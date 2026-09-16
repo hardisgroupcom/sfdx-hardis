@@ -147,11 +147,19 @@ asks the reader to hand-edit metadata that a panel can edit.
 
 ## Level 1 lab 0 stands on its own
 
-It installs the tools and nothing else: Git, VS Code, Node, the GitHub CLI, the extension pack, and
-the Setup panel installing the Salesforce CLI. Somebody joining a real project can do that lab and
-stop, and the lab says so. Everything training-specific, the two free orgs, the clone, the pipeline,
-the seeded data, belongs to lab 1. Keep that line where it is: a tool that belongs on every
-Salesforce workstation goes in lab 0, anything that only makes sense for Helios goes in lab 1.
+It installs the tools and nothing else: Git, VS Code, Node, the extension pack, and the Setup panel
+installing the Salesforce CLI. Somebody joining a real project can do that lab and stop, and the lab
+says so. Everything training-specific, the two free orgs, the clone, the pipeline, the seeded data,
+belongs to lab 1.
+
+Two lines to keep where they are:
+
+- a tool that belongs on **every** Salesforce workstation goes in lab 0, anything that only makes
+  sense for Helios goes in lab 1
+- lab 0 is **agnostic about the git provider**. sfdx-hardis treats GitHub, GitLab, Azure DevOps and
+  Bitbucket alike, so nothing provider-specific belongs there, not even a GitHub account in the
+  checklist. The GitHub CLI lives in lab 1, in the step that uses it, because this project happens
+  to live on GitHub and no part of the product needs it
 
 ## Screenshots
 
