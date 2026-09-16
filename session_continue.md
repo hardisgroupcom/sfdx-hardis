@@ -185,8 +185,8 @@ validation rule that already contained the fix the lab asked for, a button that 
 CI/CD repository, a branch selector that only lists branches which already have a config file, and a
 capstone repeating the Level 2 capstone's defect.
 
-Audit rule `3-04` was also unpassable: it required US-020 in the integration history while the lab
-correctly sends that story back to its author.
+Audit rule `3-04` could not be passed either: it required US-020 in the integration history
+while the lab correctly sends that story back to its author.
 
 **Five claims still need a real org**, and are the first thing to settle when one is free:
 
