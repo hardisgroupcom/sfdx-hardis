@@ -14754,6 +14754,42 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionofferSandboxInit">
+    <div class="card">
+        <div class="card-header" id="headingofferSandboxInit">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#offerSandboxInit"
+                        aria-expanded="" aria-controls="offerSandboxInit" onclick="setAnchor('#offerSandboxInit')"><span class="property-name">offerSandboxInit</span></button>
+            </h2>
+        </div>
+
+        <div id="offerSandboxInit"
+             class="collapse property-definition-div" aria-labelledby="headingofferSandboxInit"
+             data-parent="#accordionofferSandboxInit">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#offerSandboxInit" onclick="anchorLink('offerSandboxInit')">offerSandboxInit</a></div><h4>Offer to initialize the sandbox on New User Story</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set to true to have New User Story (hardis:work:new) offer to initialize the selected dev sandbox: install the installed packages, assign initPermissionSets, run scratchOrgInitApexScripts and load scripts/data/ScratchInit.<br />
+It never deploys metadata: bring what the team merged into a sandbox with a backpromote.<br />
+Ignored when sharedDevSandboxes is true.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionsharedDevSandboxes">
     <div class="card">
         <div class="card-header" id="headingsharedDevSandboxes">
@@ -14777,7 +14813,7 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </svg>
     <a href="#sharedDevSandboxes" onclick="anchorLink('sharedDevSandboxes')">sharedDevSandboxes</a></div><h4>Contributors can share Dev Sandboxes</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>Set to true if contributors can share dev sandboxes<br />
-If active, contributors will never be asked to refresh their sandbox metadata, to avoid to overwrite by accident their colleagues work :)</p>
+If active, contributors are never offered to initialize their sandbox on New User Story, to avoid overwriting their colleagues work by accident</p>
 </span>
         
 
