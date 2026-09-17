@@ -144,7 +144,8 @@ one is a regression.
 When a step has no button, that is a finding, not a licence: either the product has a click nobody
 named, or the product is missing one. Two examples that were fixed rather than documented: connecting
 an org could not set an alias, so `hardis:org:select` gained `--alias` and a prompt; setting up a
-fork by hand took a dozen forms, so `Training > Set up my pipeline` does it.
+fork, four orgs and their secrets by hand took an afternoon, so `Training > Set up my training environment`
+does it.
 
 ```bash
 # The check. It must print nothing.
@@ -255,10 +256,10 @@ as Levels 1 and 2 have it, and the other two are built from it at launch:
 
 | Value                | What it gives                                                                    | Used for                                      |
 |----------------------|----------------------------------------------------------------------------------|-----------------------------------------------|
-| unset                | integration with its feature branches and open Pull Requests                     | Level 2 and Level 3 labs                      |
+| unset                | integration and uat, with the feature branches and open Pull Requests            | Level 2 and Level 3 labs                      |
 | `fresh`              | no feature branches, no Pull Requests, no jobs                                   | Level 1: what a learner's own fork looks like |
 | `fresh-disconnected` | the same, with the git provider inactive: grey icon, no toggle, no Pull Requests | Level 1 lab 1, the step that connects GitHub  |
-| `level3`             | uat and main configured, each merging into the next                              | Level 3: the finished three stage pipeline    |
+| `level3`             | uat, preprod and main configured, each merging into the next                     | Level 3: the finished four stage pipeline     |
 
 They capture under the usual shot names, so take them into a temp folder and copy the file in under
 the name the lab uses (`devops-pipeline-fresh.png`, `pipeline-branch-modal-level3.png`...).
@@ -301,11 +302,17 @@ unchanged.** That is the invariant of the whole fixture design. Prove it after a
 
 ```bash
 cd ../vscode-sfdx-hardis
-yarn screenshots            # writes doc-screenshots/, the MyCompany-CRM universe
-git status --porcelain doc-screenshots
+yarn screenshots                      # writes doc-screenshots/, the MyCompany-CRM universe
+python scripts/build-doc-images.py    # crops them into ../sfdx-hardis/docs/assets/images
+cd ../sfdx-hardis
+git status --porcelain docs/assets/images
 ```
 
 Empty output, or the training work broke the product images.
+
+`doc-screenshots/` itself is git-ignored and holds no tracked file, so checking it with `git status`
+proves nothing: a run that changed every capture still reads as clean there. The tracked copies are
+the cropped images in the sfdx-hardis documentation, and those are what to look at.
 
 ### Third-party screens rot faster than the rest
 
@@ -365,16 +372,19 @@ it is the only one that works on this course's orgs:
   question that needs `./scripts/data/EmailTemplate` and so never fires here, and *push?*. **There
   is no screen where a learner picks components.** Any lab that describes one is wrong
 - answering *No, please pull my latest updates* runs `sf project retrieve start`, which needs
-  **source tracking**. Developer Edition orgs do not have it, so that answer fails on every org this
-  course uses
+  **source tracking**. `helios-dev` is a scratch org and has it, but the course still never uses that
+  answer: the Metadata Retriever is the one route that also works on a sandbox or a Developer Edition
 - "the selection" that `hardis:work:resetselection` resets is **the commits**, not a stored list.
   It does a soft reset, restores `manifest/`, and sets `canForcePush`
 
 So a lab that changes an org reads: retrieve with the Metadata Retriever, commit from Source
 Control, then Save / Publish and answer *Yes, my commit(s) are ready*.
 
-**`hardis:work:new` asks whether to update the sandbox, and that answer does not bring metadata
-down.** It installs packages, assigns permission sets and runs the init scripts. The command itself
+**`hardis:work:new` in this course answers Scratch org, then Reuse scratch org helios-dev.** The list
+leaves out the scratch orgs `config/branches/` names, and never *Create new scratch org*: the Dev Hub
+keeps three alive and all three are taken. With a sandbox, the command only asks whether to initialize
+it when the project sets `offerSandboxInit: true` (this one does not), and that answer does not bring
+metadata down. It installs packages, assigns permission sets and runs the init scripts. The command itself
 prints that a backpromote is what brings the merged metadata. A lab that says "say yes and you will
 have the team's work" is wrong.
 
@@ -386,12 +396,26 @@ files nobody asked for.
 **The target branch question offers `availableTargetBranches`, and the mock reads that same file.**
 `scripts/build/mocks.mjs` builds the choices from `config/.sfdx-hardis.yml`, so a screenshot can
 never offer a branch the project refuses. Levels 1 and 2 pin it to `integration` alone; Level 3
-lab 0 adds `uat` and `main`. A one-item list is correct, and the lab says why.
+lab 0 adds `preprod`, where hotfixes start. A one-item list is correct, and the lab says why.
 
-**The orgs are Org Farm orgs.** Their host name is `orgfarm-<10 hex>-dev-ed.develop.my.salesforce.com`
-and says nothing about what the org is for, which is why the labs read the **ALIAS** column and why
-`Set up my pipeline` can recognise the integration org from its alias without asking. The fixtures
-use that shape on purpose.
+**One signup, then scratch orgs.** A learner signs up for one Developer Edition org, `helios-prod`
+(an Org Farm org, `orgfarm-<10 hex>-dev-ed.develop.my.salesforce.com`), and `Set up my training
+environment` (`scripts/training/init.mjs`) makes it a Dev Hub and creates three scratch orgs from it:
+`helios-dev` to build in, `helios-integration` and `helios-uat` for the two stages of Levels 1 and 2.
+Level 3 lab 0 adds a second signup, `helios-preprod`, and makes `helios-prod` the `main` org. The
+universe carries `kind` and `branchFrom` per org, and the fixtures use both host shapes on purpose.
+
+- **A Developer Edition Dev Hub keeps 3 active scratch orgs and creates 6 a day.** Rehearse init
+  against a spare Org Farm org with throwaway aliases (import `ensureDevHub`, `ensureScratchOrgs`,
+  `seedScratchOrgs` from `init.mjs`), never against the maintainer's own `helios-*` aliases, and
+  never create scratch orgs in a loop.
+- The Dev Hub switch in metadata is `DevHubSettings.enableScratchOrgManagementPref`, not
+  `enableDevHub`, which the Metadata API refuses.
+- A scratch org records the seeding deployment as source changes, so Recent Changes lists the whole
+  app. Level 1 lab 4 sorts on **Last Updated Date**, and init renames the scratch org user after the
+  Dev Hub owner so the rows do not all read "User User".
+- Scratch orgs expire after 30 days. Init rebuilds only the missing ones and rewrites their branch
+  files and secrets, which is why every level's Training menu carries it.
 
 ## Claims about the product
 
