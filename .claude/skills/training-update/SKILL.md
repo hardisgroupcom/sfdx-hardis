@@ -168,6 +168,9 @@ cannot do. The rules below are hard rules, not preferences.
 
 ### What a lab must show
 
+0. **Every operation in vscode-sfdx-hardis has a screenshot.** A hard rule from the author. Where a
+   lab repeats an operation the same lab already showed, the picture is not repeated; where a level
+   or a lab meets it for the first time, it is
 1. **Every step that tells a learner to click something shows it.** A step that names a button, a
    panel, a tab or a field and carries no screenshot of that screen is not finished. "Click New
    User Story in the DevOps Pipeline panel" needs a picture with that button marked
@@ -211,7 +214,35 @@ SFDX_HARDIS_DOC_SCREENSHOTS_DIR=../sfdx-hardis-training/labs/_assets/vscode \
 yarn screenshots [names]
 ```
 
-Pass only the names you need: the full batch takes about fifteen minutes.
+Pass only the names you need: the full batch takes about twenty-five minutes, and with no names at
+all it also records the GIFs, which writes `recordings/` and `*-for-recording.png` into the output
+folder. Those do not belong in the training assets: delete them, or always pass names.
+
+**`SFDX_HARDIS_DOC_SCREENSHOTS_DIR` must be an absolute path.** A relative one resolves against the
+Extension Development Host's own working directory, and the captures land somewhere nobody finds.
+
+**Three pipeline states, through `SF_MOCK_PIPELINE_STATE`.** The committed fixture is the pipeline
+as Levels 1 and 2 have it, and the other two are built from it at launch:
+
+| Value                | What it gives                                                                   | Used for                                     |
+|----------------------|---------------------------------------------------------------------------------|----------------------------------------------|
+| unset                | integration with its feature branches and open Pull Requests                    | Level 2 and Level 3 labs                     |
+| `fresh`              | no feature branches, no Pull Requests, no jobs                                  | Level 1: what a learner's own fork looks like |
+| `fresh-disconnected` | the same, with the git provider inactive: grey icon, no toggle, no Pull Requests | Level 1 lab 1, the step that connects GitHub  |
+| `level3`             | uat and main configured, each merging into the next                             | Level 3: the finished three stage pipeline    |
+
+They capture under the usual shot names, so take them into a temp folder and copy the file in under
+the name the lab uses (`devops-pipeline-fresh.png`, `pipeline-branch-modal-level3.png`...).
+
+**`branchNode` in `universe.json`** is where the major branch box sits in the diagram, for the click
+that opens its window. Mermaid lays it out from the branches the fixture carries, so it moves
+whenever they change, and a stale value clicks empty canvas and captures a pipeline with no window.
+`scripts/build/mocks.mjs` writes it.
+
+**Never take the Extensions view.** That VS Code has no marketplace access, so it renders "Error
+while fetching extensions", and the view stays open for every capture that follows. The training
+uses a screenshot taken on a real machine, `labs/_assets/vscode/extensions-install.png`, which
+nothing in the harness may overwrite.
 
 **Web pages** come from `scripts/build/capture-web.mjs`, declared in `labs/_assets/web-captures.json`,
 driven by Playwright over CDP against a Chrome started with `--remote-debugging-port=9222`. A page
@@ -294,6 +325,29 @@ things drive them:
 
 A lab's `**Time**` line and its row in the level index must agree, and the level totals appear in
 four places: each `labs/en/level-N/index.md`, `labs/en/index.md` and `README.md`.
+
+## The contributor loop the course teaches
+
+**The Metadata Retriever comes before `hardis:work:save`, always.** That is the product's own
+workflow (the contribution cards read New User Story, then Commit changes, then Save / Publish) and
+it is the only one that works on this course's orgs:
+
+- `hardis:work:save` has exactly three prompts: *Have you already committed?*, a data export
+  question that needs `./scripts/data/EmailTemplate` and so never fires here, and *push?*. **There
+  is no screen where a learner picks components.** Any lab that describes one is wrong
+- answering *No, please pull my latest updates* runs `sf project retrieve start`, which needs
+  **source tracking**. Developer Edition orgs do not have it, so that answer fails on every org this
+  course uses
+- "the selection" that `hardis:work:resetselection` resets is **the commits**, not a stored list.
+  It does a soft reset, restores `manifest/`, and sets `canForcePush`
+
+So a lab that changes an org reads: retrieve with the Metadata Retriever, commit from Source
+Control, then Save / Publish and answer *Yes, my commit(s) are ready*.
+
+**`hardis:work:new` asks whether to update the sandbox, and that answer does not bring metadata
+down.** It installs packages, assigns permission sets and runs the init scripts. The command itself
+prints that a backpromote is what brings the merged metadata. A lab that says "say yes and you will
+have the team's work" is wrong.
 
 ## Claims about the product
 
