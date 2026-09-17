@@ -4,6 +4,7 @@
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): the scratch orgs your major branches deploy to are no longer offered as orgs to build a User Story in.
 - A command that stores a value in a `.sfdx-hardis.yml` file now keeps the comments and the formatting of that file instead of rewriting it.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) now keeps the comments of an existing `mkdocs.yml`, and only rewrites the keys it changes.
 - A project that declares a single `availableTargetBranches` is no longer asked which target branch to use, and `--agent` no longer stops on that question.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a project with no list view to restore no longer starts a browser after the deployment, which failed the job with a navigation timeout although the deployment had succeeded.
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): no longer asks whether to update the sandbox, unless the project sets `offerSandboxInit: true`. Metadata reaches a sandbox through a backpromote.

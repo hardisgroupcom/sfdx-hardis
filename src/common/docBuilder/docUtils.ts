@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
 
 import * as yaml from 'js-yaml';
+import { parseDocument as parseYamlDocument } from 'yaml';
 import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
@@ -266,9 +267,32 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
 }
 
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
-  let mkdocsYmlStr = yaml.dump(mkdocsYml, { lineWidth: -1 });
+  let mkdocsYmlStr: string;
+  // The file is edited in place when it already exists: a mkdocs.yml is written
+  // by hand, and rebuilding it from the parsed object drops every comment in it
+  // and rewraps what is left.
+  if (fs.existsSync(mkdocsYmlFile)) {
+    const doc = parseYamlDocument(fs.readFileSync(mkdocsYmlFile, 'utf-8'));
+    const current: any = doc.toJSON() || {};
+    for (const [key, value] of Object.entries(mkdocsYml)) {
+      // Only what actually changed is rewritten: replacing a key replaces its
+      // whole subtree, and with it the comments inside that subtree.
+      if (JSON.stringify(current[key]) !== JSON.stringify(value)) {
+        doc.set(key, value);
+      }
+    }
+    for (const key of Object.keys(doc.toJSON() || {})) {
+      if (!(key in mkdocsYml)) {
+        doc.delete(key);
+      }
+    }
+    mkdocsYmlStr = doc.toString({ lineWidth: 0 });
+  } else {
+    mkdocsYmlStr = yaml.dump(mkdocsYml, { lineWidth: -1 });
+  }
   for (const tag of [EMOJI_TWEMOJI_TAG, EMOJI_TO_SVG_TAG, FENCE_CODE_FORMAT_TAG]) {
     mkdocsYmlStr = mkdocsYmlStr.replaceAll(`'${tag}'`, tag);
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(`"${tag}"`, tag);
   }
   await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
   uxLog("action", this, c.cyan(t('updatedZensicalConfigFileAt', { mkdocsYmlFile: c.green(mkdocsYmlFile) })));
