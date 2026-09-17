@@ -44,6 +44,19 @@ have to be regenerated.
 **Never edit a generated file.** Change its source and re-run the generator. CI fails on drift
 (`node scripts/build/universe.mjs --check`).
 
+**The site is Zensical, and it is not mkdocs-material.** It reads `mkdocs.yml` and honours most of
+it, but it ships none of the plugins: `glightbox` is declared and Zensical emits the
+`<a class="glightbox">` wrapper around every picture while shipping no viewer, so the course
+carries its own (`site-theme/javascripts/lightbox.js`, a delegated listener in the **capture**
+phase, because the theme cancels link clicks on the way back up for its instant navigation). Two
+more things the theme gets wrong and this stylesheet corrects: the footer text is painted from the
+page foreground token rather than `--md-footer-fg-color`, which in the light scheme is navy on plum
+and unreadable; and `html .md-footer-meta.md-typeset a:not(:focus,:hover)` is specific enough that
+a rule has to match it shape for shape to win.
+
+Custom JavaScript runs once per **page load**, and the theme swaps pages without reloading. Anything
+per-page subscribes to `document$`, the way `tables.js` does.
+
 ## Editing a lab
 
 Every lab carries front matter that drives the manifest and the checks:
@@ -71,6 +84,10 @@ check work, and it is the one thing easy to forget.
 
 House style for the lab body, in order: `The situation`, `Before you start`, `Steps`,
 `What you should see`, `If it goes wrong`, `Check your work`, `Go deeper`.
+
+`If it goes wrong` stays an ordinary `##` heading in the markdown. `scripts/build/site.mjs` folds it
+into a collapsed block on the site, because it is the one section nobody reads in order. Write it as
+a plain section; do not indent it by hand.
 
 Three rules the labs are written under, and they are not negotiable:
 
@@ -218,6 +235,18 @@ Pass only the names you need: the full batch takes about twenty-five minutes, an
 all it also records the GIFs, which writes `recordings/` and `*-for-recording.png` into the output
 folder. Those do not belong in the training assets: delete them, or always pass names.
 
+**A name in that list is the name the test is gated on, not the name of the file it writes.** Most
+tests gate on the shot they take, but the ones that take a group gate on the group:
+`sidebar-commands` writes eight `sidebar-commands-*.png`, and `work-new`, `work-save`,
+`command-runner`, `pipeline-modals`, `pipeline-action-editors`, `user-activateinvalid` and
+`backpromote` behave the same way. Listing the file names of a group silently skips it: the run is
+green and the images are the old ones. `grep -n "shouldTake(" src/test/ui/docScreenshots.test.ts`
+lists every gate.
+
+**The side bar is in every VS Code capture**, so a change to what a project declares in
+`customCommands` invalidates all of them, not only the menu shots. The training declares one menu
+per level (`Training: Level 1`, `2`, `3`), which is three rows instead of one.
+
 **`SFDX_HARDIS_DOC_SCREENSHOTS_DIR` must be an absolute path.** A relative one resolves against the
 Extension Development Host's own working directory, and the captures land somewhere nobody finds.
 
@@ -348,6 +377,21 @@ Control, then Save / Publish and answer *Yes, my commit(s) are ready*.
 down.** It installs packages, assigns permission sets and runs the init scripts. The command itself
 prints that a backpromote is what brings the merged metadata. A lab that says "say yes and you will
 have the team's work" is wrong.
+
+**Staging is the decision, not the picker.** `hardis:work:save` commits nothing by itself: the
+learner stages the retrieved files one at a time in the Source Control panel, with the **+** on each
+row. Level 1 lab 4 teaches that and forbids **Stage All Changes**, because the panel routinely shows
+files nobody asked for.
+
+**The target branch question offers `availableTargetBranches`, and the mock reads that same file.**
+`scripts/build/mocks.mjs` builds the choices from `config/.sfdx-hardis.yml`, so a screenshot can
+never offer a branch the project refuses. Levels 1 and 2 pin it to `integration` alone; Level 3
+lab 0 adds `uat` and `main`. A one-item list is correct, and the lab says why.
+
+**The orgs are Org Farm orgs.** Their host name is `orgfarm-<10 hex>-dev-ed.develop.my.salesforce.com`
+and says nothing about what the org is for, which is why the labs read the **ALIAS** column and why
+`Set up my pipeline` can recognise the integration org from its alias without asking. The fixtures
+use that shape on purpose.
 
 ## Claims about the product
 
