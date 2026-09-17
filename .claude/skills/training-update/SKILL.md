@@ -278,7 +278,16 @@ the name the lab uses (`devops-pipeline-fresh.png`, `pipeline-branch-modal-level
 **`branchNode` in `universe.json`** is where the major branch box sits in the diagram, for the click
 that opens its window. Mermaid lays it out from the branches the fixture carries, so it moves
 whenever they change, and a stale value clicks empty canvas and captures a pipeline with no window.
-`scripts/build/mocks.mjs` writes it.
+`scripts/build/mocks.mjs` writes it. It is the default state's point: the `level3` state lays the diagram out
+differently, so pass `SFDX_HARDIS_DOC_SCREENSHOTS_BRANCH_NODE=x,y` for that run, read off its
+`devops-pipeline.png`. The branch window without a merge target is taken the same way, on `uat`.
+`retrieverRows` in the same file is the heights of the three rows the Metadata Retriever capture ticks,
+and it moves whenever `sourceMembers` changes.
+
+**After any capture, re-pin by looking.** A panel that gained a toggle, a Welcome strip or two menu rows
+moves every box below it, and `annotate.mjs` still draws the old spec without complaint. Render the
+annotated images four to a sheet with a headless Chrome of your own and check each pill against its
+step text. Run one harness batch at a time: two VS Code instances on this machine run out of memory.
 
 **Never take the Extensions view.** That VS Code has no marketplace access, so it renders "Error
 while fetching extensions", and the view stays open for every capture that follows. The training
