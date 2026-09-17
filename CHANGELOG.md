@@ -4,6 +4,7 @@
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): the scratch orgs your major branches deploy to are no longer offered as orgs to build a User Story in.
 - A command that stores a value in a `.sfdx-hardis.yml` file now keeps the comments and the formatting of that file instead of rewriting it.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a project with no list view to restore no longer starts a browser after the deployment, which failed the job with a navigation timeout although the deployment had succeeded.
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): no longer asks whether to update the sandbox, unless the project sets `offerSandboxInit: true`. Metadata reaches a sandbox through a backpromote.
 - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): an org you connect is now given an alias, suggested from its instance URL, so it appears under a short name instead of its username.
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.

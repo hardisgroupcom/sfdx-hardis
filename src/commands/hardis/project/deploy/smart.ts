@@ -599,7 +599,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const deployExecuted = !this.checkOnly && deployXmlCount > 0 ? true : false;
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
-    if (this.configInfo.listViewsToSetToMine && deployExecuted) {
+    if ((this.configInfo.listViewsToSetToMine || []).length > 0 && deployExecuted) {
       await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
         debug: this.debugMode,
       });

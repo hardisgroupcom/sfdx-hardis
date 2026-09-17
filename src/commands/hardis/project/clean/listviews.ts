@@ -87,7 +87,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
       }
     }
     listViewsMine = [...new Set(listViewsMine)]; // Make unique
-    await setConfig('project', { listViewsToSetToMine: listViewsMine });
+    // An empty list is not worth a line in the project configuration, and the
+    // deployment reads this key to decide whether it has list views to restore
+    if (listViewsMine.length > 0) {
+      await setConfig('project', { listViewsToSetToMine: listViewsMine });
+    }
 
     // Summary
     const msg = `Replaced ${c.green(c.bold(counter))} Mine by Everything in ListViews`;
