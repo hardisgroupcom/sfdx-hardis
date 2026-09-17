@@ -63,9 +63,11 @@ Every lab carries front matter that drives the manifest and the checks:
 
 ```yaml
 ---
-id: l2-lab-06-conflicts
+id: lab-2-7
+title: "Lab 2.7 - Resolve a Git merge conflict with a teammate"
+description: "A teammate merged first on the same flow and permission set. Resolve both Git conflicts in VS Code without losing anybody's work."
 level: 2
-lab: 6
+lab: 7
 lang: en
 source_rev: ""
 screenshots:
@@ -78,6 +80,15 @@ depends_on:
   docs: [salesforce-devops-work-on-user-story-profiles]
 ---
 ```
+
+**Labs are numbered `N.M` from 1**, level then position: Lab 1.1 is the first lab of Level 1, and
+text says "Lab 2.5", never "Level 2 lab 4". The folder is `labs/en/level-N-<name>/` and the file
+`N-M-<words>.md`, which is also the URL: short, lowercase, hyphenated, words a learner would search
+for. `title` is the page title and must equal the `# ` heading; `description` is the meta
+description, one sentence under 160 characters that names the Salesforce and sfdx-hardis terms the
+lab teaches. Both come from `training-universe.json` (`levels[].labs[]`), and inserting a lab means
+renumbering the ones after it, their files, their rule ids (`N.M` in `scripts/verify/rules.mjs`)
+and every "Lab N.M" in the text.
 
 When you change what a lab relies on, **change `depends_on` too**. It is what makes the next impact
 check work, and it is the one thing easy to forget.

@@ -113,7 +113,7 @@ In the analysis and the design, a **Training impact** section:
 ```markdown
 ## Training impact
 
-**Affected labs**: l2-lab-02-deployment-actions-apex, l2-lab-03-deployment-actions-data
+**Affected labs**: lab-2-3 (Lab 2.3), lab-2-4 (Lab 2.4)
 
 `commandsPostDeploy` gains a `retryCount` key. Both labs quote the YAML in their
 "Under the hood" block, so both blocks are now incomplete rather than wrong.

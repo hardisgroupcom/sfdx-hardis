@@ -71,7 +71,7 @@ The Trailmix URL embeds the owning Trailhead account handle and the Trailmix slu
 | Expected Trailmix URL shape | `https://trailhead.salesforce.com/users/nvuillamy/trailmixes/salesforce-devops-with-sfdx-hardis-contributor-basics` |
 | Training repo               | `hardisgroupcom/sfdx-hardis-training` (public)                                                                      |
 | Training site               | `https://hardisgroupcom.github.io/sfdx-hardis-training/` (GitHub Pages, section 12)                                 |
-| Lab URL shape               | `<site>/en/level-2/lab-06-conflicts/`                                                                               |
+| Lab URL shape               | `<site>/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/`                                          |
 | Badge URL shape             | `<site>/badges/<github-handle>/`                                                                                    |
 
 Two cautions on the account:
@@ -132,9 +132,9 @@ hardisgroupcom/sfdx-hardis-training
 ├── mkdocs.yml                    Zensical config for the training site (section 12)
 ├── labs/
 │   ├── en/
-│   │   ├── level-1/              lab-00 .. lab-06   Contributor basics
-│   │   ├── level-2/              lab-00 .. lab-08   Contributor advanced
-│   │   └── level-3/              lab-00 .. lab-10   Release Manager
+│   │   ├── level-1-contributor-basics/     1-1 .. 1-7    Contributor basics
+│   │   ├── level-2-contributor-advanced/   2-1 .. 2-9    Contributor advanced
+│   │   └── level-3-release-manager/        3-1 .. 3-11   Release Manager
 │   ├── _assets/
 │   │   ├── vscode/               PNGs produced by the extension harness (section 13)
 │   │   └── github/               PNGs of the GitHub web UI (section 13.5)
@@ -258,33 +258,33 @@ Goal: install, take a User Story, build it, publish it, merge it into `integrati
 
 Legend: **TH** = existing Trailhead content, **L** = Link step, **T** = Task step. "Req" = marked required. Lab links point at the training site, `<site>` = `https://hardisgroupcom.github.io/sfdx-hardis-training`.
 
-| #  | Type | Req | Title shown in Trailmix                                                   | Target                                                                  |
-|----|------|-----|---------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| 1  | L    | no  | Why this path exists (3 min read)                                         | `<site>/en/level-1/`                                                    |
-| 2  | TH   | yes | Git and GitHub Basics for Effective Collaboration                         | `trailhead.salesforce.com/content/learn/modules/git-and-git-hub-basics` |
-| 3  | TH   | no  | Org Development Model                                                     | `.../modules/org-development-model`                                     |
-| 4  | L    | no  | How Salesforce CI/CD works with sfdx-hardis                               | `sfdx-hardis.cloudity.com/salesforce-devops-home/`                      |
-| 5  | L    | yes | Contributor Guide overview                                                | `.../salesforce-devops-use-home/`                                       |
-| 6  | T    | yes | Create your two Developer Edition orgs, then connect them in Orgs Manager | text only                                                               |
-| 7  | L    | yes | **Lab 0** - Install the tools and seed your orgs                          | `<site>/en/level-1/lab-00-setup/`                                       |
-| 8  | L    | no  | Reference: install the tools                                              | `.../salesforce-devops-use-install/`                                    |
-| 9  | L    | no  | Reference: the VS Code extension                                          | `.../vscode-extension/`                                                 |
-| 10 | L    | yes | **Lab 1** - Fork the repository and connect your pipeline                 | `<site>/en/level-1/lab-01-fork-and-connect/`                            |
-| 11 | L    | no  | Reference: create a Git access token                                      | `.../salesforce-devops-git-tokens/`                                     |
-| 12 | L    | no  | Reference: clone the repository                                           | `.../salesforce-devops-clone-repository/`                               |
-| 13 | L    | yes | **Lab 2** - Take US-014 from the backlog                                  | `<site>/en/level-1/lab-02-new-user-story/`                              |
-| 14 | L    | no  | Reference: start a User Story                                             | `.../salesforce-devops-create-new-user-story/`                          |
-| 15 | L    | yes | **Lab 3** - Build it in your org                                          | `<site>/en/level-1/lab-03-build-in-org/`                                |
-| 16 | L    | no  | Reference: work in your org                                               | `.../salesforce-devops-work-on-user-story/`                             |
-| 17 | L    | no  | Reference: configuration guidelines                                       | `.../salesforce-devops-work-on-user-story-configuration/`               |
-| 18 | L    | yes | **Lab 4** - Publish it and read the package.xml diff                      | `<site>/en/level-1/lab-04-publish/`                                     |
-| 19 | L    | no  | Reference: publish your User Story                                        | `.../salesforce-devops-publish-user-story/`                             |
-| 20 | L    | yes | **Lab 5** - Open the Pull Request, get it green, merge to integration     | `<site>/en/level-1/lab-05-pull-request/`                                |
-| 21 | L    | no  | Reference: create the Pull Request on GitHub                              | `.../salesforce-devops-pull-request-github/`                            |
-| 22 | L    | no  | Reference: check the Pull Request results                                 | `.../salesforce-devops-handle-merge-request-results/`                   |
-| 23 | L    | yes | **Capstone** - Deliver US-016 on your own                                 | `<site>/en/level-1/lab-06-capstone/`                                    |
-| 24 | T    | yes | Claim your Contributor Basics badge                                       | text with the claim instructions                                        |
-| 25 | L    | no  | Recommended next: Level 2 - Contributor advanced                          | Level 2 Trailmix URL                                                    |
+| #   | Type | Req | Title shown in Trailmix                                                   | Target                                                                                    |
+|-----|------|-----|---------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| 1   | L    | no  | Why this path exists (3 min read)                                         | `<site>/en/level-1-contributor-basics/`                                                   |
+| 2   | TH   | yes | Git and GitHub Basics for Effective Collaboration                         | `trailhead.salesforce.com/content/learn/modules/git-and-git-hub-basics`                   |
+| 3   | TH   | no  | Org Development Model                                                     | `.../modules/org-development-model`                                                       |
+| 4   | L    | no  | How Salesforce CI/CD works with sfdx-hardis                               | `sfdx-hardis.cloudity.com/salesforce-devops-home/`                                        |
+| 5   | L    | yes | Contributor Guide overview                                                | `.../salesforce-devops-use-home/`                                                         |
+| 6   | T    | yes | Create your two Developer Edition orgs, then connect them in Orgs Manager | text only                                                                                 |
+| 7   | L    | yes | **Lab 1.1** - Install VS Code, Git and sfdx-hardis                        | `<site>/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/`               |
+| 8   | L    | no  | Reference: install the tools                                              | `.../salesforce-devops-use-install/`                                                      |
+| 9   | L    | no  | Reference: the VS Code extension                                          | `.../vscode-extension/`                                                                   |
+| 10  | L    | yes | **Lab 1.2** - Create your Dev Hub, scratch orgs and CI/CD pipeline        | `<site>/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/` |
+| 11  | L    | no  | Reference: create a Git access token                                      | `.../salesforce-devops-git-tokens/`                                                       |
+| 12  | L    | no  | Reference: clone the repository                                           | `.../salesforce-devops-clone-repository/`                                                 |
+| 13  | L    | yes | **Lab 1.3** - Start a User Story on its own Git branch                    | `<site>/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/`            |
+| 14  | L    | no  | Reference: start a User Story                                             | `.../salesforce-devops-create-new-user-story/`                                            |
+| 15  | L    | yes | **Lab 1.4** - Build a custom field in your Salesforce org                 | `<site>/en/level-1-contributor-basics/1-4-build-a-custom-field-in-your-org/`              |
+| 16  | L    | no  | Reference: work in your org                                               | `.../salesforce-devops-work-on-user-story/`                                               |
+| 17  | L    | no  | Reference: configuration guidelines                                       | `.../salesforce-devops-work-on-user-story-configuration/`                                 |
+| 18  | L    | yes | **Lab 1.5** - Retrieve, commit and publish your Salesforce changes        | `<site>/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/`      |
+| 19  | L    | no  | Reference: publish your User Story                                        | `.../salesforce-devops-publish-user-story/`                                               |
+| 20  | L    | yes | **Lab 1.6** - Open a Pull Request, pass the deployment check, merge       | `<site>/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/`       |
+| 21  | L    | no  | Reference: create the Pull Request on GitHub                              | `.../salesforce-devops-pull-request-github/`                                              |
+| 22  | L    | no  | Reference: check the Pull Request results                                 | `.../salesforce-devops-handle-merge-request-results/`                                     |
+| 23  | L    | yes | **Lab 1.7** - Capstone: deliver a User Story on your own                  | `<site>/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/`     |
+| 24  | T    | yes | Claim your Contributor Basics badge                                       | text with the claim instructions                                                          |
+| 25  | L    | no  | Recommended next: Level 2 - Contributor advanced                          | Level 2 Trailmix URL                                                                      |
 
 ### Level 1 labs
 
@@ -333,32 +333,32 @@ A learner who does all three levels ends up having done it both ways and knowing
 
 Goal: everything that goes wrong between "it works in my org" and "it is live in integration", plus the deployment actions that carry non-metadata work from org to org.
 
-| #  | Type | Req | Title shown in Trailmix                                                | Target                                                         |
-|----|------|-----|------------------------------------------------------------------------|----------------------------------------------------------------|
-| 1  | L    | yes | What changes at Level 2, and how to reset if you are joining here      | `<site>/en/level-2/`                                           |
-| 2  | L    | no  | Refresher: the contributor loop in one page                            | `.../salesforce-devops-use-home/`                              |
-| 3  | L    | yes | **Lab 0** - Your org is behind, catch it up                            | `<site>/en/level-2/lab-00-refresh/`                            |
-| 4  | L    | no  | Reference: Backpromote                                                 | `.../salesforce-devops-backpromote/`                           |
-| 5  | L    | yes | **Lab 1** - US-021 will not deploy: a missing dependency               | `<site>/en/level-2/lab-01-missing-dependency/`                 |
-| 6  | L    | no  | Reference: solve deployment errors                                     | `.../salesforce-devops-solve-deployment-errors/`               |
-| 7  | L    | no  | Reference: source retrieve issues                                      | `.../salesforce-devops-retrieve/`                              |
-| 8  | L    | yes | **Lab 2** - US-024: the field cannot be required yet                   | `<site>/en/level-2/lab-02-deployment-actions-apex/`            |
-| 9  | L    | yes | Reference: deployment actions                                          | `.../salesforce-devops-work-on-user-story-deployment-actions/` |
-| 10 | L    | yes | **Lab 3** - US-026: reference data and a batch must follow your change | `<site>/en/level-2/lab-03-deployment-actions-data/`            |
-| 11 | L    | no  | Reference: data workspaces (SFDMU)                                     | `.../salesforce-devops-agent-data-workspaces/`                 |
-| 12 | L    | yes | **Lab 4** - US-027 fails the quality gate and the tests                | `<site>/en/level-2/lab-04-quality-and-tests/`                  |
-| 13 | L    | no  | Reference: solve MegaLinter errors                                     | `.../salesforce-devops-solve-megalinter-errors/`               |
-| 14 | L    | no  | Reference: development guidelines                                      | `.../salesforce-devops-work-on-user-story-development/`        |
-| 15 | L    | yes | **Lab 5** - US-033: your Profile change disappeared                    | `<site>/en/level-2/lab-05-profiles-overwrites/`                |
-| 16 | L    | no  | Reference: Profiles and Permission Sets                                | `.../salesforce-devops-work-on-user-story-profiles/`           |
-| 17 | L    | no  | Reference: overwrite management                                        | `.../salesforce-devops-config-overwrite/`                      |
-| 18 | L    | yes | **Lab 6** - Marco merged first: resolve the conflict                   | `<site>/en/level-2/lab-06-conflicts/`                          |
-| 19 | L    | yes | **Lab 7** - You committed the wrong things: recover                    | `<site>/en/level-2/lab-07-recover-selection/`                  |
-| 20 | L    | no  | Reference: install packages in your org                                | `.../salesforce-devops-work-on-user-story-install-packages/`   |
-| 21 | L    | yes | **Capstone** - Deliver US-041, which has all of it at once             | `<site>/en/level-2/lab-08-capstone/`                           |
-| 22 | L    | no  | Going further: work with AI coding agents                              | `.../salesforce-devops-agent-skills/`                          |
-| 23 | T    | yes | Claim your Contributor badge                                           | text with the claim instructions                               |
-| 24 | L    | no  | Continue to Level 3 - Release Manager                                  | Level 3 Trailmix URL                                           |
+| #   | Type | Req | Title shown in Trailmix                                               | Target                                                                                                |
+|-----|------|-----|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| 1   | L    | yes | What changes at Level 2, and how to reset if you are joining here     | `<site>/en/level-2-contributor-advanced/`                                                             |
+| 2   | L    | no  | Refresher: the contributor loop in one page                           | `.../salesforce-devops-use-home/`                                                                     |
+| 3   | L    | yes | **Lab 2.1** - Backpromote: catch your org up with the team            | `<site>/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/`                         |
+| 4   | L    | no  | Reference: Backpromote                                                | `.../salesforce-devops-backpromote/`                                                                  |
+| 5   | L    | yes | **Lab 2.2** - Fix a deployment error caused by a missing dependency   | `<site>/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/`               |
+| 6   | L    | no  | Reference: solve deployment errors                                    | `.../salesforce-devops-solve-deployment-errors/`                                                      |
+| 7   | L    | no  | Reference: source retrieve issues                                     | `.../salesforce-devops-retrieve/`                                                                     |
+| 8   | L    | yes | **Lab 2.3** - Fix broken records with an Apex deployment action       | `<site>/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/`       |
+| 9   | L    | yes | Reference: deployment actions                                         | `.../salesforce-devops-work-on-user-story-deployment-actions/`                                        |
+| 10  | L    | yes | **Lab 2.4** - Ship reference data and a batch with deployment actions | `<site>/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/` |
+| 11  | L    | no  | Reference: data workspaces (SFDMU)                                    | `.../salesforce-devops-agent-data-workspaces/`                                                        |
+| 12  | L    | yes | **Lab 2.5** - Pass the code quality gate and Apex test coverage       | `<site>/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/`                |
+| 13  | L    | no  | Reference: solve MegaLinter errors                                    | `.../salesforce-devops-solve-megalinter-errors/`                                                      |
+| 14  | L    | no  | Reference: development guidelines                                     | `.../salesforce-devops-work-on-user-story-development/`                                               |
+| 15  | L    | yes | **Lab 2.6** - Permission sets, profiles and why a grant disappears    | `<site>/en/level-2-contributor-advanced/2-6-permission-sets-profiles-and-overwrites/`                 |
+| 16  | L    | no  | Reference: Profiles and Permission Sets                               | `.../salesforce-devops-work-on-user-story-profiles/`                                                  |
+| 17  | L    | no  | Reference: overwrite management                                       | `.../salesforce-devops-config-overwrite/`                                                             |
+| 18  | L    | yes | **Lab 2.7** - Resolve a Git merge conflict with a teammate            | `<site>/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/`                            |
+| 19  | L    | yes | **Lab 2.8** - Recover from committing the wrong metadata              | `<site>/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/`              |
+| 20  | L    | no  | Reference: install packages in your org                               | `.../salesforce-devops-work-on-user-story-install-packages/`                                          |
+| 21  | L    | yes | **Lab 2.9** - Capstone: deliver a User Story that has it all          | `<site>/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/`           |
+| 22  | L    | no  | Going further: work with AI coding agents                             | `.../salesforce-devops-agent-skills/`                                                                 |
+| 23  | T    | yes | Claim your Contributor badge                                          | text with the claim instructions                                                                      |
+| 24  | L    | no  | Continue to Level 3 - Release Manager                                 | Level 3 Trailmix URL                                                                                  |
 
 ### Level 2 labs
 
@@ -376,45 +376,45 @@ Goal: everything that goes wrong between "it works in my org" and "it is live in
 
 ## 10. Trailmix C - Level 3, Release Manager
 
-| #  | Type | Req | Title shown in Trailmix                                                       | Target                                            |
-|----|------|-----|-------------------------------------------------------------------------------|---------------------------------------------------|
-| 1  | L    | yes | Read this first: what changes at Level 3, and why Levels 1 and 2 are required | `<site>/en/level-3/`                              |
-| 2  | TH   | no  | Package Development Model                                                     | `.../modules/sfdx_dev_model`                      |
-| 3  | TH   | no  | DevOps Center: Quick Look (for comparison)                                    | `.../modules/devops-center-quick-look`            |
-| 4  | L    | yes | Release Manager Guide overview                                                | `.../salesforce-devops-release-home/`             |
-| 5  | T    | yes | Create `helios-uat` and `helios-prod`, then connect them in Orgs Manager      | text only                                         |
-| 6  | L    | yes | **Lab 0** - Your pipeline stops at integration: finish it                     | `<site>/en/level-3/lab-00-finish-the-pipeline/`   |
-| 7  | L    | no  | Reference: Setup Guide                                                        | `.../salesforce-devops-setup-home/`               |
-| 8  | L    | no  | Reference: initialize the SFDX project                                        | `.../salesforce-devops-setup-init-project/`       |
-| 9  | L    | no  | Reference: retrieve an existing org                                           | `.../salesforce-devops-setup-existing-org/`       |
-| 10 | L    | yes | **Lab 1** - Wire CI authentication for three orgs                             | `<site>/en/level-3/lab-01-ci-auth/`               |
-| 11 | L    | no  | Reference: configure CI authentication                                        | `.../salesforce-devops-setup-auth/`               |
-| 12 | L    | no  | Reference: GitHub Actions authentication                                      | `.../salesforce-devops-setup-auth-github/`        |
-| 13 | L    | yes | **Lab 2** - Review and merge a contributor Pull Request                       | `<site>/en/level-3/lab-02-review-pr/`             |
-| 14 | L    | no  | Reference: review and merge Pull Requests                                     | `.../salesforce-devops-validate-merge-request/`   |
-| 15 | L    | yes | **Lab 3** - Deploy to integration and read what happened                      | `<site>/en/level-3/lab-03-deploy-integration/`    |
-| 16 | L    | no  | Reference: deploy to major orgs                                               | `.../salesforce-devops-deploy-major-branches/`    |
-| 17 | L    | no  | Reference: Smart Deploy internals                                             | `.../salesforce-devops-smart-deployment/`         |
-| 18 | L    | yes | **Lab 4** - Three Pull Requests collide: overwrites and cleaning              | `<site>/en/level-3/lab-04-overwrite-cleaning/`    |
-| 19 | L    | no  | Reference: automated cleaning                                                 | `.../salesforce-devops-config-cleaning/`          |
-| 20 | L    | no  | Reference: delta deployments                                                  | `.../salesforce-devops-config-delta-deployment/`  |
-| 21 | L    | yes | **Lab 5** - Promote integration to UAT and write the release notes            | `<site>/en/level-3/lab-05-uat-release-notes/`     |
-| 22 | L    | no  | Reference: Release Notes                                                      | `.../hardis/doc/salesforce-devops-release-notes/` |
-| 23 | L    | yes | **Lab 6** - Ship to production and read your DORA metrics                     | `<site>/en/level-3/lab-06-production/`            |
-| 24 | L    | no  | Reference: DORA Metrics                                                       | `.../hardis/doc/salesforce-devops-dora-report/`   |
-| 25 | L    | yes | **Lab 7** - Production is broken: hotfix and retrofit                         | `<site>/en/level-3/lab-07-hotfix-retrofit/`       |
-| 26 | L    | no  | Reference: Hotfixes                                                           | `.../salesforce-devops-hotfixes/`                 |
-| 27 | L    | no  | Reference: Retrofit                                                           | `.../salesforce-devops-retrofit/`                 |
-| 28 | L    | yes | **Lab 8** - Put production under monitoring                                   | `<site>/en/level-3/lab-08-monitoring/`            |
-| 29 | L    | no  | Reference: Org Monitoring                                                     | `.../salesforce-monitoring-home/`                 |
-| 30 | L    | no  | Reference: monitoring on GitHub                                               | `.../salesforce-monitoring-config-github/`        |
-| 31 | L    | no  | Reference: Grafana dashboards                                                 | `.../salesforce-monitoring-grafana-v2/`           |
-| 32 | L    | yes | **Lab 9** - Generate the project documentation                                | `<site>/en/level-3/lab-09-documentation/`         |
-| 33 | L    | no  | Reference: generate documentation                                             | `.../salesforce-project-doc-generate/`            |
-| 34 | L    | yes | **Capstone** - Run one full weekly release cycle                              | `<site>/en/level-3/lab-10-capstone/`              |
-| 35 | L    | no  | Going further: promotion branches (Experimental)                              | `.../salesforce-devops-promotion-branches/`       |
-| 36 | L    | no  | Going further: setup checklist for a real project                             | `.../salesforce-devops-setup-checklist/`          |
-| 37 | T    | yes | Claim your Release Manager badge                                              | text with the claim instructions                  |
+| #   | Type | Req | Title shown in Trailmix                                                       | Target                                                                               |
+|-----|------|-----|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| 1   | L    | yes | Read this first: what changes at Level 3, and why Levels 1 and 2 are required | `<site>/en/level-3-release-manager/`                                                 |
+| 2   | TH   | no  | Package Development Model                                                     | `.../modules/sfdx_dev_model`                                                         |
+| 3   | TH   | no  | DevOps Center: Quick Look (for comparison)                                    | `.../modules/devops-center-quick-look`                                               |
+| 4   | L    | yes | Release Manager Guide overview                                                | `.../salesforce-devops-release-home/`                                                |
+| 5   | T    | yes | Create `helios-uat` and `helios-prod`, then connect them in Orgs Manager      | text only                                                                            |
+| 6   | L    | yes | **Lab 3.1** - Configure the CI/CD pipeline up to production                   | `<site>/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/`     |
+| 7   | L    | no  | Reference: Setup Guide                                                        | `.../salesforce-devops-setup-home/`                                                  |
+| 8   | L    | no  | Reference: initialize the SFDX project                                        | `.../salesforce-devops-setup-init-project/`                                          |
+| 9   | L    | no  | Reference: retrieve an existing org                                           | `.../salesforce-devops-setup-existing-org/`                                          |
+| 10  | L    | yes | **Lab 3.2** - Set up CI authentication with JWT for four orgs                 | `<site>/en/level-3-release-manager/3-2-ci-authentication-with-jwt/`                  |
+| 11  | L    | no  | Reference: configure CI authentication                                        | `.../salesforce-devops-setup-auth/`                                                  |
+| 12  | L    | no  | Reference: GitHub Actions authentication                                      | `.../salesforce-devops-setup-auth-github/`                                           |
+| 13  | L    | yes | **Lab 3.3** - Review and merge a contributor Pull Request                     | `<site>/en/level-3-release-manager/3-3-review-a-contributor-pull-request/`           |
+| 14  | L    | no  | Reference: review and merge Pull Requests                                     | `.../salesforce-devops-validate-merge-request/`                                      |
+| 15  | L    | yes | **Lab 3.4** - Deploy to integration and read the deployment log               | `<site>/en/level-3-release-manager/3-4-deploy-to-integration-and-read-the-log/`      |
+| 16  | L    | no  | Reference: deploy to major orgs                                               | `.../salesforce-devops-deploy-major-branches/`                                       |
+| 17  | L    | no  | Reference: Smart Deploy internals                                             | `.../salesforce-devops-smart-deployment/`                                            |
+| 18  | L    | yes | **Lab 3.5** - Three Pull Requests collide: choose the merge order             | `<site>/en/level-3-release-manager/3-5-merge-colliding-pull-requests/`               |
+| 19  | L    | no  | Reference: automated cleaning                                                 | `.../salesforce-devops-config-cleaning/`                                             |
+| 20  | L    | no  | Reference: delta deployments                                                  | `.../salesforce-devops-config-delta-deployment/`                                     |
+| 21  | L    | yes | **Lab 3.6** - Promote to UAT and write the release notes                      | `<site>/en/level-3-release-manager/3-6-promote-to-uat-and-write-release-notes/`      |
+| 22  | L    | no  | Reference: Release Notes                                                      | `.../hardis/doc/salesforce-devops-release-notes/`                                    |
+| 23  | L    | yes | **Lab 3.7** - Release to production and read your DORA metrics                | `<site>/en/level-3-release-manager/3-7-release-to-production-and-read-dora-metrics/` |
+| 24  | L    | no  | Reference: DORA Metrics                                                       | `.../hardis/doc/salesforce-devops-dora-report/`                                      |
+| 25  | L    | yes | **Lab 3.8** - Production is broken: hotfix and retrofit                       | `<site>/en/level-3-release-manager/3-8-hotfix-and-retrofit/`                         |
+| 26  | L    | no  | Reference: Hotfixes                                                           | `.../salesforce-devops-hotfixes/`                                                    |
+| 27  | L    | no  | Reference: Retrofit                                                           | `.../salesforce-devops-retrofit/`                                                    |
+| 28  | L    | yes | **Lab 3.9** - Monitor your production org                                     | `<site>/en/level-3-release-manager/3-9-monitor-your-production-org/`                 |
+| 29  | L    | no  | Reference: Org Monitoring                                                     | `.../salesforce-monitoring-home/`                                                    |
+| 30  | L    | no  | Reference: monitoring on GitHub                                               | `.../salesforce-monitoring-config-github/`                                           |
+| 31  | L    | no  | Reference: Grafana dashboards                                                 | `.../salesforce-monitoring-grafana-v2/`                                              |
+| 32  | L    | yes | **Lab 3.10** - Generate the Salesforce project documentation                  | `<site>/en/level-3-release-manager/3-10-generate-the-project-documentation/`         |
+| 33  | L    | no  | Reference: generate documentation                                             | `.../salesforce-project-doc-generate/`                                               |
+| 34  | L    | yes | **Lab 3.11** - Capstone: run a weekly release cycle                           | `<site>/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/`        |
+| 35  | L    | no  | Going further: promotion branches (Experimental)                              | `.../salesforce-devops-promotion-branches/`                                          |
+| 36  | L    | no  | Going further: setup checklist for a real project                             | `.../salesforce-devops-setup-checklist/`                                             |
+| 37  | T    | yes | Claim your Release Manager badge                                              | text with the claim instructions                                                     |
 
 ### Level 3 labs
 
@@ -499,7 +499,7 @@ customCommands:
         sldsIcon: utility:upload
         tooltip: Deploys the Helios Energy app and its sample data into the org you choose
         command: node scripts/training.mjs seed
-        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1/lab-00-setup/
+        helpUrl: https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/
       - id: training-check
         label: Check my work
         vscodeIcon: pass
@@ -638,7 +638,7 @@ steps:
 | What the site publishes         | The labs, the backlog, and the badge pages. It is the thing Trailmix Link steps point at                                                                                                    |
 | Why the labs move here too      | GitHub blob rendering has no navigation, no search, and an ugly URL. The Trailmix is a table of contents pointing at 30-some URLs, and those URLs are the product                           |
 | Source of truth                 | Still plain markdown in `labs/<locale>/`. If Pages is ever dropped, the content is intact and only the link map changes                                                                     |
-| URL shape                       | `<site>/en/level-2/lab-06-conflicts/`, `<site>/badges/<handle>/`                                                                                                                            |
+| URL shape                       | `<site>/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/`, `<site>/badges/<handle>/`                                                                                       |
 | Locale in the path from day one | `/en/...` so `/fr/...` is purely additive, see section 16                                                                                                                                   |
 | Theme                           | Material via Zensical, Cloudity colors, matching the product doc site so the two feel related                                                                                               |
 | Custom domain                   | Optional and later. A CNAME such as `training.sfdx-hardis.cloudity.com` is a separate site from the product doc, so it respects constraint 1. Not needed for v1                             |
@@ -1000,12 +1000,12 @@ Teardown is an approximation, not a reset: it removes what `seed/` created, and 
 
 ### 19.3 Human actions, all complete
 
-| #  | Action                                                         | Status                                    |
-|----|----------------------------------------------------------------|-------------------------------------------|
-| H1 | Chrome with remote debugging, logged into GitHub and Trailhead | Done, verified                            |
-| H2 | Four Developer Edition orgs authenticated                      | Done, verified by live query against each |
-| H3 | Desktop session available for screenshot batches               | Standing, verified                        |
-| H4 | Repository administration rights                               | Confirmed, `admin: true`                  |
+| #   | Action                                                         | Status                                    |
+|-----|----------------------------------------------------------------|-------------------------------------------|
+| H1  | Chrome with remote debugging, logged into GitHub and Trailhead | Done, verified                            |
+| H2  | Four Developer Edition orgs authenticated                      | Done, verified by live query against each |
+| H3  | Desktop session available for screenshot batches               | Standing, verified                        |
+| H4  | Repository administration rights                               | Confirmed, `admin: true`                  |
 
 Nothing further is required from a human until the Trailmix creation attempt (19.5) and the optional stranger dry run.
 
@@ -1056,33 +1056,33 @@ Nothing further is required from a human until the Trailmix creation attempt (19
 
 ## 21. Decisions taken
 
-| #  | Question                           | Decision                                                                                                                                                                                                                                          |
-|----|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 1  | Owning Trailhead account           | `nvuillamy`. Personal account, accepted                                                                                                                                                                                                           |
-| 2  | How orgs are seeded                | Sources from the GitHub repo, deployed with `sf project deploy start`. No unlocked package, no Dev Hub                                                                                                                                            |
-| 3  | Completion checks and claims       | In v1. Receipts from a local check, claim as a Pull Request, central audit of the learner's public fork                                                                                                                                           |
-| 4  | Badge                              | Yes, and free: SVG rendered by a workflow, badge page on the training site, Open Badges shaped JSON, no paid issuer                                                                                                                               |
-| 5  | Git platforms                      | GitHub only in v1                                                                                                                                                                                                                                 |
-| 6  | Languages                          | English only in v1, with the locale layout and staleness tooling in place from the start                                                                                                                                                          |
-| 7  | Level 2 positioning                | Recommended for a contributor who wants to stop after Level 1, **required before Level 3**. The Level 3 audit checks Levels 1 and 2 first                                                                                                         |
-| 8  | Where badges live                  | `hardisgroupcom/sfdx-hardis-training`, in `badges/`. No separate repo                                                                                                                                                                             |
-| 9  | Actions minutes                    | Not a constraint on a public repo                                                                                                                                                                                                                 |
-| 10 | Training site                      | GitHub Pages built with Zensical, same toolchain as the product doc site. It hosts the labs and the badge pages                                                                                                                                   |
-| 11 | Wording                            | Badge, never certification. Certifications for clients and partners are a separate future thing, out of scope here                                                                                                                                |
-| 12 | Screenshots                        | Real, from the extension's existing screenshot harness driven with a Helios fixture universe generated from `training-universe.json`. GitHub web UI captured with Playwright against the real public repo                                         |
-| 13 | Cross-repo sync                    | A committed `training-manifest.json`, a diff check, and a monthly backstop workflow                                                                                                                                                               |
-| 14 | Existing mock data                 | Never replaced, edited or repointed. The training fixtures are new files in new folders, `SF_MOCK_UNIVERSE` unset keeps today's behavior byte for byte, and a regression check proves the product screenshots did not move                        |
-| 15 | Where the skills live              | `sfdx-hardis/.claude/skills/` only: `training-impact` and `training-update`. The training and extension repos carry no skills. `sfdx-hardis-training` is always a sibling directory, cloned there if absent, like `vscode-sfdx-hardis` already is |
-| 16 | Claim mechanism                    | A GitHub issue form carrying the level, the Trailblazer username and the public repository URL. No Pull Request, no fork-and-commit                                                                                                               |
-| 17 | Who reviews claims                 | Nobody. `claim.yml` clones the public repo, audits it, comments and closes. The residual human duty is reading `needs-work` issues, which are course bug reports                                                                                  |
-| 18 | Trailhead-side verification        | Not a gate. A Trailmix awards nothing queryable, and the only profile endpoint is unofficial. The Trailblazer username is shown on the badge page, and the optional badge check never blocks (15.3)                                               |
-| 19 | Helios fixture source for captures | Read from the sibling training clone at its latest `main`, not vendored into the extension repo                                                                                                                                                   |
-| 20 | Custom domain                      | `github.io` for now                                                                                                                                                                                                                               |
-| 21 | Screen recordings                  | No. Annotated stills with numbered pills, reusing the disc the extension's image script already draws (13.6)                                                                                                                                      |
-| 22 | How labs are written               | Clicks only: the product panels first, then a **Training menu the training repo declares through `customCommands`**, and a copy-paste command only as a last resort. An "under the hood" block follows every significant step (11.1, 11.2)        |
-| 23 | Level 3 starting point             | Not an empty repository. The learner's own fork, whose pipeline stops at `integration`, so Level 3 finishes it. This keeps continuity with Levels 1 and 2 and matches what most real projects look like                                           |
-| 24 | Level 1 CI credential              | `SFDX_AUTH_URL_INTEGRATION` in the learner's fork, with an explicit warning and a forward link to the JWT setup in Level 3 lab 1, which deletes it (8.2)                                                                                          |
-| 25 | Gaps and bugs found while building | Fixed in the same three branches when small and related, in their own Pull Request when large, and listed either way in a "Found while training" section of the training Pull Request (23.2)                                                      |
+| #   | Question                           | Decision                                                                                                                                                                                                                                          |
+|-----|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1   | Owning Trailhead account           | `nvuillamy`. Personal account, accepted                                                                                                                                                                                                           |
+| 2   | How orgs are seeded                | Sources from the GitHub repo, deployed with `sf project deploy start`. No unlocked package, no Dev Hub                                                                                                                                            |
+| 3   | Completion checks and claims       | In v1. Receipts from a local check, claim as a Pull Request, central audit of the learner's public fork                                                                                                                                           |
+| 4   | Badge                              | Yes, and free: SVG rendered by a workflow, badge page on the training site, Open Badges shaped JSON, no paid issuer                                                                                                                               |
+| 5   | Git platforms                      | GitHub only in v1                                                                                                                                                                                                                                 |
+| 6   | Languages                          | English only in v1, with the locale layout and staleness tooling in place from the start                                                                                                                                                          |
+| 7   | Level 2 positioning                | Recommended for a contributor who wants to stop after Level 1, **required before Level 3**. The Level 3 audit checks Levels 1 and 2 first                                                                                                         |
+| 8   | Where badges live                  | `hardisgroupcom/sfdx-hardis-training`, in `badges/`. No separate repo                                                                                                                                                                             |
+| 9   | Actions minutes                    | Not a constraint on a public repo                                                                                                                                                                                                                 |
+| 10  | Training site                      | GitHub Pages built with Zensical, same toolchain as the product doc site. It hosts the labs and the badge pages                                                                                                                                   |
+| 11  | Wording                            | Badge, never certification. Certifications for clients and partners are a separate future thing, out of scope here                                                                                                                                |
+| 12  | Screenshots                        | Real, from the extension's existing screenshot harness driven with a Helios fixture universe generated from `training-universe.json`. GitHub web UI captured with Playwright against the real public repo                                         |
+| 13  | Cross-repo sync                    | A committed `training-manifest.json`, a diff check, and a monthly backstop workflow                                                                                                                                                               |
+| 14  | Existing mock data                 | Never replaced, edited or repointed. The training fixtures are new files in new folders, `SF_MOCK_UNIVERSE` unset keeps today's behavior byte for byte, and a regression check proves the product screenshots did not move                        |
+| 15  | Where the skills live              | `sfdx-hardis/.claude/skills/` only: `training-impact` and `training-update`. The training and extension repos carry no skills. `sfdx-hardis-training` is always a sibling directory, cloned there if absent, like `vscode-sfdx-hardis` already is |
+| 16  | Claim mechanism                    | A GitHub issue form carrying the level, the Trailblazer username and the public repository URL. No Pull Request, no fork-and-commit                                                                                                               |
+| 17  | Who reviews claims                 | Nobody. `claim.yml` clones the public repo, audits it, comments and closes. The residual human duty is reading `needs-work` issues, which are course bug reports                                                                                  |
+| 18  | Trailhead-side verification        | Not a gate. A Trailmix awards nothing queryable, and the only profile endpoint is unofficial. The Trailblazer username is shown on the badge page, and the optional badge check never blocks (15.3)                                               |
+| 19  | Helios fixture source for captures | Read from the sibling training clone at its latest `main`, not vendored into the extension repo                                                                                                                                                   |
+| 20  | Custom domain                      | `github.io` for now                                                                                                                                                                                                                               |
+| 21  | Screen recordings                  | No. Annotated stills with numbered pills, reusing the disc the extension's image script already draws (13.6)                                                                                                                                      |
+| 22  | How labs are written               | Clicks only: the product panels first, then a **Training menu the training repo declares through `customCommands`**, and a copy-paste command only as a last resort. An "under the hood" block follows every significant step (11.1, 11.2)        |
+| 23  | Level 3 starting point             | Not an empty repository. The learner's own fork, whose pipeline stops at `integration`, so Level 3 finishes it. This keeps continuity with Levels 1 and 2 and matches what most real projects look like                                           |
+| 24  | Level 1 CI credential              | `SFDX_AUTH_URL_INTEGRATION` in the learner's fork, with an explicit warning and a forward link to the JWT setup in Level 3 lab 1, which deletes it (8.2)                                                                                          |
+| 25  | Gaps and bugs found while building | Fixed in the same three branches when small and related, in their own Pull Request when large, and listed either way in a "Found while training" section of the training Pull Request (23.2)                                                      |
 
 ## 22. Still open
 
