@@ -157,7 +157,7 @@ Then the rest of the project configuration:
 
 - [ ] [Automated sources cleaning](salesforce-devops-config-cleaning.md) is configured (`autoCleanTypes`), so User Story branches are cleaned before Pull Requests.
 - [ ] Apex test configuration matches your policy (test level, minimum coverage).
-- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `allowedOrgTypes`...) so contributors get the right prompts.
+- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `offerSandboxInit`, `allowedOrgTypes`...) so contributors get the right prompts.
 - [ ] Delta deployments are **NOT activated**: `useDeltaDeployment` is absent from `config/.sfdx-hardis.yml`, or set to `false`. The initialization Pull Request must deploy the **full package**. _See [Delta deployments](salesforce-devops-config-delta-deployment.md)_
 
 #### Notification channels
