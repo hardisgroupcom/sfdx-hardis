@@ -255,6 +255,15 @@ tests gate on the shot they take, but the ones that take a group gate on the gro
 green and the images are the old ones. `grep -n "shouldTake(" src/test/ui/docScreenshots.test.ts`
 lists every gate.
 
+**A command panel in a lab shows the command the lab runs, never a stand-in.** `command-runner`
+replays `hardis:org:mock-showcase`, a demo of the panel itself: it is fine for the product docs and
+wrong for a lab, where the reader compares the questions with the ones they get. When a lab needs a
+command that has no scenario yet, add one to `DOCS_SCENARIOS` in `test/fixtures/sf-shim/sf-mock.js`
+with the real prompts, log lines and report files (read the command source and `src/i18n/en.json`
+here), take its answers from the universe `scenario` key written by `mocks.mjs`, and a gated test in
+`docScreenshots.test.ts`. `configure-auth` (Lab 3.2) is the example. Every question needs a `log`
+line after it, or the panel shows no answer chip on that row.
+
 **The side bar is in every VS Code capture**, so a change to what a project declares in
 `customCommands` invalidates all of them, not only the menu shots. The training declares one menu
 per level (`Training: Level 1`, `2`, `3`), which is three rows instead of one.
