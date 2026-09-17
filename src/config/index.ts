@@ -16,6 +16,7 @@ import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
 import fs from '../common/utils/fsUtils.js';
 import * as yaml from 'js-yaml';
+import { parseDocument as parseYamlDocument } from 'yaml';
 import * as os from 'os';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
@@ -228,13 +229,18 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
     const configExplorer = await explorer.search();
     configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
   }
-  let doc: any = {};
-  if (fs.existsSync(configFile)) {
-    doc = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+  // The file is edited in place rather than rebuilt from a JS object: a project
+  // configuration is written by hand and its comments explain why each value is
+  // what it is. Loading it and dumping it back would drop every one of them, and
+  // rewrap the lines, the first time any command stored a value.
+  const previous = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf-8') : '';
+  const doc = parseYamlDocument(previous);
+  for (const [key, value] of Object.entries(propValues)) {
+    doc.set(key, value);
   }
-  doc = Object.assign(doc, propValues);
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  // lineWidth 0: never fold a long value, so a URL or a sentence stays on one line
+  await fs.writeFile(configFile, doc.toString({ lineWidth: 0 }));
   if (explorer) {
     explorer.clearCaches();
   }
