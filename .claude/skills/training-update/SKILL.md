@@ -253,12 +253,12 @@ Extension Development Host's own working directory, and the captures land somewh
 **Three pipeline states, through `SF_MOCK_PIPELINE_STATE`.** The committed fixture is the pipeline
 as Levels 1 and 2 have it, and the other two are built from it at launch:
 
-| Value                | What it gives                                                                   | Used for                                     |
-|----------------------|---------------------------------------------------------------------------------|----------------------------------------------|
-| unset                | integration with its feature branches and open Pull Requests                    | Level 2 and Level 3 labs                     |
-| `fresh`              | no feature branches, no Pull Requests, no jobs                                  | Level 1: what a learner's own fork looks like |
+| Value                | What it gives                                                                    | Used for                                      |
+|----------------------|----------------------------------------------------------------------------------|-----------------------------------------------|
+| unset                | integration with its feature branches and open Pull Requests                     | Level 2 and Level 3 labs                      |
+| `fresh`              | no feature branches, no Pull Requests, no jobs                                   | Level 1: what a learner's own fork looks like |
 | `fresh-disconnected` | the same, with the git provider inactive: grey icon, no toggle, no Pull Requests | Level 1 lab 1, the step that connects GitHub  |
-| `level3`             | uat and main configured, each merging into the next                             | Level 3: the finished three stage pipeline    |
+| `level3`             | uat and main configured, each merging into the next                              | Level 3: the finished three stage pipeline    |
 
 They capture under the usual shot names, so take them into a temp folder and copy the file in under
 the name the lab uses (`devops-pipeline-fresh.png`, `pipeline-branch-modal-level3.png`...).
