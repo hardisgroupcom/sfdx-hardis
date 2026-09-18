@@ -1,7 +1,6 @@
 ---
 name: implement
 description: Implement a feature, bug fix, or code change in sfdx-hardis. Use whenever the user asks to add a feature, fix a bug, implement something, or make a code change - with or without a prior /design phase.
-disable-model-invocation: true
 allowed-tools: Read Glob Grep Write Edit Bash Agent
 argument-hint: "[feature or change to implement]"
 model: opus
@@ -14,6 +13,7 @@ Implement the requested changes. If a prior `/design` conversation exists, follo
 Read `.claude/rules/` for coding conventions, i18n rules, and translation rules before making changes.
 
 > Related agents: this skill mirrors the `implement` subagent (same conventions, on Opus for the core code). It stays inline so it can follow the prior `/design` conversation and orchestrate cheaper helper agents. Two recurring subtasks can be delegated to keep Opus focused on the code:
+>
 > - **i18n key propagation** across the 9 locales -> the `i18n-translate` agent (Sonnet).
 > - **The CHANGELOG entry** -> the `changelog` agent (Haiku).
 >
