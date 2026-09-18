@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
 
 import * as yaml from 'js-yaml';
-import { parseDocument as parseYamlDocument } from 'yaml';
+import { parseDocument as parseYamlDocument, isMap as isYamlMap, isSeq as isYamlSeq } from 'yaml';
 import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
 import { UtilsAi } from "../aiProvider/utils.js";
@@ -266,27 +266,67 @@ export function readMkDocsFile(mkdocsYmlFile: string): any {
   return mkdocsYml;
 }
 
+/**
+ * Writes `value` over a YAML text and keeps what a person wrote in it: only what changed is touched,
+ * maps are merged key by key, and a list that only gained items keeps its existing items, with the
+ * comments around them, and gets the new ones inserted where they belong. A list that lost or
+ * reordered items, or a value that changed type, is replaced.
+ */
+export function mergeIntoYamlText(yamlText: string, value: any): string {
+  const doc = parseYamlDocument(yamlText);
+  const asJson = (node: any) => (node && typeof node.toJSON === 'function' ? node.toJSON() : node);
+  const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
+  const merge = (keyPath: (string | number)[], wanted: any): void => {
+    const node: any = keyPath.length > 0 ? doc.getIn(keyPath, true) : doc.contents;
+    if (same(asJson(node), wanted)) {
+      return;
+    }
+    if (isYamlMap(node) && wanted && typeof wanted === 'object' && !Array.isArray(wanted)) {
+      for (const [key, child] of Object.entries(wanted)) {
+        merge([...keyPath, key], child);
+      }
+      for (const key of Object.keys(asJson(node) || {})) {
+        if (!(key in wanted)) {
+          doc.deleteIn([...keyPath, key]);
+        }
+      }
+      return;
+    }
+    if (isYamlSeq(node) && Array.isArray(wanted)) {
+      const items: any[] = node.items;
+      const existing = items.map((item) => JSON.stringify(asJson(item)));
+      const wantedKeys = wanted.map((item) => JSON.stringify(item));
+      // Only additions, in an order that keeps the existing items where they are
+      if (existing.every((key, index) => wantedKeys.indexOf(key) >= 0 && (index === 0 || wantedKeys.indexOf(key) > wantedKeys.indexOf(existing[index - 1])))) {
+        let position = 0;
+        for (let index = 0; index < wanted.length; index++) {
+          if (position < items.length && JSON.stringify(asJson(items[position])) === wantedKeys[index]) {
+            position++;
+            continue;
+          }
+          items.splice(position, 0, doc.createNode(wanted[index]));
+          position++;
+        }
+        return;
+      }
+    }
+    if (keyPath.length > 0) {
+      doc.setIn(keyPath, wanted);
+    } else {
+      doc.contents = doc.createNode(wanted) as any;
+    }
+  };
+  merge([], value);
+  return doc.toString({ lineWidth: 0 });
+}
+
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
   let mkdocsYmlStr: string;
   // The file is edited in place when it already exists: a mkdocs.yml is written
   // by hand, and rebuilding it from the parsed object drops every comment in it
   // and rewraps what is left.
   if (fs.existsSync(mkdocsYmlFile)) {
-    const doc = parseYamlDocument(fs.readFileSync(mkdocsYmlFile, 'utf-8'));
-    const current: any = doc.toJSON() || {};
-    for (const [key, value] of Object.entries(mkdocsYml)) {
-      // Only what actually changed is rewritten: replacing a key replaces its
-      // whole subtree, and with it the comments inside that subtree.
-      if (JSON.stringify(current[key]) !== JSON.stringify(value)) {
-        doc.set(key, value);
-      }
-    }
-    for (const key of Object.keys(doc.toJSON() || {})) {
-      if (!(key in mkdocsYml)) {
-        doc.delete(key);
-      }
-    }
-    mkdocsYmlStr = doc.toString({ lineWidth: 0 });
+    mkdocsYmlStr = mergeIntoYamlText(fs.readFileSync(mkdocsYmlFile, 'utf-8'), mkdocsYml);
   } else {
     mkdocsYmlStr = yaml.dump(mkdocsYml, { lineWidth: -1 });
   }

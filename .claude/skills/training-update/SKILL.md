@@ -44,7 +44,8 @@ have to be regenerated.
 **Never edit a generated file.** Change its source and re-run the generator. CI fails on drift
 (`node scripts/build/universe.mjs --check`).
 
-**The site is Zensical, and it is not mkdocs-material.** It reads `mkdocs.yml` and honours most of
+**The site is Zensical, and it is not mkdocs-material.** It reads `course-site.yml` (named so because
+`mkdocs.yml` belongs to the Helios project documentation of Lab 3.10) and honours most of
 it, but it ships none of the plugins: `glightbox` is declared and Zensical emits the
 `<a class="glightbox">` wrapper around every picture while shipping no viewer, so the course
 carries its own (`site-theme/javascripts/lightbox.js`, a delegated listener in the **capture**
@@ -476,7 +477,7 @@ node scripts/build/universe.mjs --check    # generated files up to date, fiction
 node scripts/build/annotate.mjs            # every annotated image matches its spec
 node scripts/verify/check-pills.mjs        # the pills an image carries are the ones its step cites
 node scripts/verify/check-links.mjs        # every link resolves
-node scripts/build/site.mjs && python -m zensical build
+node scripts/build/site.mjs && python -m zensical build -f course-site.yml
 node scripts/verify/check-site.mjs         # every page resolves every asset
 node scripts/verify/check-mobile.mjs       # the shared pages still read at 412px
 ```
