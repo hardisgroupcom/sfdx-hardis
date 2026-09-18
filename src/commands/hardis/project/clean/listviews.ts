@@ -80,7 +80,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
       const listViewXml = await parseXmlFile(listViewfile);
       if (listViewXml.ListView?.filterScope[0] === 'Mine') {
         listViewXml.ListView.filterScope[0] = 'Everything';
-        uxLog("log", this, c.grey(t('replacedMineByEverythingInListview', { listViewXml })));
+        // The file, not the parsed XML, which printed as [object Object]
+        uxLog("log", this, c.grey(t('replacedMineByEverythingInListview', { listViewXml: path.relative(process.cwd(), listViewfile).replace(/\\/g, '/') })));
         await writeXmlFile(listViewfile, listViewXml);
         listViewsMine.push(path.relative(process.cwd(), listViewfile).replace(/\\/g, '/'));
         counter++;
