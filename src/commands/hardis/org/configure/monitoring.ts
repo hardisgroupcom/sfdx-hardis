@@ -1,5 +1,5 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
@@ -25,6 +25,7 @@ import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { buildConventionalCommitMessage } from '../../../../common/utils/gitUtils.js';
+import { addOrgToGithubMonitoringWorkflow, GITHUB_MONITORING_WORKFLOW_PATH } from '../../../../common/utils/monitoringWorkflowUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -51,7 +52,8 @@ Key functionalities include:
 - **Configuration File Update:** Updates the local \`.sfdx-hardis.yml\` file with the target org's username and instance URL.
 - **SSL Certificate Generation:** Generates an SSL certificate for secure authentication to the monitored org.
 - **Automated Commit and Push:** Offers to automatically commit and push the generated configuration files to the remote Git repository.
-- **Scheduling Guidance:** Provides instructions and links for scheduling the monitoring job on the Git server.
+- **Scheduling:** On GitHub, writes the monitoring workflow on the default branch with this org in its matrix and its two secrets in its jobs, since GitHub only schedules, and only offers Run workflow for, the workflows of that branch. On other Git servers, gives the instructions to schedule the job.
+- **Empty repository:** A repository created empty on the Git server gets a first empty commit on \`main\`, so that the monitoring branch has something to start from.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -86,7 +88,7 @@ The command's technical implementation involves a series of Git operations, file
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'target-org': requiredOrgFlagWithDeprecations,
+    'target-org': optionalOrgFlagWithDeprecations,
   };
 
   // Comment this out if your command does not require an org username
@@ -181,9 +183,27 @@ The command's technical implementation involves a series of Git operations, file
 
     uxLog("action", this, c.cyan(t('handlingMonitoringGitBranch', { branchName: c.bold(branchName) })));
 
-    // Checkout branch, or create it if not existing (stash before if necessary)
-    await execCommand('git add --all', this, { output: true, fail: false });
-    await execCommand('git stash', this, { output: true, fail: false });
+    // A repository created empty on the git server has no commit yet: there is nothing to stash, and
+    // no main to cut the monitoring branch from. Give it its first commit on main.
+    const hasCommit = (await git().raw(['rev-list', '-n', '1', '--all'])).trim() !== '';
+    if (!hasCommit) {
+      uxLog("action", this, c.cyan(t('monitoringRepositoryEmptyInitialCommit')));
+      await git().raw(['checkout', '-B', 'main']);
+      await git().raw(['commit', '--allow-empty', '-m', 'Initial commit']);
+      try {
+        await git().push(['-u', 'origin', 'main']);
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('monitoringInitialCommitNotPushed', { message: (e as Error).message })));
+      }
+    } else {
+      // Checkout branch, or create it if not existing (stash before if necessary)
+      try {
+        await execCommand('git add --all', this, { output: true, fail: false });
+        await execCommand('git stash', this, { output: true, fail: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('monitoringStashFailed', { message: (e as Error).message })));
+      }
+    }
     await ensureGitBranch(branchName, { parent: 'main', logAsAction: true });
 
     // Create sfdx project if not existing yet
@@ -260,18 +280,24 @@ The command's technical implementation involves a series of Git operations, file
     } else {
       uxLog("action", this, c.cyan(t('pleaseManuallyGitAddCommitAndPush')));
     }
-    const branch = await getCurrentGitBranch();
-    uxLog(
-      "warning",
-      this,
-      c.yellow(
-        t('scheduleMonitoringNightly', { branchName: branch })
-      )
-    );
-    const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    const msg = t('followScheduleInstructions') + ' ' + c.bold(scheduleMonitoringUrl);
-    uxLog("warning", this, c.yellow(msg));
-    WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, t('scheduleMonitoringLabel'), "actionUrl");
+    // On GitHub, the scheduled run needs the workflow on the default branch: put it there
+    const scheduledFromMain = confirmPush.value === true && fs.existsSync(GITHUB_MONITORING_WORKFLOW_PATH)
+      ? await this.scheduleGithubMonitoringFromMain(branchName)
+      : false;
+    if (!scheduledFromMain) {
+      const branch = await getCurrentGitBranch();
+      uxLog(
+        "warning",
+        this,
+        c.yellow(
+          t('scheduleMonitoringNightly', { branchName: branch })
+        )
+      );
+      const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
+      const msg = t('followScheduleInstructions') + ' ' + c.bold(scheduleMonitoringUrl);
+      uxLog("warning", this, c.yellow(msg));
+      WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, t('scheduleMonitoringLabel'), "actionUrl");
+    }
     uxLog(
       "warning",
       this,
@@ -290,5 +316,38 @@ The command's technical implementation involves a series of Git operations, file
     uxLog("log", this, t('grafanaIntegrationDoc') + ' ' + grafanaIntegrationUrl);
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
+  }
+
+  // GitHub schedules, and offers "Run workflow" for, the workflows of the default branch only. Write
+  // the monitoring workflow there with this org in it, keeping the orgs it already monitors.
+  private async scheduleGithubMonitoringFromMain(branchName: string): Promise<boolean> {
+    try {
+      let workflow = '';
+      try {
+        workflow = await git().show([`origin/main:${GITHUB_MONITORING_WORKFLOW_PATH}`]);
+      } catch {
+        workflow = await fs.readFile(GITHUB_MONITORING_WORKFLOW_PATH, 'utf8');
+      }
+      const updated = addOrgToGithubMonitoringWorkflow(workflow, branchName);
+      await git().checkout('main');
+      try {
+        await git().pull('origin', 'main');
+        await fs.ensureDir(path.dirname(GITHUB_MONITORING_WORKFLOW_PATH));
+        await fs.writeFile(GITHUB_MONITORING_WORKFLOW_PATH, updated, 'utf8');
+        const status = await git().status();
+        if (status.files.some((file) => file.path === GITHUB_MONITORING_WORKFLOW_PATH)) {
+          await git().add([GITHUB_MONITORING_WORKFLOW_PATH]);
+          await git().commit(buildConventionalCommitMessage({ subject: `run the monitoring of ${branchName}` }), [GITHUB_MONITORING_WORKFLOW_PATH]);
+          await git().push('origin', 'main');
+        }
+      } finally {
+        await git().checkout(branchName);
+      }
+      uxLog("success", this, c.green(t('monitoringWorkflowScheduledFromMain', { branchName })));
+      return true;
+    } catch (e) {
+      uxLog("warning", this, c.yellow(t('monitoringWorkflowNotScheduled', { message: (e as Error).message })));
+      return false;
+    }
   }
 }
