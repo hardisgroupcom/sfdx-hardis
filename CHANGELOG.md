@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [Custom functions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-custom-functions/): package a node, python or bash script as a deployment action type of your project, with its own inputs, outputs and secrets.
+- [hardis:project:action:update](https://sfdx-hardis.cloudity.com/hardis/project/action/update/): move an action between pre-deployment and post-deployment with `--new-when`.
 - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/):
   - Connected Apps that allow users to authorize themselves were reported as secured when their OAuth tokens were fetched with the Bulk API: they are now reported as unsecured, so the number of findings can rise after upgrading.
   - A Connected App migrated to an External Client App is no longer reported as unsecured when the External Client App requires admin pre-approval, its OAuth tokens are now checked against the External Client App policy. When that policy can not be read, the Connected App settings are kept, and the apps whose status comes from an External Client App are logged so they can be checked.

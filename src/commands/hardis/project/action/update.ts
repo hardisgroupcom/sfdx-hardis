@@ -8,9 +8,10 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
-  ACTION_TYPES,
+  ActionWhen,
   applyBranchFilterFlagsToAction,
   findActionById,
+  listAvailableActionTypes,
   logActionSummary,
   readActions,
   resolvePrId,
@@ -19,6 +20,8 @@ import {
 } from '../../../../common/utils/actionUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
+import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
+import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -81,8 +84,7 @@ Required in agent mode:
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
     type: Flags.string({
-      options: ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'],
-      description: 'New type of action',
+      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, remove-packagexml-items) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'New label for the action',
@@ -113,6 +115,14 @@ Required in agent mode:
     }),
     'packagexml-items': Flags.string({
       description: 'New semicolon-separated list of package.xml items to remove, each in format TypeName:Member1,Member2 (for remove-packagexml-items type)',
+    }),
+    'new-when': Flags.string({
+      options: ['pre-deploy', 'post-deploy'],
+      description: 'Move the action to the other deployment phase. --when still says where to find it',
+    }),
+    'function-input': Flags.string({
+      multiple: true,
+      description: 'Value of a custom function input, as name=value. Repeat the flag once per input',
     }),
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
@@ -174,19 +184,34 @@ Required in agent mode:
     if (!agentMode && !isCI) {
       await this.interactiveUpdate(action, flags);
     } else {
-      this.applyFlagUpdates(action, flags);
+      await this.applyFlagUpdates(action, flags);
     }
 
-    // Validate
-    const validationErrors = await validateActionParameters(action);
+    // The action may be moved to the other phase: it is then removed from the list it was read
+    // from and appended to the other one, instead of ending up in both.
+    const targetWhen: ActionWhen = (flags['new-when'] as ActionWhen) || when;
+    const isPhaseMove = targetWhen !== when;
+
+    // Validate against the phase the action ends up in, which --new-when may have changed
+    const validationErrors = await validateActionParameters(action, targetWhen);
     if (validationErrors.length > 0) {
       throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
     }
 
-    // Write back
-    actions[index] = action;
     uxLog("action", this, c.cyan(t('savingDeploymentActions')));
-    const configFile = await writeActions(scope, when, actions, flags.branch, resolvedPrId);
+    let configFile: string;
+    if (isPhaseMove) {
+      actions.splice(index, 1);
+      await writeActions(scope, when, actions, flags.branch, resolvedPrId);
+      const targetActions = await readActions(scope, targetWhen, flags.branch, resolvedPrId);
+      action.when = targetWhen;
+      targetActions.push(action);
+      configFile = await writeActions(scope, targetWhen, targetActions, flags.branch, resolvedPrId);
+      uxLog("log", this, c.grey(t('actionMovedToPhase', { label: action.label, when: targetWhen })));
+    } else {
+      actions[index] = action;
+      configFile = await writeActions(scope, when, actions, flags.branch, resolvedPrId);
+    }
 
     uxLog("success", this, c.green(t('actionUpdatedSuccessfully', { label: action.label })));
     logActionSummary(this, action);
@@ -194,14 +219,14 @@ Required in agent mode:
 
     WebSocketClient.sendRefreshPipelineMessage();
 
-    return { outputString: 'Action updated', action: action as any, configFile };
+    return { outputString: 'Action updated', action: action as any, configFile, movedTo: isPhaseMove ? targetWhen : undefined };
   }
 
   private async interactiveUpdate(action: PrePostCommand, _flags: any): Promise<void> {
     const newLabel = await this.promptText(t('enterActionLabel'), action.label);
     if (newLabel) action.label = newLabel;
 
-    const newType = await this.promptSelect(t('selectActionType'), ACTION_TYPES.map(t2 => ({ title: t2, value: t2 })), action.type);
+    const newType = await this.promptSelect(t('selectActionType'), await listAvailableActionTypes(action.when), action.type);
     if (newType && newType !== action.type) {
       action.type = newType;
       action.parameters = {};
@@ -238,6 +263,12 @@ Required in agent mode:
           packageXmlItems: itemsRaw.split(/[;\n]/).map((item: string) => item.trim()).filter(Boolean),
         };
       }
+    } else if (!isBuiltInActionType(action.type)) {
+      const definition = await getCustomFunctionById(action.type);
+      if (!definition) {
+        throw new SfError(t('actionValidationUnknownType', { type: action.type }));
+      }
+      action.parameters = await this.promptCustomFunctionInputs(definition, action.parameters || {});
     }
 
     const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
@@ -259,7 +290,7 @@ Required in agent mode:
     action.customUsername = cu || undefined;
   }
 
-  private applyFlagUpdates(action: PrePostCommand, flags: any): void {
+  private async applyFlagUpdates(action: PrePostCommand, flags: any): Promise<void> {
     if (flags.label) action.label = flags.label;
     if (flags.type) {
       action.type = flags.type;
@@ -286,5 +317,17 @@ Required in agent mode:
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (action.type === 'remove-packagexml-items') action.runOnlyOnceByOrg = false;
     if (flags['custom-username']) action.customUsername = flags['custom-username'];
+    if ((flags['function-input'] || []).length > 0) {
+      if (isBuiltInActionType(action.type)) {
+        throw new SfError(t('actionFunctionInputOnBuiltInType', { type: action.type }));
+      }
+      // Merge rather than replace: updating one input must not drop the others
+      const definition = await getCustomFunctionById(action.type);
+      const flagInputs = parseFunctionInputFlags(flags['function-input']);
+      action.parameters = {
+        ...action.parameters,
+        ...(definition ? castFunctionInputValues(flagInputs, definition) : flagInputs),
+      };
+    }
   }
 }

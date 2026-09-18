@@ -34,6 +34,8 @@ interface DeploymentActionRow {
   pullRequest: string;
   // Status text, or empty when the icon already says it (success and manual).
   status: string;
+  // "name: value" of each output a custom function returned, already masked for secrets.
+  outputs: string[];
 }
 
 /**
@@ -96,7 +98,31 @@ function buildActionRow(cmd: PrePostCommand, translate: boolean): DeploymentActi
     type: escapeLineValue(cmd.type || 'command'),
     pullRequest: getPullRequestReference(cmd),
     status: statusInfo.status,
+    outputs: buildOutputLines(cmd),
   };
+}
+
+/**
+ * Render the outputs a custom function returned, one "name: value" per entry.
+ * Only the masked copy is rendered: the raw one may carry a resolved secret, and this text goes
+ * to chat channels and e-mail. An action that produced no masked copy (a built-in type) has no
+ * outputs to show at all.
+ */
+function buildOutputLines(cmd: PrePostCommand): string[] {
+  const outputs = cmd.result?.outputsForDisplay;
+  if (!outputs || Object.keys(outputs).length === 0) {
+    return [];
+  }
+  return Object.entries(outputs).map(
+    ([name, value]) => `${escapeLineValue(name)}: ${escapeLineValue(formatOutputValue(value))}`
+  );
+}
+
+function formatOutputValue(value: any): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return typeof value === 'object' ? JSON.stringify(value) : String(value);
 }
 
 /**
@@ -109,7 +135,12 @@ function renderActionLine(row: DeploymentActionRow): string {
   const type = row.type ? ` (${row.type})` : '';
   const status = row.status ? ` - ${row.status}` : '';
   const pullRequest = row.pullRequest ? ` · ${row.pullRequest}` : '';
-  return `${row.icon} ${row.label}${type}${status}${pullRequest}`;
+  const actionLine = `${row.icon} ${row.label}${type}${status}${pullRequest}`;
+  // Outputs stay ON the action line. The size guard trims attachments line by line, so putting
+  // them on their own lines would let a trim cut between an action and its outputs, or drop the
+  // action and leave orphan values attached to nothing.
+  const outputs = row.outputs.length > 0 ? ` \u2192 ${row.outputs.join(', ')}` : '';
+  return `${actionLine}${outputs}`;
 }
 
 /**
@@ -201,6 +232,7 @@ export function buildDeploymentActionsAttachmentText(translate: boolean, options
       type: '',
       pullRequest: '',
       status: '',
+      outputs: [],
     });
   }
 

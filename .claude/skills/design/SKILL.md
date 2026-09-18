@@ -1,7 +1,6 @@
 ---
 name: design
 description: Design the solution and write a technical specification based on requirements analysis. Second step of the contribution workflow, use after /analyze.
-disable-model-invocation: true
 allowed-tools: Read Glob Grep
 argument-hint: "[additional context]"
 model: opus
