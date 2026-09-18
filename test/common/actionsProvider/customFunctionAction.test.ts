@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import fs from '../../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { CustomFunctionAction, createMaskedLineStreamer, maskSecrets } from '../../../src/common/actionsProvider/customFunctionAction.js';
+import { CustomFunctionAction, createMaskedLineStreamer, maskOutputValues, maskSecrets } from '../../../src/common/actionsProvider/customFunctionAction.js';
 import { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { CustomFunctionDefinition } from '../../../src/common/utils/customFunctionUtils.js';
 import { setupTmpDir } from '../utils/actionTestHelper.js';
@@ -241,6 +241,57 @@ describe('CustomFunctionAction', () => {
     expect(result.statusCode).to.equal('failed');
     expect(result.skippedReason).to.match(/1/);
   }).timeout(20000);
+
+  // The outputs are rendered into the Pull Request comment and the chat notification, so a
+  // secret a script puts INSIDE a returned value must not survive into the reported copy.
+  it('masks a secret returned inside an output value', async () => {
+    process.env.TEST_CUSTOM_FUNCTION_SECRET = 'super-secret-value';
+    try {
+      await declareFunction(
+        {
+          id: 'leaksSecret',
+          label: 'Leaks secret',
+          runtime: 'node',
+          script: path.join('scripts', 'functions', 'leaks.js'),
+          inputs: [{ name: 'token', type: 'secret', required: true }],
+          outputs: [{ name: 'signedUrl' }, { name: 'nested' }],
+        },
+        [
+          'const token = process.env.SFDX_HARDIS_IN_TOKEN;',
+          'console.log(JSON.stringify({',
+          '  signedUrl: "https://example.com/?token=" + token,',
+          '  nested: { inner: token },',
+          '}));',
+        ].join('\n')
+      );
+      const result = await new CustomFunctionAction().run(
+        buildCommand('leaksSecret', { token: 'TEST_CUSTOM_FUNCTION_SECRET' })
+      );
+      expect(result.statusCode).to.equal('success');
+      // Raw copy keeps the real value, so a later action can still consume it
+      expect(result.outputs?.signedUrl).to.match(/super-secret-value/);
+      // Reported copy is masked, including inside a nested object
+      expect(result.outputsForDisplay?.signedUrl).to.equal('https://example.com/?token=****');
+      expect(result.outputsForDisplay?.nested).to.deep.equal({ inner: '****' });
+      expect(JSON.stringify(result.outputsForDisplay)).to.not.match(/super-secret-value/);
+    } finally {
+      delete process.env.TEST_CUSTOM_FUNCTION_SECRET;
+    }
+  });
+
+  describe('maskOutputValues', () => {
+    it('leaves non-string values alone', () => {
+      expect(maskOutputValues({ count: 3, ok: true, nothing: null }, ['SECRET'])).to.deep.equal({
+        count: 3,
+        ok: true,
+        nothing: null,
+      });
+    });
+
+    it('returns an empty object for no outputs', () => {
+      expect(maskOutputValues({}, ['SECRET'])).to.deep.equal({});
+    });
+  });
 
   describe('createMaskedLineStreamer', () => {
     it('emits complete lines only, holding back a partial one', () => {

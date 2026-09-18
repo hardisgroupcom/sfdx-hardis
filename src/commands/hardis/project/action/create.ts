@@ -22,7 +22,7 @@ import {
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
-import { parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
+import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -269,12 +269,15 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       if (!definition) {
         throw new SfError(t('actionValidationUnknownType', { type }));
       }
-      const flagInputs = parseFunctionInputFlags(flags['function-input'] || []);
+      // Values passed with --function-input pre-fill the prompts rather than replacing them, so
+      // supplying one input interactively does not skip the questions for the others.
+      const flagInputs = castFunctionInputValues(
+        parseFunctionInputFlags(flags['function-input'] || []),
+        definition
+      );
       const collectedInputs = agentMode || isCI
         ? flagInputs
-        : Object.keys(flagInputs).length > 0
-          ? flagInputs
-          : await this.promptCustomFunctionInputs(definition);
+        : await this.promptCustomFunctionInputs(definition, flagInputs);
       Object.assign(parameters, collectedInputs);
     }
 
@@ -304,16 +307,21 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       : functionDefaults?.excludeTargetBranches || [];
 
     if (!agentMode && !isCI) {
+      // Each prompt is seeded with the value resolved so far, so the defaults a custom function
+      // declares are what the user is offered instead of being silently dropped.
       if (!flags['allow-failure']) {
-        allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'));
+        allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), allowFailure);
       }
       if (!flags['include-target-branches'] && !flags['exclude-target-branches']) {
-        const branchFilter = await this.promptTargetBranchFilter();
+        const branchFilter = await this.promptTargetBranchFilter({
+          includeTargetBranches,
+          excludeTargetBranches,
+        });
         includeTargetBranches = branchFilter.includeTargetBranches || [];
         excludeTargetBranches = branchFilter.excludeTargetBranches || [];
       }
       if (type !== 'remove-packagexml-items') {
-        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), flags['run-only-once-by-org']);
+        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), runOnlyOnceByOrg);
       }
       if (!flags['custom-username']) {
         customUsername = await this.promptText(t('actionPromptCustomUsername'), '');

@@ -332,8 +332,9 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         jobUrl,
         date: new Date().toISOString(),
         output: cmd.result.output,
-        // Persisted so a runOnlyOnceByOrg action can replay them when it is skipped later
-        outputs: cmd.result.outputs,
+        // Persisted so a runOnlyOnceByOrg action can replay them when it is skipped later.
+        // The masked copy, because this is written into a Pull Request comment.
+        outputs: cmd.result.outputsForDisplay,
       }, sourcePrNumber);
       await persistDeploymentActionsState();
     }

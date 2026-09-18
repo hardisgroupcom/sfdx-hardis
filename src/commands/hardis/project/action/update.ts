@@ -21,7 +21,7 @@ import {
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
-import { parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
+import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -322,7 +322,12 @@ Required in agent mode:
         throw new SfError(t('actionFunctionInputOnBuiltInType', { type: action.type }));
       }
       // Merge rather than replace: updating one input must not drop the others
-      action.parameters = { ...action.parameters, ...parseFunctionInputFlags(flags['function-input']) };
+      const definition = await getCustomFunctionById(action.type);
+      const flagInputs = parseFunctionInputFlags(flags['function-input']);
+      action.parameters = {
+        ...action.parameters,
+        ...(definition ? castFunctionInputValues(flagInputs, definition) : flagInputs),
+      };
     }
   }
 }

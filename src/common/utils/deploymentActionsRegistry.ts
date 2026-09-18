@@ -104,11 +104,12 @@ function buildActionRow(cmd: PrePostCommand, translate: boolean): DeploymentActi
 
 /**
  * Render the outputs a custom function returned, one "name: value" per entry.
- * Secret values are already masked by the action itself, which is the only place knowing which
- * values came from a secret input.
+ * Only the masked copy is rendered: the raw one may carry a resolved secret, and this text goes
+ * to chat channels and e-mail. An action that produced no masked copy (a built-in type) has no
+ * outputs to show at all.
  */
 function buildOutputLines(cmd: PrePostCommand): string[] {
-  const outputs = cmd.result?.outputs;
+  const outputs = cmd.result?.outputsForDisplay;
   if (!outputs || Object.keys(outputs).length === 0) {
     return [];
   }
@@ -135,9 +136,11 @@ function renderActionLine(row: DeploymentActionRow): string {
   const status = row.status ? ` - ${row.status}` : '';
   const pullRequest = row.pullRequest ? ` · ${row.pullRequest}` : '';
   const actionLine = `${row.icon} ${row.label}${type}${status}${pullRequest}`;
-  // Outputs go on their own lines rather than in the action line: a chat channel wraps a long
-  // line anyway, and the size guard trims attachments line by line so each stays droppable.
-  return [actionLine, ...row.outputs.map((output) => `\u2003${output}`)].join('\n');
+  // Outputs stay ON the action line. The size guard trims attachments line by line, so putting
+  // them on their own lines would let a trim cut between an action and its outputs, or drop the
+  // action and leave orphan values attached to nothing.
+  const outputs = row.outputs.length > 0 ? ` \u2192 ${row.outputs.join(', ')}` : '';
+  return `${actionLine}${outputs}`;
 }
 
 /**

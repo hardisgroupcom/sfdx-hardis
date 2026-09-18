@@ -144,7 +144,12 @@ export class CustomFunctionAction extends ActionsProvider {
       return { statusCode: 'failed', output, skippedReason: parsed.error };
     }
 
-    return { statusCode: 'success', output, outputs: parsed.outputs };
+    return {
+      statusCode: 'success',
+      output,
+      outputs: parsed.outputs,
+      outputsForDisplay: maskOutputValues(parsed.outputs, secretValues),
+    };
   }
 
   /**
@@ -298,6 +303,31 @@ function serializeInputValue(value: any): string {
  * Applied to everything that leaves the action: the job log, the action output stored in the
  * Deployment Actions state, the Pull Request comment and the deployment notification.
  */
+/**
+ * Mask the resolved secrets inside every output value.
+ *
+ * A script is free to return a value built from a secret (a signed URL, a token echoed back), and
+ * the outputs are rendered in the Pull Request comment and the deployment notification. The raw
+ * map stays available in memory for interpolation; this copy is the one that is reported.
+ */
+export function maskOutputValues(
+  outputs: Record<string, any>,
+  secretValues: string[]
+): Record<string, any> {
+  const masked: Record<string, any> = {};
+  for (const [name, value] of Object.entries(outputs || {})) {
+    if (typeof value === 'string') {
+      masked[name] = maskSecrets(value, secretValues);
+    } else if (value !== null && typeof value === 'object') {
+      // Nested structures are JSON-encoded before being displayed anyway, so mask the encoding
+      masked[name] = JSON.parse(maskSecrets(JSON.stringify(value), secretValues));
+    } else {
+      masked[name] = value;
+    }
+  }
+  return masked;
+}
+
 export function maskSecrets(text: string, secretValues: string[]): string {
   let maskedText = String(text || '');
   for (const secretValue of secretValues) {

@@ -68,8 +68,13 @@ export type ActionResult = {
   // code must branch on this field instead
   skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference';
   // Values a custom function returned on the last line of its stdout, consumable by later actions
-  // through ${{ actions.<id>.outputs.<name> }}.
+  // through ${{ actions.<id>.outputs.<name> }}. Raw, so an action can pass a real value on.
+  // Stays in memory for the duration of the run and is never reported as is.
   outputs?: Record<string, any>;
+  // Same values with the resolved secrets masked. This is the ONLY copy that may leave the
+  // process: the job log, the Pull Request comment and the deployment notification all use it,
+  // because a Pull Request comment is as public as a chat channel.
+  outputsForDisplay?: Record<string, any>;
 };
 
 /**

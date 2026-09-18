@@ -85,6 +85,30 @@ export function parseFunctionInputFlags(rawValues: string[] = []): Record<string
   return parameters;
 }
 
+/**
+ * Give the values collected from --function-input the type their input declares.
+ *
+ * A flag value is always a string, while the interactive prompts already produce real numbers and
+ * booleans. Without this, the same action written the two ways would store `retries: "3"` in one
+ * case and `retries: 3` in the other, and the JSON schema declares these inputs typed.
+ * A value carrying a ${{ }} reference is left alone: its type is only known at run time.
+ */
+export function castFunctionInputValues(
+  values: Record<string, string>,
+  definition: { inputs?: CustomFunctionInput[] }
+): Record<string, any> {
+  const typedValues: Record<string, any> = {};
+  for (const [name, rawValue] of Object.entries(values)) {
+    const input = (definition.inputs || []).find((declared) => declared.name === name);
+    if (!input || typeof rawValue !== 'string' || rawValue.includes('${{')) {
+      typedValues[name] = rawValue;
+      continue;
+    }
+    typedValues[name] = castInputDefault(rawValue, input.type || 'string');
+  }
+  return typedValues;
+}
+
 function splitEntries(rawValue: string): string[] {
   return String(rawValue || '')
     .split(';')
