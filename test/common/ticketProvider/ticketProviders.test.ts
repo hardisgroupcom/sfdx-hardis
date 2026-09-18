@@ -578,4 +578,16 @@ describe('GenericTicketingProvider.getTicketsFromString', () => {
     const forUs014 = tickets.filter((ticket) => ticket.id === 'US-014');
     expect(forUs014.map((ticket) => ticket.provider)).to.deep.equal(['GENERIC']);
   });
+
+  it('lists no JIRA placeholder when the project declares another ticketing system', async () => {
+    const { TicketProvider } = await import('../../../src/common/ticketProvider/index.js');
+    const tickets = await TicketProvider.getProvidersTicketsFromString('Release 2026-09: US-018 and US-019', { config });
+    expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['US-018', 'US-019']);
+  });
+
+  it('keeps the JIRA placeholder when no ticketing system is declared', async () => {
+    const { TicketProvider } = await import('../../../src/common/ticketProvider/index.js');
+    const tickets = await TicketProvider.getProvidersTicketsFromString('Release PROJ-123', { config: {} });
+    expect(tickets.map((ticket) => ticket.id)).to.include('PROJ-123');
+  });
 });

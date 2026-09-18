@@ -79,13 +79,19 @@ export abstract class TicketProvider {
     }
     // JIRA recognizes any PROJ-123 identifier, even with no JIRA host configured, and then links
     // it to a placeholder host. When another provider claims the same identifier with a real URL,
-    // that one is the ticket: the placeholder would only add a dead link next to it.
+    // that one is the ticket: the placeholder would only add a dead link next to it. And when the
+    // project declares another ticketing system, a placeholder is never a ticket: it is a release
+    // name or a date ("Release 2026-09") that happens to have the shape of a JIRA key.
+    const otherProviderConfigured = allTicketProviders.some(
+      (provider) => provider !== JiraProvider && provider.isAvailable(optionsWithConfig.config)
+    );
     const withoutPlaceholders = tickets.filter(
       (ticket) =>
         !(
           ticket.provider === "JIRA" &&
           ticket.url?.startsWith(JIRA_HOST_PLACEHOLDER) &&
-          tickets.some((other) => other !== ticket && other.id === ticket.id && other.provider !== "JIRA")
+          (otherProviderConfigured ||
+            tickets.some((other) => other !== ticket && other.id === ticket.id && other.provider !== "JIRA"))
         )
     );
     const ticketsSorted: Ticket[] = sortArray(withoutPlaceholders, { by: ["id"], order: ["asc"] });

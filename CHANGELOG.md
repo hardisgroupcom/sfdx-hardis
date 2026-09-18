@@ -7,7 +7,7 @@
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): when it puts uncommitted changes aside to start the new branch clean, it now says so, names the files and says how to get them back.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) and [hardis:org:fix:listviewmine](https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/): list views are set back to Mine again on current Lightning pages, and a failure to do so no longer fails a deployment that succeeded.
 - [hardis:project:clean:listviews](https://sfdx-hardis.cloudity.com/hardis/project/clean/listviews/): the log names the list view it converted instead of printing `[object Object]`.
-- Generic ticketing: `genericTicketingProviderRegex` and `genericTicketingProviderUrlBuilder` declared in `.sfdx-hardis.yml` now work, and a ticket they find is no longer listed a second time with a placeholder JIRA link.
+- Generic ticketing: `genericTicketingProviderRegex` and `genericTicketingProviderUrlBuilder` declared in `.sfdx-hardis.yml` now work, and with them declared, a ticket is no longer listed a second time with a placeholder JIRA link, and a release name such as `2026-09` is no longer listed as a JIRA ticket.
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): the scratch orgs your major branches deploy to are no longer offered as orgs to build a User Story in.
 - A command that stores a value in a `.sfdx-hardis.yml` file now keeps the comments and the formatting of that file instead of rewriting it.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) now keeps the comments of an existing `mkdocs.yml`, and only rewrites the keys it changes.
