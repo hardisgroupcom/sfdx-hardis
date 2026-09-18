@@ -175,7 +175,7 @@ prompts
     const branches = await git().branch(["--list", "-r"]);
     const branchesFiltered = branches.all
       .map((branch: string) => branch.replace('origin/', ''))
-      .filter((branch: string) => branch !== branchName && !branch.includes("/"));
+      .filter((branch: string) => !branch.includes("/") && branch !== 'HEAD');
 
     if (!devHub) {
       if (flags.name) {
@@ -231,7 +231,8 @@ prompts
         type: 'multiselect',
         name: 'value',
         message: c.cyanBright(t('whatAreTargetGitBranchesToMergeIn', { branchName })),
-        choices: branchesFiltered.map((branch: string) => {
+        // A branch never merges into itself
+        choices: branchesFiltered.filter((branch: string) => branch !== branchName).map((branch: string) => {
           return {
             title: branch,
             value: branch,
