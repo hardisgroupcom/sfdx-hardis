@@ -560,3 +560,22 @@ describe('ServiceNowProvider deployment comments', () => {
   ));
 });
 });
+
+describe('GenericTicketingProvider.getTicketsFromString', () => {
+  const config = {
+    genericTicketingProviderRegex: '(US-[0-9]{3})',
+    genericTicketingProviderUrlBuilder: 'https://example.invalid/backlog/#{REF}',
+  };
+
+  it('reads the regex and the URL builder from the project configuration', async () => {
+    const tickets = await GenericTicketingProvider.getTicketsFromString('features/US-014-panels-required', { config });
+    expect(tickets.map((ticket) => ticket.url)).to.deep.equal(['https://example.invalid/backlog/#US-014']);
+  });
+
+  it('lets the provider with a real URL win over a JIRA placeholder for the same identifier', async () => {
+    const { TicketProvider } = await import('../../../src/common/ticketProvider/index.js');
+    const tickets = await TicketProvider.getProvidersTicketsFromString('US-014 Panels Required', { config });
+    const forUs014 = tickets.filter((ticket) => ticket.id === 'US-014');
+    expect(forUs014.map((ticket) => ticket.provider)).to.deep.equal(['GENERIC']);
+  });
+});

@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- Generic ticketing: `genericTicketingProviderRegex` and `genericTicketingProviderUrlBuilder` declared in `.sfdx-hardis.yml` now work, and a ticket they find is no longer listed a second time with a placeholder JIRA link.
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): the scratch orgs your major branches deploy to are no longer offered as orgs to build a User Story in.
 - A command that stores a value in a `.sfdx-hardis.yml` file now keeps the comments and the formatting of that file instead of rewriting it.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) now keeps the comments of an existing `mkdocs.yml`, and only rewrites the keys it changes.
