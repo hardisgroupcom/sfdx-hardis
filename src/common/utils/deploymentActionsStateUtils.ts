@@ -34,6 +34,9 @@ export interface DeploymentActionStateEntry {
   jobUrl: string;
   date: string;
   output?: string;
+  // Values a custom function returned. Persisted so a runOnlyOnceByOrg action, skipped on later
+  // deployments, can still feed ${{ actions.<id>.outputs.<name> }} references.
+  outputs?: Record<string, any>;
   prNumber?: number;
   prUrl?: string;
 }

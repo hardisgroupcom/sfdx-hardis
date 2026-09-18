@@ -34,6 +34,8 @@ interface DeploymentActionRow {
   pullRequest: string;
   // Status text, or empty when the icon already says it (success and manual).
   status: string;
+  // "name: value" of each output a custom function returned, already masked for secrets.
+  outputs: string[];
 }
 
 /**
@@ -96,7 +98,30 @@ function buildActionRow(cmd: PrePostCommand, translate: boolean): DeploymentActi
     type: escapeLineValue(cmd.type || 'command'),
     pullRequest: getPullRequestReference(cmd),
     status: statusInfo.status,
+    outputs: buildOutputLines(cmd),
   };
+}
+
+/**
+ * Render the outputs a custom function returned, one "name: value" per entry.
+ * Secret values are already masked by the action itself, which is the only place knowing which
+ * values came from a secret input.
+ */
+function buildOutputLines(cmd: PrePostCommand): string[] {
+  const outputs = cmd.result?.outputs;
+  if (!outputs || Object.keys(outputs).length === 0) {
+    return [];
+  }
+  return Object.entries(outputs).map(
+    ([name, value]) => `${escapeLineValue(name)}: ${escapeLineValue(formatOutputValue(value))}`
+  );
+}
+
+function formatOutputValue(value: any): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  return typeof value === 'object' ? JSON.stringify(value) : String(value);
 }
 
 /**
@@ -109,7 +134,10 @@ function renderActionLine(row: DeploymentActionRow): string {
   const type = row.type ? ` (${row.type})` : '';
   const status = row.status ? ` - ${row.status}` : '';
   const pullRequest = row.pullRequest ? ` · ${row.pullRequest}` : '';
-  return `${row.icon} ${row.label}${type}${status}${pullRequest}`;
+  const actionLine = `${row.icon} ${row.label}${type}${status}${pullRequest}`;
+  // Outputs go on their own lines rather than in the action line: a chat channel wraps a long
+  // line anyway, and the size guard trims attachments line by line so each stays droppable.
+  return [actionLine, ...row.outputs.map((output) => `\u2003${output}`)].join('\n');
 }
 
 /**
@@ -201,6 +229,7 @@ export function buildDeploymentActionsAttachmentText(translate: boolean, options
       type: '',
       pullRequest: '',
       status: '',
+      outputs: [],
     });
   }
 

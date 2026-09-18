@@ -16,6 +16,35 @@ import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
 import { ActionWhen, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
+import {
+  ActionInterpolationError,
+  ActionOutputsRegistry,
+  ActionSkipReasons,
+  InterpolationScope,
+  interpolateActionFields,
+} from './actionInterpolationUtils.js';
+import { PipelineContext, buildPipelineContext, withActionContext } from './pipelineContextUtils.js';
+
+/**
+ * Outputs produced by the actions of the current process, shared between the pre-deploy and the
+ * post-deploy calls of executePrePostCommands so a post-deploy action can consume what a
+ * pre-deploy action produced (capture before the deployment, restore after it).
+ *
+ * Lifetime is the process, like the deployment actions registry: smartDeploy resets it before
+ * starting, so outputs never leak between runs.
+ */
+const actionOutputsRegistry: ActionOutputsRegistry = new Map();
+const actionSkipReasons: ActionSkipReasons = new Map();
+
+export function resetActionOutputsRegistry(): void {
+  actionOutputsRegistry.clear();
+  actionSkipReasons.clear();
+}
+
+/** Exposed for the deployment notification and the tests. */
+export function getActionOutputs(actionId: string): Record<string, any> | undefined {
+  return actionOutputsRegistry.get(actionId);
+}
 
 /**
  * Full kill switch of the deployment actions feature, for projects whose git provider cannot
@@ -137,6 +166,14 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     }
   }
 
+  // Pipeline variables of the run, built once: every action reads the same values, and only the
+  // per-action identity (actionId / actionLabel) changes from one action to the next.
+  const pipelineContext: PipelineContext = await buildPipelineContext({
+    checkOnly: options.checkOnly,
+    when: deployWhen,
+    targetBranch: orgBranchName,
+  });
+
   for (let cmdIndex = 0; cmdIndex < commands.length; cmdIndex++) {
     const cmd = commands[cmdIndex];
     // An action defining both branch filter lists is a definition error, not a skip: report every
@@ -145,13 +182,45 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     if (branchFilterVerdict.invalid) {
       cmd.result = { statusCode: "failed", skippedReason: branchFilterVerdict.reason };
       uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${branchFilterVerdict.reason}`));
+      recordActionProducedNothing(cmd, branchFilterVerdict.reason);
+      continue;
+    }
+    cmd.pipelineContext = withActionContext(pipelineContext, cmd);
+    // Resolve ${{ actions.<id>.outputs.<name> }} and ${{ pipeline.<name> }} before anything reads
+    // the action fields, so validity checks and the run itself see the resolved values.
+    const interpolationScope: InterpolationScope = {
+      outputs: actionOutputsRegistry,
+      skipReasons: actionSkipReasons,
+      pipeline: cmd.pipelineContext,
+    };
+    try {
+      interpolateActionFields(cmd, interpolationScope);
+    } catch (e) {
+      if (!(e instanceof ActionInterpolationError)) {
+        throw e;
+      }
+      // A reference that cannot be resolved fails the consuming action: running it with a hole in
+      // its arguments (an empty record id, an empty channel) is worse than stopping here.
+      cmd.result = {
+        statusCode: "failed",
+        skippedCode: "unresolved-reference",
+        skippedReason: e.message,
+      };
+      uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label}: ${e.message}`));
+      recordActionProducedNothing(cmd, e.message);
       continue;
     }
     const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
+    if (!actionsInstance) {
+      // buildActionInstance already set cmd.result and logged the unknown type
+      recordActionProducedNothing(cmd, cmd.result?.skippedReason || t('actionNotRunUnknownType'));
+      continue;
+    }
     const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
     if (actionsIssues) {
       cmd.result = actionsIssues;
       uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${actionsIssues.skippedReason}`));
+      recordActionProducedNothing(cmd, actionsIssues.skippedReason);
       continue;
     }
     // Determine whether the action should be skipped; use a flag instead of early `continue` so
@@ -207,6 +276,18 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
               skippedCode: "already-run-in-org",
               skippedReason: `runOnlyOnceByOrg: already run in org (${orgBranchName}) on ${existingEntry.date}`
             };
+            // The action is skipped but its outputs were persisted the day it ran: replay them, so
+            // a later action consuming ${{ actions.<id>.outputs.<name> }} keeps resolving instead
+            // of failing on every deployment after the first.
+            if (existingEntry.outputs && Object.keys(existingEntry.outputs).length > 0) {
+              actionOutputsRegistry.set(cmd.id, existingEntry.outputs);
+              cmd.result.outputs = existingEntry.outputs;
+              uxLog("log", this, c.grey(
+                `[DeploymentActions] ${t('actionOutputsReplayed', { label: cmd.label, names: Object.keys(existingEntry.outputs).join(', ') })}`
+              ));
+            } else {
+              recordActionProducedNothing(cmd, cmd.result.skippedReason);
+            }
             // If the action label changed, update it in the PR comment.
             if (existingEntry.actionLabel !== cmd.label) {
               const sourcePr = cmd.pullRequest?.idNumber || currentPrNumber;
@@ -229,6 +310,9 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         logActionFailureDetails(cmd);
       }
     }
+    // Make the outcome of this action available to the ones that follow: either its outputs, or
+    // the reason it produced none so an unresolved reference can say what happened.
+    registerActionOutcome(cmd);
     // Track executed/manual/skipped actions in the source PR's "Deployment Actions" comment.
     // Actions are written to their source PR only - not to the current PR for actions from other PRs.
     // "Already ran" skips (runOnlyOnceByOrg + existing success entry) are excluded via the
@@ -248,6 +332,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
         jobUrl,
         date: new Date().toISOString(),
         output: cmd.result.output,
+        // Persisted so a runOnlyOnceByOrg action can replay them when it is skipped later
+        outputs: cmd.result.outputs,
       }, sourcePrNumber);
       await persistDeploymentActionsState();
     }
@@ -292,6 +378,33 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       throw new SfError(`One or more ${actionLabel} have failed. See logs for more details.`);
     }
   }
+}
+
+/**
+ * Publish what an action produced to the outputs registry, so later actions can consume it.
+ * Only a successful action publishes outputs; anything else records why there are none.
+ */
+function registerActionOutcome(cmd: PrePostCommand): void {
+  const outputs = cmd.result?.outputs;
+  if (cmd.result?.statusCode === 'success' && outputs && Object.keys(outputs).length > 0) {
+    actionOutputsRegistry.set(cmd.id, outputs);
+    actionSkipReasons.delete(cmd.id);
+    return;
+  }
+  if (cmd.result?.statusCode === 'success') {
+    // Succeeded without declaring outputs: referencing one is a configuration mistake, not a skip
+    return;
+  }
+  recordActionProducedNothing(cmd, cmd.result?.skippedReason);
+}
+
+/**
+ * Remember that an action produced no outputs and why, so an action referencing one of its
+ * outputs fails with the actual cause ("skipped: branch not targeted") instead of a bare
+ * "unknown action".
+ */
+function recordActionProducedNothing(cmd: PrePostCommand, reason?: string): void {
+  actionSkipReasons.set(cmd.id, reason || cmd.result?.statusCode || 'not run');
 }
 
 /**

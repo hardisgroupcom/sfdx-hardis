@@ -206,9 +206,12 @@ export async function listActionTargetBranchChoices(): Promise<{ title: string; 
  * Validate type-specific parameters for an action.
  * Returns an array of error messages (empty if valid).
  */
-export async function validateActionParameters(action: Partial<PrePostCommand>): Promise<string[]> {
+export async function validateActionParameters(action: Partial<PrePostCommand>, when?: ActionWhen): Promise<string[]> {
   const errors: string[] = [];
   const type = action.type || 'command';
+  // Actions read from a config file carry `when`; a freshly built one does not, so the caller
+  // passes the phase it is being saved into.
+  const actionWhen = when || action.when;
 
   if ((action.includeTargetBranches || []).length > 0 && (action.excludeTargetBranches || []).length > 0) {
     errors.push(t('actionValidationBranchFiltersMutuallyExclusive'));
@@ -261,12 +264,113 @@ export async function validateActionParameters(action: Partial<PrePostCommand>):
         errors.push(t('actionValidationInvalidPackageXmlItems', { items: invalidItems.join(' | ') }));
       }
     }
-    if (action.when === 'post-deploy') {
+    if (actionWhen === 'post-deploy') {
       errors.push(t('actionValidationPackageXmlItemsPreDeployOnly'));
     }
+  } else {
+    errors.push(...(await validateCustomFunctionAction(action, type, actionWhen)));
   }
 
   return errors;
+}
+
+/**
+ * Validate an action whose type is not built-in: it must be the id of a project custom function,
+ * and it must respect the contract that function declares (required inputs, allowed values,
+ * phase and context restrictions).
+ */
+async function validateCustomFunctionAction(
+  action: Partial<PrePostCommand>,
+  type: string,
+  actionWhen?: ActionWhen
+): Promise<string[]> {
+  const errors: string[] = [];
+  const { getCustomFunctionById } = await import('./customFunctionUtils.js');
+  const definition = await getCustomFunctionById(type);
+  if (!definition) {
+    errors.push(t('actionValidationUnknownType', { type }));
+    return errors;
+  }
+
+  if (definition.when && actionWhen && definition.when !== actionWhen) {
+    errors.push(t('actionValidationFunctionWrongPhase', { id: definition.id, when: definition.when }));
+  }
+
+  const allowedContexts = definition.allowedContexts || [];
+  if (allowedContexts.length > 0 && action.context && !allowedContexts.includes(action.context)) {
+    errors.push(
+      t('actionValidationFunctionContextNotAllowed', {
+        id: definition.id,
+        context: action.context,
+        contexts: allowedContexts.join(', '),
+      })
+    );
+  }
+
+  for (const input of definition.inputs || []) {
+    const rawValue = action.parameters?.[input.name] ?? input.default;
+    const isEmpty = rawValue === undefined || rawValue === null || String(rawValue).trim() === '';
+    if (input.required === true && isEmpty) {
+      errors.push(t('actionValidationFunctionMissingInput', { name: input.name, id: definition.id }));
+      continue;
+    }
+    if (isEmpty) {
+      continue;
+    }
+    // A value carrying a reference is only known at run time, so it cannot be checked here
+    if (typeof rawValue === 'string' && rawValue.includes('${{')) {
+      continue;
+    }
+    if (input.type === 'select' && !(input.options || []).includes(String(rawValue))) {
+      errors.push(
+        t('actionValidationFunctionInvalidSelectValue', {
+          name: input.name,
+          value: String(rawValue),
+          options: (input.options || []).join(', '),
+        })
+      );
+    }
+    if (input.type === 'number' && !Number.isFinite(Number(rawValue))) {
+      errors.push(t('actionValidationFunctionInvalidNumber', { name: input.name, value: String(rawValue) }));
+    }
+  }
+
+  const declaredInputNames = (definition.inputs || []).map((input) => input.name);
+  const unknownParameters = Object.keys(action.parameters || {}).filter(
+    (parameterName) => !declaredInputNames.includes(parameterName)
+  );
+  if (unknownParameters.length > 0) {
+    errors.push(
+      t('actionValidationFunctionUnknownParameters', {
+        names: unknownParameters.join(', '),
+        id: definition.id,
+        declared: declaredInputNames.join(', ') || '-',
+      })
+    );
+  }
+
+  return errors;
+}
+
+/**
+ * Action types offered by the current project: the built-in ones plus one per custom function.
+ * `when` filters out the functions restricted to the other deployment phase.
+ */
+export async function listAvailableActionTypes(when?: ActionWhen): Promise<{ title: string; value: string; description?: string }[]> {
+  const { listCustomFunctions } = await import('./customFunctionUtils.js');
+  const choices: { title: string; value: string; description?: string }[] = ACTION_TYPES.map((actionType) => ({
+    title: String(actionType),
+    value: String(actionType),
+  }));
+  const customFunctions = (await listCustomFunctions()).filter((fn) => !when || !fn.when || fn.when === when);
+  for (const customFunction of customFunctions) {
+    choices.push({
+      title: `${customFunction.label || customFunction.id} (${t('actionTypeCustomFunctionSuffix')})`,
+      value: customFunction.id,
+      description: customFunction.description || customFunction.script,
+    });
+  }
+  return choices;
 }
 
 /**

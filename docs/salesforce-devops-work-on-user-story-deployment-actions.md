@@ -22,6 +22,8 @@ You can automate (or track) the following kinds of steps:
 - [Remove items from package.xml](#remove-items-from-packagexml)
 - [Manual step](#manual-step) (something a person must do)
 
+Need something this list does not cover? Package your own node, python or bash script as a [custom function](salesforce-devops-work-on-user-story-custom-functions.md), and use it as an action type of your project.
+
 Actions can be attached to a **Pull Request** (they follow your User Story from org to org) or to the **whole project** (they run at every deployment).
 
 ### Manage your actions from VS Code
