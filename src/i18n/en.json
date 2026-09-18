@@ -2067,6 +2067,7 @@
   "listingExternalClientAppsInOrg": "Listing External Client Apps available in the org...",
   "listingInvalidResultsBelow": "Listing invalid results below:",
   "listingTargetOrgContentForNoOverwrite": "Listing the target org content, to detect which package-no-overwrite.xml items already exist there...",
+  "listViewsMineNotRestored": "The list views to set back to Mine could not be updated ({{message}}). The deployment itself succeeded: set them by hand, or run sf hardis:org:fix:listviewmine.",
   "loadedDeploymentActionsStateEntries": "Loaded {{count}} deployment actions state entries from PR #{{pr}}",
   "loadingDeploymentActionsStateFromPrs": "Loading deployment actions state from {{count}} Pull Requests...",
   "loadingFullOrgManifest": "Loading full org manifest for profile purge...",

@@ -2063,6 +2063,7 @@
   "listingExternalClientAppsInOrg": "Listing des External Client Apps disponibles dans l'org...",
   "listingInvalidResultsBelow": "Liste des résultats invalides ci-dessous :",
   "listingTargetOrgContentForNoOverwrite": "Liste du contenu de l'org cible, afin de détecter les éléments de package-no-overwrite.xml qui y existent déjà...",
+  "listViewsMineNotRestored": "Les vues de liste à remettre sur Mine n'ont pas pu être mises à jour ({{message}}). Le déploiement lui-même a réussi : remettez-les à la main, ou lancez sf hardis:org:fix:listviewmine.",
   "loadedDeploymentActionsStateEntries": "{{count}} entrées d'état des actions de déploiement chargées depuis la PR #{{pr}}",
   "loadingDeploymentActionsStateFromPrs": "Chargement de l'état des actions de déploiement depuis {{count}} Pull Requests...",
   "loadingFullOrgManifest": "Chargement du manifeste complet de l'org pour la purge des profils...",

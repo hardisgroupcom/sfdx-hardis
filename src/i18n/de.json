@@ -2062,6 +2062,7 @@
   "listingExternalClientAppsInOrg": "External Client Apps in der Org werden aufgelistet...",
   "listingInvalidResultsBelow": "Ungültige Ergebnisse werden unten aufgelistet:",
   "listingTargetOrgContentForNoOverwrite": "Der Inhalt der Ziel-Org wird aufgelistet, um zu ermitteln, welche package-no-overwrite.xml-Elemente dort bereits vorhanden sind...",
+  "listViewsMineNotRestored": "Die Listenansichten, die wieder auf Mine gesetzt werden sollen, konnten nicht aktualisiert werden ({{message}}). Das Deployment selbst war erfolgreich: Setzen Sie sie manuell zurück oder führen Sie sf hardis:org:fix:listviewmine aus.",
   "loadedDeploymentActionsStateEntries": "{{count}} Statuseinträge der Deployment-Aktionen aus PR #{{pr}} geladen",
   "loadingDeploymentActionsStateFromPrs": "Status der Deployment-Aktionen wird aus {{count}} Pull Requests geladen...",
   "loadingFullOrgManifest": "Vollständiges Org-Manifest für die Profile-Bereinigung wird geladen...",

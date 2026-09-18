@@ -61,13 +61,20 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
     return { error: e };
   }
   const page = await browser.newPage();
-
-  // Process login page
-  await page.goto(loginUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
-
   const success: any[] = [];
   const failed: any[] = [];
   const unnecessary: any[] = [];
+
+  // Process login page. A Lightning page keeps connections open for as long as it lives, so
+  // waiting for the network to go idle only ever ends with a timeout: wait for the page load, which
+  // also lets frontdoor.jsp finish the redirect that sets the session cookie.
+  try {
+    await page.goto(loginUrl, { waitUntil: 'load', timeout: 60000 });
+  } catch (e: any) {
+    uxLog("warning", this, c.yellow(`List views 'Mine' have not been restored: the org could not be opened in the browser simulator (${e.message}).`));
+    await browser.close();
+    return { success, failed: listViewItems.map((item) => `${item.object}:${item.listViewName}`), unnecessary, error: e };
+  }
 
   // Restore list views with Mine option
   for (const listView of listViewItems) {
@@ -79,13 +86,14 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
     const setupObjectUrl = `${instanceUrl}/lightning/o/${objectName}/list?filterName=${listViewName}`;
 
     try {
-      // Open ListView url in org
-      const navigationPromise = page.waitForNavigation();
-      await page.goto(setupObjectUrl);
-      await navigationPromise;
+      // Open ListView url in org. goto() already waits for its own navigation: waiting for another
+      // one on top of it timed out whenever Lightning did not navigate a second time.
+      await page.goto(setupObjectUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
       // Open ListView settings
-      const filterButton = await page.waitForSelector('.filterButton');
+      // Lightning renders its controls before it shows them: a hidden one is found at once and then
+      // refuses the click ("Node is either not clickable"), so every wait is for a visible element
+      const filterButton = await page.waitForSelector('.filterButton', { visible: true });
       if (filterButton) {
         await filterButton.click();
       } else {
@@ -93,7 +101,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       }
 
       // Open Filter by owner popup
-      const filterByOwnerButtons = await page.waitForSelector("xpath///div[contains(text(), 'Filter by Owner')]");
+      const filterByOwnerButtons = await page.waitForSelector("xpath///div[contains(text(), 'Filter by Owner')]", { visible: true });
       if (filterByOwnerButtons) {
         await filterByOwnerButtons.click();
       } else {
@@ -103,16 +111,15 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Select Mine value
       const mineValue = await page.waitForSelector('input[value="mine"]');
       if (mineValue) {
-        const mineValueClickableLabel = await mineValue.$('following-sibling::*');
-        if (mineValueClickableLabel) {
-          await mineValueClickableLabel[0].click();
-        }
+        // The radio input itself is hidden by the Lightning styling: click the element drawn next to it
+        await mineValue.evaluate((input) => ((input.nextElementSibling as HTMLElement | null) || (input as HTMLElement)).click());
       } else {
         throw new SfError('Puppeteer: input[value="mine"] not found');
       }
 
       // Click done
-      const doneButtons = await page.waitForSelector("xpath///span[contains(text(), 'Done')]");
+      // The label is the button's own text now; older Lightning releases wrapped it in a span
+      const doneButtons = await page.waitForSelector("xpath///button[normalize-space()='Done'] | //span[contains(text(), 'Done')]", { visible: true });
       if (doneButtons) {
         await doneButtons.click();
       } else {
@@ -121,7 +128,8 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 
       // Save
       try {
-        const saveButton = await page.waitForSelector('.saveButton', { timeout: 3000 });
+        // Lightning dropped the saveButton class: the button is found by its label as well
+        const saveButton = await page.waitForSelector("xpath///button[normalize-space()='Save'] | //button[contains(@class, 'saveButton')]", { timeout: 3000, visible: true });
         if (saveButton) {
           await saveButton.click();
         } else {

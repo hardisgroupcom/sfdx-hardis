@@ -2061,6 +2061,7 @@
   "listingExternalClientAppsInOrg": "組織で利用可能な外部クライアントアプリケーションを一覧取得中...",
   "listingInvalidResultsBelow": "以下に無効な結果を一覧表示します:",
   "listingTargetOrgContentForNoOverwrite": "対象組織の内容を一覧表示し、package-no-overwrite.xml のどの項目が既に存在するかを検出しています...",
+  "listViewsMineNotRestored": "Mine に戻すリストビューを更新できませんでした ({{message}})。デプロイ自体は成功しています。手動で設定するか、sf hardis:org:fix:listviewmine を実行してください。",
   "loadedDeploymentActionsStateEntries": "PR #{{pr}} からデプロイアクションの状態エントリを {{count}} 件読み込みました",
   "loadingDeploymentActionsStateFromPrs": "{{count}} 件の PR からデプロイアクションの状態を読み込んでいます...",
   "loadingFullOrgManifest": "プロファイルパージのために組織の完全なマニフェストを読み込んでいます...",

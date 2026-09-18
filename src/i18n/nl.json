@@ -2063,6 +2063,7 @@
   "listingExternalClientAppsInOrg": "Beschikbare External Client Apps in de org weergeven...",
   "listingInvalidResultsBelow": "Ongeldige resultaten hieronder weergeven:",
   "listingTargetOrgContentForNoOverwrite": "De inhoud van de doel-org wordt weergegeven, om te bepalen welke package-no-overwrite.xml-items daar al bestaan...",
+  "listViewsMineNotRestored": "De lijstweergaven die terug naar Mine moesten, konden niet worden bijgewerkt ({{message}}). De implementatie zelf is gelukt: zet ze met de hand terug of voer sf hardis:org:fix:listviewmine uit.",
   "loadedDeploymentActionsStateEntries": "{{count}} statusitems van deploy-acties geladen vanuit PR #{{pr}}",
   "loadingDeploymentActionsStateFromPrs": "Status van deploy-acties laden vanuit {{count}} pull requests...",
   "loadingFullOrgManifest": "Volledig org-manifest laden voor profielopschoning...",

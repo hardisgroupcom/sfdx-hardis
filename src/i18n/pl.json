@@ -2063,6 +2063,7 @@
   "listingExternalClientAppsInOrg": "Wyświetlanie External Client Apps dostępnych w org...",
   "listingInvalidResultsBelow": "Poniżej lista nieprawidłowych wyników:",
   "listingTargetOrgContentForNoOverwrite": "Wyświetlanie zawartości docelowego org w celu wykrycia, które elementy package-no-overwrite.xml już tam istnieją...",
+  "listViewsMineNotRestored": "Nie udało się zaktualizować widoków listy, które miały wrócić do Mine ({{message}}). Samo wdrożenie zakończyło się powodzeniem: należy ustawić je ręcznie lub uruchomić sf hardis:org:fix:listviewmine.",
   "loadedDeploymentActionsStateEntries": "Załadowano {{count}} wpisów stanu akcji wdrożeniowych z PR #{{pr}}",
   "loadingDeploymentActionsStateFromPrs": "Ładowanie stanu akcji wdrożeniowych z {{count}} PR...",
   "loadingFullOrgManifest": "Ładowanie pełnego manifestu org do czyszczenia profili...",

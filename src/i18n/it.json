@@ -2063,6 +2063,7 @@
   "listingExternalClientAppsInOrg": "Elenco delle External Client Apps disponibili nella org...",
   "listingInvalidResultsBelow": "Elenco dei risultati non validi di seguito:",
   "listingTargetOrgContentForNoOverwrite": "Elenco del contenuto dell'org di destinazione, per rilevare quali elementi di package-no-overwrite.xml esistono già...",
+  "listViewsMineNotRestored": "Non è stato possibile aggiornare le viste elenco da riportare su Mine ({{message}}). La distribuzione in sé è riuscita: reimpostale a mano oppure esegui sf hardis:org:fix:listviewmine.",
   "loadedDeploymentActionsStateEntries": "Caricate {{count}} voci di stato delle azioni di distribuzione dalla PR #{{pr}}",
   "loadingDeploymentActionsStateFromPrs": "Caricamento dello stato delle azioni di distribuzione da {{count}} Pull Request...",
   "loadingFullOrgManifest": "Caricamento del manifesto completo dell'org per la pulizia dei profili...",
