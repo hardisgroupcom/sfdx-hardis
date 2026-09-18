@@ -291,10 +291,19 @@ interface MergeCommitInfo {
   message: string;
 }
 
+// The merges happen on the git server: a local branch nobody pulled since misses the latest
+// release. Fetch the branch, and read the remote-tracking copy when there is one.
+async function freshBranchRef(branch: string): Promise<string> {
+  await execCommand(`git fetch origin "${branch}"`, null, { fail: false, output: false });
+  const remoteRef = await execCommand(`git rev-parse --verify --quiet "refs/remotes/origin/${branch}"`, null, { fail: false, output: false });
+  return remoteRef?.stdout?.trim() ? `origin/${branch}` : branch;
+}
+
 async function listMergeCommitsOnBranch(branch: string, limit = 20): Promise<MergeCommitInfo[]> {
   try {
+    const ref = await freshBranchRef(branch);
     const result = await execCommand(
-      `git log --merges --first-parent "${branch}" --pretty=format:"%H|%cs|%s" -n ${limit}`,
+      `git log --merges --first-parent "${ref}" --pretty=format:"%H|%cs|%s" -n ${limit}`,
       null,
       { fail: true },
     );
@@ -485,6 +494,26 @@ export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> 
 // Data collection
 // ---------------------------------------------------------------------------
 
+/**
+ * How the Pull Requests of a release are found, from its scope:
+ * - `dates`: merged into the target branch between two dates
+ * - `branches`: merged into the source branch since its last merge into the target branch (what is
+ *   waiting). Not in post mode once a merge commit is chosen: right after that merge, "since the last
+ *   merge" is empty
+ * - `goLive`: introduced by the chosen merge commit
+ * - `recent`: the recently merged Pull Requests of the target branch
+ */
+export function pullRequestsLookup(scope: ReleaseNotesScope): "dates" | "branches" | "goLive" | "recent" {
+  const mergeCommitChosen = Boolean(scope.toCommit && scope.toCommit !== "HEAD" && !scope.releaseTag);
+  if (scope.fromDate || scope.toDate) {
+    return "dates";
+  }
+  if (scope.sourceBranch && scope.targetBranch && !(scope.mode === "post" && mergeCommitChosen)) {
+    return "branches";
+  }
+  return mergeCommitChosen ? "goLive" : "recent";
+}
+
 export async function collectPullRequests(
   scope: ReleaseNotesScope,
   commandRef: any,
@@ -503,8 +532,9 @@ export async function collectPullRequests(
   // are inter-major-branch but must survive the filter below, as they carry the release.
   const releaseCommitPrIds = new Set<string>();
 
+  const lookup = pullRequestsLookup(scope);
   // Date-based filtering
-  if (scope.fromDate || scope.toDate) {
+  if (lookup === "dates") {
     pullRequests = (await gitProvider.listPullRequests(
       {
         targetBranch: scope.targetBranch,
@@ -520,12 +550,12 @@ export async function collectPullRequests(
         return mergedDate && mergedDate <= toDate;
       });
     }
-  } else if (scope.sourceBranch && scope.targetBranch) {
+  } else if (lookup === "branches") {
     // Branch-based: find PRs between branches
     const childBranches = recursiveGetChildBranches(scope.targetBranch, majorOrgs);
     try {
       pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
-        scope.sourceBranch,
+        scope.sourceBranch as string,
         scope.targetBranch,
         [...childBranches],
       );
@@ -537,7 +567,7 @@ export async function collectPullRequests(
         { targetBranch: scope.targetBranch, status: "merged" },
       )) || [];
     }
-  } else if (scope.toCommit && scope.toCommit !== "HEAD" && !scope.releaseTag) {
+  } else if (lookup === "goLive") {
     // Commit-based (e.g. post mode with --merge-commit): scope PRs to the go-live
     // introduced by the merge commit. This excludes hotfixes merged directly to the
     // target branch at other times, which a plain "recent merged PRs" list catches.

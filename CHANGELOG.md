@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the notes of a promotion that was just merged list its Pull Requests and tickets again instead of none, and the merge commits offered are read from the git server, so the latest merge is there even when the local branch was not pulled.
 - [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): the branch being configured is no longer offered as one of its own merge targets.
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): deleting a standard profile from the repository no longer adds it to `destructiveChanges.xml`, where it failed every deployment with "cannot delete profile".
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): when it puts uncommitted changes aside to start the new branch clean, it now says so, names the files and says how to get them back.
