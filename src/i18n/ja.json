@@ -3630,6 +3630,7 @@
   "unableToUploadFile": "ファイル {{file}} をアップロードできません",
   "unableToUploadFile2": "ファイル {{file}} をアップロードできません: {{errorDetail}}",
   "unableToVerifyExistingMetadata": "既存の {{metadataType}} を確認できません: {{message}}",
+  "uncommittedChangesStashed": "新しいブランチをクリーンな状態で始めるため、コミットされていない変更を git stash で退避しました:\n{{localUpdates}}\n新しいブランチに戻すには、Source Control パネルの Stashes から Pop Latest Stash を選択してください (または git stash pop)。",
   "underusedPermsetsFileTitle": "使用率の低い権限セット",
   "underusedPermsetsFoundInOrg": "{{orgMarkdown}} で使用率の低い権限セット/権限セットグループが {{count}} 件見つかりました",
   "underusedPermsetsFoundSummary": "使用率の低い権限セット/権限セットグループが {{totalCount}} 件見つかりました（0 ユーザー: {{zeroTotal}} 件、1〜{{threshold}} ユーザー: {{limitedTotal}} 件）",

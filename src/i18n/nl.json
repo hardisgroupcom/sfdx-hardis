@@ -3633,6 +3633,7 @@
   "unableToUploadFile": "Kan bestand {{file}} niet uploaden",
   "unableToUploadFile2": "Kan bestand {{file}} niet uploaden: {{errorDetail}}",
   "unableToVerifyExistingMetadata": "Kan bestaande {{metadataType}} niet verifiëren: {{message}}",
+  "uncommittedChangesStashed": "Je niet gecommitte wijzigingen zijn met git stash opzijgezet, zodat de nieuwe branch schoon begint:\n{{localUpdates}}\nOm ze terug te halen op de nieuwe branch: Source Control-paneel, dan Stashes, dan Pop Latest Stash (of git stash pop).",
   "underusedPermsetsFileTitle": "Weinig gebruikte Permission Sets",
   "underusedPermsetsFoundInOrg": "{{count}} weinig gebruikte permission sets/groepen gevonden in {{orgMarkdown}}",
   "underusedPermsetsFoundSummary": "{{totalCount}} weinig gebruikte permission sets/groepen gevonden ({{zeroTotal}} met 0 gebruikers, {{limitedTotal}} met 1-{{threshold}} gebruikers)",

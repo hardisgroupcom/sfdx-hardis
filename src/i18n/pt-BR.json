@@ -3599,6 +3599,7 @@
   "unableToUploadFile": "Não foi possível fazer upload do arquivo {{file}}",
   "unableToUploadFile2": "Não foi possível fazer upload do arquivo {{file}}: {{errorDetail}}",
   "unableToVerifyExistingMetadata": "Não foi possível verificar o {{metadataType}} existente: {{message}}",
+  "uncommittedChangesStashed": "Suas alterações sem commit foram guardadas com git stash, para que o novo branch comece limpo:\n{{localUpdates}}\nPara recuperá-las no novo branch: painel Source Control, depois Stashes, depois Pop Latest Stash (ou git stash pop).",
   "underusedPermsetsFileTitle": "Conjuntos de Permissões Subutilizados",
   "underusedPermsetsFoundInOrg": "{{count}} conjuntos/grupos de permissões subutilizados encontrados em {{orgMarkdown}}",
   "underusedPermsetsFoundSummary": "Encontrados {{totalCount}} conjuntos/grupos de permissões subutilizados ({{zeroTotal}} com 0 usuários, {{limitedTotal}} com 1-{{threshold}} usuários)",

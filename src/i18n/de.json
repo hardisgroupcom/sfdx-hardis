@@ -3632,6 +3632,7 @@
   "unableToUploadFile": "Datei {{file}} konnte nicht hochgeladen werden",
   "unableToUploadFile2": "Datei {{file}} konnte nicht hochgeladen werden: {{errorDetail}}",
   "unableToVerifyExistingMetadata": "Vorhandene Metadaten {{metadataType}} konnten nicht überprüft werden: {{message}}",
+  "uncommittedChangesStashed": "Ihre nicht committeten Änderungen wurden mit git stash beiseitegelegt, damit der neue Branch sauber beginnt:\n{{localUpdates}}\nUm sie auf den neuen Branch zurückzuholen: Source-Control-Bereich, dann Stashes, dann Pop Latest Stash (oder git stash pop).",
   "underusedPermsetsFileTitle": "Wenig genutzte Permission Sets",
   "underusedPermsetsFoundInOrg": "{{count}} wenig genutzte Permission Sets/Gruppen in {{orgMarkdown}} gefunden",
   "underusedPermsetsFoundSummary": "{{totalCount}} wenig genutzte Permission Sets/Gruppen gefunden ({{zeroTotal}} mit 0 Benutzern, {{limitedTotal}} mit 1-{{threshold}} Benutzern)",

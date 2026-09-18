@@ -3633,6 +3633,7 @@
   "unableToUploadFile": "Impossible de téléverser le fichier {{file}}",
   "unableToUploadFile2": "Impossible de téléverser le fichier {{file}} : {{errorDetail}}",
   "unableToVerifyExistingMetadata": "Impossible de vérifier l'existence de {{metadataType}} : {{message}}",
+  "uncommittedChangesStashed": "Vos modifications non commitées ont été mises de côté avec git stash, pour que la nouvelle branche parte propre :\n{{localUpdates}}\nPour les récupérer sur la nouvelle branche : panneau Source Control, puis Stashes, puis Pop Latest Stash (ou git stash pop).",
   "underusedPermsetsFileTitle": "Ensembles d'autorisations sous-utilisés",
   "underusedPermsetsFoundInOrg": "{{count}} ensembles d'autorisations/groupes sous-utilisés trouvés dans {{orgMarkdown}}",
   "underusedPermsetsFoundSummary": "{{totalCount}} ensembles d'autorisations/groupes sous-utilisés trouvés ({{zeroTotal}} avec 0 utilisateur, {{limitedTotal}} avec 1 à {{threshold}} utilisateurs)",

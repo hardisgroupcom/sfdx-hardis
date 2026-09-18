@@ -3633,6 +3633,7 @@
   "unableToUploadFile": "No se puede cargar el archivo {{file}}",
   "unableToUploadFile2": "No se puede cargar el archivo {{file}}: {{errorDetail}}",
   "unableToVerifyExistingMetadata": "No se puede verificar la existencia de {{metadataType}}: {{message}}",
+  "uncommittedChangesStashed": "Tus cambios sin commit se han apartado con git stash, para que la nueva branch empiece limpia:\n{{localUpdates}}\nPara recuperarlos en la nueva branch: panel Source Control, luego Stashes, luego Pop Latest Stash (o git stash pop).",
   "underusedPermsetsFileTitle": "Permission Sets infrautilizados",
   "underusedPermsetsFoundInOrg": "Se encontraron {{count}} Permission Sets/Permission Set Groups infrautilizados en {{orgMarkdown}}",
   "underusedPermsetsFoundSummary": "Se encontraron {{totalCount}} Permission Sets/Permission Set Groups infrautilizados ({{zeroTotal}} con 0 usuarios, {{limitedTotal}} con entre 1 y {{threshold}} usuarios)",

@@ -3633,6 +3633,7 @@
   "unableToUploadFile": "Nie można przesłać pliku {{file}}",
   "unableToUploadFile2": "Nie można przesłać pliku {{file}}: {{errorDetail}}",
   "unableToVerifyExistingMetadata": "Nie można zweryfikować istniejących metadanych {{metadataType}}: {{message}}",
+  "uncommittedChangesStashed": "Niezatwierdzone zmiany zostały odłożone za pomocą git stash, aby nowy branch zaczynał się od czystego stanu:\n{{localUpdates}}\nAby przywrócić je na nowym branchu: panel Source Control, następnie Stashes, następnie Pop Latest Stash (lub git stash pop).",
   "underusedPermsetsFileTitle": "Rzadko używane Permission Sets",
   "underusedPermsetsFoundInOrg": "Znaleziono {{count}} rzadko używanych Permission Sets/grup w {{orgMarkdown}}",
   "underusedPermsetsFoundSummary": "Znaleziono {{totalCount}} rzadko używanych Permission Sets/grup ({{zeroTotal}} z 0 użytkownikami, {{limitedTotal}} z 1-{{threshold}} użytkownikami)",
