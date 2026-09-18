@@ -27,6 +27,7 @@ import {
   parsePackageXmlFile,
   parseXmlFile,
   removePackageXmlFilesContent,
+  writePackageXmlFile,
   writeXmlFile,
 } from '../../../common/utils/xmlUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -481,6 +482,45 @@ The command's technical implementation involves a series of orchestrated steps:
     }
   }
 
+  /**
+   * A standard profile (Admin, Standard User...) cannot be deleted in any org. Deleting its file from
+   * the repository means "stop versioning it", so it is taken out of the destructive delta: left
+   * there, it failed every deployment with "cannot delete profile".
+   */
+  private async keepStandardProfilesOutOfDestructiveChanges(diffDestructivePackageXml: string, fromCommit: string) {
+    if (!fs.existsSync(diffDestructivePackageXml)) {
+      return;
+    }
+    const destructive = await parsePackageXmlFile(diffDestructivePackageXml);
+    const profiles: string[] = destructive['Profile'] || [];
+    if (profiles.length === 0) {
+      return;
+    }
+    const filesAtBase = (await git().raw(['ls-tree', '-r', '--name-only', fromCommit])).split('\n');
+    const standard: string[] = [];
+    for (const profile of profiles) {
+      const file = filesAtBase.find((f) => f.endsWith(`/profiles/${profile}.profile-meta.xml`));
+      if (!file) {
+        continue;
+      }
+      const content = await git().show([`${fromCommit}:${file}`]).catch(() => '');
+      if (/<custom>\s*false\s*<\/custom>/.test(content)) {
+        standard.push(profile);
+      }
+    }
+    if (standard.length === 0) {
+      return;
+    }
+    const remaining = profiles.filter((profile) => !standard.includes(profile));
+    if (remaining.length > 0) {
+      destructive['Profile'] = remaining;
+    } else {
+      delete destructive['Profile'];
+    }
+    await writePackageXmlFile(diffDestructivePackageXml, destructive);
+    uxLog("action", this, c.cyan(t('standardProfilesNotDeleted', { profiles: standard.join(', ') })));
+  }
+
   private async upgradePackageXmlFilesWithDelta() {
     uxLog("action", this, c.cyan(t('updatingManifestPackageXmlAndManifestDestructivechanges')));
     // Retrieving info about current branch latest commit and master branch latest commit
@@ -515,6 +555,7 @@ The command's technical implementation involves a series of orchestrated steps:
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
       }
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
+      await this.keepStandardProfilesOutOfDestructiveChanges(diffDestructivePackageXml, gitDeltaScope.fromCommit);
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
         "log",

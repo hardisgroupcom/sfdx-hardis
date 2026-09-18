@@ -3460,6 +3460,7 @@
   "stagingNewEcaCredential": "Staging new credentials for {{appName}}...",
   "standardApiDescribeFailedForRetryingWith": "Standard API describe failed for {{sObjectName}}. Retrying with Tooling API...",
   "standardOauthAppsAlsoRevoked": "{{count}} standard Salesforce app authentication(s) (Salesforce CLI, mobile apps...) are also revoked by the refresh: users just need to log in again, nothing to reconfigure.",
+  "standardProfilesNotDeleted": "Standard profile(s) {{profiles}} removed from the repository: they are no longer versioned, and stay in the org, because Salesforce never deletes a standard profile.",
   "startFindingDuplicateValuesInXml": "Start finding duplicate values in XML metadata files.",
   "startingCodingAgentToFixErrors": "Starting coding agent {{agent}} to analyze and fix deployment errors...",
   "startingProfileAttributesPurgeProcessOnOrg": "Starting profile attributes purge process on org: {{conn}}",

@@ -3423,6 +3423,7 @@
   "stagingNewEcaCredential": "Preparando novas credenciais para {{appName}}...",
   "standardApiDescribeFailedForRetryingWith": "A descrição pela API padrão falhou para {{sObjectName}}. Tentando novamente com a API de Ferramentas...",
   "standardOauthAppsAlsoRevoked": "{{count}} autenticação(ões) de aplicativos padrão do Salesforce (Salesforce CLI, aplicativos móveis...) também são revogadas pelo refresh: os usuários só precisam fazer login novamente, não há nada para reconfigurar.",
+  "standardProfilesNotDeleted": "Perfil(is) padrão {{profiles}} removido(s) do repositório: não são mais versionados e permanecem na org, porque o Salesforce nunca exclui um perfil padrão.",
   "startFindingDuplicateValuesInXml": "Iniciando a busca por valores duplicados em arquivos de metadados XML.",
   "startingProfileAttributesPurgeProcessOnOrg": "Iniciando o processo de limpeza de atributos de perfil na org: {{conn}}",
   "startingTheRetrieveOfChunks": "Iniciando a recuperação de {{packageXmlChunkFiles}} blocos...",

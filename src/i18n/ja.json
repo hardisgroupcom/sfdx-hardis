@@ -3453,6 +3453,7 @@
   "stagingNewEcaCredential": "{{appName}} の新しい資格情報をステージングしています...",
   "standardApiDescribeFailedForRetryingWith": "{{sObjectName}} の標準APIのdescribeが失敗しました。Tooling APIで再試行しています...",
   "standardOauthAppsAlsoRevoked": "{{count}} 件の標準Salesforceアプリ認証(Salesforce CLI、モバイルアプリなど)もrefreshによって取り消されます。ユーザーは再度ログインするだけで、再設定は不要です。",
+  "standardProfilesNotDeleted": "標準プロファイル {{profiles}} をリポジトリから削除しました。バージョン管理の対象外になりますが、Salesforce は標準プロファイルを削除しないため、org には残ります。",
   "startFindingDuplicateValuesInXml": "XMLメタデータファイル内の重複値の検索を開始します。",
   "startingCodingAgentToFixErrors": "デプロイエラーの分析と修正のためにコーディングエージェント {{agent}} を起動しています...",
   "startingProfileAttributesPurgeProcessOnOrg": "組織 {{conn}} でプロファイル属性のパージプロセスを開始しています",

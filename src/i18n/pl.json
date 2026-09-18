@@ -3456,6 +3456,7 @@
   "stagingNewEcaCredential": "Wystawianie nowych poświadczeń dla {{appName}}...",
   "standardApiDescribeFailedForRetryingWith": "Opis standardowego API nie powiódł się dla {{sObjectName}}. Ponowna próba z Tooling API...",
   "standardOauthAppsAlsoRevoked": "{{count}} standardowych uwierzytelnień aplikacji Salesforce (Salesforce CLI, aplikacje mobilne...) jest również cofanych przez refresh: użytkownicy muszą jedynie zalogować się ponownie, nie ma nic do ponownej konfiguracji.",
+  "standardProfilesNotDeleted": "Profil(e) standardowe {{profiles}} usunięto z repozytorium: nie są już wersjonowane i pozostają w org, ponieważ Salesforce nigdy nie usuwa profilu standardowego.",
   "startFindingDuplicateValuesInXml": "Rozpocznij wyszukiwanie zduplikowanych wartości w plikach metadanych XML.",
   "startingCodingAgentToFixErrors": "Uruchamianie agenta kodującego {{agent}} w celu analizy i naprawy błędów wdrożenia...",
   "startingProfileAttributesPurgeProcessOnOrg": "Uruchamianie procesu czyszczenia atrybutów Profile w org: {{conn}}",

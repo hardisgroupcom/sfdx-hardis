@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): deleting a standard profile from the repository no longer adds it to `destructiveChanges.xml`, where it failed every deployment with "cannot delete profile".
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): when it puts uncommitted changes aside to start the new branch clean, it now says so, names the files and says how to get them back.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) and [hardis:org:fix:listviewmine](https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/): list views are set back to Mine again on current Lightning pages, and a failure to do so no longer fails a deployment that succeeded.
 - [hardis:project:clean:listviews](https://sfdx-hardis.cloudity.com/hardis/project/clean/listviews/): the log names the list view it converted instead of printing `[object Object]`.

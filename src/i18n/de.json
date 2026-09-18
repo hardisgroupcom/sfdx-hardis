@@ -3455,6 +3455,7 @@
   "stagingNewEcaCredential": "Neue Anmeldedaten für {{appName}} werden bereitgestellt...",
   "standardApiDescribeFailedForRetryingWith": "Standard-API describe fehlgeschlagen für {{sObjectName}}. Wiederholung mit Tooling API...",
   "standardOauthAppsAlsoRevoked": "{{count}} Standard-Salesforce-App-Authentifizierung(en) (Salesforce CLI, mobile Apps...) werden durch den Refresh ebenfalls widerrufen: Benutzer müssen sich einfach erneut anmelden, es ist nichts neu zu konfigurieren.",
+  "standardProfilesNotDeleted": "Standardprofil(e) {{profiles}} aus dem Repository entfernt: Sie werden nicht mehr versioniert und bleiben in der Org, da Salesforce ein Standardprofil nie löscht.",
   "startFindingDuplicateValuesInXml": "Suche nach doppelten Werten in XML-Metadatendateien wird gestartet.",
   "startingCodingAgentToFixErrors": "Starte Coding-Agent {{agent}} zur Analyse und Behebung von Deployment-Fehlern...",
   "startingProfileAttributesPurgeProcessOnOrg": "Bereinigungsprozess für Profile-Attribute wird auf Org gestartet: {{conn}}",

@@ -3456,6 +3456,7 @@
   "stagingNewEcaCredential": "Nieuwe inloggegevens voor {{appName}} stagen...",
   "standardApiDescribeFailedForRetryingWith": "Standaard API describe mislukt voor {{sObjectName}}. Opnieuw proberen met Tooling API...",
   "standardOauthAppsAlsoRevoked": "{{count}} standaard Salesforce-app-authenticatie(s) (Salesforce CLI, mobiele apps...) worden ook ingetrokken door de refresh: gebruikers hoeven alleen opnieuw in te loggen, er hoeft niets opnieuw te worden geconfigureerd.",
+  "standardProfilesNotDeleted": "Standaardprofiel(en) {{profiles}} uit de repository verwijderd: ze worden niet meer geversioneerd en blijven in de org, want Salesforce verwijdert nooit een standaardprofiel.",
   "startFindingDuplicateValuesInXml": "Begin met het zoeken naar dubbele waarden in XML-metadatabestanden.",
   "startingCodingAgentToFixErrors": "Coding agent {{agent}} starten om deployment fouten te analyseren en te herstellen...",
   "startingProfileAttributesPurgeProcessOnOrg": "Profielattributen opschoningsproces starten op org: {{conn}}",

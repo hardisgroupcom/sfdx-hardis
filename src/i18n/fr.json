@@ -3456,6 +3456,7 @@
   "stagingNewEcaCredential": "Mise en attente de nouveaux identifiants pour {{appName}}...",
   "standardApiDescribeFailedForRetryingWith": "L'API standard describe a échoué pour {{sObjectName}}. Nouvelle tentative avec l'API Tooling...",
   "standardOauthAppsAlsoRevoked": "{{count}} authentification(s) d'application(s) standard Salesforce (Salesforce CLI, applications mobiles...) sont également révoquée(s) par le rafraîchissement : les utilisateurs doivent simplement se reconnecter, rien à reconfigurer.",
+  "standardProfilesNotDeleted": "Profil(s) standard {{profiles}} retiré(s) du dépôt : ils ne sont plus versionnés et restent dans l'org, car Salesforce ne supprime jamais un profil standard.",
   "startFindingDuplicateValuesInXml": "Démarrage de la recherche de valeurs en doublon dans les fichiers XML de métadonnées.",
   "startingCodingAgentToFixErrors": "Démarrage de l agent de codage {{agent}} pour analyser et corriger les erreurs de déploiement...",
   "startingProfileAttributesPurgeProcessOnOrg": "Démarrage du processus de purge des attributs de profil sur l'org : {{conn}}",
