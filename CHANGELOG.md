@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/):
+  - Connected Apps that allow users to authorize themselves were reported as secured when their OAuth tokens were fetched with the Bulk API: they are now reported as unsecured, so the number of findings can rise after upgrading.
+  - A Connected App migrated to an External Client App is no longer reported as unsecured when the External Client App requires admin pre-approval, its OAuth tokens are now checked against the External Client App policy. When that policy can not be read, the Connected App settings are kept, and the apps whose status comes from an External Client App are logged so they can be checked.
+  - OAuth tokens issued before a Connected App was reinstalled are now matched to it by name, instead of being reported as unsecured whatever the app settings.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
 - [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/) has its own documentation page, split from [Hotfixes](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/), and both are illustrated with diagrams.
 - [hardis:org:retrieve:sources:retrofit](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/retrofit/) is deprecated: recover a change made by hand in an org as a User Story instead.
