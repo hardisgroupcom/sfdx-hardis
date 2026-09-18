@@ -16,6 +16,8 @@ import {
   getGitRepoUrl,
   git,
   gitFetch,
+  isAgentMode,
+  isCI,
   uxLog,
 } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
@@ -147,6 +149,21 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   if (availableTargetBranches === null && config.developmentBranch) {
     uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(config.developmentBranch) })));
     return config.developmentBranch;
+  }
+
+  // A project that declares a single target branch is not asking a question:
+  // it is stating a fact. Same when nobody can answer, in CI or in agent mode.
+  if (availableTargetBranches && availableTargetBranches.length === 1) {
+    const onlyBranch = availableTargetBranches[0].split(',')[0];
+    uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(onlyBranch) })));
+    return onlyBranch;
+  }
+  if ((isCI || isAgentMode()) && availableTargetBranches) {
+    const defaultBranch = config.developmentBranch && availableTargetBranches.some((branch) => branch.split(',')[0] === config.developmentBranch)
+      ? config.developmentBranch
+      : availableTargetBranches[0].split(',')[0];
+    uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(defaultBranch) })));
+    return defaultBranch;
   }
 
   // Request info to build branch name. ex features/config/MYTASK

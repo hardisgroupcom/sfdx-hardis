@@ -29,6 +29,7 @@ Key functionalities:
 
 - **Interactive Org Selection:** Displays a list of your authenticated Salesforce orgs, allowing you to choose one.
 - **Default Org Setting:** Sets the selected org as the default for your Salesforce CLI environment.
+- **Org Naming:** When you connect a new org, it is given an alias, so it shows up under a short name instead of its username everywhere afterwards. Pass \`--alias\`, or accept the suggestion the command makes from the org's instance URL.
 - **Dev Hub Filtering:** The \`--devhub\` flag filters the list to show only Dev Hub orgs.
 - **Scratch Org Filtering:** The \`--scratch\` flag filters the list to show only scratch orgs related to your default Dev Hub.
 - **Connection Verification:** Ensures that the selected org is connected and prompts for re-authentication if necessary.
@@ -51,6 +52,7 @@ The command's technical implementation involves:
   public static examples = [
     '$ sf hardis:org:select',
     '$ sf hardis:org:select --devhub',
+    '$ sf hardis:org:select --alias acme-dev',
     '$ sf hardis:org:select --username myuser@example.com --set-default',
     '$ sf hardis:org:select --username myuser@example.com --no-set-default',
     '$ sf hardis:org:select --reconnect --instance-url https://myorg.salesforce.com --set-default',
@@ -73,6 +75,10 @@ The command's technical implementation involves:
     username: Flags.string({
       char: 't',
       description: "Username of the org you want to authenticate (overrides the interactive prompt)",
+    }),
+    alias: Flags.string({
+      char: 'a',
+      description: "Alias to give the org you connect. When omitted, the command suggests one built from the org instance URL",
     }),
     reconnect: Flags.boolean({
       char: 'r',
@@ -190,7 +196,7 @@ The command's technical implementation involves:
     } else {
       // Prompt user to select an org
       // promptOrg handles connection verification and default-setting
-      org = await promptOrg(this, { devHub, setDefault, scratch, useCache: false });
+      org = await promptOrg(this, { devHub, setDefault, scratch, useCache: false, alias: flags.alias });
     }
 
     // Never report a success if we did not end up with a connected org

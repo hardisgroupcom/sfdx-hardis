@@ -35,6 +35,9 @@ type JiraAuth = {
   headers?: () => Record<string, string>;
 };
 
+/** Host of the links built for JIRA identifiers when no JIRA host is configured */
+export const JIRA_HOST_PLACEHOLDER = "https://define.JIRA_HOST.in.cicd.variables/";
+
 export class JiraProvider extends TicketProviderRoot {
   public static readonly providerKey = "jira" as const;
   public static readonly providerLabel = "JIRA";
@@ -322,7 +325,7 @@ export class JiraProvider extends TicketProviderRoot {
     }
     // Extract JIRA tickets using Identifiers
     const config = options.config || (await getConfig("project"));
-    const jiraBaseUrl = getEnvVar("JIRA_HOST") || config.jiraHost || "https://define.JIRA_HOST.in.cicd.variables/";
+    const jiraBaseUrl = getEnvVar("JIRA_HOST") || config.jiraHost || JIRA_HOST_PLACEHOLDER;
     const sanitizedBaseUrl = jiraBaseUrl.startsWith("http") ? jiraBaseUrl : `https://${jiraBaseUrl}`;
     const jiraRegex = getEnvVar("JIRA_TICKET_REGEX") || config.jiraTicketRegex || "(?<=[^a-zA-Z0-9_-]|^)([A-Za-z0-9]{2,10}-\\d{1,6})(?=[^a-zA-Z0-9_-]|$)";
     const jiraRefRegex = new RegExp(jiraRegex, "gm");

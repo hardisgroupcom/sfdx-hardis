@@ -14,6 +14,7 @@ import {
   uxLog,
 } from '../../../common/utils/index.js';
 import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import {
   initApexScripts,
   initOrgData,
@@ -56,6 +57,7 @@ Key features include:
 - **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
+- **Sandbox initialization:** Only when \`offerSandboxInit: true\` is set, the command offers to initialize the selected sandbox: installed packages, \`initPermissionSets\`, \`scratchOrgInitApexScripts\` and \`scripts/data/ScratchInit\`. It never deploys metadata.
 
 - **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
@@ -106,7 +108,7 @@ The command's logic orchestrates various underlying processes:
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
 - **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
 - **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`) via \`execCommand\` and \`execSfdxJson\
-- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed.
+- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed. A scratch org that a major branch deploys to is never offered for reuse.
 - **WebSocket Communication:** Sends refresh status messages via \`WebSocketClient.sendRefreshStatusMessage()\` to update connected VS Code clients.
 </details>
 `;
@@ -597,8 +599,12 @@ The command's logic orchestrates various underlying processes:
         : null;
     }
 
-    const hubOrgUsername = flags['target-dev-hub'].getUsername();
-    const scratchOrgList = await MetadataUtils.listLocalOrgs('scratch', { devHubUsername: hubOrgUsername });
+    const hubOrgUsername = flags['target-dev-hub']?.getUsername();
+    // A scratch org a major branch deploys to is not a place to build a User Story in
+    const majorOrgUsernames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.targetUsername).filter(Boolean);
+    const scratchOrgList = (await MetadataUtils.listLocalOrgs('scratch', { devHubUsername: hubOrgUsername })).filter(
+      (scratchOrg: any) => !majorOrgUsernames.includes(scratchOrg.username)
+    );
     const currentOrg = await MetadataUtils.getCurrentOrg();
 
     const baseChoices = [
@@ -705,10 +711,13 @@ The command's logic orchestrates various underlying processes:
 
     // Initialize / Update existing sandbox if available
     if (!(config.sharedDevSandboxes === true)) {
+      // Only offered when the project asks for it: the metadata comes from a backpromote, and the
+      // initialization left (packages, permission sets, scripts, data) is not what most teams expect
+      const offerSandboxInit = config.offerSandboxInit === true;
       let initSandbox = false;
-      if (agentInputs) {
+      if (offerSandboxInit && agentInputs) {
         initSandbox = agentInputs.initSandbox === true;
-      } else {
+      } else if (offerSandboxInit) {
         const initSandboxResponse = await prompts({
           type: 'select',
           name: 'value',

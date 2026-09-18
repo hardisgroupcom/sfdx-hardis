@@ -1,6 +1,6 @@
 import c from "chalk";
 import sortArray from '../utils/sortArray.js';
-import { JiraProvider } from "./jiraProvider.js";
+import { JIRA_HOST_PLACEHOLDER, JiraProvider } from "./jiraProvider.js";
 import { clearTicketCollectionIssues, TicketProviderRoot } from "./ticketProviderRoot.js";
 import { uxLog } from "../utils/index.js";
 import { GenericTicketingProvider } from "./genericProvider.js";
@@ -77,7 +77,18 @@ export abstract class TicketProvider {
       const providerTickets = await ticketProvider.getTicketsFromString(text, optionsWithConfig);
       tickets.push(...providerTickets);
     }
-    const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
+    // JIRA recognizes any PROJ-123 identifier, even with no JIRA host configured, and then links
+    // it to a placeholder host. When another provider claims the same identifier with a real URL,
+    // that one is the ticket: the placeholder would only add a dead link next to it.
+    const withoutPlaceholders = tickets.filter(
+      (ticket) =>
+        !(
+          ticket.provider === "JIRA" &&
+          ticket.url?.startsWith(JIRA_HOST_PLACEHOLDER) &&
+          tickets.some((other) => other !== ticket && other.id === ticket.id && other.provider !== "JIRA")
+        )
+    );
+    const ticketsSorted: Ticket[] = sortArray(withoutPlaceholders, { by: ["id"], order: ["asc"] });
     return ticketsSorted;
   }
 

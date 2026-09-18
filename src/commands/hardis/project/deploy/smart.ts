@@ -599,10 +599,16 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const deployExecuted = !this.checkOnly && deployXmlCount > 0 ? true : false;
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
-    if (this.configInfo.listViewsToSetToMine && deployExecuted) {
-      await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
-        debug: this.debugMode,
-      });
+    // A list view left on "Everything" is a nuisance, not a failed deployment: the metadata is in the
+    // org by now, so a browser that cannot reach a page must not fail the job.
+    if ((this.configInfo.listViewsToSetToMine || []).length > 0 && deployExecuted) {
+      try {
+        await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
+          debug: this.debugMode,
+        });
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(t('listViewsMineNotRestored', { message: e.message })));
+      }
     }
 
     // Post-destructive Flow deletions. A blocked Flow fails the command before any success comment or

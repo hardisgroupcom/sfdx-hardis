@@ -38,10 +38,11 @@ export class GenericTicketingProvider extends TicketProviderRoot {
     if (!this.isAvailable(config)) {
       return tickets;
     }
-    // Extract tickets using GENERIC_TICKETING_PROVIDER_REGEX regexp
-    const ticketRefRegexExec = new RegExp(getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX") || "", "g");
+    // Same sources as isAvailable(): the variables first, then the project configuration.
+    // Reading only the variables made a provider declared in .sfdx-hardis.yml match nothing.
+    const ticketRefRegexExec = new RegExp(getEnvVar("GENERIC_TICKETING_PROVIDER_REGEX") || config.genericTicketingProviderRegex, "g");
     const regexMatches = await extractRegexMatches(ticketRefRegexExec, text);
-    const ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER") || "";
+    const ticketUrlBuilder = getEnvVar("GENERIC_TICKETING_PROVIDER_URL_BUILDER") || config.genericTicketingProviderUrlBuilder;
     for (const genericTicketRef of regexMatches) {
       const genericTicketUrl = ticketUrlBuilder.replace("{REF}", genericTicketRef);
       if (!tickets.some((ticket) => ticket.url === genericTicketUrl)) {

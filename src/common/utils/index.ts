@@ -824,6 +824,9 @@ export async function checkGitClean(options: any) {
       try {
         await execCommand('git add --all', this, { output: true, fail: true });
         await execCommand('git stash', this, { output: true, fail: true });
+        // Say it: a file somebody was writing disappears from the working tree here, and a
+        // "git stash" line among the commands does not tell anyone where it went
+        uxLog("action", this, c.cyan(t('uncommittedChangesStashed', { localUpdates })));
       } catch (e) {
         uxLog("warning", this, c.yellow(c.bold(t('youMightNeedToRunTheFollowing'))));
         uxLog("warning", this, c.yellow(c.bold(t('gitConfigSystemCoreLongpathsTrue'))));

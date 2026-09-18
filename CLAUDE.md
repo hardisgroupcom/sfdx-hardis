@@ -49,6 +49,18 @@ Most users run sfdx-hardis through the VS Code extension [vscode-sfdx-hardis](ht
 - A feature available in both must behave the same: the CLI is the engine and the extension passes it flags. Never reimplement CLI logic in the extension.
 - Work in the extension follows the extension's own `CLAUDE.md`, `.claude/skills` (`analyze`, `design`, `implement`, `test`...) and `.claude/agents`, not the sfdx-hardis ones. One PR per repository, cross-linked.
 
+## Training (sfdx-hardis-training)
+
+The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/) course walks learners through this product, click by click, with screenshots taken from the real extension. A change here can break a lab silently: the text still reads fine and the click no longer does what it says.
+
+- `training-impact` skill: load it for any change touching a command name or flag, a prompt, `--json` output, a config key, a report file, a doc page URL, an LWC panel, or any behavior a lab walks through. It reads `training-manifest.json` from the sibling clone and names the affected labs.
+- `training-update` skill: load it once `training-impact` says there is an impact. It performs the edits in the sibling training repository, including regenerating the Helios screenshots.
+- **The analysis and the design always state the training impact, even when it is "none".**
+- `node scripts/check-training-impact.mjs` names the affected labs mechanically. It only covers names: a behavior that changed under an unchanged name needs the skill.
+- `sfdx-hardis-training` is always a sibling directory, cloned there if absent, like `../vscode-sfdx-hardis` already is.
+
+One Pull Request per repository, cross-linked. Order: CLI, then the extension, then the training. A change that invalidates a lab is not finished until the training Pull Request is open.
+
 ## Behavior Preferences
 
 - Always continue iterating until the task is complete -- do not ask to continue.

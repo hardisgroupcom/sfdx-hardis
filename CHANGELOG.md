@@ -2,6 +2,21 @@
 
 ## [beta] (main)
 
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): deleting a standard profile from the repository no longer adds it to `destructiveChanges.xml`, where it failed every deployment with "cannot delete profile".
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): when it puts uncommitted changes aside to start the new branch clean, it now says so, names the files and says how to get them back.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) and [hardis:org:fix:listviewmine](https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/): list views are set back to Mine again on current Lightning pages, and a failure to do so no longer fails a deployment that succeeded.
+- [hardis:project:clean:listviews](https://sfdx-hardis.cloudity.com/hardis/project/clean/listviews/): the log names the list view it converted instead of printing `[object Object]`.
+- Generic ticketing: `genericTicketingProviderRegex` and `genericTicketingProviderUrlBuilder` declared in `.sfdx-hardis.yml` now work, and a ticket they find is no longer listed a second time with a placeholder JIRA link.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): the scratch orgs your major branches deploy to are no longer offered as orgs to build a User Story in.
+- A command that stores a value in a `.sfdx-hardis.yml` file now keeps the comments and the formatting of that file instead of rewriting it.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) now keeps the comments of an existing `mkdocs.yml`, and only rewrites the keys it changes.
+- A project that declares a single `availableTargetBranches` is no longer asked which target branch to use, and `--agent` no longer stops on that question.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a project with no list view to restore no longer starts a browser after the deployment, which failed the job with a navigation timeout although the deployment had succeeded.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): no longer asks whether to update the sandbox, unless the project sets `offerSandboxInit: true`. Metadata reaches a sandbox through a backpromote.
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): an org you connect is now given an alias, suggested from its instance URL, so it appears under a short name instead of its username.
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
+- CI authentication with `SFDX_AUTH_URL_<ALIAS>` now sets the org as the default one, like JWT already did: the job authenticated and the next command failed with `NoDefaultEnvError`.
+- `sf commands` no longer crashes with `ReferenceError: DS_PROMETHEUS is not defined`: a command description containing `${...}` made oclif evaluate it while reading its own manifest.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
 - [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/) has its own documentation page, split from [Hotfixes](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/), and both are illustrated with diagrams.
 - [hardis:org:retrieve:sources:retrofit](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/retrofit/) is deprecated: recover a change made by hand in an org as a User Story instead.
