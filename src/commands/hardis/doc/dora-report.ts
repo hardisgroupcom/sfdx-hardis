@@ -28,6 +28,7 @@ import {
   classifyMttr,
   classifyReworkRate,
   groupByWeek,
+  weekKey,
 } from "../../../common/utils/doraUtils.js";
 import { median, percentile, round1 } from "../../../common/utils/statsUtils.js";
 import { CONSTANTS } from "../../../config/index.js";
@@ -955,11 +956,7 @@ In agent mode:
       for (const pr of pullRequests as CommonPullRequestInfo[]) {
         const d = parseDatetime(pr.mergedDate);
         if (!d) continue;
-        const year = d.getFullYear();
-        const jan1 = new Date(year, 0, 1);
-        const dayOfYear = Math.floor((d.getTime() - jan1.getTime()) / 86400000) + 1;
-        const weekNum = Math.ceil(dayOfYear / 7);
-        const key = `${year}-W${String(weekNum).padStart(2, "0")}`;
+        const key = weekKey(d);
         const lt = daysBetween(parseDatetime(pr.createdDate), d);
         if (lt > 0) {
           const arr = prByWeek.get(key) || [];
