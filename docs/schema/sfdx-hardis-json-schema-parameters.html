@@ -8471,7 +8471,7 @@ While the list is missing, sf hardis:project:promotion:create stops and asks for
             />
         </svg>
     <a href="#genericTicketingProviderUrlBuilder" onclick="anchorLink('genericTicketingProviderUrlBuilder')">genericTicketingProviderUrlBuilder</a></div><h4>Generic Ticketing Provider URL Builder</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>URL pattern to build ticket URLs from ticket IDs. Use {ticketId} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{ticketId}</p>
+<span class="description"><p>URL pattern to build ticket URLs from ticket IDs. Use {REF} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{REF}</p>
 </span>
         
 
@@ -8480,7 +8480,45 @@ While the list is missing, sf hardis:project:promotion:create stops and asks for
 
         <br/>
 <div class="badge badge-secondary">Example:</div>
-<br/><div id="genericTicketingProviderUrlBuilder_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://tickets.mycompany.com/ticket/{ticketId}&quot;</span>
+<br/><div id="genericTicketingProviderUrlBuilder_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://tickets.mycompany.com/ticket/{REF}&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongenericTicketingProviderDetailsUrlBuilder">
+    <div class="card">
+        <div class="card-header" id="headinggenericTicketingProviderDetailsUrlBuilder">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#genericTicketingProviderDetailsUrlBuilder"
+                        aria-expanded="" aria-controls="genericTicketingProviderDetailsUrlBuilder" onclick="setAnchor('#genericTicketingProviderDetailsUrlBuilder')"><span class="property-name">genericTicketingProviderDetailsUrlBuilder</span></button>
+            </h2>
+        </div>
+
+        <div id="genericTicketingProviderDetailsUrlBuilder"
+             class="collapse property-definition-div" aria-labelledby="headinggenericTicketingProviderDetailsUrlBuilder"
+             data-parent="#accordiongenericTicketingProviderDetailsUrlBuilder">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#genericTicketingProviderDetailsUrlBuilder" onclick="anchorLink('genericTicketingProviderDetailsUrlBuilder')">genericTicketingProviderDetailsUrlBuilder</a></div><h4>Generic Ticketing Provider Details URL Builder</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Optional. URL pattern of a JSON document describing a ticket, with {REF} as placeholder for the ticket ID. The JSON gives the ticket title in subject (or title, or summary) and optionally its status in status. When set, Pull Request comments, release notes and notifications show the title and the status next to each ticket link. Send a token with the GENERIC<em>TICKETING</em>PROVIDER_TOKEN variable when the URL requires one.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="genericTicketingProviderDetailsUrlBuilder_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://tickets.mycompany.com/api/ticket/{REF}.json&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -12868,6 +12906,44 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
 </div><div id="monitoringMfaPhishingResistantLookbackDays_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">180</span>
 </pre></div>
 </div><div id="monitoringMfaPhishingResistantLookbackDays_ex3" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">365</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionmonitoringRepository">
+    <div class="card">
+        <div class="card-header" id="headingmonitoringRepository">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringRepository"
+                        aria-expanded="" aria-controls="monitoringRepository" onclick="setAnchor('#monitoringRepository')"><span class="property-name">monitoringRepository</span></button>
+            </h2>
+        </div>
+
+        <div id="monitoringRepository"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringRepository"
+             data-parent="#accordionmonitoringRepository">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringRepository" onclick="anchorLink('monitoringRepository')">monitoringRepository</a></div><h4>Monitoring repository</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="monitoringRepository_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://github.com/my-company/my-project-monitoring&quot;</span>
 </pre></div>
 </div>
             </div>
