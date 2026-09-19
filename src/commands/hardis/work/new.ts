@@ -602,7 +602,8 @@ The command's logic orchestrates various underlying processes:
     const hubOrgUsername = flags['target-dev-hub']?.getUsername();
     // A scratch org a major branch deploys to is not a place to build a User Story in
     const majorOrgUsernames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.targetUsername).filter(Boolean);
-    const scratchOrgList = (await MetadataUtils.listLocalOrgs('scratch', { devHubUsername: hubOrgUsername })).filter(
+    // Read fresh: a cached list still offers scratch orgs deleted since, and misses the new ones
+    const scratchOrgList = (await MetadataUtils.listLocalOrgs('scratch', { devHubUsername: hubOrgUsername, useCache: false })).filter(
       (scratchOrg: any) => !majorOrgUsernames.includes(scratchOrg.username)
     );
     const currentOrg = await MetadataUtils.getCurrentOrg();

@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): the scratch orgs offered to build a User Story in are read fresh, so a scratch org deleted and created again under the same alias is no longer offered in its old version.
 - New configuration key `monitoringRepository`: the address of the monitoring repository of a CI/CD project, which the Org Monitoring Workbench of VS Code offers to open.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): profiles, permission sets, roles, rules and field references are read from the package directories of `sfdx-project.json` only, so another copy of the metadata elsewhere in the repository no longer documents the same item twice or writes an invalid JSON file.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): works in a freshly cloned empty repository with no default org, and on GitHub it now writes the monitoring workflow on `main` with the org in it, so that the nightly run starts without copying and editing the file by hand, and the GitHub monitoring job no longer fails on its commit step after the backup.
