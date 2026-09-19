@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): the cleaning keeps the final line break of the XML files it rewrites, so a cleaned file no longer shows a change on its last line.
+- GitHub monitoring workflow: the nightly backup commits the org state again. The job runs as root in a container, git refused the workspace checked out by another user, and every run reported no change. Existing monitoring repositories need the `git config --global --add safe.directory` line of the new template in each job.
 - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): the deployments of the current week are shown in the weekly chart and table again, and weeks are numbered the ISO way, starting on Monday.
 - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): without a git provider token, squash-merged Pull Requests of GitHub and Azure DevOps are counted too.
 - [Generic ticketing](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/): new optional `genericTicketingProviderDetailsUrlBuilder`, so that Pull Request comments, release notes and notifications show the title and status of each ticket, read from one JSON document per ticket.

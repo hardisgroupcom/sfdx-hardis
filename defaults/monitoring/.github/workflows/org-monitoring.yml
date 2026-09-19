@@ -99,6 +99,9 @@ jobs:
 
         run: |
           echo "Monitoring sfdx-hardis: Metadata Backup for \"$CONFIG_BRANCH\""
+          # The job runs as root in a container, over a workspace checked out by another user:
+          # without this, git refuses the repository and the backup sees no change to commit
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           sf hardis:auth:login
           sf hardis:org:monitor:backup
 
@@ -176,6 +179,9 @@ jobs:
         run: |
           echo "Run apex tests against \"$CONFIG_BRANCH\""
           git pull origin ${{ matrix.branch }} || echo "Issue when pulling latest branch state, but that should be ok"
+          # The job runs as root in a container, over a workspace checked out by another user:
+          # without this, git refuses the repository and the backup sees no change to commit
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           sf hardis:auth:login
           sf hardis:org:test:apex
 
@@ -307,6 +313,9 @@ jobs:
         run: |
           echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
           git pull origin ${{ matrix.branch }} || echo "Issue when pulling latest branch state, but that should be ok"
+          # The job runs as root in a container, over a workspace checked out by another user:
+          # without this, git refuses the repository and the backup sees no change to commit
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           sf hardis:auth:login
           sf hardis:org:monitor:all
 
