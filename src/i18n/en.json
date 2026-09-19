@@ -2098,7 +2098,6 @@
   "manualActionsInventoryTitle": "Sandbox refresh manual actions inventory",
   "manualDeployDocInstructions": "You can manually deploy the Static Resource {{resName}}, the Visualforce page {{resName}}, and the Custom Tab {{resName}} to your org:\n  - Static Resource: {{mkDocsResourcePath}} (If you upload via the UI, zip the folder and ensure index.html is at the root of the zip.)\n  - Visualforce page: {{vfPageMetaFile}}\n  - Custom Tab: {{tabMetaFile}}\n  - Permission Set: {{permissionSetFile}}\nYou can also run the documentation locally using: \"zensical serve\".",
   "manualInstructionsExternalClientApp": "\n**MANUAL INSTRUCTIONS**\nIf deployment fails, create the External Client App manually:\n1. Go to Setup > App Manager > New External Client App\n2. Set App Name: {{appName}}\n3. Contact Email: {{contactEmail}}\n4. Enable OAuth Settings with scopes: Api, Web, RefreshToken\n5. Upload the certificate file: {{crtFile}} (delete from your computer after!)\n6. Copy Consumer Key to CI/CD variable SFDX_CLIENT_ID_{{branchNameUpper}}",
-  "manuallyUpdateMkdocsYml": "You should probably manually update mkdocs.yml to add the newly generated documentation pages",
   "markdownDiffBetweenFlowStatesGeneratedIn": "Markdown diff between {{fileHistory}} Flow states generated in {{diffMdFile}}",
   "markdownDocumentationGeneratedForFlow": "Markdown documentation generated for {{inputFiles}} Flow(s).",
   "markdownFlowDiffDocumentationGeneratedFor": "Markdown Flow diff documentation generated for {{path}}.",
