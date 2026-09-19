@@ -210,6 +210,11 @@ cannot do. The rules below are hard rules, not preferences.
    `labs/_assets/annotated/`, and labs reference the annotated copy, never the raw one
 3. **`labs/_assets/annotated/` is generated.** Never retouch an image there by hand: change the
    spec and re-run the generator
+3bis. **A pill reference in the text is painted in the colour of its pill.** `scripts/build/site.mjs`
+   turns `**(2)**`, and a `(2)` inside a bold run such as `**Save (3)**`, into a coloured span, and
+   generates the stylesheet from the palette `annotate.mjs` draws the pills with, so the two cannot
+   drift. Write the plain markdown and never a colour, an emoji or a styled span by hand; a number
+   in ordinary, non-bold prose is left alone on purpose
 4. **A pill never covers anything the learner has to read**: text, a label, a field value, an icon.
    Put it outside the highlighted box, which is what the `px` / `py` keys of the spec are for.
    After drawing, look at the result and move any pill that landed on something
