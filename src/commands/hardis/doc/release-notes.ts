@@ -316,6 +316,7 @@ In agent mode:
       const pdfResult = await generatePdfFileFromMarkdown(pdfSourceFile, {
         landscape: flags.portrait !== true,
         extraCss: "td:first-child, th:first-child { white-space: nowrap; }",
+        silent: true,
       });
       if (pdfResult) {
         const defaultPdfFile = mdOutputFile.replace(/\.md$/i, ".pdf");
@@ -329,6 +330,7 @@ In agent mode:
           pdfFile = typeof pdfResult === "string" ? pdfResult : undefined;
         }
         if (pdfFile) {
+          uxLog("success", this, c.green(t("pdfFileGeneratedFromDocumentation", { markdownFile: mdOutputFile, outputPdfFile: c.bold(pdfFile) })));
           WebSocketClient.sendReportFileMessage(pdfFile, `${t("releaseNotesReportTitle")} (PDF)`, "report");
         }
       }
