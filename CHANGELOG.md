@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): without a git provider token, squash-merged Pull Requests of GitHub and Azure DevOps are counted too.
 - [Generic ticketing](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/): new optional `genericTicketingProviderDetailsUrlBuilder`, so that Pull Request comments, release notes and notifications show the title and status of each ticket, read from one JSON document per ticket.
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): the scratch orgs offered to build a User Story in are read fresh, so a scratch org deleted and created again under the same alias is no longer offered in its old version.
 - New configuration key `monitoringRepository`: the address of the monitoring repository of a CI/CD project, which the Org Monitoring Workbench of VS Code offers to open.

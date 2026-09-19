@@ -82,7 +82,7 @@ This command is part of [sfdx-hardis Documentation](${CONSTANTS.DOC_URL_ROOT}/sa
 <summary>Technical explanations</summary>
 
 The command queries \`DeployRequest\` records via the Salesforce Tooling API to build deployment metrics.
-It uses \`GitProvider.listPullRequests()\` to fetch merged PRs with date filtering, falling back to local \`git log --merges\` when no provider API is available.
+It uses \`GitProvider.listPullRequests()\` to fetch merged PRs with date filtering, falling back to the local \`git log\` when no provider API is available: merge commits, and the squash commits of GitHub (\`(#123)\`) and Azure DevOps (\`Merged PR 123:\`).
 Ticket references are extracted from PR titles/descriptions via \`TicketProvider\`, enriched with server data when configured, and used to compute MTTR from bug/incident resolution times.
 
 Mermaid \`xychart-beta\` diagrams visualize deployment frequency trends and lead time, while \`pie\` charts show deployment outcome distribution.
@@ -612,7 +612,8 @@ In agent mode:
   private async fetchPullRequestsFromGitLog(minDate: Date, debugMode: boolean): Promise<CommonPullRequestInfo[]> {
     try {
       uxLog("log", this, c.grey(t("doraReportGitLogFallback")));
-      const logResult = await git().log(["--merges", `--after=${minDate.toISOString()}`]);
+      // Every commit, not only merges: a squash merge leaves a single ordinary commit
+      const logResult = await git().log([`--after=${minDate.toISOString()}`]);
       const prs: CommonPullRequestInfo[] = [];
 
       for (const commit of logResult.all) {
@@ -621,6 +622,8 @@ In agent mode:
         // GitLab: "Merge branch 'feature' into 'main'"
         const ghMatch = commit.message.match(/Merge pull request #(\d+) from (.+)/);
         const glMatch = commit.message.match(/Merge branch '([^']+)' into '([^']+)'/);
+        // Squash merges: GitHub ends the subject with "(#123)", Azure DevOps starts it with "Merged PR 123:"
+        const squashMatch = commit.message.match(/\(#(\d+)\)\s*$/) || commit.message.match(/^Merged PR (\d+):/);
 
         const basePr = {
           description: "",
@@ -654,7 +657,20 @@ In agent mode:
             mergedDate: commit.date,
             webUrl: "",
           });
-        } else if (commit.message.toLowerCase().includes("merge")) {
+        } else if (squashMatch) {
+          prs.push({
+            ...basePr,
+            idNumber: parseInt(squashMatch[1], 10),
+            idStr: squashMatch[1],
+            title: commit.message,
+            authorName: commit.author_name || "",
+            sourceBranch: "",
+            targetBranch: "",
+            createdDate: commit.date,
+            mergedDate: commit.date,
+            webUrl: "",
+          });
+        } else if ((commit as any).parents?.length > 1 || /^Merge /i.test(commit.message)) {
           prs.push({
             ...basePr,
             idNumber: 0,
