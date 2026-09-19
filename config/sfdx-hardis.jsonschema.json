@@ -2879,6 +2879,16 @@
       "title": "MFA diagnose - VerificationHistory lookback (days)",
       "type": "number"
     },
+    "monitoringRepository": {
+      "$id": "#/properties/monitoringRepository",
+      "description": "In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+      "examples": [
+        "https://github.com/my-company/my-project-monitoring"
+      ],
+      "title": "Monitoring repository",
+      "type": "string"
+    },
     "monitoringUnsecureConnectedAppsIgnore": {
       "$id": "#/properties/monitoringUnsecureConnectedAppsIgnore",
       "description": "List of Connected App names to ignore while running Unsecure Connected Apps monitoring command",
