@@ -281,9 +281,14 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         // the hook also checks the existing connection, so relying on it here left a CI job
         // authenticated with no default org, and the very next command failed with
         // "NoDefaultEnvError: No default environment found".
+        // The technical org is the exception it has always been: it is a second
+        // connection of the same job, and making it the default would send every
+        // command after it to the wrong org.
+        const setDefaultForAuthUrl =
+          options.setDefault ?? (orgAlias !== 'TECHNICAL_ORG');
         const authCommand =
           `sf org login sfdx-url -f "${authFile}"` +
-          (isDevHub ? ` --set-default-dev-hub` : options.setDefault === false ? '' : ' --set-default') +
+          (isDevHub ? ` --set-default-dev-hub` : setDefaultForAuthUrl ? ' --set-default' : '') +
           (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
         const authUrlRes = await execSfdxJson(authCommand, this, { fail: true, output: false });
         uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));

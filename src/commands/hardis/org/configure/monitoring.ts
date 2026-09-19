@@ -333,16 +333,19 @@ The command's technical implementation involves a series of Git operations, file
 
   private async scheduleGithubMonitoringFromMain(branchName: string): Promise<boolean> {
     try {
-      let workflow = '';
-      try {
-        workflow = await git().show([`origin/main:${GITHUB_MONITORING_WORKFLOW_PATH}`]);
-      } catch {
-        workflow = await fs.readFile(GITHUB_MONITORING_WORKFLOW_PATH, 'utf8');
-      }
-      const updated = addOrgToGithubMonitoringWorkflow(workflow, branchName);
       await git().checkout('main');
       try {
         await git().pull('origin', 'main');
+        // Read after the pull, never before: an org a colleague added since the
+        // last fetch would be missing from the copy this clone had, and writing
+        // that copy back would drop it from every matrix and stop its backup.
+        let workflow = '';
+        try {
+          workflow = await fs.readFile(GITHUB_MONITORING_WORKFLOW_PATH, 'utf8');
+        } catch {
+          workflow = await git().show([`origin/main:${GITHUB_MONITORING_WORKFLOW_PATH}`]);
+        }
+        const updated = addOrgToGithubMonitoringWorkflow(workflow, branchName);
         await fs.ensureDir(path.dirname(GITHUB_MONITORING_WORKFLOW_PATH));
         await fs.writeFile(GITHUB_MONITORING_WORKFLOW_PATH, updated, 'utf8');
         const status = await git().status();

@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- CI authentication: an `SFDX_AUTH_URL_TECHNICAL_ORG` no longer becomes the default org of the job, so the commands that follow keep running against the org they were meant for.
+- [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the merges of a major branch that exists only locally, or read offline, are found again instead of coming back empty.
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring workflow on `main` keeps the orgs somebody else added since your last fetch, instead of dropping them from the nightly run.
+- [Generic ticketing](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/): JIRA references are kept unless the project declares its own ticketing system, instead of disappearing on a pipeline that happens to expose Azure DevOps variables.
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/): the cleaning keeps the final line break of the XML files it rewrites, so a cleaned file no longer shows a change on its last line.
 - GitHub monitoring workflow: the nightly backup commits the org state again, instead of reporting no change on every run.
 - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): the deployments of the current week are shown in the weekly chart and table again, and weeks are numbered the ISO way, starting on Monday.

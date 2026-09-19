@@ -294,9 +294,23 @@ interface MergeCommitInfo {
 // The merges happen on the git server: a local branch nobody pulled since misses the latest
 // release. Fetch the branch, and read the remote-tracking copy when there is one.
 async function freshBranchRef(branch: string): Promise<string> {
-  await execCommand(`git fetch origin "${branch}"`, null, { fail: false, output: false });
-  const remoteRef = await execCommand(`git rev-parse --verify --quiet "refs/remotes/origin/${branch}"`, null, { fail: false, output: false });
-  return remoteRef?.stdout?.trim() ? `origin/${branch}` : branch;
+  // execCommand only swallows a failure for a --json command: for these two it
+  // throws, and a branch that exists only locally, or an offline run, would end
+  // up reported as a branch with no merge at all.
+  try {
+    await execCommand(`git fetch origin "${branch}"`, null, { fail: false, output: false });
+  } catch {
+    // No remote, or no network: the local branch is all there is
+  }
+  try {
+    const remoteRef = await execCommand(`git rev-parse --verify --quiet "refs/remotes/origin/${branch}"`, null, {
+      fail: false,
+      output: false,
+    });
+    return remoteRef?.stdout?.trim() ? `origin/${branch}` : branch;
+  } catch {
+    return branch;
+  }
 }
 
 async function listMergeCommitsOnBranch(branch: string, limit = 20): Promise<MergeCommitInfo[]> {

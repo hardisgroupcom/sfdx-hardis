@@ -82,9 +82,12 @@ export abstract class TicketProvider {
     // that one is the ticket: the placeholder would only add a dead link next to it. And when the
     // project declares another ticketing system, a placeholder is never a ticket: it is a release
     // name or a date ("Release 2026-09") that happens to have the shape of a JIRA key.
-    const otherProviderConfigured = allTicketProviders.some(
-      (provider) => provider !== JiraProvider && provider.isAvailable(optionsWithConfig.config)
-    );
+    // Only a ticketing system the project itself declares counts here. Azure
+    // Boards, for one, reports itself available from the SYSTEM_* variables an
+    // Azure DevOps pipeline sets by itself: a team running there while tracking
+    // its work in JIRA would otherwise lose every JIRA reference, silently,
+    // for the single reason that JIRA_HOST is not set yet.
+    const otherProviderConfigured = GenericTicketingProvider.isAvailable(optionsWithConfig.config);
     const withoutPlaceholders = tickets.filter(
       (ticket) =>
         !(
