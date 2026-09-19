@@ -585,9 +585,72 @@ describe('GenericTicketingProvider.getTicketsFromString', () => {
     expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['US-018', 'US-019']);
   });
 
+  it('accepts the {ticketId} placeholder as well as {REF}', () => {
+    expect(GenericTicketingProvider.buildUrl('https://x.invalid/t/{ticketId}', 'US-014')).to.equal('https://x.invalid/t/US-014');
+    expect(GenericTicketingProvider.buildUrl('https://x.invalid/t/{REF}/', 'US-014')).to.equal('https://x.invalid/t/US-014/');
+  });
+
   it('keeps the JIRA placeholder when no ticketing system is declared', async () => {
     const { TicketProvider } = await import('../../../src/common/ticketProvider/index.js');
     const tickets = await TicketProvider.getProvidersTicketsFromString('Release PROJ-123', { config: {} });
     expect(tickets.map((ticket) => ticket.id)).to.include('PROJ-123');
+  });
+});
+
+describe('GenericTicketingProvider.collectTicketsInfo', () => {
+  const envBefore = { ...process.env };
+  afterEach(() => {
+    setFetchForTests(null);
+    process.env = { ...envBefore };
+  });
+
+  const ticket = (id: string): Ticket => ({ provider: 'GENERIC', id, url: `https://x.invalid/backlog/${id}/` });
+  const jsonResponse = (status: number, body: any) =>
+    new Response(typeof body === 'string' ? body : JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+  it('leaves the tickets as bare links when no details URL is declared', async () => {
+    delete process.env.GENERIC_TICKETING_PROVIDER_DETAILS_URL_BUILDER;
+    let called = false;
+    setFetchForTests(async () => {
+      called = true;
+      return jsonResponse(200, {});
+    });
+    const tickets = [ticket('US-014')];
+    await new GenericTicketingProvider({}).collectTicketsInfo(tickets);
+    expect(called).to.equal(false);
+    expect(tickets[0].foundOnServer).to.equal(undefined);
+  });
+
+  it('reads the subject and the status of each ticket, and sends the token', async () => {
+    process.env.GENERIC_TICKETING_PROVIDER_DETAILS_URL_BUILDER = 'https://x.invalid/backlog/{REF}.json';
+    process.env.GENERIC_TICKETING_PROVIDER_TOKEN = 'secret';
+    const seen: { url: string; auth: string }[] = [];
+    setFetchForTests(async (url: string, init: any) => {
+      seen.push({ url, auth: init.headers.Authorization });
+      if (url.endsWith('US-014.json')) {
+        return jsonResponse(200, { subject: 'Show the crew  how many panels', status: 'Level 1' });
+      }
+      return jsonResponse(200, { title: 'Crew size becomes mandatory' });
+    });
+    const tickets = [ticket('US-014'), ticket('US-024'), { provider: 'JIRA', id: 'PROJ-1', url: 'https://jira.invalid/PROJ-1' } as Ticket];
+    await new GenericTicketingProvider({}).collectTicketsInfo(tickets);
+    expect(seen.map((call) => call.url).sort()).to.deep.equal(['https://x.invalid/backlog/US-014.json', 'https://x.invalid/backlog/US-024.json']);
+    expect(seen.every((call) => call.auth === 'Bearer secret')).to.equal(true);
+    expect(tickets[0]).to.include({ foundOnServer: true, subject: 'Show the crew how many panels', status: 'Level 1', statusLabel: 'Level 1' });
+    expect(tickets[1]).to.include({ foundOnServer: true, subject: 'Crew size becomes mandatory' });
+    expect(tickets[1].statusLabel).to.equal(undefined);
+    expect(tickets[2].foundOnServer).to.equal(undefined);
+  });
+
+  it('keeps a ticket that cannot be read as a bare link and records why', async () => {
+    const { getTicketCollectionIssues, clearTicketCollectionIssues } = await import('../../../src/common/ticketProvider/ticketProviderRoot.js');
+    clearTicketCollectionIssues();
+    process.env.GENERIC_TICKETING_PROVIDER_DETAILS_URL_BUILDER = 'https://x.invalid/backlog/{REF}.json';
+    setFetchForTests(async (url: string) => (url.includes('US-014') ? jsonResponse(404, 'Not found') : jsonResponse(200, '<html>no json</html>')));
+    const tickets = [ticket('US-014'), ticket('US-016')];
+    await new GenericTicketingProvider({}).collectTicketsInfo(tickets);
+    expect(tickets.every((one) => !one.foundOnServer)).to.equal(true);
+    expect(getTicketCollectionIssues()).to.have.length(1);
+    expect(getTicketCollectionIssues()[0]).to.contain('2 of 2');
   });
 });

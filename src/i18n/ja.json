@@ -1814,6 +1814,8 @@
   "generatingVisualforceDocumentation": "Visualforceのドキュメントを生成しています...",
   "generatingWorkflowRulesDocumentation": "ワークフロールールのドキュメントを生成しています...",
   "genericPromptTemplateDeploySuccess": "SfdxHardisGenericPromptテンプレートが正常にデプロイされました",
+  "genericTicketDetailsCollectionFailed": "{{total}} 件中 {{failed}} 件のチケットの詳細を取得できませんでした (最初のエラー: {{message}})。genericTicketingProviderDetailsUrlBuilder を確認してください。",
+  "genericTicketDetailsError": "チケット {{ticketId}} の詳細を読み取れません: {{message}}",
   "getOutOfHere": "ここから出る",
   "getticketdetailsIsNotImplementedOn": "getTicketDetails は以下に実装されていません: ",
   "gettingInfoAbout": "{{username}} の情報を取得しています...",

@@ -1792,6 +1792,8 @@
   "generatingVisualforceDocumentation": "Gerando documentação de Visualforce...",
   "generatingWorkflowRulesDocumentation": "Gerando documentação de Regras de Fluxo de Trabalho...",
   "genericPromptTemplateDeploySuccess": "Template SfdxHardisGenericPrompt implantado com sucesso",
+  "genericTicketDetailsCollectionFailed": "Não foi possível obter os detalhes de {{failed}} de {{total}} ticket(s) (primeiro erro: {{message}}). Verifique genericTicketingProviderDetailsUrlBuilder.",
+  "genericTicketDetailsError": "Não foi possível ler os detalhes do ticket {{ticketId}}: {{message}}",
   "getOutOfHere": "Sair daqui",
   "getticketdetailsIsNotImplementedOn": "getTicketDetails não está implementado em ",
   "gettingInfoAbout": "Obtendo informações sobre {{username}} ...",

@@ -1816,6 +1816,8 @@
   "generatingVisualforceDocumentation": "Visualforce-documentatie genereren...",
   "generatingWorkflowRulesDocumentation": "Documentatie over werkstroomregels genereren...",
   "genericPromptTemplateDeploySuccess": "SfdxHardisGenericPrompt-sjabloon succesvol geïmplementeerd",
+  "genericTicketDetailsCollectionFailed": "Kan de details van {{failed}} van {{total}} ticket(s) niet ophalen (eerste fout: {{message}}). Controleer genericTicketingProviderDetailsUrlBuilder.",
+  "genericTicketDetailsError": "Kan de details van ticket {{ticketId}} niet lezen: {{message}}",
   "getOutOfHere": "Hier weggaan",
   "getticketdetailsIsNotImplementedOn": "getTicketDetails is niet geïmplementeerd op ",
   "gettingInfoAbout": "Informatie ophalen over {{username}} ...",

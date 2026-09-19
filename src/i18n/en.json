@@ -1820,6 +1820,8 @@
   "generatingVisualforceDocumentation": "Generating Visualforce documentation...",
   "generatingWorkflowRulesDocumentation": "Generating Workflow Rules documentation...",
   "genericPromptTemplateDeploySuccess": "SfdxHardisGenericPrompt template deployed successfully",
+  "genericTicketDetailsCollectionFailed": "Could not retrieve details for {{failed}} of {{total}} ticket(s) (first error: {{message}}). Check genericTicketingProviderDetailsUrlBuilder.",
+  "genericTicketDetailsError": "Unable to read the details of ticket {{ticketId}}: {{message}}",
   "getOutOfHere": "Get out of here",
   "getticketdetailsIsNotImplementedOn": "getTicketDetails is not implemented on ",
   "gettingInfoAbout": "Getting info about {{username}} ...",
