@@ -244,6 +244,23 @@ SFDX_HARDIS_DOC_SCREENSHOTS_DIR=../sfdx-hardis-training/labs/_assets/vscode \
 yarn screenshots [names]
 ```
 
+**Use `scripts/build/shots.mjs` rather than calling the harness by hand.** It takes image names or
+labs, finds the gate behind each image in `labs/_assets/vscode/.shot-gates.json` (the harness
+writes that map at every capture) or in `labs/_assets/vscode-captures.json` (images taken under
+another pipeline state or copied under another name), runs the harness once per state into a temp
+folder, copies back only the images asked for, redraws their pills and builds one sheet to look at:
+
+```bash
+node scripts/build/shots.mjs vscode/work-new-org web/github-pr-comment
+node scripts/build/shots.mjs --lab 2.7            # every image Lab 2.7 shows
+node scripts/build/shots.mjs --lab 2.7 --pills    # no capture: pills and sheet only
+node scripts/build/shots.mjs --all --kind vscode  # every VS Code image of the course
+node scripts/build/shots.mjs --lab 3.1 --dry-run  # what it would take
+```
+
+A workbench menu (the **...** of a view, a context menu) cannot be captured: activating the window
+for the capture closes it. Webview menus, quick picks and the Command Palette can.
+
 Pass only the names you need: the full batch takes about twenty-five minutes, and with no names at
 all it also records the GIFs, which writes `recordings/` and `*-for-recording.png` into the output
 folder. Those do not belong in the training assets: delete them, or always pass names.
