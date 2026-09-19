@@ -877,13 +877,13 @@ Not verified: the state of the learner's orgs. We are not asking anyone for org 
 
 ### 15.5 The badges
 
-| Badge   | Awarded for                       | Name                               |
-|---------|-----------------------------------|------------------------------------|
-| Level 1 | Level 1 audit passes              | **sfdx-hardis Contributor Basics** |
-| Level 2 | Levels 1 and 2 audits pass        | **sfdx-hardis Contributor**        |
-| Level 3 | Levels 1, 2 and 3 audits all pass | **sfdx-hardis Release Manager**    |
+| Badge   | Awarded for                       | Name                                 |
+|---------|-----------------------------------|--------------------------------------|
+| Level 1 | Level 1 audit passes              | **sfdx-hardis Contributor Basics**   |
+| Level 2 | Levels 1 and 2 audits pass        | **sfdx-hardis Contributor Advanced** |
+| Level 3 | Levels 1, 2 and 3 audits all pass | **sfdx-hardis Release Manager**      |
 
-Three separate badges, each shown on the learner's badge page with its date. Level 2 carries the unqualified "Contributor" title, which is the nudge: the badge people will want is one level further than the one they were going to stop at.
+Three separate badges, each shown on the learner's badge page with its date. Each name says what the holder can do, which is what makes it worth putting on a profile.
 
 Implementation, all free:
 
