@@ -280,8 +280,10 @@ The command's technical implementation involves a series of Git operations, file
     } else {
       uxLog("action", this, c.cyan(t('pleaseManuallyGitAddCommitAndPush')));
     }
-    // On GitHub, the scheduled run needs the workflow on the default branch: put it there
-    const scheduledFromMain = confirmPush.value === true && fs.existsSync(GITHUB_MONITORING_WORKFLOW_PATH)
+    // On GitHub, the scheduled run needs the workflow on the default branch: put it there.
+    // The workflow file is no signal: the monitoring templates of every git provider are
+    // copied into every monitoring repository, so the remote says which server this is
+    const scheduledFromMain = confirmPush.value === true && fs.existsSync(GITHUB_MONITORING_WORKFLOW_PATH) && (await this.isGithubRemote())
       ? await this.scheduleGithubMonitoringFromMain(branchName)
       : false;
     if (!scheduledFromMain) {
@@ -320,6 +322,15 @@ The command's technical implementation involves a series of Git operations, file
 
   // GitHub schedules, and offers "Run workflow" for, the workflows of the default branch only. Write
   // the monitoring workflow there with this org in it, keeping the orgs it already monitors.
+  private async isGithubRemote(): Promise<boolean> {
+    try {
+      const remote = (await git().remote(['get-url', 'origin'])) || '';
+      return /github/i.test(remote);
+    } catch {
+      return false;
+    }
+  }
+
   private async scheduleGithubMonitoringFromMain(branchName: string): Promise<boolean> {
     try {
       let workflow = '';

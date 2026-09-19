@@ -27,9 +27,16 @@ const baseIndex = args.indexOf("--base");
 const BASE = baseIndex > -1 ? args[baseIndex + 1] : "main";
 const STRICT = args.includes("--strict");
 
+// A diff read in part would miss names and print a false "none": a git that fails
+// stops the script instead of passing an empty diff along
 function git(argv, cwd = ROOT) {
-  const res = spawnSync("git", argv, { cwd, encoding: "utf8" });
-  return res.status === 0 ? (res.stdout || "") : "";
+  const res = spawnSync("git", argv, { cwd, encoding: "utf8", maxBuffer: 512 * 1024 * 1024 });
+  if (res.error || res.status !== 0) {
+    console.error(`git ${argv.join(" ")} failed: ${res.error ? res.error.message : (res.stderr || "").trim()}`);
+    console.error("Training impact cannot be computed. Say so rather than assuming there is none.");
+    process.exit(STRICT ? 1 : 2);
+  }
+  return res.stdout || "";
 }
 
 // ---------------------------------------------------------------- manifest
