@@ -131,6 +131,10 @@ is what keeps the two from disagreeing about what a button does. So:
 - **A translation is allowed to lag.** `source_rev` in the front matter names the commit of the
   English file it was made from, and `node scripts/i18n/check-translations.mjs` lists the ones the
   source has moved past. That list is what to re-read, and CI reports it without failing
+- **A translation is not allowed to lose things.** Staleness is the loud failure; a paragraph
+  skipped or an "Under the hood" block never carried over is the quiet one, and nothing else shows
+  it. `node scripts/i18n/check-structure.mjs` compares headings, images, code fences, `<details>`
+  blocks, pill references, admonitions and tables, and says nothing about the words
 - **Screenshots are shared and stay English**, and so do the button names inside a translated
   sentence: the course assumes sfdx-hardis, the extension and the learner's org are in English,
   because that is what the pictures show. Translate the prose around the label, never the label
@@ -574,6 +578,7 @@ node scripts/build/universe.mjs --check    # generated files up to date, fiction
 node scripts/build/annotate.mjs            # every annotated image matches its spec
 node scripts/verify/check-pills.mjs        # the pills an image carries are the ones its step cites
 node scripts/i18n/check-translations.mjs   # which translations the English source has moved past
+node scripts/i18n/check-structure.mjs      # which translations lost an image or a block. Reports, never fails
 node scripts/verify/check-links.mjs        # every link resolves
 node scripts/build/site.mjs && python -m zensical build -f course-site.yml
 node scripts/verify/check-site.mjs         # every page resolves every asset
