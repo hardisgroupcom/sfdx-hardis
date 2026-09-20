@@ -51,3 +51,14 @@ This is a Salesforce platform limitation: standard applications can be set as vi
 - Make sure at least one application remains set as the default for each Profile (see [Missing profile default application](sf-deployment-assistant/Missing-profile-default-application.md)).
 - This manual step must be repeated in each environment (sandbox, preprod, production).
 - Track this manual step with a [manual deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#manual-step) on your Pull Request, so nobody forgets it.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
+
+- [Lab 2.6 - Permission sets, profiles and why a grant disappears](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-6-permission-sets-and-profiles/)
+- [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
+
+<!-- training-links:end -->

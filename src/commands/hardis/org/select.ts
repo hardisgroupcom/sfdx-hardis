@@ -47,6 +47,16 @@ The command's technical implementation involves:
 - **Salesforce CLI Integration:** It relies on Salesforce CLI's underlying commands for org listing and authentication.
 - **Authentication Failure Detection:** Errors raised while authenticating are re-thrown instead of being swallowed by the oclif hook mechanism, and the command fails if it ends without a connected org.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 1.2 - Create your Dev Hub, scratch orgs and CI/CD pipeline](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [

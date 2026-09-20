@@ -69,6 +69,16 @@ The command's technical implementation involves a series of Git operations, file
 - **External Tool Integration:** Requires \`openssl\` to be installed on the system for SSL certificate generation.
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRunSfdxHardisCommandMessage\` to restart the command in VS Code if the default org changes, and \`WebSocketClient.sendRefreshStatusMessage\` to update the status.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.8 - Monitor your production org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-8-monitor-your-production-org/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = ['$ sf hardis:org:configure:monitoring'];

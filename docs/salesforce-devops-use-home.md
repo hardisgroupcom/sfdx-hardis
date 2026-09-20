@@ -69,3 +69,13 @@ Once the validation jobs are green, your release manager [reviews and merges the
 This recording shows the complete workflow. It was recorded with the previous interface of the extension: the screens have changed, the steps have not.
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/zEYqTd2txU4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 1.7 - Capstone: deliver a User Story on your own](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
+
+<!-- training-links:end -->

@@ -140,3 +140,13 @@ If the Terminal asks `Do you want to continue? (y/n)`, type `y` and press `Enter
 #### Upgrading later
 
 When sfdx-hardis tells you that a new version of a plugin is available, do **not** click the Upgrade button in VS Code (it fails silently for the same reason). Instead, open the Terminal again and run the matching `sudo sf plugins install ...` command from Step 3. To upgrade the Salesforce CLI itself, run the command from Step 2 again.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
+
+<!-- training-links:end -->

@@ -256,6 +256,18 @@ _See [Dockerfile-ubuntu](https://github.com/hardisgroupcom/sfdx-hardis/blob/main
 sf hardis:<COMMAND> <OPTIONS>
 ```
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+[Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+
+- [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 10 labs, the pipeline up to production, releases, hotfixes, monitoring
+
+<!-- training-links:end -->
+
 ## Events
 
 <!-- events.md start -->

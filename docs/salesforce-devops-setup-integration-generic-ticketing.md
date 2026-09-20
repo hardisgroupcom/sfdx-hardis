@@ -116,3 +116,13 @@ This integration uses the following variables, which must be available from the 
 - genericTicketingProviderRegex or GENERIC_TICKETING_PROVIDER_REGEX
 - genericTicketingProviderUrlBuilder or GENERIC_TICKETING_PROVIDER_URL_BUILDER
 - optionally genericTicketingProviderDetailsUrlBuilder or GENERIC_TICKETING_PROVIDER_DETAILS_URL_BUILDER, and GENERIC_TICKETING_PROVIDER_TOKEN
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+
+<!-- training-links:end -->

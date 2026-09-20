@@ -55,3 +55,15 @@ In the **DevOps Pipeline** panel of the VS Code SFDX Hardis extension, click a m
 - If your project publishes [Release Notes](hardis/doc/salesforce-devops-release-notes.md), generate them from the major branch window of the DevOps Pipeline
 
 For urgent fixes that cannot wait for the next promotion, see [Hotfixes](salesforce-devops-hotfixes.md), then [Retrofit](salesforce-devops-retrofit.md).
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
+
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.6 - Release to production and read your DORA metrics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+
+<!-- training-links:end -->

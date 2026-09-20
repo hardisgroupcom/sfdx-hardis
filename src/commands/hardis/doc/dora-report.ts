@@ -103,6 +103,17 @@ In agent mode:
 
 - All interactive prompts are skipped.
 - \`--period\` defaults to 90 days when not provided.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 3.6 - Release to production and read your DORA metrics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+- [Lab 3.10 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [

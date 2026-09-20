@@ -40,3 +40,13 @@ You can also use the command ![Select and retrieve sources from org](assets/imag
 > ![Under the hood](assets/images/engine.png) **_Under the hood_**
 >
 > See details in the [hardis:source:retrieve](https://sfdx-hardis.cloudity.com/hardis/source/retrieve/) command documentation
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+
+<!-- training-links:end -->

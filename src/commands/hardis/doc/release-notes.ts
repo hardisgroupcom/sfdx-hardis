@@ -94,6 +94,17 @@ In agent mode:
 - \`--target-branch\` defaults to the current git branch.
 - When \`--mode post\` and \`--target-branch\` are provided without \`--merge-commit\`, the latest merge commit on the target branch is used automatically.
 - When \`--mode prepare\` and \`--source-branch\` is provided without \`--target-branch\`, the target branch is inferred from the source branch mergeTargets configuration.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.10 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [

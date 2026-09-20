@@ -42,3 +42,13 @@ Then:
 ### Need help?
 
 [Cloudity](https://cloudity.com/), the company behind sfdx-hardis, offers an [assisted setup and a full setup service](salesforce-devops-home.md#get-help-from-cloudity). Community support is available through [GitHub issues](https://github.com/hardisgroupcom/sfdx-hardis/issues).
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+
+<!-- training-links:end -->

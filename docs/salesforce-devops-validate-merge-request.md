@@ -100,3 +100,13 @@ The merge commit in the target branch **triggers the deployment job**, which run
 When the check deploy job already validated the same content, the deployment reuses that validation (Quick Deploy) instead of deploying and testing everything again. See [Smart Deploy internals](salesforce-devops-smart-deployment.md) for details.
 
 The deployment result is posted as a Pull Request comment and sent to the configured notification channels. To promote the changes to the next major org, see [Deploy to major orgs](salesforce-devops-deploy-major-branches.md).
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.2 - Review and merge a contributor Pull Request](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
+
+<!-- training-links:end -->

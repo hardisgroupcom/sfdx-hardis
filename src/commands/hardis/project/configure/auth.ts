@@ -66,6 +66,16 @@ prompts
 - **SSL Certificate Generation:** Calls \`generateSSLCertificate\` to create necessary SSL certificates for JWT-based authentication.
 - **WebSocket Communication:** Uses \`WebSocketClient\` for potential communication with external tools or processes, such as restarting the command in VS Code.
 - **Dependency Check:** Ensures the presence of \`openssl\` on the system, which is required for SSL certificate generation.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [

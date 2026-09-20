@@ -177,6 +177,16 @@ sf hardis:doc:project2markdown --agent
 In agent mode, all interactive prompts are skipped. All flags remain available and behave identically - use them to control which documentation sections are generated.
 
 ${this.htmlInstructions}
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.9 - Generate the Salesforce project documentation](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-9-generate-the-project-documentation/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [

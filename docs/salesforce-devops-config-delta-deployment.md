@@ -147,3 +147,12 @@ You can either:
 - ALWAYS_ENABLE_DELTA_DEPLOYMENT
   - By default, delta deployment is allowed only from minor to major branches. You can force it for Pull Requests between major branches by defining variable `ALWAYS_ENABLE_DELTA_DEPLOYMENT=true`
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+
+<!-- training-links:end -->

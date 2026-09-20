@@ -87,3 +87,13 @@ Write the missing test classes. You will need them anyway to deploy to productio
 - Ask your [release manager](salesforce-devops-release-home.md), they are here to help you.
 - Search [Salesforce StackExchange](https://salesforce.stackexchange.com/) for the error message.
 - If you think the error is caused by sfdx-hardis itself, or if its tip is wrong, [open an issue on GitHub](https://github.com/hardisgroupcom/sfdx-hardis/issues).
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+
+<!-- training-links:end -->

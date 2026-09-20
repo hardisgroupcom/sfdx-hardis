@@ -284,3 +284,13 @@ Dashboards only display aggregates, counts, and (for detail tables) the pseudony
 ## Contributing
 
 The JSON files are generated: edit [`generator.mjs`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/docs/grafana/dashboards-v2/generator.mjs) (same folder), run `node generator.mjs`, then `npx mocha "test/grafana-dashboards-v2.test.ts"`. The test suite enforces the portability rules (no hardcoded datasource, daily-sample lookback wrappers, detail links on every number).
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.8 - Monitor your production org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-8-monitor-your-production-org/)
+
+<!-- training-links:end -->

@@ -230,6 +230,16 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
 - **Cache:** under the temporary folder, \`sfdx-hardis/backpromote/\`: the sfdx-git-delta output per commit pair, the comment reads and the run state per run id, the sandbox retrieve per org id and run id. Deleting it loses nothing.
 - **Progress of a background call:** when \`SFDX_HARDIS_PROGRESS_FILE\` is set (the VS Code panel sets it), each step is appended to that file as one JSON line.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 2.1 - Backpromote: catch your org up with the team](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
