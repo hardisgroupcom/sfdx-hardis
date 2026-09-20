@@ -122,6 +122,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 - [Lab 1.7 - Capstone: deliver a User Story on your own](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
 - [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
 - [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
 
 <!-- training-links:end -->
 `;
