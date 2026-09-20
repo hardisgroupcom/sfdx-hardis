@@ -878,34 +878,43 @@
           },
           "type": {
             "$id": "#/properties/commandsPreDeploy/items/properties/type",
-            "description": "Type of the action",
+            "description": "Type of the action: a built-in type, or the id of a custom function declared in customFunctions",
             "title": "Type",
             "type": "string",
-            "enum": [
-              "command",
-              "data",
-              "apex",
-              "schedule-batch",
-              "publish-community",
-              "manual",
-              "remove-packagexml-items"
-            ],
-            "enumNames": [
-              "Command",
-              "Data Import",
-              "Apex Script",
-              "Schedule Batch",
-              "Publish Community",
-              "Manual Action",
-              "Remove package.xml Items"
-            ],
             "examples": [
               "command",
               "data",
               "apex",
               "publish-community",
               "manual",
-              "remove-packagexml-items"
+              "remove-packagexml-items",
+              "notifySlack"
+            ],
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "data",
+                  "apex",
+                  "schedule-batch",
+                  "publish-community",
+                  "manual",
+                  "remove-packagexml-items"
+                ],
+                "enumNames": [
+                  "Command",
+                  "Data Import",
+                  "Apex Script",
+                  "Schedule Batch",
+                  "Publish Community",
+                  "Manual Action",
+                  "Remove package.xml Items"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Id of a custom function declared in the customFunctions property of config/.sfdx-hardis.yml"
+              }
             ]
           },
           "when": {
@@ -1131,32 +1140,41 @@
           },
           "type": {
             "$id": "#/properties/commandsPostDeploy/items/properties/type",
-            "description": "Type of the action",
+            "description": "Type of the action: a built-in type, or the id of a custom function declared in customFunctions",
             "title": "Type",
             "type": "string",
-            "enum": [
-              "command",
-              "data",
-              "apex",
-              "schedule-batch",
-              "publish-community",
-              "manual"
-            ],
-            "enumNames": [
-              "Command",
-              "Data Import",
-              "Apex Script",
-              "Schedule Batch",
-              "Publish Community",
-              "Manual Action"
-            ],
             "examples": [
               "command",
               "data",
               "apex",
               "schedule-batch",
               "publish-community",
-              "manual"
+              "manual",
+              "notifySlack"
+            ],
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "data",
+                  "apex",
+                  "schedule-batch",
+                  "publish-community",
+                  "manual"
+                ],
+                "enumNames": [
+                  "Command",
+                  "Data Import",
+                  "Apex Script",
+                  "Schedule Batch",
+                  "Publish Community",
+                  "Manual Action"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Id of a custom function declared in the customFunctions property of config/.sfdx-hardis.yml"
+              }
             ]
           },
           "when": {
@@ -1508,6 +1526,312 @@
       ],
       "title": "Custom commands position",
       "type": "string"
+    },
+    "customFunctions": {
+      "$id": "#/properties/customFunctions",
+      "title": "Custom functions",
+      "description": "Scripts (node, python or bash) usable as deployment action types. The id of a function is a valid value for the type property of a deployment action. Defined at project level only.",
+      "type": "array",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-custom-functions/",
+      "examples": [
+        [
+          {
+            "id": "notifySlack",
+            "label": "Notify Slack channel",
+            "runtime": "node",
+            "script": "scripts/functions/notify-slack.js",
+            "when": "post-deploy",
+            "inputs": [
+              {
+                "name": "channel",
+                "label": "Channel",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "severity",
+                "type": "select",
+                "options": [
+                  "info",
+                  "warning",
+                  "critical"
+                ],
+                "default": "info"
+              },
+              {
+                "name": "webhookToken",
+                "type": "secret",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "messageId",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/customFunctions/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Custom function definition",
+        "required": [
+          "id",
+          "runtime",
+          "script"
+        ],
+        "properties": {
+          "id": {
+            "$id": "#/properties/customFunctions/items/properties/id",
+            "description": "Function id. This is the value to use as the type of a deployment action, so it must not collide with a built-in action type",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "$id": "#/properties/customFunctions/items/properties/label",
+            "description": "Label of the function (what does it do ?)",
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "$id": "#/properties/customFunctions/items/properties/description",
+            "description": "Longer description displayed in the deployment action editor",
+            "title": "Description",
+            "type": "string"
+          },
+          "runtime": {
+            "$id": "#/properties/customFunctions/items/properties/runtime",
+            "description": "Interpreter used to run the script. node is the interpreter running sfdx-hardis, python tries python3 then python, bash is taken from PATH",
+            "title": "Runtime",
+            "type": "string",
+            "enum": [
+              "node",
+              "python",
+              "bash"
+            ],
+            "enumNames": [
+              "Node.js",
+              "Python",
+              "Bash"
+            ]
+          },
+          "script": {
+            "$id": "#/properties/customFunctions/items/properties/script",
+            "description": "Path to the script file, relative to the repository root",
+            "title": "Script",
+            "type": "string",
+            "examples": [
+              "scripts/functions/notify-slack.js"
+            ]
+          },
+          "timeout": {
+            "$id": "#/properties/customFunctions/items/properties/timeout",
+            "description": "Maximum duration of a run, in seconds. The script is killed and the action fails past it",
+            "title": "Timeout",
+            "type": "number",
+            "default": 600
+          },
+          "when": {
+            "$id": "#/properties/customFunctions/items/properties/when",
+            "description": "Restrict the function to one deployment phase. Unset means it can be used in both",
+            "title": "When",
+            "type": "string",
+            "enum": [
+              "pre-deploy",
+              "post-deploy"
+            ],
+            "enumNames": [
+              "Pre-Deployment",
+              "Post-Deployment"
+            ]
+          },
+          "allowedContexts": {
+            "$id": "#/properties/customFunctions/items/properties/allowedContexts",
+            "description": "Restrict the execution contexts an action using this function may declare. Unset means all of them",
+            "title": "Allowed contexts",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "all",
+                "check-deployment-only",
+                "process-deployment-only"
+              ]
+            }
+          },
+          "defaults": {
+            "$id": "#/properties/customFunctions/items/properties/defaults",
+            "description": "Default action fields applied when an action of this type is created. They can be overridden per action",
+            "title": "Defaults",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "context": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/context",
+                "description": "Default execution context of an action using this function",
+                "title": "Context",
+                "type": "string",
+                "enum": [
+                  "all",
+                  "check-deployment-only",
+                  "process-deployment-only"
+                ]
+              },
+              "allowFailure": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/allowFailure",
+                "description": "Default allowFailure of an action using this function",
+                "title": "Allow failure",
+                "type": "boolean"
+              },
+              "runOnlyOnceByOrg": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/runOnlyOnceByOrg",
+                "description": "Default runOnlyOnceByOrg of an action using this function",
+                "title": "Run only once by org",
+                "type": "boolean"
+              },
+              "includeTargetBranches": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/includeTargetBranches",
+                "description": "Default includeTargetBranches of an action using this function",
+                "title": "Include target branches",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludeTargetBranches": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/excludeTargetBranches",
+                "description": "Default excludeTargetBranches of an action using this function",
+                "title": "Exclude target branches",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "inputs": {
+            "$id": "#/properties/customFunctions/items/properties/inputs",
+            "description": "Parameters an action using this function provides. Each one reaches the script as SFDX_HARDIS_IN_<NAME>",
+            "title": "Inputs",
+            "type": "array",
+            "items": {
+              "$id": "#/properties/customFunctions/items/properties/inputs/items",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/name",
+                  "description": "Input name. Passed to the script as the SFDX_HARDIS_IN_<NAME> environment variable (uppercased)",
+                  "title": "Name",
+                  "type": "string"
+                },
+                "label": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/label",
+                  "description": "Label displayed in the deployment action editor",
+                  "title": "Label",
+                  "type": "string"
+                },
+                "description": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/description",
+                  "description": "Help text displayed under the field",
+                  "title": "Description",
+                  "type": "string"
+                },
+                "type": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/type",
+                  "description": "Input type. A secret input stores the NAME of a CI/CD variable, never its value: sfdx-hardis reads the variable from the environment when the action runs, and masks it in logs and comments",
+                  "title": "Type",
+                  "type": "string",
+                  "default": "string",
+                  "enum": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "select",
+                    "multiline",
+                    "secret"
+                  ],
+                  "enumNames": [
+                    "Text",
+                    "Number",
+                    "Checkbox",
+                    "Picklist",
+                    "Long text",
+                    "Secret (CI/CD variable name)"
+                  ]
+                },
+                "required": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/required",
+                  "description": "When true, an action using this function must provide a value",
+                  "title": "Required",
+                  "type": "boolean",
+                  "default": false
+                },
+                "default": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/default",
+                  "description": "Value used when an action does not provide one",
+                  "title": "Default value"
+                },
+                "options": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/options",
+                  "description": "Allowed values, for inputs of type select",
+                  "title": "Options",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "outputs": {
+            "$id": "#/properties/customFunctions/items/properties/outputs",
+            "description": "Values the script returns as a JSON object on the last line of its stdout. They are displayed in reports and can be consumed by later actions",
+            "title": "Outputs",
+            "type": "array",
+            "items": {
+              "$id": "#/properties/customFunctions/items/properties/outputs/items",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/name",
+                  "description": "Output name. The script must return it in the JSON object of its last stdout line, and later actions read it with ${{ actions.<actionId>.outputs.<name> }}",
+                  "title": "Name",
+                  "type": "string"
+                },
+                "label": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/label",
+                  "description": "Label displayed in reports",
+                  "title": "Label",
+                  "type": "string"
+                },
+                "description": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/description",
+                  "description": "What the output contains",
+                  "title": "Description",
+                  "type": "string"
+                },
+                "type": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/type",
+                  "description": "Free-form type hint",
+                  "title": "Type",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "customOrgColors": {
       "$id": "#/properties/customOrgColors",
@@ -2884,7 +3208,10 @@
       "$id": "#/properties/monitoringMfaLoginHistoryLookbackDays",
       "default": 30,
       "description": "Number of days back the hardis:org:diagnose:mfa command scans LoginHistory for non-MFA direct UI logins.",
-      "examples": [30, 60],
+      "examples": [
+        30,
+        60
+      ],
       "title": "MFA diagnose - LoginHistory lookback (days)",
       "type": "number"
     },
@@ -2892,7 +3219,11 @@
       "$id": "#/properties/monitoringMfaPhishingResistantLookbackDays",
       "default": 180,
       "description": "Number of days back the hardis:org:diagnose:mfa command scans VerificationHistory for phishing-resistant MFA registration / usage per privileged user. The Salesforce July 1 2026 enforcement requires Sys Admin / ModifyAllData / ViewAllData / CustomizeApplication / AuthorApex users to have a security key (U2F / WebAuthn / built-in authenticator) registered.",
-      "examples": [90, 180, 365],
+      "examples": [
+        90,
+        180,
+        365
+      ],
       "title": "MFA diagnose - VerificationHistory lookback (days)",
       "type": "number"
     },

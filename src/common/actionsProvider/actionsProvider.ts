@@ -5,13 +5,26 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
 import { t } from '../utils/i18n.js';
+import type { PipelineContext } from '../utils/pipelineContextUtils.js';
 
 export type ActionWhen = 'pre-deploy' | 'post-deploy';
+
+/** Action types implemented by sfdx-hardis itself. A project custom function id is also valid. */
+export type BuiltInActionType =
+  | 'command'
+  | 'data'
+  | 'apex'
+  | 'publish-community'
+  | 'manual'
+  | 'schedule-batch'
+  | 'remove-packagexml-items';
 
 export interface PrePostCommand {
   id: string;
   label: string;
-  type: 'command' | 'data' | 'apex' | 'publish-community' | 'manual' | 'schedule-batch' | 'remove-packagexml-items';
+  // A built-in type, or the id of a custom function declared in customFunctions (project config).
+  // Typed as a widened string union so built-in literals still autocomplete and narrow.
+  type: BuiltInActionType | (string & {});
   when?: ActionWhen;
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
@@ -39,6 +52,9 @@ export interface PrePostCommand {
   // If command comes from a PR, we attach PR info
   pullRequest?: CommonPullRequestInfo;
   result?: ActionResult;
+  // Pipeline variables of the current run, attached by the execution loop before the action runs.
+  // Custom function actions pass them to their script as SFDX_HARDIS_* environment variables.
+  pipelineContext?: PipelineContext;
 }
 
 export type ActionResult = {
@@ -50,7 +66,15 @@ export type ActionResult = {
   skippedReason?: string;
   // Machine-readable skip cause: skippedReason is user-facing wording that may change,
   // code must branch on this field instead
-  skippedCode?: 'already-run-in-org' | 'branch-not-targeted';
+  skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference';
+  // Values a custom function returned on the last line of its stdout, consumable by later actions
+  // through ${{ actions.<id>.outputs.<name> }}. Raw, so an action can pass a real value on.
+  // Stays in memory for the duration of the run and is never reported as is.
+  outputs?: Record<string, any>;
+  // Same values with the resolved secrets masked. This is the ONLY copy that may leave the
+  // process: the job log, the Pull Request comment and the deployment notification all use it,
+  // because a Pull Request comment is as public as a chat channel.
+  outputsForDisplay?: Record<string, any>;
 };
 
 /**
@@ -107,11 +131,20 @@ export abstract class ActionsProvider {
       actionInstance = new RemovePackageXmlItemsAction.RemovePackageXmlItemsAction();
     }
     else {
-      uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
-      cmd.result = {
-        statusCode: "failed",
-        skippedReason: `Action type [${cmd.type}] is not implemented`
-      };
+      // Not a built-in type: it must be the id of a project custom function. Resolving it here
+      // keeps every unknown-type error in a single place.
+      const { getCustomFunctionById } = await import('../utils/customFunctionUtils.js');
+      const customFunction = await getCustomFunctionById(type);
+      if (customFunction) {
+        const CustomFunctionActionModule = await import('./customFunctionAction.js');
+        actionInstance = new CustomFunctionActionModule.CustomFunctionAction();
+      } else {
+        uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
+        cmd.result = {
+          statusCode: "failed",
+          skippedReason: `Action type [${cmd.type}] is not implemented`
+        };
+      }
     }
     return actionInstance;
   }

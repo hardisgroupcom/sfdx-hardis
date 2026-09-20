@@ -108,6 +108,7 @@ nav:
               - Development guidelines: salesforce-devops-work-on-user-story-development.md
               - Install packages: salesforce-devops-work-on-user-story-install-packages.md
               - Deployment actions: salesforce-devops-work-on-user-story-deployment-actions.md
+              - Custom functions: salesforce-devops-work-on-user-story-custom-functions.md
               - Backpromote (Beta): salesforce-devops-backpromote.md
           - 3. Publish your User Story: salesforce-devops-publish-user-story.md
           - 4. Create the Pull Request:

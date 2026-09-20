@@ -3,6 +3,9 @@
 ## [beta] (main)
 
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
+- Deployment actions:
+  - [Custom functions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-custom-functions/): package a node, python or bash script as a deployment action type of your project, with its own inputs, outputs and secrets.
+  - [hardis:project:action:update](https://sfdx-hardis.cloudity.com/hardis/project/action/update/): move an action between pre-deployment and post-deployment with `--new-when`.
 - [Generic ticketing](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/):
   - New optional `genericTicketingProviderDetailsUrlBuilder`, so that Pull Request comments, release notes and notifications show the title and status of each ticket, read from one JSON document per ticket.
   - `genericTicketingProviderRegex` and `genericTicketingProviderUrlBuilder` declared in `.sfdx-hardis.yml` now work, and with them declared, a ticket is no longer listed a second time with a placeholder JIRA link, and a release name such as `2026-09` is no longer listed as a JIRA ticket.

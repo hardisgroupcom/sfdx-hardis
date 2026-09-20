@@ -34,6 +34,9 @@ export interface DeploymentActionStateEntry {
   jobUrl: string;
   date: string;
   output?: string;
+  // Values a custom function returned. Persisted so a runOnlyOnceByOrg action, skipped on later
+  // deployments, can still feed ${{ actions.<id>.outputs.<name> }} references.
+  outputs?: Record<string, any>;
   prNumber?: number;
   prUrl?: string;
 }
@@ -366,6 +369,9 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
         jobUrl: jobLinkMatch ? jobLinkMatch[2] : '',
         date: dateMatch ? dateMatch[1] : '',
         output: '',
+        // Replayed to a runOnlyOnceByOrg action skipped on this run, so the actions consuming
+        // its outputs keep resolving after the first deployment
+        outputs: decodeOutputsMarker(cell),
       });
     }
   }
@@ -418,6 +424,51 @@ function buildMatrixStatusLegend(usedIcons: string[]): string {
   const used = new Set(usedIcons);
   const parts = MATRIX_STATUS_LEGEND.filter((entry) => used.has(entry.icon)).map((entry) => `${entry.icon} ${entry.label}`);
   return parts.length > 0 ? `\n*Legend: ${parts.join(' · ')}*\n` : '';
+}
+
+/**
+ * Outputs of a custom function, carried inside the matrix cell as an HTML comment.
+ *
+ * The whole deployment actions state round-trips through the markdown of the Pull Request
+ * comment, so anything not written here is lost between two jobs. An HTML comment is invisible
+ * in the rendered comment, and base64 keeps the JSON free of the characters that would break the
+ * table or close the comment early ("|", newlines, "-->").
+ */
+const OUTPUTS_MARKER_REGEX = /<!--\s*outputs:([A-Za-z0-9+/=]+)\s*-->/;
+
+/**
+ * Outputs bigger than this are not persisted: the comment has a size guard, and a replayed value
+ * that large is a payload, not an identifier a later action interpolates.
+ */
+const MAX_PERSISTED_OUTPUTS_CHARS = 2000;
+
+export function encodeOutputsMarker(outputs?: Record<string, any>): string {
+  if (!outputs || Object.keys(outputs).length === 0) {
+    return '';
+  }
+  try {
+    const encoded = Buffer.from(JSON.stringify(outputs), 'utf8').toString('base64');
+    if (encoded.length > MAX_PERSISTED_OUTPUTS_CHARS) {
+      return '';
+    }
+    return `<!-- outputs:${encoded} -->`;
+  } catch (_e) {
+    // A value that cannot be serialized (a cycle) must not break the whole comment
+    return '';
+  }
+}
+
+export function decodeOutputsMarker(cell: string): Record<string, any> | undefined {
+  const match = OUTPUTS_MARKER_REGEX.exec(cell || '');
+  if (!match) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(match[1], 'base64').toString('utf8'));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : undefined;
+  } catch (_e) {
+    return undefined;
+  }
 }
 
 function getStatusIcon(status: DeploymentActionStateEntry['status']): string {
@@ -548,7 +599,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
         const jobRef = e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
         const statusIcon = getStatusIcon(e.status);
         usedMatrixIcons.push(statusIcon);
-        return `${statusIcon}${dateStr}${jobRef}`;
+        return `${statusIcon}${dateStr}${jobRef}${encodeOutputsMarker(e.outputs)}`;
       });
       body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
     }

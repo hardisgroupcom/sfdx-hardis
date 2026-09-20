@@ -37,7 +37,7 @@ import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { executePrePostCommands } from './prePostCommandUtils.js';
+import { executePrePostCommands, resetActionOutputsRegistry } from './prePostCommandUtils.js';
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
@@ -375,8 +375,10 @@ export async function smartDeploy(
   }
 ): Promise<any> {
   elapseStart('all deployments');
-  // Start from a clean slate so the post-deployment notification only reports this run's actions
+  // Start from a clean slate so the post-deployment notification only reports this run's actions,
+  // and so custom function outputs never leak from a previous deployment of the same process
   resetExecutedDeploymentActions();
+  resetActionOutputsRegistry();
   const deployStartTime = Date.now();
   let quickDeploy = false;
   const deploymentMetrics: DeploymentMetrics = buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime });
