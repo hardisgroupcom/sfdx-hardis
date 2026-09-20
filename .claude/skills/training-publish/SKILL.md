@@ -14,21 +14,21 @@ trailhead.salesforce.com, and the **badge** the course awards.
 
 Re-check these once before any publishing session: the Trailhead UI changes.
 
-| Capability                                                             | Available        | Consequence                                                                    |
-|------------------------------------------------------------------------|------------------|--------------------------------------------------------------------------------|
-| Add existing trails, modules, projects, superbadges as steps           | Yes              | Used for the conceptual warm-up steps                                          |
-| Add a **Link** step (any external URL)                                 | Yes              | The main mechanism: one per lab page and per reference doc page                |
-| Add a **Task** step (free text, no URL)                                | Yes              | Used for "create your orgs" and "claim your badge"                             |
-| Mark a Link or Task required for completion                            | Yes              | On for every lab, off for optional reading                                     |
-| Reorder steps                                                          | Yes              | The order in the Trailmix is the authoritative reading order                   |
-| Public shareable URL                                                   | Yes              | `https://trailhead.salesforce.com/users/<handle>/trailmixes/<slug>`            |
-| Custom description and cover                                           | Yes              | Copy below                                                                     |
-| Quizzes or hands-on challenges                                         | **No**           | Verification is the local check plus the claim issue audit                     |
-| Award a Trailhead badge                                                | **No**           | Cloudity issues its own                                                        |
-| Gate a step behind another                                             | **No**           | Order is a suggestion, so every lab states its own preconditions and reset     |
-| Nest a Trailmix inside a Trailmix                                      | **No (assumed)** | Each level links the next with a plain Link step                               |
-| Author-side reporting on who completed what                            | **No**           | Completion data comes from the closed claim issues and `badges/`               |
-| Localize one Trailmix                                                  | **No**           | A translated course is a new Trailmix per language                             |
+| Capability                                                   | Available        | Consequence                                                                |
+|--------------------------------------------------------------|------------------|----------------------------------------------------------------------------|
+| Add existing trails, modules, projects, superbadges as steps | Yes              | Used for the conceptual warm-up steps                                      |
+| Add a **Link** step (any external URL)                       | Yes              | The main mechanism: one per lab page and per reference doc page            |
+| Add a **Task** step (free text, no URL)                      | Yes              | Used for "create your orgs" and "claim your badge"                         |
+| Mark a Link or Task required for completion                  | Yes              | On for every lab, off for optional reading                                 |
+| Reorder steps                                                | Yes              | The order in the Trailmix is the authoritative reading order               |
+| Public shareable URL                                         | Yes              | `https://trailhead.salesforce.com/users/<handle>/trailmixes/<slug>`        |
+| Custom description and cover                                 | Yes              | Copy below                                                                 |
+| Quizzes or hands-on challenges                               | **No**           | Verification is the local check plus the claim issue audit                 |
+| Award a Trailhead badge                                      | **No**           | Cloudity issues its own                                                    |
+| Gate a step behind another                                   | **No**           | Order is a suggestion, so every lab states its own preconditions and reset |
+| Nest a Trailmix inside a Trailmix                            | **No (assumed)** | Each level links the next with a plain Link step                           |
+| Author-side reporting on who completed what                  | **No**           | Completion data comes from the closed claim issues and `badges/`           |
+| Localize one Trailmix                                        | **No**           | A translated course is a new Trailmix per language                         |
 
 Authoring a real Trailhead badge is not an option: there is no self-serve program, and
 myTrailhead / Enablement Sites (Trailmaker Content) is retiring. A Trailmix is the only
