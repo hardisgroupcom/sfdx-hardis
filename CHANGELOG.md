@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/):
+  - Connected Apps that allow users to authorize themselves were reported as secured when their OAuth tokens were fetched with the Bulk API: they are now reported as unsecured, so the number of findings can rise after upgrading.
+  - A Connected App migrated to an External Client App is no longer reported as unsecured when the External Client App requires admin pre-approval, its OAuth tokens are now checked against the External Client App policy. When that policy can not be read, the Connected App settings are kept, and the apps whose status comes from an External Client App are logged so they can be checked.
+  - OAuth tokens issued before a Connected App was reinstalled are now matched to it by name, instead of being reported as unsecured whatever the app settings.
 - Working on a scratch org no longer prints a "please create an issue" warning: a scratch org has no connection status to report, and its lifecycle status is read instead.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring workflow reaches `main` again, instead of being refused by the certificate key the command had just rewritten, so the nightly run is scheduled without copying a file by hand.
 - CI authentication: an `SFDX_AUTH_URL_TECHNICAL_ORG` no longer becomes the default org of the job, so the commands that follow keep running against the org they were meant for.

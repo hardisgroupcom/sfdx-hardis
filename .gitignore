@@ -68,3 +68,4 @@ site/
 .megalinter_github_conf/
 # Session work reports, kept local
 report.md
+session_continue.md

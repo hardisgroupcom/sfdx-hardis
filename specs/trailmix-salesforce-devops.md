@@ -975,10 +975,10 @@ Fixed role assignment for the build:
 
 | Alias                | Username                                       | Role in the build                                                        |
 |----------------------|------------------------------------------------|--------------------------------------------------------------------------|
-| `helios-dev`         | `veurtio.dd9da51447c4@agentforce.com`          | the contributor's dev org                                                |
-| `helios-integration` | `veurtio+demo.73193ee31bf8@agentforce.com`     | CI target for Pull Request checks and merges                             |
-| `helios-uat`         | `nicobackup@nico.com`                          | second major org, and the **cold start canary**, see 19.2                |
-| `helios-prod`        | `nicolas.vuillamy.c8024b5deb9f@agentforce.com` | production stand-in. Also the Dev Hub, so it gets the lightest treatment |
+| `helios-dev`         | the Dev Hub's scratch org          | the contributor's dev org                                                |
+| `helios-integration` | the Dev Hub's scratch org     | CI target for Pull Request checks and merges                             |
+| `helios-uat`         | the Dev Hub's scratch org                          | second major org, and the **cold start canary**, see 19.2                |
+| `helios-prod`        | a Developer Edition org | production stand-in. Also the Dev Hub, so it gets the lightest treatment |
 
 ### 19.2 The one real constraint: cold starts are not repeatable
 

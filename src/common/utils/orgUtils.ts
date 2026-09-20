@@ -372,10 +372,6 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   if (connectedStatus === "Connected" || connectedStatus === "Unknown") {
     return orgResult;
   }
-  // A scratch org has no connectedStatus at all: sf org display reports its lifecycle in "status" instead
-  if (scratchOrgStatus === "Active") {
-    return orgResult;
-  }
   // Authentication is necessary
   if (connectedStatus?.includes("expired") || connectedStatus === "RefreshTokenAuthError") {
     uxLog("action", this, c.yellow(t('yourAuthTokenHasExpiredYouNeed')));
@@ -387,6 +383,13 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
       throw new SfError(t('authenticationDidNotConnectAnyOrg'));
     }
     return loginRes.result;
+  }
+  // A scratch org reports no connectedStatus at all: sf org display gives its
+  // lifecycle in "status" instead. Read after the checks above, never before,
+  // so that a scratch org still inside its 30 days but whose token was revoked
+  // is sent to re-authenticate rather than reported as working.
+  if (scratchOrgStatus === "Active") {
+    return orgResult;
   }
   // We shouldn't be here 😊
   uxLog("warning", this, c.yellow(t('whatAreWeDoingHerePleaseCreate') + instanceUrl + ":" + connectedStatus));

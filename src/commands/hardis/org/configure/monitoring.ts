@@ -363,7 +363,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         try {
           workflow = await fs.readFile(GITHUB_MONITORING_WORKFLOW_PATH, 'utf8');
         } catch {
-          workflow = await git().show([`origin/main:${GITHUB_MONITORING_WORKFLOW_PATH}`]);
+          // The first org configured in a repository: main has no workflow yet,
+          // so the one to start from is the template just committed on the
+          // monitoring branch. Reading origin/main here would look for the file
+          // that is missing, which is why we are in this branch at all.
+          workflow = await git().show([`${branchName}:${GITHUB_MONITORING_WORKFLOW_PATH}`]);
         }
         const updated = addOrgToGithubMonitoringWorkflow(workflow, branchName);
         await fs.ensureDir(path.dirname(GITHUB_MONITORING_WORKFLOW_PATH));
