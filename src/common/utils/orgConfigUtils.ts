@@ -71,7 +71,11 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   try {
     await page.goto(loginUrl, { waitUntil: 'load', timeout: 60000 });
   } catch (e: any) {
-    uxLog("warning", this, c.yellow(`List views 'Mine' have not been restored: the org could not be opened in the browser simulator (${e.message}).`));
+    // The url this failed on is the frontdoor one, and its sid parameter is a
+    // live access token: a navigation error carries the whole url in its
+    // message, and this message goes to the CI log.
+    const reason = String(e.message || e).replace(/sid=[^&\s'"]+/g, 'sid=[redacted]');
+    uxLog("warning", this, c.yellow(`List views 'Mine' have not been restored: the org could not be opened in the browser simulator (${reason}).`));
     await browser.close();
     return { success, failed: listViewItems.map((item) => `${item.object}:${item.listViewName}`), unnecessary, error: e };
   }
