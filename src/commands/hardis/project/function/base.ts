@@ -1,8 +1,10 @@
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { SfError } from '@salesforce/core';
+import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   CUSTOM_FUNCTION_INPUT_TYPES,
@@ -10,6 +12,9 @@ import {
   CustomFunctionDefinition,
   CustomFunctionInput,
   CustomFunctionOutput,
+  readCustomFunctionsFromProjectFile,
+  validateCustomFunctionDefinition,
+  writeCustomFunctionsToProjectFile,
 } from '../../../../common/utils/customFunctionUtils.js';
 import { castInputDefault, parseCommaSeparated } from '../../../../common/utils/customFunctionFlagUtils.js';
 
@@ -133,6 +138,66 @@ export abstract class FunctionCommandBase extends SfCommand<any> {
       }
       outputs.push(output);
     }
+  }
+
+  /**
+   * Resolve the function a command must act on: the --id flag is required when headless,
+   * otherwise the user picks it in the catalog.
+   * Returns the whole catalog and the index, because update and delete both rewrite the list.
+   */
+  protected async resolveTargetFunction(
+    idFlag: string | undefined,
+    headless: boolean,
+    promptMessage: string
+  ): Promise<{ customFunctions: CustomFunctionDefinition[]; functionIndex: number }> {
+    const customFunctions = await readCustomFunctionsFromProjectFile();
+    if (customFunctions.length === 0) {
+      throw new SfError(t('noCustomFunctionDefined'));
+    }
+    const functionId = headless
+      ? this.requireFlag(idFlag, 'id')
+      : idFlag || await this.promptSelect(
+        promptMessage,
+        customFunctions.map((definition) => ({
+          title: `${definition.label || definition.id} (${definition.runtime})`,
+          value: definition.id,
+          description: definition.script,
+        }))
+      );
+    const functionIndex = customFunctions.findIndex((definition) => definition.id === functionId);
+    if (functionIndex === -1) {
+      throw new SfError(t('customFunctionNotFound', { id: functionId }));
+    }
+    return { customFunctions, functionIndex };
+  }
+
+  /**
+   * Validate the definition, write the whole catalog, then report what was saved.
+   * Shared by create and update, which only differ by the success message and the output string.
+   */
+  protected async validateAndSaveCustomFunctions(
+    definition: CustomFunctionDefinition,
+    allFunctions: CustomFunctionDefinition[],
+    successMessageKey: string,
+    outputString: string
+  ): Promise<AnyJson> {
+    // The definition being saved is already in the catalog and must not count as a duplicate of itself
+    const otherFunctions = allFunctions.filter((other) => other !== definition);
+    const validationErrors = validateCustomFunctionDefinition(definition, otherFunctions);
+    if (validationErrors.length > 0) {
+      throw new SfError(t('customFunctionValidationErrors', { errors: validationErrors.join('\n') }));
+    }
+
+    uxLog('action', this, c.cyan(t('savingCustomFunction')));
+    const configFile = await writeCustomFunctionsToProjectFile(allFunctions);
+
+    uxLog('success', this, c.green(t(successMessageKey, { label: definition.label || '', id: definition.id })));
+    this.logFunctionSummary(definition);
+    uxLog('log', this, c.grey(t('customFunctionSavedToFile', { file: configFile })));
+
+    WebSocketClient.sendRefreshPipelineMessage();
+
+    return { outputString, customFunction: definition as any, configFile };
   }
 
   /** Log a function definition, the way logActionSummary logs an action. */

@@ -1,22 +1,19 @@
+/* jscpd:ignore-start */
 import { Flags } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
-import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { isCI } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { FunctionCommandBase } from './base.js';
 import {
   CUSTOM_FUNCTION_RUNTIMES,
   CustomFunctionDefinition,
-  readCustomFunctionsFromProjectFile,
-  validateCustomFunctionDefinition,
-  writeCustomFunctionsToProjectFile,
 } from '../../../../common/utils/customFunctionUtils.js';
 import { parseInputsFlag, parseOutputsFlag } from '../../../../common/utils/customFunctionFlagUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+/* jscpd:ignore-end */
 
 export default class FunctionUpdate extends FunctionCommandBase {
   public static title = 'Update custom function';
@@ -91,6 +88,7 @@ Required in agent mode: \`--id\`. Every other flag is optional, and every prompt
     outputs: Flags.string({
       description: 'Replace the output contract: "name[:type]" entries separated by ";". Empty value removes every output',
     }),
+    /* jscpd:ignore-start */
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -103,6 +101,7 @@ Required in agent mode: \`--id\`. Every other flag is optional, and every prompt
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
     }),
+    /* jscpd:ignore-end */
   };
 
   public static requiresProject = true;
@@ -112,26 +111,11 @@ Required in agent mode: \`--id\`. Every other flag is optional, and every prompt
     const agentMode = flags.agent === true;
     const headless = agentMode || isCI;
 
-    const customFunctions = await readCustomFunctionsFromProjectFile();
-    if (customFunctions.length === 0) {
-      throw new SfError(t('noCustomFunctionDefined'));
-    }
-
-    const functionId = headless
-      ? this.requireFlag(flags.id, 'id')
-      : flags.id || await this.promptSelect(
-        t('selectCustomFunctionToUpdate'),
-        customFunctions.map((definition) => ({
-          title: `${definition.label || definition.id} (${definition.runtime})`,
-          value: definition.id,
-          description: definition.script,
-        }))
-      );
-
-    const functionIndex = customFunctions.findIndex((definition) => definition.id === functionId);
-    if (functionIndex === -1) {
-      throw new SfError(t('customFunctionNotFound', { id: functionId }));
-    }
+    const { customFunctions, functionIndex } = await this.resolveTargetFunction(
+      flags.id,
+      headless,
+      t('selectCustomFunctionToUpdate')
+    );
     const definition: CustomFunctionDefinition = { ...customFunctions[functionIndex] };
 
     if (flags.label) {
@@ -202,23 +186,13 @@ Required in agent mode: \`--id\`. Every other flag is optional, and every prompt
       }
     }
 
-    // The function being updated must not count as a duplicate of itself
-    const otherFunctions = customFunctions.filter((_definition, index) => index !== functionIndex);
-    const validationErrors = validateCustomFunctionDefinition(definition, otherFunctions);
-    if (validationErrors.length > 0) {
-      throw new SfError(t('customFunctionValidationErrors', { errors: validationErrors.join('\n') }));
-    }
-
-    uxLog('action', this, c.cyan(t('savingCustomFunction')));
     customFunctions[functionIndex] = definition;
-    const configFile = await writeCustomFunctionsToProjectFile(customFunctions);
 
-    uxLog('success', this, c.green(t('customFunctionUpdatedSuccessfully', { label: definition.label || '', id: definition.id })));
-    this.logFunctionSummary(definition);
-    uxLog('log', this, c.grey(t('customFunctionSavedToFile', { file: configFile })));
-
-    WebSocketClient.sendRefreshPipelineMessage();
-
-    return { outputString: 'Custom function updated', customFunction: definition as any, configFile };
+    return this.validateAndSaveCustomFunctions(
+      definition,
+      customFunctions,
+      'customFunctionUpdatedSuccessfully',
+      'Custom function updated'
+    );
   }
 }

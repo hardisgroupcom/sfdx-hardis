@@ -47,6 +47,7 @@ This command is read-only and never prompts, so it already runs headless. \`--ag
       default: false,
       description: 'Also report whether each function runtime is available on this machine',
     }),
+    /* jscpd:ignore-start */
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -59,6 +60,7 @@ This command is read-only and never prompts, so it already runs headless. \`--ag
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
     }),
+    /* jscpd:ignore-end */
   };
 
   public static requiresProject = true;

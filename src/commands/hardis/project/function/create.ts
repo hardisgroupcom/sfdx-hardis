@@ -1,22 +1,20 @@
+/* jscpd:ignore-start */
 import { Flags } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import c from 'chalk';
-import { isCI, uxLog } from '../../../../common/utils/index.js';
-import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { isCI } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { FunctionCommandBase } from './base.js';
 import {
   CUSTOM_FUNCTION_RUNTIMES,
   CustomFunctionDefinition,
   readCustomFunctionsFromProjectFile,
-  validateCustomFunctionDefinition,
-  writeCustomFunctionsToProjectFile,
 } from '../../../../common/utils/customFunctionUtils.js';
 import { parseInputsFlag, parseOutputsFlag } from '../../../../common/utils/customFunctionFlagUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+/* jscpd:ignore-end */
 
 export default class FunctionCreate extends FunctionCommandBase {
   public static title = 'Create custom function';
@@ -112,6 +110,7 @@ The \`--outputs\` syntax is \`name[:type]\`, entries separated by \`;\`.
     outputs: Flags.string({
       description: 'Output contract: "name[:type]" entries separated by ";"',
     }),
+    /* jscpd:ignore-start */
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -124,6 +123,7 @@ The \`--outputs\` syntax is \`name[:type]\`, entries separated by \`;\`.
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
     }),
+    /* jscpd:ignore-end */
   };
 
   public static requiresProject = true;
@@ -180,21 +180,13 @@ The \`--outputs\` syntax is \`name[:type]\`, entries separated by \`;\`.
     }
 
     const existingFunctions = await readCustomFunctionsFromProjectFile();
-    const validationErrors = validateCustomFunctionDefinition(definition, existingFunctions);
-    if (validationErrors.length > 0) {
-      throw new SfError(t('customFunctionValidationErrors', { errors: validationErrors.join('\n') }));
-    }
-
-    uxLog('action', this, c.cyan(t('savingCustomFunction')));
     existingFunctions.push(definition);
-    const configFile = await writeCustomFunctionsToProjectFile(existingFunctions);
 
-    uxLog('success', this, c.green(t('customFunctionCreatedSuccessfully', { label: definition.label || '', id: definition.id })));
-    this.logFunctionSummary(definition);
-    uxLog('log', this, c.grey(t('customFunctionSavedToFile', { file: configFile })));
-
-    WebSocketClient.sendRefreshPipelineMessage();
-
-    return { outputString: 'Custom function created', customFunction: definition as any, configFile };
+    return this.validateAndSaveCustomFunctions(
+      definition,
+      existingFunctions,
+      'customFunctionCreatedSuccessfully',
+      'Custom function created'
+    );
   }
 }
