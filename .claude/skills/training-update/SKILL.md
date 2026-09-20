@@ -31,6 +31,7 @@ have to be regenerated.
 | The audit rules                            | `scripts/verify/rules.mjs`                                                       | No                                              |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs`              |
+| The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs              | **Yes**, `scripts/build/doc-links.mjs`          |
 | The raw panel screenshots                  | `labs/_assets/vscode/*.png`                                                      | **Yes**, the extension harness                  |
 | The raw web screenshots                    | `labs/_assets/web/*.png`                                                         | **Yes**, `scripts/build/capture-web.mjs`        |
 | The capture and annotation specs           | `labs/_assets/web-captures.json`, `labs/_assets/annotations.json`                | No, written by hand                             |
@@ -111,6 +112,23 @@ Three rules the labs are written under, and they are not negotiable:
 3. **Under the hood, every time.** Each significant step closes with a `<details>` block naming the
    exact command, the files it wrote, and the one decision the tool made that the learner could not
    see
+
+## The lab links in the product documentation
+
+Every command and guide a lab teaches carries a **Learn by doing** block that links that lab, in
+`../sfdx-hardis` and in the extension's README. It is generated, between
+`<!-- training-links:start -->` and `<!-- training-links:end -->`, from the `depends_on` front
+matter of the labs by way of `training-manifest.json`:
+
+```bash
+node scripts/build/universe.mjs     # first: the manifest is what the links are read from
+node scripts/build/doc-links.mjs    # then: writes the blocks into the sibling clones
+node scripts/build/doc-links.mjs --check   # writes nothing, fails when a page is out of date
+```
+
+So **changing a lab's `depends_on` changes the product documentation**, and the three repositories
+are committed together. Never edit a block by hand; move one if it sits in the wrong place, and the
+next run rewrites it where you put it.
 
 ## Changing the fiction
 
