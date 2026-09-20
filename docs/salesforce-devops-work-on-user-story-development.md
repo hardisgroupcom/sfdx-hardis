@@ -22,3 +22,13 @@ description: With sfdx-hardis, learn how to develop on a User Story with a sourc
 - Edit code in VS Code. The online Developer Console is not recommended: its updates are not tracked in your local files until you retrieve them.
 - Write your Apex test classes together with your code. Deployments to production require 75% of code coverage, and the Pull Request (Merge Request on GitLab) validation job runs the tests.
 - Follow the [configuration guidelines](salesforce-devops-work-on-user-story-configuration.md): they also apply to developers.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
+
+<!-- training-links:end -->

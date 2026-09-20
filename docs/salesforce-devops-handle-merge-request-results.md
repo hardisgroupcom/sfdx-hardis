@@ -59,3 +59,14 @@ If this deployment fails (for example because of a change merged by someone else
 ### Deployment Actions comment
 
 If your User Story has [deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md) (data loads, Apex scripts, manual steps...), sfdx-hardis also maintains a **Deployment Actions** comment on the Pull Request. It shows the manual steps still waiting to be done, with a checkbox to tick when you have done them, and the status of every action in every org.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
+
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+- [Lab 3.2 - Review and merge a contributor Pull Request](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
+
+<!-- training-links:end -->

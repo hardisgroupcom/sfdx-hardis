@@ -138,3 +138,13 @@ ___
 - [Hotfixes](salesforce-devops-hotfixes.md): ship an urgent fix to production through the RUN stream.
 - [Promotion branches (experimental)](salesforce-devops-promotion-branches.md): ship the approved stories of `uat` without waiting for the rest.
 - [Deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md): what runs around a deployment, and the scope each kind of merge gets.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+
+<!-- training-links:end -->

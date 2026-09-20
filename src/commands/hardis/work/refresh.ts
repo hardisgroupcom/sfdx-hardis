@@ -63,6 +63,17 @@ Use \`--agent\` to disable all interactive prompts. The command will:
 - Auto-proceed on merge conflicts instead of prompting (will fail if conflicts cannot be resolved automatically).
 
 Required flags: none beyond \`--agent\` (uses project defaults).
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 2.1 - Backpromote: catch your org up with the team](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+- [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = ['$ sf hardis:work:refresh', '$ sf hardis:work:refresh --agent'];

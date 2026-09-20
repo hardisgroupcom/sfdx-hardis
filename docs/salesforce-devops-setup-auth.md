@@ -135,3 +135,13 @@ This stores the Dev Hub alias / username / instance URL in the project-level `.s
 - `SFDX_CLIENT_CERT_<DEVHUB_ALIAS>` with the raw PEM key content for the CA-signed flow.
 
 As a **less secure last resort** for scratch-org workflows where JWT cannot be set up, you can set `SFDX_AUTH_URL_DEV_HUB` with the output of `sf org auth show-sfdx-auth-url --target-org <devhub-alias> --no-prompt --json | jq -r .result.sfdxAuthUrl`. Be aware that this value contains a long-lived OAuth refresh token granting full Dev Hub access if leaked; prefer JWT whenever possible.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+
+<!-- training-links:end -->

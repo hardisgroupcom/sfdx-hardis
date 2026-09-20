@@ -609,3 +609,13 @@ See also the [full environment variables reference](all-env-variables.md).
 | [Packages](salesforce-devops-work-on-user-story-install-packages.md)        | Warns about missing packages             | Installs packages                                                                      |
 | [Post commands](salesforce-devops-work-on-user-story-deployment-actions.md) | Skips `process-deployment-only` commands | Skips `check-deployment-only` commands                                                 |
 | [Notifications](salesforce-devops-setup-integrations-home.md)               | Posts check results to PR                | Sends deployment success [notifications](salesforce-devops-setup-integrations-home.md) |
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+
+<!-- training-links:end -->

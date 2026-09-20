@@ -87,3 +87,13 @@ Click the **Clone** button on your repository page. In the dialog, switch the dr
 - The project is open in VS Code. You are now ready to [start a User Story](salesforce-devops-create-new-user-story.md).
 
 ![Salesforce project opened in VS Code](assets/images/git-clone-4.jpg){ align=center }
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 1.2 - Create your Dev Hub, scratch orgs and CI/CD pipeline](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/)
+
+<!-- training-links:end -->

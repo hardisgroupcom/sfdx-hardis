@@ -49,3 +49,13 @@ Follow these recommendations as much as possible when you work on a Salesforce C
 - Do not reference users directly. Use [Public Groups](https://developer.salesforce.com/docs/atlas.en-us.securityImplGuide.meta/securityImplGuide/user_groups.htm) instead.
 
 - Share your reports and email templates with public groups, not with named users.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 1.4 - Build a custom field in your Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-4-build-a-custom-field-in-your-org/)
+
+<!-- training-links:end -->

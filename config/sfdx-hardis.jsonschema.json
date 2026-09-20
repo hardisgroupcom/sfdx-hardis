@@ -2362,11 +2362,28 @@
     },
     "genericTicketingProviderUrlBuilder": {
       "$id": "#/properties/genericTicketingProviderUrlBuilder",
-      "description": "URL pattern to build ticket URLs from ticket IDs. Use {ticketId} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{ticketId}",
+      "description": "URL pattern to build ticket URLs from ticket IDs. Use {REF} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{REF}",
       "examples": [
-        "https://tickets.mycompany.com/ticket/{ticketId}"
+        "https://tickets.mycompany.com/ticket/{REF}"
       ],
       "title": "Generic Ticketing Provider URL Builder",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "GENERIC"
+        }
+      ]
+    },
+    "genericTicketingProviderDetailsUrlBuilder": {
+      "$id": "#/properties/genericTicketingProviderDetailsUrlBuilder",
+      "description": "Optional. URL pattern of a JSON document describing a ticket, with {REF} as placeholder for the ticket ID. The JSON gives the ticket title in subject (or title, or summary) and optionally its status in status. When set, Pull Request comments, release notes and notifications show the title and the status next to each ticket link. Send a token with the GENERIC_TICKETING_PROVIDER_TOKEN variable when the URL requires one.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/",
+      "examples": [
+        "https://tickets.mycompany.com/api/ticket/{REF}.json"
+      ],
+      "title": "Generic Ticketing Provider Details URL Builder",
       "type": "string",
       "visible-conditions": [
         {
@@ -3210,6 +3227,16 @@
       "title": "MFA diagnose - VerificationHistory lookback (days)",
       "type": "number"
     },
+    "monitoringRepository": {
+      "$id": "#/properties/monitoringRepository",
+      "description": "In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+      "examples": [
+        "https://github.com/my-company/my-project-monitoring"
+      ],
+      "title": "Monitoring repository",
+      "type": "string"
+    },
     "monitoringUnsecureConnectedAppsIgnore": {
       "$id": "#/properties/monitoringUnsecureConnectedAppsIgnore",
       "description": "List of Connected App names to ignore while running Unsecure Connected Apps monitoring command",
@@ -3590,10 +3617,18 @@
       "title": "Skip update .gitignore file",
       "type": "boolean"
     },
+    "offerSandboxInit": {
+      "$id": "#/properties/offerSandboxInit",
+      "default": false,
+      "description": "Set to true to have New User Story (hardis:work:new) offer to initialize the selected dev sandbox: install the installed packages, assign initPermissionSets, run scratchOrgInitApexScripts and load scripts/data/ScratchInit.\nIt never deploys metadata: bring what the team merged into a sandbox with a backpromote.\nIgnored when sharedDevSandboxes is true.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-create-new-user-story/",
+      "title": "Offer to initialize the sandbox on New User Story",
+      "type": "boolean"
+    },
     "sharedDevSandboxes": {
       "$id": "#/properties/sharedDevSandboxes",
       "default": false,
-      "description": "Set to true if contributors can share dev sandboxes\nIf active, contributors will never be asked to refresh their sandbox metadata, to avoid to overwrite by accident their colleagues work :)",
+      "description": "Set to true if contributors can share dev sandboxes\nIf active, contributors are never offered to initialize their sandbox on New User Story, to avoid overwriting their colleagues work by accident",
       "title": "Contributors can share Dev Sandboxes",
       "type": "boolean"
     },

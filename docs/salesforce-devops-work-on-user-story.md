@@ -26,3 +26,13 @@ When you are done, [publish your User Story](salesforce-devops-publish-user-stor
 This recording shows how to work on a User Story in a source-tracked sandbox. It was recorded with the previous interface of the extension: the screens have changed, the steps have not.
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/-EjPkDDH7VY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 1.4 - Build a custom field in your Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-4-build-a-custom-field-in-your-org/)
+
+<!-- training-links:end -->

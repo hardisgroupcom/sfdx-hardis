@@ -142,7 +142,7 @@ export interface BackpromotePlan {
     instanceUrl: string;
     orgId: string;
     sandboxName: string;
-    orgType: 'sandbox' | 'scratch' | 'production';
+    orgType: 'sandbox' | 'scratch' | 'developer' | 'production';
     tracksSource: boolean;
     refusal: 'production' | 'majorOrg' | null;
   };

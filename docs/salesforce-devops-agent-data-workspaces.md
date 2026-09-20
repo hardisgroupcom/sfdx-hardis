@@ -1099,3 +1099,13 @@ Migrate ContentVersion, Attachment, and Note files:
 - [`hardis:org:configure:data` command reference](hardis/org/configure/data.md)
 - [sfdx-hardis for CPQ](salesforce-devops-cpq.md)
 - [sfdx-hardis for Conga](salesforce-devops-conga.md)
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
+
+<!-- training-links:end -->

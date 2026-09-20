@@ -193,7 +193,7 @@ Several people backpromote to the same sandbox over time, from different compute
 
 What the command does, in order:
 
-1. **Checks:** a git provider token must be configured (the history lives in the Pull Request comments), the target org must be a developer sandbox or a scratch org (a production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those), and the parent branch must be \`developmentBranch\` or one of \`availableTargetBranches\`.
+1. **Checks:** a git provider token must be configured (the history lives in the Pull Request comments), the target org must be a development environment, meaning a developer sandbox, a scratch org or a Developer Edition org (a production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those), and the parent branch must be \`developmentBranch\` or one of \`availableTargetBranches\`.
 2. **Start Pull Request:** the merged Pull Requests of the parent branch are listed, newest first, and the "Backpromotes" comment of each one is read until one holds a row for this sandbox: the default start is the Pull Request merged right after it. Everything merged after the start, up to the head of the parent branch, is the **window**.
 3. **Delta and actions:** sfdx-git-delta computes what the window deploys and deletes, and \`scripts/actions/.sfdx-hardis.<PR>.yml\` gives the deployment actions of its Pull Requests. An action with a success row for this sandbox in the "Backpromotes" comment never runs twice (\`runOnlyOnceByOrg\`).
 4. **Comparison with the sandbox:** the ticked items are retrieved from the sandbox into a cache and compared with the parent branch version. For every file that differs, one decision: **Overwrite** (\`git\`, the parent branch version is deployed), **Keep org version** (\`org\`, the item is not deployed and listed as kept) or **Merge** (\`merge\`, the file is written with conflict markers in the backpromote branch and solved with the VS Code merge editor, by hand or with the coding agent prompt saved in \`hardis-report/\`). An item listed in \`manifest/package-no-overwrite.xml\` of the parent branch is deployed when it is absent from the sandbox; when the sandbox already has it, it is not deployed unless you tick it (\`--include-no-overwrite Type:Name\`).
@@ -230,6 +230,16 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
 - **Cache:** under the temporary folder, \`sfdx-hardis/backpromote/\`: the sfdx-git-delta output per commit pair, the comment reads and the run state per run id, the sandbox retrieve per org id and run id. Deleting it loses nothing.
 - **Progress of a background call:** when \`SFDX_HARDIS_PROGRESS_FILE\` is set (the VS Code panel sets it), each step is appended to that file as one JSON line.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 2.1 - Backpromote: catch your org up with the team](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
