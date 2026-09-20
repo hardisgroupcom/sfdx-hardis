@@ -55,6 +55,7 @@ The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-h
 
 - `training-impact` skill: load it for any change touching a command name or flag, a prompt, `--json` output, a config key, a report file, a doc page URL, an LWC panel, or any behavior a lab walks through. It reads `training-manifest.json` from the sibling clone and names the affected labs.
 - `training-update` skill: load it once `training-impact` says there is an impact. It performs the edits in the sibling training repository, including regenerating the Helios screenshots.
+- `training-publish` skill: the Trailhead Trailmixes and the Cloudity badges. Load it for the Trailmix titles, copy, step lists and URLs, and for anything touching the badges, the claim issue or the audit's promises to a learner.
 - **The analysis and the design always state the training impact, even when it is "none".**
 - `node scripts/check-training-impact.mjs` names the affected labs mechanically. It only covers names: a behavior that changed under an unchanged name needs the skill.
 - `sfdx-hardis-training` is always a sibling directory, cloned there if absent, like `../vscode-sfdx-hardis` already is.
