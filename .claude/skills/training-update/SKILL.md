@@ -1,6 +1,6 @@
 ---
 name: training-update
-description: Perform the edits in the sibling sfdx-hardis-training repository after training-impact found an impact, or when a lab has to change for its own reasons. Covers the lab text, training-universe.json, the audit rules, the link map, the Helios screenshot fixtures, and the screenshot rules: capture, web captures, numbered pills and verification. Use it when the user says "update the training", "fix the labs", "regenerate the training screenshots", "annotate a screenshot", or when a training Pull Request has to be opened.
+description: Perform the edits in the sibling sfdx-hardis-training repository after training-impact found an impact, or when a lab has to change for its own reasons. Covers the lab text in every locale (labs/en/ is the reference, labs/fr/ mirrors it), training-universe.json, the audit rules, the link maps, the Helios screenshot fixtures, and the screenshot rules: capture, web captures, numbered pills and verification. Use it when the user says "update the training", "fix the labs", "translate a lab", "regenerate the training screenshots", "annotate a screenshot", or when a training Pull Request has to be opened.
 allowed-tools: Bash, Read, Write, Edit, Grep, Glob
 ---
 
@@ -26,8 +26,9 @@ have to be regenerated.
 | What                                       | Where                                                                            | Generated?                                      |
 |--------------------------------------------|----------------------------------------------------------------------------------|-------------------------------------------------|
 | The lab text                               | `labs/en/level-N/lab-NN-*.md`                                                    | No, written by hand                             |
+| The translated lab text                    | `labs/<locale>/level-N/lab-NN-*.md`, same file names                             | No, translated by hand from `labs/en/`          |
 | The fiction: stories, branches, orgs, cast | `training-universe.json`                                                         | No, the source of truth                         |
-| The backlog, the link map, the manifest    | `BACKLOG.md`, `labs/link-map.en.md`, `training-manifest.json`                    | **Yes**, `scripts/build/universe.mjs`           |
+| The backlog, the link maps, the manifest   | `BACKLOG.md`, `labs/link-map.<locale>.md`, `training-manifest.json`              | **Yes**, `scripts/build/universe.mjs`           |
 | The audit rules                            | `scripts/verify/rules.mjs`                                                       | No                                              |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs`              |
@@ -90,7 +91,9 @@ for. `title` is the page title and must equal the `# ` heading; `description` is
 description, one sentence under 160 characters that names the Salesforce and sfdx-hardis terms the
 lab teaches. Both come from `training-universe.json` (`levels[].labs[]`), and inserting a lab means
 renumbering the ones after it, their files, their rule ids (`N.M` in `scripts/verify/rules.mjs`)
-and every "Lab N.M" in the text.
+and every "Lab N.M" in the text, **in every locale**: the file names and the numbers are the same in
+all of them, so a renumbering that stops at `labs/en/` leaves the translations pointing at pages
+that moved.
 
 When you change what a lab relies on, **change `depends_on` too**. It is what makes the next impact
 check work, and it is the one thing easy to forget.
@@ -112,6 +115,55 @@ Three rules the labs are written under, and they are not negotiable:
 3. **Under the hood, every time.** Each significant step closes with a `<details>` block naming the
    exact command, the files it wrote, and the one decision the tool made that the learner could not
    see
+
+## Translations, and why English comes first
+
+The course ships in English and in French, `labs/en/` and `labs/fr/`, mirrored file for file.
+
+**`labs/en/` is the reference. Every change starts there.** Not a convention to be polite about: it
+is what keeps the two from disagreeing about what a button does. So:
+
+- **Never fix a lab in French only.** Fix `labs/en/`, then carry the fix into every locale. A French
+  page that is right while the English one is wrong is a fact nobody else can find
+- **Never rename a file, an `id` or a slug in one locale.** The structure is English everywhere:
+  same file names, same folders, same `id`, `level`, `lab`, `screenshots` and `depends_on`, same
+  URLs. Only the prose, the `title` and the `description` are translated
+- **A translation is allowed to lag.** `source_rev` in the front matter names the commit of the
+  English file it was made from, and `node scripts/i18n/check-translations.mjs` lists the ones the
+  source has moved past. That list is what to re-read, and CI reports it without failing
+- **Screenshots are shared and stay English**, and so do the button names inside a translated
+  sentence: the course assumes sfdx-hardis, the extension and the learner's org are in English,
+  because that is what the pictures show. Translate the prose around the label, never the label
+
+The order when a change touches a lab:
+
+```bash
+# 1. English first, and commit it, because the stamp reads git
+$EDITOR labs/en/level-2-contributor-advanced/2-3-*.md
+git add labs/en && git commit -m "..."
+
+# 2. the same edit in each other locale
+$EDITOR labs/fr/level-2-contributor-advanced/2-3-*.md
+
+# 3. the three generators that are locale aware
+node scripts/build/lab-crossrefs.mjs        # "Lab 2.7, étape 3" becomes a link, per locale
+node scripts/i18n/align-tables.mjs          # MD060: a translated cell moves every pipe under it
+node scripts/i18n/stamp-source-rev.mjs fr   # write source_rev from the commit of step 1
+
+# 4. what always runs
+node scripts/build/universe.mjs
+```
+
+`stamp-source-rev.mjs` reads the last commit that touched the English file, so **running it before
+committing the English change stamps the version before yours** and quietly claims the translation
+is current. Commit first.
+
+**Adding a locale** is additive, and `TRANSLATION.md` in the training repository is the procedure.
+The part worth knowing from here: three scripts carry a word per locale that has to be declared, or
+the locale silently loses a feature. `TROUBLESHOOTING` in `scripts/build/site.mjs` (the translated
+"If it goes wrong" heading, which is what folds that section), `LOCALES` in
+`scripts/build/lab-crossrefs.mjs` (the word for "step"), and `NAV_LABELS` plus `LOCALE_NAMES` in
+`scripts/build/universe.mjs`.
 
 ## The lab links in the product documentation
 
@@ -430,7 +482,9 @@ things drive them:
   two, and the reader reads the comment while they run. Do not pad for waiting.
 
 A lab's `**Time**` line and its row in the level index must agree, and the level totals appear in
-four places: each `labs/en/level-N/index.md`, `labs/en/index.md` and `README.md`.
+four places per locale: each `labs/<locale>/level-N/index.md`, `labs/<locale>/index.md`, plus
+`README.md` once. A time changed in English and not in French is the easiest translation drift to
+create and the hardest to notice, because nothing compares numbers across locales.
 
 ## The contributor loop the course teaches
 
@@ -512,19 +566,31 @@ a thing happened, tell them where to look in the org.
 
 ```bash
 cd ../sfdx-hardis-training
+node scripts/build/lab-crossrefs.mjs       # first: link every mention of another lab, per locale
+node scripts/i18n/align-tables.mjs         # a translated cell moves every pipe under it
+node scripts/i18n/stamp-source-rev.mjs     # after the English commit, never before
 node scripts/build/universe.mjs           # regenerate, because lab front matter feeds the manifest
 node scripts/build/universe.mjs --check    # generated files up to date, fiction consistent
 node scripts/build/annotate.mjs            # every annotated image matches its spec
 node scripts/verify/check-pills.mjs        # the pills an image carries are the ones its step cites
+node scripts/i18n/check-translations.mjs   # which translations the English source has moved past
 node scripts/verify/check-links.mjs        # every link resolves
 node scripts/build/site.mjs && python -m zensical build -f course-site.yml
 node scripts/verify/check-site.mjs         # every page resolves every asset
-node scripts/verify/check-mobile.mjs       # the shared pages still read at 412px
+node scripts/verify/check-mobile.mjs       # the shared pages still read at 412px, in every locale
 ```
 
 `check-pills.mjs` and `check-mobile.mjs` exist because two classes of mistake were invisible to
 everything else: a lab citing **(3)** over a two-pill image, and a five-column table rendering as
 one word per column on a phone. Both passed the markdown, the links and the asset checks.
+`check-pills.mjs` reads every locale for the same reason: a translator who drops a **(3)** breaks
+the tie between the sentence and the picture, and nothing else would say so.
+
+**Anchors into another lab are per locale.** `lab-crossrefs.mjs` builds them from the step headings
+of the locale it is linking within, folding accents to ASCII the way python-markdown does, so
+"3. Prendre les vôtres" becomes `#3-prendre-les-votres`. Change that fold and every French anchor
+misses by one letter, with nothing failing: `check-site.mjs` checks that pages exist, not that
+anchors resolve.
 
 ## The Pull Request
 
