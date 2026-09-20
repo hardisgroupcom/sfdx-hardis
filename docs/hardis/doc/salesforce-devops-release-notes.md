@@ -72,3 +72,12 @@ sf hardis:doc:release-notes --agent --mode post --target-branch main
 sf hardis:doc:release-notes --mode post --from-date 2026-01-01 --to-date 2026-03-31 --no-pdf
 ```
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+
+<!-- training-links:end -->

@@ -27,6 +27,7 @@ import {
   parsePackageXmlFile,
   parseXmlFile,
   removePackageXmlFilesContent,
+  writePackageXmlFile,
   writeXmlFile,
 } from '../../../common/utils/xmlUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -140,6 +141,26 @@ The command's technical implementation involves a series of orchestrated steps:
 - **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to notify connected VS Code clients about status updates.
 - **External Tool Integration:** Requires the \`sfdx-git-delta\` plugin to be installed for its core functionality.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
+- [Lab 1.7 - Capstone: deliver a User Story on your own](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.3 - Fix broken records with an Apex deployment action](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
+- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
+- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
+- [Lab 2.6 - Permission sets, profiles and why a grant disappears](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-6-permission-sets-and-profiles/)
+- [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
+- [Lab 2.8 - Recover from committing the wrong metadata](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
@@ -481,6 +502,45 @@ The command's technical implementation involves a series of orchestrated steps:
     }
   }
 
+  /**
+   * A standard profile (Admin, Standard User...) cannot be deleted in any org. Deleting its file from
+   * the repository means "stop versioning it", so it is taken out of the destructive delta: left
+   * there, it failed every deployment with "cannot delete profile".
+   */
+  private async keepStandardProfilesOutOfDestructiveChanges(diffDestructivePackageXml: string, fromCommit: string) {
+    if (!fs.existsSync(diffDestructivePackageXml)) {
+      return;
+    }
+    const destructive = await parsePackageXmlFile(diffDestructivePackageXml);
+    const profiles: string[] = destructive['Profile'] || [];
+    if (profiles.length === 0) {
+      return;
+    }
+    const filesAtBase = (await git().raw(['ls-tree', '-r', '--name-only', fromCommit])).split('\n');
+    const standard: string[] = [];
+    for (const profile of profiles) {
+      const file = filesAtBase.find((f) => f.endsWith(`/profiles/${profile}.profile-meta.xml`));
+      if (!file) {
+        continue;
+      }
+      const content = await git().show([`${fromCommit}:${file}`]).catch(() => '');
+      if (/<custom>\s*false\s*<\/custom>/.test(content)) {
+        standard.push(profile);
+      }
+    }
+    if (standard.length === 0) {
+      return;
+    }
+    const remaining = profiles.filter((profile) => !standard.includes(profile));
+    if (remaining.length > 0) {
+      destructive['Profile'] = remaining;
+    } else {
+      delete destructive['Profile'];
+    }
+    await writePackageXmlFile(diffDestructivePackageXml, destructive);
+    uxLog("action", this, c.cyan(t('standardProfilesNotDeleted', { profiles: standard.join(', ') })));
+  }
+
   private async upgradePackageXmlFilesWithDelta() {
     uxLog("action", this, c.cyan(t('updatingManifestPackageXmlAndManifestDestructivechanges')));
     // Retrieving info about current branch latest commit and master branch latest commit
@@ -515,6 +575,7 @@ The command's technical implementation involves a series of orchestrated steps:
         await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
       }
       const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
+      await this.keepStandardProfilesOutOfDestructiveChanges(diffDestructivePackageXml, gitDeltaScope.fromCommit);
       const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
       uxLog(
         "log",

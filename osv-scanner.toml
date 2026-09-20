@@ -58,22 +58,3 @@ reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsf
 [[IgnoredVulns]]
 id = "CVE-2026-85063"
 reason = "Same finding as GHSA-8cw4-87c7-c6xx, ignored under the same id alias."
-
-# https://github.com/advisories/GHSA-vwc7-r8mq-g2x9 (CVE-2026-76845)
-# adm-zip: Utils.sanitize enforces containment by comparing only the string form of an entry name
-# against the resolved extraction root, and Utils.writeFileTo opens the destination without
-# O_NOFOLLOW and without a pre-write lstat, so a symlink already present at the destination is
-# followed and a file is written outside the target directory.
-# No patched release exists: 0.6.0 is the latest release on npm, so there is nothing to upgrade to.
-# Single call site in sfdx-hardis: src/common/metadata-utils/index.ts builds `new AdmZip(...)` and
-# calls extractAllTo(metadataFolder, true) on the unpackaged.zip retrieved from the Salesforce
-# Metadata API into a temporary metadata folder. The archive is produced by the org's own Metadata
-# API, not supplied by an untrusted uploader, which is the premise of adm-zip path-traversal
-# findings. Remove as soon as adm-zip ships a fixed release. Added 2026-09-09.
-[[IgnoredVulns]]
-id = "GHSA-vwc7-r8mq-g2x9"
-reason = "adm-zip 0.6.0 is the latest release on npm and no patched version exists. Our single call site (src/common/metadata-utils/index.ts) extracts the unpackaged.zip returned by the Salesforce Metadata API into a temporary folder, so the archive is produced by the org itself and never supplied by an untrusted uploader."
-
-[[IgnoredVulns]]
-id = "CVE-2026-76845"
-reason = "Same finding as GHSA-vwc7-r8mq-g2x9, ignored under the same id alias."

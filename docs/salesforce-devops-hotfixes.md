@@ -131,3 +131,13 @@ ___
 - [Retrofit](salesforce-devops-retrofit.md): bring what reached production back into the BUILD branches.
 - [Promotion branches (experimental)](salesforce-devops-promotion-branches.md): ship the approved stories of `uat` without waiting for the rest.
 - [Deploy to major orgs](salesforce-devops-deploy-major-branches.md): the ordinary promotion of a version.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+
+<!-- training-links:end -->

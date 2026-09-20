@@ -13,11 +13,12 @@ import {
   stripAnsi,
   uxLog,
 } from './index.js';
-import { CONSTANTS, getConfig } from '../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../config/index.js';
 import { SfError } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
+import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 
 const execAsync = promisify(childExec);
@@ -25,6 +26,9 @@ const execAsync = promisify(childExec);
 // Options used by authOrg / authenticateUsingDeviceLogin
 export interface AuthOrgOptions {
   checkAuth?: boolean;
+  /** Alias to give the org being connected. When absent, the user is asked for one
+      after a successful interactive login, with a default built from the instance URL. */
+  alias?: string;
   argv?: string[];
   debug?: boolean;
   scratch?: boolean;
@@ -63,6 +67,78 @@ export function extractTargetOrgFromArgv(argv: string[] | undefined): string | n
     }
   }
   return null;
+}
+
+/* A short, memorable name for an org, built from its instance URL.
+
+   https://acme-dev-dev-ed.develop.my.salesforce.com  ->  acme-dev
+   https://acme-integration.my.salesforce.com         ->  acme-integration
+   https://acme--uat.sandbox.my.salesforce.com        ->  acme--uat
+
+   It is only a default: the user is always free to type something else.
+*/
+export function shortenInstanceUrl(instanceUrl: string): string {
+  const host = (instanceUrl || '')
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/.*$/, '')
+    .toLowerCase();
+  const shortened = host
+    .replace(/\.sandbox\.my\.salesforce\.com$/, '')
+    .replace(/\.develop\.my\.salesforce\.com$/, '')
+    .replace(/\.scratch\.my\.salesforce\.com$/, '')
+    .replace(/\.my\.salesforce\.com$/, '')
+    .replace(/\.lightning\.force\.com$/, '')
+    .replace(/\.my\.site\.com$/, '')
+    .replace(/\.salesforce\.com$/, '')
+    .replace(/-dev-ed$/, '')
+    .replace(/[^a-z0-9\-_]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  // login.salesforce.com and test.salesforce.com say nothing about the org
+  if (shortened === '' || shortened === 'login' || shortened === 'test') {
+    return 'my-org';
+  }
+  return shortened;
+}
+
+/* Names the org that was just connected.
+
+   Called after an interactive web login, which is the only case where nobody has
+   already provided an alias: CI paths always carry one. Without this an org shows
+   up everywhere as its username, and the user has nothing short to type.
+*/
+async function nameConnectedOrg(username: string, instanceUrl: string, requestedAlias?: string): Promise<string | null> {
+  if (!username || username === 'err') {
+    return null;
+  }
+  let alias = requestedAlias || null;
+  if (!alias) {
+    if (isCI || isAgentMode()) {
+      return null;
+    }
+    const aliasRes = await prompts({
+      type: 'text',
+      name: 'alias',
+      message: t('whatNameForThisOrg'),
+      description: t('theAliasReplacesTheUsernameEverywhere'),
+      initial: shortenInstanceUrl(instanceUrl),
+    });
+    alias = (aliasRes.alias || '').trim() || null;
+  }
+  if (!alias) {
+    return null;
+  }
+  // The VS Code UI hides everything after a prompt until the next action log
+  uxLog("action", this, c.cyan(t('namingTheOrg', { alias: alias })));
+  const aliasSetRes = await execSfdxJson(`sf alias set ${alias}=${username}`, this, {
+    fail: false,
+    output: false,
+  });
+  if (aliasSetRes?.status !== 0) {
+    uxLog("warning", this, c.yellow(t('couldNotSetOrgAlias', { alias: alias })));
+    return null;
+  }
+  uxLog("success", this, c.green(t('orgIsNowKnownAs', { org: username, alias: alias })));
+  return alias;
 }
 
 /* Run the sfdx-hardis "auth" hook and make sure an authentication failure is not silently ignored.
@@ -200,9 +276,19 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       const authFile = path.join(authTmpDir, 'sfdxScratchAuth.txt');
       try {
         await fs.writeFile(authFile, authUrl, 'utf8');
+        // Same rule as the JWT and web login branches below: the org becomes the default
+        // unless the caller explicitly said not to. `setDefaultOrg` is only computed when
+        // the hook also checks the existing connection, so relying on it here left a CI job
+        // authenticated with no default org, and the very next command failed with
+        // "NoDefaultEnvError: No default environment found".
+        // The technical org is the exception it has always been: it is a second
+        // connection of the same job, and making it the default would send every
+        // command after it to the wrong org.
+        const setDefaultForAuthUrl =
+          options.setDefault ?? (orgAlias !== 'TECHNICAL_ORG');
         const authCommand =
           `sf org login sfdx-url -f "${authFile}"` +
-          (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
+          (isDevHub ? ` --set-default-dev-hub` : setDefaultForAuthUrl ? ' --set-default' : '') +
           (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
         const authUrlRes = await execSfdxJson(authCommand, this, { fail: true, output: false });
         uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
@@ -230,7 +316,15 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
               ? process.env.TARGET_USERNAME
               : config.targetUsername || null;
     if (username == null && isCI) {
-      const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
+      // A CI Pull Request check runs on a detached HEAD, so the branch cannot be read
+      // from git. The CI variables hold it, and without them the message named a file
+      // called ".sfdx-hardis.null.yml", which does not help anybody.
+      const gitBranchFormatted =
+        (await getCurrentGitBranch({ formatted: true })) ||
+        getEnvVar('CONFIG_BRANCH') ||
+        getEnvVar('CI_COMMIT_REF_NAME') ||
+        orgAlias ||
+        '<branch>';
       console.error(
         c.yellow(
           `[sfdx-hardis][WARNING] You may have to define ${c.bold(
@@ -397,6 +491,10 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         }
       }
       uxLog("other", this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
+      // Name the org, unless the login already carried an alias
+      if (!alias) {
+        alias = await nameConnectedOrg(username, instanceUrl, options.alias);
+      }
       WebSocketClient.sendRefreshStatusMessage();
       // Assign org to SfCommands
       // if (isDevHub) {

@@ -27,3 +27,13 @@ Once your branch is pushed (see [Publish your User Story](salesforce-devops-publ
 - The validation jobs start automatically and post their results as comments on the Pull Request. See [Check the Pull Request results](salesforce-devops-handle-merge-request-results.md).
 - To add more updates to an open Pull Request, do not create a new one: commit again and run **Save / Publish** again, as described in [Publish your User Story](salesforce-devops-publish-user-story.md). Every new commit pushed to your branch runs the validation jobs again.
 - When the jobs are green, your release manager [reviews and merges the Pull Request](salesforce-devops-validate-merge-request.md). Depending on the organization of the project, you may be responsible for getting the jobs green yourself before asking for the review.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+
+<!-- training-links:end -->

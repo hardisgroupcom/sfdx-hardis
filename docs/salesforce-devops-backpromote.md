@@ -247,3 +247,13 @@ When the deployment fails, the refused components are returned with the tips of 
 A refreshed sandbox keeps its name but gets a new org id. Its old rows are history, not state: the Pull Requests show "Before refresh", nothing counts as received, and the deployment actions count as not run yet.
 
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 2.1 - Backpromote: catch your org up with the team](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+
+<!-- training-links:end -->

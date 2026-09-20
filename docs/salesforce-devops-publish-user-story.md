@@ -103,3 +103,14 @@ ___
 ### 4. Check the Pull Request results
 
 Once the Pull Request is created, validation jobs run automatically and post their results as comments on the Pull Request. Read [Check the Pull Request results](salesforce-devops-handle-merge-request-results.md) to know what to look at and how to fix errors.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
+
+- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
+- [Lab 2.8 - Recover from committing the wrong metadata](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+
+<!-- training-links:end -->

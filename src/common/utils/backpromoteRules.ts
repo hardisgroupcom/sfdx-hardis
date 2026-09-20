@@ -272,6 +272,13 @@ export function deriveSandboxName(options: { instanceUrl: string; username: stri
  */
 export function findBackpromoteTargetOrgRefusal(options: {
   isSandbox: boolean;
+  /**
+   * A Developer Edition org used as a personal development environment. It is not a sandbox, and it
+   * is not production either: refusing it would rule out every project whose developers work in
+   * Developer Edition orgs rather than in sandboxes. A Developer Edition org that IS a major org is
+   * still refused, by the check above.
+   */
+  isDeveloperEdition?: boolean;
   username: string;
   instanceUrl: string;
   majorOrgs: Array<{ branchName?: string; targetUsername?: string; instanceUrl?: string }>;
@@ -295,7 +302,7 @@ export function findBackpromoteTargetOrgRefusal(options: {
   if (majorOrg) {
     return { reason: 'majorOrg', branchName: majorOrg.branchName || '' };
   }
-  if (options.isSandbox !== true) {
+  if (options.isSandbox !== true && options.isDeveloperEdition !== true) {
     return { reason: 'production' };
   }
   return null;

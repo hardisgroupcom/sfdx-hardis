@@ -143,6 +143,40 @@ describe('backpromote target org', () => {
     expect(parseSandboxOfUsername('admin@mycompany.com')).to.be.null;
   });
 
+  it('accepts a Developer Edition dev org, and still refuses one that is a major org', () => {
+    // A project whose developers work in Developer Edition orgs rather than in sandboxes: the org is
+    // not a sandbox, and refusing it would rule the whole project out of backpromote.
+    expect(
+      findBackpromoteTargetOrgRefusal({
+        isSandbox: false,
+        isDeveloperEdition: true,
+        username: 'sam@heliostraining.invalid',
+        instanceUrl: 'https://helios-dev.my.salesforce.com',
+        majorOrgs,
+      })
+    ).to.be.null;
+    // A Developer Edition org that IS the org of a major branch stays refused: the pipeline deploys it
+    expect(
+      findBackpromoteTargetOrgRefusal({
+        isSandbox: false,
+        isDeveloperEdition: true,
+        username: 'deploy@mycompany.com.integ',
+        instanceUrl: 'https://helios-integration.my.salesforce.com',
+        majorOrgs,
+      })
+    ).to.deep.equal({ reason: 'majorOrg', branchName: 'integration' });
+    // Anything else that is not a sandbox is still production
+    expect(
+      findBackpromoteTargetOrgRefusal({
+        isSandbox: false,
+        isDeveloperEdition: false,
+        username: 'admin@acme.com',
+        instanceUrl: 'https://acme.my.salesforce.com',
+        majorOrgs,
+      })
+    ).to.deep.equal({ reason: 'production' });
+  });
+
   it('derives the sandbox name from the instance URL, then the username, then the org id', () => {
     expect(deriveSandboxName({ instanceUrl: 'https://mycompany--Dev1.sandbox.my.salesforce.com', username: 'sam@mycompany.com.dev1', orgId: '00D1' })).to.equal('dev1');
     expect(deriveSandboxName({ instanceUrl: 'https://test.salesforce.com', username: 'sam@mycompany.com.devsam', orgId: '00D1' })).to.equal('devsam');

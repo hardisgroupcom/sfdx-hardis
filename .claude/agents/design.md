@@ -29,6 +29,7 @@ Your goal is to design a solution and produce a technical specification.
    - **Dependencies**: Any new packages or config changes
    - **Testing approach**: How to verify the changes
    - **VS Code extension impact**: Files to change in vscode-sfdx-hardis (following its `CLAUDE.md`), CLI flags / JSON / events it relies on, minimum CLI version bump, or "none" with the reason
+   - **Training impact**: Labs of sfdx-hardis-training to update, whether their screenshots have to be recaptured, and whether a seeded failure stops firing. "none" with the reason is a valid answer. Load `training-impact` to decide and `training-update` to do it
    - **Risks**: Potential issues or trade-offs
 
 Do NOT implement anything. Produce only the design document for user review.

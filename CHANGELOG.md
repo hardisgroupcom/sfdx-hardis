@@ -2,13 +2,58 @@
 
 ## [beta] (main)
 
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
+- [Generic ticketing](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/):
+  - New optional `genericTicketingProviderDetailsUrlBuilder`, so that Pull Request comments, release notes and notifications show the title and status of each ticket, read from one JSON document per ticket.
+  - `genericTicketingProviderRegex` and `genericTicketingProviderUrlBuilder` declared in `.sfdx-hardis.yml` now work, and with them declared, a ticket is no longer listed a second time with a placeholder JIRA link, and a release name such as `2026-09` is no longer listed as a JIRA ticket.
+  - JIRA references are kept unless the project declares its own ticketing system, instead of disappearing on a pipeline that happens to expose Azure DevOps variables.
+- Monitoring:
+  - New configuration key `monitoringRepository`: the address of the monitoring repository of a CI/CD project, which the Org Monitoring Workbench of VS Code offers to open.
+  - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): works in a freshly cloned empty repository with no default org, and on GitHub it now writes the monitoring workflow on `main` with the org in it, so that the nightly run starts without copying and editing the file by hand, and the GitHub monitoring job no longer fails on its commit step after the backup.
+  - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring workflow reaches `main` again, instead of being refused by the certificate key the command had just rewritten, so the nightly run is scheduled without copying a file by hand.
+  - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring workflow on `main` keeps the orgs somebody else added since your last fetch, instead of dropping them from the nightly run.
+  - GitHub monitoring workflow: the nightly backup commits the org state again, instead of reporting no change on every run.
 - [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/):
   - Connected Apps that allow users to authorize themselves were reported as secured when their OAuth tokens were fetched with the Bulk API: they are now reported as unsecured, so the number of findings can rise after upgrading.
   - A Connected App migrated to an External Client App is no longer reported as unsecured when the External Client App requires admin pre-approval, its OAuth tokens are now checked against the External Client App policy. When that policy can not be read, the Connected App settings are kept, and the apps whose status comes from an External Client App are logged so they can be checked.
   - OAuth tokens issued before a Connected App was reinstalled are now matched to it by name, instead of being reported as unsecured whatever the app settings.
-- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
-- [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/) has its own documentation page, split from [Hotfixes](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/), and both are illustrated with diagrams.
-- [hardis:org:retrieve:sources:retrofit](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/retrofit/) is deprecated: recover a change made by hand in an org as a User Story instead.
+- CI authentication:
+  - An `SFDX_AUTH_URL_TECHNICAL_ORG` no longer becomes the default org of the job, so the commands that follow keep running against the org they were meant for.
+  - `SFDX_AUTH_URL_<ALIAS>` now sets the org as the default one, like JWT already did: the job authenticated and the next command failed with `NoDefaultEnvError`.
+- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/):
+  - The deployments of the current week are shown in the weekly chart and table again, and weeks are numbered the ISO way, starting on Monday.
+  - Without a git provider token, squash-merged Pull Requests of GitHub and Azure DevOps are counted too.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Profiles, permission sets, roles, rules and field references are read from the package directories of `sfdx-project.json` only, so another copy of the metadata elsewhere in the repository no longer documents the same item twice or writes an invalid JSON file.
+  - Now keeps the comments of an existing `mkdocs.yml`, including inside the sections and lists it adds to, and only rewrites what it changes.
+- [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/):
+  - The merges of a major branch that exists only locally, or read offline, are found again instead of coming back empty.
+  - The notes of a promotion that was just merged list its Pull Requests and tickets again instead of none, and the merge commits offered are read from the git server, so the latest merge is there even when the local branch was not pulled.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/):
+  - No longer asks whether to update the sandbox, unless the project sets `offerSandboxInit: true`. Metadata reaches a sandbox through a backpromote.
+  - The scratch orgs offered to build a User Story in are read fresh, so a scratch org deleted and created again under the same alias is no longer offered in its old version.
+  - The scratch orgs your major branches deploy to are no longer offered as orgs to build a User Story in.
+  - When it puts uncommitted changes aside to start the new branch clean, it now says so, names the files and says how to get them back.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/):
+  - Deleting a standard profile from the repository no longer adds it to `destructiveChanges.xml`, where it failed every deployment with "cannot delete profile".
+  - The cleaning keeps the final line break of the XML files it rewrites, so a cleaned file no longer shows a change on its last line.
+- List views:
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) and [hardis:org:fix:listviewmine](https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/): list views are set back to Mine again on current Lightning pages, and a failure to do so no longer fails a deployment that succeeded.
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a project with no list view to restore no longer starts a browser after the deployment, which failed the job with a navigation timeout although the deployment had succeeded.
+  - [hardis:project:clean:listviews](https://sfdx-hardis.cloudity.com/hardis/project/clean/listviews/): the log names the list view it converted instead of printing `[object Object]`.
+- Orgs:
+  - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): an org you connect is now given an alias, suggested from its instance URL, so it appears under a short name instead of its username.
+  - Working on a scratch org no longer prints a "please create an issue" warning: a scratch org has no connection status to report, and its lifecycle status is read instead.
+- Configuration:
+  - A command that stores a value in a `.sfdx-hardis.yml` file now keeps the comments and the formatting of that file instead of rewriting it.
+  - A project that declares a single `availableTargetBranches` is no longer asked which target branch to use, and `--agent` no longer stops on that question.
+  - [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): the branch being configured is no longer offered as one of its own merge targets.
+- `sf commands` no longer crashes with `ReferenceError: DS_PROMETHEUS is not defined`: a command description containing `${...}` made oclif evaluate it while reading its own manifest.
+- Upgrade **adm-zip** to 0.6.1, which fixes an uncontrolled memory allocation when reading a zip header (CVE-2026-77301) and a symlink path traversal at extraction (CVE-2026-76845).
+- Documentation:
+  - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
+  - [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/) has its own documentation page, split from [Hotfixes](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/), and both are illustrated with diagrams.
+  - [hardis:org:retrieve:sources:retrofit](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/retrofit/) is deprecated: recover a change made by hand in an org as a User Story instead.
 
 ## [8.8.1] 2026-09-14
 

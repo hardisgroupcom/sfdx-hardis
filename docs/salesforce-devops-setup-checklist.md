@@ -157,7 +157,7 @@ Then the rest of the project configuration:
 
 - [ ] [Automated sources cleaning](salesforce-devops-config-cleaning.md) is configured (`autoCleanTypes`), so User Story branches are cleaned before Pull Requests.
 - [ ] Apex test configuration matches your policy (test level, minimum coverage).
-- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `allowedOrgTypes`...) so contributors get the right prompts.
+- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `offerSandboxInit`, `allowedOrgTypes`...) so contributors get the right prompts.
 - [ ] Delta deployments are **NOT activated**: `useDeltaDeployment` is absent from `config/.sfdx-hardis.yml`, or set to `false`. The initialization Pull Request must deploy the **full package**. _See [Delta deployments](salesforce-devops-config-delta-deployment.md)_
 
 #### Notification channels
@@ -329,3 +329,13 @@ Not part of the CI/CD pipeline itself, but usually set up right after.
 - [ ] [Project documentation](salesforce-project-documentation.md) is generated and hosted, so the team has an up to date functional documentation of the org.
 - [ ] [Deployment Agent](salesforce-deployment-agent-home.md) is set up if you want assisted resolution of deployment errors.
 - [ ] [Sandbox refresh](salesforce-sandbox-refresh.md) procedure is documented for the day a major sandbox is refreshed.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.10 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->

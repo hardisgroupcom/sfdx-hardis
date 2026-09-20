@@ -9,3 +9,9 @@ DISABLE_ERRORS_LINTERS:
   - SALESFORCE_SFDX_SCANNER_APEX
   - SALESFORCE_SFDX_SCANNER_AURA
   - SALESFORCE_SFDX_SCANNER_LWC
+
+# The monitoring jobs run the latest sfdx-hardis image on purpose, so that every night uses the
+# latest checks: the image tag checks do not apply to these templates
+REPOSITORY_CHECKOV_ARGUMENTS:
+  - --skip-check
+  - CKV_AZUREPIPELINES_1,CKV_AZUREPIPELINES_2,CKV_BITBUCKETPIPELINES_1

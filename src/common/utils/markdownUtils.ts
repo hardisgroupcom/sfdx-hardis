@@ -157,7 +157,7 @@ ${htmlBody}
 `;
 }
 
-export async function generatePdfFileFromMarkdown(markdownFile: string, options: { timeoutMs?: number, landscape?: boolean, extraCss?: string } = {}): Promise<string | false> {
+export async function generatePdfFileFromMarkdown(markdownFile: string, options: { timeoutMs?: number, landscape?: boolean, extraCss?: string, silent?: boolean } = {}): Promise<string | false> {
   try {
     const outputPdfFile = markdownFile.replace('.md', '.pdf');
     const timeoutMs = options.timeoutMs || 120000;
@@ -207,7 +207,10 @@ export async function generatePdfFileFromMarkdown(markdownFile: string, options:
       await fs.remove(tmpHtmlFile);
     }
 
-    uxLog("success", this, c.green(t('pdfFileGeneratedFromDocumentation', { markdownFile, outputPdfFile: c.bold(outputPdfFile) })));
+    // silent: the caller renames the file and logs the name the user will find
+    if (options.silent !== true) {
+      uxLog("success", this, c.green(t('pdfFileGeneratedFromDocumentation', { markdownFile, outputPdfFile: c.bold(outputPdfFile) })));
+    }
     return outputPdfFile;
   } catch (e: any) {
     uxLog("warning", this, c.yellow(t('errorGeneratingPdfFileFromDocumentationWith', { markdownFile, message: e.message })) + "\n" + c.grey(e.stack));

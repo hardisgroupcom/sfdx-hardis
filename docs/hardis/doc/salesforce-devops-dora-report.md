@@ -92,3 +92,13 @@ sf hardis:doc:dora-report --agent --target-org myorg@example.com
 - [sf hardis:doc:dora-report command reference](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/)
 - [Deployment Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-deployments/)
 - [Observability integrations (Grafana, Slack, Teams)](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integrations-home/)
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.6 - Release to production and read your DORA metrics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+
+<!-- training-links:end -->

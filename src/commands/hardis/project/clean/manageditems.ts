@@ -70,7 +70,7 @@ Key functionalities:
 The command's technical implementation involves:
 
 - **Namespace Validation:** Ensures that a namespace is provided, throwing an \`SfError\` if it's missing.
-- **File Discovery:** Uses \`glob\` to find all files and directories within the specified \`folder\` (defaults to \`force-app\`) that match the managed package namespace pattern (\`**/\${this.namespace}__*\`).
+- **File Discovery:** Uses \`glob\` to find all files and directories within the specified \`folder\` (defaults to \`force-app\`) that match the managed package namespace pattern, which is the namespace followed by two underscores (for example \`**/MyNamespace__*\`).
 - **Folder Content Check:** For identified managed folders, the \`folderContainsLocalItems\` function is called. This function uses \`glob\` again to check for the presence of any files within that folder that *do not* start with the managed package namespace, indicating local customizations.
 - **Conditional Deletion:** Based on the \`folderContainsLocalItems\` check, it conditionally removes files and folders using \`fs.remove\`. If a managed folder contains local items, it is skipped to prevent accidental deletion of custom work.
 - **Compound Filename Detection:** For Layouts (\`<Object>-<Name>.layout-meta.xml\`), and QuickActions (\`<Object>.<Name>.quickAction-meta.xml\`), the filename is split into its object and item parts. When the object part is namespaced but the item part is not, the file is preserved as a custom item on a managed object.

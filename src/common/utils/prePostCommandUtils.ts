@@ -50,10 +50,18 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   }
   uxLog("action", this, c.cyan(`[DeploymentActions] ${t('deploymentActionsListing', { actionLabel })}`));
   const commands: PrePostCommand[] = [...(branchConfig[property] || []), ...(extraCommands || [])];
+  // When the lookup fails, the actions of the Pull Requests in scope are unknown:
+  // not absent, unknown. Continuing would deploy and then report "no action
+  // defined", so a data load or a post-deployment script silently never runs and
+  // the job is still green. That is the worst outcome available, so it throws.
   try {
     await completeWithCommandsFromPullRequests(property, commands, options.checkOnly, options.success);
   } catch (e) {
-    uxLog("error", this, c.red(`[DeploymentActions] Error while retrieving commands from pull requests: ${(e as Error).message}\n ${(e as Error).stack}\n You might report the issue on sfdx-hardis GitHub repository.`));
+    uxLog("error", this, c.red(`[DeploymentActions] ${t('deploymentActionsLookupFailed', { actionLabel, message: (e as Error).message })}`));
+    uxLog("log", this, c.grey((e as Error).stack || ''));
+    throw new SfError(
+      `[DeploymentActions] ${t('deploymentActionsLookupFailed', { actionLabel, message: (e as Error).message })}`
+    );
   }
   for (const cmd of commands) {
     cmd.when ??= deployWhen;
