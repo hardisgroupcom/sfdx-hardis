@@ -10,6 +10,7 @@ import { expect } from 'chai';
 import fs from '../../src/common/utils/fsUtils.js';
 import * as path from 'path';
 import { countDeployComponentChanges } from '../../src/common/utils/deployResultSummary.js';
+import { resolveRuntimeInterpreter } from '../../src/common/utils/customFunctionUtils.js';
 import {
   addApexClassToManifest,
   addBrokenApexClass,
@@ -253,6 +254,136 @@ describe('hardis:project:deploy:smart against a real org', () => {
 
       expectOutputIncludes(output, 'Deployment check summary');
       await clearBranchConfig(ctx.projectDir);
+    });
+  });
+
+  /**
+   * Custom functions are the one deployment action type whose body is a script the project
+   * owns, in one of three runtimes. What is worth proving against a real deployment, and what
+   * a unit test cannot reach, is the whole chain: the three interpreters are resolved on the
+   * runner, each script receives its typed inputs as environment variables, its last stdout
+   * line is read back as its outputs, a secret input is resolved from a CI/CD variable and
+   * masked in everything reported, and the replacements of a later action are filled with what
+   * an earlier one returned, across the pre-deploy / post-deploy boundary.
+   *
+   * The three functions themselves are declared in the fixture project config, because a
+   * function id is an action type and the catalog is project scoped.
+   */
+  describe('custom function actions', () => {
+    // The name of the CI/CD variable the secret input points at, and the value it resolves to.
+    // The value must never appear in the deployment output.
+    const secretVarName = 'HARDIS_NUT_FUNCTION_TOKEN';
+    const secretValue = 'nut-secret-value-do-not-log';
+
+    const missingRuntimes: string[] = [];
+
+    before(async function () {
+      // bash and python are both present on the CI runner, but a developer running the NUTs on
+      // Windows may have neither. Skip rather than fail on a machine that cannot run them.
+      for (const runtime of ['node', 'bash', 'python'] as const) {
+        if (!resolveRuntimeInterpreter(runtime)) {
+          missingRuntimes.push(runtime);
+        }
+      }
+      if (missingRuntimes.length > 0) {
+        this.skip();
+      }
+      await writeBranchConfig(
+        ctx.projectDir,
+        'main',
+        [
+          'commandsPreDeploy:',
+          // node, with a typed input, a defaulted one and a secret read from a CI/CD variable
+          '  - id: nut-fn-node',
+          '    label: NUT node function action',
+          '    type: nutNodeFunction',
+          '    parameters:',
+          '      channel: "#nut-releases"',
+          '      retries: 3',
+          `      token: ${secretVarName}`,
+          '    context: all',
+          '    runOnlyOnceByOrg: false',
+          // bash, in the same phase, so the python one downstream can read both
+          '  - id: nut-fn-bash',
+          '    label: NUT bash function action',
+          '    type: nutBashFunction',
+          '    parameters:',
+          '      environment: integration',
+          '    context: all',
+          '    runOnlyOnceByOrg: false',
+          // python, fed by replacements pointing at the two functions above
+          '  - id: nut-fn-python',
+          '    label: NUT python function action',
+          '    type: nutPythonFunction',
+          '    parameters:',
+          '      severity: warning',
+          '      fromNode: "${{ actions.nut-fn-node.outputs.nodeMessageId }}"',
+          '      fromBash: "${{ actions.nut-fn-bash.outputs.bashReport }}"',
+          '    context: all',
+          '    runOnlyOnceByOrg: false',
+          'commandsPostDeploy:',
+          // A plain command action, after the deployment, reading what the functions returned:
+          // this proves the outputs survive the pre-deploy / post-deploy boundary
+          '  - id: nut-fn-consumer',
+          '    label: NUT function output consumer',
+          '    type: command',
+          '    command: node -e "console.log(\'HARDIS_NUT_FN_CONSUMED\', process.argv[1], process.argv[2], process.argv[3])"' +
+            ' "${{ actions.nut-fn-node.outputs.nodeStatus }}"' +
+            ' "${{ actions.nut-fn-bash.outputs.bashStatus }}"' +
+            ' "${{ actions.nut-fn-python.outputs.pythonSummary }}"',
+          '    context: all',
+          '    runOnlyOnceByOrg: false',
+          '',
+        ].join('\n')
+      );
+    });
+
+    after(async () => {
+      await clearBranchConfig(ctx.projectDir);
+    });
+
+    // Captured once: the deployment is the expensive part of this scenario
+    let output = '';
+
+    it('runs a node, a bash and a python function during a real deployment', () => {
+      const result = runHardis(
+        ctx,
+        `hardis:project:deploy:smart --testlevel NoTestRun --target-org ${ctx.orgAlias}`,
+        { ensureExitCode: 0, env: { CONFIG_BRANCH: 'main', [secretVarName]: secretValue } }
+      );
+      output = result.shellOutput.stdout + result.shellOutput.stderr;
+
+      expectOutputIncludes(output, 'HARDIS_NUT_NODE_FUNCTION_RAN', 'the node function should have run');
+      expectOutputIncludes(output, 'HARDIS_NUT_BASH_FUNCTION_RAN', 'the bash function should have run');
+      expectOutputIncludes(output, 'HARDIS_NUT_PYTHON_FUNCTION_RAN', 'the python function should have run');
+      expectOutputExcludes(output, 'Action NUT node function action failed');
+      expectOutputExcludes(output, 'Action NUT bash function action failed');
+      expectOutputExcludes(output, 'Action NUT python function action failed');
+    });
+
+    it('passes the declared inputs to each script', () => {
+      expectOutputIncludes(output, 'node channel=#nut-releases');
+      expectOutputIncludes(output, 'node retries=3', 'the number input should reach the script');
+      expectOutputIncludes(output, 'bash environment=integration');
+      expectOutputIncludes(output, 'python severity=warning');
+    });
+
+    it('never prints the value behind a secret input', () => {
+      expectOutputExcludes(output, secretValue, 'the resolved secret must be masked everywhere');
+      expectOutputIncludes(output, 'node token=', 'the script still receives something for the secret');
+    });
+
+    it('fills the replacements of an action with what an earlier function returned', () => {
+      expectOutputIncludes(output, 'python fromNode=node-msg-1', 'a replacement should carry the node output');
+      expectOutputIncludes(output, 'python fromBash=bash-report-1', 'a replacement should carry the bash output');
+    });
+
+    it('carries the outputs across the pre-deploy and post-deploy boundary', () => {
+      expectOutputIncludes(
+        output,
+        'HARDIS_NUT_FN_CONSUMED sent ok python-summary-1',
+        'the post-deploy command should receive the three pre-deploy outputs'
+      );
     });
   });
 
