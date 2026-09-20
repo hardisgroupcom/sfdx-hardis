@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
+- [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/): tickets separated by spaces are read as several tickets, and each one is looked up on its own, instead of the whole field being reported as NOT FOUND.
 - Deployment actions:
   - [Custom functions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-custom-functions/): package a node, python or bash script as a deployment action type of your project, with its own inputs, outputs and secrets.
   - [hardis:project:action:update](https://sfdx-hardis.cloudity.com/hardis/project/action/update/): move an action between pre-deployment and post-deployment with `--new-when`.
