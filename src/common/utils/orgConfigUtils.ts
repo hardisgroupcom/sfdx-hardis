@@ -116,7 +116,10 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       const mineValue = await page.waitForSelector('input[value="mine"]');
       if (mineValue) {
         // The radio input itself is hidden by the Lightning styling: click the element drawn next to it
-        await mineValue.evaluate((input) => ((input.nextElementSibling as HTMLElement | null) || (input as HTMLElement)).click());
+        await mineValue.evaluate((input) => {
+          const clickable = (input.nextElementSibling ?? input) as unknown as { click: () => void };
+          clickable.click();
+        });
       } else {
         throw new SfError('Puppeteer: input[value="mine"] not found');
       }
