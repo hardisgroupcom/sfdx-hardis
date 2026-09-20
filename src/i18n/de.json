@@ -2256,6 +2256,7 @@
   "monitoringRepoDetected": "Monitoring-Repository erkannt",
   "monitoringRepositoryEmptyInitialCommit": "Das Repository hat noch keinen commit: Es wird ein erster leerer commit auf main erstellt, damit der Monitoring-branch einen Ausgangspunkt hat.",
   "monitoringStashFailed": "Die nicht committeten Änderungen konnten nicht beiseitegelegt werden: {{message}}",
+  "monitoringStashNotRestored": "Ihre nicht committeten Änderungen wurden beiseitegelegt, um den Monitoring-Workflow auf main zu schreiben, und konnten nicht wiederhergestellt werden ({{message}}). Führen Sie aus: git stash pop",
   "monitoringSummaryNotifText": "Monitoring-Lauf auf {{orgUrl}} abgeschlossen: {{success}} Befehl(e) erfolgreich, {{failed}} fehlgeschlagen",
   "monitoringWorkflowNotScheduled": "Der Monitoring-Workflow konnte nicht auf main geschrieben werden ({{message}}). Kopieren Sie .github/workflows/org-monitoring.yml manuell nach main, wie im Kopf der Datei beschrieben.",
   "monitoringWorkflowScheduledFromMain": "Der Monitoring-Workflow auf main führt jetzt {{branchName}} aus: GitHub plant nur die Workflows des Standard-branch ein, und nur dort wird Run workflow angeboten.",

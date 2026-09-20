@@ -2257,6 +2257,7 @@
   "monitoringRepoDetected": "Repositorio de monitorización detectado",
   "monitoringRepositoryEmptyInitialCommit": "El repositorio aún no tiene ningún commit: se crea un primer commit vacío en main para que la branch de monitorización tenga un punto de partida.",
   "monitoringStashFailed": "No se han podido apartar los cambios sin commit: {{message}}",
+  "monitoringStashNotRestored": "Tus cambios sin commit se apartaron para escribir el workflow de monitorización en main y no se han podido restaurar ({{message}}). Ejecuta: git stash pop",
   "monitoringSummaryNotifText": "Ejecución de monitoring completada en {{orgUrl}}: {{success}} comando(s) correcto(s), {{failed}} fallido(s)",
   "monitoringWorkflowNotScheduled": "No se ha podido escribir el workflow de monitorización en main ({{message}}). Copia .github/workflows/org-monitoring.yml a main a mano, como explica su cabecera.",
   "monitoringWorkflowScheduledFromMain": "El workflow de monitorización en main ahora ejecuta {{branchName}}: GitHub solo programa los workflows de la branch por defecto, y es también donde se ofrece Run workflow.",

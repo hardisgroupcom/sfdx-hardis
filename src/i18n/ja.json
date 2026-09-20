@@ -2255,6 +2255,7 @@
   "monitoringRepoDetected": "監視リポジトリが検出されました",
   "monitoringRepositoryEmptyInitialCommit": "リポジトリにはまだ commit がありません。監視用の branch の起点となるよう、main に最初の空の commit を作成します。",
   "monitoringStashFailed": "commit されていない変更を退避できませんでした: {{message}}",
+  "monitoringStashNotRestored": "監視 workflow を main に書き込むために commit されていない変更を退避しましたが、復元できませんでした ({{message}})。次を実行してください: git stash pop",
   "monitoringSummaryNotifText": "{{orgUrl}} でのモニタリング実行が完了しました: {{success}} 件のコマンドが成功、{{failed}} 件が失敗",
   "monitoringWorkflowNotScheduled": "監視 workflow を main に書き込めませんでした ({{message}})。ヘッダーの説明どおり、.github/workflows/org-monitoring.yml を手動で main にコピーしてください。",
   "monitoringWorkflowScheduledFromMain": "main の監視 workflow が {{branchName}} を実行するようになりました。GitHub はデフォルト branch の workflow のみをスケジュールし、Run workflow もそこでのみ提供されます。",

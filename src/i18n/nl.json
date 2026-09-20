@@ -2257,6 +2257,7 @@
   "monitoringRepoDetected": "Monitoring-repository gedetecteerd",
   "monitoringRepositoryEmptyInitialCommit": "De repository heeft nog geen commit: er wordt een eerste lege commit op main gemaakt, zodat de monitoring-branch een startpunt heeft.",
   "monitoringStashFailed": "De niet-gecommitte wijzigingen konden niet opzij worden gezet: {{message}}",
+  "monitoringStashNotRestored": "Je niet-gecommitte wijzigingen zijn opzij gezet om de monitoring-workflow op main te schrijven, en konden niet worden hersteld ({{message}}). Voer uit: git stash pop",
   "monitoringSummaryNotifText": "Monitoring-run voltooid op {{orgUrl}}: {{success}} commando('s) geslaagd, {{failed}} mislukt",
   "monitoringWorkflowNotScheduled": "De monitoring-workflow kon niet op main worden geschreven ({{message}}). Kopieer .github/workflows/org-monitoring.yml met de hand naar main, zoals de kop van het bestand uitlegt.",
   "monitoringWorkflowScheduledFromMain": "De monitoring-workflow op main voert nu {{branchName}} uit: GitHub plant alleen de workflows van de standaard-branch in, en alleen daar wordt Run workflow aangeboden.",

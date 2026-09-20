@@ -2257,6 +2257,7 @@
   "monitoringRepoDetected": "Dépôt de monitoring détecté",
   "monitoringRepositoryEmptyInitialCommit": "Le dépôt n'a encore aucun commit : création d'un premier commit vide sur main, pour que la branche de monitoring ait un point de départ.",
   "monitoringStashFailed": "Impossible de mettre de côté les modifications non commitées : {{message}}",
+  "monitoringStashNotRestored": "Vos modifications non commitées ont été mises de côté pour écrire le workflow de monitoring sur main, et n'ont pas pu être restaurées ({{message}}). Exécutez : git stash pop",
   "monitoringSummaryNotifText": "Exécution du monitoring terminée sur {{orgUrl}} : {{success}} commande(s) réussie(s), {{failed}} échouée(s)",
   "monitoringWorkflowNotScheduled": "Le workflow de monitoring n'a pas pu être écrit sur main ({{message}}). Copiez .github/workflows/org-monitoring.yml sur main à la main, comme l'explique son en-tête.",
   "monitoringWorkflowScheduledFromMain": "Le workflow de monitoring sur main exécute maintenant {{branchName}} : GitHub ne planifie que les workflows de la branche par défaut, et c'est aussi là que Run workflow est proposé.",

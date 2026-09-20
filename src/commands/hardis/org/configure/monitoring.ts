@@ -342,7 +342,17 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
   }
 
   private async scheduleGithubMonitoringFromMain(branchName: string): Promise<boolean> {
+    let stashed = false;
     try {
+      // The command has just rewritten the certificate key of this branch, so the
+      // working tree is dirty and git refuses to switch branches. Put the changes
+      // aside for the two commits below and give them back afterwards: without
+      // this the workflow never reaches main and the scheduled run never starts.
+      const dirty = await git().status();
+      if (dirty.files.length > 0) {
+        await git().stash(['push', '--include-untracked', '-m', `sfdx-hardis monitoring ${branchName}`]);
+        stashed = true;
+      }
       await git().checkout('main');
       try {
         await git().pull('origin', 'main');
@@ -372,6 +382,15 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     } catch (e) {
       uxLog("warning", this, c.yellow(t('monitoringWorkflowNotScheduled', { message: (e as Error).message })));
       return false;
+    } finally {
+      // Whatever happened above, the learner gets their working tree back
+      if (stashed) {
+        try {
+          await git().stash(['pop']);
+        } catch (e) {
+          uxLog("warning", this, c.yellow(t('monitoringStashNotRestored', { message: (e as Error).message })));
+        }
+      }
     }
   }
 }

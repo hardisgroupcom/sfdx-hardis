@@ -2261,6 +2261,7 @@
   "monitoringRepoDetected": "Monitoring repo detected",
   "monitoringRepositoryEmptyInitialCommit": "The repository has no commit yet: creating a first empty commit on main, so that the monitoring branch has something to start from.",
   "monitoringStashFailed": "Could not put the uncommitted changes aside: {{message}}",
+  "monitoringStashNotRestored": "Your uncommitted changes were put aside to write the monitoring workflow on main, and could not be restored ({{message}}). Run: git stash pop",
   "monitoringSummaryNotifText": "Monitoring run completed on {{orgUrl}}: {{success}} command(s) succeeded, {{failed}} failed",
   "monitoringWorkflowNotScheduled": "The monitoring workflow could not be written on main ({{message}}). Copy .github/workflows/org-monitoring.yml to main by hand, as its header explains.",
   "monitoringWorkflowScheduledFromMain": "The monitoring workflow on main now runs {{branchName}}: GitHub schedules only the workflows of the default branch, and it is also where Run workflow is offered.",
