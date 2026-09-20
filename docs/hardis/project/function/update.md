@@ -35,14 +35,14 @@ Required in agent mode: `--id`. Every other flag is optional, and every prompt i
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|allowed-contexts|option|New comma-separated execution contexts. Pass an empty value to remove the restriction||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|description|option|New description||||
-|flags-dir|option|undefined||||
-|id|option|Id of the function to update||||
+| Name             |  Type   | Description                                                                           | Default | Required | Options |
+|:-----------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent            | boolean | Run in non-interactive mode for agents and automation                                 |         |          |         |
+| allowed-contexts | option  | New comma-separated execution contexts. Pass an empty value to remove the restriction |         |          |         |
+| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                       |         |          |         |
+| description      | option  | New description                                                                       |         |          |         |
+| flags-dir        | option  | undefined                                                                             |         |          |         |
+| id               | option  | Id of the function to update                                                          |         |          |         |
 |inputs|option|Replace the input contract: "name[:type][:required][|opt1,opt2][=default]" entries separated by ";". Empty value removes every input||||
 |json|boolean|Format output as json.||||
 |label|option|New label||||

@@ -56,14 +56,14 @@ The `--outputs` syntax is `name[:type]`, entries separated by `;`.
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|allowed-contexts|option|Comma-separated execution contexts the function may be used with (default: all of them)||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|description|option|Description of what the function does||||
-|flags-dir|option|undefined||||
-|id|option|Function id, used as the deployment action type (ex: notifySlack)||||
+| Name             |  Type   | Description                                                                             | Default | Required | Options |
+|:-----------------|:-------:|:----------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent            | boolean | Run in non-interactive mode for agents and automation                                   |         |          |         |
+| allowed-contexts | option  | Comma-separated execution contexts the function may be used with (default: all of them) |         |          |         |
+| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                         |         |          |         |
+| description      | option  | Description of what the function does                                                   |         |          |         |
+| flags-dir        | option  | undefined                                                                               |         |          |         |
+| id               | option  | Function id, used as the deployment action type (ex: notifySlack)                       |         |          |         |
 |inputs|option|Input contract: "name[:type][:required][|opt1,opt2][=default]" entries separated by ";"||||
 |json|boolean|Format output as json.||||
 |label|option|Human-readable label for the function||||

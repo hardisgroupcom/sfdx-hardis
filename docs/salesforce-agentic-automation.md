@@ -138,7 +138,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                                     | Generate a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent --target-org`                                                |
 | [**hardis:project:function:create**](hardis/project/function/create.md)                     | Declare a node, python or bash script as a deployment action type, with `--id --label --runtime --script --inputs --outputs`                                                        |
 | [**hardis:project:function:list**](hardis/project/function/list.md)                         | List the custom functions of the project and check their runtimes, with `--json` and `--check-runtimes`                                                                             |
-| [**hardis:project:function:update**](hardis/project/function/update.md)                     | Change a custom function definition. Required: `--id`                                                                                                                              |
+| [**hardis:project:function:update**](hardis/project/function/update.md)                     | Change a custom function definition. Required: `--id`                                                                                                                               |
 | [**hardis:project:function:delete**](hardis/project/function/delete.md)                     | Remove a custom function. Required: `--id`; `--force` to delete one still used by deployment actions                                                                                |
 
 ### Monitoring

@@ -35,15 +35,15 @@ Required in agent mode: `--id`. Add `--force` to delete a function that deployme
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|force|boolean|Delete even when deployment actions still use this function||||
-|id|option|Id of the function to delete||||
-|json|boolean|Format output as json.||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name         |  Type   | Description                                                 | Default | Required | Options |
+|:-------------|:-------:|:------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation       |         |          |         |
+| debug<br/>-d | boolean | Activate debug mode (more logs)                             |         |          |         |
+| flags-dir    | option  | undefined                                                   |         |          |         |
+| force        | boolean | Delete even when deployment actions still use this function |         |          |         |
+| id           | option  | Id of the function to delete                                |         |          |         |
+| json         | boolean | Format output as json.                                      |         |          |         |
+| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration   |         |          |         |
 
 ## Examples
 

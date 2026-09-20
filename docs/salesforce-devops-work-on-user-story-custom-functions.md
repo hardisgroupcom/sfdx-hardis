@@ -95,12 +95,12 @@ echo "Posting to $SFDX_HARDIS_IN_CHANNEL with severity $SFDX_HARDIS_IN_SEVERITY"
 
 **The pipeline context**, always available:
 
-| Group | Variables |
-|-------|-----------|
-| Git | `SFDX_HARDIS_TARGET_BRANCH`, `SFDX_HARDIS_SOURCE_BRANCH`, `SFDX_HARDIS_CURRENT_BRANCH`, `SFDX_HARDIS_COMMIT_SHA`, `SFDX_HARDIS_REPO_URL` |
+| Group        | Variables                                                                                                                                                  |
+|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Git          | `SFDX_HARDIS_TARGET_BRANCH`, `SFDX_HARDIS_SOURCE_BRANCH`, `SFDX_HARDIS_CURRENT_BRANCH`, `SFDX_HARDIS_COMMIT_SHA`, `SFDX_HARDIS_REPO_URL`                   |
 | Pull Request | `SFDX_HARDIS_PR_ID`, `SFDX_HARDIS_PR_TITLE`, `SFDX_HARDIS_PR_URL`, `SFDX_HARDIS_PR_AUTHOR`, `SFDX_HARDIS_PR_SOURCE_BRANCH`, `SFDX_HARDIS_PR_TARGET_BRANCH` |
-| Org | `SFDX_HARDIS_ORG_USERNAME`, `SFDX_HARDIS_ORG_INSTANCE_URL`, `SFDX_HARDIS_ORG_ID`, `SFDX_HARDIS_ORG_ALIAS`, `SFDX_HARDIS_IS_PRODUCTION` |
-| Deployment | `SFDX_HARDIS_CHECK_ONLY`, `SFDX_HARDIS_WHEN`, `SFDX_HARDIS_ACTION_ID`, `SFDX_HARDIS_ACTION_LABEL`, `SFDX_HARDIS_JOB_URL`, `SFDX_HARDIS_DEPLOYMENT_ID` |
+| Org          | `SFDX_HARDIS_ORG_USERNAME`, `SFDX_HARDIS_ORG_INSTANCE_URL`, `SFDX_HARDIS_ORG_ID`, `SFDX_HARDIS_ORG_ALIAS`, `SFDX_HARDIS_IS_PRODUCTION`                     |
+| Deployment   | `SFDX_HARDIS_CHECK_ONLY`, `SFDX_HARDIS_WHEN`, `SFDX_HARDIS_ACTION_ID`, `SFDX_HARDIS_ACTION_LABEL`, `SFDX_HARDIS_JOB_URL`, `SFDX_HARDIS_DEPLOYMENT_ID`      |
 
 A variable that has no value in the current run (the Pull Request group during a local deployment) is an empty string, never missing, so your script can read it without guarding.
 
@@ -165,11 +165,11 @@ Define the variable in the secure variables of your CI/CD workflow, the same way
 
 ### Runtimes
 
-| Runtime | Interpreter used |
-|---------|------------------|
-| `node` | The interpreter already running sfdx-hardis, so it is always available |
-| `python` | `python3`, then `python` |
-| `bash` | `bash` from PATH (Git Bash on Windows) |
+| Runtime  | Interpreter used                                                       |
+|----------|------------------------------------------------------------------------|
+| `node`   | The interpreter already running sfdx-hardis, so it is always available |
+| `python` | `python3`, then `python`                                               |
+| `bash`   | `bash` from PATH (Git Bash on Windows)                                 |
 
 If the interpreter is missing on the machine, the action **fails** and says what it tried. Set `allowFailure: true` on the action if your pipeline can live without that step.
 
@@ -210,9 +210,9 @@ customFunctions:
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| [hardis:project:function:create](https://sfdx-hardis.cloudity.com/hardis/project/function/create/) | Declare a new custom function |
-| [hardis:project:function:list](https://sfdx-hardis.cloudity.com/hardis/project/function/list/) | List the functions of the project, and check their runtimes |
-| [hardis:project:function:update](https://sfdx-hardis.cloudity.com/hardis/project/function/update/) | Change a function definition |
+| Command                                                                                            | Description                                                 |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
+| [hardis:project:function:create](https://sfdx-hardis.cloudity.com/hardis/project/function/create/) | Declare a new custom function                               |
+| [hardis:project:function:list](https://sfdx-hardis.cloudity.com/hardis/project/function/list/)     | List the functions of the project, and check their runtimes |
+| [hardis:project:function:update](https://sfdx-hardis.cloudity.com/hardis/project/function/update/) | Change a function definition                                |
 | [hardis:project:function:delete](https://sfdx-hardis.cloudity.com/hardis/project/function/delete/) | Remove a function, warning about the actions still using it |
