@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- Working on a scratch org no longer prints a "please create an issue" warning: a scratch org has no connection status to report, and its lifecycle status is read instead.
 - CI authentication: an `SFDX_AUTH_URL_TECHNICAL_ORG` no longer becomes the default org of the job, so the commands that follow keep running against the org they were meant for.
 - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the merges of a major branch that exists only locally, or read offline, are found again instead of coming back empty.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring workflow on `main` keeps the orgs somebody else added since your last fetch, instead of dropping them from the nightly run.

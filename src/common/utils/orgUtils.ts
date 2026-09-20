@@ -346,10 +346,12 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Get connected Status and instance URL
   let connectedStatus;
   let instanceUrl;
+  let scratchOrgStatus;
   let orgResult: any;
   if (typeof targetOrg !== 'string') {
     instanceUrl = targetOrg.instanceUrl;
     connectedStatus = targetOrg.connectedStatus;
+    scratchOrgStatus = targetOrg.status;
     orgResult = targetOrg;
     targetOrg = targetOrg.username;
   }
@@ -363,10 +365,15 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     });
     connectedStatus = displayResult?.result?.connectedStatus || "error";
     instanceUrl = displayResult?.result?.instanceUrl || "error";
+    scratchOrgStatus = displayResult?.result?.status;
     orgResult = displayResult.result
   }
   // Org is connected ("Unknown" is the status reported for scratch orgs)
   if (connectedStatus === "Connected" || connectedStatus === "Unknown") {
+    return orgResult;
+  }
+  // A scratch org has no connectedStatus at all: sf org display reports its lifecycle in "status" instead
+  if (scratchOrgStatus === "Active") {
     return orgResult;
   }
   // Authentication is necessary
