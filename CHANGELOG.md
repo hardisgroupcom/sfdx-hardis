@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.9.0] 2026-09-20
+
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
 - [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/): tickets separated by spaces are read as several tickets, and each one is looked up on its own, instead of the whole field being reported as NOT FOUND.
 - Deployment actions:
