@@ -22,6 +22,16 @@ Functions are declared at **project level**, in `config/.sfdx-hardis.yml`. They 
 
 ### Declare a function
 
+The **Custom Functions** tab of Pipeline Settings lists the functions your project declares, with the runtime, the script and the contract of each one.
+
+![Custom Functions tab of Pipeline Settings](assets/images/screenshot-custom-functions-tab.jpg)
+
+**Add a custom function** opens the editor: give the function an id and a label, pick the runtime and the script, then declare the inputs a deployment action will fill and the outputs the script returns.
+
+![Editor of a custom function](assets/images/screenshot-custom-function-editor.jpg)
+
+The panel writes the block below for you. You can also edit it by hand, or use [hardis:project:function:create](hardis/project/function/create.md).
+
 ```yaml
 # config/.sfdx-hardis.yml
 customFunctions:
@@ -66,7 +76,11 @@ sf hardis:project:function:create --agent \
 
 ### Use it as a deployment action
 
-Once declared, the function id is a valid action `type`:
+Once declared, the function appears in the **Type** list of the deployment action editor, next to the built-in types. The form below the common fields is built from the inputs the function declares, and an input of type `secret` asks for the name of a CI/CD variable rather than for a value. The editor also reminds you what the function returns, and how a later action can reuse it.
+
+![Deployment action using a custom function](assets/images/screenshot-deployment-action-custom-function.jpg)
+
+The action it writes looks like this, where the function id is the action `type`:
 
 ```yaml
 commandsPostDeploy:
