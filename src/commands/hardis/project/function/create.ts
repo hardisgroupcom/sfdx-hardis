@@ -41,7 +41,7 @@ Every value arrives as an environment variable:
 
 When the function declares outputs, the **last non-empty line of stdout must be a JSON object** holding them. Everything printed before it is ordinary logging, kept as the action output.
 
-Outputs are consumable by any later action of the run with \`\${{ actions.<actionId>.outputs.<name> }}\`, and are displayed in the job log, the Pull Request comment and the deployment notification.
+Outputs are consumable by any later action of the run through an \`actions.<actionId>.outputs.<name>\` placeholder, and are displayed in the job log, the Pull Request comment and the deployment notification. See the custom functions documentation for the exact placeholder syntax.
 
 ### Secrets
 
