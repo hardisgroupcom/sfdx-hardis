@@ -47,7 +47,7 @@
     "undici": "8.10.2",
     "ws": "8.21.3",
     "xpath": "0.0.34",
-    "yaml": "2.9.0"
+    "yaml": "2.9.1"
   },
   "resolutions": {
     "**/gray-matter/js-yaml": "3.15.2",
