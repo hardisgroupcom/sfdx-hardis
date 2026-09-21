@@ -17,7 +17,8 @@
  * That is the whole point of this file. A learner reading the lab would be stuck
  * on the same question, so the run must stop there too.
  *
- * Exit codes: the command's own, or 2 when a prompt went unanswered.
+ * Exit codes: the command's own, 2 when a prompt went unanswered, 3 when the
+ * WebSocket server could not start.
  *
  * `ws` comes from the sfdx-hardis working copy this skill lives in, found from
  * this file's own path. Nothing here is hardcoded to one machine.
@@ -43,8 +44,32 @@ const rules = JSON.parse(opts.answers || "[]").map((r) => ({ ...r, used: false }
 const port = Number(opts.port || 27020 + Math.floor(Math.random() * 500));
 const strip = (s) => String(s ?? "").replace(/\u001b\[[0-9;]*m/g, "");
 
+const isWin = process.platform === "win32";
+
 const wss = new WebSocketServer({ port });
 let failed = null;
+
+// Without this, a port already taken kills the process before `sf` starts, and
+// a caller reading only stdout sees an ordinary empty pass.
+wss.on("error", (error) => {
+  console.log(`[PANEL] WebSocket server failed: ${error.message}`);
+  process.exit(3);
+});
+
+/**
+ * `shell: true` on Windows makes the child a cmd.exe whose kill leaves `sf`
+ * running against the real org. Kill the tree.
+ */
+function stopCommand() {
+  if (!child || child.exitCode !== null) {
+    return;
+  }
+  if (isWin) {
+    spawn("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+  } else {
+    child.kill();
+  }
+}
 
 wss.on("connection", (ws) => {
   ws.on("message", (raw) => {
@@ -65,7 +90,7 @@ wss.on("connection", (ws) => {
           if (!rule) {
             failed = `No answer for: ${message}`;
             console.log(`[PANEL] ${failed}`);
-            child.kill();
+            stopCommand();
             return;
           }
           rule.used = true;
@@ -80,7 +105,7 @@ wss.on("connection", (ws) => {
             } else {
               failed = `No choice matching /${rule.choice}/ for: ${message}`;
               console.log(`[PANEL] ${failed}`);
-              child.kill();
+              stopCommand();
               return;
             }
           } else if (rule.value === "__INITIAL__") {
@@ -106,7 +131,6 @@ wss.on("connection", (ws) => {
   });
 });
 
-const isWin = process.platform === "win32";
 const args = [...command, "--websocket", `localhost:${port}`];
 const child = spawn(isWin ? `sf ${args.map((a) => (/[\s"&|<>^]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a)).join(" ")}` : "sf", isWin ? [] : args, {
   cwd: opts.cwd || process.cwd(),

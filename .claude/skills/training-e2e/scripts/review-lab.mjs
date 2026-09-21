@@ -122,7 +122,20 @@ for (const lab of wanted) {
 
     // What the step cites. Bold is the course's notation: **(1)**
     const cited = [...new Set([...block.join("\n").matchAll(/\*\*\((\d+)\)\*\*/g)].map((m) => Number(m[1])))].sort((a, b) => a - b);
-    console.log(`      cited in this step: ${cited.join(", ") || "(none)"}`);
+    console.log(`      pills drawn in this step: ${[...declared].sort((a, b) => a - b).join(", ") || "(none)"}`);
+    console.log(`      cited in this step:       ${cited.join(", ") || "(none)"}`);
+    // check-pills.mjs in the course repository is the authority and runs over
+    // every lab at once. Flagging it here too saves opening the image for a
+    // step whose numbers already disagree.
+    const invented = cited.filter((n) => !declared.has(n));
+    const uncited = [...declared].filter((n) => !cited.includes(n));
+    if (invented.length || uncited.length) {
+      console.log(
+        `      MISMATCH:${invented.length ? ` cites ${invented.join(", ")} which no pill carries;` : ""}` +
+          `${uncited.length ? ` shows ${uncited.join(", ")} which the step never mentions;` : ""}` +
+          " run scripts/verify/check-pills.mjs"
+      );
+    }
 
     console.log(`\n${block.join("\n").split("\n").map((l) => `      ${l}`).join("\n")}`);
   }

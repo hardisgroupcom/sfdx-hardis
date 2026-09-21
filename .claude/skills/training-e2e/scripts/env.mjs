@@ -38,5 +38,8 @@ export const login =
 
 export const UPSTREAM = process.env.UPSTREAM || "hardisgroupcom/sfdx-hardis-training";
 export const FORK = process.env.FORK || `${login}/sfdx-hardis-training`;
-export const MONREPO = process.env.MONREPO || `${login}/sfdx-hardis-training-monitoring`;
+// From FORK's owner, not from the login, so an overridden FORK takes the
+// monitoring repository with it. Same rule as env.sh.
+export const MONREPO =
+  process.env.MONREPO || `${FORK.split("/")[0]}/sfdx-hardis-training-monitoring`;
 export const PANEL = path.join(HERE, "panel.mjs");

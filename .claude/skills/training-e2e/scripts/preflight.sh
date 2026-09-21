@@ -63,8 +63,12 @@ let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
 
 for a in helios-prod helios-preprod; do
   if sf org display -o "$a" --json >/dev/null 2>&1; then
-    LIM=$(sf org list limits -o "$a" --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const f=n=>{const x=(j.result||[]).find(l=>l.name===n);return x?`${x.remaining}/${x.max}`:"?"};console.log(`DailyScratchOrgs ${f("DailyScratchOrgs")}  TotalRequests ${f("DailyApiRequests")||f("TotalRequests")}`)}catch{console.log("limits unreadable")}})')
-    say "  $a limits" "$(echo "$LIM" | grep -q ' 0/' && echo WARN || echo OK)" "$LIM"
+    LIM=$(sf org list limits -o "$a" --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const f=n=>{const x=(j.result||[]).find(l=>l.name===n);return x?`${x.remaining}/${x.max}`:null};const api=f("DailyApiRequests")??f("TotalRequests")??"?";console.log(`DailyScratchOrgs ${f("DailyScratchOrgs")??"?"}  TotalRequests ${api}`)}catch{console.log("limits unreadable")}})')
+    case "$LIM" in
+      *" 0/"*|*"?"*|*unreadable*) VERDICT=WARN;;
+      *) VERDICT=OK;;
+    esac
+    say "  $a limits" "$VERDICT" "$LIM"
   fi
 done
 echo "                           ^ a Developer Edition Dev Hub makes 6 scratch orgs a day and deleting one does not give the allowance back"

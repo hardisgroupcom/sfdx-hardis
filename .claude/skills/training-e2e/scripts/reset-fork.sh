@@ -13,16 +13,20 @@ set -e
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 REF=${REF:-main}
 
-git -C "$COURSE" fetch -q origin
+# The fork is restored from $UPSTREAM, so read it from $UPSTREAM rather than
+# from whatever $COURSE's origin happens to be. A course clone whose origin is
+# the fork itself would otherwise reset the fork from the fork.
+git -C "$COURSE" fetch -q "https://github.com/$UPSTREAM.git" \
+  "+refs/heads/*:refs/remotes/e2e-upstream/*"
 
 echo "resetting $FORK from $UPSTREAM@$REF"
 for n in $(gh pr list -R "$FORK" --state open --json number -q '.[].number'); do gh pr close "$n" -R "$FORK" >/dev/null; done
 for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do gh api -X DELETE "repos/$FORK/branches/$b/protection" >/dev/null 2>&1 || true; done
 
-git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "origin/$REF:refs/heads/main"
+git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/$REF:refs/heads/main"
 for lvl in 1 2 3; do
-  git -C "$COURSE" rev-parse -q --verify "origin/training/start-level-$lvl" >/dev/null &&
-    git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "origin/training/start-level-$lvl:refs/heads/training/start-level-$lvl"
+  git -C "$COURSE" rev-parse -q --verify "e2e-upstream/training/start-level-$lvl" >/dev/null &&
+    git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/training/start-level-$lvl:refs/heads/training/start-level-$lvl"
 done
 
 for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do

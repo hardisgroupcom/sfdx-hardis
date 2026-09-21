@@ -12,17 +12,39 @@ set -e
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 REF=${REF:-upstream/main}
 cd "$RUN"
+
+# This script checks branches out and hard-resets them. Anything uncommitted in
+# the clone would be lost, and mid-walk is exactly when there is something.
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "The clone has uncommitted changes. Commit or stash them first:"
+  git status --short --untracked-files=no
+  exit 1
+fi
+
 git fetch -q upstream
 git fetch -q origin
+
+lift() { gh api -X DELETE "repos/$FORK/branches/$1/protection" >/dev/null 2>&1 && echo yes || echo no; }
 # A relative specifier in `node -e` resolves against the working directory, which
 # keeps this free of any absolute path.
-lift() { gh api -X DELETE "repos/$FORK/branches/$1/protection" >/dev/null 2>&1 && echo yes || echo no; }
 protect() { (cd "$COURSE" && node -e "import('./scripts/lib/protection.mjs').then(m=>console.log('$1 protected:',m.protectBranch('$FORK','$1')))"); }
+
+# A branch whose protection was lifted must get it back even when the merge
+# conflicts or the push is rejected, which `set -e` would otherwise skip.
+UNPROTECTED=""
+restore_protection() {
+  for branch in $UNPROTECTED; do
+    protect "$branch" || echo "WARNING: $branch is still unprotected"
+  done
+  UNPROTECTED=""
+}
+trap restore_protection EXIT
+
 current=$(git branch --show-current)
 for b in main integration uat preprod; do
   git rev-parse -q --verify "origin/$b" >/dev/null || continue
   if git merge-base --is-ancestor "$REF" "origin/$b"; then continue; fi
-  was=$(lift "$b")
+  if [ "$(lift "$b")" = "yes" ]; then UNPROTECTED="$UNPROTECTED $b"; fi
   if git merge-base --is-ancestor "origin/$b" "$REF"; then
     git push -q origin "$REF:refs/heads/$b"
     echo "$b fast-forwarded"
@@ -33,7 +55,7 @@ for b in main integration uat preprod; do
     git push -q origin "$b"
     echo "$b merged"
   fi
-  [ "$was" = "yes" ] && protect "$b"
+  restore_protection
 done
 git checkout -q "$current"
 git pull -q --ff-only origin "$current" 2>/dev/null || true

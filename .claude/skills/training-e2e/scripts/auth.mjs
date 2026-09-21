@@ -40,17 +40,38 @@ const run = () =>
     process.execPath,
     [PANEL, "--cwd", RUN, "--answers", JSON.stringify(answers), "--", "hardis:project:configure:auth"],
     { encoding: "utf8", maxBuffer: 1 << 28 }
-  ).stdout;
+  );
 
 fs.mkdirSync(LOGS, { recursive: true });
+let stored = false;
 for (const pass of [1, 2]) {
-  const out = run();
+  const result = run();
+  const out = result.stdout || "";
   const log = path.join(LOGS, `auth-${branch}-${pass}.log`);
   fs.writeFileSync(log, out);
-  console.log(`pass ${pass}:`, (out.match(/\[PANEL\][^\n]*/g) || []).join(" | "), /Successfully deployed/.test(out) ? "| app deployed" : "");
+  console.log(
+    `pass ${pass}: exit ${result.status}`,
+    (out.match(/\[PANEL\][^\n]*/g) || []).join(" | "),
+    /Successfully deployed/.test(out) ? "| app deployed" : ""
+  );
+  // panel.mjs exits 2 on a question no rule covers and 3 when it could not
+  // start: either way the pass is a finding, not something to run past.
+  if (result.status === 2 || result.status === 3) {
+    console.log(`The command stopped on an unexpected question. See ${log}`);
+    process.exit(result.status);
+  }
   if (/Variable: <copy>SFDX_CLIENT_ID_/.test(out)) {
     const res = spawnSync(process.execPath, [path.join(HERE, "setsecrets.mjs"), log, branch.toUpperCase()], { encoding: "utf8" });
-    console.log(res.stdout.trim());
+    console.log(res.stdout.trim(), (res.stderr || "").trim());
+    if (res.status !== 0) {
+      console.log(`Storing the secrets of ${branch} failed. See ${log}`);
+      process.exit(1);
+    }
+    stored = true;
     break;
   }
+}
+if (!stored) {
+  console.log(`No secret was printed for ${branch}: the branch is not wired. See ${LOGS}`);
+  process.exit(1);
 }

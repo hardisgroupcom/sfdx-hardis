@@ -11,6 +11,9 @@ RUN=${RUN:-$SIBLINGS/training-run}
 MONRUN=${MONRUN:-$SIBLINGS/training-monitoring}
 LOGS=${LOGS:-$SIBLINGS/training-e2e}
 UPSTREAM=${UPSTREAM:-hardisgroupcom/sfdx-hardis-training}
-FORK=${FORK:-$(gh api user -q .login)/sfdx-hardis-training}
-MONREPO=${MONREPO:-$(dirname "$FORK")/sfdx-hardis-training-monitoring}
-export E2E_HERE HARDIS SIBLINGS COURSE RUN MONRUN LOGS UPSTREAM FORK MONREPO
+# GH_LOGIN, FORK and MONREPO are resolved by the same rules as env.mjs: the two
+# halves of the harness must never end up pointing at different repositories.
+GH_LOGIN=${GH_LOGIN:-$(gh api user -q .login)}
+FORK=${FORK:-$GH_LOGIN/sfdx-hardis-training}
+MONREPO=${MONREPO:-${FORK%%/*}/sfdx-hardis-training-monitoring}
+export E2E_HERE HARDIS SIBLINGS COURSE RUN MONRUN LOGS UPSTREAM GH_LOGIN FORK MONREPO
