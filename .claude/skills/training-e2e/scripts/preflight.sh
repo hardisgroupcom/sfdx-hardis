@@ -7,6 +7,8 @@
 # the run cannot create a Developer Edition org, sign a browser into GitHub or
 # grant a token scope on its own. Read the "Before starting" section of SKILL.md
 # next to this output.
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=env.sh
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 say() { printf '%-26s %-8s %s\n' "$1" "$2" "$3"; }
 
@@ -63,6 +65,9 @@ let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
 
 for a in helios-prod helios-preprod; do
   if sf org display -o "$a" --json >/dev/null 2>&1; then
+    # The single quotes are deliberate: the braces are JavaScript template
+    # literals, not shell expansions.
+    # shellcheck disable=SC2016
     LIM=$(sf org list limits -o "$a" --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const f=n=>{const x=(j.result||[]).find(l=>l.name===n);return x?`${x.remaining}/${x.max}`:null};const api=f("DailyApiRequests")??f("TotalRequests")??"?";console.log(`DailyScratchOrgs ${f("DailyScratchOrgs")??"?"}  TotalRequests ${api}`)}catch{console.log("limits unreadable")}})')
     case "$LIM" in
       *" 0/"*|*"?"*|*unreadable*) VERDICT=WARN;;

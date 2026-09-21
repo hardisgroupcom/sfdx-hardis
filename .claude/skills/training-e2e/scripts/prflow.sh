@@ -8,6 +8,8 @@
 # Requests are merged. Do not change that: the release notes and the retrofit read
 # the history.
 set -e
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=env.sh
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 R=$FORK
 PR=$1

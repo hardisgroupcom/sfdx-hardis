@@ -9,6 +9,8 @@
 # This is maintenance, not a learner action: protection is lifted for the push and
 # put back. Prefer reset-fork.sh and a clean walk whenever the run can afford it.
 set -e
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=env.sh
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 REF=${REF:-upstream/main}
 cd "$RUN"

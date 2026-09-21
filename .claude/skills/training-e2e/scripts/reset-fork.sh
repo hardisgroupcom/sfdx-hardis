@@ -10,6 +10,8 @@
 # Run this before every walk. A re-walk on a dirty fork produces failures that
 # belong to the previous run, and three of the five runs so far lost time to one.
 set -e
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=env.sh
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 REF=${REF:-main}
 
