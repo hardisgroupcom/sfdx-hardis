@@ -320,6 +320,80 @@ export function mergeIntoYamlText(yamlText: string, value: any): string {
   return doc.toString({ lineWidth: 0 });
 }
 
+// The id a project that never configured anything still carries.
+export const GTAG_PLACEHOLDER_ID = 'G-XXXXXXXXXX';
+const GTAG_JS_ENTRY = 'javascripts/gtag.js';
+const GTAG_ID_REGEX = /gtag_id\s*=\s*["'](G-[A-Za-z0-9_-]+)["']/;
+
+export type GtagMigrationResult = {
+  /** The measurement id that was moved into extra.analytics, if any */
+  movedProperty: string | null;
+  /** The id already in extra.analytics, when gtag.js declared a different one */
+  conflictingProperty: string | null;
+  fileRemoved: boolean;
+  entryRemoved: boolean;
+};
+
+/**
+ * Moves the Google Analytics measurement id of a project documentation out of
+ * docs/javascripts/gtag.js and into extra.analytics of its mkdocs.yml.
+ *
+ * Analytics used to be a script sfdx-hardis copied into the project, which the project
+ * owner edited to put their id in. It did all of its work inside location$.subscribe, and
+ * location$ is a plain Subject: it emits when the theme swaps the body for an instant
+ * navigation and stays silent for the page that is already open. The page a reader landed
+ * on was never counted, and a reader who landed and left was never counted at all.
+ *
+ * The theme has done this properly for a while through extra.analytics, so the script is
+ * gone and the id moves to where the theme reads it. mkdocsYml is mutated, and the caller
+ * writes it. Nothing is deleted until the id it held has somewhere else to live.
+ */
+export async function migrateGtagJsToMkDocsAnalytics(projectDir: string, mkdocsYml: any): Promise<GtagMigrationResult> {
+  const result: GtagMigrationResult = { movedProperty: null, conflictingProperty: null, fileRemoved: false, entryRemoved: false };
+  const gtagFile = path.join(projectDir, 'docs', 'javascripts', 'gtag.js');
+  const gtagFileExists = fs.existsSync(gtagFile);
+  const listedEntry = (mkdocsYml?.extra_javascript || []).includes(GTAG_JS_ENTRY);
+  if (!gtagFileExists && !listedEntry) {
+    return result;
+  }
+
+  const declaredId = gtagFileExists ? (GTAG_ID_REGEX.exec(await fs.readFile(gtagFile, 'utf8'))?.[1] ?? null) : null;
+  const configuredId = declaredId && declaredId !== GTAG_PLACEHOLDER_ID ? declaredId : null;
+  const alreadyInMkDocs = mkdocsYml?.extra?.analytics?.property ?? null;
+
+  // Two different ids, one in each place: the project site is counting twice and only its
+  // owner knows which one is theirs. Nothing is touched, and both are named in the log.
+  if (configuredId && alreadyInMkDocs && alreadyInMkDocs !== configuredId) {
+    result.conflictingProperty = alreadyInMkDocs;
+    uxLog("warning", this, c.yellow(t('gtagJsAndMkDocsAnalyticsDisagree', {
+      gtagFile: c.green(gtagFile),
+      gtagProperty: c.green(configuredId),
+      mkdocsProperty: c.green(alreadyInMkDocs),
+    })));
+    return result;
+  }
+
+  if (configuredId && !alreadyInMkDocs) {
+    mkdocsYml.extra = mkdocsYml.extra || {};
+    mkdocsYml.extra.analytics = { provider: 'google', property: configuredId };
+    result.movedProperty = configuredId;
+  }
+
+  if (listedEntry) {
+    mkdocsYml.extra_javascript = mkdocsYml.extra_javascript.filter((jsItem: string) => jsItem !== GTAG_JS_ENTRY);
+    result.entryRemoved = true;
+  }
+  if (gtagFileExists) {
+    await fs.remove(gtagFile);
+    result.fileRemoved = true;
+  }
+
+  if (result.movedProperty) {
+    uxLog("action", this, c.cyan(t('googleAnalyticsMovedToMkDocsYml', { property: c.green(result.movedProperty) })));
+  }
+  return result;
+}
+
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
   let mkdocsYmlStr: string;
   // The file is edited in place when it already exists: a mkdocs.yml is written

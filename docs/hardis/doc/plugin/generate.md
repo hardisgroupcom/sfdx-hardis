@@ -23,7 +23,7 @@ After the initial run, you will need to manually update:
 
 - `mkdocs.yml`: Customize the project title, theme, and other site settings. Zensical reads this file directly.
 - `.github/workflows/build-deploy-docs.yml`: Configure the GitHub Actions workflow for automatic documentation deployment.
-- `docs/javascripts/gtag.js`: If desired, set up Google Analytics tracking.
+- `mkdocs.yml`, key `extra.analytics`: If desired, set up Google Analytics tracking with your own measurement id.
 
 Finally, activate GitHub Pages with `gh_pages` as the target branch. This will enable automatic documentation rebuilding and publishing to GitHub Pages upon each merge into your `master`/`main` branch.
 
