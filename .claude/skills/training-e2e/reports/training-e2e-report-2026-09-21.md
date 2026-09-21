@@ -22,7 +22,7 @@ panels over the real CLI) that was built the same day.
 | Scratch orgs      | `helios-dev`, `helios-integration`, `helios-uat`, all Active                     |
 | Fork              | `nvuillam/sfdx-hardis-training`, **reset** to a brand new fork state before the run |
 | Learner clone     | `C:/git/training-run2`, cloned from the shared repository, as a learner does     |
-| Browser on CDP    | **absent**: nothing was signed in on port 9222                                   |
+| Browser on CDP    | absent at first; a Chrome signed in to GitHub then arrived on 9222 and unblocked 1.4 and 1.6 |
 
 The fork reset worked (main plus the three `training/start-level-*` branches, no secrets, no open
 Pull Requests). The clone had to move to `training-run2`: a VS Code window still held
