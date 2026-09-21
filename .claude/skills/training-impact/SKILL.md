@@ -189,3 +189,4 @@ learners mid-course. The training Pull Request bumps the pin and updates the lab
 
 - [[training-update]] performs the edits once this says there is an impact
 - The `vscode-sfdx-hardis` skill, for the extension side of the same change
+- [[training-e2e]] walks the labs for real, which is what finds the impacts nobody predicted

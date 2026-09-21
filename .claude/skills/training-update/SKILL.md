@@ -612,3 +612,4 @@ neither fixed nor written down is the only unacceptable outcome.
 
 - [[training-impact]] decides whether any of this is needed
 - The `vscode-sfdx-hardis` skill, for the extension side of the same change
+- [[training-e2e]] walks the labs for real, against a live fork and live orgs, and is where most of these edits come from

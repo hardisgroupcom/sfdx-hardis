@@ -211,3 +211,4 @@ Small, and each can be settled when the phase that needs it arrives:
 - [[training-update]] edits the labs, the universe, the rules and the screenshots.
 - [[training-impact]] decides whether a change here or in the extension breaks a lab.
 - [[vscode-sfdx-hardis]] for the panels the labs click through.
+- [[training-e2e]] walks the labs for real, including the claim and the badge audit.
