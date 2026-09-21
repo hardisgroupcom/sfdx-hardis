@@ -106,6 +106,17 @@ chrome.exe --remote-debugging-port=9222 --restore-last-session
 `scripts/env.sh` and `scripts/env.mjs` derive all of this from the skill's own location and let every
 value be overridden. Nothing is tied to one machine.
 
+Two traps that cost the 2026-09-21 run time:
+
+- **Build the extension with `yarn dev` as well as `yarn compile`.** `yarn compile` alone leaves the
+  worker bundle out, and the extension logs `worker error, using the CLI for every command: Cannot
+  find module out/utils/worker.js` and falls back to one process per command. It still works, and it
+  is slower on every call.
+- **A VS Code window holding `$RUN` makes `reset-fork.sh` fail** with "Device or resource busy",
+  after the fork itself has already been reset. The lab driver opens the clone, so this happens
+  whenever a driver run was not closed. The script now says what to do; the way out is
+  `RUN=/c/git/training-run2 bash reset-fork.sh`.
+
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
 branches from the course, and clones the shared repository into `$RUN` the way a learner does. Three
@@ -298,6 +309,15 @@ correctly and renders unreadably still passes. Only opening the screenshots (pas
 **Only the labs in `lab-drivers.json` are driven**, and the ones that end in a browser or on GitHub
 never will be: Lab 1.4 is Salesforce Setup, Lab 1.6 is a Pull Request. Every lab carrying a `skip`
 prints its reason, so the gap is visible in the run rather than implied.
+
+**A lab's "What you should see" is not asserted.** The driver opens the panels a lab declares
+*before* its steps, and checks that a step's command completed. What the lab promises the learner
+will see *afterwards* (the pipeline showing two branches with their orgs, the GitHub icon in colour)
+is a post-condition the driver has no way to state yet. Pass C still has to read it by eye.
+
+**Some steps are interactive by nature.** Lab 1.2 step 7 signs the extension in to GitHub through an
+OAuth round trip in a browser; no harness can click that. The test host simply has no GitHub session,
+and says so in its log.
 
 **An agent is not a beginner**, which no harness fixes. See section 1.
 

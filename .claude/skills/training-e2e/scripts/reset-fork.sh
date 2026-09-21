@@ -39,7 +39,15 @@ for s in $(gh api "repos/$FORK/actions/secrets" -q '.secrets[].name'); do gh sec
 # The learner clones the shared repository, not their fork: "Set up my training
 # environment" is what renames origin to upstream and adds the fork as origin.
 # Cloning the fork here would skip that step and take init down its other path.
-rm -rf "$RUN"
+# A VS Code holding the clone (the lab driver opens it) makes this fail with
+# "Device or resource busy", after the fork has already been reset. Say so, and
+# say what to do, rather than dying on a message nobody can act on.
+if [ -d "$RUN" ] && ! rm -rf "$RUN" 2>/dev/null; then
+  echo "The fork is reset, but $RUN could not be removed: something holds it open,"
+  echo "usually a VS Code window (the lab driver opens the clone)."
+  echo "Close it, or run again with another clone:  RUN=/c/git/training-run2 bash reset-fork.sh"
+  exit 1
+fi
 git clone -q "https://github.com/$UPSTREAM.git" "$RUN"
 git -C "$RUN" checkout -q -B main "origin/$REF"
 echo "fork reset, $RUN cloned from $UPSTREAM at $(git -C "$RUN" log --oneline -1)"
