@@ -27,7 +27,7 @@ say "sf" "$(sf --version >/dev/null 2>&1 && echo OK || echo MISSING)" "$(sf --ve
 PLUGIN=$(sf plugins 2>/dev/null | grep -i 'sfdx-hardis' | head -1)
 say "sfdx-hardis plugin" "$([ -n "$PLUGIN" ] && echo OK || echo MISSING)" "${PLUGIN:-not installed}"
 case "$PLUGIN" in
-  *link*) echo "                           ^ a linked build: the walk tests your working copy, which is usually what you want mid-change";;
+*link*) echo "                           ^ a linked build: the walk tests your working copy, which is usually what you want mid-change" ;;
 esac
 
 echo
@@ -70,8 +70,8 @@ for a in helios-prod helios-preprod; do
     # shellcheck disable=SC2016
     LIM=$(sf org list limits -o "$a" --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const f=n=>{const x=(j.result||[]).find(l=>l.name===n);return x?`${x.remaining}/${x.max}`:null};const api=f("DailyApiRequests")??f("TotalRequests")??"?";console.log(`DailyScratchOrgs ${f("DailyScratchOrgs")??"?"}  TotalRequests ${api}`)}catch{console.log("limits unreadable")}})')
     case "$LIM" in
-      *" 0/"*|*"?"*|*unreadable*) VERDICT=WARN;;
-      *) VERDICT=OK;;
+    *" 0/"* | *"?"* | *unreadable*) VERDICT=WARN ;;
+    *) VERDICT=OK ;;
     esac
     say "  $a limits" "$VERDICT" "$LIM"
   fi
