@@ -3265,7 +3265,7 @@
     "newTaskNameRegex": {
       "$id": "#/properties/newTaskNameRegex",
       "default": "",
-      "description": "If you define a regular expression, it will be used to validate the name of new User Stories.\nFor example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'",
+      "description": "If you define a regular expression, it will be used to validate the name of new User Stories.\nFor example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'\nThe regex is tested against the User Story name as typed by the user, so it can require spaces. Once the name is validated, spaces and special characters are replaced by '-' to build the git branch name.",
       "examples": [
         "^[A-Z]+-[0-9]+ .*",
         "^CLOUDITY-[0-9]+ .*",

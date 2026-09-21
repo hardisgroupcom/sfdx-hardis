@@ -54,7 +54,7 @@ Key features include:
 
 - **Project-Specific Configuration:** Supports defining multiple target branches (\`availableTargetBranches\`) and projects (\`availableProjects\`) in \`.sfdx-hardis.yml\`, allowing for tailored User Stories workflows.
 
-- **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\
+- **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\`. The regex is applied to the name as you type it, so a pattern such as \`^MYPROJECT-[0-9]+ .*\` can require spaces. Once validated, the name is converted into a git-compatible branch name, where spaces and special characters become \`-\`.
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
 - **Sandbox initialization:** Only when \`offerSandboxInit: true\` is set, the command offers to initialize the selected sandbox: installed packages, \`initPermissionSets\`, \`scratchOrgInitApexScripts\` and \`scripts/data/ScratchInit\`. It never deploys metadata.
@@ -259,13 +259,23 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
           },
         ]);
 
-    // Request task name
-    const taskName = agentMode
-      ? agentInputs.normalizedTaskName
-      : flags['task-name']
-        ? this.normalizeTaskName(flags['task-name'])
-        : await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
-    this.validateTaskNameOrThrow(taskName, config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+    // Request task name.
+    // newTaskNameRegex is always checked against the name as typed by the user: the normalization
+    // into a git-compatible branch name (spaces become "-") happens only once the name is validated.
+    let taskName: string;
+    if (agentMode) {
+      // Already validated against newTaskNameRegex in validateAgentInputs
+      taskName = agentInputs.normalizedTaskName;
+    } else if (flags['task-name']) {
+      taskName = this.validateAndNormalizeTaskName(
+        flags['task-name'],
+        config.newTaskNameRegex || null,
+        config.newTaskNameRegexExample || null
+      );
+    } else {
+      // promptTaskName validates the typed name and returns it normalized
+      taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+    }
 
     // Create the new branch from the latest version of the target branch.
     // We branch from origin/<target> instead of checking out <target>, so this works even
@@ -374,11 +384,26 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     return { outputString: 'Created new User Story' };
   }
 
-  private validateTaskNameOrThrow(taskName: string, validationRegex: string | null, taskNameExample: string | null): void {
+  /**
+   * The User Story name as it was given, checked against newTaskNameRegex and turned into a
+   * branch name. The order is the whole point: normalizing first replaces every space with "-",
+   * so a pattern like "^MYPROJECT-[0-9]+ .*" could never match a name anybody types.
+   */
+  private validateAndNormalizeTaskName(
+    rawTaskName: string,
+    validationRegex: string | null,
+    taskNameExample: string | null
+  ): string {
+    this.validateTaskNameOrThrow(rawTaskName, validationRegex, taskNameExample);
+    return this.normalizeTaskName(rawTaskName);
+  }
+
+  // The name is checked as typed by the user, before it is normalized into a branch name
+  private validateTaskNameOrThrow(rawTaskName: string, validationRegex: string | null, taskNameExample: string | null): void {
     const effectiveTaskNameExample = taskNameExample || 'MYPROJECT-123 Update account status validation rule';
-    if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
+    if (validationRegex != null && !new RegExp(validationRegex).test(rawTaskName)) {
       throw new SfError(
-        `task-name "${taskName}" does not match required pattern (${validationRegex}). Example: ${effectiveTaskNameExample}`
+        `task-name "${rawTaskName}" does not match required pattern (${validationRegex}). Example: ${effectiveTaskNameExample}`
       );
     }
   }
@@ -530,9 +555,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     if (!normalizedTaskName) {
       missing.push('task-name produced an empty normalized value');
     }
-    if (config.newTaskNameRegex && normalizedTaskName && !new RegExp(config.newTaskNameRegex).test(normalizedTaskName)) {
+    // newTaskNameRegex applies to the value passed by the caller, not to its normalized version
+    if (config.newTaskNameRegex && taskNameRaw && !new RegExp(config.newTaskNameRegex).test(taskNameRaw)) {
       missing.push(
-        `task-name does not match newTaskNameRegex (${config.newTaskNameRegex}). Example: ${taskNameExample}`
+        `task-name "${taskNameRaw}" does not match newTaskNameRegex (${config.newTaskNameRegex}). Example: ${taskNameExample}`
       );
     }
 
@@ -576,18 +602,19 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       description: t('enterDescriptiveNameForUserStoryBranch'),
       placeholder: `Ex: ${taskNameExample}`,
     });
-    let taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
-    // If there are multiple "-" , replace by single "-", otherwise it messes with mermaid diagrams
-    taskName = taskName.replace(/-+/g, '-');
-    if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
+    const rawTaskName = taskResponse.taskName || '';
+    // Validate the name as typed by the user: normalizing it first would turn every space into "-",
+    // so a regex like "^MYPROJECT-[0-9]+ .*" could never match
+    if (validationRegex != null && !new RegExp(validationRegex).test(rawTaskName)) {
       uxLog(
         "action",
         this,
-        c.cyan(t('userStoryNameDoesNotMatchPattern', { taskName: c.bold(taskName), validationRegex: c.bold(validationRegex) }))
+        c.cyan(t('userStoryNameDoesNotMatchPattern', { taskName: c.bold(rawTaskName), validationRegex: c.bold(validationRegex) }))
       );
       return this.promptTaskName(validationRegex, taskNameExample);
     }
-    return taskName;
+    // Once validated, turn the name into a git-compatible branch name
+    return this.normalizeTaskName(rawTaskName);
   }
 
   // Select/Create scratch org
