@@ -40,16 +40,16 @@ In agent mode, pass either `--id`, or both `--type` and `--name`. If lookup retu
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|bulk|boolean|Use sf data query with Tooling Bulk API for large dependency graphs and Reports||||
-|component-type|option|Only return dependent components of this Tooling metadata type||||
-|flags-dir|option|undefined||||
-|id|option|Salesforce Id of the selected component (15 or 18 characters); skips name lookup||||
-|json|boolean|Format output as json.||||
-|name|option|API name of the selected component (for example MyClass or Account.Status__c)||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
+| Name           |  Type   | Description                                                                      | Default | Required | Options |
+|:---------------|:-------:|:---------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent          | boolean | Run in non-interactive mode for agents and automation                            |         |          |         |
+| bulk           | boolean | Use sf data query with Tooling Bulk API for large dependency graphs and Reports  |         |          |         |
+| component-type | option  | Only return dependent components of this Tooling metadata type                   |         |          |         |
+| flags-dir      | option  | undefined                                                                        |         |          |         |
+| id             | option  | Salesforce Id of the selected component (15 or 18 characters); skips name lookup |         |          |         |
+| json           | boolean | Format output as json.                                                           |         |          |         |
+| name           | option  | API name of the selected component (for example MyClass or Account.Status__c)    |         |          |         |
+| skipauth       | boolean | Skip authentication check when a default username is required                    |         |          |         |
 |target-org<br/>-o|option|undefined|||||
 |type|option|Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
