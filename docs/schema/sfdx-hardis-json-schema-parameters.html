@@ -15187,9 +15187,17 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
             />
         </svg>
     <a href="#newTaskNameRegex" onclick="anchorLink('newTaskNameRegex')">newTaskNameRegex</a></div><h4>User Story name validation regex</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
-<span class="description"><p>If you define a regular expression, it will be used to validate the name of new User Stories.<br />
-For example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'</p>
-</span>
+<div class="description collapse" id="collapseDescription_newTaskNameRegex">
+            <p>If you define a regular expression, it will be used to validate the name of new User Stories.<br />
+For example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'<br />
+The regex is tested against the User Story name as typed by the user, so it can require spaces. Once the name is validated, spaces and special characters are replaced by '-' to build the git branch name.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_newTaskNameRegex"
+               aria-expanded="false" aria-controls="collapseDescriptionnewTaskNameRegex"
+            ></a>
+        </div>
         
 
         
