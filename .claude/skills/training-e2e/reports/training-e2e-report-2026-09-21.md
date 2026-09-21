@@ -43,33 +43,45 @@ Pull Requests). The clone had to move to `training-run2`: a VS Code window still
 Fidelity 1 is the lab driver (real panel, real CLI, real org). Fidelity 2 is the headless panel.
 Fidelity 3 is `sf`/`git`/`gh` directly.
 
-| Lab | Read (A) | Done (B)                 | Images (C) | Verdict                                                 |
-|-----|----------|--------------------------|------------|---------------------------------------------------------|
-| 1.1 | yes      | not applicable           | yes        | Pass, one cosmetic finding (4)                          |
-| 1.2 | yes      | fidelity 1, **partial**  | partly     | Ran correctly as far as it got, see below               |
-| 1.3 | yes      | **not covered**          | yes        | One real finding in the text (1), fixed                 |
-| 1.4 | yes      | **not covered**          | partly     | Blocked: the whole lab is Salesforce Setup in a browser |
-| 1.5 | yes      | **not covered**          | yes        | Blocked downstream of 1.4                               |
-| 1.6 | yes      | **not covered**          | yes        | Blocked downstream, and it is GitHub web                |
-| 1.7 | yes      | **not covered**          | n/a        | Blocked downstream of 1.4                               |
+| Lab | Read (A) | Done (B)        | Images (C) | Verdict                                                 |
+|-----|----------|-----------------|------------|---------------------------------------------------------|
+| 1.1 | yes      | not applicable  | yes        | Pass, one cosmetic finding (4)                          |
+| 1.2 | yes      | **fidelity 1**  | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified |
+| 1.3 | yes      | **fidelity 1**  | yes        | **Pass**, and its own check passes. One text finding (1), fixed |
+| 1.4 | yes      | **not covered** | partly     | Blocked: the whole lab is Salesforce Setup in a browser |
+| 1.5 | yes      | **not covered** | yes        | Blocked downstream of 1.4                               |
+| 1.6 | yes      | **not covered** | yes        | Blocked downstream, and it is GitHub web                |
+| 1.7 | yes      | **not covered** | n/a        | Blocked downstream of 1.4                               |
 
-### Lab 1.2, what the driver actually proved
+### Lab 1.2, what the driver proved
 
-The card was clicked through the real panel, against the real CLI and the real Dev Hub, and it did
-the right things in the right order. Verified from outside the run, not from its log:
+The card was clicked through the real panel, against the real CLI and the real Dev Hub, and every
+promise of the lab's step 6 held. Verified from outside the run, not from its log:
 
-| Step of the lab                                | Observed                                                       |
-|------------------------------------------------|----------------------------------------------------------------|
-| Fork, and origin becomes the fork              | `origin` is now `nvuillam/...`, `upstream` the shared repository |
-| The confirmation the lab documents             | `Build your training environment from helios-prod?`, answered yes |
-| `integration` and `uat` created in the fork    | both present                                                    |
-| Branch to org mapping committed                | `config/branches/.sfdx-hardis.integration.yml` on `integration`  |
-| Three scratch orgs created                     | `helios-dev`, `helios-integration`, `helios-uat`, all Active     |
-| The Helios app deployed into them              | `Installation__c` queryable in all three                         |
-| The sample data imported                       | 30 rows in `helios-dev`; the other two still at 0 when time ran out |
-| CI secrets, branch protection                  | **not reached** in the window                                    |
+| Step 6 promises                             | Observed                                                          |
+|---------------------------------------------|-------------------------------------------------------------------|
+| A fork, and origin becomes it               | `origin` is `nvuillam/...`, `upstream` is the shared repository    |
+| The confirmation the lab documents          | `Build your training environment from helios-prod?`, answered yes  |
+| `integration` and `uat` in the fork         | both present                                                       |
+| The branch to org mapping                   | `config/branches/.sfdx-hardis.integration.yml` on `integration`     |
+| Three scratch orgs                          | `helios-dev`, `helios-integration`, `helios-uat`, all Active        |
+| The Helios app deployed into each           | `Installation__c` queryable in all three                            |
+| Its data loaded                             | 30 `Installation__c` rows in each of the three                      |
+| CI credentials as repository secrets        | `SFDX_AUTH_URL_INTEGRATION`, `SFDX_AUTH_URL_UAT`                    |
+| `integration` and `uat` protected           | `integration` has required reviews                                   |
 
-So the lab works, and it is **slower than it says**: see finding 5.
+10 minutes 14 seconds, inside the 15 to 20 the lab promises.
+
+### Lab 1.3, what the driver proved
+
+Four questions, in the order the lab documents them, and **no fifth**:
+
+1. `What type of User Story do you want to create?` -> `features`
+2. `What is the name of your new User Story? Please avoid accents and special characters.` -> `US-014-panels-required`
+3. `Which Salesforce org do you want to work in?` -> `scratch`
+4. `Select a scratch org for branch features/US-014-panels-required` -> `helios-dev`
+
+Then the lab's own **Check my work** for Lab 1.3: `OK 1 of 1 checks passed`, with the receipt line.
 
 ## Findings
 
@@ -110,28 +122,37 @@ Lab 1.1's Extensions view capture is dark while every other screenshot in the co
 a hand capture by necessity, because the harness VS Code has no marketplace access, so it cannot be
 regenerated by a script. Left open: it needs someone to re-take it by hand in light mode.
 
-### 5. Lab 1.2 says 15 to 20 minutes, and a cold run takes longer (course, open)
+### 5. An anchored choice regex cannot match a choice that starts with an emoji (spec, fixed)
 
-Step 5 of Lab 1.2 tells the learner to wait 15 to 20 minutes. On a reset fork with three scratch
-orgs created from scratch, the app deployed into each and the data imported, it had not finished
-after 50 minutes, and it was still making progress rather than stuck. A learner who reads "15 to 20
-minutes" and sees nothing after half an hour will assume it hung and kill it, which is the worst
-thing they could do to a half-wired fork.
+Lab 1.3 failed on its third question with the driver printing what the panel really offered:
 
-Two things follow, and only the second is done:
+```
+No choice matching /^Scratch org/ in "Which Salesforce org do you want to work in?".
+The panel offered: Sandbox org with source tracking | Scratch org | Current org fun-dream-... | I'm hardcore, I don't need an org !
+```
 
-- the lab's estimate should say what the long pole is (three scratch orgs, three deploys, three data
-  imports) and give a wider range. **Left open**: it is the course's own copy to set, and this run
-  never saw the true total.
-- the driver's budget for the step was 40 minutes, which was not enough. Raised to 70 minutes in
-  `lab-drivers.json`, with the evidence in a comment next to it.
+Every one of those titles is prefixed with an emoji in the payload, so `^Scratch org` can never
+match. The rules in `lab-drivers.json` were written with `^` anchors throughout; all of them are now
+matched on words instead, and the file says why at the top so the next rule is not written that way.
+
+Nothing wrong with the course or the product here: the failure was in the answers this run brought,
+and the driver reporting the real choices is what made it a two-minute fix.
+
+### Note on the time Lab 1.2 takes
+
+An earlier draft of this report claimed the setup overran the lab's "15 to 20 minutes". It does not:
+mocha timed the step at 10 minutes 14 seconds. The long wall clock came from the first, failed
+attempt (finding 3) running before it, not from the setup itself. The step budget in the spec was
+raised to 70 minutes anyway, which costs nothing and leaves room for a slower Dev Hub.
 
 ## What this run did not cover
 
 - **Labs 1.4 to 1.7 were not performed.** Lab 1.4 happens entirely in Salesforce Setup in a browser,
   and no signed-in Chrome was available on the CDP port. Everything after it needs the field it
   creates, so the rest of the level is blocked behind it. They were read and their screenshots
-  partly reviewed, nothing more.
+  reviewed, nothing more. To unblock them, start Chrome with `--remote-debugging-port=9222` on a
+  profile signed in to GitHub, and run the walk again from Lab 1.4: the fork and the orgs are
+  already wired, and the story branch already exists.
 - **Lab 1.2 step 7** (Sign in with VS Code so the extension can talk to GitHub) cannot be driven: the
   test host has no GitHub session and the sign-in is an interactive OAuth. The log shows the
   extension reporting no signed-in session for `api.github.com`.
