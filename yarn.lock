@@ -1434,13 +1434,13 @@
   dependencies:
     ollama "^0.6.3"
 
-"@langchain/openai@1.5.11":
-  version "1.5.11"
-  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.5.11.tgz#d973b75285502c899f82b476df9db38ed2756428"
-  integrity sha512-BvGp5lQk5//0WVwTIepscazFpneT9I9+mc+kp+cLuhGHFb7mc9zGNrusZOXoa3p73SN0i3XqTo8lyIndpVx3Hw==
+"@langchain/openai@1.5.13":
+  version "1.5.13"
+  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.5.13.tgz#70d666a53494e17c522ec347aa7a9489b042012d"
+  integrity sha512-SA1QWNgM/p8xhdwU82CJ7OofhHEExpAaIwJ7j9ELIyVW795Mn0jDRQO/5yChawLcPhuLkeL+jMesi0FnXbImSg==
   dependencies:
     js-tiktoken "^1.0.12"
-    openai "^7.5.0"
+    openai "^7.10.0"
     zod "^3.25.76 || ^4"
 
 "@nodable/entities@^3.0.0":
@@ -7075,10 +7075,10 @@ oniguruma-to-es@^2.2.0:
     regex "^5.1.1"
     regex-recursion "^5.1.1"
 
-openai@^7.5.0:
-  version "7.10.0"
-  resolved "https://registry.yarnpkg.com/openai/-/openai-7.10.0.tgz#85f755a02dfcb7b7327732fe7e09a88f10df6ce1"
-  integrity sha512-sn9t2Kls7O52PwuF9BUTYNu4Gk/r0lXJyrgaNht4TNRlZFb3dJIGO0RciSgjARGCBRtWjySubAQFJttlzUvGQQ==
+openai@^7.10.0:
+  version "7.20.0"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-7.20.0.tgz#2508815a7b0844dde94311a0de9771eecdc3738d"
+  integrity sha512-5x5ru4cKEvEqHqYZbdIbT57OE7KqmP9YYxZiUKuKng016grOHXqom1vmu34MTPPW30q+lcP9RhxAbaRse+Xlcw==
 
 optionator@^0.9.3:
   version "0.9.4"
