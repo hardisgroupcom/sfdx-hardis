@@ -5,24 +5,24 @@ panels over the real CLI) that was built the same day.
 
 ## Versions under test
 
-| Thing                  | Version                                                                             |
-|------------------------|-------------------------------------------------------------------------------------|
-| sfdx-hardis            | 8.9.0, linked working copy (`sf plugins` shows `link`), branch `feat/training-e2e-skill` |
-| vscode-sfdx-hardis     | 8.7.0, branch `feat/lab-driver`                                                      |
-| Course                 | branch `feat/lab-driver-specs`, on top of `c50ebb9`                                  |
-| Salesforce CLI         | @salesforce/cli 2.151.6, node 24.11.1                                                |
-| Published site         | live, and **behind the working copy**: the fixes below are not on `main` yet         |
+| Thing              | Version                                                                                  |
+|--------------------|------------------------------------------------------------------------------------------|
+| sfdx-hardis        | 8.9.0, linked working copy (`sf plugins` shows `link`), branch `feat/training-e2e-skill` |
+| vscode-sfdx-hardis | 8.7.0, branch `feat/lab-driver`                                                          |
+| Course             | branch `feat/lab-driver-specs`, on top of `c50ebb9`                                      |
+| Salesforce CLI     | @salesforce/cli 2.151.6, node 24.11.1                                                    |
+| Published site     | live, and **behind the working copy**: the fixes below are not on `main` yet             |
 
 ## Environment
 
-| Item              | State                                                                          |
-|-------------------|--------------------------------------------------------------------------------|
-| `helios-prod`     | Developer Edition, Dev Hub, `orgfarm-c77e7e1127`, 6/6 daily scratch orgs, ~14.9k/15k API |
-| `helios-preprod`  | Developer Edition, Dev Hub, `orgfarm-bedd5b7a5a`, 6/6 daily scratch orgs                 |
-| Scratch orgs      | `helios-dev`, `helios-integration`, `helios-uat`, all Active                     |
-| Fork              | `nvuillam/sfdx-hardis-training`, **reset** to a brand new fork state before the run |
-| Learner clone     | `C:/git/training-run2`, cloned from the shared repository, as a learner does     |
-| Browser on CDP    | **absent**: nothing was signed in on port 9222                                   |
+| Item             | State                                                                                    |
+|------------------|------------------------------------------------------------------------------------------|
+| `helios-prod`    | Developer Edition, Dev Hub, `orgfarm-c77e7e1127`, 6/6 daily scratch orgs, ~14.9k/15k API |
+| `helios-preprod` | Developer Edition, Dev Hub, `orgfarm-bedd5b7a5a`, 6/6 daily scratch orgs                 |
+| Scratch orgs     | `helios-dev`, `helios-integration`, `helios-uat`, all Active                             |
+| Fork             | `nvuillam/sfdx-hardis-training`, **reset** to a brand new fork state before the run      |
+| Learner clone    | `C:/git/training-run2`, cloned from the shared repository, as a learner does             |
+| Browser on CDP   | **absent**: nothing was signed in on port 9222                                           |
 
 The fork reset worked (main plus the three `training/start-level-*` branches, no secrets, no open
 Pull Requests). The clone had to move to `training-run2`: a VS Code window still held
@@ -30,8 +30,8 @@ Pull Requests). The clone had to move to `training-run2`: a VS Code window still
 
 ## The cheap checks, all green
 
-| Check                      | Result                                              |
-|----------------------------|-----------------------------------------------------|
+| Check                      | Result                                               |
+|----------------------------|------------------------------------------------------|
 | `check-commands.mjs`       | 13 commands the labs rely on, all exist              |
 | `check-links.mjs`          | 55 external URLs, every one resolves                 |
 | `check-pills.mjs`          | 274 image references against 117 annotated images    |
@@ -46,15 +46,15 @@ Fidelity 3 is `sf`/`git`/`gh` directly.
 The browser arrived mid-run: the user started a Chrome signed in to GitHub on the CDP port, which
 unblocked Labs 1.4 and 1.6.
 
-| Lab | Read (A) | Done (B)                  | Images (C) | Verdict                                                          |
-|-----|----------|---------------------------|------------|------------------------------------------------------------------|
-| 1.1 | yes      | not applicable            | yes        | Pass, one cosmetic finding (4)                                   |
-| 1.2 | yes      | **fidelity 1**            | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified          |
-| 1.3 | yes      | **fidelity 1**            | yes        | **Pass**, own check passes. One text finding (1), fixed          |
-| 1.4 | yes      | **browser, real Setup**   | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed      |
-| 1.5 | yes      | **fidelity 1** (publish)  | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3    |
-| 1.6 | yes      | **browser + gh**          | yes        | One finding (8), fixed. See the run notes                        |
-| 1.7 | yes      | **not covered**           | n/a        | Capstone: repeats 1.3 to 1.6 unaided, which is the point of it   |
+| Lab | Read (A) | Done (B)                 | Images (C) | Verdict                                                        |
+|-----|----------|--------------------------|------------|----------------------------------------------------------------|
+| 1.1 | yes      | not applicable           | yes        | Pass, one cosmetic finding (4)                                 |
+| 1.2 | yes      | **fidelity 1**           | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified        |
+| 1.3 | yes      | **fidelity 1**           | yes        | **Pass**, own check passes. One text finding (1), fixed        |
+| 1.4 | yes      | **browser, real Setup**  | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed    |
+| 1.5 | yes      | **fidelity 1** (publish) | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3  |
+| 1.6 | yes      | **browser + gh**         | yes        | One finding (8), fixed. See the run notes                      |
+| 1.7 | yes      | **not covered**          | n/a        | Capstone: repeats 1.3 to 1.6 unaided, which is the point of it |
 
 ### Lab 1.4, done through the real Salesforce Setup
 
@@ -81,17 +81,17 @@ screenshot claims. Save / Publish then ran at fidelity 1, two questions, branch 
 The card was clicked through the real panel, against the real CLI and the real Dev Hub, and every
 promise of the lab's step 6 held. Verified from outside the run, not from its log:
 
-| Step 6 promises                             | Observed                                                          |
-|---------------------------------------------|-------------------------------------------------------------------|
-| A fork, and origin becomes it               | `origin` is `nvuillam/...`, `upstream` is the shared repository    |
-| The confirmation the lab documents          | `Build your training environment from helios-prod?`, answered yes  |
-| `integration` and `uat` in the fork         | both present                                                       |
-| The branch to org mapping                   | `config/branches/.sfdx-hardis.integration.yml` on `integration`     |
-| Three scratch orgs                          | `helios-dev`, `helios-integration`, `helios-uat`, all Active        |
-| The Helios app deployed into each           | `Installation__c` queryable in all three                            |
-| Its data loaded                             | 30 `Installation__c` rows in each of the three                      |
-| CI credentials as repository secrets        | `SFDX_AUTH_URL_INTEGRATION`, `SFDX_AUTH_URL_UAT`                    |
-| `integration` and `uat` protected           | `integration` has required reviews                                   |
+| Step 6 promises                      | Observed                                                          |
+|--------------------------------------|-------------------------------------------------------------------|
+| A fork, and origin becomes it        | `origin` is `nvuillam/...`, `upstream` is the shared repository   |
+| The confirmation the lab documents   | `Build your training environment from helios-prod?`, answered yes |
+| `integration` and `uat` in the fork  | both present                                                      |
+| The branch to org mapping            | `config/branches/.sfdx-hardis.integration.yml` on `integration`   |
+| Three scratch orgs                   | `helios-dev`, `helios-integration`, `helios-uat`, all Active      |
+| The Helios app deployed into each    | `Installation__c` queryable in all three                          |
+| Its data loaded                      | 30 `Installation__c` rows in each of the three                    |
+| CI credentials as repository secrets | `SFDX_AUTH_URL_INTEGRATION`, `SFDX_AUTH_URL_UAT`                  |
+| `integration` and `uat` protected    | `integration` has required reviews                                |
 
 10 minutes 14 seconds, inside the 15 to 20 the lab promises.
 
