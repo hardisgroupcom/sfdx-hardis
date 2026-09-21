@@ -56,6 +56,31 @@ console.log((m.reverseIndex[key] || {})[value] || 'no lab depends on it');
 It works offline and against the exact checked-out state, which is what makes this a check rather
 than a habit.
 
+## The course is in two languages, and one of them is the reference
+
+The training ships in English and in French: `labs/en/` and `labs/fr/`, mirrored file for file.
+
+**`labs/en/` is the reference, and the impact is always computed from it.** The manifest is
+generated from the English front matter, so `reverseIndex` names English lab ids and nothing else.
+That is correct and it is not a gap: a lab's `depends_on` is the same in every language, because the
+commands, flags, config keys and panels it relies on are the same.
+
+What it means for the answer you give: **a lab that is affected is affected in every locale.** Each
+manifest entry carries a `translations` block naming the file and the URL of that lab in each other
+locale, so name them:
+
+```bash
+node -e "
+const m = require('../sfdx-hardis-training/training-manifest.json');
+const lab = m.labs.find((one) => one.id === process.argv[1]);
+console.log(lab.file, '+', Object.values(lab.translations || {}).map((t) => t.file).join(', '));
+" lab-2-3
+```
+
+A change never breaks only the French version, and a French-only fix is never the answer: the
+correction goes into `labs/en/` first and the translations follow. [[training-update]] has the
+procedure.
+
 ## The procedure
 
 1. **List what the change touches.** Be specific and literal:
@@ -113,7 +138,7 @@ In the analysis and the design, a **Training impact** section:
 ```markdown
 ## Training impact
 
-**Affected labs**: lab-2-3 (Lab 2.3), lab-2-4 (Lab 2.4)
+**Affected labs**: lab-2-3 (Lab 2.3), lab-2-4 (Lab 2.4), in `labs/en/` and `labs/fr/`
 
 `commandsPostDeploy` gains a `retryCount` key. Both labs quote the YAML in their
 "Under the hood" block, so both blocks are now incomplete rather than wrong.
