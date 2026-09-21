@@ -70,10 +70,19 @@ markdown_extensions:
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
-  - javascripts/gtag.js
 extra_css:
   - stylesheets/extra.css
 extra:
+  # Google Analytics. The theme calls gtag("config") once when the page loads and
+  # again on every instant navigation, so both the landing page view and the ones
+  # that follow are counted. Do not replace this with a hand written gtag.js in
+  # extra_javascript: that is what used to be here, and it only subscribed to
+  # location$, which is a plain Subject and never emits for the page you land on.
+  # Every session's first page view was lost. Verify with:
+  #   node scripts/verify/check-analytics.mjs   (in the sfdx-hardis-training repo)
+  analytics:
+    provider: google
+    property: G-Z1B416W4CP
   social:
     - icon: fontawesome/regular/circle-question
       link: https://github.com/hardisgroupcom/sfdx-hardis/issues

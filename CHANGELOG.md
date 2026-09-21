@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): a documentation site with Google Analytics configured now counts the page a reader lands on, instead of counting nothing until they click a link.
+
 ## [8.9.0] 2026-09-20
 
 - [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
