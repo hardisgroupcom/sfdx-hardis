@@ -95,13 +95,13 @@ describe('migrateGtagJsToMkDocsAnalytics()', () => {
   it('touches nothing when the two places declare different ids', async () => {
     await writeGtagJs('G-ABC1234567');
     const mkdocsYml: any = yaml.load(legacyMkDocsYml);
-    mkdocsYml.extra.analytics = { provider: 'google', property: 'G-SOMEONEELSE' };
+    mkdocsYml.extra.analytics = { provider: 'google', property: 'G-9Z8Y7X6W5V' };
 
     const result = await migrateGtagJsToMkDocsAnalytics(projectDir, mkdocsYml);
 
-    expect(result.conflictingProperty).to.equal('G-SOMEONEELSE');
+    expect(result.conflictingProperty).to.equal('G-9Z8Y7X6W5V');
     expect(result.movedProperty).to.equal(null);
-    expect(mkdocsYml.extra.analytics.property).to.equal('G-SOMEONEELSE');
+    expect(mkdocsYml.extra.analytics.property).to.equal('G-9Z8Y7X6W5V');
     // Nothing is thrown away while the project owner has not said which id is theirs
     expect(mkdocsYml.extra_javascript).to.include('javascripts/gtag.js');
     expect(gtagJsExists()).to.equal(true);
