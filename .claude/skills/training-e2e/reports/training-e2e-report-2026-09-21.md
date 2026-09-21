@@ -43,15 +43,38 @@ Pull Requests). The clone had to move to `training-run2`: a VS Code window still
 Fidelity 1 is the lab driver (real panel, real CLI, real org). Fidelity 2 is the headless panel.
 Fidelity 3 is `sf`/`git`/`gh` directly.
 
-| Lab | Read (A) | Done (B)        | Images (C) | Verdict                                                 |
-|-----|----------|-----------------|------------|---------------------------------------------------------|
-| 1.1 | yes      | not applicable  | yes        | Pass, one cosmetic finding (4)                          |
-| 1.2 | yes      | **fidelity 1**  | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified |
-| 1.3 | yes      | **fidelity 1**  | yes        | **Pass**, and its own check passes. One text finding (1), fixed |
-| 1.4 | yes      | **not covered** | partly     | Blocked: the whole lab is Salesforce Setup in a browser |
-| 1.5 | yes      | **not covered** | yes        | Blocked downstream of 1.4                               |
-| 1.6 | yes      | **not covered** | yes        | Blocked downstream, and it is GitHub web                |
-| 1.7 | yes      | **not covered** | n/a        | Blocked downstream of 1.4                               |
+The browser arrived mid-run: the user started a Chrome signed in to GitHub on the CDP port, which
+unblocked Labs 1.4 and 1.6.
+
+| Lab | Read (A) | Done (B)                  | Images (C) | Verdict                                                          |
+|-----|----------|---------------------------|------------|------------------------------------------------------------------|
+| 1.1 | yes      | not applicable            | yes        | Pass, one cosmetic finding (4)                                   |
+| 1.2 | yes      | **fidelity 1**            | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified          |
+| 1.3 | yes      | **fidelity 1**            | yes        | **Pass**, own check passes. One text finding (1), fixed          |
+| 1.4 | yes      | **browser, real Setup**   | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed      |
+| 1.5 | yes      | **fidelity 1** (publish)  | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3    |
+| 1.6 | yes      | **browser + gh**          | yes        | One finding (8), fixed. See the run notes                        |
+| 1.7 | yes      | **not covered**           | n/a        | Capstone: repeats 1.3 to 1.6 unaided, which is the point of it   |
+
+### Lab 1.4, done through the real Salesforce Setup
+
+Driven in the user's signed-in Chrome over CDP, clicking the wizard the lab describes. The field
+exists in `helios-dev` with exactly the lab's values (`Panels_Required`, precision 4, scale 0, the
+description and help text verbatim), both permission sets carry the grants the lab specifies
+(Crew read only, Manager read and edit), and **Check my work** passes:
+
+> Panels Required exists in helios-dev, the crew can read it and the planners can fill it in
+
+Not done: the last part of the lab, typing a value into three Installation records. It changes no
+metadata and the lab's own check does not look at it.
+
+### Lab 1.5
+
+Steps 1 to 4 (Metadata Retriever, then the commit) were done with `sf project retrieve start` and
+`git commit`, which is fidelity 3: the Metadata Retriever is a webview the driver cannot click yet.
+The retrieve returned exactly the four components the lab's screenshot shows, which is what that
+screenshot claims. Save / Publish then ran at fidelity 1, two questions, branch pushed, and
+**Check my work** passes.
 
 ### Lab 1.2, what the driver proved
 
@@ -145,14 +168,89 @@ mocha timed the step at 10 minutes 14 seconds. The long wall clock came from the
 attempt (finding 3) running before it, not from the setup itself. The step budget in the spec was
 raised to 70 minutes anyway, which costs nothing and leaves room for a slower Dev Hub.
 
+### 6. Lab 1.4 says to leave every profile unticked; they arrive ticked (course, fixed)
+
+Step 3 of the New Custom Field wizard, in the lab: *"On the field-level security screen, leave every
+profile unticked and click Next. You are going to grant this through a permission set, not a
+profile."*
+
+What the screen really shows, counted in the org: **19 of the 24 profiles arrive with Visible
+ticked.** The instruction cannot be followed as written, and a learner who reads "leave them" and
+clicks Next ships the field granted by profile, which is the opposite of what the lab is teaching
+and of what Lab 2.6 later builds on.
+
+The checkbox in the **Visible** column header toggles the whole column: from the default it takes one
+click to tick all 24 and a second to clear them. Verified by doing it, 48 checkboxes to 0. The lab
+now says that.
+
+### 7. Lab 1.4 says to tick a box that is already ticked (course, fixed)
+
+Step 4: *"On the page layout screen, tick Installation Layout"*. There is one layout and it arrives
+ticked. Harmless, and still an instruction that does not match the screen, so it now reads as what
+it is.
+
+### 8. Lab 1.6 sends a stuck learner back through a 10 minute setup that cannot help (course, fixed)
+
+Walking Lab 1.6 the checks never started: no run at all, not even the `push` one. Actions reported
+`enabled: true` and every workflow `active`, and the fork still showed GitHub's banner,
+**"Workflows aren't being run on this forked repository"**, with **"I understand my workflows, go
+ahead and enable them"**. One click, reopen the Pull Request, and the deployment check started.
+
+Lab 1.6's "If it goes wrong" said to re-run **Set up my training environment**. That cannot clear
+this: there is no API behind that banner, which is exactly why the setup command cannot turn it on
+either. Lab 1.2 already documents it correctly; Lab 1.6 now points at the banner too, and says the
+Pull Request has to be reopened afterwards, which nobody guesses.
+
+Every learner meets this on a fresh fork, so it is the most likely place in Level 1 for someone to
+give up.
+
+### 9. Two answer rules were written from an i18n key instead of the rendered question (spec, fixed)
+
+Lab 1.5 stopped on *"Do you want to push your commit(s) to the git server?"*, which the rule
+`push commits to git branch` does not match: that text came from the key name
+`doYouWantToPushCommitsToGitBranch`, not from the screen. Same class as finding 5. The rule now
+matches the sentence a learner reads.
+
+### 10. The Pull Request comment links the story to a placeholder JIRA host (product, open)
+
+The deployment check posted the comment Lab 1.6 walks through, and its **Tickets** section read:
+
+> US-014 -> `https://define.JIRA_HOST.in.cicd.variables/browse/US-014`
+
+A dead link. The course configures `genericTicketingProviderRegex` and
+`genericTicketingProviderUrlBuilder` so that US-014 points at its backlog page, and the lab's own
+screenshot shows exactly that, with the story title next to it.
+
+sfdx-hardis on `main` already guards this: `getProvidersTicketsFromString` drops a JIRA ticket whose
+URL starts with `JIRA_HOST_PLACEHOLDER` when a generic provider is configured. So either the job ran
+a published version older than that guard, or the project config did not reach it. **Left open**: the
+job log does not print the plugin version, so the run could not tell which, and guessing in a report
+is worse than saying so.
+
+What is certain is the mismatch a learner meets: the lab's screenshot shows a working backlog link,
+and the comment they get carries a dead one.
+
+### Not a finding: "Insufficient Privileges" on the field wizard
+
+Worth recording because it cost an hour and looked like a blocking course defect. Opening Object
+Manager by API name (`/ObjectManager/Installation__c/FieldsAndRelationships/new`) renders the list
+fine but denies the wizard. The `new` page wants the object's **durable id**
+(`/ObjectManager/01IE200000FmmjT/...`), which is what a learner gets by clicking through Object
+Manager as the lab tells them to. A deep link was the harness's shortcut, not the lab's instruction.
+The user was System Administrator with `CustomizeApplication` throughout, and the same wizard opened
+on `Account` at the same moment, which is what proved it.
+
 ## What this run did not cover
 
-- **Labs 1.4 to 1.7 were not performed.** Lab 1.4 happens entirely in Salesforce Setup in a browser,
-  and no signed-in Chrome was available on the CDP port. Everything after it needs the field it
-  creates, so the rest of the level is blocked behind it. They were read and their screenshots
-  reviewed, nothing more. To unblock them, start Chrome with `--remote-debugging-port=9222` on a
-  profile signed in to GitHub, and run the walk again from Lab 1.4: the fork and the orgs are
-  already wired, and the story branch already exists.
+- **Lab 1.7, the capstone, was not walked.** It repeats 1.3 to 1.6 unaided on a second story, and
+  what it really tests is whether a human can do it without the steps, which is the one thing an
+  agent cannot stand in for.
+- **The Metadata Retriever was not clicked.** Lab 1.5 steps 1 to 4 were done with
+  `sf project retrieve start` and `git commit`. The panel is a webview the driver cannot drive yet,
+  so the lab's central teaching moment (pick your four components, leave the rest) is covered by its
+  screenshot and not by the walk.
+- **Lab 1.4's last part** (typing a value into three Installation records) was skipped: it changes no
+  metadata and the lab's own check does not read it.
 - **Lab 1.2 step 7** (Sign in with VS Code so the extension can talk to GitHub) cannot be driven: the
   test host has no GitHub session and the sign-in is an interactive OAuth. The log shows the
   extension reporting no signed-in session for `api.github.com`.
