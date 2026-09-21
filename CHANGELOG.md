@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): a documentation site with Google Analytics configured now counts the page a reader lands on, instead of counting nothing until they click a link.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): Google Analytics is now declared in `mkdocs.yml` under `extra.analytics`, and a measurement id already set in `docs/javascripts/gtag.js` is moved there on the next run: the page a reader lands on is counted, instead of nothing being counted until they click a link.
 
 ## [8.9.0] 2026-09-20
 

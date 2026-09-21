@@ -9,7 +9,7 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, migrateGtagJsToMkDocsAnalytics, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
@@ -1389,18 +1389,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         { overwrite: true }
       );
     }
-    // gtag.js carries the measurement id of the project, so it is not an owned asset: rewriting
-    // it would throw away an id someone configured. A project that never set one still calls
-    // googletagmanager.com on every page load with the placeholder, which the current default now
-    // guards against, so that file is refreshed only while it still declares the placeholder.
-    const projectGtagFile = path.join(process.cwd(), "docs", "javascripts", "gtag.js");
-    if (fs.existsSync(projectGtagFile) && /gtag_id\s*=\s*"G-XXXXXXXXXX"/.test(await fs.readFile(projectGtagFile, "utf8"))) {
-      await fs.copy(
-        path.join(PACKAGE_ROOT_DIR, "defaults/mkdocs-project-doc/docs/javascripts/gtag.js"),
-        projectGtagFile,
-        { overwrite: true }
-      );
-    }
     const docLabels = {
       filterTableRows: t('docJsFilterTableRows'),
       filterRowsPlaceholder: t('docJsFilterRowsPlaceholder'),
@@ -1447,7 +1435,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       "https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js",
       "https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js",
       "javascripts/tables.js",
-      "javascripts/gtag.js",
       "javascripts/jstree-handler.js",
       // Labels first: the script below reads them
       SFDX_HARDIS_DOC_LABELS_JS,
@@ -1460,6 +1447,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       }
     }
     mkdocsYml.extra_javascript = extraJavascript;
+
+    // Analytics used to be a gtag.js copied into the project, which never counted the page a
+    // reader landed on. The id moves to extra.analytics, where the theme reads it.
+    await migrateGtagJsToMkDocsAnalytics(process.cwd(), mkdocsYml);
 
     // Add missing CSS if necessary
     const allCss = [
