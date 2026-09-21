@@ -53,8 +53,27 @@ unblocked Labs 1.4 and 1.6.
 | 1.3 | yes      | **fidelity 1**            | yes        | **Pass**, own check passes. One text finding (1), fixed          |
 | 1.4 | yes      | **browser, real Setup**   | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed      |
 | 1.5 | yes      | **fidelity 1** (publish)  | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3    |
-| 1.6 | yes      | **browser + gh**          | yes        | One finding (8), fixed. See the run notes                        |
+| 1.6 | yes      | **browser + gh**          | yes        | **Pass**, own check passes. Two findings (8, 10)                 |
 | 1.7 | yes      | **not covered**           | n/a        | Capstone: repeats 1.3 to 1.6 unaided, which is the point of it   |
+
+**Everything in level 1**, the check the badge claim runs: **5 of 6 pass.** The sixth is Lab 1.7,
+which this run did not walk, and the check says exactly what it wants and where it looked:
+
+```
+X   Lab 1.7  Capstone: US-016 delivered on your own
+      What is missing: Installation__c.Crew_Notes__c was not found
+      Where it was looked for: force-app/.../fields/Crew_Notes__c.field-meta.xml on branch integration
+```
+
+That message is worth keeping as it is. Every failing check in this run named the thing it wanted and
+the place it looked, which is the difference between a learner fixing it and a learner giving up.
+
+### Lab 1.6, end to end
+
+Pull Request opened into `integration`, both required checks green, squash merged, **Process
+Deployment (sfdx-hardis)** run on `integration`, and `Panels_Required__c` verified present in
+`helios-integration` afterwards. The deployment comment matched the lab's screenshot except for its
+ticket link, which is finding 10.
 
 ### Lab 1.4, done through the real Salesforce Setup
 

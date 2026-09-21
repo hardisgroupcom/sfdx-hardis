@@ -91,6 +91,26 @@ type into a window you found by its title.
 chrome.exe --remote-debugging-port=9222 --restore-last-session
 ```
 
+Four things the 2026-09-21 run paid for, driving Salesforce Setup over CDP:
+
+- **Reach Setup through the Lightning domain, not the Setup domain.** With Enhanced Domains, Setup
+  lives on `my.salesforce-setup.com` while the session belongs to `my.salesforce.com`. Navigating
+  straight to the setup host renders a page whose actions all answer "Insufficient Privileges".
+  Build the URL on the instance URL and let Salesforce redirect.
+- **Open Object Manager by the object's durable id**, not its API name.
+  `/ObjectManager/Installation__c/FieldsAndRelationships/view` lists the fields, and the matching
+  `/new` denies the wizard. `/ObjectManager/01IE2000.../...` works, and is what clicking through
+  Object Manager gives a learner anyway. `SELECT DurableId FROM EntityDefinition WHERE
+  QualifiedApiName = '...'` (tooling API) gets it.
+- **Setup buttons carry assistive text.** The New button's text content is `NewCustom Field`, so an
+  exact-text selector finds nothing; `button[title="Custom Field"]` does. The wizard itself is a
+  classic form in an iframe, with plain `input[name=...]` controls (`digleft` is Length).
+- **Bring the tab to front before a screenshot.** Chrome throttles background tabs hard enough that
+  `page.screenshot` times out. And after a long session the DevTools endpoint can wedge: `/json`
+  still answers over HTTP while Playwright's attach hangs, and the cure is to close the instance's
+  tabs through `/json/close/<id>` and relaunch it on the same `--user-data-dir`, which keeps the
+  sign-in.
+
 ## 3. The environment
 
 | Thing                                | Where                                     | Note                                                                  |
