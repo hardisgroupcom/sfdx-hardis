@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:doc:metadata-deps](https://sfdx-hardis.cloudity.com/hardis/doc/metadata-deps/): Identify which metadata items use a given Salesforce component and export a dependency report.
 - New [Free training](https://sfdx-hardis.cloudity.com/salesforce-devops-training/) page presenting the hands-on Salesforce DevOps course, linked from the menu, the home page and the guides.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta):
   - New `promotionConflictMarkersIgnoredFiles` property to list the files allowed to hold git conflict markers, so a repository whose own content holds them can promote again.

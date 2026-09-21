@@ -191,6 +191,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)           | Generate a detailed report of Permission Set Group assignments and included permission sets                             |
 | [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                                 | Display where custom fields are referenced across metadata components (impact analysis)                                 |
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                           | Convert a Salesforce Flow metadata file into a human-readable Markdown description                                      |
+| [**hardis:doc:metadata-deps**](hardis/doc/metadata-deps.md)                           | Find which metadata components use a selected component. Flags: `--type`, `--name`, `--id`, `--component-type`, `--bulk` |
 | [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                             | Publish MkDocs-generated documentation to Cloudflare Pages                                                              |
 | [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)             | Synchronize MkDocs documentation to a Confluence space                                                                  |
 | [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)             | Publish MkDocs documentation inside a Salesforce org (static resource, Visualforce page and Custom Tab)                 |
