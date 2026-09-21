@@ -267,8 +267,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       // Already validated against newTaskNameRegex in validateAgentInputs
       taskName = agentInputs.normalizedTaskName;
     } else if (flags['task-name']) {
-      this.validateTaskNameOrThrow(flags['task-name'], config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
-      taskName = this.normalizeTaskName(flags['task-name']);
+      taskName = this.validateAndNormalizeTaskName(
+        flags['task-name'],
+        config.newTaskNameRegex || null,
+        config.newTaskNameRegexExample || null
+      );
     } else {
       // promptTaskName validates the typed name and returns it normalized
       taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
@@ -379,6 +382,20 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     }
     // Return an object to be displayed with --json
     return { outputString: 'Created new User Story' };
+  }
+
+  /**
+   * The User Story name as it was given, checked against newTaskNameRegex and turned into a
+   * branch name. The order is the whole point: normalizing first replaces every space with "-",
+   * so a pattern like "^MYPROJECT-[0-9]+ .*" could never match a name anybody types.
+   */
+  private validateAndNormalizeTaskName(
+    rawTaskName: string,
+    validationRegex: string | null,
+    taskNameExample: string | null
+  ): string {
+    this.validateTaskNameOrThrow(rawTaskName, validationRegex, taskNameExample);
+    return this.normalizeTaskName(rawTaskName);
   }
 
   // The name is checked as typed by the user, before it is normalized into a branch name
