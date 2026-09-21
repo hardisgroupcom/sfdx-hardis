@@ -20,20 +20,20 @@ defects nobody predicted.
 
 ## What this skill contains
 
-| File                       | Use                                                                                                          |
-|----------------------------|--------------------------------------------------------------------------------------------------------------|
-| `reference/runbook.md`     | The full procedure: fidelity levels, the three passes per lab, per level notes, the traps. **Read it first.** |
-| `scripts/preflight.sh`     | Every prerequisite in one screen, and what to ask the user for.                                              |
-| `scripts/env.sh`, `env.mjs`| The paths, all derived from this skill's own location, all overridable.                                       |
-| `scripts/reset-fork.sh`    | Puts the fork and the clone back to what a brand new fork gives a learner.                                    |
-| `scripts/panel.mjs`        | The headless stand-in for the VS Code panel: real command, real org, prompts answered from rules.             |
-| `scripts/review-lab.mjs`   | Per lab, every image with its pills, the text around it, and the file to open.                                |
-| `scripts/prflow.sh`        | Waits for a Pull Request's checks, merges when green, watches the deployment job.                             |
-| `scripts/auth.mjs`         | Lab 3.1: Add/Configure Org for one branch, then its two secrets on the fork.                                  |
-| `scripts/mon.mjs`          | Lab 3.8: Install Org Monitoring in the monitoring repository, then its secrets.                               |
-| `scripts/setsecrets.mjs`, `setsecrets-mon.mjs` | Read the secret values out of a command's log and store them.                             |
-| `scripts/sync.sh`          | Mid-walk only: brings a course fix into the fork's major branches.                                            |
-| `reports/`                 | One report per run.                                                                                          |
+| File                                           | Use                                                                                                           |
+|------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `reference/runbook.md`                         | The full procedure: fidelity levels, the three passes per lab, per level notes, the traps. **Read it first.** |
+| `scripts/preflight.sh`                         | Every prerequisite in one screen, and what to ask the user for.                                               |
+| `scripts/env.sh`, `env.mjs`                    | The paths, all derived from this skill's own location, all overridable.                                       |
+| `scripts/reset-fork.sh`                        | Puts the fork and the clone back to what a brand new fork gives a learner.                                    |
+| `scripts/panel.mjs`                            | The headless stand-in for the VS Code panel: real command, real org, prompts answered from rules.             |
+| `scripts/review-lab.mjs`                       | Per lab, every image with its pills, the text around it, and the file to open.                                |
+| `scripts/prflow.sh`                            | Waits for a Pull Request's checks, merges when green, watches the deployment job.                             |
+| `scripts/auth.mjs`                             | Lab 3.1: Add/Configure Org for one branch, then its two secrets on the fork.                                  |
+| `scripts/mon.mjs`                              | Lab 3.8: Install Org Monitoring in the monitoring repository, then its secrets.                               |
+| `scripts/setsecrets.mjs`, `setsecrets-mon.mjs` | Read the secret values out of a command's log and store them.                                                 |
+| `scripts/sync.sh`                              | Mid-walk only: brings a course fix into the fork's major branches.                                            |
+| `reports/`                                     | One report per run.                                                                                           |
 
 ## Before starting
 

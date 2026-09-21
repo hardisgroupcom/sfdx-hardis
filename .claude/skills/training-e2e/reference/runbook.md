@@ -11,12 +11,12 @@ contributor loop changed.
 
 A learner fails for four different reasons, and only the first is what unit tests catch:
 
-| Failure                                                                    | Caught by                                    |
-|----------------------------------------------------------------------------|----------------------------------------------|
-| A command was renamed, a flag dropped, a config key moved                  | `scripts/verify/check-commands.mjs`, the `training-impact` skill |
-| A link rotted, a pill number drifted, a page lost an asset                 | `scripts/verify/check-*.mjs`                 |
-| The step works but the lab describes something else, or the screenshot shows a panel that no longer looks like that | **only this run**  |
-| The step does not work at all on a clean environment                       | **only this run**                            |
+| Failure                                                                                                             | Caught by                                                        |
+|---------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| A command was renamed, a flag dropped, a config key moved                                                           | `scripts/verify/check-commands.mjs`, the `training-impact` skill |
+| A link rotted, a pill number drifted, a page lost an asset                                                          | `scripts/verify/check-*.mjs`                                     |
+| The step works but the lab describes something else, or the screenshot shows a panel that no longer looks like that | **only this run**                                                |
+| The step does not work at all on a clean environment                                                                | **only this run**                                                |
 
 The two bottom rows are why this exists. Everything above them is cheap, runs in minutes, and must
 be run first: there is no point walking 26 labs to discover a dead link.
@@ -93,15 +93,15 @@ chrome.exe --remote-debugging-port=9222 --restore-last-session
 
 ## 3. The environment
 
-| Thing                        | Where                                                | Note                                                              |
-|------------------------------|------------------------------------------------------|-------------------------------------------------------------------|
-| The course source            | `$COURSE`, sibling `sfdx-hardis-training`            | Read the rules and the images here; never do the labs here        |
-| The learner's clone          | `$RUN`, sibling `training-run`                       | Every lab happens here                                            |
-| The fork                     | `$FORK`, `<login>/sfdx-hardis-training`              | Reset before the walk                                             |
-| The monitoring repository    | `$MONREPO`, cloned into `$MONRUN`                    | Lab 3.8 only                                                      |
-| `helios-prod`                | A Developer Edition org, Dev Hub                     | Production in the fiction, and the Dev Hub the scratch orgs come from |
-| `helios-preprod`             | A second Developer Edition org                       | Level 3 adds it to the pipeline                                   |
-| `helios-dev`, `-integration`, `-uat` | Scratch orgs                                 | Created by Set up my training environment                         |
+| Thing                                | Where                                     | Note                                                                  |
+|--------------------------------------|-------------------------------------------|-----------------------------------------------------------------------|
+| The course source                    | `$COURSE`, sibling `sfdx-hardis-training` | Read the rules and the images here; never do the labs here            |
+| The learner's clone                  | `$RUN`, sibling `training-run`            | Every lab happens here                                                |
+| The fork                             | `$FORK`, `<login>/sfdx-hardis-training`   | Reset before the walk                                                 |
+| The monitoring repository            | `$MONREPO`, cloned into `$MONRUN`         | Lab 3.8 only                                                          |
+| `helios-prod`                        | A Developer Edition org, Dev Hub          | Production in the fiction, and the Dev Hub the scratch orgs come from |
+| `helios-preprod`                     | A second Developer Edition org            | Level 3 adds it to the pipeline                                       |
+| `helios-dev`, `-integration`, `-uat` | Scratch orgs                              | Created by Set up my training environment                             |
 
 `scripts/env.sh` and `scripts/env.mjs` derive all of this from the skill's own location and let every
 value be overridden. Nothing is tied to one machine.
@@ -192,15 +192,15 @@ traps of that harness are in the `training-update` skill; do not rediscover them
 
 The pipeline and the contributor loop. Nothing else in the course works if this level does not.
 
-| Lab | What it is                       | Driven by                                        | Proves                                       |
-|-----|----------------------------------|--------------------------------------------------|----------------------------------------------|
-| 1.1 | Install the tools                | Nothing to run: read it, check the 8 screenshots | The install page still matches the marketplace and the Setup panel |
-| 1.2 | Dev Hub, scratch orgs, pipeline  | `training.mjs init`                              | The fork, the three scratch orgs, the branches, the secrets, the protection |
-| 1.3 | Start a User Story               | `panel.mjs ... hardis:work:new`                  | The branch, its prefix, the story name rules  |
-| 1.4 | Build a custom field             | The browser, in Salesforce Setup                 | The field, both permission sets, the layout   |
-| 1.5 | Retrieve, commit, publish        | `panel.mjs ... hardis:work:save`                 | Metadata Retriever, the commit, the push      |
-| 1.6 | Pull Request, check, merge       | `gh pr create`, then `prflow.sh <pr> squash`     | The deployment check job, the merge, the deploy to integration |
-| 1.7 | Capstone, on your own            | The whole loop again, unaided                    | That a learner can repeat it without the step by step |
+| Lab | What it is                      | Driven by                                        | Proves                                                                      |
+|-----|---------------------------------|--------------------------------------------------|-----------------------------------------------------------------------------|
+| 1.1 | Install the tools               | Nothing to run: read it, check the 8 screenshots | The install page still matches the marketplace and the Setup panel          |
+| 1.2 | Dev Hub, scratch orgs, pipeline | `training.mjs init`                              | The fork, the three scratch orgs, the branches, the secrets, the protection |
+| 1.3 | Start a User Story              | `panel.mjs ... hardis:work:new`                  | The branch, its prefix, the story name rules                                |
+| 1.4 | Build a custom field            | The browser, in Salesforce Setup                 | The field, both permission sets, the layout                                 |
+| 1.5 | Retrieve, commit, publish       | `panel.mjs ... hardis:work:save`                 | Metadata Retriever, the commit, the push                                    |
+| 1.6 | Pull Request, check, merge      | `gh pr create`, then `prflow.sh <pr> squash`     | The deployment check job, the merge, the deploy to integration              |
+| 1.7 | Capstone, on your own           | The whole loop again, unaided                    | That a learner can repeat it without the step by step                       |
 
 Level 1 notes that previous runs settled:
 
@@ -221,17 +221,17 @@ The failures a contributor meets after the easy stories. Teammate branches and P
 from `Training > Simulate my teammates` (`node scripts/training.mjs simulate`), never from you
 opening them by hand: what the simulator produces is what the lab describes.
 
-| Lab | What it is                            | Driven by                                              |
-|-----|---------------------------------------|--------------------------------------------------------|
-| 2.1 | Backpromote                           | `panel.mjs ... hardis:work:backpromote`; the `backpromote` skill covers the protocol |
-| 2.2 | A missing dependency breaks the deploy | `work:new`, `work:save`, then the failing check job    |
+| Lab | What it is                             | Driven by                                                                            |
+|-----|----------------------------------------|--------------------------------------------------------------------------------------|
+| 2.1 | Backpromote                            | `panel.mjs ... hardis:work:backpromote`; the `backpromote` skill covers the protocol |
+| 2.2 | A missing dependency breaks the deploy | `work:new`, `work:save`, then the failing check job                                  |
 | 2.3 | Fix records with an Apex action        | A deployment action; the fix must be `Database.Batchable`, never a loop over a query |
-| 2.4 | Reference data and a batch             | `hardis:org:data:import` and two deployment actions    |
-| 2.5 | Code quality and Apex coverage         | The quality gate job on the Pull Request               |
-| 2.6 | Permission sets and profiles           | `work:save`, and a grant that disappears               |
-| 2.7 | A merge conflict with a teammate       | `simulate`, then the conflict resolved in `$RUN`       |
-| 2.8 | Recover from the wrong metadata        | `hardis:work:resetselection`, which resets the commits |
-| 2.9 | Capstone                               | Everything at once                                     |
+| 2.4 | Reference data and a batch             | `hardis:org:data:import` and two deployment actions                                  |
+| 2.5 | Code quality and Apex coverage         | The quality gate job on the Pull Request                                             |
+| 2.6 | Permission sets and profiles           | `work:save`, and a grant that disappears                                             |
+| 2.7 | A merge conflict with a teammate       | `simulate`, then the conflict resolved in `$RUN`                                     |
+| 2.8 | Recover from the wrong metadata        | `hardis:work:resetselection`, which resets the commits                               |
+| 2.9 | Capstone                               | Everything at once                                                                   |
 
 - Level 2 **updates flows that already ship with the app** (`Installation_Crew_Warning`,
   `Installation_Close_Check`). A lab that creates one is wrong.
@@ -244,18 +244,18 @@ opening them by hand: what the simulator produces is what the lab describes.
 
 The release manager. This is the level where the course touches the orgs and the repository hardest.
 
-| Lab  | What it is                          | Driven by                                                        |
-|------|-------------------------------------|------------------------------------------------------------------|
+| Lab  | What it is                           | Driven by                                                                                         |
+|------|--------------------------------------|---------------------------------------------------------------------------------------------------|
 | 3.1  | Configure the pipeline to production | `scripts/auth.mjs <org> <branch> <urlRegex> <targetRegex>`, once per new branch, then the secrets |
-| 3.2  | Review and merge a contributor PR    | `simulate`, then review and `prflow.sh <pr> squash`              |
-| 3.3  | Read the deployment log              | The job log of the merge, and what `.forceignore` hides from it   |
-| 3.4  | Three colliding Pull Requests        | `simulate`, then a merge order chosen and defended               |
-| 3.5  | Promote to UAT, write release notes  | The `+ PR` chip of the DevOps Pipeline, `hardis:doc:release-notes` |
-| 3.6  | Release to production, DORA          | The promotion into `main`, `hardis:doc:dora-report`              |
-| 3.7  | Hotfix and retrofit                  | A hotfix from `main`, then the retrofit into `integration`       |
-| 3.8  | Monitor production                    | `scripts/mon.mjs`, in a repository of its own                    |
-| 3.9  | Project documentation                 | `hardis:doc:project2markdown`                                    |
-| 3.10 | Capstone: a weekly release cycle      | One story all the way through, four promotions                   |
+| 3.2  | Review and merge a contributor PR    | `simulate`, then review and `prflow.sh <pr> squash`                                               |
+| 3.3  | Read the deployment log              | The job log of the merge, and what `.forceignore` hides from it                                   |
+| 3.4  | Three colliding Pull Requests        | `simulate`, then a merge order chosen and defended                                                |
+| 3.5  | Promote to UAT, write release notes  | The `+ PR` chip of the DevOps Pipeline, `hardis:doc:release-notes`                                |
+| 3.6  | Release to production, DORA          | The promotion into `main`, `hardis:doc:dora-report`                                               |
+| 3.7  | Hotfix and retrofit                  | A hotfix from `main`, then the retrofit into `integration`                                        |
+| 3.8  | Monitor production                   | `scripts/mon.mjs`, in a repository of its own                                                     |
+| 3.9  | Project documentation                | `hardis:doc:project2markdown`                                                                     |
+| 3.10 | Capstone: a weekly release cycle     | One story all the way through, four promotions                                                    |
 
 The role split is the point of this level, and it is easy to break by being helpful:
 
@@ -278,13 +278,13 @@ commit, not just a green job.
 
 ## 8. Fixing what you find, inside the run
 
-| The defect is                                             | Fix it in              | How                                                   |
-|-----------------------------------------------------------|------------------------|-------------------------------------------------------|
-| The command, the flag, the report, the log                | `sfdx-hardis`          | The usual `implement` flow, plus a CHANGELOG entry     |
-| The panel, the webview, the DevOps Pipeline               | `vscode-sfdx-hardis`   | Its own `CLAUDE.md` and skills, never this repository's |
-| The lab text, a precondition, an "If it goes wrong"       | `sfdx-hardis-training` | `labs/en/` first, then the other locales               |
-| A stale screenshot                                        | `sfdx-hardis-training` | Re-capture with the harness; never edit a PNG          |
-| A check rule that passes broken work, or fails good work  | `sfdx-hardis-training` | `scripts/verify/rules.mjs`                             |
+| The defect is                                            | Fix it in              | How                                                     |
+|----------------------------------------------------------|------------------------|---------------------------------------------------------|
+| The command, the flag, the report, the log               | `sfdx-hardis`          | The usual `implement` flow, plus a CHANGELOG entry      |
+| The panel, the webview, the DevOps Pipeline              | `vscode-sfdx-hardis`   | Its own `CLAUDE.md` and skills, never this repository's |
+| The lab text, a precondition, an "If it goes wrong"      | `sfdx-hardis-training` | `labs/en/` first, then the other locales                |
+| A stale screenshot                                       | `sfdx-hardis-training` | Re-capture with the harness; never edit a PNG           |
+| A check rule that passes broken work, or fails good work | `sfdx-hardis-training` | `scripts/verify/rules.mjs`                              |
 
 Rules that hold whatever you found:
 

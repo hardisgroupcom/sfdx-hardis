@@ -14,7 +14,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 R=$FORK
 PR=$1
 MODE=${2:-merge}
-[ -n "$PR" ] || { echo "usage: prflow.sh <pr> [check|merge|squash]"; exit 1; }
+[ -n "$PR" ] || {
+  echo "usage: prflow.sh <pr> [check|merge|squash]"
+  exit 1
+}
 
 # `gh pr checks --watch` returns when every check has finished, whatever their
 # number. Counting lines instead meant guessing how many checks a Pull Request

@@ -32,7 +32,7 @@ for lvl in 1 2 3; do
 done
 
 for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do
-  case $b in main|gh-pages|training/start-level-*) ;; *) gh api -X DELETE "repos/$FORK/git/refs/heads/$b" >/dev/null;; esac
+  case $b in main | gh-pages | training/start-level-*) ;; *) gh api -X DELETE "repos/$FORK/git/refs/heads/$b" >/dev/null ;; esac
 done
 for s in $(gh api "repos/$FORK/actions/secrets" -q '.secrets[].name'); do gh secret delete "$s" -R "$FORK" >/dev/null; done
 
