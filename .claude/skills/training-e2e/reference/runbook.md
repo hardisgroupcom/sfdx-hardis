@@ -292,9 +292,24 @@ The role split is the point of this level, and it is easy to break by being help
 - Pull Request titles say "Release" only into `main`, and "Promotion" otherwise.
 
 Lab 3.8 runs in a **second repository**, the monitoring one, with its own secrets
-(`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Its backup job once silently never committed,
-from a git "dubious ownership" error inside the container: check that the run actually produced a
-commit, not just a green job.
+(`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Two things about its first run:
+
+- **It is supposed to be red.** The Monitoring job fails on `ActiveScratchOrgs`, 3 of 3 at 100%, and
+  the lab names that limit in advance and builds its triage exercise on it. Do not go fixing it.
+- **Read the first lines of each step anyway.** "dubious ownership" inside the container has twice
+  hidden a real defect behind a green-looking job: once a backup that silently never committed, once
+  (2026-09-21) a `git pull` that ran before `safe.directory` was set and so never refreshed the
+  branch. Both were in `defaults/monitoring/.github/workflows/org-monitoring.yml`, and both printed a
+  reassuring fallback message. Check what the run actually did, not what it reported.
+
+### The badge claim
+
+Claiming the level's badge is part of walking it, and the claim is what exercises the audit. If the
+audit does not run within a minute or two of the issue being opened, look at the issue's **labels**
+before looking at the workflow: `claim.yml` gates on `badge-claim`, GitHub silently drops a label an
+issue form asks for when the repository has no such label, and from the learner's side that is
+indistinguishable from waiting. That was finding 12 of the 2026-09-21 run, and it meant no claim had
+ever been audited.
 
 ## 8. Fixing what you find, inside the run
 
