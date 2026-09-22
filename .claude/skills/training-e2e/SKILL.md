@@ -65,11 +65,19 @@ almost always be yes to.
    link:
 
    ```bash
+   node scripts/build/universe.mjs --check    # the generated files match what the sources say
    node scripts/verify/check-commands.mjs     # every command a lab needs still exists
    node scripts/verify/check-links.mjs        # every URL
    node scripts/verify/check-pills.mjs        # drawn pills versus referenced pills
-   node scripts/build/site.mjs && node scripts/verify/check-site.mjs
+   node scripts/i18n/check-i18n.mjs           # every locale answers every key of the generated pages
+   node scripts/build/site.mjs && python -m zensical build -f course-site.yml
+   node scripts/verify/check-site.mjs         # every page resolves every asset and every link
+   node scripts/verify/check-nav.mjs          # one language per menu, and every picker comes back
+   node scripts/verify/check-language-switch.mjs   # the picker after an instant navigation, and the cookie
    ```
+
+   The last two open a browser, so they need `playwright-core` and a Chrome, which
+   `preflight.sh` reports.
 
 3. **Reset the fork**: `bash scripts/reset-fork.sh`, and put the orgs back with
    `node scripts/training.mjs teardown`. Never delete and recreate the scratch orgs: the daily
@@ -121,8 +129,11 @@ State them again in the report unless you close them:
 - **An agent is not a beginner.** It reads past ambiguities a first-timer stops at, because it knows
   the product. Treat every sentence you had to re-read as a finding, and say in the report that
   prose clarity was not really tested.
-- The French labs are walked only when asked. `labs/en/` is the reference and gets the walk;
-  `labs/fr/` is checked for structure by `scripts/i18n/check-structure.mjs`, not by doing it.
+- The French side is walked only when asked, and it is the whole site now rather than the labs
+  alone: the backlog, every story page, the badges and the Help page are generated in both
+  languages, and each menu holds one language. `labs/en/` is the reference and gets the walk;
+  `labs/fr/` is checked for structure by `scripts/i18n/check-structure.mjs` and its generated
+  pages for completeness by `scripts/i18n/check-i18n.mjs`, neither of which is doing it.
 - Lab 1.1 installs tools that are already installed, so it is read and its screenshots are checked,
   never performed.
 - Levels 1 and 2 have been walked green several times; Level 3 is the one that keeps finding
