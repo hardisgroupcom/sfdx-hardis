@@ -5,9 +5,10 @@ panels over the real CLI) that was built the same day.
 
 **All 26 labs of the three levels were walked, and every lab's own `Check my work` passes**: 6 of 6
 in Level 1, 9 of 9 in Level 2, 10 of 10 in Level 3. The Level 3 badge was claimed and awarded. The
-run produced 13 findings, 11 of them fixed here; the two left open are 4 (a dark-theme screenshot)
+run produced 14 findings, 12 of them fixed here; the two left open are 4 (a dark-theme screenshot)
 and 10 (a placeholder JIRA link in a Pull Request comment). The one worth reading first is 12: no
-badge claim any learner ever opened had been audited.
+badge claim any learner ever opened had been audited. A `code-review` at `high` over the three Pull
+Requests then raised seven more, all of them in the harness this run added, and all seven are fixed.
 
 ## Versions under test
 
@@ -332,6 +333,55 @@ workspace checked out by another user. The fallback message made it look deliber
 `defaults/monitoring/.github/workflows/org-monitoring.yml` by setting `safe.directory` first, in both
 steps that pull. The backup step was already in the right order, which is why only two of the three
 showed it.
+
+### 14. Monitoring: MegaLinter went red on a Flow Salesforce ships (product, fixed)
+
+Lab 3.8 says the backup, the Apex tests and MegaLinter are green and only the Monitoring job is red.
+Two of those three were true. MegaLinter failed, on one linter:
+
+```
+| ⚠️ SALESFORCE | code-analyzer-apex   |   1 |
+| ⚠️ SALESFORCE | code-analyzer-aura   | 222 |
+| ❌ SALESFORCE | code-analyzer-flow   |   6 |
+| ⚠️ SALESFORCE | code-analyzer-lwc    |   1 |
+```
+
+Five of those six violations are `MissingDescription` on `sfdc_default_ReportExport_Protection_Flow`,
+a flow **Salesforce puts in every org**. The sixth is on the flow the course itself has the learner
+build. So this went red for every learner who ever reached Lab 3.8, on metadata nobody wrote.
+
+The cause is visible in the table above: apex, aura and lwc are warnings because
+`config/sfdx-hardis.mega-linter-config.yml` sets `SALESFORCE_CODE_ANALYZER_*_DISABLE_ERRORS` for
+those three. Flow was never added. It was missed because
+`defaults/monitoring/.mega-linter.yml` still listed `SALESFORCE_SFDX_SCANNER_APEX`, `_AURA` and
+`_LWC` in `DISABLE_ERRORS_LINTERS`, keys that have matched nothing since MegaLinter renamed those
+linters to `SALESFORCE_CODE_ANALYZER_*`: the config looked like it covered the Salesforce analyzers
+and covered none of them.
+
+Fixed by adding `SALESFORCE_CODE_ANALYZER_FLOW_DISABLE_ERRORS: true` and removing the three dead
+keys. **Not re-proven on a real run**: the Developer Edition org's daily API budget ran out
+(`REQUEST_LIMIT_EXCEEDED: TotalRequests Limit exceeded`) before the verification run could reach
+MegaLinter. What the evidence does establish is the mechanism, since the three sibling keys produced
+`⚠️` instead of `❌` in the same run on the same repository.
+
+### The code review round
+
+The `code-review` skill was then run at `high` over the three Pull Requests. It raised **seven
+findings, every one of them in the harness this run added**, and all seven are fixed:
+
+| # | Where | What |
+|---|-------|------|
+| 1 | `scripts/mon.mjs` | A failed Lab 3.8 pass exited 0, so a run where no secret was ever stored reported green |
+| 2 | `scripts/prflow.sh` | `\| tail -1` handed the pipeline tail's status, so a merge refused by branch protection read as merged and was diagnosed ten minutes later as a missing deployment run |
+| 3 | `labDriver.ts` | A question the command really asks twice was dropped silently: the step then failed at its full timeout without naming the question, which is the driver's whole purpose |
+| 4 | `scripts/sync.sh` | `protectBranch` returns a boolean, so node exited 0 either way and a major branch left unprotected passed silently |
+| 5 | `labDriver.ts`, `panel.mjs` | A rule with neither `choice` nor `value` answered `undefined`; the command read it as falsy and the lab passed having exercised the wrong branch |
+| 6 | `scripts/prflow.sh` | A bare filtering `grep` under `set -e` could kill the script with nothing printed, and `grep -qE "fail"` matched the whole row including check names and URLs |
+| 7 | `labDriver.ts` | The abort path disposed the panel by its provisional id, which `rekeyPanel` has already removed, so an aborted command kept running against the learner's real org while the next lab started |
+
+Findings 1, 4 and 5 share a shape worth naming: **a harness that reports success when it did nothing
+is worse than no harness**, because it converts an unwalked lab into a green line in a report. Three
+of the seven were that.
 
 ### Not a finding: Lab 2.3's deployment error is the lab's own lesson
 
