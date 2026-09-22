@@ -52,15 +52,15 @@ Fidelity 3 is `sf`/`git`/`gh` directly.
 The browser arrived mid-run: the user started a Chrome signed in to GitHub on the CDP port, which
 unblocked Labs 1.4 and 1.6.
 
-| Lab | Read (A) | Done (B)                  | Images (C) | Verdict                                                          |
-|-----|----------|---------------------------|------------|------------------------------------------------------------------|
-| 1.1 | yes      | not applicable            | yes        | Pass, one cosmetic finding (4)                                   |
-| 1.2 | yes      | **fidelity 1**            | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified          |
-| 1.3 | yes      | **fidelity 1**            | yes        | **Pass**, own check passes. One text finding (1), fixed          |
-| 1.4 | yes      | **browser, real Setup**   | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed      |
-| 1.5 | yes      | **fidelity 1** (publish)  | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3    |
-| 1.6 | yes      | **browser + gh**          | yes        | **Pass**, own check passes. Two findings (8, 10)                 |
-| 1.7 | yes      | **browser + sf + git/gh**  | yes        | **Pass**, own check passes. Walked after the rest of level 1     |
+| Lab | Read (A) | Done (B)                  | Images (C) | Verdict                                                       |
+|-----|----------|---------------------------|------------|---------------------------------------------------------------|
+| 1.1 | yes      | not applicable            | yes        | Pass, one cosmetic finding (4)                                |
+| 1.2 | yes      | **fidelity 1**            | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified       |
+| 1.3 | yes      | **fidelity 1**            | yes        | **Pass**, own check passes. One text finding (1), fixed       |
+| 1.4 | yes      | **browser, real Setup**   | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed   |
+| 1.5 | yes      | **fidelity 1** (publish)  | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3 |
+| 1.6 | yes      | **browser + gh**          | yes        | **Pass**, own check passes. Two findings (8, 10)              |
+| 1.7 | yes      | **browser + sf + git/gh** | yes        | **Pass**, own check passes. Walked after the rest of level 1  |
 
 **Everything in level 1: 6 of 6 pass.** Lab 1.7 failed first, which is how its message got read:
 
@@ -75,34 +75,34 @@ the place it looked, which is the difference between a learner fixing it and a l
 
 ### Level 2, contributor at work
 
-| Lab | Read (A) | Done (B)                   | Images (C) | Verdict                                                   |
-|-----|----------|----------------------------|------------|-----------------------------------------------------------|
-| 2.1 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
-| 2.2 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
-| 2.3 | yes      | fidelity 3 + browser       | yes        | Pass. The lab predicts its own deployment error, see below |
-| 2.4 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
-| 2.5 | yes      | fidelity 3                 | yes        | Pass, own check passes                                    |
-| 2.6 | yes      | fidelity 3                 | yes        | Pass, own check passes                                    |
-| 2.7 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
-| 2.8 | yes      | fidelity 3                 | yes        | Pass, own check passes                                    |
-| 2.9 | yes      | fidelity 3 + browser       | yes        | Capstone, walked. Own check passes                        |
+| Lab | Read (A) | Done (B)             | Images (C) | Verdict                                                    |
+|-----|----------|----------------------|------------|------------------------------------------------------------|
+| 2.1 | yes      | fidelity 3 + browser | yes        | Pass, own check passes                                     |
+| 2.2 | yes      | fidelity 3 + browser | yes        | Pass, own check passes                                     |
+| 2.3 | yes      | fidelity 3 + browser | yes        | Pass. The lab predicts its own deployment error, see below |
+| 2.4 | yes      | fidelity 3 + browser | yes        | Pass, own check passes                                     |
+| 2.5 | yes      | fidelity 3           | yes        | Pass, own check passes                                     |
+| 2.6 | yes      | fidelity 3           | yes        | Pass, own check passes                                     |
+| 2.7 | yes      | fidelity 3 + browser | yes        | Pass, own check passes                                     |
+| 2.8 | yes      | fidelity 3           | yes        | Pass, own check passes                                     |
+| 2.9 | yes      | fidelity 3 + browser | yes        | Capstone, walked. Own check passes                         |
 
 **Everything in level 2: 9 of 9 pass.**
 
 ### Level 3, release manager
 
-| Lab | Read (A) | Done (B)                        | Images (C) | Verdict                                              |
-|-----|----------|---------------------------------|------------|-------------------------------------------------------|
-| 3.1 | yes      | `auth.mjs` + browser + `gh`     | yes        | Pass. Org authentication and the two secrets per branch |
-| 3.2 | yes      | browser + `gh`                  | yes        | Pass. One text finding (11), fixed                    |
-| 3.3 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
-| 3.4 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
-| 3.5 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
-| 3.6 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
-| 3.7 | yes      | fidelity 3                      | yes        | Pass, own check passes                                |
-| 3.8 | yes      | `mon.mjs` + real nightly run    | yes        | Pass. One product finding (13), fixed                 |
-| 3.9 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
-| 3.10| yes      | browser + `gh`                  | yes        | Capstone, walked. Own check passes                    |
+| Lab  | Read (A) | Done (B)                     | Images (C) | Verdict                                                 |
+|------|----------|------------------------------|------------|---------------------------------------------------------|
+| 3.1  | yes      | `auth.mjs` + browser + `gh`  | yes        | Pass. Org authentication and the two secrets per branch |
+| 3.2  | yes      | browser + `gh`               | yes        | Pass. One text finding (11), fixed                      |
+| 3.3  | yes      | fidelity 3 + browser         | yes        | Pass, own check passes                                  |
+| 3.4  | yes      | fidelity 3 + browser         | yes        | Pass, own check passes                                  |
+| 3.5  | yes      | fidelity 3 + browser         | yes        | Pass, own check passes                                  |
+| 3.6  | yes      | fidelity 3 + browser         | yes        | Pass, own check passes                                  |
+| 3.7  | yes      | fidelity 3                   | yes        | Pass, own check passes                                  |
+| 3.8  | yes      | `mon.mjs` + real nightly run | yes        | Pass. One product finding (13), fixed                   |
+| 3.9  | yes      | fidelity 3 + browser         | yes        | Pass, own check passes                                  |
+| 3.10 | yes      | browser + `gh`               | yes        | Capstone, walked. Own check passes                      |
 
 **Everything in level 3: 10 of 10 pass.**
 
