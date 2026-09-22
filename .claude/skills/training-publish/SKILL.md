@@ -137,10 +137,12 @@ Everything is free and GitHub-native, in `hardisgroupcom/sfdx-hardis-training`:
 
 - **The image**: an SVG rendered from `badges/_template.svg`, Cloudity colors, badge name,
   handle, date. Committed, no image service.
-- **The page**: `badges/<handle>.md`, published at `<site>/badges/<handle>/`, showing the badges
-  earned with their dates, the Trailblazer profile the learner declared, the claim issue and the
-  audit result. One page per learner, so the URL they share stays the same as they progress.
-  This is the URL the learner shares.
+- **The page**: built by `scripts/build/site.mjs` from the record, once per language, and
+  published at `<site>/badges/<trailblazer>/` and `<site>/<locale>/badges/<trailblazer>/`. It shows
+  the badges earned with their dates, the Trailblazer profile the learner declared and the audit
+  result. Nothing is committed for it: a claim writes the record and the image, and a badge earned
+  before a language existed gains its page in it on the next build. One page per learner, so the
+  URL they share stays the same as they progress. This is the URL the learner shares.
 - **The machine-readable record**: `badges/<handle>.json`, Open Badges shaped (issuer,
   recipient, achievement, issuedOn, evidence), unsigned. Real certifications for clients and
   partners, if they ever come, are a different scheme; this shape does not block it and these

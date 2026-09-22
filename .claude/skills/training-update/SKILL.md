@@ -27,8 +27,10 @@ have to be regenerated.
 |--------------------------------------------|----------------------------------------------------------------------------------|-------------------------------------------------|
 | The lab text                               | `labs/en/level-N/lab-NN-*.md`                                                    | No, written by hand                             |
 | The translated lab text                    | `labs/<locale>/level-N/lab-NN-*.md`, same file names                             | No, translated by hand from `labs/en/`          |
+| The words of the generated pages           | `i18n/<locale>.json`                                                             | No, translated by hand from `i18n/en.json`      |
 | The fiction: stories, branches, orgs, cast | `training-universe.json`                                                         | No, the source of truth                         |
 | The backlog, the link maps, the manifest   | `BACKLOG.md`, `labs/link-map.<locale>.md`, `training-manifest.json`              | **Yes**, `scripts/build/universe.mjs`           |
+| The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder     | **Yes**, `scripts/build/site.mjs`, per locale   |
 | The audit rules                            | `scripts/verify/rules.mjs`                                                       | No                                              |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs`              |
@@ -138,6 +140,13 @@ is what keeps the two from disagreeing about what a button does. So:
 - **Screenshots are shared and stay English**, and so do the button names inside a translated
   sentence: the course assumes sfdx-hardis, the extension and the learner's org are in English,
   because that is what the pictures show. Translate the prose around the label, never the label
+- **The generated pages are translated in `i18n/<locale>.json`, not in markdown.** The backlog, the
+  page of each User Story, the badges index and the badge pages are built from
+  `training-universe.json` and the badge records, once per locale, so there is no file to copy for
+  them. That file holds their words, and under `universe` the translation of what
+  `training-universe.json` writes in English: the pitch, the level names, the roles of the cast,
+  and the title, story and acceptance criteria of every story. A string it leaves out reads in
+  English rather than leaving a hole
 
 The order when a change touches a lab:
 
@@ -163,11 +172,22 @@ committing the English change stamps the version before yours** and quietly clai
 is current. Commit first.
 
 **Adding a locale** is additive, and `TRANSLATION.md` in the training repository is the procedure.
-The part worth knowing from here: three scripts carry a word per locale that has to be declared, or
-the locale silently loses a feature. `TROUBLESHOOTING` in `scripts/build/site.mjs` (the translated
-"If it goes wrong" heading, which is what folds that section), `LOCALES` in
-`scripts/build/lab-crossrefs.mjs` (the word for "step"), and `NAV_LABELS` plus `LOCALE_NAMES` in
-`scripts/build/universe.mjs`.
+Three things worth knowing from here:
+
+- three scripts carry a word per locale that has to be declared, or the locale silently loses a
+  feature: `TROUBLESHOOTING` in `scripts/build/site.mjs` (the translated "If it goes wrong"
+  heading, which is what folds that section), `LOCALES` in `scripts/build/lab-crossrefs.mjs` (the
+  word for "step"), and `NAV_LABELS` plus `LOCALE_NAMES` in `scripts/build/universe.mjs`;
+- `i18n/<locale>.json` is the whole of the generated pages, and the locale also goes in the `nav`
+  and in `extra.languages` of `course-site.yml`, which carries its home page and its flag. That key
+  is deliberately not called `alternate`: under that name the theme reads each entry as the root of
+  a separate site, asks it for a `sitemap.xml` it does not have, and takes the language click over;
+- the theme speaks the language of the page, from the dictionary Zensical ships for it, so a locale
+  it has none for fails the build in `site-overrides/partials/language.html`.
+
+`node scripts/verify/check-nav.mjs` and `node scripts/verify/check-language-switch.mjs` on the
+built site are what say the new locale holds together: one language per menu, every picker landing
+on the same page in the other language and pointing back, and the choice remembered in a cookie.
 
 ## The lab links in the product documentation
 
