@@ -31,17 +31,34 @@ const run = () =>
     process.execPath,
     [PANEL, "--cwd", MONRUN, "--answers", JSON.stringify(answers), "--", "hardis:org:configure:monitoring"],
     { encoding: "utf8", maxBuffer: 1 << 28 }
-  ).stdout;
+  );
 
 fs.mkdirSync(LOGS, { recursive: true });
+let stored = false;
 for (const pass of [1, 2, 3]) {
-  const out = run();
+  const result = run();
+  const out = result.stdout || "";
   const log = path.join(LOGS, `mon-pass${pass}.log`);
   fs.writeFileSync(log, out);
-  console.log(`pass ${pass}:`, (out.match(/\[PANEL\][^\n]*/g) || []).join(" | ").slice(0, 400));
+  console.log(`pass ${pass}: exit ${result.status}`, (out.match(/\[PANEL\][^\n]*/g) || []).join(" | ").slice(0, 400));
+  // panel.mjs exits 2 on a question no rule covers and 3 when it could not
+  // start: either way the pass is a finding, not something to run past.
+  if (result.status === 2 || result.status === 3) {
+    console.log(`The command stopped on an unexpected question. See ${log}`);
+    process.exit(result.status);
+  }
   if (/Variable: <copy>SFDX_CLIENT_ID_/.test(out)) {
     const res = spawnSync(process.execPath, [path.join(HERE, "setsecrets-mon.mjs"), log], { encoding: "utf8" });
-    console.log(res.stdout.trim(), res.stderr.trim());
+    console.log((res.stdout || "").trim(), (res.stderr || "").trim());
+    if (res.status !== 0) {
+      console.log(`Storing the monitoring secrets failed. See ${log}`);
+      process.exit(1);
+    }
+    stored = true;
     break;
   }
+}
+if (!stored) {
+  console.log(`No secret was printed: the monitoring repository is not wired. See ${LOGS}`);
+  process.exit(1);
 }

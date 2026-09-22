@@ -110,7 +110,22 @@ wss.on("connection", (ws) => {
             }
           } else if (rule.value === "__INITIAL__") {
             // What the panel shows pre-filled: accepting it is pressing Validate
+            if (prompt.initial === undefined) {
+              failed = `Rule asks for __INITIAL__ but the panel pre-filled nothing, for: ${message}`;
+              console.log(`[PANEL] ${failed}`);
+              stopCommand();
+              return;
+            }
             value = prompt.initial;
+          } else if (!("value" in rule)) {
+            // Neither `choice` nor `value`: a typo such as "choices" would
+            // otherwise answer `undefined`, the command would read it as a
+            // falsy answer and walk a different path, and the run would pass
+            // having exercised the wrong branch.
+            failed = `Rule has neither "choice" nor "value" (${JSON.stringify(rule)}), for: ${message}`;
+            console.log(`[PANEL] ${failed}`);
+            stopCommand();
+            return;
           } else {
             value = rule.value;
           }

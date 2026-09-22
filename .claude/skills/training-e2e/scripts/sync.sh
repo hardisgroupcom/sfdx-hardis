@@ -29,7 +29,10 @@ git fetch -q origin
 lift() { gh api -X DELETE "repos/$FORK/branches/$1/protection" >/dev/null 2>&1 && echo yes || echo no; }
 # A relative specifier in `node -e` resolves against the working directory, which
 # keeps this free of any absolute path.
-protect() { (cd "$COURSE" && node -e "import('./scripts/lib/protection.mjs').then(m=>console.log('$1 protected:',m.protectBranch('$FORK','$1')))"); }
+# protectBranch returns a boolean, so node exits 0 either way: the exit code has to
+# be set from it, or a branch left unprotected passes silently and stays unprotected
+# for the rest of the walk.
+protect() { (cd "$COURSE" && node -e "import('./scripts/lib/protection.mjs').then(m=>{const ok=m.protectBranch('$FORK','$1');console.log('$1 protected:',ok);process.exit(ok?0:1)})"); }
 
 # A branch whose protection was lifted must get it back even when the merge
 # conflicts or the push is rejected, which `set -e` would otherwise skip.
