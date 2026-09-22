@@ -178,10 +178,10 @@ jobs:
           NOTIF_API_METRICS_BASIC_AUTH_PASSWORD: ${{ secrets.NOTIF_API_METRICS_BASIC_AUTH_PASSWORD }}
         run: |
           echo "Run apex tests against \"$CONFIG_BRANCH\""
-          git pull origin ${{ matrix.branch }} || echo "Issue when pulling latest branch state, but that should be ok"
-          # The job runs as root in a container, over a workspace checked out by another user:
-          # without this, git refuses the repository and the backup sees no change to commit
+          # The job runs as root in a container, over a workspace checked out by another user.
+          # This must come before any git command, or the pull below fails on dubious ownership.
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git pull origin ${{ matrix.branch }} || echo "Issue when pulling latest branch state, but that should be ok"
           sf hardis:auth:login
           sf hardis:org:test:apex
 
@@ -312,10 +312,10 @@ jobs:
 
         run: |
           echo "Run Monitoring checks against \"$CONFIG_BRANCH\""
-          git pull origin ${{ matrix.branch }} || echo "Issue when pulling latest branch state, but that should be ok"
-          # The job runs as root in a container, over a workspace checked out by another user:
-          # without this, git refuses the repository and the backup sees no change to commit
+          # The job runs as root in a container, over a workspace checked out by another user.
+          # This must come before any git command, or the pull below fails on dubious ownership.
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git pull origin ${{ matrix.branch }} || echo "Issue when pulling latest branch state, but that should be ok"
           sf hardis:auth:login
           sf hardis:org:monitor:all
 
