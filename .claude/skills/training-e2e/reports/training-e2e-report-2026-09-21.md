@@ -369,15 +369,15 @@ MegaLinter. What the evidence does establish is the mechanism, since the three s
 The `code-review` skill was then run at `high` over the three Pull Requests. It raised **seven
 findings, every one of them in the harness this run added**, and all seven are fixed:
 
-| # | Where | What |
-|---|-------|------|
-| 1 | `scripts/mon.mjs` | A failed Lab 3.8 pass exited 0, so a run where no secret was ever stored reported green |
-| 2 | `scripts/prflow.sh` | `\| tail -1` handed the pipeline tail's status, so a merge refused by branch protection read as merged and was diagnosed ten minutes later as a missing deployment run |
-| 3 | `labDriver.ts` | A question the command really asks twice was dropped silently: the step then failed at its full timeout without naming the question, which is the driver's whole purpose |
-| 4 | `scripts/sync.sh` | `protectBranch` returns a boolean, so node exited 0 either way and a major branch left unprotected passed silently |
-| 5 | `labDriver.ts`, `panel.mjs` | A rule with neither `choice` nor `value` answered `undefined`; the command read it as falsy and the lab passed having exercised the wrong branch |
-| 6 | `scripts/prflow.sh` | A bare filtering `grep` under `set -e` could kill the script with nothing printed, and `grep -qE "fail"` matched the whole row including check names and URLs |
-| 7 | `labDriver.ts` | The abort path disposed the panel by its provisional id, which `rekeyPanel` has already removed, so an aborted command kept running against the learner's real org while the next lab started |
+| # | Where                       | What                                                                                                                                                                                          |
+|---|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1 | `scripts/mon.mjs`           | A failed Lab 3.8 pass exited 0, so a run where no secret was ever stored reported green                                                                                                       |
+| 2 | `scripts/prflow.sh`         | `\| tail -1` handed the pipeline tail's status, so a merge refused by branch protection read as merged and was diagnosed ten minutes later as a missing deployment run                        |
+| 3 | `labDriver.ts`              | A question the command really asks twice was dropped silently: the step then failed at its full timeout without naming the question, which is the driver's whole purpose                      |
+| 4 | `scripts/sync.sh`           | `protectBranch` returns a boolean, so node exited 0 either way and a major branch left unprotected passed silently                                                                            |
+| 5 | `labDriver.ts`, `panel.mjs` | A rule with neither `choice` nor `value` answered `undefined`; the command read it as falsy and the lab passed having exercised the wrong branch                                              |
+| 6 | `scripts/prflow.sh`         | A bare filtering `grep` under `set -e` could kill the script with nothing printed, and `grep -qE "fail"` matched the whole row including check names and URLs                                 |
+| 7 | `labDriver.ts`              | The abort path disposed the panel by its provisional id, which `rekeyPanel` has already removed, so an aborted command kept running against the learner's real org while the next lab started |
 
 Findings 1, 4 and 5 share a shape worth naming: **a harness that reports success when it did nothing
 is worse than no harness**, because it converts an unwalked lab into a green line in a report. Three
