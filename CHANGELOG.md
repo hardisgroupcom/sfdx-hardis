@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- VS Code: [hardis:project:function:list](https://sfdx-hardis.cloudity.com/hardis/project/function/list/) and [hardis:scratch:pool:view](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/view/) no longer open a command execution tab when a panel reads them in the background to fill itself, which the DevOps Pipeline did on every click and every refresh.
+
 ## [8.9.1] 2026-09-22
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): `newTaskNameRegex` is checked against the User Story name as typed, so a pattern with a space such as `^MYPROJECT-[0-9]+ .*` accepts a name again, instead of rejecting every name because the spaces had already been replaced by `-`.
