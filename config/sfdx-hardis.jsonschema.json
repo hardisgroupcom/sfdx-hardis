@@ -1483,13 +1483,6 @@
                   "title": "Command",
                   "type": "string"
                 },
-                "showCommandDetails": {
-                  "$id": "#/properties/customCommands/items/properties/commands/items/properties/showCommandDetails",
-                  "description": "Open the command runner with Advanced details already switched on, so the person running the command sees every step instead of the summary. Useful for teaching commands.",
-                  "title": "Show command details",
-                  "type": "boolean",
-                  "default": false
-                },
                 "helpUrl": {
                   "$id": "#/properties/customCommands/items/properties/commands/items/properties/helpUrl",
                   "description": "URL for help page of the command",
