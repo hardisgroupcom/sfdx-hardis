@@ -4,6 +4,7 @@
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): `newTaskNameRegex` is checked against the User Story name as typed, so a pattern with a space such as `^MYPROJECT-[0-9]+ .*` accepts a name again, instead of rejecting every name because the spaces had already been replaced by `-`.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): Google Analytics is now declared in `mkdocs.yml` under `extra.analytics`, and a measurement id already set in `docs/javascripts/gtag.js` is moved there on the next run: the page a reader lands on is counted, instead of nothing being counted until they click a link.
+- GitHub monitoring workflow: the Apex tests and monitoring checks jobs refresh the branch before running, instead of failing the pull on `detected dubious ownership` because `safe.directory` was only set after it.
 
 ## [8.9.0] 2026-09-20
 
