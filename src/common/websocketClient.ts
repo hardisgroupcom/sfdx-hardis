@@ -238,6 +238,21 @@ static sendMessage(data: any) {
     WebSocketClient.sendMessage({ event: 'refreshCommands' });
   }
 
+  /**
+   * Name this run in the VS Code command execution panel.
+   *
+   * The panel shows the command line by default. A command that has a name a
+   * person would recognize can send it here: the label takes the title's place
+   * and the command line becomes its tooltip, so nothing is hidden. Optional,
+   * and ignored by an extension that does not know the event.
+   */
+  static sendCommandLabelMessage(label: string) {
+    if (!label || !label.trim()) {
+      return;
+    }
+    WebSocketClient.sendMessage({ event: 'commandLabel', label: label.trim() });
+  }
+
   // Send progress start message
   static sendProgressStartMessage(title: string, totalSteps?: number) {
     WebSocketClient.sendMessage({
