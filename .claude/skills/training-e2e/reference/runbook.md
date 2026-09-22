@@ -165,6 +165,13 @@ Fetch the lab's URL, not the markdown in the working copy. The published page is
 reads, and the two differ whenever the course working copy is ahead of `main`. The URL of each lab is
 in `training-manifest.json`.
 
+**The site remembers a language, so the browser used for this pass can start lying to you.**
+Clicking the flag in the header once writes `course-language` for a year, and from then on every
+English URL opened in that browser lands on its French twin before it is painted. Two ways out,
+and the first is the one to use: put `?lang=en` on the URL, which pins that page and resets the
+preference. Otherwise clear the cookie for the site. A redirect you did not expect is worth a
+second of doubt: read the address bar before concluding that a lab links to the wrong page.
+
 Ask, of each step: is every term defined before it is used; does the step say where to click, not
 just what to achieve; is a precondition stated that the previous lab did not deliver; does the "If it
 goes wrong" section cover what can actually go wrong here.
@@ -304,8 +311,17 @@ Lab 3.8 runs in a **second repository**, the monitoring one, with its own secret
 
 ### The badge claim
 
-Claiming the level's badge is part of walking it, and the claim is what exercises the audit. If the
-audit does not run within a minute or two of the issue being opened, look at the issue's **labels**
+Claiming the level's badge is part of walking it, and the claim is what exercises the audit.
+
+What a claim writes is the record and the image, `badges/<trailblazer>.json` and
+`badges/img/<trailblazer>-level-N.svg`, and nothing else. The page is built from that record by
+the site, once per language, so after a claim check both `/badges/<trailblazer>/` and
+`/fr/badges/<trailblazer>/`, and that the badge on them is the hexagon rather than an older
+drawing. After any change to the artwork, `node scripts/badges/rerender.mjs` redraws the badges
+already awarded and `node scripts/badges/examples.mjs` the three on the home page; a run that finds
+old and new artwork side by side has found a missing re-render, not a design problem.
+
+If the audit does not run within a minute or two of the issue being opened, look at the issue's **labels**
 before looking at the workflow: `claim.yml` gates on `badge-claim`, GitHub silently drops a label an
 issue form asks for when the repository has no such label, and from the learner's side that is
 indistinguishable from waiting. That was finding 12 of the 2026-09-21 run, and it meant no claim had
