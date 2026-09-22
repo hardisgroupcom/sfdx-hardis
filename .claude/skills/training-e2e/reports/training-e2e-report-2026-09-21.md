@@ -3,6 +3,12 @@
 First run of the `training-e2e` skill, and the first to use the **lab driver** (the real VS Code
 panels over the real CLI) that was built the same day.
 
+**All 26 labs of the three levels were walked, and every lab's own `Check my work` passes**: 6 of 6
+in Level 1, 9 of 9 in Level 2, 10 of 10 in Level 3. The Level 3 badge was claimed and awarded. The
+run produced 13 findings, 11 of them fixed here; the two left open are 4 (a dark-theme screenshot)
+and 10 (a placeholder JIRA link in a Pull Request comment). The one worth reading first is 12: no
+badge claim any learner ever opened had been audited.
+
 ## Versions under test
 
 | Thing              | Version                                                                                  |
@@ -46,18 +52,17 @@ Fidelity 3 is `sf`/`git`/`gh` directly.
 The browser arrived mid-run: the user started a Chrome signed in to GitHub on the CDP port, which
 unblocked Labs 1.4 and 1.6.
 
-| Lab | Read (A) | Done (B)                 | Images (C) | Verdict                                                        |
-|-----|----------|--------------------------|------------|----------------------------------------------------------------|
-| 1.1 | yes      | not applicable           | yes        | Pass, one cosmetic finding (4)                                 |
-| 1.2 | yes      | **fidelity 1**           | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified        |
-| 1.3 | yes      | **fidelity 1**           | yes        | **Pass**, own check passes. One text finding (1), fixed        |
-| 1.4 | yes      | **browser, real Setup**  | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed    |
-| 1.5 | yes      | **fidelity 1** (publish) | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3  |
-| 1.6 | yes      | **browser + gh**         | yes        | **Pass**, own check passes. Two findings (8, 10)               |
-| 1.7 | yes      | **not covered**          | n/a        | Capstone: repeats 1.3 to 1.6 unaided, which is the point of it |
+| Lab | Read (A) | Done (B)                  | Images (C) | Verdict                                                          |
+|-----|----------|---------------------------|------------|------------------------------------------------------------------|
+| 1.1 | yes      | not applicable            | yes        | Pass, one cosmetic finding (4)                                   |
+| 1.2 | yes      | **fidelity 1**            | partly     | **Pass**, 10 min 14 s, every promise of step 6 verified          |
+| 1.3 | yes      | **fidelity 1**            | yes        | **Pass**, own check passes. One text finding (1), fixed          |
+| 1.4 | yes      | **browser, real Setup**   | yes        | **Pass**, own check passes. Two findings (6, 7), both fixed      |
+| 1.5 | yes      | **fidelity 1** (publish)  | yes        | **Pass**, own check passes. Retrieve and commit at fidelity 3    |
+| 1.6 | yes      | **browser + gh**          | yes        | **Pass**, own check passes. Two findings (8, 10)                 |
+| 1.7 | yes      | **browser + sf + git/gh**  | yes        | **Pass**, own check passes. Walked after the rest of level 1     |
 
-**Everything in level 1**, the check the badge claim runs: **5 of 6 pass.** The sixth is Lab 1.7,
-which this run did not walk, and the check says exactly what it wants and where it looked:
+**Everything in level 1: 6 of 6 pass.** Lab 1.7 failed first, which is how its message got read:
 
 ```
 X   Lab 1.7  Capstone: US-016 delivered on your own
@@ -67,6 +72,45 @@ X   Lab 1.7  Capstone: US-016 delivered on your own
 
 That message is worth keeping as it is. Every failing check in this run named the thing it wanted and
 the place it looked, which is the difference between a learner fixing it and a learner giving up.
+
+### Level 2, contributor at work
+
+| Lab | Read (A) | Done (B)                   | Images (C) | Verdict                                                   |
+|-----|----------|----------------------------|------------|-----------------------------------------------------------|
+| 2.1 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
+| 2.2 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
+| 2.3 | yes      | fidelity 3 + browser       | yes        | Pass. The lab predicts its own deployment error, see below |
+| 2.4 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
+| 2.5 | yes      | fidelity 3                 | yes        | Pass, own check passes                                    |
+| 2.6 | yes      | fidelity 3                 | yes        | Pass, own check passes                                    |
+| 2.7 | yes      | fidelity 3 + browser       | yes        | Pass, own check passes                                    |
+| 2.8 | yes      | fidelity 3                 | yes        | Pass, own check passes                                    |
+| 2.9 | yes      | fidelity 3 + browser       | yes        | Capstone, walked. Own check passes                        |
+
+**Everything in level 2: 9 of 9 pass.**
+
+### Level 3, release manager
+
+| Lab | Read (A) | Done (B)                        | Images (C) | Verdict                                              |
+|-----|----------|---------------------------------|------------|-------------------------------------------------------|
+| 3.1 | yes      | `auth.mjs` + browser + `gh`     | yes        | Pass. Org authentication and the two secrets per branch |
+| 3.2 | yes      | browser + `gh`                  | yes        | Pass. One text finding (11), fixed                    |
+| 3.3 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
+| 3.4 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
+| 3.5 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
+| 3.6 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
+| 3.7 | yes      | fidelity 3                      | yes        | Pass, own check passes                                |
+| 3.8 | yes      | `mon.mjs` + real nightly run    | yes        | Pass. One product finding (13), fixed                 |
+| 3.9 | yes      | fidelity 3 + browser            | yes        | Pass, own check passes                                |
+| 3.10| yes      | browser + `gh`                  | yes        | Capstone, walked. Own check passes                    |
+
+**Everything in level 3: 10 of 10 pass.**
+
+### The badge
+
+The Level 3 claim was opened on the fork and the audit ran on it: **23 of 23 checks pass**, and it
+posted `sfdx-hardis Release Manager is awarded to nvuillam`. Getting there found the worst defect of
+the run, finding 12: no claim had ever been audited.
 
 ### Lab 1.6, end to end
 
@@ -249,6 +293,57 @@ is worse than saying so.
 What is certain is the mismatch a learner meets: the lab's screenshot shows a working backlog link,
 and the comment they get carries a dead one.
 
+### 11. Lab 3.2 carried a pill number pointing at nothing (course, fixed)
+
+A stray `**(1)**` in the review lab referred to a pill the image does not draw. Removed. The checker
+added for finding 2 now catches this class on its own.
+
+### 12. A badge claim was never audited, because the label it requires did not exist (course, fixed)
+
+The worst finding of the run, and invisible from the inside. `.github/workflows/claim.yml` runs the
+audit on `issues: [opened]` and gates on the `badge-claim` label, which the issue form applies. That
+label **did not exist in the repository**, and GitHub silently drops a label an issue form asks for
+when the repository has no such label. So every claim arrived unlabelled, the gate never matched, and
+no claim any learner ever opened was audited. Nobody would report this: from a learner's side it
+looks like waiting.
+
+Two fixes, both needed:
+
+- the `badge-claim` label now exists in the repository;
+- `claim.yml` also triggers on `labeled`, so a claim that arrives without its label can still be
+  audited by adding the label by hand, instead of being reopened.
+
+The audit itself was fine all along, which is the trap: it passed 23 of 23 checks the first time it
+was ever allowed to run.
+
+### 13. Monitoring: the nightly `git pull` failed on every run (product, fixed)
+
+Lab 3.8's monitoring repository ran green-enough to pass, but both the **Apex tests** and the
+**Monitoring** jobs opened with:
+
+```
+fatal: detected dubious ownership in repository at '/__w/...'
+Issue when pulling latest branch state, but that should be ok
+```
+
+The workflow template ran `git pull` **before** `git config --global --add safe.directory`, so the
+pull it was meant to protect could never succeed: the job runs as root in a container over a
+workspace checked out by another user. The fallback message made it look deliberate. Fixed in
+`defaults/monitoring/.github/workflows/org-monitoring.yml` by setting `safe.directory` first, in both
+steps that pull. The backup step was already in the right order, which is why only two of the three
+showed it.
+
+### Not a finding: Lab 2.3's deployment error is the lab's own lesson
+
+The deployment fails with *"You cannot deploy to a required field"*, and reading it as a defect costs
+an hour. Lab 2.3 documents that exact failure and what to do about it, ahead of time. It is right.
+
+### Not a finding: Lab 3.8's first monitoring run is red
+
+The Monitoring job fails on `ActiveScratchOrgs`, 3 of 3 at 100%. Lab 3.8 says so in advance, names
+that limit, and builds its triage exercise on it. The course predicted the run before the run
+happened.
+
 ### Not a finding: "Insufficient Privileges" on the field wizard
 
 Worth recording because it cost an hour and looked like a blocking course defect. Opening Object
@@ -261,9 +356,10 @@ on `Account` at the same moment, which is what proved it.
 
 ## What this run did not cover
 
-- **Lab 1.7, the capstone, was not walked.** It repeats 1.3 to 1.6 unaided on a second story, and
-  what it really tests is whether a human can do it without the steps, which is the one thing an
-  agent cannot stand in for.
+- **The capstones were walked, but not as capstones.** 1.7, 2.9 and 3.10 repeat the earlier labs
+  unaided, and what they really test is whether a human can do it without the steps. An agent that
+  has just read those steps is the wrong instrument for that, so they are reported as "the work was
+  done and the check passes", not as "the capstone works".
 - **The Metadata Retriever was not clicked.** Lab 1.5 steps 1 to 4 were done with
   `sf project retrieve start` and `git commit`. The panel is a webview the driver cannot drive yet,
   so the lab's central teaching moment (pick your four components, leave the rest) is covered by its
@@ -278,6 +374,11 @@ on `Account` at the same moment, which is what proved it.
   passes.
 - **Prose clarity was not tested.** An agent reads past ambiguities a beginner stops at.
 - **The French labs were not walked**, only kept structurally aligned.
+- **Levels 2 and 3 were walked at fidelity 3**, `sf` / `git` / `gh` plus the browser, not through
+  the VS Code panel: `labs/_assets/lab-drivers.json` only covers three Level 1 labs so far. Every
+  lab's own `Check my work` passed, which proves the end state, not the clicks that should reach it.
+- **Only the GitHub provider was walked.** The GitLab, Azure and Bitbucket variants of the pipeline
+  and of the monitoring workflow were not run, and finding 13 lived in a provider-specific file.
 - The extension ran with `yarn compile` but no `yarn dev`, so the worker bundle was missing and every
   command went through the fallback path. Functionally the same, slower, and it should be a clean
   `yarn dev && yarn compile` next time.
