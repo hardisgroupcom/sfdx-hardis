@@ -6,8 +6,12 @@ claimed and awarded**, which is what the run was asked for. **Level 3 reached 9 
 
 The run produced **17 findings**. The four worth reading first:
 
-- **F17**: the Lab 3.7 hotfix Pull Request into `preprod` **cannot be merged**, ever, and shows no
-  red check to explain why.
+- **F17**: **the course disables its own pipeline.** Lab 3.1 makes `Mega-Linter` a required check on
+  all four major branches; it also cuts `preprod` from `main`, and Lab 3.7 retrofits `main` back
+  down into `integration`. Both moves replace the Helios project's `megalinter.yml` with the course
+  site's, which only answers Pull Requests into `main`. From then on no Pull Request into a major
+  branch can obtain the context its own protection demands, and GitHub shows "merging is blocked"
+  with every check on the page green and nothing naming the missing one.
 - **F3**: `Clean up a training org` can never complete on an org that was actually used.
 - **F12**: the badge claim form cannot be submitted by following the instructions the command
   prints.
@@ -113,11 +117,11 @@ work; `resetselection` takes a 13-component delta back down to 1.
 | 3.5  | yes      | fidelity 3 + `gh`               | partly     | Pass, own check green. Finding 16      |
 | 3.6  | yes      | fidelity 3 + `gh`               | partly     | Pass, own check green                  |
 | 3.7  | yes      | fidelity 2/3 + `gh`             | partly     | Pass, own check green. **Finding 17**  |
-| 3.8  | yes      | `mon.mjs` + a real nightly run  | no         | Walked, see below                      |
+| 3.8  | yes      | `mon.mjs` + a real nightly run  | no         | **Pass**, own check green. Finding 17  |
 | 3.9  | yes      | fidelity 3                      | partly     | Pass, own check green                  |
 | 3.10 | no       | **not started**                 | no         | **Not covered**                        |
 
-**9 of 10 walked.** Every Level 3 check that was run passed. The badge was not claimed, because
+**9 of 10 walked, and all nine passed their own checks.** The badge was not claimed, because
 3.10 is unwalked and the audit would refuse it.
 
 What Level 3 proved live, end to end, on real orgs:
@@ -136,11 +140,16 @@ What Level 3 proved live, end to end, on real orgs:
 
 **Lab 3.8** installed monitoring into a reset monitoring repository, created its External Client App
 and its two JWT secrets, and wrote the workflow on `main` with the right branch in its matrix. The
-first manual run was started on the wrong ref (the monitoring branch rather than `main`), and failed
-on the template's placeholder branches; that was this run's mistake, not a course defect, and the
-lab says plainly to leave the branch on `main`. It was re-run correctly. The two traps the runbook
-names for this lab, the "dubious ownership" fallback and the `git pull` before `safe.directory`,
-were looked for in the first log and were absent from it.
+first manual run was started on the wrong ref, the monitoring branch rather than `main`, and failed
+on the template's placeholder branches: that was this run's mistake, not a course defect, and the
+lab says plainly to leave the branch on `main`.
+
+Re-run correctly, the job did what the lab promises. It backed up **1205 metadata files** from
+production onto the monitoring branch and committed them, and it finished **red on
+`ActiveScratchOrgs`**, which is the failure the lab names in advance and builds its triage exercise
+on. Both traps the runbook names for this lab are closed: `git config --global --add
+safe.directory` now runs **before** `git pull`, with a comment in the workflow saying why, which is
+the previous run's finding 13 holding.
 
 ## Findings
 
@@ -165,7 +174,7 @@ The full text of every finding, with its evidence, is in
 | F14 | low      | this skill             | `auth.mjs`'s documented URL regex matches the wrong choice (**fixed**)|
 | F15 | medium   | this skill / training  | nothing cleans up the External Client Apps Lab 3.1 creates            |
 | F16 | low      | this skill             | `gh pr edit --body-file` silently fails on this repository            |
-| F17 | **high** | training               | the Lab 3.7 hotfix Pull Request cannot be merged                      |
+| F17 | **high** | training               | after Lab 3.7, no Pull Request into a major branch can be merged      |
 
 Fixed during the run: **F6** (both halves: the runbook's build order, and a worker-path fallback in
 `vscode-sfdx-hardis` so a tsc build is not silently degraded) and **F14**. Everything else is
@@ -177,6 +186,11 @@ Not optional, per the runbook.
 
 - **Lab 3.10 was not walked at all.** The Level 3 capstone, a whole weekly release cycle with four
   promotions, is the single biggest gap in this report, and the Level 3 badge was not claimed.
+- **Two Pull Requests were merged with `Mega-Linter` temporarily lifted** from their branch
+  protection, because F17 makes them otherwise unmergeable: #57, the Lab 3.7 hotfix into `preprod`,
+  and #60, the Lab 3.8 pipeline configuration into `integration`. The protection was restored
+  immediately afterwards in both cases. A learner has no reason to think of that, which is the
+  finding.
 - **The webview DOM was still not clicked.** The lab driver ran the real panel and the real command
   together for Labs 1.2, 1.3 and 1.5, which is the strongest evidence in this report. It answers the
   question the panel received rather than clicking a pixel, and `labs/_assets/lab-drivers.json`
