@@ -8,12 +8,12 @@ morning run as their evidence.
 
 ## Versions under test
 
-| Piece                | Version                                                                                        |
-|----------------------|-------------------------------------------------------------------------------------------------|
-| sfdx-hardis          | `fix/squash-merge-pr-number` (PR #2236), linked build; ends the run at `c64225d1d`              |
-| vscode-sfdx-hardis   | not exercised tonight (no lab driver run); PR #525 unchanged                                    |
-| course               | `feat/promotion-branches-lab` (PR #26) at `e9553a6`, plus `10106c4` pushed during the run       |
-| published site       | behind: the published course still has 26 labs; everything walked tonight is unreleased content |
+| Piece              | Version                                                                                         |
+|--------------------|-------------------------------------------------------------------------------------------------|
+| sfdx-hardis        | `fix/squash-merge-pr-number` (PR #2236), linked build; ends the run at `c64225d1d`              |
+| vscode-sfdx-hardis | not exercised tonight (no lab driver run); PR #525 unchanged                                    |
+| course             | `feat/promotion-branches-lab` (PR #26) at `e9553a6`, plus `10106c4` pushed during the run       |
+| published site     | behind: the published course still has 26 labs; everything walked tonight is unreleased content |
 
 The CI jobs of the fork run the **released** sfdx-hardis, which does not carry the two promotion
 fixes of PR #2236. Every place where that matters is called out below.
@@ -36,13 +36,13 @@ fixes of PR #2236. Every place where that matters is called out below.
 
 ## The walk
 
-| Lab  | Fidelity | Verdict | Notes                                                                                                      |
-|------|----------|---------|-------------------------------------------------------------------------------------------------------------|
+| Lab  | Fidelity | Verdict | Notes                                                                                                                                                                                                                                                                                                      |
+|------|----------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 3.1  | 2 and 3  | OK      | Full walk. Steps 2-3 via the lab's own `gh api` commands; steps 4-7 via the headless panel (`auth.mjs`), four branches on the nominal path, eight secrets; steps 8-10 as file edits (panel screens not exercised); step 11-12 done, PR #1 merged, `sf org login jwt` in the deploy log; `check --lab 1` OK |
-| 3.5  | 3        | essence | The promotion Pull Request into `uat` (#2, then #7 in the capstone week), merge commit, deploy green: the JWT key of `uat` proven. Release notes not repeated tonight |
-| 3.6  | 3        | essence | `uat`->`preprod` (#3) and `preprod`->`main` (#4): the JWT keys of `preprod` and `main` proven. DORA not repeated tonight |
-| 3.10 | 2 and 3  | OK      | Full walk, findings N1 below. `check --lab 10` OK, twice (before and after the exception ended)             |
-| 3.11 | 3        | essence | The ordinary promotion that ends the exception (#9) and the release into `main` (#10): the capstone's weekly cycle, without the badge claim |
+| 3.5  | 3        | essence | The promotion Pull Request into `uat` (#2, then #7 in the capstone week), merge commit, deploy green: the JWT key of `uat` proven. Release notes not repeated tonight                                                                                                                                      |
+| 3.6  | 3        | essence | `uat`->`preprod` (#3) and `preprod`->`main` (#4): the JWT keys of `preprod` and `main` proven. DORA not repeated tonight                                                                                                                                                                                   |
+| 3.10 | 2 and 3  | OK      | Full walk, findings N1 below. `check --lab 10` OK, twice (before and after the exception ended)                                                                                                                                                                                                            |
+| 3.11 | 3        | essence | The ordinary promotion that ends the exception (#9) and the release into `main` (#10): the capstone's weekly cycle, without the badge claim                                                                                                                                                                |
 
 Labs 3.2, 3.3, 3.4, 3.7, 3.8, 3.9: **not covered tonight**; the morning run of 2026-09-23 is their
 evidence.
@@ -122,8 +122,8 @@ promotions, from the Level 2 content, not from the selective one.
 
 ## The three Pull Requests
 
-| Repository           | PR                                                       | State tonight                                   |
-|----------------------|----------------------------------------------------------|--------------------------------------------------|
-| sfdx-hardis          | #2236, now with N1 (`c64225d1d`)                          | CI restarted on the new commit                  |
-| vscode-sfdx-hardis   | #525                                                     | unchanged, green                                |
-| sfdx-hardis-training | #26, now with N3 (`10106c4`)                              | CI restarted on the new commit                  |
+| Repository           | PR                               | State tonight                  |
+|----------------------|----------------------------------|--------------------------------|
+| sfdx-hardis          | #2236, now with N1 (`c64225d1d`) | CI restarted on the new commit |
+| vscode-sfdx-hardis   | #525                             | unchanged, green               |
+| sfdx-hardis-training | #26, now with N3 (`10106c4`)     | CI restarted on the new commit |
