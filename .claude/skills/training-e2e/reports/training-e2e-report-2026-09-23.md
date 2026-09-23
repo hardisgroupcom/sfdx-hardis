@@ -19,8 +19,8 @@ The run produced **17 findings**. The four worth reading first:
 
 ## Versions under test
 
-| Thing              | Version                                                                      |
-|--------------------|------------------------------------------------------------------------------|
+| Thing              | Version                                                                       |
+|--------------------|-------------------------------------------------------------------------------|
 | sfdx-hardis        | 8.9.2, linked working copy (`sf plugins` shows `link`), `main` at `a88a276ba` |
 | vscode-sfdx-hardis | 8.7.2, `main` at `51fa747e`, plus the F6 fix made during the run              |
 | Course             | `main` at `df1399d`, clean                                                    |
@@ -29,15 +29,15 @@ The run produced **17 findings**. The four worth reading first:
 
 ## Environment
 
-| Item             | State                                                                             |
-|------------------|-----------------------------------------------------------------------------------|
-| `helios-prod`    | Developer Edition, Dev Hub, `orgfarm-c77e7e1127`. Production, and seeded for L3   |
-| `helios-preprod` | Developer Edition, `orgfarm-bedd5b7a5a`, seeded for L3                            |
+| Item             | State                                                                              |
+|------------------|------------------------------------------------------------------------------------|
+| `helios-prod`    | Developer Edition, Dev Hub, `orgfarm-c77e7e1127`. Production, and seeded for L3    |
+| `helios-preprod` | Developer Edition, `orgfarm-bedd5b7a5a`, seeded for L3                             |
 | Scratch orgs     | `helios-dev`, `helios-integration`, `helios-uat`, **all created fresh by Lab 1.2** |
-| Fork             | `nvuillam/sfdx-hardis-training`, reset to a brand new fork before the walk        |
-| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring`, reset to its initial commit           |
-| Learner clone    | `C:/git/training-run`, cloned from the shared repository, as a learner does       |
-| Browser on CDP   | a dedicated Chrome profile on 9222, signed in to GitHub as `nvuillam`             |
+| Fork             | `nvuillam/sfdx-hardis-training`, reset to a brand new fork before the walk         |
+| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring`, reset to its initial commit            |
+| Learner clone    | `C:/git/training-run`, cloned from the shared repository, as a learner does        |
+| Browser on CDP   | a dedicated Chrome profile on 9222, signed in to GitHub as `nvuillam`              |
 
 The three scratch orgs were **deleted and recreated by Lab 1.2** rather than torn down, because
 `Clean up a training org` does not work (F3). That is the more faithful path anyway: a first-time
@@ -45,16 +45,16 @@ learner has no orgs at all when Lab 1.2 starts. It cost 3 of the Dev Hub's 6 dai
 
 ## The cheap checks, all green
 
-| Check                              | Result                                                  |
-|------------------------------------|----------------------------------------------------------|
-| `build/universe.mjs --check`       | 26 lab files, consistent                                |
-| `verify/check-commands.mjs`        | 13 commands the labs rely on, all exist                 |
-| `verify/check-links.mjs`           | 63 external URLs, every one resolves                    |
-| `verify/check-pills.mjs`           | 274 image references against 117 annotated images       |
-| `verify/check-site.mjs`            | 109 pages, 1706 assets, 4949 internal links             |
-| `verify/check-nav.mjs`             | 109 menus and 109 language pickers                      |
-| `verify/check-language-switch.mjs` | the picker after an instant navigation, and the cookie  |
-| `i18n/check-i18n.mjs`              | every locale answers every key (one false BEHIND, F1)   |
+| Check                              | Result                                                 |
+|------------------------------------|--------------------------------------------------------|
+| `build/universe.mjs --check`       | 26 lab files, consistent                               |
+| `verify/check-commands.mjs`        | 13 commands the labs rely on, all exist                |
+| `verify/check-links.mjs`           | 63 external URLs, every one resolves                   |
+| `verify/check-pills.mjs`           | 274 image references against 117 annotated images      |
+| `verify/check-site.mjs`            | 109 pages, 1706 assets, 4949 internal links            |
+| `verify/check-nav.mjs`             | 109 menus and 109 language pickers                     |
+| `verify/check-language-switch.mjs` | the picker after an instant navigation, and the cookie |
+| `i18n/check-i18n.mjs`              | every locale answers every key (one false BEHIND, F1)  |
 
 ## What was walked
 
@@ -65,7 +65,7 @@ panel (`panel.mjs`: real command, real prompt protocol, real org, no webview). F
 ### Level 1, contributor basics
 
 | Lab | Read (A) | Done (B)                    | Images (C) | Verdict                                             |
-|-----|----------|-----------------------------|------------|------------------------------------------------------|
+|-----|----------|-----------------------------|------------|-----------------------------------------------------|
 | 1.1 | yes      | not applicable              | yes, all 8 | Pass. Finding 4                                     |
 | 1.2 | yes      | **fidelity 1**, 9 min 40 s  | yes        | **Pass**, own check green. Finding 5                |
 | 1.3 | yes      | **fidelity 1**, 70 s        | yes        | **Pass**, own check green. Finding 10               |
@@ -86,7 +86,7 @@ criteria.
 ### Level 2, contributor advanced
 
 | Lab | Read (A) | Done (B)                       | Images (C) | Verdict                           |
-|-----|----------|--------------------------------|------------|------------------------------------|
+|-----|----------|--------------------------------|------------|-----------------------------------|
 | 2.1 | yes      | fidelity 3 (backpromote CLI)   | yes        | Pass, own check green             |
 | 2.2 | yes      | browser (Setup) + fidelity 2/3 | partly     | Pass, own check green             |
 | 2.3 | yes      | browser (Setup) + fidelity 2/3 | partly     | Pass, own check green. Finding 13 |
@@ -109,7 +109,7 @@ work; `resetselection` takes a 13-component delta back down to 1.
 ### Level 3, release manager
 
 | Lab  | Read (A) | Done (B)                        | Images (C) | Verdict                                |
-|------|----------|---------------------------------|------------|-----------------------------------------|
+|------|----------|---------------------------------|------------|----------------------------------------|
 | 3.1  | yes      | `auth.mjs` (fidelity 2) + `gh`  | partly     | Pass, own check green. Findings 14, 15 |
 | 3.2  | yes      | `gh` + review comments          | partly     | Pass, own check green                  |
 | 3.3  | yes      | `gh` + job log + review comment | partly     | Pass, own check green                  |
@@ -156,25 +156,25 @@ the previous run's finding 13 holding.
 The full text of every finding, with its evidence, is in
 `C:/git/training-e2e/run-2026-09-23/findings.md`.
 
-| #   | Severity | Where                  | What                                                                  |
-|-----|----------|------------------------|-----------------------------------------------------------------------|
-| F1  | low      | training               | `check-i18n` reports BEHIND on a formatting-only change               |
-| F2  | medium   | training               | a non-interactive `select` never names the flag to pass               |
-| F3  | **high** | training               | `Clean up a training org` can never complete                          |
-| F4  | medium   | training               | Lab 1.1's VS Code screenshots taken in a configured workspace         |
-| F5  | medium   | training               | `org-select-alias.png` captured on a Level 2 feature branch           |
-| F6  | medium   | extension + this skill | the documented build order kills the worker (**fixed in both**)       |
-| F7  | medium   | training               | Lab 1.5's retriever screenshots say 11 results, the org gives 41      |
-| F8  | **high** | training               | Lab 1.5's commit screenshot is two thirds a Level 2 dialog            |
-| F9  | medium   | training               | `work-save-completed.png` shows the repository the text warns against |
-| F10 | medium   | training               | the three `pipeline-cards--*` shots are one stale Level 2 frame       |
-| F11 | **high** | training               | "your four are the four at the top" is false on a real org            |
-| F12 | **high** | training               | the badge claim form cannot be submitted as instructed                |
-| F13 | low      | training               | Lab 2.3 says Salesforce accepts Required "without a word"; it asks    |
-| F14 | low      | this skill             | `auth.mjs`'s documented URL regex matches the wrong choice (**fixed**)|
-| F15 | medium   | this skill / training  | nothing cleans up the External Client Apps Lab 3.1 creates            |
-| F16 | low      | this skill             | `gh pr edit --body-file` silently fails on this repository            |
-| F17 | **high** | training               | after Lab 3.7, no Pull Request into a major branch can be merged      |
+| #   | Severity | Where                  | What                                                                   |
+|-----|----------|------------------------|------------------------------------------------------------------------|
+| F1  | low      | training               | `check-i18n` reports BEHIND on a formatting-only change                |
+| F2  | medium   | training               | a non-interactive `select` never names the flag to pass                |
+| F3  | **high** | training               | `Clean up a training org` can never complete                           |
+| F4  | medium   | training               | Lab 1.1's VS Code screenshots taken in a configured workspace          |
+| F5  | medium   | training               | `org-select-alias.png` captured on a Level 2 feature branch            |
+| F6  | medium   | extension + this skill | the documented build order kills the worker (**fixed in both**)        |
+| F7  | medium   | training               | Lab 1.5's retriever screenshots say 11 results, the org gives 41       |
+| F8  | **high** | training               | Lab 1.5's commit screenshot is two thirds a Level 2 dialog             |
+| F9  | medium   | training               | `work-save-completed.png` shows the repository the text warns against  |
+| F10 | medium   | training               | the three `pipeline-cards--*` shots are one stale Level 2 frame        |
+| F11 | **high** | training               | "your four are the four at the top" is false on a real org             |
+| F12 | **high** | training               | the badge claim form cannot be submitted as instructed                 |
+| F13 | low      | training               | Lab 2.3 says Salesforce accepts Required "without a word"; it asks     |
+| F14 | low      | this skill             | `auth.mjs`'s documented URL regex matches the wrong choice (**fixed**) |
+| F15 | medium   | this skill / training  | nothing cleans up the External Client Apps Lab 3.1 creates             |
+| F16 | low      | this skill             | `gh pr edit --body-file` silently fails on this repository             |
+| F17 | **high** | training               | after Lab 3.7, no Pull Request into a major branch can be merged       |
 
 Fixed during the run: **F6** (both halves: the runbook's build order, and a worker-path fallback in
 `vscode-sfdx-hardis` so a tsc build is not silently degraded) and **F14**. Everything else is
