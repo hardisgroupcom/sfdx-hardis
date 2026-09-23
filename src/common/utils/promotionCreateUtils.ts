@@ -1285,7 +1285,7 @@ export async function listFilesWithConflictMarkers(commandThis: any, restrictToF
 
 /**
  * The files a promotion branch changes against the branch it was cut from. `null` when that cannot
- * be worked out, which keeps the caller on its previous whole-branch behaviour rather than
+ * be worked out, which keeps the caller on its previous whole-branch behavior rather than
  * silently checking nothing.
  */
 export async function promotionChangedFiles(commandThis: any, targetBranch: string | undefined): Promise<string[] | null> {
