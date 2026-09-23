@@ -36,7 +36,7 @@ PATH, and walks a lab through the real panels against the real orgs:
 
 ```bash
 cd ../vscode-sfdx-hardis
-yarn dev && yarn compile            # build order matters: webviews, then tsc
+yarn compile && yarn dev            # build order matters: tsc first, webpack last (see below)
 SFDX_HARDIS_LAB_WORKSPACE="$RUN" SFDX_HARDIS_LAB_ONLY=1.3 yarn test:ui:labs
 ```
 
@@ -128,10 +128,15 @@ value be overridden. Nothing is tied to one machine.
 
 Two traps that cost the 2026-09-21 run time:
 
-- **Build the extension with `yarn dev` as well as `yarn compile`.** `yarn compile` alone leaves the
-  worker bundle out, and the extension logs `worker error, using the CLI for every command: Cannot
-  find module out/utils/worker.js` and falls back to one process per command. It still works, and it
-  is slower on every call.
+- **Build the extension `yarn compile && yarn dev`, in that order.** Both are needed: `yarn compile`
+  (tsc) builds the test harness under `out/test/`, `yarn dev` (webpack) builds `out/extension.js` and
+  `out/worker.js`. They both write `out/extension.js`, so whichever runs last wins, and
+  `package.json` points `main` at it. Run tsc last and the extension loads the unbundled build, whose
+  `out/utils/sfCoreInProcess.js` looks for the worker at `out/utils/worker.js`, where webpack never
+  puts it. The log then says `worker error, using the CLI for every command: Cannot find module
+  out/utils/worker.js`, the cache preload times out after 30 s, and every `sf` call costs ~38 s
+  instead of being answered in process. It still works; it makes a Level 1 walk about twice as long.
+  The 2026-09-23 run lost most of an hour to the old order, which said the opposite.
 - **A VS Code window holding `$RUN` makes `reset-fork.sh` fail** with "Device or resource busy",
   after the fork itself has already been reset. The lab driver opens the clone, so this happens
   whenever a driver run was not closed. The script now says what to do; the way out is

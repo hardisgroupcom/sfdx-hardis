@@ -3,7 +3,12 @@
  * secrets it prints, stored on the fork.
  *
  *   node auth.mjs <orgAlias> <branch> <urlChoiceRegex> <mergeTargetRegex> [appName]
- *   node auth.mjs helios-preprod preprod "Sandbox|Developer" "^main$"
+ *   node auth.mjs helios-preprod preprod "Other: Dev org" "^main$"
+ *   node auth.mjs helios-integration integration "Sandbox or Scratch org" "^uat$"
+ *
+ * Match the URL choice on its whole label, not on one word: the list also holds
+ * "Custom login URL (Sandbox, DevHub or Production Org)", which "Sandbox" alone
+ * matches first, and which then asks for a URL nothing answers.
  *
  * It runs the command twice on purpose: the first run switches the default org
  * and stops, which is what a learner sees too. The second does the work, and the
