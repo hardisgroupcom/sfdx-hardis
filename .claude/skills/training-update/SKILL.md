@@ -50,7 +50,7 @@ have to be regenerated.
 (`node scripts/build/universe.mjs --check`).
 
 **The site is Zensical, and it is not mkdocs-material.** It reads `course-site.yml` (named so because
-`mkdocs.yml` belongs to the Helios project documentation of Lab 3.10) and honours most of
+`mkdocs.yml` belongs to the Helios project documentation of Lab 3.9) and honours most of
 it, but it ships none of the plugins: `glightbox` is declared and Zensical emits the
 `<a class="glightbox">` wrapper around every picture while shipping no viewer, so the course
 carries its own (`site-theme/javascripts/lightbox.js`, a delegated listener in the **capture**

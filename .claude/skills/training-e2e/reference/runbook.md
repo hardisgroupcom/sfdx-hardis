@@ -3,8 +3,8 @@
 Read this in full before starting. It holds the decisions that make a run meaningful and the traps
 that cost previous runs hours.
 
-The course is at <https://hardisgroupcom.github.io/sfdx-hardis-training/>: three levels, 26 labs,
-7 + 9 + 10. A full walk of the three is a long session. Level 1 alone is worth running whenever the
+The course is at <https://hardisgroupcom.github.io/sfdx-hardis-training/>: three levels, 27 labs,
+7 + 9 + 11. A full walk of the three is a long session. Level 1 alone is worth running whenever the
 contributor loop changed.
 
 ## 1. What a run proves, and what it cannot
@@ -19,7 +19,7 @@ A learner fails for four different reasons, and only the first is what unit test
 | The step does not work at all on a clean environment                                                                | **only this run**                                                |
 
 The two bottom rows are why this exists. Everything above them is cheap, runs in minutes, and must
-be run first: there is no point walking 26 labs to discover a dead link.
+be run first: there is no point walking 27 labs to discover a dead link.
 
 What no run of this kind proves: that a human can follow the prose. An agent that already knows the
 product reads past an ambiguity a beginner would stop at. Treat every sentence you had to re-read,
@@ -272,28 +272,29 @@ opening them by hand: what the simulator produces is what the lab describes.
 - `hardis:work:resetselection` resets the **commits**: a soft reset, a restore of `manifest/`, and
   `canForcePush`. There is no stored list of ticked items, and no screen that shows one.
 
-## 7. Level 3, ten labs
+## 7. Level 3, eleven labs
 
 The release manager. This is the level where the course touches the orgs and the repository hardest.
 
-| Lab  | What it is                           | Driven by                                                                                         |
-|------|--------------------------------------|---------------------------------------------------------------------------------------------------|
-| 3.1  | Configure the pipeline to production | `scripts/auth.mjs <org> <branch> <urlRegex> <targetRegex>`, once per new branch, then the secrets |
-| 3.2  | Review and merge a contributor PR    | `simulate`, then review and `prflow.sh <pr> squash`                                               |
-| 3.3  | Read the deployment log              | The job log of the merge, and what `.forceignore` hides from it                                   |
-| 3.4  | Three colliding Pull Requests        | `simulate`, then a merge order chosen and defended                                                |
-| 3.5  | Promote to UAT, write release notes  | The `+ PR` chip of the DevOps Pipeline, `hardis:doc:release-notes`                                |
-| 3.6  | Release to production, DORA          | The promotion into `main`, `hardis:doc:dora-report`                                               |
-| 3.7  | Hotfix and retrofit                  | A hotfix from `main`, then the retrofit into `integration`                                        |
-| 3.8  | Monitor production                   | `scripts/mon.mjs`, in a repository of its own                                                     |
-| 3.9  | Project documentation                | `hardis:doc:project2markdown`                                                                     |
-| 3.10 | Capstone: a weekly release cycle     | One story all the way through, four promotions                                                    |
+| Lab  | What it is                               | Driven by                                                                                         |
+|------|------------------------------------------|---------------------------------------------------------------------------------------------------|
+| 3.1  | Configure the pipeline to production     | `scripts/auth.mjs <org> <branch> <urlRegex> <targetRegex>`, once per new branch, then the secrets |
+| 3.2  | Review and merge a contributor PR        | `simulate`, then review and `prflow.sh <pr> squash`                                               |
+| 3.3  | Read the deployment log                  | The job log of the merge, and what `.forceignore` hides from it                                   |
+| 3.4  | Three colliding Pull Requests            | `simulate`, then a merge order chosen and defended                                                |
+| 3.5  | Promote to UAT, write release notes      | The `+ PR` chip of the DevOps Pipeline, `hardis:doc:release-notes`                                |
+| 3.6  | Release to production, DORA              | The promotion into `main`, `hardis:doc:dora-report`                                               |
+| 3.7  | Hotfix and retrofit                      | A hotfix from `main`, then the retrofit into `integration`                                        |
+| 3.8  | Monitor production                       | `scripts/mon.mjs`, in a repository of its own                                                     |
+| 3.9  | Project documentation                    | `hardis:doc:project2markdown`                                                                     |
+| 3.10 | Promote a subset with promotion branches | One approved story carried to `preprod` alone, and what that costs                                |
+| 3.11 | Capstone: a weekly release cycle         | One story all the way through, four promotions                                                    |
 
 The role split is the point of this level, and it is easy to break by being helpful:
 
 - **The release manager never opens a feature Pull Request.** Contributors do. In Level 3 the
-  teammates (Sofia, Marco, Amina) come from `Simulate my teammates`, and the release manager reviews
-  and merges their work.
+  teammates (Mariia Pyvovarchuk and Romain Panda) come from `Simulate my teammates`, and the
+  release manager reviews and merges their work.
 - The release manager opens only the **promotion** Pull Requests, `integration -> uat -> preprod ->
   main`, from the DevOps Pipeline `+ PR` chips. The release notes go in the promotion Pull Request
   description.
@@ -302,6 +303,21 @@ The role split is the point of this level, and it is easy to break by being help
   configuration** (`node scripts/training.mjs publish`), which opens a Pull Request. **Nobody pushes
   to a major branch.**
 - Pull Request titles say "Release" only into `main`, and "Promotion" otherwise.
+
+Lab 3.10 is the promotion branches lab, and its setup is nine labs upstream of it. Three things
+before walking it:
+
+- **`enablePromotionBranches` and `allowedPromotionSteps` are published in Lab 3.1**, and stay inert
+  until here. A promotion branch is cut from its **target**, so the deployment job reads the
+  configuration `preprod` carries, and a setting only reaches `preprod` by travelling up with the
+  promotions of Labs 3.5 and 3.6. A run that skips ahead to 3.10 without those promotions finds the
+  `Create promotion` button missing and has no way to tell a stale course from a skipped step.
+- `allowedPromotionSteps` names `uat` to `preprod` only. The button is **supposed** to be absent
+  from the `integration` window and present on the `uat` one. That asymmetry is the lab's point,
+  not a defect.
+- The `uat` counter does **not** drop when the promotion is created. `buildPromotionIndex` indexes
+  merged promotions only, so a story leaves its branch's count when the promotion merges. The lab
+  says so; a run that expects the counter to move early will report a phantom finding.
 
 Lab 3.8 runs in a **second repository**, the monitoring one, with its own secrets
 (`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Two things about its first run:

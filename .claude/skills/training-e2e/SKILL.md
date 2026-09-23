@@ -61,7 +61,7 @@ almost always be yes to.
 
 1. **Read `reference/runbook.md` in full.** It holds the fidelity levels, the traps of the five
    previous runs, and the role split of Level 3 that is easy to break by being helpful.
-2. **Run the cheap checks first**, in `$COURSE`. There is no point walking 26 labs to find a dead
+2. **Run the cheap checks first**, in `$COURSE`. There is no point walking 27 labs to find a dead
    link:
 
    ```bash
@@ -138,5 +138,9 @@ State them again in the report unless you close them:
   never performed.
 - Levels 1 and 2 have been walked green several times; Level 3 is the one that keeps finding
   defects, and its Lab 3.8 (monitoring, second repository) is the least often run.
+- **Lab 3.10, promotion branches, has never been walked, and neither has the capstone.** 3.10 was
+  written from the command and the panel sources rather than from a run, and the 2026-09-23 run
+  stopped at Lab 3.9, so the Level 3 badge has never been claimed end to end. Whatever else a run
+  covers, those two are where the unknowns are.
 
 $ARGUMENTS
