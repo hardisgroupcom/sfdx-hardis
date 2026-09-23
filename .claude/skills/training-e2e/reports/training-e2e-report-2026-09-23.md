@@ -6,12 +6,15 @@ claimed and awarded**, which is what the run was asked for. **Level 3 reached 9 
 
 The run produced **17 findings**. The four worth reading first:
 
-- **F17**: **the course disables its own pipeline.** Lab 3.1 makes `Mega-Linter` a required check on
-  all four major branches; it also cuts `preprod` from `main`, and Lab 3.7 retrofits `main` back
-  down into `integration`. Both moves replace the Helios project's `megalinter.yml` with the course
-  site's, which only answers Pull Requests into `main`. From then on no Pull Request into a major
-  branch can obtain the context its own protection demands, and GitHub shows "merging is blocked"
-  with every check on the page green and nothing naming the missing one.
+- **F17** (**fixed and proven**): **the course disabled its own pipeline.** Lab 3.1 makes
+  `Mega-Linter` a required check on all four major branches; it also cuts `preprod` from `main`, and
+  Lab 3.7 retrofits `main` back down into `integration`. Both moves replace the Helios project's
+  `megalinter.yml` with the course site's, which only answers Pull Requests into `main`. From then
+  on no Pull Request into a major branch can obtain the context its own protection demands, and
+  GitHub shows "merging is blocked" with every check on the page green and nothing naming the
+  missing one. The three `training/start-level-*` branches now carry `main`'s version of the file
+  verbatim, and a Pull Request into `integration` was then checked and merged with protection
+  intact.
 - **F3**: `Clean up a training org` can never complete on an org that was actually used.
 - **F12**: the badge claim form cannot be submitted by following the instructions the command
   prints.
@@ -174,7 +177,7 @@ The full text of every finding, with its evidence, is in
 | F14 | low      | this skill             | `auth.mjs`'s documented URL regex matches the wrong choice (**fixed**) |
 | F15 | medium   | this skill / training  | nothing cleans up the External Client Apps Lab 3.1 creates             |
 | F16 | low      | this skill             | `gh pr edit --body-file` silently fails on this repository             |
-| F17 | **high** | training               | after Lab 3.7, no Pull Request into a major branch can be merged       |
+| F17 | **high** | training               | after Lab 3.7, no Pull Request into a major branch merged (**fixed**)  |
 
 Fixed during the run: **F6** (both halves: the runbook's build order, and a worker-path fallback in
 `vscode-sfdx-hardis` so a tsc build is not silently degraded) and **F14**. Everything else is
