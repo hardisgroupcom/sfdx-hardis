@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
+import { spawnSync } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import { shouldAddVirtualPullRequest, type BackpromotePrGroup } from '../../../src/common/utils/backpromoteUtils.js';
@@ -17,11 +21,13 @@ import {
   expandPromotionsInGroups,
   filterOpenPromotionPullRequests,
   gitPathSpec,
+  listFilesWithConflictMarkers,
   listUnrequestedPullRequestNumbers,
   markAlreadyPromotedCandidates,
   oldestCandidateDate,
   parsePullRequestNumbersFlag,
   promotionCandidateRows,
+  promotionChangedFiles,
   pullRequestKeys,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
@@ -798,5 +804,65 @@ describe('assertPromotionBranchIsNotDeployed()', () => {
   it('ignores a branch that only looks like a promotion branch', () => {
     expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, 'promotion/hand-made-by-a-human')).to.not.throw();
     expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, null)).to.not.throw();
+  });
+});
+
+describe('listFilesWithConflictMarkers() and promotionChangedFiles()', () => {
+  // A repository is allowed to hold conflict markers in its own content. The training course does
+  // (its lab on resolving merge conflicts shows them), and so do merge-driver fixtures and
+  // scaffolding templates. Grepping the whole branch failed every promotion Pull Request there.
+  const commandThis = {} as any;
+  let repo = '';
+  let previousCwd = '';
+
+  const git = (args: string[]) => spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+
+  before(() => {
+    repo = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-markers-'));
+    git(['init', '-b', 'preprod']);
+    git(['config', 'user.email', 'test@example.invalid']);
+    git(['config', 'user.name', 'Test']);
+    fs.writeFileSync(
+      path.join(repo, 'teaching-about-conflicts.md'),
+      ['Here is what a conflict looks like:', '', '<<<<<<< HEAD', 'ours', '=======', 'theirs', '>>>>>>> origin/integration', ''].join('\n')
+    );
+    git(['add', '-A']);
+    git(['commit', '-m', 'the lab that teaches merge conflicts']);
+    git(['checkout', '-b', 'promotion/uat/preprod/2026-09-23-1807']);
+    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), '<CustomField/>\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'US-057 Park an installation that is waiting for parts (#7)']);
+    previousCwd = process.cwd();
+    process.chdir(repo);
+  });
+
+  after(() => {
+    if (previousCwd) {
+      process.chdir(previousCwd);
+    }
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+
+  it('names only what the promotion carries', async () => {
+    const carried = await promotionChangedFiles(commandThis, 'preprod');
+    expect(carried).to.deep.equal(['Status__c.field-meta.xml']);
+    expect(await listFilesWithConflictMarkers(commandThis, carried)).to.deep.equal([]);
+  });
+
+  it('still finds a marker in a file the promotion does carry', async () => {
+    fs.writeFileSync(
+      path.join(repo, 'Status__c.field-meta.xml'),
+      ['<<<<<<< HEAD', '<CustomField/>', '=======', '<CustomField/>', '>>>>>>> origin/uat', ''].join('\n')
+    );
+    git(['add', '-A']);
+    git(['commit', '-m', 'commit the conflict markers to solve later']);
+    const carried = await promotionChangedFiles(commandThis, 'preprod');
+    expect(await listFilesWithConflictMarkers(commandThis, carried)).to.deep.equal(['Status__c.field-meta.xml']);
+  });
+
+  it('falls back to the whole branch when the target branch cannot be resolved', async () => {
+    expect(await promotionChangedFiles(commandThis, 'a-branch-that-does-not-exist')).to.equal(null);
+    expect(await promotionChangedFiles(commandThis, undefined)).to.equal(null);
+    expect(await listFilesWithConflictMarkers(commandThis, null)).to.include('teaching-about-conflicts.md');
   });
 });

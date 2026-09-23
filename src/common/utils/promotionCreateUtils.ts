@@ -1259,13 +1259,21 @@ export function assertPromotionBranchIsNotDeployed(
  * purpose, so they have to be solved on the branch before the merge: this is what makes the
  * validation job fail while they are there, with a message naming the files.
  */
-export async function listFilesWithConflictMarkers(commandThis: any): Promise<string[]> {
-  // Every tracked file, not only the package directories: a cherry-pick conflicts wherever the
-  // stories touched the repository (config/, scripts/actions/, data/...), commitWithConflictMarkers
-  // stages all of it with git add -A, and the Pull Request body lists all of it as to be fixed.
+export async function listFilesWithConflictMarkers(commandThis: any, restrictToFiles: string[] | null = null): Promise<string[]> {
+  // Scoped to what the promotion actually carries, not to every tracked file: a repository is
+  // allowed to hold conflict markers in its own content, and plenty do (documentation about
+  // resolving conflicts, merge-driver fixtures, scaffolding templates). Grepping the whole branch
+  // failed every promotion Pull Request on those repositories, naming files the promotion never
+  // touched. The scope is still wider than the package directories, because a cherry-pick
+  // conflicts wherever the stories touched the repository (config/, scripts/actions/, data/...),
+  // and commitWithConflictMarkers stages all of it with git add -A.
   // git grep only searches tracked files, so the report folder and node_modules stay out.
   // Only the opening and closing markers: a line of "=======" is legitimate in markdown
-  const res = await runCommandSafe('git grep -l -E "^(<<<<<<< |>>>>>>> )"', commandThis, { output: false });
+  const pathspec =
+    restrictToFiles && restrictToFiles.length > 0
+      ? ' -- ' + restrictToFiles.map((file) => `"${file}"`).join(' ')
+      : '';
+  const res = await runCommandSafe(`git grep -l -E "^(<<<<<<< |>>>>>>> )"${pathspec}`, commandThis, { output: false });
   if (res.status !== 0) {
     return []; // 1 = nothing found, anything else = nothing that can be checked here
   }
@@ -1273,6 +1281,32 @@ export async function listFilesWithConflictMarkers(commandThis: any): Promise<st
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line !== '');
+}
+
+/**
+ * The files a promotion branch changes against the branch it was cut from. `null` when that cannot
+ * be worked out, which keeps the caller on its previous whole-branch behaviour rather than
+ * silently checking nothing.
+ */
+export async function promotionChangedFiles(commandThis: any, targetBranch: string | undefined): Promise<string[] | null> {
+  if (!targetBranch) {
+    return null;
+  }
+  for (const ref of [`origin/${targetBranch}`, targetBranch]) {
+    const exists = await runCommandSafe(`git rev-parse -q --verify "${ref}^{commit}"`, commandThis, { output: false });
+    if (exists.status !== 0) {
+      continue;
+    }
+    const res = await runCommandSafe(`git diff --name-only "${ref}...HEAD"`, commandThis, { output: false });
+    if (res.status !== 0) {
+      continue;
+    }
+    return (res.stdout || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '');
+  }
+  return null;
 }
 
 /**
@@ -1288,7 +1322,14 @@ export async function assertNoPromotionConflictMarkers(commandThis: any, config:
   if (!isPromotionPullRequest(prInfo, getPromotionBranchConfig(config))) {
     return;
   }
-  const files = await listFilesWithConflictMarkers(commandThis);
+  // Only the files this promotion carries: markers that were already in the target branch are not
+  // this Pull Request's to solve, and blocking on them stops promotions on any repository whose
+  // own content holds conflict markers.
+  // The branch name carries the step it belongs to, so it names the target even when the provider
+  // did not fill it in.
+  const targetBranch = parsePromotionBranchName(prInfo!.sourceBranch)?.targetBranch || prInfo!.targetBranch;
+  const carried = await promotionChangedFiles(commandThis, targetBranch);
+  const files = await listFilesWithConflictMarkers(commandThis, carried);
   if (files.length === 0) {
     return;
   }
