@@ -48,11 +48,11 @@ ___
 
 Every time something reached production without going through the BUILD branches.
 
-| What happened                                                                                          | What to retrofit                         | When                                                                            |
-|--------------------------------------------------------------------------------------------------------|------------------------------------------|---------------------------------------------------------------------------------|
-| A [hotfix](salesforce-devops-hotfixes.md) was merged into `main`                                       | `main` (or `preprod`) into `integration` | Right after the hotfix is in production                                         |
-| A [promotion branch (experimental)](salesforce-devops-promotion-branches.md) was merged into `preprod` | `preprod` into `integration`             | Right after the promotion is merged                                             |
-| Somebody changed an org **by hand** (which must never happen)                                          | The change, as a User Story              | As soon as you notice, see [below](#manual-retrofit-of-a-change-made-in-an-org) |
+| What happened                                                                                  | What to retrofit                         | When                                                                            |
+|------------------------------------------------------------------------------------------------|------------------------------------------|---------------------------------------------------------------------------------|
+| A [hotfix](salesforce-devops-hotfixes.md) was merged into `main`                               | `main` (or `preprod`) into `integration` | Right after the hotfix is in production                                         |
+| A [promotion branch (Beta)](salesforce-devops-promotion-branches.md) was merged into `preprod` | `preprod` into `integration`             | Right after the promotion is merged                                             |
+| Somebody changed an org **by hand** (which must never happen)                                  | The change, as a User Story              | As soon as you notice, see [below](#manual-retrofit-of-a-change-made-in-an-org) |
 
 Do it **right away** in every case. A retrofit left for later is a conflict that grows: the BUILD branches keep moving on top of metadata that is already out of date in production.
 
@@ -136,7 +136,7 @@ ___
 ## See also
 
 - [Hotfixes](salesforce-devops-hotfixes.md): ship an urgent fix to production through the RUN stream.
-- [Promotion branches (experimental)](salesforce-devops-promotion-branches.md): ship the approved stories of `uat` without waiting for the rest.
+- [Promotion branches (Beta)](salesforce-devops-promotion-branches.md): ship the approved stories of `uat` without waiting for the rest.
 - [Deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md): what runs around a deployment, and the scope each kind of merge gets.
 
 <!-- training-links:start -->

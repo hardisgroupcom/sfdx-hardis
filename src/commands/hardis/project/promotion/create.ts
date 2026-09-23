@@ -42,16 +42,16 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class PromotionCreate extends SfCommand<any> {
-  public static title = 'Create a promotion branch (experimental)';
+  public static title = 'Create a promotion branch (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
 
-**Experimental feature.** Promotion branches are new and switched off by default; their behavior may still change from feedback.
+**This feature is in Beta.** Promotion branches are switched off by default; their behavior may still change from feedback. Please report any issue or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Assembles a promotion branch: a branch carrying only the approved User Stories of a major branch (ex: uat), so they reach the next major branch (ex: preprod) before the rest of the promotion window.**
 
-This is the only supported way to create a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/). The command:
+This is the only supported way to create a [promotion branch (Beta)](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/). The command:
 
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
 - checks that \`allowedPromotionSteps\` declares the steps promotions may run on (ex: \`- source: uat\` / \`target: preprod\`), and keeps to them: only those source and target branches are offered, and naming another one fails;

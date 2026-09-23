@@ -20,7 +20,7 @@ DevOps practices work best when one or two team members take the role of **relea
 - [**Deploy to major orgs**](salesforce-devops-deploy-major-branches.md): promote the changes from `integration` to `uat`, `preprod` and production with Pull Requests between major branches.
 - [**Handle hotfixes**](salesforce-devops-hotfixes.md): ship an urgent fix to production through the RUN stream.
 - [**Retrofit**](salesforce-devops-retrofit.md): bring what reached production back into the BUILD branches, so the next version does not undo it.
-- [**Assemble a promotion branch** (experimental)](salesforce-devops-promotion-branches.md): when only some of the User Stories of `uat` are approved, ship them alone without losing their deployment actions.
+- [**Assemble a promotion branch** (Beta)](salesforce-devops-promotion-branches.md): when only some of the User Stories of `uat` are approved, ship them alone without losing their deployment actions.
 - [**Generate Release Notes**](hardis/doc/salesforce-devops-release-notes.md): document the tickets, Pull Requests, metadata changes, deployment actions and contributors of a release.
 - [**Follow DORA Metrics**](hardis/doc/salesforce-devops-dora-report.md): measure deployment frequency, lead time, change failure rate and time to restore.
 - [**Configure the project**](salesforce-devops-config-home.md): package.xml, overwrite management, delta deployments, automated cleaning and the other `.sfdx-hardis.yml` settings.

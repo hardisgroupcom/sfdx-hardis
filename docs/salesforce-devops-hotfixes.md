@@ -63,7 +63,7 @@ flowchart TB
 ```
 
 - **Hotfix**: this page.
-- **Promotion branch (experimental)**: do not fix it a second time, assemble a [promotion branch](salesforce-devops-promotion-branches.md) carrying the approved stories.
+- **Promotion branch (Beta)**: do not fix it a second time, assemble a [promotion branch](salesforce-devops-promotion-branches.md) carrying the approved stories.
 
 Either way, it ends the same way: what reached production has to come back down to the BUILD branches.
 
@@ -129,7 +129,7 @@ ___
 ## See also
 
 - [Retrofit](salesforce-devops-retrofit.md): bring what reached production back into the BUILD branches.
-- [Promotion branches (experimental)](salesforce-devops-promotion-branches.md): ship the approved stories of `uat` without waiting for the rest.
+- [Promotion branches (Beta)](salesforce-devops-promotion-branches.md): ship the approved stories of `uat` without waiting for the rest.
 - [Deploy to major orgs](salesforce-devops-deploy-major-branches.md): the ordinary promotion of a version.
 
 <!-- training-links:start -->
