@@ -1269,6 +1269,12 @@ export async function listFilesWithConflictMarkers(commandThis: any, restrictToF
   // and commitWithConflictMarkers stages all of it with git add -A.
   // git grep only searches tracked files, so the report folder and node_modules stay out.
   // Only the opening and closing markers: a line of "=======" is legitimate in markdown
+  // An empty list is an answer, not an absence of one: the promotion carries no file, so there
+  // is nothing to scan. Falling through to the unrestricted grep here is how the process job
+  // once failed on markers the target branch always contained.
+  if (restrictToFiles && restrictToFiles.length === 0) {
+    return [];
+  }
   const pathspec =
     restrictToFiles && restrictToFiles.length > 0
       ? ' -- ' + restrictToFiles.map((file) => `"${file}"`).join(' ')
@@ -1301,10 +1307,25 @@ export async function promotionChangedFiles(commandThis: any, targetBranch: stri
     if (res.status !== 0) {
       continue;
     }
-    return (res.stdout || '')
+    const files = (res.stdout || '')
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line !== '');
+    if (files.length > 0) {
+      return files;
+    }
+    // On the process job the promotion is already merged and HEAD is that merge commit on the
+    // target branch itself, so the three-dot diff against the target is empty. The files the
+    // promotion carried are the ones the merge brought in: its diff against its first parent.
+    // HEAD~1 rather than HEAD^1 on purpose: the caret is an escape character to a Windows shell.
+    const merge = await runCommandSafe(`git diff --name-only "HEAD~1..HEAD"`, commandThis, { output: false });
+    if (merge.status === 0) {
+      return (merge.stdout || '')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line !== '');
+    }
+    return files;
   }
   return null;
 }

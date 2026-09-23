@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): the deployment of a promotion Pull Request no longer fails on git conflict markers that belong to the target branch, so a repository whose own content holds them can promote again.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): the deployment of a promotion Pull Request no longer fails on git conflict markers that belong to the target branch, on the check job and on the deployment that follows the merge, so a repository whose own content holds them can promote again.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta) and [backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): the Pull Request number of a GitHub squash merge is read from the commit subject, so `--pull-requests` matches a story without a git provider token.
 
 ## [8.10.0] 2026-09-23

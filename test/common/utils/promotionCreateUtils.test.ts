@@ -871,4 +871,22 @@ describe('listFilesWithConflictMarkers() and promotionChangedFiles()', () => {
     expect(await promotionChangedFiles(commandThis, undefined)).to.equal(null);
     expect(await listFilesWithConflictMarkers(commandThis, null)).to.include('teaching-about-conflicts.md');
   });
+
+  it('scans nothing when the promotion carries nothing', async () => {
+    expect(await listFilesWithConflictMarkers(commandThis, [])).to.deep.equal([]);
+  });
+
+  it('reads the merge commit on the process job, where the diff against the target is empty', async () => {
+    // Solve the markers of the previous test, then merge: this is the state the process job runs
+    // in, HEAD being the merge commit on the target branch itself, where the three-dot diff
+    // against the target names nothing.
+    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), '<CustomField/>\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'solve the conflict markers on the branch']);
+    git(['checkout', 'preprod']);
+    git(['merge', '--no-ff', '-m', 'Merge pull request #8', 'promotion/uat/preprod/2026-09-23-1807']);
+    const carried = await promotionChangedFiles(commandThis, 'preprod');
+    expect(carried).to.deep.equal(['Status__c.field-meta.xml']);
+    expect(await listFilesWithConflictMarkers(commandThis, carried)).to.deep.equal([]);
+  });
 });
