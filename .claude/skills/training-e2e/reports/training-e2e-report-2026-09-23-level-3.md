@@ -26,13 +26,13 @@ way Lab 3.10 says it will.
 
 ## Environment
 
-| Item             | State                                                                        |
-|------------------|------------------------------------------------------------------------------|
-| `helios-prod`    | Developer Edition, Dev Hub, `orgfarm-c77e7e1127`. Re-seeded                  |
-| `helios-preprod` | Developer Edition, `orgfarm-bedd5b7a5a`. Re-seeded                           |
-| Scratch orgs     | `helios-dev`, `helios-integration` reused; `helios-uat` rebuilt (see F3)     |
-| Fork             | `nvuillam/sfdx-hardis-training`, reset from the branch under test            |
-| Learner clone    | `C:/git/training-run2` (the usual clone was held open by an editor)          |
+| Item             | State                                                                    |
+|------------------|--------------------------------------------------------------------------|
+| `helios-prod`    | Developer Edition, Dev Hub, `orgfarm-c77e7e1127`. Re-seeded              |
+| `helios-preprod` | Developer Edition, `orgfarm-bedd5b7a5a`. Re-seeded                       |
+| Scratch orgs     | `helios-dev`, `helios-integration` reused; `helios-uat` rebuilt (see F3) |
+| Fork             | `nvuillam/sfdx-hardis-training`, reset from the branch under test        |
+| Learner clone    | `C:/git/training-run2` (the usual clone was held open by an editor)      |
 
 Three deviations from a learner's path, all forced, all recorded:
 
@@ -50,19 +50,19 @@ Three deviations from a learner's path, all forced, all recorded:
 
 ## What was walked
 
-| Lab  | Fidelity        | A (read) | B (do)  | C (images) | Findings       |
-|------|-----------------|----------|---------|------------|----------------|
-| 3.1  | 2 and 3         | OK       | OK      | not done   | F4, F3         |
-| 3.2  | not covered     | -        | -       | -          | -              |
-| 3.3  | not covered     | -        | -       | -          | -              |
-| 3.4  | not covered     | -        | -       | -          | -              |
-| 3.5  | 3, partial      | OK       | partial | not done   | -              |
-| 3.6  | 3, partial      | OK       | partial | not done   | -              |
-| 3.7  | not covered     | -        | -       | -          | -              |
-| 3.8  | not covered     | -        | -       | -          | -              |
-| 3.9  | not covered     | -        | -       | -          | -              |
-| 3.10 | 2 and 3         | OK       | OK      | **OK**     | F1, F2, F5, F6 |
-| 3.11 | 3, the one claim| OK       | partial | not done   | -              |
+| Lab  | Fidelity         | A (read) | B (do)  | C (images) | Findings       |
+|------|------------------|----------|---------|------------|----------------|
+| 3.1  | 2 and 3          | OK       | OK      | not done   | F4, F3         |
+| 3.2  | not covered      | -        | -       | -          | -              |
+| 3.3  | not covered      | -        | -       | -          | -              |
+| 3.4  | not covered      | -        | -       | -          | -              |
+| 3.5  | 3, partial       | OK       | partial | not done   | -              |
+| 3.6  | 3, partial       | OK       | partial | not done   | -              |
+| 3.7  | not covered      | -        | -       | -          | -              |
+| 3.8  | not covered      | -        | -       | -          | -              |
+| 3.9  | not covered      | -        | -       | -          | -              |
+| 3.10 | 2 and 3          | OK       | OK      | **OK**     | F1, F2, F5, F6 |
+| 3.11 | 3, the one claim | OK       | partial | not done   | -              |
 
 Labs 3.2, 3.3, 3.4, 3.7, 3.8 and 3.9 are **not covered** by this run. They are not on the promotion
 branches path and were walked green on 2026-09-23. Labs 3.5 and 3.6 were done only as far as the
@@ -81,15 +81,15 @@ reports the same. They need a republish before the release.
 
 ## Findings
 
-| Id  | Severity     | Where            | What                                                                         |
-|-----|--------------|------------------|------------------------------------------------------------------------------|
-| F1  | **blocking** | sfdx-hardis      | A promotion fails on conflict markers in files it does not carry (**fixed**) |
-| F2  | **blocking** | sfdx-hardis      | A GitHub squash merge never yields its Pull Request number (**fixed**)       |
-| F3  | **high**     | training         | Clean up a training org, then Set up, cannot succeed (**documented**)        |
-| F4  | medium       | training         | Lab 3.1 sends you back into a command that then stops (**documented**)       |
-| F5  | medium       | training         | Lab 3.10 names the wrong Author in its sample (**fixed**)                    |
-| F6  | low          | training         | Lab 3.10's sample log is in the wrong order (**fixed**)                      |
-| F7  | low          | this skill       | `auth.mjs` hides the CLI's real error (**not fixed**)                        |
+| Id | Severity     | Where       | What                                                                         |
+|----|--------------|-------------|------------------------------------------------------------------------------|
+| F1 | **blocking** | sfdx-hardis | A promotion fails on conflict markers in files it does not carry (**fixed**) |
+| F2 | **blocking** | sfdx-hardis | A GitHub squash merge never yields its Pull Request number (**fixed**)       |
+| F3 | **high**     | training    | Clean up a training org, then Set up, cannot succeed (**documented**)        |
+| F4 | medium       | training    | Lab 3.1 sends you back into a command that then stops (**documented**)       |
+| F5 | medium       | training    | Lab 3.10 names the wrong Author in its sample (**fixed**)                    |
+| F6 | low          | training    | Lab 3.10's sample log is in the wrong order (**fixed**)                      |
+| F7 | low          | this skill  | `auth.mjs` hides the CLI's real error (**not fixed**)                        |
 
 ### F1 - A promotion fails on conflict markers in files it does not carry (blocking)
 
