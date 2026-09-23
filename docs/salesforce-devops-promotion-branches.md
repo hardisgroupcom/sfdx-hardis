@@ -458,3 +458,13 @@ Set `NO_CACHE=true` or `SFDX_HARDIS_NO_PR_CACHE=true` to bypass it entirely, and
 > Measured on a four level pipeline of 23 Pull Requests: `sf hardis:project:promotion:list-candidates` went from **74.6 s** to **40.6 s** on the second run, with identical output. The gain grows with the number of Pull Requests that carry a long description.
 
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+
+<!-- training-links:end -->

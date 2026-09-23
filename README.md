@@ -264,7 +264,7 @@ sf hardis:<COMMAND> <OPTIONS>
 
 - [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
 - [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
-- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 10 labs, the pipeline up to production, releases, hotfixes, monitoring
+- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
 
 <!-- training-links:end -->
 
