@@ -832,14 +832,20 @@ describe('listFilesWithConflictMarkers() and promotionChangedFiles()', () => {
     fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), '<CustomField/>\n');
     git(['add', '-A']);
     git(['commit', '-m', 'US-057 Park an installation that is waiting for parts (#7)']);
+  });
+
+  beforeEach(() => {
     previousCwd = process.cwd();
     process.chdir(repo);
   });
 
-  after(() => {
+  afterEach(() => {
     if (previousCwd) {
       process.chdir(previousCwd);
     }
+  });
+
+  after(() => {
     fs.rmSync(repo, { recursive: true, force: true });
   });
 
