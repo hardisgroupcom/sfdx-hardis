@@ -136,7 +136,7 @@ nav:
           - Deploy to major orgs: salesforce-devops-deploy-major-branches.md
           - Hotfixes (RUN): salesforce-devops-hotfixes.md
           - Retrofit: salesforce-devops-retrofit.md
-          - Promotion branches (Experimental): salesforce-devops-promotion-branches.md
+          - Promotion branches (Beta): salesforce-devops-promotion-branches.md
           - Release Notes: hardis/doc/salesforce-devops-release-notes.md
           - DORA Metrics: hardis/doc/salesforce-devops-dora-report.md
           - Smart Deploy internals: salesforce-devops-smart-deployment.md

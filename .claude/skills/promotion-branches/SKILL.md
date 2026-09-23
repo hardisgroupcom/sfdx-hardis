@@ -4,7 +4,7 @@ description: How the promotion branches feature works (enablePromotionBranches, 
 user-invocable: false
 ---
 
-# Promotion branches (experimental)
+# Promotion branches (Beta)
 
 A **promotion branch** carries a chosen subset of the User Stories waiting in a major branch to the
 next major branch, ahead of the rest of the promotion window. It is a selective merge: instead of
@@ -16,7 +16,7 @@ Required with it: **`allowedPromotionSteps`**, the source and target branches a 
 may assemble a promotion between (`- source: uat` / `target: preprod`). `promotion:create`
 refuses to run while the list is missing.
 Everything below is inert while it is off, with one exception noted in [Filtering](#filtering-what-moves-the-pull-requests).
-The feature is **experimental** and must be labelled as such in docs and UIs.
+The feature is in **Beta** and must be labelled as such in docs and UIs, the way backpromote is.
 
 User documentation: `docs/salesforce-devops-promotion-branches.md`
 (<https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/>).
@@ -340,5 +340,6 @@ A big project has hundreds of Pull Requests, so:
   in the CLI, the 9 `src/i18n/*.json` in the extension).
 - Any behaviour change: re-run the A/B regression check with the feature **off** before saying it
   is safe. A green unit suite has already missed a flag-off regression once.
-- The feature is experimental: keep the "(experimental)" mention in the docs page, the JSON schema
-  description and the settings UI.
+- The feature is in Beta: keep the "(Beta)" mention in the docs page, the JSON schema description
+  and the settings UI. It moved from "(experimental)" in September 2026, so a new mention is written
+  "(Beta)", capital B, like backpromote.

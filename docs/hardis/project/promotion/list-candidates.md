@@ -4,11 +4,11 @@
 
 ## Description
 
-## Command Behavior
+## Command Behavior (Beta)
 
-**Experimental feature.** Promotion branches are new and switched off by default; their behavior may still change from feedback.
+**This feature is in Beta.** Promotion branches are switched off by default; their behavior may still change from feedback. Please report any issue or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
-**Lists the Pull Requests merged into a major branch (ex: uat) and not yet promoted to the next one (ex: preprod), so you can choose the ones a [promotion branch (experimental)](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) will carry.**
+**Lists the Pull Requests merged into a major branch (ex: uat) and not yet promoted to the next one (ex: preprod), so you can choose the ones a [promotion branch (Beta)](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) will carry.**
 
 This is the read-only half of `sf hardis:project:promotion:create`: same configuration checks, same candidates, same rules about what is already on its way, but nothing is created, pushed or closed. Run it to know what can be promoted, then pass the numbers you picked to `hardis:project:promotion:create --pull-requests`.
 

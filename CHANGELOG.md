@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) are no longer experimental: the feature is now in Beta, and the docs, the JSON schema and the VS Code labels say so.
+
 ## [8.9.2] 2026-09-22
 
 - VS Code: [hardis:project:function:list](https://sfdx-hardis.cloudity.com/hardis/project/function/list/) and [hardis:scratch:pool:view](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/view/) no longer open a command execution tab when a panel reads them in the background to fill itself, which the DevOps Pipeline did on every click and every refresh.
