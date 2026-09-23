@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- French translations: a CI/CD pipeline is feminine, so the messages now read "la pipeline" and "la CI/CD".
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) are no longer experimental: the feature is now in Beta, and the docs, the JSON schema and the VS Code labels say so.
 
 ## [8.9.2] 2026-09-22

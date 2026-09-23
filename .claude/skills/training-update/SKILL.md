@@ -30,6 +30,7 @@ have to be regenerated.
 | The words of the generated pages           | `i18n/<locale>.json`                                                             | No, translated by hand from `i18n/en.json`      |
 | The fiction: stories, branches, orgs, cast | `training-universe.json`                                                         | No, the source of truth                         |
 | The backlog, the link maps, the manifest   | `BACKLOG.md`, `labs/link-map.<locale>.md`, `training-manifest.json`              | **Yes**, `scripts/build/universe.mjs`           |
+| The command links of Under the hood blocks | inside each lab, between `<!-- command-links:start/end -->`                      | **Yes**, `scripts/build/lab-command-links.mjs`  |
 | The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder     | **Yes**, `scripts/build/site.mjs`, per locale   |
 | The audit rules                            | `scripts/verify/rules.mjs`                                                       | No                                              |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`               |
@@ -160,6 +161,7 @@ $EDITOR labs/fr/level-2-contributor-advanced/2-3-*.md
 
 # 3. the three generators that are locale aware
 node scripts/build/lab-crossrefs.mjs        # "Lab 2.7, étape 3" becomes a link, per locale
+node scripts/build/lab-command-links.mjs   # each sf hardis command an Under the hood block names, linked
 node scripts/i18n/align-tables.mjs          # MD060: a translated cell moves every pipe under it
 node scripts/i18n/stamp-source-rev.mjs fr   # write source_rev from the commit of step 1
 
