@@ -90,7 +90,7 @@ almost always be yes to.
    For the "do" pass, prefer the **lab driver**, which is the real UI over the real CLI:
 
    ```bash
-   cd ../vscode-sfdx-hardis && yarn dev && yarn compile
+   cd ../vscode-sfdx-hardis && yarn compile && yarn dev
    SFDX_HARDIS_LAB_WORKSPACE="$RUN" SFDX_HARDIS_LAB_ONLY=1.3 yarn test:ui:labs
    ```
 
