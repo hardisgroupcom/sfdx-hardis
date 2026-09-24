@@ -8,6 +8,13 @@ description: With sfdx-hardis, how to work on a Salesforce CI/CD project as an a
 
 This guide is for everyone who makes changes in Salesforce on a CI/CD project: admins, business analysts, consultants and developers. You do not need to know Git or the Salesforce CLI. The VS Code SFDX Hardis extension asks you the questions and runs the commands for you.
 
+<!-- training-callout:start -->
+
+!!! tip "Learn by doing"
+    Level 1 - Contributor basics of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 7 labs, about 2 h. [Start Level 1](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/)
+
+<!-- training-callout:end -->
+
 ![Project Contribution Workflow cards](assets/images/pipeline-contribution-cards.png)
 
 ---

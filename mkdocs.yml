@@ -67,6 +67,7 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - md_in_html
+  - admonition
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
@@ -466,6 +467,7 @@ nav:
           - save: hardis/work/save.md
           - ws: hardis/work/ws.md
   - Community & Resources:
+      - Free training: salesforce-devops-training.md
       - Community Events: events.md
       - Articles & Videos: articles-videos.md
       - Frequently Asked Questions: https://nicolas.vuillamy.fr/what-devops-experts-want-to-know-about-salesforce-ci-cd-with-sfdx-hardis-q-a-1f412db34476

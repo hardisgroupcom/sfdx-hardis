@@ -8,6 +8,13 @@ description: The responsibilities and tools of a release manager on a Salesforce
 
 DevOps practices work best when one or two team members take the role of **release manager**. They own the pipeline, the branches and the orgs, and they help the other contributors. On small projects, a tech lead or a senior admin plays this role part time.
 
+<!-- training-callout:start -->
+
+!!! tip "Learn by doing"
+    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 7 h. [Start Level 3](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/)
+
+<!-- training-callout:end -->
+
 ![DevOps Pipeline](assets/images/devops-pipeline.png)
 
 ---

@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- New [Free training](https://sfdx-hardis.cloudity.com/salesforce-devops-training/) page presenting the hands-on Salesforce DevOps course, linked from the menu, the home page and the guides.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta):
   - New `promotionConflictMarkersIgnoredFiles` property to list the files allowed to hold git conflict markers, so a repository whose own content holds them can promote again.
   - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) and [hardis:project:promotion:list-candidates](https://sfdx-hardis.cloudity.com/hardis/project/promotion/list-candidates/) now require the git provider connection, so a promotion behaves the same on GitHub, GitLab, Bitbucket and Azure DevOps. From a terminal or an agent, the token can come from a `.env` file at the repository root, and the commands warn when that file is not git-ignored.
