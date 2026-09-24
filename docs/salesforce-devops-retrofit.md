@@ -143,8 +143,9 @@ ___
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
 
 - [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
 
 <!-- training-links:end -->

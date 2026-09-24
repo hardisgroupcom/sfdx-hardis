@@ -96,6 +96,16 @@ In agent mode:
 - A cherry-pick conflict undoes the whole promotion (branch deleted, nothing pushed) and fails the command naming the conflicting Pull Request, unless \`--on-conflict skip\` or \`--on-conflict commit-with-markers\` is passed.
 - To choose those numbers first, list what can be promoted with \`sf hardis:project:promotion:list-candidates --agent --source-branch uat --json\`: same candidates, nothing created.
 - The git provider token must be available (ex: \`GITHUB_TOKEN\`), from the environment or from a \`.env\` file at the repository root: agent mode never prompts for the connection, it stops without it.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
