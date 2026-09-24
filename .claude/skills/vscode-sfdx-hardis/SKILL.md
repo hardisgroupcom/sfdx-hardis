@@ -49,7 +49,7 @@ When in doubt, grep the extension for the command id, the flag, the config key o
 2. **Flags, JSON fields and events are an API.** Renaming or removing one breaks the extensions already installed. Add, deprecate, then remove.
 3. **Minimum CLI version.** When the extension starts using a new flag, command or JSON field, raise `RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION` in the extension's `src/constants.ts` to the sfdx-hardis version that ships it.
 4. **Schema first.** A config property the extension edits must be merged in `config/sfdx-hardis.jsonschema.json` on sfdx-hardis `main` before `yarn sync:schema` can pick it up.
-5. **Two pull requests, linked.** Use the same branch name in both repositories, open one PR in each, link each description to the other, and add a CHANGELOG entry in each (`## [beta] (master)` here, `## Unreleased` there).
+5. **Two pull requests, linked.** Use the same branch name in both repositories, open one PR in each, link each description to the other, and add a CHANGELOG entry in each (`## [beta] (main)` here, `## Unreleased` there).
 
 ## Working on the extension side
 

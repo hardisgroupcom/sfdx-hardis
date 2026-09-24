@@ -420,7 +420,8 @@ Rules that hold whatever you found:
 - **`labs/en/` is the reference.** Every change starts in English; `labs/fr/` follows with the same
   file names, ids, URLs and `depends_on`. A fix that lands only in `labs/fr/` is a fact nobody can
   find.
-- One Pull Request per repository, cross-linked, in the order **CLI, then extension, then training**.
+- One Pull Request per repository, cross-linked, in the order **CLI, then extension, then training**,
+  each with its entry in that repository's `CHANGELOG.md`.
 - A lab whose behaviour changed is affected in **every** language.
 - Fix it inside the run, then re-do the step. A finding you noted and walked past is a finding the
   next run will have again.
