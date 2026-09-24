@@ -8,6 +8,13 @@ description: How to set up a sfdx-hardis CI/CD pipeline on a new or existing Sal
 
 This guide takes you from an empty Git repository to a working CI/CD pipeline, with a first Pull Request validated and deployed. Count one to three days for a first setup, depending on your Git platform and the state of your production org.
 
+<!-- training-callout:start -->
+
+!!! tip "Learn by doing"
+    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 7 h. [Start Level 3](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/)
+
+<!-- training-callout:end -->
+
 ![CI/CD branch and org schema](assets/images/ci-cd-schema-main.jpg){ align=center }
 
 ---

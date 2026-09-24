@@ -4,6 +4,8 @@
 
 **New:** [**What's new in sfdx-hardis v8**](https://sfdx-hardis.cloudity.com/sfdx-hardis-v8/) - Deployment Actions are generally available, Pull Request comments are redesigned, and the VS Code extension is rebuilt.
 
+**New:** [**Free Salesforce DevOps course**](https://sfdx-hardis.cloudity.com/salesforce-devops-training/): build a complete pipeline on free orgs, one click at a time, and earn a badge per level.
+
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
@@ -36,6 +38,14 @@ It is free and open-source, and lets you:
 - Use many commands that **save minutes, hours or even days** of your daily **admin or developer** work.
 
 ![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
+
+<!-- training-teaser:start -->
+
+- [**Learn Salesforce DevOps hands-on** with a free course and shareable badges](https://sfdx-hardis.cloudity.com/salesforce-devops-training/)
+
+![Salesforce DevOps with sfdx-hardis, the free course](https://hardisgroupcom.github.io/sfdx-hardis-training/_assets/social/course.png)
+
+<!-- training-teaser:end -->
 
 If you need help to get the most out of sfdx-hardis, Cloudity's international teams of business and technical experts can help: [contact us](https://cloudity.com/contact-us/).
 

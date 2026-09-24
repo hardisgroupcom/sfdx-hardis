@@ -36,6 +36,7 @@ have to be regenerated.
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs`              |
 | The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs               | **Yes**, `scripts/build/doc-links.mjs`          |
+| The course showcase on the doc site        | `../sfdx-hardis/docs/salesforce-devops-training.md`, README teaser, guide callouts | **Yes**, `scripts/build/doc-links.mjs`          |
 | The raw panel screenshots                  | `labs/_assets/vscode/*.png`                                                      | **Yes**, the extension harness                  |
 | The raw web screenshots                    | `labs/_assets/web/*.png`                                                         | **Yes**, `scripts/build/capture-web.mjs`        |
 | The capture and annotation specs           | `labs/_assets/web-captures.json`, `labs/_assets/annotations.json`                | No, written by hand                             |
