@@ -19,7 +19,7 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
    - Use `.js` import extensions
    - Use `uxLog()` with `chalk` for logging (no emojis at line start)
    - Use `t()` for all user-visible strings
-   - Use `fs-extra` for file operations
+   - Use native `fs` for file operations (or `src/common/utils/fsUtils.ts` for its extra helpers), never `fs-extra`
    - Use `prompts()` for user input
    - Follow the provider pattern for external integrations
 3. **Extension side**: When the design touches vscode-sfdx-hardis, load the `vscode-sfdx-hardis` skill and implement that part in `../vscode-sfdx-hardis`, following that repository's `CLAUDE.md` and `.claude/skills/implement/SKILL.md` rather than the sfdx-hardis conventions. The CLI stays the engine: the extension passes flags, it does not duplicate CLI logic.
