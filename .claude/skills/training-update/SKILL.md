@@ -484,8 +484,12 @@ applied on top of the one before.
 ```bash
 node scripts/build/start-branches.mjs --dry-run   # what each branch would carry
 node scripts/build/start-branches.mjs             # build them locally
-node scripts/build/start-branches.mjs --push      # publish, from main, after a merge
+node scripts/build/start-branches.mjs --push      # publish, from main: what CI does on every push to main
 ```
+
+Publishing is CI's job: `.github/workflows/start-branches.yml` runs `--push` on every push to
+`main` of the shared repository. Push by hand only when that run failed, and from `main`, after
+checking the run is not still going: two pushes of the same branches race on `--force-with-lease`.
 
 Two rules that are easy to get wrong:
 
@@ -620,6 +624,15 @@ misses by one letter, with nothing failing: `check-site.mjs` checks that pages e
 anchors resolve.
 
 ## The Pull Request
+
+**Add a `CHANGELOG.md` entry under the date of the day** at the root of the course, in the same
+Pull Request: one short line per change a learner or a trainer would notice (a new lab, a lab whose
+steps changed, a fixed screenshot, a site feature). Write it for them, not for maintainers: no
+script names, no file paths. The course has no versions and no `## Unreleased`: the heading is
+`## YYYY-MM-DD`, today's date, added at the top when it does not exist yet.
+
+**One Pull Request for the course at a time.** When a training Pull Request is already open for the
+work in progress, add to its branch instead of opening a new branch, and update its description.
 
 State which labs were re-verified, and how. "Re-read" is not re-verified: a lab is re-verified when
 somebody walked its steps, or when its audit rule was run against a repository in that state.

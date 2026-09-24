@@ -528,6 +528,8 @@ jobs:
       contents: read
     environment:
       name: release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -542,7 +544,31 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn config set version-git-tag false && tsc -b
       - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
+      - id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - run: yarn config set network-timeout 300000 && npm publish --tag beta
+      # The image jobs below install the version this job published, by number
+      # rather than by dist-tag, and the registry can take several minutes to
+      # serve a version npm publish has already acknowledged: on 2026-09-24 the
+      # beta images were built with the previous beta, two minutes before the new
+      # one became visible. Wait until the exact version is served, and print the
+      # registry's own answer on the last attempt so a failure says why.
+      - name: Wait until the registry serves the published version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          for i in $(seq 1 120); do
+            SERVED=$(npm view "sfdx-hardis@$VERSION" version 2>/dev/null || true)
+            if [ "$SERVED" = "$VERSION" ]; then
+              echo "sfdx-hardis@$VERSION is on the registry"
+              exit 0
+            fi
+            echo "the registry does not serve $VERSION yet ($i/120)"
+            sleep 10
+          done
+          npm view "sfdx-hardis@$VERSION" version || true
+          echo "The registry never served sfdx-hardis@$VERSION"
+          exit 1
 
   push_beta_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -576,7 +602,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=beta
+            SFDX_HARDIS_VERSION=${{ needs.deploy_beta.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -661,7 +687,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=beta
+            SFDX_HARDIS_VERSION=${{ needs.deploy_beta.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -710,7 +736,7 @@ jobs:
           file: Dockerfile-ubuntu
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=beta
+            SFDX_HARDIS_VERSION=${{ needs.deploy_beta.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -795,7 +821,7 @@ jobs:
           file: Dockerfile-ubuntu
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=beta
+            SFDX_HARDIS_VERSION=${{ needs.deploy_beta.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -843,7 +869,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=beta
+            SFDX_HARDIS_VERSION=${{ needs.deploy_beta.outputs.version }}
             SFDX_CLI_VERSION=latest
             INSTALL_AGENTS=true
           load: false
@@ -885,7 +911,7 @@ jobs:
           file: Dockerfile-ubuntu
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=beta
+            SFDX_HARDIS_VERSION=${{ needs.deploy_beta.outputs.version }}
             SFDX_CLI_VERSION=latest
             INSTALL_AGENTS=true
           load: false
@@ -905,6 +931,8 @@ jobs:
       contents: read
     environment:
       name: release
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -917,7 +945,28 @@ jobs:
           package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
+      - id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - run: yarn config set network-timeout 300000 && npm publish
+      # Same race as the beta: the release images install the version by number
+      # and wait for the registry to serve it, so a `latest` image never carries
+      # the previous release under the new tag.
+      - name: Wait until the registry serves the published version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          for i in $(seq 1 120); do
+            SERVED=$(npm view "sfdx-hardis@$VERSION" version 2>/dev/null || true)
+            if [ "$SERVED" = "$VERSION" ]; then
+              echo "sfdx-hardis@$VERSION is on the registry"
+              exit 0
+            fi
+            echo "the registry does not serve $VERSION yet ($i/120)"
+            sleep 10
+          done
+          npm view "sfdx-hardis@$VERSION" version || true
+          echo "The registry never served sfdx-hardis@$VERSION"
+          exit 1
 
   push_release_to_registry:
     if: github.event_name == 'release'
@@ -951,7 +1000,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_VERSION=${{ needs.deploy_release.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -1038,7 +1087,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_VERSION=${{ needs.deploy_release.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -1087,7 +1136,7 @@ jobs:
           file: Dockerfile-ubuntu
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_VERSION=${{ needs.deploy_release.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -1174,7 +1223,7 @@ jobs:
           file: Dockerfile-ubuntu
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_VERSION=${{ needs.deploy_release.outputs.version }}
             SFDX_CLI_VERSION=latest
           load: false
           push: true
@@ -1222,7 +1271,7 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_VERSION=${{ needs.deploy_release.outputs.version }}
             SFDX_CLI_VERSION=latest
             INSTALL_AGENTS=true
           load: false
@@ -1266,7 +1315,7 @@ jobs:
           file: Dockerfile-ubuntu
           platforms: linux/amd64
           build-args: |
-            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_VERSION=${{ needs.deploy_release.outputs.version }}
             SFDX_CLI_VERSION=latest
             INSTALL_AGENTS=true
           load: false

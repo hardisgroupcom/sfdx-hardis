@@ -21,6 +21,7 @@ CHANGELOG.md entries are read by **end users** (Salesforce admins, devs, ops) de
 - **The same goes for a feature.** Changes to one feature that spans several commands (promotion branches, backpromote, monitoring, the VS Code DevOps Pipeline...) share one top-level bullet with the feature's doc link, and each change is a nested bullet that links the command it touches. Before adding an entry, read the whole beta section: if its command or its feature already has a line, add to that line (turning it into a group if needed) instead of writing a new one.
 - **Group with bullets, never with a header.** The command link is a top-level bullet and its changes are nested bullets under it. Never open a `###` (or any other) header for a command, however many changes it has.
 - **Add entries under `## [beta] (main)`** at the top of the file. Do not create version sections - releases set those.
+- **Sibling repositories have their own changelog, and a change made there from here updates it.** `../vscode-sfdx-hardis/CHANGELOG.md` takes its entries under `## Unreleased`. `../sfdx-hardis-training/CHANGELOG.md` has no versions and no `## Unreleased`: an entry goes under the `## YYYY-MM-DD` heading of the day it is written, and when that heading does not exist yet, it is added at the top. Always in the Pull Request of that repository, with the same style rules.
 
 ## Pattern
 
