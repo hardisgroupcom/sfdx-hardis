@@ -1,6 +1,5 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import { spawnSync } from 'child_process';
 import * as path from 'path';
 import fs from './fsUtils.js';
 import { createWorkBranchFromTarget, execCommand, git, gitFetch, uxLog } from './index.js';
@@ -235,7 +234,7 @@ export async function assertPromotionBranchesEnabled(commandThis: any): Promise<
  * connection is prompted for first; in CI or agent mode the command stops with the variables to set.
  */
 export async function requireGitProviderForPromotion(commandThis: any, agentMode: boolean): Promise<void> {
-  warnWhenDotEnvIsCommittable(commandThis);
+  await warnWhenDotEnvIsCommittable(commandThis);
   const provider = await GitProvider.getInstance(!agentMode);
   if (provider == null) {
     throw new SfError(t('promotionCreateGitProviderRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/` }));
@@ -249,27 +248,20 @@ export async function requireGitProviderForPromotion(commandThis: any, agentMode
  * shell. The one thing it does not do is say when that file, which holds tokens, is about to be
  * committed: say it here, on the command that told the user to write it.
  */
-export function warnWhenDotEnvIsCommittable(commandThis: any): void {
+export async function warnWhenDotEnvIsCommittable(commandThis: any): Promise<void> {
   const dotEnvPath = path.join(process.cwd(), '.env');
   if (!fs.existsSync(dotEnvPath)) {
     return;
   }
-  if (isGitIgnored(dotEnvPath) === false) {
+  if ((await isGitIgnored(dotEnvPath)) === false) {
     uxLog('warning', commandThis, c.yellow(t('promotionCreateDotEnvNotIgnored')));
   }
 }
 
 /** True when git ignores the file, false when it does not, null when git could not answer. */
-export function isGitIgnored(file: string): boolean | null {
+export async function isGitIgnored(file: string): Promise<boolean | null> {
   try {
-    const res = spawnSync('git', ['check-ignore', '-q', file], { encoding: 'utf8' });
-    if (res.status === 0) {
-      return true;
-    }
-    if (res.status === 1) {
-      return false;
-    }
-    return null;
+    return (await git().checkIgnore(file)).length > 0;
   } catch {
     return null;
   }
@@ -1309,75 +1301,31 @@ export function assertPromotionBranchIsNotDeployed(
  * purpose, so they have to be solved on the branch before the merge: this is what makes the
  * validation job fail while they are there, with a message naming the files.
  */
-export async function listFilesWithConflictMarkers(commandThis: any, restrictToFiles: string[] | null = null): Promise<string[]> {
-  // Scoped to what the promotion actually carries, not to every tracked file: a repository is
-  // allowed to hold conflict markers in its own content, and plenty do (documentation about
-  // resolving conflicts, merge-driver fixtures, scaffolding templates). Grepping the whole branch
-  // failed every promotion Pull Request on those repositories, naming files the promotion never
-  // touched. The scope is still wider than the package directories, because a cherry-pick
-  // conflicts wherever the stories touched the repository (config/, scripts/actions/, data/...),
-  // and commitWithConflictMarkers stages all of it with git add -A.
-  // git grep only searches tracked files, so the report folder and node_modules stay out.
-  // Only the opening and closing markers: a line of "=======" is legitimate in markdown
-  // An empty list is an answer, not an absence of one: the promotion carries no file, so there
-  // is nothing to scan. Falling through to the unrestricted grep here is how the process job
-  // once failed on markers the target branch always contained.
-  if (restrictToFiles && restrictToFiles.length === 0) {
-    return [];
-  }
-  const pathspec =
-    restrictToFiles && restrictToFiles.length > 0
-      ? ' -- ' + restrictToFiles.map((file) => `"${file}"`).join(' ')
-      : '';
-  const res = await runCommandSafe(`git grep -l -E "^(<<<<<<< |>>>>>>> )"${pathspec}`, commandThis, { output: false });
-  if (res.status !== 0) {
-    return []; // 1 = nothing found, anything else = nothing that can be checked here
-  }
-  return (res.stdout || '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
-}
-
-/**
- * The files a promotion branch changes against the branch it was cut from. `null` when that cannot
- * be worked out, which keeps the caller on its previous whole-branch behavior rather than
- * silently checking nothing.
- */
-export async function promotionChangedFiles(commandThis: any, targetBranch: string | undefined): Promise<string[] | null> {
-  if (!targetBranch) {
-    return null;
-  }
-  for (const ref of [`origin/${targetBranch}`, targetBranch]) {
-    const exists = await runCommandSafe(`git rev-parse -q --verify "${ref}^{commit}"`, commandThis, { output: false });
-    if (exists.status !== 0) {
-      continue;
-    }
-    const res = await runCommandSafe(`git diff --name-only "${ref}...HEAD"`, commandThis, { output: false });
-    if (res.status !== 0) {
-      continue;
-    }
-    const files = (res.stdout || '')
+export async function listFilesWithConflictMarkers(commandThis: any, ignoredPatterns: string[] = []): Promise<string[]> {
+  // Every tracked file, not only the package directories: a cherry-pick conflicts wherever the
+  // stories touched the repository (config/, scripts/actions/, data/...), commitWithConflictMarkers
+  // stages all of it with git add -A, and the Pull Request body lists all of it as to be fixed.
+  // git grep only searches tracked files, so the report folder and node_modules stay out, and it
+  // reads the checked out files, so a shallow clone is enough.
+  // Only the opening and closing markers: a line of "=======" is legitimate in markdown.
+  // A repository whose own content holds markers on purpose (a lab about merge conflicts, merge
+  // driver fixtures) lists those files in promotionConflictMarkersIgnoredFiles.
+  const pathspecs = [':/', ...ignoredPatterns.filter((pattern) => pattern && pattern.trim() !== '').map((pattern) => `:(top,exclude,glob)${pattern.trim()}`)];
+  try {
+    // No shell: the patterns are passed as they are written in the configuration
+    const stdout = await git().raw(['-c', 'core.quotepath=off', 'grep', '-l', '--full-name', '-E', '^(<<<<<<< |>>>>>>> )', '--', ...pathspecs]);
+    return (stdout || '')
       .split('\n')
       .map((line) => line.trim())
       .filter((line) => line !== '');
-    if (files.length > 0) {
-      return files;
+  } catch (e: any) {
+    // git grep exits with 1 when nothing is found, which is not an error
+    if (e?.exitCode === 1 && !(e?.message || '').trim()) {
+      return [];
     }
-    // On the process job the promotion is already merged and HEAD is that merge commit on the
-    // target branch itself, so the three-dot diff against the target is empty. The files the
-    // promotion carried are the ones the merge brought in: its diff against its first parent.
-    // HEAD~1 rather than HEAD^1 on purpose: the caret is an escape character to a Windows shell.
-    const merge = await runCommandSafe(`git diff --name-only "HEAD~1..HEAD"`, commandThis, { output: false });
-    if (merge.status === 0) {
-      return (merge.stdout || '')
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line !== '');
-    }
-    return files;
+    uxLog('warning', commandThis, c.yellow(t('promotionConflictMarkersScanFailed', { message: e?.message || String(e) })));
+    return [];
   }
-  return null;
 }
 
 /**
@@ -1393,14 +1341,8 @@ export async function assertNoPromotionConflictMarkers(commandThis: any, config:
   if (!isPromotionPullRequest(prInfo, getPromotionBranchConfig(config))) {
     return;
   }
-  // Only the files this promotion carries: markers that were already in the target branch are not
-  // this Pull Request's to solve, and blocking on them stops promotions on any repository whose
-  // own content holds conflict markers.
-  // The branch name carries the step it belongs to, so it names the target even when the provider
-  // did not fill it in.
-  const targetBranch = parsePromotionBranchName(prInfo!.sourceBranch)?.targetBranch || prInfo!.targetBranch;
-  const carried = await promotionChangedFiles(commandThis, targetBranch);
-  const files = await listFilesWithConflictMarkers(commandThis, carried);
+  const ignoredFiles = Array.isArray(config?.promotionConflictMarkersIgnoredFiles) ? config.promotionConflictMarkersIgnoredFiles : [];
+  const files = await listFilesWithConflictMarkers(commandThis, ignoredFiles);
   if (files.length === 0) {
     return;
   }

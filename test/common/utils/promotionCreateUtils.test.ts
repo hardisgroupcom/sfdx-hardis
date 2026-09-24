@@ -28,7 +28,6 @@ import {
   oldestCandidateDate,
   parsePullRequestNumbersFlag,
   promotionCandidateRows,
-  promotionChangedFiles,
   pullRequestKeys,
   requireGitProviderForPromotion,
   selectCandidatesByPullRequestNumbers,
@@ -809,31 +808,28 @@ describe('assertPromotionBranchIsNotDeployed()', () => {
   });
 });
 
-describe('listFilesWithConflictMarkers() and promotionChangedFiles()', () => {
-  // A repository is allowed to hold conflict markers in its own content. The training course does
-  // (its lab on resolving merge conflicts shows them), and so do merge-driver fixtures and
-  // scaffolding templates. Grepping the whole branch failed every promotion Pull Request there.
+describe('listFilesWithConflictMarkers()', () => {
+  // A repository is allowed to hold conflict markers in its own content: the training course does
+  // (its lab on resolving merge conflicts shows them), and so do merge-driver fixtures. Those files
+  // are listed in promotionConflictMarkersIgnoredFiles; every other tracked file is scanned.
   const commandThis = {} as any;
   let repo = '';
   let previousCwd = '';
 
   const git = (args: string[]) => spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+  const markers = ['<<<<<<< HEAD', 'ours', '=======', 'theirs', '>>>>>>> origin/uat', ''].join('\n');
 
   before(() => {
     repo = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-markers-'));
     git(['init', '-b', 'preprod']);
     git(['config', 'user.email', 'test@example.invalid']);
     git(['config', 'user.name', 'Test']);
-    fs.writeFileSync(
-      path.join(repo, 'teaching-about-conflicts.md'),
-      ['Here is what a conflict looks like:', '', '<<<<<<< HEAD', 'ours', '=======', 'theirs', '>>>>>>> origin/integration', ''].join('\n')
-    );
+    fs.mkdirSync(path.join(repo, 'labs', 'en'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'labs', 'en', '2-7-resolve-a-git-merge-conflict.md'), `Here is what a conflict looks like:\n\n${markers}`);
+    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), '<CustomField/>\n');
+    fs.writeFileSync(path.join(repo, 'notes.md'), 'A title\n=======\n');
     git(['add', '-A']);
     git(['commit', '-m', 'the lab that teaches merge conflicts']);
-    git(['checkout', '-b', 'promotion/uat/preprod/2026-09-23-1807']);
-    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), '<CustomField/>\n');
-    git(['add', '-A']);
-    git(['commit', '-m', 'US-057 Park an installation that is waiting for parts (#7)']);
   });
 
   beforeEach(() => {
@@ -851,45 +847,32 @@ describe('listFilesWithConflictMarkers() and promotionChangedFiles()', () => {
     fs.rmSync(repo, { recursive: true, force: true });
   });
 
-  it('names only what the promotion carries', async () => {
-    const carried = await promotionChangedFiles(commandThis, 'preprod');
-    expect(carried).to.deep.equal(['Status__c.field-meta.xml']);
-    expect(await listFilesWithConflictMarkers(commandThis, carried)).to.deep.equal([]);
+  it('names every tracked file holding markers, and nothing else', async () => {
+    expect(await listFilesWithConflictMarkers(commandThis)).to.deep.equal(['labs/en/2-7-resolve-a-git-merge-conflict.md']);
   });
 
-  it('still finds a marker in a file the promotion does carry', async () => {
-    fs.writeFileSync(
-      path.join(repo, 'Status__c.field-meta.xml'),
-      ['<<<<<<< HEAD', '<CustomField/>', '=======', '<CustomField/>', '>>>>>>> origin/uat', ''].join('\n')
-    );
+  it('leaves out the files matching promotionConflictMarkersIgnoredFiles', async () => {
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**/*.md'])).to.deep.equal([]);
+  });
+
+  it('still finds markers in a file the patterns do not match', async () => {
+    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), markers);
     git(['add', '-A']);
     git(['commit', '-m', 'commit the conflict markers to solve later']);
-    const carried = await promotionChangedFiles(commandThis, 'preprod');
-    expect(await listFilesWithConflictMarkers(commandThis, carried)).to.deep.equal(['Status__c.field-meta.xml']);
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**/*.md', ''])).to.deep.equal(['Status__c.field-meta.xml']);
   });
 
-  it('falls back to the whole branch when the target branch cannot be resolved', async () => {
-    expect(await promotionChangedFiles(commandThis, 'a-branch-that-does-not-exist')).to.equal(null);
-    expect(await promotionChangedFiles(commandThis, undefined)).to.equal(null);
-    expect(await listFilesWithConflictMarkers(commandThis, null)).to.include('teaching-about-conflicts.md');
-  });
-
-  it('scans nothing when the promotion carries nothing', async () => {
-    expect(await listFilesWithConflictMarkers(commandThis, [])).to.deep.equal([]);
-  });
-
-  it('reads the merge commit on the process job, where the diff against the target is empty', async () => {
-    // Solve the markers of the previous test, then merge: this is the state the process job runs
-    // in, HEAD being the merge commit on the target branch itself, where the three-dot diff
-    // against the target names nothing.
-    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), '<CustomField/>\n');
+  it('names a file whose name is not ASCII as it is', async () => {
+    const fileName = 'résumé.md';
+    fs.writeFileSync(path.join(repo, fileName), markers);
     git(['add', '-A']);
-    git(['commit', '-m', 'solve the conflict markers on the branch']);
-    git(['checkout', 'preprod']);
-    git(['merge', '--no-ff', '-m', 'Merge pull request #8', 'promotion/uat/preprod/2026-09-23-1807']);
-    const carried = await promotionChangedFiles(commandThis, 'preprod');
-    expect(carried).to.deep.equal(['Status__c.field-meta.xml']);
-    expect(await listFilesWithConflictMarkers(commandThis, carried)).to.deep.equal([]);
+    git(['commit', '-m', 'a file with an accent']);
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**', 'Status__c.field-meta.xml'])).to.deep.equal([fileName]);
+  });
+
+  it('scans from the repository root when started from a sub-folder', async () => {
+    process.chdir(path.join(repo, 'labs'));
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**'])).to.deep.equal(['Status__c.field-meta.xml', 'résumé.md']);
   });
 });
 
@@ -934,7 +917,7 @@ describe('requireGitProviderForPromotion()', () => {
     expect(String(thrown.message)).to.include('git provider');
   });
 
-  it('says whether git ignores the .env file that holds the token', () => {
+  it('says whether git ignores the .env file that holds the token', async () => {
     // The Salesforce CLI loads .env itself; what the gate adds is the warning when that file is
     // about to be committed. The answer comes from git check-ignore, proven here both ways.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-dotenv-'));
@@ -944,9 +927,9 @@ describe('requireGitProviderForPromotion()', () => {
       gitHere(['init', '-b', 'main']);
       fs.writeFileSync(path.join(dir, '.env'), 'GITHUB_TOKEN=not-a-real-one\n');
       process.chdir(dir);
-      expect(isGitIgnored(path.join(dir, '.env'))).to.equal(false);
+      expect(await isGitIgnored(path.join(dir, '.env'))).to.equal(false);
       fs.writeFileSync(path.join(dir, '.gitignore'), '.env\n');
-      expect(isGitIgnored(path.join(dir, '.env'))).to.equal(true);
+      expect(await isGitIgnored(path.join(dir, '.env'))).to.equal(true);
     } finally {
       process.chdir(previousCwd);
       fs.rmSync(dir, { recursive: true, force: true });

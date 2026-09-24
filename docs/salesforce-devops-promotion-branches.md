@@ -252,6 +252,13 @@ Once the Pull Request is open, **copy the prompt it carries and paste it into yo
 
 The validation job fails while a conflict marker is still in the sources, so a promotion cannot reach the org half-solved.
 
+Every tracked file of the branch is checked. If your repository holds conflict markers on purpose (documentation about merge conflicts, merge driver fixtures), list those files in `promotionConflictMarkersIgnoredFiles`, as git glob patterns relative to the repository root:
+
+```yaml
+promotionConflictMarkersIgnoredFiles:
+  - labs/**/*.md
+```
+
 The four answers in full:
 
 - **commit the story and every following conflict with their conflict markers, without asking again** (recommended): the promotion is assembled whole, conflicts and all, for the coding agent to solve;

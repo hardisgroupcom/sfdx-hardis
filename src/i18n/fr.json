@@ -2864,6 +2864,7 @@
   "promotionConflictMarkersFound": "La branche de promotion {{branch}} contient encore des marqueurs de conflit git dans {{count}} fichier(s) : {{files}}. Résolvez-les sur la branche (à la main ou avec le prompt pour agent de code sauvegardé par hardis:project:promotion:create), commitez et poussez avant que cette Pull Request puisse être déployée",
   "promotionConflictMarkersPrComment": "Rien n'a été déployé : la branche de promotion `{{branch}}` contient encore des marqueurs de conflit git (`<<<<<<<`, `=======`, `>>>>>>>`) dans {{count}} fichier(s). Résolvez-les sur la branche, à la main ou avec le prompt pour agent de code inclus dans la description de cette Pull Request (également enregistré dans `hardis-report/`), puis committez et poussez : le job repart de là.",
   "promotionConflictMarkersPrTitle": "Marqueurs de conflit git dans la branche de promotion",
+  "promotionConflictMarkersScanFailed": "Impossible de rechercher les marqueurs de conflit git dans le repository : {{message}}",
   "promotionCreateAborted": "Promotion arrêtée : la branche de promotion a été supprimée et rien n'a été poussé",
   "promotionCreateAddedReportsToGitIgnore": "\"{{entry}}\" a été ajouté à {{file}} : sfdx-hardis écrit ses rapports dans le dépôt, et assembler une branche de promotion nécessite un arbre git propre. Commitez cette ligne avec votre prochaine modification",
   "promotionCreateAgentRequiresPullRequests": "--pull-requests est obligatoire en mode agent. Pull Requests en attente de promotion : {{available}}",

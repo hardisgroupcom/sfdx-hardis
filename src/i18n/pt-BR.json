@@ -2832,6 +2832,7 @@
   "promotionConflictMarkersFound": "O branch de promoção {{branch}} ainda contém marcadores de conflito do git em {{count}} arquivo(s): {{files}}. Resolva-os no branch (manualmente ou com o prompt para agente de código salvo por hardis:project:promotion:create), faça commit e push antes que este Pull Request possa ser implantado",
   "promotionConflictMarkersPrComment": "Nada foi implantado: a branch de promoção `{{branch}}` ainda contém marcadores de conflito git (`<<<<<<<`, `=======`, `>>>>>>>`) em {{count}} arquivo(s). Resolva-os na branch, manualmente ou com o prompt para um agente de código incluído na descrição desta Pull Request (também salvo em `hardis-report/`), depois faça commit e push: o job roda novamente a partir daí.",
   "promotionConflictMarkersPrTitle": "Marcadores de conflito git na branch de promoção",
+  "promotionConflictMarkersScanFailed": "Não foi possível procurar marcadores de conflito do git no repositório: {{message}}",
   "promotionCreateAborted": "Promoção interrompida: a promotion branch foi excluída e nada foi enviado",
   "promotionCreateAddedReportsToGitIgnore": "\"{{entry}}\" foi adicionado a {{file}}: o sfdx-hardis grava seus relatórios dentro do repositório, e montar um branch de promoção exige uma árvore git limpa. Faça commit dessa linha com sua próxima alteração",
   "promotionCreateAgentRequiresPullRequests": "--pull-requests é obrigatório no modo agente. Pull Requests aguardando promoção: {{available}}",

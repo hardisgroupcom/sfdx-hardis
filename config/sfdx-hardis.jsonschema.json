@@ -2316,6 +2316,22 @@
       "title": "Enable promotion branches (Beta)",
       "type": "boolean"
     },
+    "promotionConflictMarkersIgnoredFiles": {
+      "$id": "#/properties/promotionConflictMarkersIgnoredFiles",
+      "description": "Beta feature. The deployment check of a promotion Pull Request fails while any tracked file of the branch still holds git conflict markers (lines starting with <<<<<<< or >>>>>>>).\nList here, as git glob patterns relative to the repository root, the files that hold such lines on purpose (ex: documentation about merge conflicts, merge driver fixtures), so they do not block every promotion.\n'*' does not cross a '/', use '**' for any depth.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/",
+      "examples": [
+        [
+          "labs/**/*.md",
+          "docs/merge-conflicts.md"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Files allowed to hold conflict markers (Beta)",
+      "type": "array"
+    },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",
       "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",
