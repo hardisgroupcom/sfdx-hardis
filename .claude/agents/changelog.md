@@ -23,7 +23,8 @@ A short description of what changed. Optionally: the command it applies to (`har
    - Skip implementation details: file paths, function names, i18n keys, internal flags, refactor mechanics, locale lists, TypeScript types.
    - If it applies to a specific command, link it: `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`.
    - Never use em-dashes. Avoid AI-tell vocabulary (leverage, robust, seamless, comprehensive, streamline, etc.).
-3. **Add the bullet** at the top of the beta section's list (do not create a new version heading - releases set those).
+3. **Group it.** If the beta section already has a line for the same command or the same feature (same doc link), add your change as a nested bullet under that line, turning a single-line entry into a group if needed. A command or a feature appears at most once per section.
+4. **Otherwise add the bullet** at the top of the beta section's list (do not create a new version heading - releases set those).
 
 ## Example
 

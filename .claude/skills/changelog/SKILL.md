@@ -18,6 +18,7 @@ CHANGELOG.md entries are read by **end users** (Salesforce admins, devs, ops) de
 - **Skip implementation details** unless they directly affect the user: file paths, function names, i18n keys, internal flags, refactor mechanics.
 - **Link the command** when the entry applies to a specific command, using the standard format `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`.
 - **Always group updates by command.** A command must appear at most once in a section. If it already has an entry (or you are adding several changes to the same command), write the command link once and put each change as a nested bullet under it - never repeat the same command link on multiple top-level lines. A single change stays on one line: `[command](url): <change>.`
+- **The same goes for a feature.** Changes to one feature that spans several commands (promotion branches, backpromote, monitoring, the VS Code DevOps Pipeline...) share one top-level bullet with the feature's doc link, and each change is a nested bullet that links the command it touches. Before adding an entry, read the whole beta section: if its command or its feature already has a line, add to that line (turning it into a group if needed) instead of writing a new one.
 - **Group with bullets, never with a header.** The command link is a top-level bullet and its changes are nested bullets under it. Never open a `###` (or any other) header for a command, however many changes it has.
 - **Add entries under `## [beta] (main)`** at the top of the file. Do not create version sections - releases set those.
 
@@ -36,6 +37,14 @@ Multiple changes for the same command - group them under one command link:
 - [hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/):
   - <one short sentence about the first user-visible change>.
   - <one short sentence about the second user-visible change>.
+```
+
+Several changes to the same feature, across its commands:
+
+```markdown
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta):
+  - New `someProperty` property: <what it lets the user do>.
+  - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): <change>.
 ```
 
 Each nested bullet must be end-user relevant (a new flag, a new channel, a new default, a fixed behavior). Never use sub-bullets to list affected files or locales.
