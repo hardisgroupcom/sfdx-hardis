@@ -625,11 +625,14 @@ anchors resolve.
 
 ## The Pull Request
 
-**Add a `CHANGELOG.md` entry under `## Unreleased`** at the root of the course, in the same Pull
-Request: one short line per change a learner or a trainer would notice (a new lab, a lab whose
+**Add a `CHANGELOG.md` entry under the date of the day** at the root of the course, in the same
+Pull Request: one short line per change a learner or a trainer would notice (a new lab, a lab whose
 steps changed, a fixed screenshot, a site feature). Write it for them, not for maintainers: no
-script names, no file paths. The course has no versions; when the Pull Request reaches `main`, the
-`## Unreleased` lines move under a heading with that day's date.
+script names, no file paths. The course has no versions and no `## Unreleased`: the heading is
+`## YYYY-MM-DD`, today's date, added at the top when it does not exist yet.
+
+**One Pull Request for the course at a time.** When a training Pull Request is already open for the
+work in progress, add to its branch instead of opening a new branch, and update its description.
 
 State which labs were re-verified, and how. "Re-read" is not re-verified: a lab is re-verified when
 somebody walked its steps, or when its audit rule was run against a repository in that state.

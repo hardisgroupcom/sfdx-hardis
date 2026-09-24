@@ -64,7 +64,7 @@ The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-h
 
 One Pull Request per repository, cross-linked. Order: CLI, then the extension, then the training. A change that invalidates a lab is not finished until the training Pull Request is open.
 
-**Every change made from here to a sibling repository updates that repository's own `CHANGELOG.md`**, in the same Pull Request: `## Unreleased` in `../vscode-sfdx-hardis` and in `../sfdx-hardis-training`, `## [beta] (main)` here. The `changelog` skill's style rules apply to all three.
+**Every change made from here to a sibling repository updates that repository's own `CHANGELOG.md`**, in the same Pull Request: `## Unreleased` in `../vscode-sfdx-hardis`, `## [beta] (main)` here, and in `../sfdx-hardis-training`, which has no versions, a `## YYYY-MM-DD` heading with the date of the day (add it at the top if it does not exist yet). The `changelog` skill's style rules apply to all three.
 
 ## Behavior Preferences
 

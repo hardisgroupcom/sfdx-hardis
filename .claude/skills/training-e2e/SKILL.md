@@ -102,8 +102,9 @@ almost always be yes to.
    including the "what this run did not cover" section.
 7. **Open one Pull Request per repository**, cross-linked, in the order CLI, extension, training,
    each with an entry in **that repository's** `CHANGELOG.md` (`## [beta] (main)` in sfdx-hardis,
-   `## Unreleased` in the extension and in the course). Then run the `code-review` skill at `high`
-   on each and fix what it raises.
+   `## Unreleased` in the extension, the `## YYYY-MM-DD` heading of the day in the course). Later
+   fixes of the same run go on the same branch and Pull Request, never a new one. Then run the
+   `code-review` skill at `high` on each and fix what it raises.
 
 ## Rules for the run
 
