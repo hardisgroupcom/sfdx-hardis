@@ -145,19 +145,19 @@ again, `Awaiting Parts` and `Warranty_Years__c` removed from the DE orgs again.
 
 **All eleven labs walked, all eleven `Check my work` rules green: `11 of 11 checks passed`.**
 
-| Lab  | Verdict | Evidence                                                                                                       |
-|------|---------|-----------------------------------------------------------------------------------------------------------------|
-| 3.1  | OK      | PR #11 merged on green checks running the linked build; `sf org login jwt` in the deploy log                    |
-| 3.2  | OK      | US-052 (#12): inline review on the removed `Total_Capacity_kW__c` line, fix commit, squash merge                |
-| 3.3  | OK      | US-056 (#13) failed exactly as staged (`no CustomField named ... Crew_Workload__c`), `.forceignore` review, fix |
-| 3.4  | OK      | US-020 (#14) sent back on `Illegal assignment from Datetime to Date`, both permission grants verified in org    |
-| 3.5  | OK      | Promotion #16; `Helios_Warehouse` kept its UAT test URL through the deploy; `# Promotion Notes - uat` generated |
-| 3.6  | OK      | Rehearsal #17, release #18, DORA report with its five metrics                                                   |
-| 3.7  | OK      | Hotfix #19/#20 live in production, retrofit branch by `work:new`, `origin/main` merged down, PR #21             |
-| 3.8  | OK      | Monitoring repo re-installed from empty; first run red on `ActiveScratchOrgs` exactly as the lab stages it      |
-| 3.9  | OK      | Documentation generated; the Installation paragraph written and `DO_NOT_OVERWRITE_DOC=TRUE`                     |
+| Lab  | Verdict | Evidence                                                                                                                                         |
+|------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| 3.1  | OK      | PR #11 merged on green checks running the linked build; `sf org login jwt` in the deploy log                                                     |
+| 3.2  | OK      | US-052 (#12): inline review on the removed `Total_Capacity_kW__c` line, fix commit, squash merge                                                 |
+| 3.3  | OK      | US-056 (#13) failed exactly as staged (`no CustomField named ... Crew_Workload__c`), `.forceignore` review, fix                                  |
+| 3.4  | OK      | US-020 (#14) sent back on `Illegal assignment from Datetime to Date`, both permission grants verified in org                                     |
+| 3.5  | OK      | Promotion #16; `Helios_Warehouse` kept its UAT test URL through the deploy; `# Promotion Notes - uat` generated                                  |
+| 3.6  | OK      | Rehearsal #17, release #18, DORA report with its five metrics                                                                                    |
+| 3.7  | OK      | Hotfix #19/#20 live in production, retrofit branch by `work:new`, `origin/main` merged down, PR #21                                              |
+| 3.8  | OK      | Monitoring repo re-installed from empty; first run red on `ActiveScratchOrgs` exactly as the lab stages it                                       |
+| 3.9  | OK      | Documentation generated; the Installation paragraph written and `DO_NOT_OVERWRITE_DOC=TRUE`                                                      |
 | 3.10 | OK      | **Promotion PR #26 green in CI, merged with protection intact, preprod deployed by the CI job**: F1 and N1 both proven where a learner sees them |
-| 3.11 | OK      | The full week: US-055 in, US-058 catches up (#29), release #30; both stories verified in helios-prod            |
+| 3.11 | OK      | The full week: US-055 in, US-058 catches up (#29), release #30; both stories verified in helios-prod                                             |
 
 Worth keeping from part 2:
 
