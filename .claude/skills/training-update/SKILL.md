@@ -23,29 +23,29 @@ have to be regenerated.
 
 ## What lives where
 
-| What                                       | Where                                                                            | Generated?                                      |
-|--------------------------------------------|----------------------------------------------------------------------------------|-------------------------------------------------|
-| The lab text                               | `labs/en/level-N/lab-NN-*.md`                                                    | No, written by hand                             |
-| The translated lab text                    | `labs/<locale>/level-N/lab-NN-*.md`, same file names                             | No, translated by hand from `labs/en/`          |
-| The words of the generated pages           | `i18n/<locale>.json`                                                             | No, translated by hand from `i18n/en.json`      |
-| The fiction: stories, branches, orgs, cast | `training-universe.json`                                                         | No, the source of truth                         |
-| The backlog, the link maps, the manifest   | `BACKLOG.md`, `labs/link-map.<locale>.md`, `training-manifest.json`              | **Yes**, `scripts/build/universe.mjs`           |
-| The command links of Under the hood blocks | inside each lab, between `<!-- command-links:start/end -->`                      | **Yes**, `scripts/build/lab-command-links.mjs`  |
-| The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder     | **Yes**, `scripts/build/site.mjs`, per locale   |
-| The audit rules                            | `scripts/verify/rules.mjs`                                                       | No                                              |
-| The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                              | **Yes**, `scripts/build/data.mjs`               |
-| The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/` | **Yes**, `scripts/build/mocks.mjs`              |
-| The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs               | **Yes**, `scripts/build/doc-links.mjs`          |
+| What                                       | Where                                                                              | Generated?                                      |
+|--------------------------------------------|------------------------------------------------------------------------------------|-------------------------------------------------|
+| The lab text                               | `labs/en/level-N/lab-NN-*.md`                                                      | No, written by hand                             |
+| The translated lab text                    | `labs/<locale>/level-N/lab-NN-*.md`, same file names                               | No, translated by hand from `labs/en/`          |
+| The words of the generated pages           | `i18n/<locale>.json`                                                               | No, translated by hand from `i18n/en.json`      |
+| The fiction: stories, branches, orgs, cast | `training-universe.json`                                                           | No, the source of truth                         |
+| The backlog, the link maps, the manifest   | `BACKLOG.md`, `labs/link-map.<locale>.md`, `training-manifest.json`                | **Yes**, `scripts/build/universe.mjs`           |
+| The command links of Under the hood blocks | inside each lab, between `<!-- command-links:start/end -->`                        | **Yes**, `scripts/build/lab-command-links.mjs`  |
+| The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder       | **Yes**, `scripts/build/site.mjs`, per locale   |
+| The audit rules                            | `scripts/verify/rules.mjs`                                                         | No                                              |
+| The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                                | **Yes**, `scripts/build/data.mjs`               |
+| The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/`   | **Yes**, `scripts/build/mocks.mjs`              |
+| The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs                 | **Yes**, `scripts/build/doc-links.mjs`          |
 | The course showcase on the doc site        | `../sfdx-hardis/docs/salesforce-devops-training.md`, README teaser, guide callouts | **Yes**, `scripts/build/doc-links.mjs`          |
-| The raw panel screenshots                  | `labs/_assets/vscode/*.png`                                                      | **Yes**, the extension harness                  |
-| The raw web screenshots                    | `labs/_assets/web/*.png`                                                         | **Yes**, `scripts/build/capture-web.mjs`        |
-| The capture and annotation specs           | `labs/_assets/web-captures.json`, `labs/_assets/annotations.json`                | No, written by hand                             |
-| The annotated screenshots labs link        | `labs/_assets/annotated/`                                                        | **Yes**, `scripts/build/annotate.mjs`           |
-| The raw Salesforce screenshots             | `labs/_assets/salesforce/*.png`                                                  | **Yes**, `scripts/build/capture-salesforce.mjs` |
-| The site sources                           | `site-src/`                                                                      | **Yes**, `scripts/build/site.mjs`, git-ignored  |
-| The site theme                             | `site-theme/`                                                                    | No, copied into the site by `site.mjs`          |
-| What a learner starts each level from      | `scripts/start-states/level-N/`                                                  | No, written by hand                             |
-| The teammate Pull Requests                 | `scripts/simulate/<story>/`                                                      | No, written by hand                             |
+| The raw panel screenshots                  | `labs/_assets/vscode/*.png`                                                        | **Yes**, the extension harness                  |
+| The raw web screenshots                    | `labs/_assets/web/*.png`                                                           | **Yes**, `scripts/build/capture-web.mjs`        |
+| The capture and annotation specs           | `labs/_assets/web-captures.json`, `labs/_assets/annotations.json`                  | No, written by hand                             |
+| The annotated screenshots labs link        | `labs/_assets/annotated/`                                                          | **Yes**, `scripts/build/annotate.mjs`           |
+| The raw Salesforce screenshots             | `labs/_assets/salesforce/*.png`                                                    | **Yes**, `scripts/build/capture-salesforce.mjs` |
+| The site sources                           | `site-src/`                                                                        | **Yes**, `scripts/build/site.mjs`, git-ignored  |
+| The site theme                             | `site-theme/`                                                                      | No, copied into the site by `site.mjs`          |
+| What a learner starts each level from      | `scripts/start-states/level-N/`                                                    | No, written by hand                             |
+| The teammate Pull Requests                 | `scripts/simulate/<story>/`                                                        | No, written by hand                             |
 
 **Never edit a generated file.** Change its source and re-run the generator. CI fails on drift
 (`node scripts/build/universe.mjs --check`).
