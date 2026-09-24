@@ -155,7 +155,7 @@ the lab's order, and the check rule of Lab 3.10 passing before and after the cat
 
 | Repository           | Pull Request                                                                       | Carries                                                                                           |
 |----------------------|------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| sfdx-hardis          | branch `fix/beta-image-waits-for-registry` (this report)                           | F2: `deploy_beta` waits until the registry serves the published beta; runbook; this report        |
+| sfdx-hardis          | [#2237](https://github.com/hardisgroupcom/sfdx-hardis/pull/2237)                   | F2: `deploy_beta` waits until the registry serves the published beta; runbook; this report        |
 | vscode-sfdx-hardis   | [#527](https://github.com/hardisgroupcom/vscode-sfdx-hardis/pull/527)              | F3: the regenerated conflict fixture                                                              |
 | sfdx-hardis-training | [#36](https://github.com/hardisgroupcom/sfdx-hardis-training/pull/36)              | F1 (workflow publishing the start branches), F3 (fixture generator), F4 (wording), the two captures |
 
