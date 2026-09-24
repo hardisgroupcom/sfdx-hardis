@@ -10405,6 +10405,84 @@ While the list is missing, sf hardis:project:promotion:create stops and asks for
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionpromotionConflictMarkersIgnoredFiles">
+    <div class="card">
+        <div class="card-header" id="headingpromotionConflictMarkersIgnoredFiles">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#promotionConflictMarkersIgnoredFiles"
+                        aria-expanded="" aria-controls="promotionConflictMarkersIgnoredFiles" onclick="setAnchor('#promotionConflictMarkersIgnoredFiles')"><span class="property-name">promotionConflictMarkersIgnoredFiles</span></button>
+            </h2>
+        </div>
+
+        <div id="promotionConflictMarkersIgnoredFiles"
+             class="collapse property-definition-div" aria-labelledby="headingpromotionConflictMarkersIgnoredFiles"
+             data-parent="#accordionpromotionConflictMarkersIgnoredFiles">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promotionConflictMarkersIgnoredFiles" onclick="anchorLink('promotionConflictMarkersIgnoredFiles')">promotionConflictMarkersIgnoredFiles</a></div><h4>Files allowed to hold conflict markers (Beta)</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<div class="description collapse" id="collapseDescription_promotionConflictMarkersIgnoredFiles">
+            <p>Beta feature. The deployment check of a promotion Pull Request fails while any tracked file of the branch still holds git conflict markers (lines starting with &lt;&lt;&lt;&lt;&lt;&lt;&lt; or &gt;&gt;&gt;&gt;&gt;&gt;&gt;).<br />
+List here, as git glob patterns relative to the repository root, the files that hold such lines on purpose (ex: documentation about merge conflicts, merge driver fixtures), so they do not block every promotion.<br />
+'<em>' does not cross a '/', use '</em>*' for any depth.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_promotionConflictMarkersIgnoredFiles"
+               aria-expanded="false" aria-controls="collapseDescriptionpromotionConflictMarkersIgnoredFiles"
+            ></a>
+        </div>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="promotionConflictMarkersIgnoredFiles_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promotionConflictMarkersIgnoredFiles" onclick="anchorLink('promotionConflictMarkersIgnoredFiles')">promotionConflictMarkersIgnoredFiles</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promotionConflictMarkersIgnoredFiles_items" onclick="anchorLink('promotionConflictMarkersIgnoredFiles_items')">promotionConflictMarkersIgnoredFiles items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="promotionConflictMarkersIgnoredFiles_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;labs/**/*.md&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;docs/merge-conflicts.md&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionenableDeploymentApexTestClasses">
     <div class="card">
         <div class="card-header" id="headingenableDeploymentApexTestClasses">

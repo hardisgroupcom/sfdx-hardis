@@ -159,6 +159,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 - [Lab 2.8 - Recover from committing the wrong metadata](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
 - [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
 - [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
 
 <!-- training-links:end -->
 `;

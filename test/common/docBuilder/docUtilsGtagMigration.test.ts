@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
-import fs from 'fs-extra';
+import fs from '../../../src/common/utils/fsUtils.js';
 import * as yaml from 'js-yaml';
 import { migrateGtagJsToMkDocsAnalytics, mergeIntoYamlText } from '../../../src/common/docBuilder/docUtils.js';
 

@@ -252,6 +252,13 @@ Once the Pull Request is open, **copy the prompt it carries and paste it into yo
 
 The validation job fails while a conflict marker is still in the sources, so a promotion cannot reach the org half-solved.
 
+Every tracked file of the branch is checked. If your repository holds conflict markers on purpose (documentation about merge conflicts, merge driver fixtures), list those files in `promotionConflictMarkersIgnoredFiles`, as git glob patterns relative to the repository root:
+
+```yaml
+promotionConflictMarkersIgnoredFiles:
+  - labs/**/*.md
+```
+
 The four answers in full:
 
 - **commit the story and every following conflict with their conflict markers, without asking again** (recommended): the promotion is assembled whole, conflicts and all, for the coding agent to solve;
@@ -458,3 +465,13 @@ Set `NO_CACHE=true` or `SFDX_HARDIS_NO_PR_CACHE=true` to bypass it entirely, and
 > Measured on a four level pipeline of 23 Pull Requests: `sf hardis:project:promotion:list-candidates` went from **74.6 s** to **40.6 s** on the second run, with identical output. The gain grows with the number of Pull Requests that carry a long description.
 
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+
+<!-- training-links:end -->

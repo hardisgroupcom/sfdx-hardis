@@ -3,8 +3,8 @@
 Read this in full before starting. It holds the decisions that make a run meaningful and the traps
 that cost previous runs hours.
 
-The course is at <https://hardisgroupcom.github.io/sfdx-hardis-training/>: three levels, 26 labs,
-7 + 9 + 10. A full walk of the three is a long session. Level 1 alone is worth running whenever the
+The course is at <https://hardisgroupcom.github.io/sfdx-hardis-training/>: three levels, 27 labs,
+7 + 9 + 11. A full walk of the three is a long session. Level 1 alone is worth running whenever the
 contributor loop changed.
 
 ## 1. What a run proves, and what it cannot
@@ -287,7 +287,8 @@ The release manager. This is the level where the course touches the orgs and the
 | 3.7  | Hotfix and retrofit                  | A hotfix from `main`, then the retrofit into `integration`                                        |
 | 3.8  | Monitor production                   | `scripts/mon.mjs`, in a repository of its own                                                     |
 | 3.9  | Project documentation                | `hardis:doc:project2markdown`                                                                     |
-| 3.10 | Capstone: a weekly release cycle     | One story all the way through, four promotions                                                    |
+| 3.10 | Promotion branches (Beta)            | Five `simulate` stories, `hardis:project:promotion:create` with one conflict, a retrofit          |
+| 3.11 | Capstone: a weekly release cycle     | One story all the way through, four promotions                                                    |
 
 The role split is the point of this level, and it is easy to break by being helpful:
 
@@ -313,6 +314,48 @@ Lab 3.8 runs in a **second repository**, the monitoring one, with its own secret
   (2026-09-21) a `git pull` that ran before `safe.directory` was set and so never refreshed the
   branch. Both were in `defaults/monitoring/.github/workflows/org-monitoring.yml`, and both printed a
   reassuring fallback message. Check what the run actually did, not what it reported.
+
+### Lab 3.10: the five stories, the conflict, the retrofit
+
+The lab was proven on a synthetic repository (`node scripts/verify/prove-promotion-conflict.mjs`
+in the course), never yet against real orgs in this shape. What a walk has to reproduce:
+
+- **Five `Simulate my teammates` stories, merged into `integration` in this order**, each with
+  **Squash and merge** before the next is simulated: US-058, US-057, US-059, US-060, US-061. The
+  order gives the `uat` window US-061, US-060, US-059, US-057, US-058 from the top. US-059 carries
+  `basedOn: us-058-warranty-term` and refuses to build while US-058 is not in `integration`: taking
+  it early is the lab's own "If it goes wrong", not a defect.
+- **The promotion carries rows 1, 3 and 4** (US-061, US-059, US-057). `promotion:create`
+  cherry-picks oldest first: US-057 clean, **US-059 conflicts** on exactly
+  `force-app/main/default/layouts/Panel_Batch__c-Panel Batch Layout.layout-meta.xml` and
+  `force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml` (the
+  `<<<<<<< HEAD` side empty, the incoming side holding the Warranty Years entry then the Supplier
+  one), then US-061 clean. Headless, answer the conflict prompt with `commit-with-markers-all`
+  (`panel.mjs` rule `{"q":"What do you want to do with","choice":"Recommended"}` or the
+  `--on-conflict commit-with-markers` flag). Expect the check job of the promotion Pull Request red
+  with the marker comment naming the two files.
+- **Two resolution routes, and the walk should do the by-hand one** unless a coding agent is part
+  of the run: on the promotion branch, in each file, keep the Supplier entry and drop the Warranty
+  Years block (the expected results are printed in the lab, step 6). Push, check green, the
+  sfdx-hardis comment names the three declared Pull Requests. The agent route pastes
+  `hardis-report/promotion-conflicts-prompt-*.md` into a chat; if you run it, keep the agent's commit
+  message and diff in the report.
+- **Merge without squash, then assert in `helios-preprod`**: Awaiting Parts on Status, Gate Code on
+  Installation, Supplier on Panel Batch; no Warranty Years, no Scaffolding Required.
+- **Then the retrofit, step 9, is part of the lab**: `work:new` Retrofit `US-059-retrofit`, merge
+  `origin/preprod`, the same two files conflict the other way round (integration side holds Warranty
+  Years, preprod side nothing): keep the `integration` side, `work:save`, Pull Request into
+  `integration` with **zero changed files**, merged. Without it, the capstone's `uat` into `preprod`
+  promotion conflicts on those files, which is proven and is why the audit rule 3.10 checks that
+  `git merge-tree integration preprod` is clean.
+- `check --level 3 --lab 10` must pass right after step 9 and again after Lab 3.11's Thursday.
+  Lab 3.11 now also asserts US-058 and US-060 reached `main`.
+- **Known on the released CLI**: until sfdx-hardis ships `promotionConflictMarkersIgnoredFiles`
+  (PR #2236), the check job of a promotion Pull Request also names the two Lab 2.7 files; the lab's
+  "If it goes wrong" says so. Use the unreleased-build override of section 8 to prove the lab green.
+- Not yet captured: the GitHub screens of this lab (the Pull Request description with the folded
+  prompt, the red check with the marker comment) are described in the text, with no `web/` image.
+  Capture them during the walk with `capture-web.mjs` once a real promotion Pull Request exists.
 
 ### The badge claim
 
@@ -351,6 +394,48 @@ Rules that hold whatever you found:
 - A lab whose behaviour changed is affected in **every** language.
 - Fix it inside the run, then re-do the step. A finding you noted and walked past is a finding the
   next run will have again.
+
+### Proving an unreleased sfdx-hardis in the fork's CI
+
+The course's jobs run in the released container image
+(`ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest`), so a CLI fix made during the run is invisible
+to them until a release ships: the labs the fix repairs stay red in CI, and the walk has to lift
+branch protections to get past them, which is exactly what a learner cannot do. When the run has to
+prove such a fix end to end, override the plugin **inside the jobs of the fork**, with a step
+inserted right after the checkout of `check-deploy.yml` and `process-deploy.yml`:
+
+```yaml
+      # E2E OVERRIDE, fork only, never committed to the course: replace the
+      # released sfdx-hardis of the container with an unreleased branch, to
+      # prove a fix in CI before it ships.
+      - name: Override sfdx-hardis with an unreleased branch (e2e only)
+        run: |
+          yarn --version || npm install --global yarn
+          git clone --depth 1 --branch <the-fix-branch> https://github.com/hardisgroupcom/sfdx-hardis.git /tmp/sfdx-hardis-e2e
+          cd /tmp/sfdx-hardis-e2e
+          yarn install --frozen-lockfile
+          npx tsc -b
+          sf plugins link . 2>/dev/null
+          sf plugins | grep hardis
+```
+
+How to get it onto every branch a job runs from, without touching the shared repository: commit it
+in the course clone on a **local** branch cut from the branch under test, never pushed to the
+course's origin, then reset the fork as usual and force-push that local branch to the fork's
+`main`, and rebuild the start branches from it (`node scripts/build/start-branches.mjs`, pushed to
+the fork only). Every major branch the learner's world derives then carries the step from the
+start, so no Pull Request has to smuggle it in later.
+
+What to expect and to record:
+
+- each overridden job pays the clone + `yarn install` + `tsc -b`, two to four minutes;
+- the run report must say the jobs ran an unreleased build, name the branch and the commit, and
+  keep the released image's failures on record (they are what a learner sees today);
+- the override is a fork artifact: it disappears with the next fork reset, and nothing of it may
+  land in a course Pull Request. `git log --oneline origin/feat-branch..local-branch` before
+  opening any training Pull Request is the check;
+- the monitoring repository of Lab 3.8 has its own workflows: override them only when the fix
+  under test touches monitoring.
 
 ## 9. What the lab driver still does not cover
 

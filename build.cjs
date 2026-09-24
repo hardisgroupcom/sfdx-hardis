@@ -1,6 +1,6 @@
 #!/usr/bin/node
 /* eslint-disable */
-const fs = require("fs-extra");
+const fs = require("fs");
 const https = require("https");
 const yaml = require("js-yaml");
 
@@ -288,7 +288,7 @@ class SfdxHardisBuilder {
     const { PROMPT_TEMPLATES } = await import("./lib/common/aiProvider/promptTemplates/index.js");
     const { PROMPT_VARIABLES } = await import("./lib/common/aiProvider/promptTemplates/variablesIndex.js");
     const docsPromptDir = "./docs/prompt-templates";
-    fs.ensureDirSync(docsPromptDir);
+    fs.mkdirSync(docsPromptDir, { recursive: true });
 
     // Build prompt templates documentation
     const promptNav = [];

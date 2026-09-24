@@ -93,11 +93,11 @@ async function fetchDashboardDefinition(baseUrl, uid) {
 
 async function syncGrafanaDashboards() {
   const pathModule = await import("node:path");
-  const fsModule = await import("fs-extra");
+  const fsModule = await import("node:fs");
   const dotenvModule = await import("dotenv");
 
   const path = pathModule.default || pathModule;
-  const fs = fsModule.default || fsModule;
+  const fs = (fsModule.default || fsModule).promises;
   const dotenv = dotenvModule.default || dotenvModule;
   dotenv.config();
 
@@ -105,7 +105,7 @@ async function syncGrafanaDashboards() {
   const folderUid = process.env.GRAFANA_FOLDER_UID || "cdklj9xhp8074d";
   const dashboardsDir = path.resolve(__dirname, "../docs/grafana/dashboards");
 
-  await fs.ensureDir(dashboardsDir);
+  await fs.mkdir(dashboardsDir, { recursive: true });
 
   console.log(`Syncing dashboards from ${baseUrl} (folder UID: ${folderUid})...`);
 
@@ -123,7 +123,7 @@ async function syncGrafanaDashboards() {
     const fileName = `${sanitizeFileName(dashboard.title)}.json`;
     const filePath = path.join(dashboardsDir, fileName);
 
-    await fs.writeJson(filePath, sanitizedDefinition, { spaces: 2 });
+    await fs.writeFile(filePath, JSON.stringify(sanitizedDefinition, null, 2) + "\n");
     console.log(`Updated ${fileName}`);
   }
 

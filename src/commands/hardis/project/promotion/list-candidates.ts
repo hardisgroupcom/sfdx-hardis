@@ -14,6 +14,7 @@ import {
   listPromotionCandidates,
   logPartiallyPromotedCandidates,
   logPromotionCandidatesTable,
+  requireGitProviderForPromotion,
   resolvePromotionSourceAndTarget,
   toCandidateSummary,
 } from '../../../../common/utils/promotionCreateUtils.js';
@@ -36,6 +37,7 @@ This is the read-only half of \`sf hardis:project:promotion:create\`: same confi
 The command:
 
 - checks that \`enablePromotionBranches: true\` and \`allowedPromotionSteps\` are set, and keeps to the allowed steps: only those source and target branches are offered, and naming another one fails;
+- requires the [git provider connection](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/) (GitHub, GitLab, Bitbucket or Azure DevOps) and refuses to run without it, like \`hardis:project:promotion:create\`: the candidates are read from the provider, so the numbers listed are the ones \`create\` accepts;
 - lists the Pull Requests merged into the source branch since its merge base with the target branch, leaving out the merges between major branches and the promotion branches themselves (they carry other people's work, they are not User Stories);
 - marks the ones another promotion branch already carries to the same target branch. They are left out of the candidates unless \`--include-already-promoted\` is passed, and always reported in the \`alreadyPromoted\` result;
 - names the promotion Pull Request already open between the two branches, if any. It is left untouched: \`hardis:project:promotion:create\` is what closes it, once its replacement exists.
@@ -45,11 +47,11 @@ With \`--json\`, the result holds \`candidates\` (Pull Request numbers, title, a
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API, whose connection this command requires).
 - A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - A promotion merged into the source branch is expanded into the User Stories its \`promotionPullRequests\` block declares, recursively, so a story promoted twice in a row keeps its number.
 - A candidate can be a merge commit carrying several Pull Requests: they are listed together, because cherry-picking it carries all of them.
-- Already-promoted detection reads the promotion Pull Requests of the target branch, bounded by the date of the oldest candidate. Without a git provider token, the check is skipped and said out loud.
+- Already-promoted detection reads the promotion Pull Requests of the target branch, bounded by the date of the oldest candidate.
 </details>
 
 ### Agent Mode
@@ -64,6 +66,7 @@ In agent mode:
 
 - \`--source-branch\` is required; \`--target-branch\` defaults to the first merge target of the source branch allowed by \`allowedPromotionSteps\`.
 - Nothing is prompted and nothing is written to git: the command only reads.
+- The git provider token must be available (ex: \`GITHUB_TOKEN\`), from the environment or from a \`.env\` file at the repository root: agent mode never prompts for the connection, it stops without it.
 `;
 
   public static examples = [
@@ -112,6 +115,9 @@ In agent mode:
     const agentMode = flags.agent === true || isCI;
 
     const promotionConfig = await assertPromotionBranchesEnabled(this);
+    // Same gate as hardis:project:promotion:create: without the provider, the candidates would be
+    // numbered from commit subjects and would not match what create accepts
+    await requireGitProviderForPromotion(this, agentMode);
     const { sourceBranch, targetBranch } = await resolvePromotionSourceAndTarget(
       this,
       flags['source-branch'] || null,

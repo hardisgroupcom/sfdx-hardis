@@ -291,6 +291,13 @@ describe('extractPrNumbersFromCommit()', () => {
     expect(extractPrNumbersFromCommit({ message: 'Merged PR 52: feature x' })).to.deep.equal([52]);
   });
 
+  it('reads the number a GitHub squash merge puts in brackets at the end of the subject', () => {
+    expect(
+      extractPrNumbersFromCommit({ message: 'US-057 Park an installation that is waiting for parts (#7)' })
+    ).to.deep.equal([7]);
+    expect(extractPrNumbersFromCommit({ message: 'Fix the thing (#12) and more' })).to.deep.equal([12]);
+  });
+
   it('never takes a generic #N reference of the body for a Pull Request', () => {
     expect(extractPrNumbersFromCommit({ message: "Merge branch 'feature/x' into 'integration'", body: 'Fixes #12 and relates to #13' })).to.deep.equal([]);
   });

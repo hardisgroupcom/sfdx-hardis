@@ -19,11 +19,29 @@ MODE=${2:-merge}
   exit 1
 }
 
+# Right after a Pull Request is created its required checks are not registered
+# yet, and `gh pr checks --watch` returns at once. Worse, the head commit often
+# already carries finished runs from its previous branch (the deploy of the
+# merge that produced it), so "some check exists and none is pending" is not
+# proof of anything. Wait for the two checks every protected branch of this
+# course requires to be present.
+for _ in $(seq 1 30); do
+  L=$(gh pr checks "$PR" -R "$R" 2>/dev/null | cut -f1)
+  echo "$L" | grep -q "Simulate Deployment to Major Org" && echo "$L" | grep -q "Mega-Linter" && break
+  sleep 10
+done
 # `gh pr checks --watch` returns when every check has finished, whatever their
 # number. Counting lines instead meant guessing how many checks a Pull Request
 # has, and a Pull Request into a major branch has fewer than a feature one: the
 # wait never ended. A non-zero exit here only means a check failed.
-gh pr checks "$PR" -R "$R" --watch --interval 10 >/dev/null 2>&1 || true
+# One watch is not enough either: the second workflow can register while the
+# first is being watched, so watch again as long as anything reads pending.
+for _ in $(seq 1 30); do
+  gh pr checks "$PR" -R "$R" --watch --interval 10 >/dev/null 2>&1 || true
+  PENDING=$(gh pr checks "$PR" -R "$R" 2>/dev/null | grep -v Socket | cut -f2 | grep -cxE "pending" || true)
+  [ "${PENDING:-0}" -eq 0 ] && break
+  sleep 10
+done
 # `|| true`: grep exits 1 when it filters every line out, and under `set -e` a bare
 # pipeline ending in grep would kill the script here with nothing printed.
 gh pr checks "$PR" -R "$R" 2>&1 | cut -f1,2 | grep -v Socket || true

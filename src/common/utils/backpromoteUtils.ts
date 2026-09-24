@@ -521,8 +521,11 @@ export function extractPrNumbersFromMessage(message: string): number[] {
     // Azure DevOps completing a Pull Request without fast-forward, which is what keeps the -x
     // trailers of a cherry-pick: "Merge pull request 52 from feature/X into integration", with no #
     /Merge pull request (\d+) from \S+ into \S+/g,
-    // Generic #NNN reference (but avoid matching issue numbers in the middle of words)
-    /(?:^|\s)#(\d+)(?:\s|$|[,.):])/g,
+    // Generic #NNN reference (but avoid matching issue numbers in the middle of words).
+    // An opening bracket counts as a boundary: a GitHub squash merge writes the number as
+    // "US-057 Park an installation that is waiting for parts (#7)", so requiring whitespace
+    // before the # missed the most common commit subject GitHub produces.
+    /(?:^|[\s([])#(\d+)(?:\s|$|[,.):\]])/g,
   ];
   for (const pattern of patterns) {
     let match;

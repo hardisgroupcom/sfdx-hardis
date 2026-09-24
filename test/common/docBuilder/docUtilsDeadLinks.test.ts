@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import fs from 'fs-extra';
+import fs from '../../../src/common/utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
 import { removeDeadDocumentationLinks } from '../../../src/common/docBuilder/docUtils.js';

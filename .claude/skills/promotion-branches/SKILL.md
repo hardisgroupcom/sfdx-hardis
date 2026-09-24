@@ -75,8 +75,10 @@ Break one of these and the feature is wrong, whatever the tests say.
 6. **Expansion is multi level.** A `preprod -> main` promotion can carry a `uat -> preprod`
    promotion, which carries stories. Both levels must resolve.
 7. **Conflict markers never reach an org, and the reviewer is told why.**
-   `assertNoPromotionConflictMarkers` greps every tracked file, not only the package directories.
-   It stops the job before anything is deployed, so no other code would ever post a Pull Request
+   `assertNoPromotionConflictMarkers` greps every tracked file, not only the package directories,
+   except the git glob patterns of `promotionConflictMarkersIgnoredFiles` (files that hold markers
+   on purpose, like the merge conflict lab of the training). It reads the checked out files only,
+   never the history, so a shallow CI clone is enough. It stops the job before anything is deployed, so no other code would ever post a Pull Request
    comment: it sets `deployErrorsMarkdownBody` / `status: 'invalid'` on the Pull Request data and
    calls `GitProvider.managePostPullRequestComment(checkOnly)` **before** throwing. A red job with
    no comment on the very Pull Request that has to be fixed is not an acceptable outcome.

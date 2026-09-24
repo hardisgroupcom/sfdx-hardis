@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
+import { spawnSync } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
-import '../../../src/common/gitProvider/index.js';
+import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { shouldAddVirtualPullRequest, type BackpromotePrGroup } from '../../../src/common/utils/backpromoteUtils.js';
 import {
   assertPromotionBranchIsNotDeployed,
@@ -17,12 +21,15 @@ import {
   expandPromotionsInGroups,
   filterOpenPromotionPullRequests,
   gitPathSpec,
+  listFilesWithConflictMarkers,
+  isGitIgnored,
   listUnrequestedPullRequestNumbers,
   markAlreadyPromotedCandidates,
   oldestCandidateDate,
   parsePullRequestNumbersFlag,
   promotionCandidateRows,
   pullRequestKeys,
+  requireGitProviderForPromotion,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
   toCandidateSummary,
@@ -798,5 +805,134 @@ describe('assertPromotionBranchIsNotDeployed()', () => {
   it('ignores a branch that only looks like a promotion branch', () => {
     expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, 'promotion/hand-made-by-a-human')).to.not.throw();
     expect(() => assertPromotionBranchIsNotDeployed(commandThis, enabled, false, null)).to.not.throw();
+  });
+});
+
+describe('listFilesWithConflictMarkers()', () => {
+  // A repository is allowed to hold conflict markers in its own content: the training course does
+  // (its lab on resolving merge conflicts shows them), and so do merge-driver fixtures. Those files
+  // are listed in promotionConflictMarkersIgnoredFiles; every other tracked file is scanned.
+  const commandThis = {} as any;
+  let repo = '';
+  let previousCwd = '';
+
+  const git = (args: string[]) => spawnSync('git', args, { cwd: repo, encoding: 'utf8' });
+  const markers = ['<<<<<<< HEAD', 'ours', '=======', 'theirs', '>>>>>>> origin/uat', ''].join('\n');
+
+  before(() => {
+    repo = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-markers-'));
+    git(['init', '-b', 'preprod']);
+    git(['config', 'user.email', 'test@example.invalid']);
+    git(['config', 'user.name', 'Test']);
+    fs.mkdirSync(path.join(repo, 'labs', 'en'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'labs', 'en', '2-7-resolve-a-git-merge-conflict.md'), `Here is what a conflict looks like:\n\n${markers}`);
+    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), '<CustomField/>\n');
+    fs.writeFileSync(path.join(repo, 'notes.md'), 'A title\n=======\n');
+    git(['add', '-A']);
+    git(['commit', '-m', 'the lab that teaches merge conflicts']);
+  });
+
+  beforeEach(() => {
+    previousCwd = process.cwd();
+    process.chdir(repo);
+  });
+
+  afterEach(() => {
+    if (previousCwd) {
+      process.chdir(previousCwd);
+    }
+  });
+
+  after(() => {
+    fs.rmSync(repo, { recursive: true, force: true });
+  });
+
+  it('names every tracked file holding markers, and nothing else', async () => {
+    expect(await listFilesWithConflictMarkers(commandThis)).to.deep.equal(['labs/en/2-7-resolve-a-git-merge-conflict.md']);
+  });
+
+  it('leaves out the files matching promotionConflictMarkersIgnoredFiles', async () => {
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**/*.md'])).to.deep.equal([]);
+  });
+
+  it('still finds markers in a file the patterns do not match', async () => {
+    fs.writeFileSync(path.join(repo, 'Status__c.field-meta.xml'), markers);
+    git(['add', '-A']);
+    git(['commit', '-m', 'commit the conflict markers to solve later']);
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**/*.md', ''])).to.deep.equal(['Status__c.field-meta.xml']);
+  });
+
+  it('names a file whose name is not ASCII as it is', async () => {
+    const fileName = 'résumé.md';
+    fs.writeFileSync(path.join(repo, fileName), markers);
+    git(['add', '-A']);
+    git(['commit', '-m', 'a file with an accent']);
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**', 'Status__c.field-meta.xml'])).to.deep.equal([fileName]);
+  });
+
+  it('scans from the repository root when started from a sub-folder', async () => {
+    process.chdir(path.join(repo, 'labs'));
+    expect(await listFilesWithConflictMarkers(commandThis, ['labs/**'])).to.deep.equal(['Status__c.field-meta.xml', 'résumé.md']);
+  });
+});
+
+describe('requireGitProviderForPromotion()', () => {
+  // The gate exists so a promotion behaves the same on GitHub, GitLab, Bitbucket and Azure
+  // DevOps: without the provider, the candidates would depend on how each platform writes its
+  // merge commits. agentMode true: the prompt path is not what this test proves.
+  const commandThis = {} as any;
+  const providerVars = [
+    'SYSTEM_ACCESSTOKEN', 'CI_SFDX_HARDIS_AZURE_TOKEN', 'AZURE_DEVOPS_EXT_PAT',
+    'CI_JOB_TOKEN', 'CI_SFDX_HARDIS_GITLAB_TOKEN',
+    'GITHUB_TOKEN', 'CI_SFDX_HARDIS_GITHUB_TOKEN',
+    'BITBUCKET_WORKSPACE', 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',
+  ];
+  const saved: Record<string, string | undefined> = {};
+
+  before(() => {
+    for (const name of providerVars) {
+      saved[name] = process.env[name];
+      delete process.env[name];
+    }
+    GitProvider.resetInstance();
+  });
+
+  after(() => {
+    for (const name of providerVars) {
+      if (saved[name] !== undefined) {
+        process.env[name] = saved[name];
+      }
+    }
+    GitProvider.resetInstance();
+  });
+
+  it('refuses to run without a git provider connection', async () => {
+    let thrown: any = null;
+    try {
+      await requireGitProviderForPromotion(commandThis, true);
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown, 'requireGitProviderForPromotion should throw without a provider').to.not.equal(null);
+    expect(String(thrown.message)).to.include('git provider');
+  });
+
+  it('says whether git ignores the .env file that holds the token', async () => {
+    // The Salesforce CLI loads .env itself; what the gate adds is the warning when that file is
+    // about to be committed. The answer comes from git check-ignore, proven here both ways.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-dotenv-'));
+    const gitHere = (args: string[]) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
+    const previousCwd = process.cwd();
+    try {
+      gitHere(['init', '-b', 'main']);
+      fs.writeFileSync(path.join(dir, '.env'), 'GITHUB_TOKEN=not-a-real-one\n');
+      process.chdir(dir);
+      expect(await isGitIgnored(path.join(dir, '.env'))).to.equal(false);
+      fs.writeFileSync(path.join(dir, '.gitignore'), '.env\n');
+      expect(await isGitIgnored(path.join(dir, '.env'))).to.equal(true);
+    } finally {
+      process.chdir(previousCwd);
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
