@@ -308,6 +308,9 @@ export async function listMergedPrsWithCommits(
   const prDetailsMap = new Map<number, any>();
   const mergeCommitToPr = new Map<string, number>();
   const sourceBranchToPr = new Map<string, number>();
+  // Whether the merged Pull Requests of this repository could be listed: only then can a number read
+  // in a commit message be told apart from one that is not a Pull Request here
+  let mergedPrsListed = false;
 
   if (gitProvider) {
     try {
@@ -321,6 +324,7 @@ export async function listMergedPrsWithCommits(
       // created long before the merge that puts it in the window
       const minDate = oldestCommitDate ? new Date(oldestCommitDate.getTime() - 180 * 24 * 60 * 60 * 1000) : undefined;
       const allMergedPrs = (await gitProvider.listPullRequests({ status: 'merged', ...(minDate ? { minDate } : {}) })) || [];
+      mergedPrsListed = true;
       for (const pr of allMergedPrs) {
         const prNum = pr.idNumber;
         if (!prNum) continue;
@@ -396,9 +400,14 @@ export async function listMergedPrsWithCommits(
 
     for (const childCommit of childCommits) {
       let prNum: number | null = null;
-      const prNumbersInMsg = extractPrNumbersFromCommit(childCommit);
-      if (prNumbersInMsg.length > 0) prNum = prNumbersInMsg[0];
-      if (prNum === null && mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
+      // The provider naming this very commit as the merge of a Pull Request is the surest answer
+      if (mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
+      // A number in a message is only a Pull Request of this repository when the provider knows it.
+      // A fork carries the squash commits of the repository it was forked from, "(#41)" included:
+      // taken as is, that number sent the reads of the Backpromotes comments to a Pull Request that
+      // does not exist here, and the whole plan stopped on a 404.
+      const prNumbersInMsg = extractPrNumbersFromCommit(childCommit).filter((num) => messageNumberIsPullRequestOf(num, childCommit, mergedPrsListed, prDetailsMap, commitShaSet));
+      if (prNum === null && prNumbersInMsg.length > 0) prNum = prNumbersInMsg[0];
       const sourceBranch = extractSourceBranchFromMessage(childCommit.message);
       if (prNum === null && sourceBranch && sourceBranchToPr.has(sourceBranch)) prNum = sourceBranchToPr.get(sourceBranch)!;
 
@@ -444,6 +453,39 @@ export async function listMergedPrsWithCommits(
   }
 
   return prGroups;
+}
+
+/**
+ * Whether a number read in the message of a commit names a Pull Request of this repository that
+ * this commit belongs to.
+ *
+ * A fork carries the history of the repository it was forked from, with that repository's numbers
+ * in its squash subjects: "(#41)" can name no Pull Request here at all, and "(#1)" can name one of
+ * the fork's own that has nothing to do with the commit. The provider tells the two apart: a
+ * number it does not list is not a Pull Request here, and a number whose merge commit is another
+ * commit of the same window is not this commit's, unless this commit is a cherry-pick of work from
+ * it, which is what a promotion branch is made of. A merge commit outside the window proves
+ * nothing (Azure DevOps can report one that never reached the target branch), so the message is
+ * trusted there, as it is when the Pull Requests could not be listed at all.
+ */
+export function messageNumberIsPullRequestOf(
+  num: number,
+  commit: { hash: string; body?: string },
+  mergedPrsListed: boolean,
+  prDetailsMap: Map<number, { mergeCommitSha?: string }>,
+  windowShas: Set<string>,
+): boolean {
+  if (!mergedPrsListed) {
+    return true;
+  }
+  const pr = prDetailsMap.get(num);
+  if (!pr) {
+    return false;
+  }
+  if (!pr.mergeCommitSha || pr.mergeCommitSha === commit.hash || !windowShas.has(pr.mergeCommitSha)) {
+    return true;
+  }
+  return /\(cherry picked from commit [0-9a-f]{7,40}\)/.test(commit.body || '');
 }
 
 // Extract all source branch names from merge commit messages

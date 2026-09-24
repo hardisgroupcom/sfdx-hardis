@@ -7,6 +7,7 @@ import {
   extractPrNumbersFromCommit,
   isVehicleMerge,
   mergedSourceBranches,
+  messageNumberIsPullRequestOf,
   parseCommitParents,
   splitVehicleMerges,
 } from '../../../src/common/utils/backpromoteUtils.js';
@@ -300,5 +301,38 @@ describe('extractPrNumbersFromCommit()', () => {
 
   it('never takes a generic #N reference of the body for a Pull Request', () => {
     expect(extractPrNumbersFromCommit({ message: "Merge branch 'feature/x' into 'integration'", body: 'Fixes #12 and relates to #13' })).to.deep.equal([]);
+  });
+});
+
+describe('messageNumberIsPullRequestOf()', () => {
+  // A fork of the training course: its own US-014 is #1, merged as commit f1, and it carries the
+  // squash commits of the course it was forked from, whose subjects hold the course's numbers
+  const prs = new Map<number, { mergeCommitSha?: string }>([[1, { mergeCommitSha: 'f1' }]]);
+  const window = new Set(['f1', 'u41', 'u1', 'cp1']);
+
+  it('drops a number the provider does not list, which would be read as a 404', () => {
+    expect(messageNumberIsPullRequestOf(41, { hash: 'u41' }, true, prs, window)).to.be.false;
+  });
+
+  it('drops a number of the fork whose merge commit is another commit of the window', () => {
+    expect(messageNumberIsPullRequestOf(1, { hash: 'u1' }, true, prs, window)).to.be.false;
+  });
+
+  it('keeps the merge commit of the Pull Request', () => {
+    expect(messageNumberIsPullRequestOf(1, { hash: 'f1' }, true, prs, window)).to.be.true;
+  });
+
+  it('keeps a cherry-pick of the Pull Request, which is what a promotion branch carries', () => {
+    const body = '(cherry picked from commit 0123456789abcdef0123456789abcdef01234567)';
+    expect(messageNumberIsPullRequestOf(1, { hash: 'cp1', body }, true, prs, window)).to.be.true;
+  });
+
+  it('trusts the message when the merge commit is outside the window, or unknown', () => {
+    expect(messageNumberIsPullRequestOf(1, { hash: 'x' }, true, prs, new Set(['x']))).to.be.true;
+    expect(messageNumberIsPullRequestOf(2, { hash: 'x' }, true, new Map([[2, {}]]), window)).to.be.true;
+  });
+
+  it('trusts the message when the Pull Requests could not be listed', () => {
+    expect(messageNumberIsPullRequestOf(41, { hash: 'u41' }, false, new Map(), window)).to.be.true;
   });
 });
