@@ -352,6 +352,48 @@ Rules that hold whatever you found:
 - Fix it inside the run, then re-do the step. A finding you noted and walked past is a finding the
   next run will have again.
 
+### Proving an unreleased sfdx-hardis in the fork's CI
+
+The course's jobs run in the released container image
+(`ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest`), so a CLI fix made during the run is invisible
+to them until a release ships: the labs the fix repairs stay red in CI, and the walk has to lift
+branch protections to get past them, which is exactly what a learner cannot do. When the run has to
+prove such a fix end to end, override the plugin **inside the jobs of the fork**, with a step
+inserted right after the checkout of `check-deploy.yml` and `process-deploy.yml`:
+
+```yaml
+      # E2E OVERRIDE, fork only, never committed to the course: replace the
+      # released sfdx-hardis of the container with an unreleased branch, to
+      # prove a fix in CI before it ships.
+      - name: Override sfdx-hardis with an unreleased branch (e2e only)
+        run: |
+          yarn --version || npm install --global yarn
+          git clone --depth 1 --branch <the-fix-branch> https://github.com/hardisgroupcom/sfdx-hardis.git /tmp/sfdx-hardis-e2e
+          cd /tmp/sfdx-hardis-e2e
+          yarn install --frozen-lockfile
+          npx tsc -b
+          sf plugins link . 2>/dev/null
+          sf plugins | grep hardis
+```
+
+How to get it onto every branch a job runs from, without touching the shared repository: commit it
+in the course clone on a **local** branch cut from the branch under test, never pushed to the
+course's origin, then reset the fork as usual and force-push that local branch to the fork's
+`main`, and rebuild the start branches from it (`node scripts/build/start-branches.mjs`, pushed to
+the fork only). Every major branch the learner's world derives then carries the step from the
+start, so no Pull Request has to smuggle it in later.
+
+What to expect and to record:
+
+- each overridden job pays the clone + `yarn install` + `tsc -b`, two to four minutes;
+- the run report must say the jobs ran an unreleased build, name the branch and the commit, and
+  keep the released image's failures on record (they are what a learner sees today);
+- the override is a fork artifact: it disappears with the next fork reset, and nothing of it may
+  land in a course Pull Request. `git log --oneline origin/feat-branch..local-branch` before
+  opening any training Pull Request is the check;
+- the monitoring repository of Lab 3.8 has its own workflows: override them only when the fix
+  under test touches monitoring.
+
 ## 9. What the lab driver still does not cover
 
 The lab driver (fidelity 1, section 2) closed the biggest hole: the real panel and the real command
