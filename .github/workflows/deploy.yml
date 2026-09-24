@@ -554,8 +554,9 @@ jobs:
       # one became visible. Wait until the exact version is served, and print the
       # registry's own answer on the last attempt so a failure says why.
       - name: Wait until the registry serves the published version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
           for i in $(seq 1 120); do
             SERVED=$(npm view "sfdx-hardis@$VERSION" version 2>/dev/null || true)
             if [ "$SERVED" = "$VERSION" ]; then
@@ -951,8 +952,9 @@ jobs:
       # and wait for the registry to serve it, so a `latest` image never carries
       # the previous release under the new tag.
       - name: Wait until the registry serves the published version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
           for i in $(seq 1 120); do
             SERVED=$(npm view "sfdx-hardis@$VERSION" version 2>/dev/null || true)
             if [ "$SERVED" = "$VERSION" ]; then
