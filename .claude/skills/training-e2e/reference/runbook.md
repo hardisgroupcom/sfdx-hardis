@@ -148,7 +148,8 @@ Two traps that cost the 2026-09-21 run time:
   and has to be cherry-picked onto it again, with the protection lifted; and a stale
   `training/start-level-*` on the shared repository reaches the learner whatever the fork holds.
   `node scripts/build/start-branches.mjs --check` on the course's `main` says whether they are
-  current, and it is only run monthly by CI.
+  current. Since training PR #36 the course's `start-branches.yml` publishes them on every push to
+  `main`; before it, only the monthly check looked, and a push by hand was the release step.
 - **Docker Desktop is usually not running on the workstation.** `docker run ... sf plugins` to read
   the version inside an image fails on the daemon socket. Read the version from the job instead,
   or from the registry timestamps.

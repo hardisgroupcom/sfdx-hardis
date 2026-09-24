@@ -484,8 +484,12 @@ applied on top of the one before.
 ```bash
 node scripts/build/start-branches.mjs --dry-run   # what each branch would carry
 node scripts/build/start-branches.mjs             # build them locally
-node scripts/build/start-branches.mjs --push      # publish, from main, after a merge
+node scripts/build/start-branches.mjs --push      # publish, from main: what CI does on every push to main
 ```
+
+Publishing is CI's job: `.github/workflows/start-branches.yml` runs `--push` on every push to
+`main` of the shared repository. Push by hand only when that run failed, and from `main`, after
+checking the run is not still going: two pushes of the same branches race on `--force-with-lease`.
 
 Two rules that are easy to get wrong:
 
