@@ -127,3 +127,50 @@ promotions, from the Level 2 content, not from the selective one.
 | sfdx-hardis          | #2236, now with N1 (`c64225d1d`) | CI restarted on the new commit |
 | vscode-sfdx-hardis   | #525                             | unchanged, green               |
 | sfdx-hardis-training | #26, now with N3 (`10106c4`)     | CI restarted on the new commit |
+
+## Part 2, same night: the full Level 3, green in CI on the unreleased build
+
+Asked for after part 1: prove the fixes of PR #2236 in the fork's own CI, then walk the whole of
+Level 3 the way a trainee meets it. The runbook gained a section for the mechanism (**Proving an
+unreleased sfdx-hardis in the fork's CI**, section 8): a step after the checkout of
+`check-deploy.yml` and `process-deploy.yml` that clones `fix/squash-merge-pr-number`, runs
+`yarn install --frozen-lockfile`, `npx tsc -b` and `sf plugins link`, committed on a local-only
+branch of the course clone and pushed to the fork alone, baked into `main` and the start branches
+before the walk. Each overridden job pays about 75 seconds; every job of the walk printed
+`sfdx-hardis 8.10.0 (link) /tmp/sfdx-hardis-e2e`.
+
+The environment was rebuilt from scratch a second time: fork reset, start branches from the
+override branch, `init` and `reset --level 3`, the External Client Apps deleted from the four orgs
+again, `Awaiting Parts` and `Warranty_Years__c` removed from the DE orgs again.
+
+**All eleven labs walked, all eleven `Check my work` rules green: `11 of 11 checks passed`.**
+
+| Lab  | Verdict | Evidence                                                                                                       |
+|------|---------|-----------------------------------------------------------------------------------------------------------------|
+| 3.1  | OK      | PR #11 merged on green checks running the linked build; `sf org login jwt` in the deploy log                    |
+| 3.2  | OK      | US-052 (#12): inline review on the removed `Total_Capacity_kW__c` line, fix commit, squash merge                |
+| 3.3  | OK      | US-056 (#13) failed exactly as staged (`no CustomField named ... Crew_Workload__c`), `.forceignore` review, fix |
+| 3.4  | OK      | US-020 (#14) sent back on `Illegal assignment from Datetime to Date`, both permission grants verified in org    |
+| 3.5  | OK      | Promotion #16; `Helios_Warehouse` kept its UAT test URL through the deploy; `# Promotion Notes - uat` generated |
+| 3.6  | OK      | Rehearsal #17, release #18, DORA report with its five metrics                                                   |
+| 3.7  | OK      | Hotfix #19/#20 live in production, retrofit branch by `work:new`, `origin/main` merged down, PR #21             |
+| 3.8  | OK      | Monitoring repo re-installed from empty; first run red on `ActiveScratchOrgs` exactly as the lab stages it      |
+| 3.9  | OK      | Documentation generated; the Installation paragraph written and `DO_NOT_OVERWRITE_DOC=TRUE`                     |
+| 3.10 | OK      | **Promotion PR #26 green in CI, merged with protection intact, preprod deployed by the CI job**: F1 and N1 both proven where a learner sees them |
+| 3.11 | OK      | The full week: US-055 in, US-058 catches up (#29), release #30; both stories verified in helios-prod            |
+
+Worth keeping from part 2:
+
+- The promotion Pull Request lifecycle needed **no protection lift anywhere**: the check job scoped
+  its conflict-marker scan to the carried files, and the deployment after the merge read the merge
+  commit. Both behaviors ship with PR #2236.
+- Lab 3.5's earlier "Release Notes" title was this harness reading a stale checkout: refetched, the
+  document opens `# Promotion Notes - uat`, exactly as the lab prints it.
+- `hardis:doc:release-notes` run headless without `-t` offers only `integration` as a target; the
+  panel button always passes `-t`, so no learner meets it. Recorded, not fixed.
+- Two background chains were stopped by the host for low system memory; both were resumed with
+  short foreground steps and nothing was lost. One of those resumes watched a stale run and briefly
+  reported the release deploy green before it was: the org check caught it, and the real run was
+  green twenty minutes later. `prflow.sh` remembers the run-before-merge precisely to avoid this.
+- Not covered in part 2: the badge claim (it writes into the shared repository, and the level is
+  unreleased), the webview DOM, and prose clarity, as ever.
