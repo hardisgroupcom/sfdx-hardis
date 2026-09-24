@@ -5,7 +5,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
-import '../../../src/common/gitProvider/index.js';
+import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { shouldAddVirtualPullRequest, type BackpromotePrGroup } from '../../../src/common/utils/backpromoteUtils.js';
 import {
   assertPromotionBranchIsNotDeployed,
@@ -22,6 +22,7 @@ import {
   filterOpenPromotionPullRequests,
   gitPathSpec,
   listFilesWithConflictMarkers,
+  isGitIgnored,
   listUnrequestedPullRequestNumbers,
   markAlreadyPromotedCandidates,
   oldestCandidateDate,
@@ -29,6 +30,7 @@ import {
   promotionCandidateRows,
   promotionChangedFiles,
   pullRequestKeys,
+  requireGitProviderForPromotion,
   selectCandidatesByPullRequestNumbers,
   toCandidate,
   toCandidateSummary,
@@ -888,5 +890,66 @@ describe('listFilesWithConflictMarkers() and promotionChangedFiles()', () => {
     const carried = await promotionChangedFiles(commandThis, 'preprod');
     expect(carried).to.deep.equal(['Status__c.field-meta.xml']);
     expect(await listFilesWithConflictMarkers(commandThis, carried)).to.deep.equal([]);
+  });
+});
+
+describe('requireGitProviderForPromotion()', () => {
+  // The gate exists so a promotion behaves the same on GitHub, GitLab, Bitbucket and Azure
+  // DevOps: without the provider, the candidates would depend on how each platform writes its
+  // merge commits. agentMode true: the prompt path is not what this test proves.
+  const commandThis = {} as any;
+  const providerVars = [
+    'SYSTEM_ACCESSTOKEN', 'CI_SFDX_HARDIS_AZURE_TOKEN', 'AZURE_DEVOPS_EXT_PAT',
+    'CI_JOB_TOKEN', 'CI_SFDX_HARDIS_GITLAB_TOKEN',
+    'GITHUB_TOKEN', 'CI_SFDX_HARDIS_GITHUB_TOKEN',
+    'BITBUCKET_WORKSPACE', 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',
+  ];
+  const saved: Record<string, string | undefined> = {};
+
+  before(() => {
+    for (const name of providerVars) {
+      saved[name] = process.env[name];
+      delete process.env[name];
+    }
+    GitProvider.resetInstance();
+  });
+
+  after(() => {
+    for (const name of providerVars) {
+      if (saved[name] !== undefined) {
+        process.env[name] = saved[name];
+      }
+    }
+    GitProvider.resetInstance();
+  });
+
+  it('refuses to run without a git provider connection', async () => {
+    let thrown: any = null;
+    try {
+      await requireGitProviderForPromotion(commandThis, true);
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown, 'requireGitProviderForPromotion should throw without a provider').to.not.equal(null);
+    expect(String(thrown.message)).to.include('git provider');
+  });
+
+  it('says whether git ignores the .env file that holds the token', () => {
+    // The Salesforce CLI loads .env itself; what the gate adds is the warning when that file is
+    // about to be committed. The answer comes from git check-ignore, proven here both ways.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'promo-dotenv-'));
+    const gitHere = (args: string[]) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
+    const previousCwd = process.cwd();
+    try {
+      gitHere(['init', '-b', 'main']);
+      fs.writeFileSync(path.join(dir, '.env'), 'GITHUB_TOKEN=not-a-real-one\n');
+      process.chdir(dir);
+      expect(isGitIgnored(path.join(dir, '.env'))).to.equal(false);
+      fs.writeFileSync(path.join(dir, '.gitignore'), '.env\n');
+      expect(isGitIgnored(path.join(dir, '.env'))).to.equal(true);
+    } finally {
+      process.chdir(previousCwd);
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

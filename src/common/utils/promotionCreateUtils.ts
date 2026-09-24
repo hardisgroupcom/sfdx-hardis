@@ -1,5 +1,6 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
+import { spawnSync } from 'child_process';
 import * as path from 'path';
 import fs from './fsUtils.js';
 import { createWorkBranchFromTarget, execCommand, git, gitFetch, uxLog } from './index.js';
@@ -223,6 +224,55 @@ export async function assertPromotionBranchesEnabled(commandThis: any): Promise<
   }
   uxLog('log', commandThis, c.grey(t('promotionCreateAllowedStepsInfo', { steps: formatPromotionSteps(promotionConfig.allowedSteps) })));
   return promotionConfig;
+}
+
+/**
+ * A promotion is assembled from the Pull Requests of the source branch, and only the git provider
+ * names them authoritatively: read from commit subjects alone, the candidates depend on how each
+ * platform writes its merge commits, so a tokenless run behaves differently on GitHub, GitLab,
+ * Bitbucket and Azure DevOps. Requiring the connection keeps the feature identical on the four
+ * platforms, and gives every carried Pull Request its real title and author. Locally the missing
+ * connection is prompted for first; in CI or agent mode the command stops with the variables to set.
+ */
+export async function requireGitProviderForPromotion(commandThis: any, agentMode: boolean): Promise<void> {
+  warnWhenDotEnvIsCommittable(commandThis);
+  const provider = await GitProvider.getInstance(!agentMode);
+  if (provider == null) {
+    throw new SfError(t('promotionCreateGitProviderRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/` }));
+  }
+  uxLog('log', commandThis, c.grey(t('promotionCreateGitProviderConnected', { provider: provider.getLabel() })));
+}
+
+/**
+ * The Salesforce CLI itself reads a `.env` file from the working directory into the environment,
+ * which is how a terminal or an agent provides the provider token without exporting it on every
+ * shell. The one thing it does not do is say when that file, which holds tokens, is about to be
+ * committed: say it here, on the command that told the user to write it.
+ */
+export function warnWhenDotEnvIsCommittable(commandThis: any): void {
+  const dotEnvPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(dotEnvPath)) {
+    return;
+  }
+  if (isGitIgnored(dotEnvPath) === false) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateDotEnvNotIgnored')));
+  }
+}
+
+/** True when git ignores the file, false when it does not, null when git could not answer. */
+export function isGitIgnored(file: string): boolean | null {
+  try {
+    const res = spawnSync('git', ['check-ignore', '-q', file], { encoding: 'utf8' });
+    if (res.status === 0) {
+      return true;
+    }
+    if (res.status === 1) {
+      return false;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 // ---- Branch resolution ----

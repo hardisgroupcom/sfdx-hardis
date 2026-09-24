@@ -10,6 +10,7 @@ import { PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionB
 import {
   abortPromotion,
   assertPromotionBranchesEnabled,
+  requireGitProviderForPromotion,
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   checkGitCleanForPromotion,
@@ -55,6 +56,7 @@ This is the only supported way to create a [promotion branch (Beta)](${CONSTANTS
 
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
 - checks that \`allowedPromotionSteps\` declares the steps promotions may run on (ex: \`- source: uat\` / \`target: preprod\`), and keeps to them: only those source and target branches are offered, and naming another one fails;
+- requires the [git provider connection](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/) (GitHub, GitLab, Bitbucket or Azure DevOps) and refuses to run without it: the carried Pull Requests are read from the provider, so the command behaves the same on every platform and every carried Pull Request gets its real title and author. From VS Code, the extension passes its own connection; from a terminal, an agent or CI, set the provider token as an environment variable or in a \`.env\` file at the repository root;
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`). A Pull Request another promotion branch already carries to the same target is left out, unless \`--include-already-promoted\` is passed;
 - creates the branch from the target branch, named \`promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>\` (UTC, ex: \`promotion/uat/preprod/2026-09-06-1430\`), with \`-2\`, \`-3\`... added only when that name is already taken;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with \`-x\` so each commit keeps a pointer to its origin;
@@ -72,7 +74,7 @@ On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API, whose connection this command requires).
 - A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - The branch is created with \`git checkout -b <name> origin/<target>\`, commits are applied with \`git cherry-pick -x\` (\`-m 1\` for merge commits).
 - The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the \`gh\` CLI on GitHub. The creation is retried a few times: the branch is pushed a fraction of a second before, and a provider that has not indexed the new ref yet answers that the source branch does not exist. Without either, the branch is pushed and the description is saved under \`hardis-report/\` to create the Pull Request by hand, and the message names the reason the provider gave.
@@ -93,6 +95,7 @@ In agent mode:
 - Every number of \`--pull-requests\` must match a Pull Request merged into the source branch and not yet promoted, otherwise the command fails before touching git.
 - A cherry-pick conflict undoes the whole promotion (branch deleted, nothing pushed) and fails the command naming the conflicting Pull Request, unless \`--on-conflict skip\` or \`--on-conflict commit-with-markers\` is passed.
 - To choose those numbers first, list what can be promoted with \`sf hardis:project:promotion:list-candidates --agent --source-branch uat --json\`: same candidates, nothing created.
+- The git provider token must be available (ex: \`GITHUB_TOKEN\`), from the environment or from a \`.env\` file at the repository root: agent mode never prompts for the connection, it stops without it.
 `;
 
   public static examples = [
@@ -156,6 +159,11 @@ In agent mode:
     // The feature switch and the steps a promotion may run on: a promotion branch is meaningless
     // for a project that did not opt in and did not say what may be promoted
     const promotionConfig = await assertPromotionBranchesEnabled(this);
+
+    // The git provider is required, not optional: the carried Pull Requests are read from it, so
+    // the command behaves the same on GitHub, GitLab, Bitbucket and Azure DevOps instead of
+    // depending on how each platform writes its merge commits.
+    await requireGitProviderForPromotion(this, agentMode);
 
     // Not checkGitClean: the reports sfdx-hardis writes inside the repository are not changes the
     // user has to commit, and this command writes one of them itself before the cherry-picks.
