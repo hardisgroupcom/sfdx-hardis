@@ -141,6 +141,17 @@ Two traps that cost the 2026-09-21 run time:
   after the fork itself has already been reset. The lab driver opens the clone, so this happens
   whenever a driver run was not closed. The script now says what to do; the way out is
   `RUN=/c/git/training-run2 bash reset-fork.sh`.
+- **`Reset this level` reads the shared repository, not the fork.** `reset --level N` resets
+  `integration` to `upstream/training/start-level-N`, and after `init` the `upstream` remote is
+  `hardisgroupcom/...`. Two consequences (2026-09-24): a fork-only override (an unreleased build,
+  the `beta` image tag) pushed onto the fork's start branches is lost on `integration` by the reset
+  and has to be cherry-picked onto it again, with the protection lifted; and a stale
+  `training/start-level-*` on the shared repository reaches the learner whatever the fork holds.
+  `node scripts/build/start-branches.mjs --check` on the course's `main` says whether they are
+  current, and it is only run monthly by CI.
+- **Docker Desktop is usually not running on the workstation.** `docker run ... sf plugins` to read
+  the version inside an image fails on the daemon socket. Read the version from the job instead,
+  or from the registry timestamps.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
@@ -328,12 +339,19 @@ in the course), never yet against real orgs in this shape. What a walk has to re
 - **The promotion carries rows 1, 3 and 4** (US-061, US-059, US-057). `promotion:create`
   cherry-picks oldest first: US-057 clean, **US-059 conflicts** on exactly
   `force-app/main/default/layouts/Panel_Batch__c-Panel Batch Layout.layout-meta.xml` and
-  `force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml` (the
-  `<<<<<<< HEAD` side empty, the incoming side holding the Warranty Years entry then the Supplier
-  one), then US-061 clean. Headless, answer the conflict prompt with `commit-with-markers-all`
-  (`panel.mjs` rule `{"q":"What do you want to do with","choice":"Recommended"}` or the
-  `--on-conflict commit-with-markers` flag). Expect the check job of the promotion Pull Request red
-  with the marker comment naming the two files.
+  `force-app/main/default/permissionsets/Helios_Delivery_Manager.permissionset-meta.xml`, then
+  US-061 clean. The `<<<<<<< HEAD` side is empty in both. In the layout, git cuts the block
+  mid-element: `<layoutItems>` and `<behavior>Edit</behavior>` sit above the markers, the incoming
+  side runs from `<field>Warranty_Years__c</field>` through the whole Supplier row to the
+  `<layoutItems><behavior>Edit</behavior>` of the External Id row. In the permission set the
+  incoming side is the Supplier grant **then** the Warranty Years grant (alphabetical). Proven
+  against real orgs on 2026-09-24; the mock fixture of the editor screenshot was aligned on it.
+  Headless, answer the conflict prompt with `commit-with-markers-all` (`panel.mjs` rule
+  `{"q":"What do you want to do with","choice":"Recommended"}` or the `--on-conflict
+  commit-with-markers` flag), and confirm the pre-ticked selection with
+  `{"q":"Select the Pull Requests to carry","value":"__INITIAL__"}` when the button's
+  `--pull-requests` flag is passed. Expect the check job of the promotion Pull Request red with the
+  marker comment naming the two files.
 - **Two resolution routes, and the walk should do the by-hand one** unless a coding agent is part
   of the run: on the promotion branch, in each file, keep the Supplier entry and drop the Warranty
   Years block (the expected results are printed in the lab, step 6). Push, check green, the
@@ -350,12 +368,23 @@ in the course), never yet against real orgs in this shape. What a walk has to re
   `git merge-tree integration preprod` is clean.
 - `check --level 3 --lab 10` must pass right after step 9 and again after Lab 3.11's Thursday.
   Lab 3.11 now also asserts US-058 and US-060 reached `main`.
-- **Known on the released CLI**: until sfdx-hardis ships `promotionConflictMarkersIgnoredFiles`
-  (PR #2236), the check job of a promotion Pull Request also names the two Lab 2.7 files; the lab's
-  "If it goes wrong" says so. Use the unreleased-build override of section 8 to prove the lab green.
-- Not yet captured: the GitHub screens of this lab (the Pull Request description with the folded
-  prompt, the red check with the marker comment) are described in the text, with no `web/` image.
-  Capture them during the walk with `capture-web.mjs` once a real promotion Pull Request exists.
+- **Known on the released CLI**: until a release ships `promotionConflictMarkersIgnoredFiles`
+  (PR #2236, in `sfdx-hardis@beta` since 8.10.1-beta202609241317.0), the check job of a promotion
+  Pull Request also names the two Lab 2.7 files; the lab's "If it goes wrong" says so. To prove the
+  lab green in CI, point the fork's two deployment workflows at `sfdx-hardis-ubuntu:beta` (or use
+  the unreleased-build override of section 8). **Check what the `beta` image really holds**: on
+  2026-09-24 it was built two minutes before the registry served the beta it was meant to install,
+  and ran the previous one; the symptom was the four-file marker comment on a job that said `beta`.
+  Compare the image push time (Docker Hub tags API, `tag_last_pushed`) with `npm view sfdx-hardis
+  time` for the beta version, and re-run the image job of `deploy.yml` if the image is older.
+- The GitHub screens of this lab are captured by `capture-web.mjs` as
+  `github-pr-promotion-description` and `github-pr-promotion-markers` (`web-captures.json`), from a
+  real promotion Pull Request of the fork: the description with the folded prompt, and the red check
+  comment naming the two files. Re-capture them when the Pull Request body or the comment changes.
+- The deployment comment of the release into `main` lists US-057, US-059 and US-061 **twice** in
+  its "Commits summary": once from the squash commits that arrive with the catch-up promotion, once
+  from their cherry-picked copies on the promotion branch. The Tickets section lists each story
+  once. Recorded in the 2026-09-24 report; not a lab failure.
 
 ### The badge claim
 

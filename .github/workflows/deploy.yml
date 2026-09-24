@@ -543,6 +543,25 @@ jobs:
       - run: yarn config set version-git-tag false && tsc -b
       - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
       - run: yarn config set network-timeout 300000 && npm publish --tag beta
+      # The image jobs below install sfdx-hardis@beta from the registry, and the
+      # registry can take several minutes to serve a version npm publish has
+      # already acknowledged: on 2026-09-24 the beta images were built with the
+      # previous beta, two minutes before the new one became visible. Wait until
+      # the beta tag really points at what was just published.
+      - name: Wait until the registry serves the published beta
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          for i in $(seq 1 60); do
+            SERVED=$(npm view sfdx-hardis@beta version 2>/dev/null || true)
+            if [ "$SERVED" = "$VERSION" ]; then
+              echo "sfdx-hardis@beta is $SERVED"
+              exit 0
+            fi
+            echo "beta tag still serves ${SERVED:-nothing}, waiting for $VERSION ($i/60)"
+            sleep 10
+          done
+          echo "The registry never served $VERSION as sfdx-hardis@beta"
+          exit 1
 
   push_beta_to_registry:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
