@@ -25,6 +25,7 @@ The headline is **Deployment Actions leaving beta**. But there is a lot more:
 | [**Sandbox refresh covered end to end**](#sandbox-refresh-covered-end-to-end)                 | Connected Apps, Scheduled Apex and restores that survive a failure                                               |
 | [**Flow deletion in destructive changes**](#deleting-a-flow-is-now-part-of-the-deployment)    | Deleting a Flow no longer means a manual step in every org                                                       |
 | [**Pipelines run in the Docker image**](#pipelines-run-in-the-sfdx-hardis-docker-image)       | Faster jobs that a bad dependency release can no longer break                                                    |
+| [**Free training with badges**](#learn-it-hands-on-free-training-with-badges)                 | A free course builds a complete pipeline on free orgs, click by click, and awards a badge per level              |
 | [**Professional support by Cloudity**](#free-and-supported-if-you-want-it)                    | Still free and open-source, with setup, support subscriptions and Release Manager as a Service if you need them  |
 
 ---
@@ -374,6 +375,19 @@ The default **GitHub Actions**, **Azure Pipelines** and **Bitbucket Pipelines** 
 - **Existing pipelines keep working**: the templates apply when you initialize a new project or monitoring repository.
 
 Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-devops-setup-checklist.md) and [how to publish job artifacts](salesforce-devops-setup-publish-artifacts.md) on any platform.
+
+---
+
+## Learn it hands-on: free training with badges
+
+[Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) is a free course that builds a complete CI/CD pipeline on free orgs, one click at a time in VS Code, with screenshots of the real panels.
+
+- **Three levels**: Contributor basics, Contributor advanced and Release Manager, from your first User Story to owning the pipeline.
+- **A badge per level**, on a page you can share on LinkedIn. To award it, a job re-runs every check of the level against your public repository.
+- **Nothing to pay**: a free GitHub account and free Developer Edition orgs are all it takes.
+- Available in **English and French**.
+
+[![Salesforce DevOps with sfdx-hardis, the free course](https://hardisgroupcom.github.io/sfdx-hardis-training/_assets/social/course.png)](salesforce-devops-training.md)
 
 ---
 

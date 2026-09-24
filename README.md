@@ -17,7 +17,7 @@
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce).
+Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce), with a [**free hands-on training and shareable badges**](https://sfdx-hardis.cloudity.com/salesforce-devops-training/).
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
