@@ -76,7 +76,16 @@ export async function buildMonitoringAgentsMdBlock(config: any): Promise<string>
 export function buildDeploymentRepositoryStatus(config: any): string {
   const deploymentRepository = typeof config?.deploymentRepository === 'string' ? config.deploymentRepository.trim() : '';
   if (deploymentRepository === '') {
-    return 'No deployment repository is configured on this branch. When a question needs one, answer with this repository alone, and tell the user that setting `deploymentRepository` in `.sfdx-hardis.yml` (by hand, from the Org Monitoring panel of VS Code, or by running `sf hardis:org:configure:monitoring` again) lets you also search the CI/CD project and its pipelines.';
+    return [
+      '**No deployment repository is configured on this branch.** The first time a question would need the CI/CD project or its pipelines, ask the user whether they want to set one:',
+      '',
+      '1. Ask for the address of the sfdx-hardis CI/CD repository that deploys to this org (for example `https://github.com/my-company/my-project`). It is optional: if the user declines, answer with this repository alone and do not ask again in this conversation.',
+      '2. If the user gives one, write it as `deploymentRepository: <address>` in `.sfdx-hardis.yml` at the root of this branch. Change only that line, and keep the rest of the file and its comments as they are.',
+      '3. Ask whether the other monitoring branches of this repository (`git branch -a`) are deployed by the same repository. It is usually the case: each branch has its own `.sfdx-hardis.yml`, and the user has to update them one by one.',
+      '4. Tell the user to commit and push the change (do not do it unless they ask), and that the next backup rewrites this file with it. Then use it right away, as explained below.',
+      '',
+      'The user can also set it from the Org Monitoring panel of VS Code, or by running `sf hardis:org:configure:monitoring` again.',
+    ].join('\n');
   }
   const gitServer = detectGitServer(deploymentRepository);
   const lines = [`The deployment repository of this org is \`${deploymentRepository}\`${gitServer ? ` (${gitServer})` : ''}, from \`deploymentRepository\` in \`.sfdx-hardis.yml\`.`];

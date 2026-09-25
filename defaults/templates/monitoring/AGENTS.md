@@ -123,18 +123,48 @@ This repository shows what the org looks like every night. The deployment reposi
 - Otherwise, list the branch configuration files of the deployment repository, on its default branch (`git -C ../<name> remote show origin` names it): `git -C ../<name> ls-tree --name-only origin/<default branch> config/branches/`. The file whose `instanceUrl` is the `instanceUrl` of `.sfdx-hardis.yml` here (compare them without the trailing `/`, ignoring case) is `config/branches/.sfdx-hardis.<branch>.yml`, and `<branch>` is the branch that deploys to this org.
 - If no file matches, say so and ask the user which branch it is. Do not pick one from its name. Suggest setting `deploymentBranch` in `.sfdx-hardis.yml` so the next agent does not have to ask.
 
-### What the deployment repository holds
+### How the CI/CD pipeline works
 
-| Path | Content |
-| ---- | ------- |
-| `sfdx-project.json` | The package directories: the sources are there, not always in `force-app/`. |
-| `config/.sfdx-hardis.yml` | Project configuration: project name, deployment settings, deployment actions. |
-| `config/branches/.sfdx-hardis.<branch>.yml` | The org of each major branch (`instanceUrl`, `targetUsername`) and its own settings. |
-| `manifest/package-no-overwrite.xml`, `manifest/packageDeployOnChange.xml` | Items never deployed once they exist in the org, or only when they change. A difference between the two repositories on these items is expected. |
-| `manifest/destructiveChanges.xml` | Items deleted from the orgs by the deployments. |
-| History of a major branch | Each merge into it is a Pull Request, deployed to the org of that branch by the pipeline. |
+Read the configuration from the deployment branch itself (`git -C ../<name> show origin/<branch>:<path>`): settings can differ from one branch to another. The [sfdx-hardis documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-home/) explains each of them.
 
-The Pull Request number is in the merge commit message: `Merge pull request #12` or `(#12)` on GitHub, `See merge request group/project!12` on GitLab, `Merged PR 12` on Azure DevOps, `(pull request #12)` on Bitbucket.
+#### Branches and orgs
+
+- Each **major branch** (for example `integration`, `uat`, `preprod`, `main`) is linked to one org by `config/branches/.sfdx-hardis.<branch>.yml` (`instanceUrl`, `targetUsername`).
+- The `mergeTargets` of each branch file names the branches it is merged into. Follow them from branch to branch to rebuild the pipeline, for example `integration -> uat -> preprod -> main`.
+- Developers create **feature branches** (User Stories) from `developmentBranch` or one of `availableTargetBranches` in `config/.sfdx-hardis.yml`, then open a Pull Request to that branch.
+- With `enablePromotionBranches: true` (Beta), a `promotion/<source>/<target>/<date>` branch carries a subset of approved User Stories from one major branch to the next. Its Pull Request lists the carried Pull Requests in its description (`promotionPullRequests: [...]`).
+
+#### What a Pull Request triggers
+
+- While it is open, the pipeline runs `sf hardis:project:deploy:smart --check`: a validation (check-only deployment with the Apex tests) against the org of the target branch. On GitHub it is the `check-deploy.yml` workflow, on GitLab the check job of `.gitlab-ci.yml`, on Azure DevOps `azure-pipelines-checks.yml`.
+- Once merged, the pipeline runs `sf hardis:project:deploy:smart` on the target branch and deploys to its org (`process-deploy.yml` on GitHub, `azure-pipelines-deployment.yml` on Azure DevOps). It uses a Quick Deploy of the validation when it can.
+- sfdx-hardis comments the Pull Request with the result of the check, the deployment errors and their fix tips, the Flow visual differences and the deployment actions. Read those comments first: they explain a failure better than the raw logs.
+
+#### What gets deployed
+
+- By default, the whole content of the package directories of `sfdx-project.json` (not always `force-app/`).
+- `useDeltaDeployment: true`: from a feature branch to a major branch, only the metadata changed by the Pull Request, plus their dependencies with `useDeltaDeploymentWithDependencies: true`. Between two major branches the deployment stays full, unless `enableDeltaDeploymentBetweenMajorBranches: true`.
+- `useSmartDeploymentTests: true`: Apex tests are skipped when a delta deployment only holds metadata that cannot break them (layouts, labels, reports...), never in production.
+- `manifest/package-no-overwrite.xml` (or the file named by `packageNoOverwritePath` on a branch): items deployed only if they do not exist in the org yet. `manifest/packageDeployOnChange.xml`: items deployed only when they differ from the org. A difference between the two repositories on these items is expected.
+- `manifest/destructiveChanges.xml`: items deleted from the org by the deployment.
+- `installedPackages` in `config/.sfdx-hardis.yml`: the packages installed by the deployments.
+- `testLevel`, `runtests`, `skipCodeCoverage`, `apexTestsMinCoverageOrgWide`: test settings, often per branch.
+
+#### Deployment actions
+
+Steps run before (`commandsPreDeploy`) or after (`commandsPostDeploy`) a deployment, unless `disableDeploymentActions: true`:
+
+- For every deployment to a branch: in `config/.sfdx-hardis.yml` or `config/branches/.sfdx-hardis.<branch>.yml`.
+- For one Pull Request: in `scripts/actions/.sfdx-hardis.<Pull Request number>.yml` (`scripts/actions/.sfdx-hardis.draft.yml` before the Pull Request exists). They run when that Pull Request is deployed, and again at each later step of the pipeline.
+- Types: `command`, `apex` (anonymous Apex script), `data` (SFDMU import), `publish-community`, `schedule-batch`, `remove-packagexml-items`, and `manual` (a step a person performs, ticked off in the Pull Request comment when `manualActionsMode: sfdxHardis`; otherwise manual steps are in the file of `manualActionsFileUrl`).
+- `context` says whether it runs during the check, the deployment or both; `runOnlyOnceByOrg` skips it in an org where it already ran.
+
+So "why is this record, schedule or setting like this in the org?" can have its answer in an action, not in the metadata.
+
+#### History
+
+- Each merge into a major branch is a Pull Request, deployed to the org of that branch. The Pull Request number is in the merge commit message: `Merge pull request #12` or `(#12)` on GitHub, `See merge request group/project!12` on GitLab, `Merged PR 12` on Azure DevOps, `(pull request #12)` on Bitbucket.
+- The ticket of a User Story (Jira, Azure Boards...) is usually in the branch name, the Pull Request title or its description.
 
 ### Recipes
 

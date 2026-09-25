@@ -24,12 +24,13 @@ Only the block between the `sfdx-hardis-monitoring-agents-start` and `sfdx-hardi
 
 #### Search the deployment repository and the pipelines too
 
-Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to the address of the sfdx-hardis CI/CD repository that deploys to the org. [Configure Org Monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) asks for it, and suggests the value already set on another monitoring branch. It is the mirror of `monitoringRepository` in the CI/CD repository.
+Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to the address of the sfdx-hardis CI/CD repository that deploys to the org. [Configure Org Monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) asks for it, and suggests the value already set on another monitoring branch. It is the mirror of `monitoringRepository` in the CI/CD repository. When it is missing, the coding agent offers to set it the first time a question needs it.
 
 `AGENTS.md` then tells the agent to:
 
 - clone the deployment repository next to the monitoring one (or use the clone already there), read-only
 - find the branch that deploys to the org, from the `instanceUrl` of its `config/branches/.sfdx-hardis.<branch>.yml`, or from the optional `deploymentBranch` property
+- understand how the pipeline is built and what it deploys: `mergeTargets`, delta deployments, overwrite management, deployment actions of the branches and of each Pull Request
 - read the pipeline logs and the Pull Requests of both repositories with `gh`, `glab`, `az` or the Bitbucket API
 
 It can then answer questions like "Was this change deployed by the pipeline, or made directly in production?" or "Why did last night's backup fail?".

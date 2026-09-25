@@ -70,6 +70,7 @@ describe('monitoringAgentsMd', () => {
 
     it('tells the agent to ask for the setting when there is none', () => {
       expect(buildDeploymentRepositoryStatus({})).to.include('No deployment repository is configured');
+      expect(buildDeploymentRepositoryStatus({})).to.include('`deploymentRepository: <address>` in `.sfdx-hardis.yml`');
       expect(buildDeploymentRepositoryStatus({ deploymentRepository: '  ' })).to.include('No deployment repository is configured');
     });
 
