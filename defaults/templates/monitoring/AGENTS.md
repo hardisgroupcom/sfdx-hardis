@@ -33,25 +33,41 @@ A commit shows the state of the org at the time of the backup, not who made the 
 
 When the user asks what changed in the org between two dates and does not ask for another format, write the answer in a markdown file with the format below, then give its path and a two or three line summary in the chat.
 
+### Where each kind of change comes from
+
+The backup retrieves the org into `force-app/` but **never deletes a file**: a component deleted in the org stays in `force-app/`. So:
+
+- **Added** and **Removed** come only from `manifest/package-all-org-items.xml`, the list of every item that exists in the org at each backup.
+- **Updated** comes from the files modified under `force-app/`.
+- Never report a component as Removed because of `force-app/`, and never infer that a component exists in the org because its file is in `force-app/`.
+
 ### Collect the changes
 
 1. Take both dates as whole days, in UTC, both included. When only one date is given, the second one is today.
 2. List the backup commits of the current branch in that range, newest first:
 
    ```sh
-   git log --since="2026-01-01 00:00:00 +0000" --until="2026-01-31 23:59:59 +0000" --name-status -M --format="COMMIT %H %s" -- force-app installedPackages
+   git log --since="2026-01-01 00:00:00 +0000" --until="2026-01-31 23:59:59 +0000" --format="%H %s" -- manifest/package-all-org-items.xml force-app installedPackages
    ```
 
 3. For each commit, take the date and time from its message (`org state on YYYY-MM-DD HH:MM`). If the message has none, use the commit date in UTC (`git show -s --date=format-local:"%Y-%m-%d %H:%M" --format=%cd <sha>` with `TZ=UTC`).
-4. Skip commits that change no file under `force-app/` or `installedPackages/`.
+4. **Added and Removed**: read the manifest before and after the commit, and compare the two sets of `type:member` pairs. Do not read the line diff of the XML: a `<members>` line does not show its type, which is in the `<name>` line of its `<types>` block.
+
+   ```sh
+   git show <sha>~1:manifest/package-all-org-items.xml > before.xml
+   git show <sha>:manifest/package-all-org-items.xml > after.xml
+   ```
+
+   A pair only in `after.xml` is Added, a pair only in `before.xml` is Removed. If the commit has no parent, or the manifest does not exist in the parent, it is the first backup: write `Initial backup of the org.` in its section instead of listing everything.
+5. **Updated**: list the files the commit modified under `force-app/` (`git show --name-status --format= <sha> -- force-app`), turn them into components (see below), and drop the ones already reported as Added in the same commit. Ignore the `D` status there.
+6. **Installed packages**: the manifest also lists the items of managed and unlocked packages. Do not list members whose namespace prefix (`xyz__`) belongs to an installed package: report the package itself as **InstalledPackage** instead. A new file in `installedPackages/` is an Added package, a version change in a file is an Updated package, written with its old and new version numbers: `My Package (1.2 -> 1.3)`. A package is Removed when all the members of its namespace disappear from the manifest (its file in `installedPackages/` is not deleted either).
+7. Skip commits with nothing Added, Removed or Updated.
 
 ### Turn files into components
 
 - Report **components**, not files. A component made of several files counts once: an Apex class and its `-meta.xml`, all the files of an LWC or Aura bundle, a static resource and its content.
-- Use the Metadata API type names, as in `manifest/package-all-org-items.xml`: `ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`, `LightningComponentBundle`, `AuraDefinitionBundle`, `Flow`, `CustomObject`, `CustomField`, `ValidationRule`, `RecordType`, `ListView`, `CompactLayout`, `WebLink`, `Layout`, `FlexiPage`, `PermissionSet`, `PermissionSetGroup`, `Profile`, `CustomLabels`, `CustomMetadata`, `StaticResource`, `EmailTemplate`, `Report`, `Dashboard`... When unsure of a type or a member name, look it up in that manifest.
-- Name members the way the manifest does. Object sub-components carry the object name: `objects/Account/fields/VAT__c.field-meta.xml` is **CustomField** `Account.VAT__c`, `objects/Account/validationRules/Check_VAT.validationRule-meta.xml` is **ValidationRule** `Account.Check_VAT`.
-- A change in `installedPackages/<Package>.json` is type **InstalledPackage**, named after the package. For an update, add the old and new version numbers: `My Package (1.2 -> 1.3)`.
-- Git status `A` is Added, `D` is Removed, `M` is Updated. A rename (`R`) is the old name Removed and the new name Added. A component with added and updated files in the same commit is Added. A component with only some files deleted is Updated.
+- Use the Metadata API type names and member names exactly as `manifest/package-all-org-items.xml` writes them: `ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`, `LightningComponentBundle`, `AuraDefinitionBundle`, `Flow`, `CustomObject`, `CustomField`, `ValidationRule`, `RecordType`, `ListView`, `CompactLayout`, `WebLink`, `Layout`, `FlexiPage`, `PermissionSet`, `PermissionSetGroup`, `Profile`, `CustomLabels`, `CustomMetadata`, `StaticResource`, `EmailTemplate`, `Report`, `Dashboard`... When unsure how a file maps to a type or a member, look the name up in that manifest.
+- Object sub-components carry the object name: `objects/Account/fields/VAT__c.field-meta.xml` is **CustomField** `Account.VAT__c`, `objects/Account/validationRules/Check_VAT.validationRule-meta.xml` is **ValidationRule** `Account.Check_VAT`.
 
 ### Output format
 
@@ -86,7 +102,7 @@ Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
 
 | Path | Content |
 | ---- | ------- |
-| `force-app/main/default/` | The metadata of the org, in Salesforce DX source format: one folder per metadata type (`objects/`, `classes/`, `triggers/`, `flows/`, `lwc/`, `aura/`, `permissionsets/`, `profiles/`, `layouts/`...). This is the backup. |
+| `force-app/main/default/` | The metadata of the org, in Salesforce DX source format: one folder per metadata type (`objects/`, `classes/`, `triggers/`, `flows/`, `lwc/`, `aura/`, `permissionsets/`, `profiles/`, `layouts/`...). This is the backup. Files are added and updated, never deleted: a component deleted in the org stays here. |
 | `installedPackages/` | One JSON file per package installed in the org: name, namespace, version name and number. |
 | `manifest/package-all-org-items.xml` | Every metadata item that exists in the org, including the ones that are not backed up. Use it to check if a component exists in the org. |
 | `manifest/package-backup-items.xml` | The items actually retrieved: the full list, minus the filters below. |
@@ -112,6 +128,8 @@ Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
 
 If a component is in `manifest/package-all-org-items.xml` but not in `force-app/`, one of these filters skipped it.
 
+The other way around, a component in `force-app/` but not in `manifest/package-all-org-items.xml` was deleted from the org: the backup never deletes files. To know whether a component exists in the org today, always check the manifest.
+
 ## Monitoring checks configured on this branch
 
 `sf hardis:org:monitor:all` runs these checks, each at its own frequency. This list merges the defaults of sfdx-hardis with the `monitoringCommands` and `monitoringDisable` settings of `.sfdx-hardis.yml`.
@@ -123,7 +141,7 @@ If a component is in `manifest/package-all-org-items.xml` but not in `force-app/
 - Never deploy anything from this repository to an org.
 - Do not edit the files under `force-app/`, `manifest/package-all-org-items.xml`, `manifest/package-backup-items.xml`, `installedPackages/` or `docs/`: the next backup overwrites them.
 - Changes worth making here are configuration: `manifest/package-skip-items.xml`, `.sfdx-hardis.yml`, the pipeline file. They apply to the branch they are committed on, so to one org.
-- To answer "what does this org do", read the sources in `force-app/main/default/` first, then the generated `docs/` when present.
+- To answer "what does this org do", read the sources in `force-app/main/default/` first, then the generated `docs/` when present. Before describing a component, check that it is still in `manifest/package-all-org-items.xml`.
 
 ## Documentation
 
