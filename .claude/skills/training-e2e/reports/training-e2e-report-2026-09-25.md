@@ -179,6 +179,31 @@ Full notes in the run's findings file. Fixed means fixed in this run, and the st
   and images. It only warns, so no Pull Request is blocked, but the learner sees a ⚠️ on their first
   MegaLinter comment. Lab 1.6 now says why. Pinning them is a template decision, left open.
 
+## Code review of the three Pull Requests
+
+`code-review` at `high` ran on each Pull Request. Fixed in the same Pull Requests:
+
+- **CLI**: a failed or empty listing of merged Pull Requests no longer drops every number read in
+  a message; numbers a truncated listing misses are asked for one by one; a fork Pull Request
+  merged outside the window needs its title in the message; the vehicle merge detection uses the
+  same filter; an action with no entry in the notes' org reads as pending, and one only skipped
+  there is left out; the first release tag gets a range. Also, the CLI writes deployment actions and
+  custom functions with the same Prettier-compatible YAML as the extension.
+- **Extension**: strings with double quotes and multi-line strings with trailing spaces now match
+  Prettier, the presets block uses the helper, and 7 tests cover the cases.
+- **Course**: a failed read no longer ends the Actions wait as a success; the wait is for the
+  banner only, with `--no-actions-wait`; rule 1.2 checks the live Actions state in Check my work
+  only, not in the badge audit; `sync-check.yml` no longer runs monthly on forks; Lab 1.6's remedy
+  for the robot commit is Pull then **Trigger my workflows**, because **Re-run all jobs** replays
+  the old commit when GitHub never started a run on the robot's one.
+
+Not changed, with the reason:
+
+- The two fallbacks of the release notes that return an empty range (no source branch, delta
+  failure) stay empty: no range can be computed there, and pretending one would be worse.
+- The helper assumes Prettier's default quotes: neither the project template nor the course ships
+  a `.prettierrc` with `singleQuote`.
+
 ## Deviations from what a learner does
 
 - **Lab 3.10 ran on `sfdx-hardis-ubuntu:beta`**, through a fork-only commit (`E2E ONLY`) on the
