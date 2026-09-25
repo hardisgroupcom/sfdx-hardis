@@ -1,5 +1,6 @@
 <!-- sfdx-hardis-monitoring-agents-start -->
-<!-- This block is rewritten by sfdx-hardis at each monitoring backup. Write your own notes after the end marker, they are kept. -->
+<!-- markdownlint-disable MD013 -->
+<!-- This block is rewritten by sfdx-hardis at each monitoring backup. Write your own notes after the end marker, they are kept. Keep both markers: without them, the backup stops updating this file. -->
 
 # Salesforce org monitoring repository (sfdx-hardis)
 
@@ -44,10 +45,14 @@ The backup retrieves the org into `force-app/` but **never deletes a file**: a c
 ### Collect the changes
 
 1. Take both dates as whole days, in UTC, both included. When only one date is given, the second one is today.
-2. List the backup commits of the current branch in that range, newest first:
+2. **A backup commit holds the changes made since the previous backup run, not the changes of its own day.** Backups run once a day, so look at the time of the recent backup commits:
+   - Made before noon UTC (the default schedule runs just after midnight): each commit holds the changes of the day before it. Read the commits made from the day after `<from>` to the day after `<to>`: for January, from `2026-01-02 00:00:00` to `2026-02-01 23:59:59`.
+   - Made after noon UTC: each commit holds mostly the changes of its own day. Read the commits made from `<from> 00:00:00` to `<to> 23:59:59`.
+
+   Say which of the two you applied in the report. List those commits of the current branch, newest first:
 
    ```sh
-   git log --since="2026-01-01 00:00:00 +0000" --until="2026-01-31 23:59:59 +0000" --format="%H %s" -- manifest/package-all-org-items.xml force-app installedPackages
+   git log --since="2026-01-02 00:00:00 +0000" --until="2026-02-01 23:59:59 +0000" --format="%H %cI %s" -- manifest/package-all-org-items.xml force-app installedPackages
    ```
 
 3. For each commit, take the date and time from its message (`org state on YYYY-MM-DD HH:MM`). If the message has none, use the commit date in UTC (`git show -s --date=format-local:"%Y-%m-%d %H:%M" --format=%cd <sha>` with `TZ=UTC`).
@@ -76,6 +81,8 @@ The backup retrieves the org into `force-app/` but **never deletes a file**: a c
 
 Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
 
+Backups read: 2026-01-02 00:10 to 2026-02-01 00:12 UTC. Each one holds the changes made since the previous nightly backup.
+
 ## 2026-01-28 00:12
 
 - Added
@@ -91,7 +98,7 @@ Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
   - **Layout**: Account-Old Account Layout
 ```
 
-- One `##` section per backup commit, newest first, titled with its date and time in UTC.
+- One `##` section per backup commit, newest first, titled with its date and time in UTC. Under the org line, say which backups were read and that each holds the changes made since the previous one.
 - Inside each section, the groups `Added`, `Removed` and `Updated`, in that order, separated by a blank line. Leave out a group with no component.
 - One line per metadata type: the type in bold, then its members separated by a comma and a space. Sort types and members alphabetically.
 - The org URL comes from `instanceUrl` in `.sfdx-hardis.yml`.
@@ -260,4 +267,5 @@ The other way around, a component in `force-app/` but not in `manifest/package-a
 - [Monitoring configuration](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/)
 - [Grafana dashboards](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/)
 
+<!-- markdownlint-enable MD013 -->
 <!-- sfdx-hardis-monitoring-agents-end -->

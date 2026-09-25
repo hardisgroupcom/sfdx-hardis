@@ -19,10 +19,13 @@ import {
   isCI,
   uxLog,
 } from '../../../../common/utils/index.js';
-import * as yaml from 'js-yaml';
-import { findDeploymentRepositoryInMonitoringBranches } from '../../../../common/monitoring/monitoringDeploymentRepository.js';
+import {
+  logDeploymentRepositoryChange,
+  MONITORING_CONFIG_FILE,
+  resolveDeploymentRepositoryChange,
+} from '../../../../common/monitoring/monitoringDeploymentRepository.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { CONSTANTS, setInConfigFile } from '../../../../config/index.js';
+import { CONSTANTS, removeFromConfigFile, setInConfigFile } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -53,7 +56,7 @@ Key functionalities include:
 - **Monitoring Branch Creation:** Creates or checks out a dedicated Git branch (e.g., \`monitoring_yourinstanceurl\`) for the monitoring configuration.
 - **SFDX Project Setup:** Initializes an SFDX project structure within the repository if it doesn't already exist, and copies default monitoring files.
 - **Configuration File Update:** Updates the local \`.sfdx-hardis.yml\` file with the target org's username and instance URL.
-- **Deployment Repository:** Asks for the address of the sfdx-hardis CI/CD repository that deploys to the org (optional, pass \`--deployment-repository\` to skip the question). It is stored as \`deploymentRepository\`, and suggested from the other monitoring branches of the repository. The \`AGENTS.md\` file written at each backup then tells coding agents to search that repository and the pipelines of both repositories.
+- **Deployment Repository:** Asks for the address of the sfdx-hardis CI/CD repository that deploys to the org (optional, pass \`--deployment-repository\` to skip the question). It is stored as \`deploymentRepository\`, and suggested from the other monitoring branches of the repository. Emptying the answer, or passing an empty \`--deployment-repository\`, removes a value set before. [hardis:org:configure:monitoring-deployment-repository](${CONSTANTS.DOC_URL_ROOT}/hardis/org/configure/monitoring-deployment-repository/) changes it alone, without the rest of the configuration. The \`AGENTS.md\` file written at each backup then tells coding agents to search that repository and the pipelines of both repositories.
 - **SSL Certificate Generation:** Generates an SSL certificate for secure authentication to the monitored org.
 - **Automated Commit and Push:** Offers to automatically commit and push the generated configuration files to the remote Git repository.
 - **Scheduling:** On GitHub, writes the monitoring workflow on the default branch with this org in its matrix and its two secrets in its jobs, since GitHub only schedules, and only offers Run workflow for, the workflows of that branch. On other Git servers, gives the instructions to schedule the job.
@@ -106,7 +109,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       description: 'Skip authentication check when a default username is required',
     }),
     'deployment-repository': Flags.string({
-      description: 'Address of the sfdx-hardis CI/CD repository that deploys to the monitored org, stored as deploymentRepository without prompting',
+      description: 'Address of the sfdx-hardis CI/CD repository that deploys to the monitored org, stored as deploymentRepository without prompting. An empty value removes it',
     }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
@@ -248,7 +251,15 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     }
 
     // The CI/CD repository that deploys to this org: the AGENTS.md written by the backup tells coding agents to search it too
-    const deploymentRepository = await this.resolveDeploymentRepository(flags, branchName);
+    const deploymentRepositoryChange = await resolveDeploymentRepositoryChange(this, {
+      repository: flags['deployment-repository'],
+      interactive: !isCI,
+      currentBranch: branchName,
+    });
+    logDeploymentRepositoryChange(this, deploymentRepositoryChange);
+    if (deploymentRepositoryChange.action === 'clear') {
+      await removeFromConfigFile(MONITORING_CONFIG_FILE, ['deploymentRepository']);
+    }
 
     // Update config file
     await setInConfigFile(
@@ -256,7 +267,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       {
         targetUsername: flags['target-org'].getUsername(),
         instanceUrl: flags['target-org'].getConnection().instanceUrl,
-        ...(deploymentRepository ? { deploymentRepository } : {}),
+        ...(deploymentRepositoryChange.action === 'set' ? { deploymentRepository: deploymentRepositoryChange.value } : {}),
       },
       './.sfdx-hardis.yml'
     );
@@ -342,42 +353,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     uxLog("log", this, t('grafanaIntegrationDoc') + ' ' + grafanaIntegrationUrl);
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
-  }
-
-  // Returns the deploymentRepository to store, or null to leave .sfdx-hardis.yml as it is.
-  // The prompt suggests the current value, else the one of another monitoring branch of the repository.
-  private async resolveDeploymentRepository(flags: any, branchName: string): Promise<string | null> {
-    if (typeof flags['deployment-repository'] === 'string') {
-      return flags['deployment-repository'].trim() || null;
-    }
-    if (isCI) {
-      return null;
-    }
-    let currentValue = '';
-    if (fs.existsSync('.sfdx-hardis.yml')) {
-      try {
-        const branchConfig: any = yaml.load(await fs.readFile('.sfdx-hardis.yml', 'utf8'));
-        currentValue = typeof branchConfig?.deploymentRepository === 'string' ? branchConfig.deploymentRepository.trim() : '';
-      } catch {
-        // Unreadable file: no suggestion from it
-      }
-    }
-    const suggestedValue = currentValue || (await findDeploymentRepositoryInMonitoringBranches(branchName)) || '';
-    const deploymentRepositoryRes = await prompts({
-      type: 'text',
-      name: 'value',
-      initial: suggestedValue,
-      message: c.cyanBright(t('deploymentRepositoryPrompt')),
-      description: t('deploymentRepositoryPromptDescription'),
-      placeholder: t('deploymentRepositoryPromptPlaceholder'),
-    });
-    const deploymentRepository = (deploymentRepositoryRes.value || '').trim();
-    if (deploymentRepository === '') {
-      uxLog("action", this, c.cyan(t('deploymentRepositorySkipped')));
-      return null;
-    }
-    uxLog("action", this, c.cyan(t('deploymentRepositorySaved', { deploymentRepository: c.bold(deploymentRepository) })));
-    return deploymentRepository;
   }
 
   // GitHub schedules, and offers "Run workflow" for, the workflows of the default branch only. Write

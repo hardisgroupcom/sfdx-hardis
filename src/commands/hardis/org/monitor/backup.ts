@@ -74,7 +74,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
 After each backup, the command writes an \`AGENTS.md\` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
 
-Only the block between the \`sfdx-hardis-monitoring-agents-start\` and \`sfdx-hardis-monitoring-agents-end\` markers is rewritten: notes written after the end marker are kept. A \`CLAUDE.md\` file that imports \`AGENTS.md\` is also created when the repository has none.
+Only the block between the \`sfdx-hardis-monitoring-agents-start\` and \`sfdx-hardis-monitoring-agents-end\` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A \`CLAUDE.md\` file that imports \`AGENTS.md\` is also created when the repository has none.
 
 ## Troubleshooting
 
@@ -493,9 +493,12 @@ In agent mode:
   private async writeAgentsMd() {
     try {
       const config = await getConfig('user');
-      const updatedFiles = await writeMonitoringAgentsMd(config);
-      if (updatedFiles.length > 0) {
-        uxLog("action", this, c.cyan(t('monitoringAgentsMdUpdated', { files: updatedFiles.join(', ') })));
+      const agentsMdResult = await writeMonitoringAgentsMd(config);
+      if (agentsMdResult.updatedFiles.length > 0) {
+        uxLog("action", this, c.cyan(t('monitoringAgentsMdUpdated', { files: agentsMdResult.updatedFiles.join(', ') })));
+      }
+      if (agentsMdResult.markersBroken) {
+        uxLog("warning", this, c.yellow(t('monitoringAgentsMdMarkersBroken')));
       }
     } catch (e: any) {
       uxLog("warning", this, c.yellow(t('errorWhileWritingMonitoringAgentsMd', { message: e.message })));

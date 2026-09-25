@@ -20,11 +20,13 @@ Open the monitoring repository with your coding agent and ask things like:
 - "When was the Account validation rule `Check_VAT` last modified, and what changed?"
 - "Is the field `Invoice__c.Status__c` the same in production and in the UAT sandbox?"
 
-Only the block between the `sfdx-hardis-monitoring-agents-start` and `sfdx-hardis-monitoring-agents-end` markers belongs to sfdx-hardis. Write your own notes after the end marker: the next backups keep them.
+Only the block between the `sfdx-hardis-monitoring-agents-start` and `sfdx-hardis-monitoring-agents-end` markers belongs to sfdx-hardis. Write your own notes after the end marker: the next backups keep them. Keep both markers: when one of them is missing, the backup leaves the file alone and logs a warning.
 
 #### Search the deployment repository and the pipelines too
 
 Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to the address of the sfdx-hardis CI/CD repository that deploys to the org. [Configure Org Monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) asks for it, and suggests the value already set on another monitoring branch. It is the mirror of `monitoringRepository` in the CI/CD repository. When it is missing, the coding agent offers to set it the first time a question needs it.
+
+To set it, change it or remove it later, run [hardis:org:configure:monitoring-deployment-repository](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring-deployment-repository/) on the monitoring branch, or use **Set deployment repository** in the Org Monitoring panel of VS Code, which runs it. Commit and push `.sfdx-hardis.yml` afterwards.
 
 `AGENTS.md` then tells the agent to:
 

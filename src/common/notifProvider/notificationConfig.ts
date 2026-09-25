@@ -24,8 +24,8 @@ const WEEKDAY_INDEX: Record<Weekday, number> = {
   saturday: 6,
 };
 
-const DEFAULT_WEEKLY_DAY: Weekday = "saturday";
-const DEFAULT_MONTHLY_DAY = 1;
+export const DEFAULT_WEEKLY_DAY: Weekday = "saturday";
+export const DEFAULT_MONTHLY_DAY = 1;
 
 const SEVERITY_RANK: Record<NotifSeverity, number> = {
   log: 0,
@@ -219,6 +219,17 @@ export function shouldRunCommandNow(
       : { shouldRun: false, reasonKey: "skippedCommandMonthlyFrequency" };
   }
   return { shouldRun: true };
+}
+
+// Keys of the monitoring commands to skip: monitoringDisable in .sfdx-hardis.yml, else the
+// comma-separated MONITORING_DISABLE env var ("AUDIT_TRAIL, LICENSES" works too)
+export function getMonitoringDisable(config: any): string[] {
+  const configured = config?.monitoringDisable;
+  if (Array.isArray(configured)) {
+    return configured.map((key: any) => String(key).trim()).filter((key: string) => key !== "");
+  }
+  const envValue = process.env?.MONITORING_DISABLE;
+  return envValue ? envValue.split(",").map((key) => key.trim()).filter((key) => key !== "") : [];
 }
 
 export function resolveMonitoringCommands<T extends MonitoringCommandEntry>(
