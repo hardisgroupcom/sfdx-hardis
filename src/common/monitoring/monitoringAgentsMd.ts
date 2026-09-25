@@ -86,12 +86,43 @@ export async function buildMonitoringAgentsMdBlock(config: any): Promise<string>
   const commands = resolveMonitoringCommands(monitoringCommandsDefault, config?.monitoringCommands);
   const table = buildMonitoringCommandsTable(commands, getMonitoringDisable(config));
   const deploymentRepositoryStatus = buildDeploymentRepositoryStatus(config);
+  const grafanaStatus = buildGrafanaStatus(config);
   // Replacer functions: a value from the configuration may hold $$, $& or $', which a replacement
   // string would expand instead of copying
   return template
     .replace('{{monitoringCommandsTable}}', () => table)
     .replace('{{deploymentRepositoryStatus}}', () => deploymentRepositoryStatus)
+    .replace('{{grafanaStatus}}', () => grafanaStatus)
     .trimEnd() + '\n';
+}
+
+function configString(config: any, key: string): string {
+  return typeof config?.[key] === 'string' ? config[key].trim() : '';
+}
+
+// The Grafana instance that receives the monitoring logs and metrics: only non-secret settings
+// come from .sfdx-hardis.yml, the token always comes from the environment
+export function buildGrafanaStatus(config: any): string {
+  const grafanaUrl = configString(config, 'grafanaUrl');
+  if (grafanaUrl === '') {
+    return [
+      '**No Grafana instance is configured on this branch.** When a question needs the history of the monitoring checks and `GRAFANA_API_URL` is not set either, ask the user whether the monitoring sends its results to a Grafana instance:',
+      '',
+      '1. It is optional: if the user declines, answer without Grafana and do not ask again in this conversation.',
+      '2. If the user gives its URL (for example `https://mycompany.grafana.net`), write it as `grafanaUrl: <url>` in `.sfdx-hardis.yml` at the root of this branch. Change only that line, and never write a token in that file.',
+      '3. Tell the user to commit and push the change (do not do it unless they ask), and that the other monitoring branches need the same line. Then use it right away, as explained below.',
+    ].join('\n');
+  }
+  const lines = [`The Grafana instance that receives the monitoring results is \`${grafanaUrl}\` (\`grafanaUrl\` in \`.sfdx-hardis.yml\`).`];
+  const lokiUid = configString(config, 'grafanaLokiDatasourceUid');
+  const promUid = configString(config, 'grafanaPrometheusDatasourceUid');
+  if (lokiUid !== '') {
+    lines.push(`Its Loki datasource uid is \`${lokiUid}\`.`);
+  }
+  if (promUid !== '') {
+    lines.push(`Its Prometheus datasource uid is \`${promUid}\`.`);
+  }
+  return lines.join(' ');
 }
 
 export function buildDeploymentRepositoryStatus(config: any): string {

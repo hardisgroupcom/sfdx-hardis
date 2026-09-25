@@ -75,6 +75,7 @@ Any change to a notification type, its `metrics` keys, or its `logElements` shap
 3. **Changed `logElements` fields**: check Loki table panels extracting those fields (`jsonArrayToRows`, `extractJson` paths) and the anonymizer's field rules (`src/common/utils/anonymizeUtils.ts`) if user-identifying fields are involved.
 4. **New notification type**: it appears automatically in the Indicator Detail dashboard `$type` variable (Loki label values) - explicit panels are only needed if the indicator deserves dedicated visibility.
 5. Regenerate (`node generator.mjs`), run the lint suite, re-import to the `sfdx-hardis-v2` folder, and update `docs/salesforce-monitoring-grafana-v2.md` if the dashboard list or prerequisites changed.
+6. **The monitoring AGENTS.md** tells coding agents how to query these logs and metrics (labels, payload fields, `<Key>_metric` naming, lookback windows, datasource detection, the dashboards folder). If the change touches any of that, load the `monitoring-agents-md` skill and update `defaults/templates/monitoring/AGENTS.md` in the same change.
 
 ## Alert pack rules
 

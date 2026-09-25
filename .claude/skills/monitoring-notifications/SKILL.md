@@ -135,6 +135,10 @@ Renaming/removing a `metrics` key, changing the `logElements` row shape, or dele
 
 If you change a default that a user has fully overridden in their YAML (`notificationConfig:` entry), their override wins. That's intentional.
 
+## The monitoring AGENTS.md
+
+The backup writes an `AGENTS.md` in every monitoring repository that lists the checks, their frequencies, the Loki labels, the log payload fields and the metric naming, for coding agents. A new or renamed command, notification type, metric key, log field or label changes what it must say: load the `monitoring-agents-md` skill and update the template in the same change.
+
 ## Adding a new channel
 
 Three steps if you ever need a fourth channel:

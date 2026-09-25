@@ -7,6 +7,7 @@ import {
   AGENTS_MD_END_MARKER,
   AGENTS_MD_START_MARKER,
   buildDeploymentRepositoryStatus,
+  buildGrafanaStatus,
   buildMonitoringAgentsMdBlock,
   mergeAgentsMdBlock,
   writeMonitoringAgentsMd,
@@ -108,6 +109,35 @@ describe('monitoringAgentsMd', () => {
       expect(getMonitoringDisable({ monitoringDisable: ['ORG_LIMITS'] })).to.deep.equal(['ORG_LIMITS']);
       process.env.MONITORING_DISABLE = '$(MONITORING_DISABLE)';
       expect(getMonitoringDisable({ monitoringDisable: ['ORG_LIMITS'] })).to.deep.equal(['ORG_LIMITS']);
+    });
+  });
+
+  describe('grafana', () => {
+    it('tells the agent to ask for the instance when there is none, never for a token in the file', () => {
+      const status = buildGrafanaStatus({});
+      expect(status).to.include('No Grafana instance is configured');
+      expect(status).to.include('`grafanaUrl: <url>` in `.sfdx-hardis.yml`');
+      expect(status).to.include('never write a token in that file');
+    });
+
+    it('names the instance and the datasource uids when set', () => {
+      expect(buildGrafanaStatus({ grafanaUrl: 'https://acme.grafana.net' })).to.equal(
+        'The Grafana instance that receives the monitoring results is `https://acme.grafana.net` (`grafanaUrl` in `.sfdx-hardis.yml`).'
+      );
+      const withUids = buildGrafanaStatus({
+        grafanaUrl: 'https://acme.grafana.net',
+        grafanaLokiDatasourceUid: 'grafanacloud-logs',
+        grafanaPrometheusDatasourceUid: 'grafanacloud-prom',
+      });
+      expect(withUids).to.include('Its Loki datasource uid is `grafanacloud-logs`.');
+      expect(withUids).to.include('Its Prometheus datasource uid is `grafanacloud-prom`.');
+    });
+
+    it('fills the Grafana section of the rendered block', async () => {
+      const content = await buildMonitoringAgentsMdBlock({ grafanaUrl: 'https://acme.grafana.net' });
+      expect(content).to.not.include('{{grafanaStatus}}');
+      expect(content).to.include('## Monitoring results in Grafana');
+      expect(content).to.include('`https://acme.grafana.net`');
     });
   });
 

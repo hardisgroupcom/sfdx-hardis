@@ -107,7 +107,12 @@ Set `deploymentRepository` to the address of your sfdx-hardis CI/CD repository, 
 - "Why did last night's deployment to UAT fail?"
 - "Why did last night's backup fail?"
 
-The agent only reads: it never pushes, comments or starts a pipeline. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent) for the details.
+Set `grafanaUrl` too, with a read-only Grafana token in a `.env` file, and the agent also queries the logs and metrics your monitoring sends to Grafana:
+
+- "How did the API requests limit evolve this quarter?"
+- "On which days did Apex errors spike, and which classes were involved?"
+
+The agent only reads: it never pushes, comments, starts a pipeline or changes Grafana. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent) for the details.
 
 ---
 

@@ -213,6 +213,50 @@ Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deplo
 
 In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
 
+## Monitoring results in Grafana
+
+{{grafanaStatus}}
+
+The results of the monitoring checks are not stored in this repository. When the pipeline sets `NOTIF_API_URL` and `NOTIF_API_METRICS_URL`, every notification of the backup and of `sf hardis:org:monitor:all` is also sent to Grafana: a log line to Loki, and its metrics to Prometheus. That is the history of every check, day after day: licenses, limits, Apex and Flow errors, audit trail findings, health score... It is what the [Org Monitoring by sfdx-hardis dashboards](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/) display. Use it for questions like:
+
+- How did the API requests limit evolve over the last three months?
+- When did the backup last fail, and why?
+- On which days did Apex errors spike, and which classes were involved?
+- Which inactive users did the last check report?
+
+### Connect
+
+1. **Grafana instance**: the `GRAFANA_API_URL` environment variable, else `grafanaUrl` in `.sfdx-hardis.yml` (see above). Below, `$GRAFANA_API_URL` stands for that URL, without a trailing `/`.
+2. **Token**: a Grafana tool you already have (a Grafana MCP server) needs nothing more. Otherwise use the `GRAFANA_API_TOKEN` environment variable, or the same name in the `.env` file at the root of this repository, loaded as described for the git providers. A service account token with the **Viewer** role is enough to query. The token never goes in `.sfdx-hardis.yml`.
+3. **No token**: tell the user they can create a service account token with the Viewer role (Grafana: **Administration** > **Users and access** > **Service accounts**) and put it as `GRAFANA_API_TOKEN` in `.env`, then answer without Grafana. Do not reuse the `NOTIF_API_*` credentials of the pipeline: they are CI secrets, usually allowed to write only.
+
+Every call below sends `-H "Authorization: Bearer $GRAFANA_API_TOKEN"`.
+
+### Find the datasources
+
+Use `grafanaLokiDatasourceUid` and `grafanaPrometheusDatasourceUid` from `.sfdx-hardis.yml` when they are set. Otherwise list the datasources with `GET $GRAFANA_API_URL/api/datasources` and keep the ones of type `loki` and `prometheus`, leaving out Grafana Cloud internal ones (`alert-state-history`, `usage-insights` or `ml-metrics` in the name). When several remain, keep the one that holds `source="sfdx-hardis"` data. If the token cannot list datasources (403), ask the user for the two uids (**Connections** > **Data sources**, the uid is in the URL of the datasource page) and offer to write them in `.sfdx-hardis.yml`.
+
+### Labels
+
+Logs and metrics carry the same labels:
+
+- `source`: always `sfdx-hardis`
+- `orgIdentifier`: the monitored org. It is `instanceUrl` of `.sfdx-hardis.yml` without `https://` and `.my.salesforce.com`, dots replaced by `__`: `https://acme--uat.sandbox.my.salesforce.com` gives `acme--uat__sandbox`. The pipeline can override it with `SFDX_HARDIS_MONITORING_KEY`, so check the actual values: `GET .../loki/api/v1/label/orgIdentifier/values`
+- `type`: the notification type, the `notificationTypes` of the checks above (`BACKUP`, `ORG_LIMITS`, `APEX_ERROR`, `LICENSES`...), plus `MONITORING_SUMMARY` for each run of the checks
+- `severity` (logs only): `critical`, `error`, `warning`, `info`, `success` or `log`
+- `gitIdentifier`: `<repository>/<branch>` of the job that sent it
+
+Personal data is pseudonymized when the monitoring runs in CI: a user appears under a stable alias, never under their real name or email.
+
+### Query
+
+Through the datasource proxy of Grafana, `$GRAFANA_API_URL/api/datasources/proxy/uid/<datasource uid>`:
+
+- **Logs (Loki)**: `GET <loki proxy>/loki/api/v1/query_range` with `query={source="sfdx-hardis", orgIdentifier="acme", type="ORG_LIMITS"}`, `start`, `end` and `limit`. Each line is a JSON document: `_title`, `_logBodyText` (the notification text), `_logElements` (the rows of the report, cut when too long, then `_logElementsTruncated` is true), `metric` (the main value), `_metrics`, `_jobUrl` (the CI job that sent it) and `_dateTime`. Filter inside it with LogQL: `{...} | json | severity=~"error|critical"`.
+- **Metrics (Prometheus)**: `GET <prometheus proxy>/api/v1/query` (one value) or `/api/v1/query_range` with `step=1d` (a history). Each metric key of a notification gives `<Key>_metric`, and `<Key>_percent`, `<Key>_min` or `<Key>_max` when it has these values. With a Prometheus Pushgateway instead of Grafana Cloud, the main value is `<Key>` without `_metric`. List the names with `GET <prometheus proxy>/api/v1/label/__name__/values?match[]={source="sfdx-hardis"}`.
+- **Metrics arrive once a day**: always query them over a range, like `last_over_time(DailyApiRequests_percent{source="sfdx-hardis", orgIdentifier="acme"}[2d])` or `max_over_time(...[30d])`. A plain selector looks back 5 minutes only, and returns nothing.
+- The dashboards are in the `Org Monitoring by sfdx-hardis` folder: `GET $GRAFANA_API_URL/api/search?query=sfdx-hardis`. Give the user the link of the dashboard that shows the answer, `$GRAFANA_API_URL/d/<uid>?var-org=<orgIdentifier>`.
+
 ## Files and folders
 
 | Path | Content |
@@ -227,7 +271,7 @@ In the logs of this repository, the job that runs `sf hardis:org:monitor:backup`
 | `manifest/chunks/` | Only in full mode (`--full`): the list of items split in several retrieves. |
 | `docs/` | Project documentation generated from the metadata after each backup, unless disabled: objects, Apex, Flows with their visual history (`docs/flows/*-history.md`), Lightning pages, profiles, permission sets, packages, and an object model diagram. |
 | `mkdocs.yml` | Menu and settings of the documentation site built from `docs/`. |
-| `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, and the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org. |
+| `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org, and the `grafanaUrl` (and optional datasource uids) that receives the monitoring results. Never a secret. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |
 | `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. |
 | `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. |
@@ -258,6 +302,7 @@ The other way around, a component in `force-app/` but not in `manifest/package-a
 - Changes worth making here are configuration: `manifest/package-skip-items.xml`, `.sfdx-hardis.yml`, the pipeline file. They apply to the branch they are committed on, so to one org.
 - To answer "what does this org do", read the sources in `force-app/main/default/` first, then the generated `docs/` when present. Before describing a component, check that it is still in `manifest/package-all-org-items.xml`.
 - Only read the deployment repository and the git servers. Never commit, push, check out a branch in the local clone of the deployment repository, create a branch, comment, approve or merge a Pull Request, start, retry or cancel a pipeline, or change a variable or a setting of either repository.
+- Only read Grafana: never create, change or delete a dashboard, an alert rule, a silence, a datasource or a service account.
 - Never print a token, and never write one in a file or in an answer.
 
 ## Documentation

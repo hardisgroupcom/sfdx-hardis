@@ -39,6 +39,16 @@ It can then answer questions like "Was this change deployed by the pipeline, or 
 
 The agent uses the git provider CLI you are already logged in with, or tokens in a `.env` file at the root of the monitoring repository, with the variable names sfdx-hardis uses (`CI_SFDX_HARDIS_GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN`, `CI_SFDX_HARDIS_BITBUCKET_TOKEN`). It only reads: no push, no comment, no pipeline run.
 
+#### Query the monitoring history in Grafana
+
+When the monitoring sends its notifications to [Grafana](salesforce-monitoring-grafana-v2.md) (`NOTIF_API_URL` and `NOTIF_API_METRICS_URL`), the agent can also query the logs and metrics of every check, over months: "How did the API requests limit evolve this quarter?", "On which days did Apex errors spike?".
+
+- Put the URL of the Grafana instance as `grafanaUrl` in the `.sfdx-hardis.yml` of the monitoring branch, or in the `GRAFANA_API_URL` environment variable. When it is missing, the agent offers to set it.
+- Optional: pin the datasources with `grafanaLokiDatasourceUid` and `grafanaPrometheusDatasourceUid`. Otherwise the agent detects them.
+- Give the agent a Grafana service account token with the **Viewer** role, as `GRAFANA_API_TOKEN` in the `.env` file. Never put the token in `.sfdx-hardis.yml`.
+
+The agent queries Loki and Prometheus through the Grafana API, and only reads: it never changes a dashboard, an alert or a datasource.
+
 ### Grafana example
 
 ![](assets/images/screenshot-monitoring-backup-grafana.jpg)

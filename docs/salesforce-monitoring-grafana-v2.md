@@ -264,6 +264,12 @@ Then, in both cases:
 1. In **Alerting** -> **Alert rules**, unpause the rules you want
 2. Configure your [contact points and notification policies](https://grafana.com/docs/grafana/latest/alerting/configure-notifications/) (Slack, email, ...)
 
+## Ask a coding agent
+
+The same logs and metrics can answer questions asked to a coding agent (Claude Code, Codex, Gemini, Copilot...) opened in your monitoring repository, like "How did the API requests limit evolve this quarter?". Set `grafanaUrl` in the `.sfdx-hardis.yml` of the monitoring branches (and optionally `grafanaLokiDatasourceUid` and `grafanaPrometheusDatasourceUid`), and give the agent a service account token with the **Viewer** role as `GRAFANA_API_TOKEN` in a `.env` file. The `AGENTS.md` written by each backup tells the agent how to query them, read-only. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent).
+
+`sf hardis:org:configure:grafana-dashboards` also reads `grafanaUrl` when neither `--grafana-url` nor `GRAFANA_API_URL` is set.
+
 ## Privacy
 
 Dashboards only display aggregates, counts, and (for detail tables) the pseudonymized identifiers produced by [data anonymization](salesforce-security-privacy.md#data-anonymization), which is enabled by default in CI: `user_<hash>` for usernames, emails and display names, `id_<hash>` for user record Ids, `ip_<hash>` for client IPs. At the default `standard` level, setup audit trail actors stay readable on purpose (auditing setup actions requires knowing who did them); the `strict` level pseudonymizes them too.

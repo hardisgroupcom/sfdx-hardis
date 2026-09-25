@@ -131,7 +131,9 @@ Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to
 - "Why did last night's deployment to UAT fail?"
 - "Why did last night's backup fail?"
 
-The agent uses a git provider CLI you are already logged in with, or tokens from a `.env` file. It only reads: it never pushes, comments or starts a pipeline. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent).
+Set `grafanaUrl` too, and the agent also queries the logs and metrics the monitoring sends to [Grafana](salesforce-monitoring-grafana-v2.md), through the Grafana API: "How did the API requests limit evolve this quarter?", "On which days did Apex errors spike?".
+
+The agent uses a git provider CLI you are already logged in with, or tokens from a `.env` file (a read-only `GRAFANA_API_TOKEN` for Grafana). It only reads: it never pushes, comments, starts a pipeline or changes Grafana. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent).
 
 ---
 
