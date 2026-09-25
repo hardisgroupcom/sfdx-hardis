@@ -25,7 +25,7 @@ export function dumpRepositoryYaml(doc: unknown): string {
     quotingType: '"',
     lineWidth: -1,
   });
-  return requoteLikePrettier(dumped);
+  return quoteLikePrettier(dumped);
 }
 
 function withoutTrailingSpaces(value: unknown): unknown {
@@ -60,7 +60,7 @@ function toPrettierQuotes(quoted: string): string {
 
 // A quoted scalar starts a line (after indentation and "- "), or follows the
 // ": " of a key. js-yaml writes each on one line when lineWidth is -1.
-function requoteLine(line: string): string {
+function quoteLine(line: string): string {
   const [, prefix, content] = /^(\s*(?:- )*)(.*)$/.exec(line)!;
   let rest = content;
   let out = prefix;
@@ -89,7 +89,7 @@ function requoteLine(line: string): string {
   return out + rest;
 }
 
-function requoteLikePrettier(dumped: string): string {
+function quoteLikePrettier(dumped: string): string {
   let blockIndent = -1;
   return dumped
     .split("\n")
@@ -101,11 +101,11 @@ function requoteLikePrettier(dumped: string): string {
         }
         blockIndent = -1;
       }
-      const requoted = requoteLine(line);
-      if (BLOCK_SCALAR_START.test(requoted)) {
+      const withQuotes = quoteLine(line);
+      if (BLOCK_SCALAR_START.test(withQuotes)) {
         blockIndent = indent;
       }
-      return requoted;
+      return withQuotes;
     })
     .join("\n");
 }
