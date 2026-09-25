@@ -126,7 +126,7 @@ Four things the 2026-09-21 run paid for, driving Salesforce Setup over CDP:
 `scripts/env.sh` and `scripts/env.mjs` derive all of this from the skill's own location and let every
 value be overridden. Nothing is tied to one machine.
 
-Two traps that cost the 2026-09-21 run time:
+Traps that cost earlier runs time:
 
 - **Build the extension `yarn compile && yarn dev`, in that order.** Both are needed: `yarn compile`
   (tsc) builds the test harness under `out/test/`, `yarn dev` (webpack) builds `out/extension.js` and
@@ -153,6 +153,25 @@ Two traps that cost the 2026-09-21 run time:
 - **Docker Desktop is usually not running on the workstation.** `docker run ... sf plugins` to read
   the version inside an image fails on the daemon socket. Read the version from the job instead,
   or from the registry timestamps.
+- **A brand new fork runs no workflow until someone clicks the Actions banner** ("I understand my
+  workflows, go ahead and enable them"). The API lists zero workflows until then. Since 2026-09-25
+  `init` notices it, opens the Actions page and waits up to 10 minutes: click the green button in
+  the browser, which is also what Lab 1.2 now tells the learner. Before that fix `init` printed
+  Actions OK and the first Pull Request got no checks. A run with no browser passes
+  `--no-actions-wait` and clicks the banner some other way before step 7 pushes.
+- **The CDP attach can hang** after hours of use, even once your own tab is closed. Do not restart
+  the user's Chrome and never call `browser.close()`. For the badge claim, open the issue with
+  `gh issue create` using the form's exact body and the `badge-claim` label, and record the step as
+  fidelity 3.
+- **Never chain a branch delete after a merge command.** When the merge is refused (a check still
+  running, a review missing), deleting the head branch closes the Pull Request. Delete only after
+  `gh pr view <n> --json state` says `MERGED`; `delete_branch_on_merge` is on in the fork anyway.
+- **`backpromote --reset` is not the panel's Back button.** The button only checks out the branch
+  you were on. `--reset` leaves the clone on a detached HEAD at `origin/<parent>`.
+- **Leave MegaLinter's GitHub Actions auditor (zizmor) without a token.** Without one it prints a
+  single warning. Giving it `GITHUB_TOKEN` (2026-09-25) turned that into about 70 findings on the
+  project template's workflows, mostly unpinned actions and images. It warns and never blocks;
+  Lab 1.6 explains the ⚠️ line it leaves on a green comment.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
@@ -284,7 +303,7 @@ opening them by hand: what the simulator produces is what the lab describes.
 - `hardis:work:resetselection` resets the **commits**: a soft reset, a restore of `manifest/`, and
   `canForcePush`. There is no stored list of ticked items, and no screen that shows one.
 
-## 7. Level 3, ten labs
+## 7. Level 3, eleven labs
 
 The release manager. This is the level where the course touches the orgs and the repository hardest.
 
@@ -315,6 +334,11 @@ The role split is the point of this level, and it is easy to break by being help
   configuration** (`node scripts/training.mjs publish`), which opens a Pull Request. **Nobody pushes
   to a major branch.**
 - Pull Request titles say "Release" only into `main`, and "Promotion" otherwise.
+
+**`work:new` sets the default org to the one of the story's branch.** After Lab 3.7's or 3.10's
+retrofit the default is `helios-dev` again, which is why Labs 3.6 and 3.11 say to set `helios-prod`
+before the DORA report. Skip that line and the report reads a scratch org with no history
+(2026-09-25).
 
 Lab 3.8 runs in a **second repository**, the monitoring one, with its own secrets
 (`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Two things about its first run:
@@ -371,7 +395,9 @@ in the course), never yet against real orgs in this shape. What a walk has to re
   Lab 3.11 now also asserts US-058 and US-060 reached `main`.
 - **Known on the released CLI**: until a release ships `promotionConflictMarkersIgnoredFiles`
   (PR #2236, in `sfdx-hardis@beta` since 8.10.1-beta202609241317.0), the check job of a promotion
-  Pull Request also names the two Lab 2.7 files; the lab's "If it goes wrong" says so. To prove the
+  Pull Request also names the two Lab 2.7 files; the lab's "If it goes wrong" says so. **On
+  2026-09-25 that was still true of the released 8.10.0, and it blocks the learner**: branch
+  protection forbids merging red, so Lab 3.10 cannot be finished until 8.10.1 ships. To prove the
   lab green in CI, point the fork's two deployment workflows at `sfdx-hardis-ubuntu:beta` (or use
   the unreleased-build override of section 8). **Check what the `beta` image really holds**: on
   2026-09-24 it was built two minutes before the registry served the beta it was meant to install,

@@ -7,6 +7,10 @@
   - New `promotionConflictMarkersIgnoredFiles` property to list the files allowed to hold git conflict markers, so a repository whose own content holds them can promote again.
   - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) and [hardis:project:promotion:list-candidates](https://sfdx-hardis.cloudity.com/hardis/project/promotion/list-candidates/) now require the git provider connection, so a promotion behaves the same on GitHub, GitLab, Bitbucket and Azure DevOps. From a terminal or an agent, the token can come from a `.env` file at the repository root, and the commands warn when that file is not git-ignored.
   - The Pull Request number of a GitHub squash merge is read from the commit subject, so a story is matched from the git history the same way on every platform. [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta) benefits from it too.
+- [Release notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the notes of a first promotion list its metadata changes, and each deployment action shows its status in the org of the branch the notes are for.
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta) works in a fork again: a Pull Request number from the history of the forked repository is no longer read as a Pull Request of the fork.
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta) names a scratch org by its alias in its messages and questions, not by its org id.
+- Deployment actions and custom functions are saved in the YAML style Prettier writes, so MegaLinter no longer pushes a fix commit onto the Pull Request.
 - The build scripts and the tests use native `fs` instead of `fs-extra`, which was no longer a dependency and only worked because another package installed it.
 - Docker images: the `beta` and `latest` images always hold the sfdx-hardis version published by the same run, never the previous one.
 

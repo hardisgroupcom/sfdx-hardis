@@ -46,6 +46,7 @@ import {
 } from '../../../common/utils/backpromotePlanUtils.js';
 import {
   BackpromoteTargetOrgInfo,
+  backpromoteOrgDisplayName,
   compareItemsWithOrg,
   deployBackpromoteDeletions,
   deployBackpromotePackage,
@@ -400,7 +401,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
           : t('backpromoteParentBranchNotAllowed', { parentBranch, branches: parentRefusal.allowedBranches.join(', ') })
         : t('backpromoteCheckParentBranchOk', { parentBranch }),
     });
-    uxLog('action', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch || '?'), sandboxName: c.green(targetOrg.sandboxName) })));
+    uxLog('action', this, c.cyan(t('backpromoteStarting', { parentBranch: c.green(parentBranch || '?'), sandboxName: c.green(backpromoteOrgDisplayName(targetOrg)) })));
 
     const scanLimit = flags['scan-limit'] && flags['scan-limit'] > 0 ? flags['scan-limit'] : Number(projectConfig.backpromoteScanLimit) > 0 ? Number(projectConfig.backpromoteScanLimit) : BACKPROMOTE_DEFAULT_SCAN_LIMIT;
     const backpromoteBranch = parentBranch ? buildBackpromoteBranchName(parentBranch, targetOrg.sandboxName) : '';
@@ -513,7 +514,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       const status: BackpromoteStatus = unknownStart ? 'refused' : ctx.scan.found ? 'nothingToDo' : mode === 'plan' ? 'ok' : 'refused';
       const message = unknownStart
         ? t('backpromoteStartPullRequestUnknown', { number: flags['from-pull-request'], parentBranch })
-        : ctx.scan.found ? t('backpromoteUpToDate', { parentBranch, sandboxName: targetOrg.sandboxName }) : t('backpromoteNoHistoryFound', { count: ctx.scan.read });
+        : ctx.scan.found ? t('backpromoteUpToDate', { parentBranch, sandboxName: backpromoteOrgDisplayName(targetOrg) }) : t('backpromoteNoHistoryFound', { count: ctx.scan.read });
       const plan = this.buildPlan(ctx, status, message);
       if (mode === 'plan' || status === 'nothingToDo') {
         uxLog('action', this, c.green(message));
@@ -722,7 +723,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     }
     const preselected = ctx.pullRequests.find((pr) => pr.selected);
     if (ctx.interactive) {
-      const chosenCommit = await promptStartPullRequest(ctx.pullRequests, ctx.targetOrg.sandboxName);
+      const chosenCommit = await promptStartPullRequest(ctx.pullRequests, backpromoteOrgDisplayName(ctx.targetOrg));
       const entry = chosenCommit ? ctx.pullRequests.find((pr) => pr.commit === chosenCommit) : null;
       if (!entry) {
         return null;
@@ -875,7 +876,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     // sandbox decides if it is ticked by default, and the panel offers a decision once it is ticked
     const keys = ctx.items.filter((item) => item.noOverwrite || !ctx.excludedKeys.has(item.key)).map((item) => item.key);
     const noOverwriteKeys = new Set(ctx.items.filter((item) => item.noOverwrite).map((item) => item.key));
-    reportCommandProgress({ step: 'retrieve', message: t('backpromoteProgressRetrieve', { count: keys.length, sandboxName: ctx.targetOrg.sandboxName }) });
+    reportCommandProgress({ step: 'retrieve', message: t('backpromoteProgressRetrieve', { count: keys.length, sandboxName: backpromoteOrgDisplayName(ctx.targetOrg) }) });
     const retrieve = await retrieveItemsForComparison({ username: ctx.targetOrg.username, keys, orgId: ctx.targetOrg.orgId, runId: ctx.runId, commandThis: this, conn: ctx.conn, tracksSource: ctx.targetOrg.tracksSource });
     ctx.state.retrieveDir = retrieve.orgDir;
     reportCommandProgress({ step: 'compare', message: t('backpromoteProgressCompare') });
@@ -931,7 +932,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     const candidates = ctx.items.map((item) => item.key);
     // A package-no-overwrite.xml item already in the sandbox is offered unticked
     const noOverwriteInSandbox = new Set(ctx.items.filter((item) => item.noOverwrite && isNoOverwriteItemInSandbox(item.key, ctx.comparison)).map((item) => item.key));
-    const chosen = await promptItemsToDeploy(candidates, ctx.deletions.map((deletion) => deletion.key), ctx.targetOrg.sandboxName, this.heldNoOverwriteKeys(ctx));
+    const chosen = await promptItemsToDeploy(candidates, ctx.deletions.map((deletion) => deletion.key), backpromoteOrgDisplayName(ctx.targetOrg), this.heldNoOverwriteKeys(ctx));
     for (const key of candidates) {
       if (noOverwriteInSandbox.has(key)) {
         if (chosen.items.includes(key)) {
@@ -963,7 +964,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         ctx.diffDecisions.set(entry.file, forAll);
         continue;
       }
-      const answer = await promptDiffDecision(entry.file, ctx.parentBranch, ctx.targetOrg.sandboxName);
+      const answer = await promptDiffDecision(entry.file, ctx.parentBranch, backpromoteOrgDisplayName(ctx.targetOrg));
       ctx.diffDecisions.set(entry.file, answer.choice);
       if (answer.forAll) {
         forAll = answer.choice;
@@ -1064,7 +1065,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       return { prepared: [], withMarkers: [], newlyWritten };
     }
     reportCommandProgress({ step: 'merges', message: t('backpromoteProgressMerges', { count: toMerge.length }) });
-    const labels = { sandbox: `sandbox ${ctx.targetOrg.sandboxName}`, parent: ctx.parentBranch, base: 'base' };
+    const labels = { sandbox: `sandbox ${backpromoteOrgDisplayName(ctx.targetOrg)}`, parent: ctx.parentBranch, base: 'base' };
     for (const entry of toMerge) {
       const absolute = path.join(ctx.gitRoot, entry.file);
       const parentContent = entry.versions.parentHead ? await fs.readFile(entry.versions.parentHead, 'utf8') : fileAtRef(ctx.parentRef, entry.file);
@@ -1275,7 +1276,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     await refreshActionRows(ctx.actionCandidates.pre);
     merge(await executeBackpromoteActions({ ...actionOptions, actions: ctx.actionCandidates.pre, phase: 'commandsPreDeploy' }));
 
-    reportCommandProgress({ step: 'deploy', message: t('backpromoteProgressDeploy', { count: deployKeys.length, sandboxName: ctx.targetOrg.sandboxName }) });
+    reportCommandProgress({ step: 'deploy', message: t('backpromoteProgressDeploy', { count: deployKeys.length, sandboxName: backpromoteOrgDisplayName(ctx.targetOrg) }) });
     const workDir = await createTempDir();
     const deployment = await deployBackpromotePackage({ keys: deployKeys, username: ctx.targetOrg.username, workDir, commandThis: this, debugMode: ctx.debugMode });
     result.deployReport = deployment.reportPath;
@@ -1362,7 +1363,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     const confirmIds = new Set(ctx.confirmActionIds);
     if (ctx.interactive) {
       for (const action of ctx.actions.filter((entry) => result.actions.pending.includes(entry.id))) {
-        if (await promptManualActionDone(action, ctx.targetOrg.sandboxName)) {
+        if (await promptManualActionDone(action, backpromoteOrgDisplayName(ctx.targetOrg))) {
           confirmIds.add(action.id);
         }
       }
@@ -1375,7 +1376,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 
     // The backpromote branch is pushed when it holds manual merges
     let status: BackpromoteStatus = 'ok';
-    let message: string | null = t('backpromoteCompleted', { sandboxName: ctx.targetOrg.sandboxName });
+    let message: string | null = t('backpromoteCompleted', { sandboxName: backpromoteOrgDisplayName(ctx.targetOrg) });
     if (headCommit() !== ctx.parentHead) {
       reportCommandProgress({ step: 'push', message: t('backpromoteProgressPush', { branch: ctx.backpromoteBranch }) });
       const push = pushBackpromoteBranch(ctx.backpromoteBranch);
@@ -1390,7 +1391,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       }
     }
     await this.persistState(ctx);
-    uxLog('action', this, c.green(t('backpromoteCompleted', { sandboxName: ctx.targetOrg.sandboxName })));
+    uxLog('action', this, c.green(t('backpromoteCompleted', { sandboxName: backpromoteOrgDisplayName(ctx.targetOrg) })));
     const original = ctx.state.checkout?.originalBranch || '';
     if (original && original !== ctx.backpromoteBranch) {
       uxLog('action', this, c.cyan(t('backpromoteBackToBranchHint', { branch: ctx.backpromoteBranch, original, parentBranch: ctx.parentBranch, stash: ctx.state.checkout?.stashed ? ' && git stash pop' : '' })));
