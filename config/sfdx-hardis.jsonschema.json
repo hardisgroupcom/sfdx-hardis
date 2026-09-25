@@ -3198,7 +3198,7 @@
     },
     "monitoringDisable": {
       "$id": "#/properties/monitoringDisable",
-      "description": "List of commands to skip during monitoring jobs",
+      "description": "List of commands to skip during monitoring jobs. The MONITORING_DISABLE env variable (comma-separated keys, for example AUDIT_TRAIL,LICENSES) has priority over it.",
       "examples": [
         [
           "METADATA_STATUS",

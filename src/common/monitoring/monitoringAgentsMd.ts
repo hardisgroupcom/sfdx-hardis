@@ -10,7 +10,7 @@ import {
 import type { MonitoringCommandEntry } from '../notifProvider/types.js';
 import { t } from '../utils/i18n.js';
 import { getTitleI18nKey, monitoringCommandsDefault } from './monitoringDefaults.js';
-import { detectGitServer } from './monitoringDeploymentRepository.js';
+import { GitProvider } from '../gitProvider/index.js';
 
 // AGENTS.md written at the root of a monitoring repository, so that a coding agent opened in it knows
 // how the backup works and what each file holds. Only the block between the markers belongs to
@@ -108,8 +108,8 @@ export function buildDeploymentRepositoryStatus(config: any): string {
       'The user can also set it from the Org Monitoring panel of VS Code.',
     ].join('\n');
   }
-  const gitServer = detectGitServer(deploymentRepository);
-  const lines = [`The deployment repository of this org is \`${deploymentRepository}\`${gitServer ? ` (${gitServer})` : ''}, from \`deploymentRepository\` in \`.sfdx-hardis.yml\`.`];
+  const providerType = GitProvider.getProviderTypeFromRemoteUrl(deploymentRepository);
+  const lines = [`The deployment repository of this org is \`${deploymentRepository}\`${providerType ? ` (git provider: \`${providerType}\`)` : ''}, from \`deploymentRepository\` in \`.sfdx-hardis.yml\`.`];
   const deploymentBranch = typeof config?.deploymentBranch === 'string' ? config.deploymentBranch.trim() : '';
   if (deploymentBranch !== '') {
     lines.push(`Its branch \`${deploymentBranch}\` deploys to this org (\`deploymentBranch\` in \`.sfdx-hardis.yml\`).`);

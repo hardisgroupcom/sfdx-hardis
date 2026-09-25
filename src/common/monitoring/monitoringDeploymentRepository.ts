@@ -19,40 +19,6 @@ export function isRepositoryUrl(value: string | null | undefined): boolean {
   return REPOSITORY_URL_REGEX.test((value || '').trim());
 }
 
-export function getRepositoryHost(repositoryUrl: string | null | undefined): string | null {
-  const value = (repositoryUrl || '').trim();
-  const scpLike = value.match(/^[\w.-]+@([\w.-]+):/);
-  if (scpLike && !/^[a-z][\w+.-]*:\/\//i.test(value)) {
-    return scpLike[1].toLowerCase();
-  }
-  try {
-    return new URL(value).hostname.toLowerCase() || null;
-  } catch {
-    return null;
-  }
-}
-
-export function detectGitServer(repositoryUrl: string | null | undefined): string | null {
-  const host = getRepositoryHost(repositoryUrl);
-  if (!host) {
-    return null;
-  }
-  const isHostOrSubdomain = (domain: string) => host === domain || host.endsWith('.' + domain);
-  if (isHostOrSubdomain('github.com')) {
-    return 'GitHub';
-  }
-  if (isHostOrSubdomain('dev.azure.com') || isHostOrSubdomain('visualstudio.com')) {
-    return 'Azure DevOps';
-  }
-  if (isHostOrSubdomain('bitbucket.org')) {
-    return 'Bitbucket';
-  }
-  // GitLab is often self-hosted: gitlab.com, gitlab.my-company.com...
-  if (host.split('.').some((label) => label === 'gitlab' || label.startsWith('gitlab-'))) {
-    return 'GitLab';
-  }
-  return null;
-}
 
 export async function readDeploymentRepository(configFile: string = MONITORING_CONFIG_FILE): Promise<string | null> {
   if (!fs.existsSync(configFile)) {

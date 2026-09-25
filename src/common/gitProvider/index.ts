@@ -27,6 +27,15 @@ import {
 // Enable with NODE_DEBUG=sfdxhardis
 const debug = debuglog("sfdxhardis");
 
+export type GitProviderType = "github" | "gitlab" | "azure" | "bitbucket";
+
+const GIT_PROVIDER_CLASSES: Record<GitProviderType, typeof GitProviderRoot> = {
+  github: GithubProvider,
+  gitlab: GitlabProvider,
+  azure: AzureDevopsProvider,
+  bitbucket: BitbucketProvider,
+};
+
 // The environment the provider is built from: a change of one of these (a token set by a prompt,
 // a CI variable auto-detected from the git remote) is a new provider
 const PROVIDER_ENV_VARS = [
@@ -699,28 +708,46 @@ export abstract class GitProvider {
   }
 
   /**
+   * Which git provider a repository address belongs to, from the address alone: the Azure DevOps
+   * URL shapes, then the host. Returns null for a host that does not name its product (a
+   * self-managed instance), without guessing from the CI variables of the running job, so it can
+   * describe a repository other than the current one.
+   */
+  static getProviderTypeFromRemoteUrl(remoteUrl: string | null | undefined): GitProviderType | null {
+    const url = (remoteUrl || "").trim();
+    if (url === "") {
+      return null;
+    }
+    // Azure DevOps URLs are recognizable by their shape, whatever the host
+    if (AzureDevopsProvider.parseAzureRepoUrl(url)) {
+      return "azure";
+    }
+    const host = (
+      url.match(/^[a-z+]+:\/\/(?:[^@/]+@)?([^/:]+)/i)?.[1] ||
+      url.match(/^[^@]+@([^:]+):/)?.[1] ||
+      ""
+    ).toLowerCase();
+    if (host.includes("bitbucket")) {
+      return "bitbucket";
+    }
+    if (host.includes("gitlab")) {
+      return "gitlab";
+    }
+    if (host.includes("github")) {
+      return "github";
+    }
+    return null;
+  }
+
+  /**
    * Which provider class a remote URL belongs to, when no token tells us. The host is the only
    * reliable signal for a self-managed instance, and the GitHub and Bitbucket URL shapes are the
    * same, so the CI variables of the running job break the ties the host cannot.
    */
   private static guessProviderClassesFromRemoteUrl(remoteUrl: string): Array<typeof GitProviderRoot> {
-    // Azure DevOps URLs are recognizable by their shape, whatever the host
-    if (AzureDevopsProvider.parseAzureRepoUrl(remoteUrl)) {
-      return [AzureDevopsProvider];
-    }
-    const host = (
-      remoteUrl.match(/^[a-z+]+:\/\/(?:[^@/]+@)?([^/:]+)/i)?.[1] ||
-      remoteUrl.match(/^[^@]+@([^:]+):/)?.[1] ||
-      ""
-    ).toLowerCase();
-    if (host.includes("bitbucket")) {
-      return [BitbucketProvider];
-    }
-    if (host.includes("gitlab")) {
-      return [GitlabProvider];
-    }
-    if (host.includes("github")) {
-      return [GithubProvider];
+    const providerType = GitProvider.getProviderTypeFromRemoteUrl(remoteUrl);
+    if (providerType) {
+      return [GIT_PROVIDER_CLASSES[providerType]];
     }
     // Self-managed instances rarely name themselves after the product
     if (process.env.GITLAB_CI || process.env.CI_SERVER_URL) {

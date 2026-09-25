@@ -221,15 +221,20 @@ export function shouldRunCommandNow(
   return { shouldRun: true };
 }
 
-// Keys of the monitoring commands to skip: monitoringDisable in .sfdx-hardis.yml, else the
-// comma-separated MONITORING_DISABLE env var ("AUDIT_TRAIL, LICENSES" works too)
+// Keys of the monitoring commands to skip: the comma-separated MONITORING_DISABLE env var
+// ("AUDIT_TRAIL, LICENSES" works too), which has priority, else monitoringDisable in .sfdx-hardis.yml.
+// An Azure Pipelines variable that is not defined reaches the job as the literal "$(MONITORING_DISABLE)":
+// it counts as unset, or it would hide the configuration.
 export function getMonitoringDisable(config: any): string[] {
+  const envValue = (process.env?.MONITORING_DISABLE || "").trim();
+  if (envValue !== "" && !/^\$\(.*\)$/.test(envValue)) {
+    return envValue.split(",").map((key) => key.trim()).filter((key) => key !== "");
+  }
   const configured = config?.monitoringDisable;
   if (Array.isArray(configured)) {
     return configured.map((key: any) => String(key).trim()).filter((key: string) => key !== "");
   }
-  const envValue = process.env?.MONITORING_DISABLE;
-  return envValue ? envValue.split(",").map((key) => key.trim()).filter((key) => key !== "") : [];
+  return [];
 }
 
 export function resolveMonitoringCommands<T extends MonitoringCommandEntry>(

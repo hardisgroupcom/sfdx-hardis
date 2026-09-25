@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [Monitoring backup](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) writes an `AGENTS.md` file explaining the monitoring repository, so a coding agent can answer questions about the org, also from the deployment repository and the pipeline logs when the new `deploymentRepository` property is set.
+- [Monitoring](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): the `MONITORING_DISABLE` env variable has priority over the `monitoringDisable` property, and spaces around its keys are ignored.
 - New [Free training](https://sfdx-hardis.cloudity.com/salesforce-devops-training/) page presenting the hands-on Salesforce DevOps course, linked from the menu, the home page and the guides.
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta):
   - New `promotionConflictMarkersIgnoredFiles` property to list the files allowed to hold git conflict markers, so a repository whose own content holds them can promote again.

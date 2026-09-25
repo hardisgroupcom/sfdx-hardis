@@ -11,11 +11,8 @@ import {
   mergeAgentsMdBlock,
   writeMonitoringAgentsMd,
 } from '../../../src/common/monitoring/monitoringAgentsMd.js';
-import {
-  detectGitServer,
-  getRepositoryHost,
-  isRepositoryUrl,
-} from '../../../src/common/monitoring/monitoringDeploymentRepository.js';
+import { isRepositoryUrl } from '../../../src/common/monitoring/monitoringDeploymentRepository.js';
+import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { getMonitoringDisable } from '../../../src/common/notifProvider/notificationConfig.js';
 import { removeFromConfigFile, setInConfigFile } from '../../../src/config/index.js';
 
@@ -96,28 +93,55 @@ describe('monitoringAgentsMd', () => {
     it('trims the keys of the env var and of the configuration', () => {
       process.env.MONITORING_DISABLE = 'AUDIT_TRAIL, LICENSES ,';
       expect(getMonitoringDisable({})).to.deep.equal(['AUDIT_TRAIL', 'LICENSES']);
+      delete process.env.MONITORING_DISABLE;
       expect(getMonitoringDisable({ monitoringDisable: [' ORG_LIMITS '] })).to.deep.equal(['ORG_LIMITS']);
       expect(getMonitoringDisable({ monitoringDisable: [] })).to.deep.equal([]);
+    });
+
+    it('gives the env var priority over the configuration', () => {
+      process.env.MONITORING_DISABLE = 'AUDIT_TRAIL';
+      expect(getMonitoringDisable({ monitoringDisable: ['ORG_LIMITS'] })).to.deep.equal(['AUDIT_TRAIL']);
+    });
+
+    it('ignores an empty env var and an Azure variable that was never defined', () => {
+      process.env.MONITORING_DISABLE = '  ';
+      expect(getMonitoringDisable({ monitoringDisable: ['ORG_LIMITS'] })).to.deep.equal(['ORG_LIMITS']);
+      process.env.MONITORING_DISABLE = '$(MONITORING_DISABLE)';
+      expect(getMonitoringDisable({ monitoringDisable: ['ORG_LIMITS'] })).to.deep.equal(['ORG_LIMITS']);
     });
   });
 
   describe('deployment repository', () => {
-    it('detects the git server from the host of the address', () => {
-      expect(detectGitServer('https://github.com/my-company/my-project')).to.equal('GitHub');
-      expect(detectGitServer('git@github.com:my-company/my-project.git')).to.equal('GitHub');
-      expect(detectGitServer('https://gitlab.my-company.com/group/sub/project.git')).to.equal('GitLab');
-      expect(detectGitServer('https://my-org@dev.azure.com/my-org/My%20Project/_git/my-project')).to.equal('Azure DevOps');
-      expect(detectGitServer('git@ssh.dev.azure.com:v3/my-org/project/repo')).to.equal('Azure DevOps');
-      expect(detectGitServer('https://my-org.visualstudio.com/project/_git/repo')).to.equal('Azure DevOps');
-      expect(detectGitServer('https://bitbucket.org/workspace/repo.git')).to.equal('Bitbucket');
-      expect(detectGitServer('https://git.my-company.com/repo.git')).to.be.null;
-      expect(detectGitServer('')).to.be.null;
+    it('detects the git provider from the host of the address', () => {
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://github.com/my-company/my-project')).to.equal('github');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('git@github.com:my-company/my-project.git')).to.equal('github');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://gitlab.my-company.com/group/sub/project.git')).to.equal('gitlab');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://my-org@dev.azure.com/my-org/My%20Project/_git/my-project')).to.equal('azure');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('git@ssh.dev.azure.com:v3/my-org/project/repo')).to.equal('azure');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://my-org.visualstudio.com/project/_git/repo')).to.equal('azure');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://bitbucket.org/workspace/repo.git')).to.equal('bitbucket');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://git.my-company.com/repo.git')).to.be.null;
+      expect(GitProvider.getProviderTypeFromRemoteUrl('')).to.be.null;
     });
 
-    it('does not read the server from the path of the address', () => {
-      expect(detectGitServer('https://gitlab.acme.com/team/github.com-mirror')).to.equal('GitLab');
-      expect(detectGitServer('https://git.acme.com/gitlab-tools/sf.git')).to.be.null;
-      expect(getRepositoryHost('ssh://git@gitlab.acme.com:2222/team/repo.git')).to.equal('gitlab.acme.com');
+    it('does not read the git provider from the path of the address', () => {
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://gitlab.acme.com/team/github.com-mirror')).to.equal('gitlab');
+      expect(GitProvider.getProviderTypeFromRemoteUrl('https://git.acme.com/gitlab-tools/sf.git')).to.be.null;
+      expect(GitProvider.getProviderTypeFromRemoteUrl('ssh://git@gitlab.acme.com:2222/team/repo.git')).to.equal('gitlab');
+    });
+
+    it('does not guess from the CI variables of the running job', () => {
+      const previous = process.env.GITHUB_ACTIONS;
+      process.env.GITHUB_ACTIONS = 'true';
+      try {
+        expect(GitProvider.getProviderTypeFromRemoteUrl('https://git.my-company.com/team/repo.git')).to.be.null;
+      } finally {
+        if (previous === undefined) {
+          delete process.env.GITHUB_ACTIONS;
+        } else {
+          process.env.GITHUB_ACTIONS = previous;
+        }
+      }
     });
 
     it('accepts only git repository addresses', () => {
@@ -137,7 +161,7 @@ describe('monitoringAgentsMd', () => {
 
     it('names the repository, its git server and the branch when set', () => {
       const withoutBranch = buildDeploymentRepositoryStatus({ deploymentRepository: 'https://gitlab.com/group/project' });
-      expect(withoutBranch).to.include('`https://gitlab.com/group/project` (GitLab)');
+      expect(withoutBranch).to.include('`https://gitlab.com/group/project` (git provider: `gitlab`)');
       expect(withoutBranch).to.include('as explained below');
       const withBranch = buildDeploymentRepositoryStatus({ deploymentRepository: 'https://github.com/a/b', deploymentBranch: 'main' });
       expect(withBranch).to.include('Its branch `main` deploys to this org');
@@ -146,7 +170,7 @@ describe('monitoringAgentsMd', () => {
     it('fills the status in the rendered block', async () => {
       const content = await buildMonitoringAgentsMdBlock({ deploymentRepository: 'https://github.com/a/b' });
       expect(content).to.not.include('{{deploymentRepositoryStatus}}');
-      expect(content).to.include('The deployment repository of this org is `https://github.com/a/b` (GitHub)');
+      expect(content).to.include('The deployment repository of this org is `https://github.com/a/b` (git provider: `github`)');
     });
   });
 
