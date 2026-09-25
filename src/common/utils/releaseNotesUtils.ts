@@ -223,8 +223,11 @@ export async function resolveReleaseScope(
       const prevCommit = selectedIndex >= 0 && selectedIndex < mergeCommits.length - 1
         ? mergeCommits[selectedIndex + 1]
         : null;
+      // The first promotion into a branch has no merge before it: bound the range with the
+      // merge's first parent, as the merge-commit scope does, or the metadata delta is skipped
+      // and the notes of every first promotion say no metadata changed
       return {
-        fromCommit: prevCommit?.sha || "",
+        fromCommit: prevCommit?.sha || (await getFirstParentCommit(selected.sha)) || "",
         toCommit: selected.sha,
         targetBranch,
         sourceBranch: sourceBranch || undefined,
@@ -988,6 +991,7 @@ export async function collectMetadataAttribution(
 export async function collectDeploymentActions(
   pullRequests: CommonPullRequestInfo[],
   commandRef: any,
+  targetBranch?: string,
 ): Promise<DeploymentActionStateEntry[]> {
   const prNumbers = pullRequests.map((pr) => pr.idNumber).filter((n) => n > 0);
   if (prNumbers.length === 0) {
@@ -1028,7 +1032,7 @@ export async function collectDeploymentActions(
         if (allEntries.length > 0) {
           // State exists for these PRs: return the processed actions (skipped excluded, deduped),
           // even if that leaves the list empty - do not fall back to re-listing action definitions.
-          return filterAndDedupeDeploymentActions(allEntries);
+          return filterAndDedupeDeploymentActions(allEntries, targetBranch);
         }
       }
     }
@@ -1069,16 +1073,26 @@ export async function collectDeploymentActions(
 // Keep only processed actions (drop skipped) and remove duplicates: the same action can be
 // recorded once per org branch, which would render as identical rows since the table does not
 // show the org branch. Collapse to one row per action + phase + PR, keeping the most meaningful status.
-function filterAndDedupeDeploymentActions(entries: DeploymentActionStateEntry[]): DeploymentActionStateEntry[] {
+/**
+ * One row per action, with its status. The notes of a branch report the status in the org of that
+ * branch: a manual step ticked in integration is still to do in uat, and taking the best status
+ * across orgs printed it as done in the notes of uat. An action with no entry for that branch yet,
+ * as when previewing a promotion that has not run, keeps its best status across orgs.
+ */
+export function filterAndDedupeDeploymentActions(entries: DeploymentActionStateEntry[], targetBranch?: string): DeploymentActionStateEntry[] {
   const statusPriority: Record<string, number> = { success: 3, failed: 2, manual: 1 };
   const byKey = new Map<string, DeploymentActionStateEntry>();
+  const isTarget = (entry: DeploymentActionStateEntry) => !!targetBranch && entry.orgBranch === targetBranch;
   for (const entry of entries) {
     if (entry.status === "skipped") {
       continue;
     }
     const key = `${entry.actionId}::${entry.when}::${entry.prNumber ?? ""}`;
     const existing = byKey.get(key);
-    if (!existing || (statusPriority[entry.status] || 0) > (statusPriority[existing.status] || 0)) {
+    const better = !existing
+      || (isTarget(entry) && !isTarget(existing))
+      || (isTarget(entry) === isTarget(existing) && (statusPriority[entry.status] || 0) > (statusPriority[existing.status] || 0));
+    if (better) {
       byKey.set(key, entry);
     }
   }

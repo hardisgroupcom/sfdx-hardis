@@ -270,7 +270,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 
     // 5. Collect deployment actions
     uxLog("action", this, c.cyan(t("releaseNotesCollectingActions")));
-    const deploymentActions = await collectDeploymentActions(pullRequests, this);
+    const deploymentActions = await collectDeploymentActions(pullRequests, this, scope.targetBranch);
     if (deploymentActions.length > 0) {
       uxLogTable(this, deploymentActions.map((a) => ({
         Action: a.actionLabel,
