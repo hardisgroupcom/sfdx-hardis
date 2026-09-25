@@ -157,7 +157,8 @@ Traps that cost earlier runs time:
   workflows, go ahead and enable them"). The API lists zero workflows until then. Since 2026-09-25
   `init` notices it, opens the Actions page and waits up to 10 minutes: click the green button in
   the browser, which is also what Lab 1.2 now tells the learner. Before that fix `init` printed
-  Actions OK and the first Pull Request got no checks.
+  Actions OK and the first Pull Request got no checks. A run with no browser passes
+  `--no-actions-wait` and clicks the banner some other way before step 7 pushes.
 - **The CDP attach can hang** after hours of use, even once your own tab is closed. Do not restart
   the user's Chrome and never call `browser.close()`. For the badge claim, open the issue with
   `gh issue create` using the form's exact body and the `badge-claim` label, and record the step as
