@@ -448,8 +448,8 @@ describe('backpromote deployment tips', () => {
 
 describe('backpromoteOrgDisplayName()', () => {
   it('names a scratch org by its alias, since its sandbox name is its org id', () => {
-    expect(backpromoteOrgDisplayName({ orgType: 'scratch', alias: 'helios-dev', sandboxName: '00dcu00000heexpuab' })).to.equal('helios-dev');
-    expect(backpromoteOrgDisplayName({ orgType: 'scratch', alias: null, sandboxName: '00dcu00000heexpuab' })).to.equal('00dcu00000heexpuab');
+    expect(backpromoteOrgDisplayName({ orgType: 'scratch', alias: 'helios-dev', sandboxName: '00d000000000000001' })).to.equal('helios-dev');
+    expect(backpromoteOrgDisplayName({ orgType: 'scratch', alias: null, sandboxName: '00d000000000000001' })).to.equal('00d000000000000001');
   });
 
   it('keeps the sandbox name of a sandbox, whatever its alias', () => {
