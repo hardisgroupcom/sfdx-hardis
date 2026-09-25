@@ -81,6 +81,7 @@ Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
 - Added
   - **ApexClass**: InvoiceService, InvoiceServiceTest
   - **CustomField**: Account.VAT__c
+
 - Updated
   - **Flow**: Account_After_Update
 
@@ -91,12 +92,89 @@ Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
 ```
 
 - One `##` section per backup commit, newest first, titled with its date and time in UTC.
-- Inside each section, the groups `Added`, `Removed` and `Updated`, in that order. Leave out a group with no component.
+- Inside each section, the groups `Added`, `Removed` and `Updated`, in that order, separated by a blank line. Leave out a group with no component.
 - One line per metadata type: the type in bold, then its members separated by a comma and a space. Sort types and members alphabetically.
 - The org URL comes from `instanceUrl` in `.sfdx-hardis.yml`.
 - If nothing changed in the range, write the title, the org line and `No change detected in this period.`
 - Write the file to `hardis-report/org-changes-<from>-to-<to>.md` (git ignores that folder), unless the user gives another path.
 - Report only what the commits show. Do not guess who made a change or why.
+
+## Deployment repository and pipelines
+
+{{deploymentRepositoryStatus}}
+
+This repository shows what the org looks like every night. The deployment repository (the sfdx-hardis CI/CD project of the same org) shows what was delivered to it, through which Pull Request, and whether its pipelines succeeded. Use both, and the pipeline logs of both, for questions like:
+
+- Was this change deployed by the CI/CD pipeline, or made directly in the org?
+- Which Pull Request brought this version of the Flow to production, and when?
+- Why did last night's backup fail? Why did the last deployment to this org fail?
+- What is in the deployment repository that is not in the org yet, or the other way around?
+
+### Get the deployment repository
+
+1. Take the repository name from the last part of `deploymentRepository`, without `.git`.
+2. If `../<name>` exists and `git -C ../<name> remote get-url origin` points to the same repository (same host and path, whatever the `https` or `ssh` form and the `.git` suffix), use it. Otherwise clone it there: `git clone <deploymentRepository> ../<name>`. If the clone fails for lack of rights, tell the user and answer without the deployment repository.
+3. Run `git -C ../<name> fetch --all --prune` before answering.
+4. That folder may be the working copy of the user: never check out, commit or change anything in it. Read the branches through their remote refs: `git -C ../<name> show origin/<branch>:<path>`, `git -C ../<name> log origin/<branch> -- <path>`, `git -C ../<name> ls-tree -r --name-only origin/<branch>`.
+
+### Find the branch that deploys to this org
+
+- If `deploymentBranch` is set in `.sfdx-hardis.yml`, use it.
+- Otherwise, list the branch configuration files of the deployment repository, on its default branch (`git -C ../<name> remote show origin` names it): `git -C ../<name> ls-tree --name-only origin/<default branch> config/branches/`. The file whose `instanceUrl` is the `instanceUrl` of `.sfdx-hardis.yml` here (compare them without the trailing `/`, ignoring case) is `config/branches/.sfdx-hardis.<branch>.yml`, and `<branch>` is the branch that deploys to this org.
+- If no file matches, say so and ask the user which branch it is. Do not pick one from its name. Suggest setting `deploymentBranch` in `.sfdx-hardis.yml` so the next agent does not have to ask.
+
+### What the deployment repository holds
+
+| Path | Content |
+| ---- | ------- |
+| `sfdx-project.json` | The package directories: the sources are there, not always in `force-app/`. |
+| `config/.sfdx-hardis.yml` | Project configuration: project name, deployment settings, deployment actions. |
+| `config/branches/.sfdx-hardis.<branch>.yml` | The org of each major branch (`instanceUrl`, `targetUsername`) and its own settings. |
+| `manifest/package-no-overwrite.xml`, `manifest/packageDeployOnChange.xml` | Items never deployed once they exist in the org, or only when they change. A difference between the two repositories on these items is expected. |
+| `manifest/destructiveChanges.xml` | Items deleted from the orgs by the deployments. |
+| History of a major branch | Each merge into it is a Pull Request, deployed to the org of that branch by the pipeline. |
+
+The Pull Request number is in the merge commit message: `Merge pull request #12` or `(#12)` on GitHub, `See merge request group/project!12` on GitLab, `Merged PR 12` on Azure DevOps, `(pull request #12)` on Bitbucket.
+
+### Recipes
+
+- **Deployed or made in the org?** Find the backup commit that shows the change here: the change happened between the previous backup and that one. Then look for a commit of the deployment branch in that window that touches the same component: `git -C ../<name> log origin/<branch> --since=<previous backup> --until=<this backup> --format="%H %ci %s" -- <path of the component in the package directory>`. One found: it came through the CI/CD pipeline, name its Pull Request. None found: it was probably made directly in the org. Say "probably", and point to the Setup Audit Trail for who did it.
+- **Which Pull Request brought this version?** `git -C ../<name> log origin/<branch> --first-parent --format="%H %ci %s" -- <path>` gives the merges that touched the component, newest first.
+- **Repository and org differ?** Compare a file of the deployment branch with the same file here: `git -C ../<name> show origin/<branch>:<path>` against `force-app/main/default/<same path>`. Before calling it a drift, check that the item is not in `package-no-overwrite.xml` or `packageDeployOnChange.xml`, and that the backup does not skip it.
+
+### Git server access
+
+The git server of each repository comes from its URL: `github.com` is GitHub, a host with `gitlab` in its name is GitLab (often self-hosted), `dev.azure.com` or `*.visualstudio.com` is Azure DevOps, `bitbucket.org` is Bitbucket Cloud. The URL of this repository is `git remote get-url origin`. Jenkins has no standard API: ask the user for the logs.
+
+Credentials, in this order:
+
+1. A command line tool the user is already logged in with: `gh auth status`, `glab auth status`, `az account show` (with the `azure-devops` extension). Use it as is.
+2. Otherwise, a `.env` file at the root of this repository (git ignores it). Load it into the environment of your commands only, for example `set -a; . ./.env; set +a`, and use the variables by name in the commands, never their value. The variable names are the ones sfdx-hardis uses:
+   - GitHub: `CI_SFDX_HARDIS_GITHUB_TOKEN` or `GITHUB_TOKEN`
+   - GitLab: `CI_SFDX_HARDIS_GITLAB_TOKEN` or `ACCESS_TOKEN`
+   - Azure DevOps: `CI_SFDX_HARDIS_AZURE_TOKEN` or `SYSTEM_ACCESSTOKEN`
+   - Bitbucket: `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, with `CI_SFDX_HARDIS_BITBUCKET_EMAIL` when the token is an Atlassian account API token
+3. Neither: tell the user which login or which variable is missing, and answer with what git alone shows.
+
+Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deployment branch for the deployment repository, and the current branch for this one:
+
+- **GitHub**
+  - Runs: `gh run list -R <owner>/<repo> --branch <branch> --limit 20`, then `gh run view <run id> -R <owner>/<repo> --log-failed`
+  - Pull Requests: `gh pr list -R <owner>/<repo> --base <branch> --state merged --limit 30`, `gh pr view <number> -R <owner>/<repo> --comments`
+  - Without `gh`: `curl -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/<owner>/<repo>/actions/runs?branch=<branch>&per_page=20"`, then `/actions/runs/<run id>/jobs` and `/actions/jobs/<job id>/logs`
+- **GitLab** (`<project>` is the URL-encoded path, like `group%2Fproject`)
+  - Pipelines: `glab api "projects/<project>/pipelines?ref=<branch>&per_page=20"`, then `projects/<project>/pipelines/<id>/jobs` and `projects/<project>/jobs/<job id>/trace`
+  - Merge Requests: `glab mr list -R <group>/<project> --merged --target-branch <branch>`, `glab mr view <number> -R <group>/<project> --comments`
+  - Without `glab`: the same API paths with `curl -H "PRIVATE-TOKEN: $CI_SFDX_HARDIS_GITLAB_TOKEN" "https://<gitlab host>/api/v4/..."`
+- **Azure DevOps**
+  - Runs: `az pipelines runs list --org https://dev.azure.com/<org> --project <project> --branch <branch> --top 20`, `az pipelines runs show --org ... --project ... --id <id>`
+  - Logs: `curl -u ":$CI_SFDX_HARDIS_AZURE_TOKEN" "https://dev.azure.com/<org>/<project>/_apis/build/builds/<id>/logs?api-version=7.1"`, then `.../logs/<log id>?api-version=7.1`
+  - Pull Requests: `az repos pr list --org ... --project ... --repository <repo> --target-branch <branch> --status completed`
+- **Bitbucket Cloud** (`Authorization: Bearer $CI_SFDX_HARDIS_BITBUCKET_TOKEN`, or `-u "$CI_SFDX_HARDIS_BITBUCKET_EMAIL:$CI_SFDX_HARDIS_BITBUCKET_TOKEN"` with an account API token)
+  - Pipelines: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pipelines/?sort=-created_on&pagelen=50`, keep the ones whose `target.ref_name` is `<branch>`, then `.../pipelines/<uuid>/steps/` and `.../pipelines/<uuid>/steps/<step uuid>/log`
+  - Pull Requests: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pullrequests?state=MERGED&q=destination.branch.name="<branch>"`
+
+In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
 
 ## Files and folders
 
@@ -112,7 +190,7 @@ Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
 | `manifest/chunks/` | Only in full mode (`--full`): the list of items split in several retrieves. |
 | `docs/` | Project documentation generated from the metadata after each backup, unless disabled: objects, Apex, Flows with their visual history (`docs/flows/*-history.md`), Lightning pages, profiles, permission sets, packages, and an object model diagram. |
 | `mkdocs.yml` | Menu and settings of the documentation site built from `docs/`. |
-| `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`. |
+| `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, and the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |
 | `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. |
 | `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. |
@@ -142,6 +220,8 @@ The other way around, a component in `force-app/` but not in `manifest/package-a
 - Do not edit the files under `force-app/`, `manifest/package-all-org-items.xml`, `manifest/package-backup-items.xml`, `installedPackages/` or `docs/`: the next backup overwrites them.
 - Changes worth making here are configuration: `manifest/package-skip-items.xml`, `.sfdx-hardis.yml`, the pipeline file. They apply to the branch they are committed on, so to one org.
 - To answer "what does this org do", read the sources in `force-app/main/default/` first, then the generated `docs/` when present. Before describing a component, check that it is still in `manifest/package-all-org-items.xml`.
+- Only read the deployment repository and the git servers. Never commit, push, check out a branch in the local clone of the deployment repository, create a branch, comment, approve or merge a Pull Request, start, retry or cancel a pipeline, or change a variable or a setting of either repository.
+- Never print a token, and never write one in a file or in an answer.
 
 ## Documentation
 

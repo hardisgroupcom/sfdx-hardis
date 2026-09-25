@@ -6,10 +6,12 @@ import path from 'path';
 import {
   AGENTS_MD_END_MARKER,
   AGENTS_MD_START_MARKER,
+  buildDeploymentRepositoryStatus,
   buildMonitoringAgentsMdBlock,
   mergeAgentsMdBlock,
   writeMonitoringAgentsMd,
 } from '../../../src/common/monitoring/monitoringAgentsMd.js';
+import { detectGitServer } from '../../../src/common/monitoring/monitoringDeploymentRepository.js';
 
 const block = `${AGENTS_MD_START_MARKER}\nsfdx-hardis content v2\n${AGENTS_MD_END_MARKER}\n`;
 
@@ -51,6 +53,38 @@ describe('monitoringAgentsMd', () => {
       expect(content).to.include('| monthly (day 1) |');
       expect(content).to.include('| `MY_CUSTOM` | My custom check | `sf my:custom` | weekly (monday) |');
       expect(content).to.match(/\| `ORG_LIMITS` \|.*\| disabled \(monitoringDisable\) \|/);
+    });
+  });
+
+  describe('deployment repository', () => {
+    it('detects the git server from the repository address', () => {
+      expect(detectGitServer('https://github.com/my-company/my-project')).to.equal('GitHub');
+      expect(detectGitServer('git@github.com:my-company/my-project.git')).to.equal('GitHub');
+      expect(detectGitServer('https://gitlab.my-company.com/group/sub/project.git')).to.equal('GitLab');
+      expect(detectGitServer('https://my-org@dev.azure.com/my-org/My%20Project/_git/my-project')).to.equal('Azure DevOps');
+      expect(detectGitServer('https://my-org.visualstudio.com/project/_git/repo')).to.equal('Azure DevOps');
+      expect(detectGitServer('https://bitbucket.org/workspace/repo.git')).to.equal('Bitbucket');
+      expect(detectGitServer('https://git.my-company.com/repo.git')).to.be.null;
+      expect(detectGitServer('')).to.be.null;
+    });
+
+    it('tells the agent to ask for the setting when there is none', () => {
+      expect(buildDeploymentRepositoryStatus({})).to.include('No deployment repository is configured');
+      expect(buildDeploymentRepositoryStatus({ deploymentRepository: '  ' })).to.include('No deployment repository is configured');
+    });
+
+    it('names the repository, its git server and the branch when set', () => {
+      const withoutBranch = buildDeploymentRepositoryStatus({ deploymentRepository: 'https://gitlab.com/group/project' });
+      expect(withoutBranch).to.include('`https://gitlab.com/group/project` (GitLab)');
+      expect(withoutBranch).to.include('as explained below');
+      const withBranch = buildDeploymentRepositoryStatus({ deploymentRepository: 'https://github.com/a/b', deploymentBranch: 'main' });
+      expect(withBranch).to.include('Its branch `main` deploys to this org');
+    });
+
+    it('fills the status in the rendered block', async () => {
+      const content = await buildMonitoringAgentsMdBlock({ deploymentRepository: 'https://github.com/a/b' });
+      expect(content).to.not.include('{{deploymentRepositoryStatus}}');
+      expect(content).to.include('The deployment repository of this org is `https://github.com/a/b` (GitHub)');
     });
   });
 

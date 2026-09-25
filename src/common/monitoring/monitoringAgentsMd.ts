@@ -5,6 +5,7 @@ import { resolveMonitoringCommands } from '../notifProvider/notificationConfig.j
 import type { MonitoringCommandEntry } from '../notifProvider/types.js';
 import { t } from '../utils/i18n.js';
 import { getTitleI18nKey, monitoringCommandsDefault } from './monitoringDefaults.js';
+import { detectGitServer } from './monitoringDeploymentRepository.js';
 
 // AGENTS.md written at the root of a monitoring repository, so that a coding agent opened in it knows
 // how the backup works and what each file holds. Only the block between the markers belongs to
@@ -66,7 +67,26 @@ export async function buildMonitoringAgentsMdBlock(config: any): Promise<string>
   const monitoringDisable: string[] =
     config?.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(',') : []);
   const table = buildMonitoringCommandsTable(commands, monitoringDisable);
-  return template.replace('{{monitoringCommandsTable}}', table).trimEnd() + '\n';
+  return template
+    .replace('{{monitoringCommandsTable}}', table)
+    .replace('{{deploymentRepositoryStatus}}', buildDeploymentRepositoryStatus(config))
+    .trimEnd() + '\n';
+}
+
+export function buildDeploymentRepositoryStatus(config: any): string {
+  const deploymentRepository = typeof config?.deploymentRepository === 'string' ? config.deploymentRepository.trim() : '';
+  if (deploymentRepository === '') {
+    return 'No deployment repository is configured on this branch. When a question needs one, answer with this repository alone, and tell the user that setting `deploymentRepository` in `.sfdx-hardis.yml` (by hand, from the Org Monitoring panel of VS Code, or by running `sf hardis:org:configure:monitoring` again) lets you also search the CI/CD project and its pipelines.';
+  }
+  const gitServer = detectGitServer(deploymentRepository);
+  const lines = [`The deployment repository of this org is \`${deploymentRepository}\`${gitServer ? ` (${gitServer})` : ''}, from \`deploymentRepository\` in \`.sfdx-hardis.yml\`.`];
+  const deploymentBranch = typeof config?.deploymentBranch === 'string' ? config.deploymentBranch.trim() : '';
+  if (deploymentBranch !== '') {
+    lines.push(`Its branch \`${deploymentBranch}\` deploys to this org (\`deploymentBranch\` in \`.sfdx-hardis.yml\`).`);
+  } else {
+    lines.push('Find its branch that deploys to this org as explained below.');
+  }
+  return lines.join(' ');
 }
 
 // Writes AGENTS.md, and a CLAUDE.md that imports it when the repository has none.
