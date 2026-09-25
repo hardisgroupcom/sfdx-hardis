@@ -142,7 +142,7 @@ Read the configuration from the deployment branch itself (`git -C ../<name> show
 
 #### What gets deployed
 
-- By default, the whole content of the package directories of `sfdx-project.json` (not always `force-app/`).
+- By default, the items listed in `manifest/package.xml`, minus the items of `manifest/package-no-overwrite.xml` that already exist in the target org. A component that is in the repository but not in `manifest/package.xml` is never deployed. The sources are in the package directories of `sfdx-project.json` (not always `force-app/`).
 - `useDeltaDeployment: true`: from a feature branch to a major branch, only the metadata changed by the Pull Request, plus their dependencies with `useDeltaDeploymentWithDependencies: true`. Between two major branches the deployment stays full, unless `enableDeltaDeploymentBetweenMajorBranches: true`.
 - `useSmartDeploymentTests: true`: Apex tests are skipped when a delta deployment only holds metadata that cannot break them (layouts, labels, reports...), never in production.
 - `manifest/package-no-overwrite.xml` (or the file named by `packageNoOverwritePath` on a branch): items deployed only if they do not exist in the org yet. `manifest/packageDeployOnChange.xml`: items deployed only when they differ from the org. A difference between the two repositories on these items is expected.
@@ -170,7 +170,7 @@ So "why is this record, schedule or setting like this in the org?" can have its 
 
 - **Deployed or made in the org?** Find the backup commit that shows the change here: the change happened between the previous backup and that one. Then look for a commit of the deployment branch in that window that touches the same component: `git -C ../<name> log origin/<branch> --since=<previous backup> --until=<this backup> --format="%H %ci %s" -- <path of the component in the package directory>`. One found: it came through the CI/CD pipeline, name its Pull Request. None found: it was probably made directly in the org. Say "probably", and point to the Setup Audit Trail for who did it.
 - **Which Pull Request brought this version?** `git -C ../<name> log origin/<branch> --first-parent --format="%H %ci %s" -- <path>` gives the merges that touched the component, newest first.
-- **Repository and org differ?** Compare a file of the deployment branch with the same file here: `git -C ../<name> show origin/<branch>:<path>` against `force-app/main/default/<same path>`. Before calling it a drift, check that the item is not in `package-no-overwrite.xml` or `packageDeployOnChange.xml`, and that the backup does not skip it.
+- **Repository and org differ?** Compare a file of the deployment branch with the same file here: `git -C ../<name> show origin/<branch>:<path>` against `force-app/main/default/<same path>`. Before calling it a drift, check that the item is in the `manifest/package.xml` of the deployment branch (otherwise the pipeline never deploys it), that it is not in `package-no-overwrite.xml` or `packageDeployOnChange.xml`, and that the backup does not skip it.
 
 ### Git server access
 
