@@ -2050,6 +2050,27 @@
       "title": "Apex Test Classes to run during deployments (NOT RECOMMENDED) (Beta)",
       "type": "array"
     },
+    "deploymentBranch": {
+      "$id": "#/properties/deploymentBranch",
+      "description": "In a monitoring repository, the branch of the deployment repository (deploymentRepository) that deploys to the monitored org. Optional: without it, coding agents find the branch whose config/branches/.sfdx-hardis.<branch>.yml has the same instanceUrl as the monitored org.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent",
+      "examples": [
+        "main",
+        "preprod"
+      ],
+      "title": "Deployment branch",
+      "type": "string"
+    },
+    "deploymentRepository": {
+      "$id": "#/properties/deploymentRepository",
+      "description": "In a monitoring repository, the address of the sfdx-hardis CI/CD repository that deploys to the monitored org, the mirror of monitoringRepository. The AGENTS.md file written by the monitoring backup tells coding agents to search it, and the pipelines of both repositories, and the Org Monitoring panel of VS Code offers to open it.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent",
+      "examples": [
+        "https://github.com/my-company/my-project"
+      ],
+      "title": "Deployment repository",
+      "type": "string"
+    },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
       "default": "integration",
@@ -3177,7 +3198,7 @@
     },
     "monitoringDisable": {
       "$id": "#/properties/monitoringDisable",
-      "description": "List of commands to skip during monitoring jobs",
+      "description": "List of commands to skip during monitoring jobs. The MONITORING_DISABLE env variable (comma-separated keys, for example AUDIT_TRAIL,LICENSES) has priority over it.",
       "examples": [
         [
           "METADATA_STATUS",
@@ -3245,7 +3266,7 @@
     },
     "monitoringRepository": {
       "$id": "#/properties/monitoringRepository",
-      "description": "In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project.",
+      "description": "In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project. Its mirror in the monitoring repository is deploymentRepository.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
       "examples": [
         "https://github.com/my-company/my-project-monitoring"

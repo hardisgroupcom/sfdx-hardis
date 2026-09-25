@@ -16,10 +16,16 @@ import {
   getGitRepoName,
   git,
   gitAddCommitPush,
+  isCI,
   uxLog,
 } from '../../../../common/utils/index.js';
+import {
+  logDeploymentRepositoryChange,
+  MONITORING_CONFIG_FILE,
+  resolveDeploymentRepositoryChange,
+} from '../../../../common/monitoring/monitoringDeploymentRepository.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { CONSTANTS, setInConfigFile } from '../../../../config/index.js';
+import { CONSTANTS, removeFromConfigFile, setInConfigFile } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
@@ -50,6 +56,7 @@ Key functionalities include:
 - **Monitoring Branch Creation:** Creates or checks out a dedicated Git branch (e.g., \`monitoring_yourinstanceurl\`) for the monitoring configuration.
 - **SFDX Project Setup:** Initializes an SFDX project structure within the repository if it doesn't already exist, and copies default monitoring files.
 - **Configuration File Update:** Updates the local \`.sfdx-hardis.yml\` file with the target org's username and instance URL.
+- **Deployment Repository:** Asks for the address of the sfdx-hardis CI/CD repository that deploys to the org (optional, pass \`--deployment-repository\` to skip the question). It is stored as \`deploymentRepository\`, and suggested from the other monitoring branches of the repository. Emptying the answer, or passing an empty \`--deployment-repository\`, removes a value set before. The \`AGENTS.md\` file written at each backup then tells coding agents to search that repository and the pipelines of both repositories.
 - **SSL Certificate Generation:** Generates an SSL certificate for secure authentication to the monitored org.
 - **Automated Commit and Push:** Offers to automatically commit and push the generated configuration files to the remote Git repository.
 - **Scheduling:** On GitHub, writes the monitoring workflow on the default branch with this org in its matrix and its two secrets in its jobs, since GitHub only schedules, and only offers Run workflow for, the workflows of that branch. On other Git servers, gives the instructions to schedule the job.
@@ -81,7 +88,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 <!-- training-links:end -->
 `;
 
-  public static examples = ['$ sf hardis:org:configure:monitoring'];
+  public static examples = [
+    '$ sf hardis:org:configure:monitoring',
+    '$ sf hardis:org:configure:monitoring --deployment-repository https://github.com/my-company/my-project',
+  ];
 
   public static flags: any = {
     orginstanceurl: Flags.string({
@@ -97,6 +107,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    'deployment-repository': Flags.string({
+      description: 'Address of the sfdx-hardis CI/CD repository that deploys to the monitored org, stored as deploymentRepository without prompting. An empty value removes it',
     }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
@@ -237,12 +250,24 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/monitoring', '.'), process.cwd(), { overwrite: true });
     }
 
+    // The CI/CD repository that deploys to this org: the AGENTS.md written by the backup tells coding agents to search it too
+    const deploymentRepositoryChange = await resolveDeploymentRepositoryChange(this, {
+      repository: flags['deployment-repository'],
+      interactive: !isCI,
+      currentBranch: branchName,
+    });
+    logDeploymentRepositoryChange(this, deploymentRepositoryChange);
+    if (deploymentRepositoryChange.action === 'clear') {
+      await removeFromConfigFile(MONITORING_CONFIG_FILE, ['deploymentRepository']);
+    }
+
     // Update config file
     await setInConfigFile(
       [],
       {
         targetUsername: flags['target-org'].getUsername(),
         instanceUrl: flags['target-org'].getConnection().instanceUrl,
+        ...(deploymentRepositoryChange.action === 'set' ? { deploymentRepository: deploymentRepositoryChange.value } : {}),
       },
       './.sfdx-hardis.yml'
     );

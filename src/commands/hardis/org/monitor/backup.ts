@@ -23,6 +23,7 @@ import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
 import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitoringAgentsMd.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -68,6 +69,12 @@ _With those both options, it's like if you are not using --full, but with chunke
 ## In CI/CD
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+
+## Coding agents
+
+After each backup, the command writes an \`AGENTS.md\` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
+
+Only the block between the \`sfdx-hardis-monitoring-agents-start\` and \`sfdx-hardis-monitoring-agents-end\` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A \`CLAUDE.md\` file that imports \`AGENTS.md\` is also created when the repository has none.
 
 ## Troubleshooting
 
@@ -416,6 +423,9 @@ In agent mode:
       },
     });
 
+    // Written after the notification, so that an update of AGENTS.md is never reported as an org change
+    await this.writeAgentsMd();
+
     // Ask interactively only after backup is done and just before doc generation.
     if (!isCI && !agentMode && !skipDocFlagProvided) {
       const generateDocRes = await prompts({
@@ -479,6 +489,21 @@ In agent mode:
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }
 
+
+  private async writeAgentsMd() {
+    try {
+      const config = await getConfig('user');
+      const agentsMdResult = await writeMonitoringAgentsMd(config);
+      if (agentsMdResult.updatedFiles.length > 0) {
+        uxLog("action", this, c.cyan(t('monitoringAgentsMdUpdated', { files: agentsMdResult.updatedFiles.join(', ') })));
+      }
+      if (agentsMdResult.markersBroken) {
+        uxLog("warning", this, c.yellow(t('monitoringAgentsMdMarkersBroken')));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('errorWhileWritingMonitoringAgentsMd', { message: e.message })));
+    }
+  }
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
     let packageXmlToExtract = packageXmlFullFile;

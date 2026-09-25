@@ -9361,6 +9361,84 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordiondeploymentBranch">
+    <div class="card">
+        <div class="card-header" id="headingdeploymentBranch">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#deploymentBranch"
+                        aria-expanded="" aria-controls="deploymentBranch" onclick="setAnchor('#deploymentBranch')"><span class="property-name">deploymentBranch</span></button>
+            </h2>
+        </div>
+
+        <div id="deploymentBranch"
+             class="collapse property-definition-div" aria-labelledby="headingdeploymentBranch"
+             data-parent="#accordiondeploymentBranch">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#deploymentBranch" onclick="anchorLink('deploymentBranch')">deploymentBranch</a></div><h4>Deployment branch</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>In a monitoring repository, the branch of the deployment repository (deploymentRepository) that deploys to the monitored org. Optional: without it, coding agents find the branch whose config/branches/.sfdx-hardis.&lt;branch&gt;.yml has the same instanceUrl as the monitored org.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="deploymentBranch_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;main&quot;</span>
+</pre></div>
+</div><div id="deploymentBranch_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;preprod&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiondeploymentRepository">
+    <div class="card">
+        <div class="card-header" id="headingdeploymentRepository">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#deploymentRepository"
+                        aria-expanded="" aria-controls="deploymentRepository" onclick="setAnchor('#deploymentRepository')"><span class="property-name">deploymentRepository</span></button>
+            </h2>
+        </div>
+
+        <div id="deploymentRepository"
+             class="collapse property-definition-div" aria-labelledby="headingdeploymentRepository"
+             data-parent="#accordiondeploymentRepository">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#deploymentRepository" onclick="anchorLink('deploymentRepository')">deploymentRepository</a></div><h4>Deployment repository</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>In a monitoring repository, the address of the sfdx-hardis CI/CD repository that deploys to the monitored org, the mirror of monitoringRepository. The AGENTS.md file written by the monitoring backup tells coding agents to search it, and the pipelines of both repositories, and the Org Monitoring panel of VS Code offers to open it.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="deploymentRepository_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://github.com/my-company/my-project&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordiondevelopmentBranch">
     <div class="card">
         <div class="card-header" id="headingdevelopmentBranch">
@@ -14826,7 +14904,7 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
             />
         </svg>
     <a href="#monitoringDisable" onclick="anchorLink('monitoringDisable')">monitoringDisable</a></div><h4>Disabled monitoring commands</h4><span class="badge badge-dark value-type">Type: array</span><br/>
-<span class="description"><p>List of commands to skip during monitoring jobs</p>
+<span class="description"><p>List of commands to skip during monitoring jobs. The MONITORING<em>DISABLE env variable (comma-separated keys, for example AUDIT</em>TRAIL,LICENSES) has priority over it.</p>
 </span>
         
 
@@ -15120,7 +15198,7 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
             />
         </svg>
     <a href="#monitoringRepository" onclick="anchorLink('monitoringRepository')">monitoringRepository</a></div><h4>Monitoring repository</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project.</p>
+<span class="description"><p>In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project. Its mirror in the monitoring repository is deploymentRepository.</p>
 </span>
         
 

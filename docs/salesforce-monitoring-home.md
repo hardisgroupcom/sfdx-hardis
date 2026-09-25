@@ -22,6 +22,7 @@ Keep a **daily, version-tracked backup** of all the metadata in your Salesforce 
 - **Catch problems early**: failing Apex tests, security issues, deprecated API calls, org limits, overdue Release Updates are all surfaced automatically.
 - **Stay admin-friendly**: works on any API-enabled org. No CI/CD project required.
 - **Route the right signal to the right channel**: stream everything to Grafana while keeping Slack and Teams reserved for warnings and errors only.
+- **Ask a coding agent**: open the monitoring repository in Claude Code, Codex, Gemini or Copilot and ask what changed, when, and whether it came through your CI/CD pipeline.
 
 ---
 
@@ -87,6 +88,26 @@ Track trends across all your orgs with the **[Org Monitoring by sfdx-hardis Graf
 Get **Slack** or **Teams** notifications when something needs attention.
 
 ![Slack notification example](assets/images/screenshot-slack-monitoring.jpg)
+
+---
+
+## Ask your coding agent
+
+Each backup writes an `AGENTS.md` file at the root of the monitoring repository. It tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file holds, and how to read the git history. Open the repository with your agent and ask:
+
+- "What changed in production last week?"
+- "When was the `Check_VAT` validation rule last modified, and what changed?"
+- "Write the report of the changes between March 1 and March 31."
+- "Is `Invoice__c.Status__c` the same in production and in the UAT sandbox?"
+
+Set `deploymentRepository` to the address of your sfdx-hardis CI/CD repository, and the agent also searches its branches, its Pull Requests and the pipeline logs of both repositories:
+
+- "Was this Flow change deployed by the pipeline, or made directly in production?"
+- "Which Pull Request brought this Apex class to production, and when?"
+- "Why did last night's deployment to UAT fail?"
+- "Why did last night's backup fail?"
+
+The agent only reads: it never pushes, comments or starts a pipeline. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent) for the details.
 
 ---
 

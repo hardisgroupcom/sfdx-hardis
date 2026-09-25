@@ -21,6 +21,7 @@ Salesforce DevOps involves many repetitive, multi-step operations: creating feat
 - **Fail fast**: if a required parameter is missing, the command exits immediately with a descriptive error listing available options.
 - **Composable**: commands can be chained as agent tool calls or shell scripts.
 - **Works everywhere**: any agent that understands skills and can run shell commands can drive sfdx-hardis: Claude Code, Copilot, Gemini, Cursor, Codex, or your own automation.
+- **Answers about your orgs**: a monitoring repository explains itself to agents, so they can answer what changed in an org, when, and through which Pull Request. See [below](#ask-questions-about-your-org-history-and-deployments).
 
 ---
 
@@ -111,6 +112,26 @@ image: ghcr.io/hardisgroupcom/sfdx-hardis-with-agents:latest
 These images include Claude Code, OpenAI Codex, Gemini CLI, GitHub Copilot, and Cursor pre-installed.
 
 See [Installation](installation.md) for all available image variants.
+
+---
+
+## Ask Questions About Your Org History and Deployments
+
+A [monitoring repository](salesforce-monitoring-home.md) holds a nightly backup of each org, one commit per day with changes. At each backup, sfdx-hardis writes an `AGENTS.md` file at its root, with a `CLAUDE.md` pointing to it. It explains to the agent how the monitoring works, what each file holds, what the backup skips, and how to read the git history. There are no skills to install: open the monitoring repository with your agent and ask.
+
+- "What changed in production last week?"
+- "When was the `Check_VAT` validation rule last modified, and what changed?"
+- "Write the report of the changes between March 1 and March 31." The agent writes a markdown file grouping the Added, Removed and Updated components by metadata type
+- "Which monitoring checks run on this org, and on which day?"
+
+Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to the address of your sfdx-hardis CI/CD repository, and the agent also searches it. It clones it next to the monitoring repository, read-only, finds the branch that deploys to the org, and reads the Pull Requests and the pipeline logs of both repositories with `gh`, `glab`, `az` or the Bitbucket API:
+
+- "Was this Flow change deployed by the pipeline, or made directly in production?"
+- "Which Pull Request brought this Apex class to production, and when?"
+- "Why did last night's deployment to UAT fail?"
+- "Why did last night's backup fail?"
+
+The agent uses a git provider CLI you are already logged in with, or tokens from a `.env` file. It only reads: it never pushes, comments or starts a pipeline. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent).
 
 ---
 
