@@ -26,27 +26,27 @@ The run produced **32 findings** (F1 to F32) and 9 observations. The ones worth 
 
 ## Versions under test
 
-| Thing              | Version                                                                                 |
-|--------------------|-----------------------------------------------------------------------------------------|
-| sfdx-hardis        | 8.10.0, linked working copy, `fix/training-e2e-2026-09-25` at `0ae61e35d` (PR #2239)    |
-| vscode-sfdx-hardis | 8.8.0, `fix/yaml-prettier-quotes` at `c4673c6b` (PR #528)                               |
-| Course             | `fix/training-e2e-2026-09-25` at `0733228` (PR #43), started from `main`                |
-| CI images          | `sfdx-hardis-ubuntu:latest` (8.10.0), then `:beta` for Lab 3.10 only (see F30)           |
-| Salesforce CLI     | @salesforce/cli 2.151.6, node 24.11.1                                                   |
-| VS Code (driver)   | 1.139.0                                                                                 |
-| Published site     | level with course `main` at the start                                                   |
+| Thing              | Version                                                                              |
+|--------------------|--------------------------------------------------------------------------------------|
+| sfdx-hardis        | 8.10.0, linked working copy, `fix/training-e2e-2026-09-25` at `0ae61e35d` (PR #2239) |
+| vscode-sfdx-hardis | 8.8.0, `fix/yaml-prettier-quotes` at `c4673c6b` (PR #528)                            |
+| Course             | `fix/training-e2e-2026-09-25` at `0733228` (PR #43), started from `main`             |
+| CI images          | `sfdx-hardis-ubuntu:latest` (8.10.0), then `:beta` for Lab 3.10 only (see F30)       |
+| Salesforce CLI     | @salesforce/cli 2.151.6, node 24.11.1                                                |
+| VS Code (driver)   | 1.139.0                                                                              |
+| Published site     | level with course `main` at the start                                                |
 
 ## Environment
 
-| Item             | State                                                                                            |
-|------------------|--------------------------------------------------------------------------------------------------|
-| `helios-prod`    | Developer Edition, Dev Hub, production in the fiction                                            |
-| `helios-preprod` | Developer Edition                                                                                |
-| Scratch orgs     | `helios-dev`, `helios-integration`, `helios-uat`, **created fresh by `init`** in this run        |
-| Fork             | `nvuillam/sfdx-hardis-training`, **deleted and forked again by `init`**: a true brand new fork   |
-| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring-0925`, new; the old one of earlier runs was kept        |
-| Learner clone    | `C:/git/training-run`                                                                            |
-| Browser on CDP   | the user's Chrome on 9222, signed in to GitHub and to the orgs by the user                       |
+| Item             | State                                                                                          |
+|------------------|------------------------------------------------------------------------------------------------|
+| `helios-prod`    | Developer Edition, Dev Hub, production in the fiction                                          |
+| `helios-preprod` | Developer Edition                                                                              |
+| Scratch orgs     | `helios-dev`, `helios-integration`, `helios-uat`, **created fresh by `init`** in this run      |
+| Fork             | `nvuillam/sfdx-hardis-training`, **deleted and forked again by `init`**: a true brand new fork |
+| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring-0925`, new; the old one of earlier runs was kept     |
+| Learner clone    | `C:/git/training-run`                                                                          |
+| Browser on CDP   | the user's Chrome on 9222, signed in to GitHub and to the orgs by the user                     |
 
 The Developer Edition orgs carried leftovers of earlier runs (fields, the Awaiting Parts value,
 External Client Apps, a scheduled job). They were removed before Level 3, except
@@ -55,15 +55,15 @@ delete. It had no effect on any lab.
 
 ## The cheap checks
 
-| Check                        | Result                                                            |
-|------------------------------|-------------------------------------------------------------------|
-| `build/universe.mjs --check` | 27 lab files, consistent                                          |
-| `verify/check-commands.mjs`  | 14 commands the labs rely on, all exist                           |
+| Check                        | Result                                                             |
+|------------------------------|--------------------------------------------------------------------|
+| `build/universe.mjs --check` | 27 lab files, consistent                                           |
+| `verify/check-commands.mjs`  | 14 commands the labs rely on, all exist                            |
 | `verify/check-links.mjs`     | every link resolves (cloudity.com times out on bot protection, O2) |
-| `verify/check-pills.mjs`     | 296 image references against 126 annotated images, all consistent |
-| `i18n/check-i18n.mjs`        | every locale answers every key (a stale `source_rev`, F1)         |
-| `i18n/check-structure.mjs`   | 32 pairs, 1 difference already there before the run (`index.md`) |
-| MegaLinter on the course PR  | markdownlint clean after the F13 fix                              |
+| `verify/check-pills.mjs`     | 296 image references against 126 annotated images, all consistent  |
+| `i18n/check-i18n.mjs`        | every locale answers every key (a stale `source_rev`, F1)          |
+| `i18n/check-structure.mjs`   | 32 pairs, 1 difference already there before the run (`index.md`)   |
+| MegaLinter on the course PR  | markdownlint clean after the F13 fix                               |
 
 ## Lab by lab
 
@@ -71,35 +71,35 @@ Fidelity: **1** lab driver (`yarn test:ui:labs`), **2** headless panel (`panel.m
 `mon.mjs`), **3** direct `sf` / `git` / `gh`. **Browser** means the real Salesforce Setup or GitHub
 page, clicked over CDP. Pass A read, B do, C look at the images.
 
-| Lab  | Fidelity                                                 | A  | B  | C                  | Findings                |
-|------|----------------------------------------------------------|----|----|--------------------|-------------------------|
-| 1.1  | read only, as every run                                  | ok | -  | ok                 | F13, O1                 |
-| 1.2  | `init` for real, Actions click in the browser            | ok | ok | stale              | F5, F6, F7, F8, F9, O4  |
-| 1.3  | 1                                                        | ok | ok | stale              | F2                      |
-| 1.4  | browser (Setup, permission set, record page)             | ok | ok | ok                 | F10                     |
-| 1.5  | 1                                                        | ok | ok | stale              | F2, F4, F11, F12        |
-| 1.6  | 3 (`prflow.sh`), merge box in the browser                | ok | ok | ok                 | F13, O5                 |
-| 1.7  | `claim.mjs`, form in the browser                         | ok | ok | ok                 | F14, F15                |
-| 2.1  | 2 (backpromote plan and run)                             | ok | ok | stale              | F16, F17, O6, O7        |
-| 2.2  | browser (field), 3 (flow XML), 2 (retriever)             | ok | ok | ok                 | F18, F19                |
-| 2.3  | browser (Required), 3 (action file for the dialog)       | ok | ok | stale              | F20, F21                |
-| 2.4  | 2 (export), 3 (org build, workspace file, action files)  | ok | ok | ok                 | O8                      |
-| 2.5  | 3, tests through the headless panel                      | ok | ok | ok                 | F22                     |
-| 2.6  | browser (FLS), 2 (retrieve, clean)                       | ok | ok | ok                 |                         |
-| 2.7  | 3 (Flow Builder as XML), browser (grant), simulate       | ok | ok | ok                 | F23                     |
-| 2.8  | 3 (layout XML), 2 (retrieve, reset selection)            | ok | ok | ok                 | F24                     |
-| 2.9  | 2 and 3, claim                                           | ok | ok | ok                 |                         |
-| 3.1  | browser (New branch), 2 (`auth.mjs` x4), 3 (protection)  | ok | ok | sampled            |                         |
-| 3.2  | simulate, review via the API (3), squash                 | ok | ok | sampled            |                         |
-| 3.3  | job log read                                             | ok | ok | sampled            |                         |
-| 3.4  | simulate, merge order                                    | ok | ok | sampled            | F32                     |
-| 3.5  | browser (remote site), 3 (no-overwrite file), 2 (notes)  | ok | ok | sampled            | F25, F26, F27           |
-| 3.6  | 3 (promotions), 2 (DORA)                                 | ok | ok | sampled            |                         |
-| 3.7  | simulate, 3                                              | ok | ok | sampled            | F28, O9                 |
-| 3.8  | 2 (`mon.mjs`), 3 (workflow run)                          | ok | ok | stale              | F29, step 7 not done    |
-| 3.9  | 2                                                        | ok | ok | sampled            |                         |
-| 3.10 | simulate x5, 2 (`promotion:create`), 3, **beta image**   | ok | ok | sampled            | F30                     |
-| 3.11 | 3, 2 (release notes, DORA)                               | ok | ok | sampled            | F31                     |
+| Lab  | Fidelity                                                | A  | B  | C       | Findings               |
+|------|---------------------------------------------------------|----|----|---------|------------------------|
+| 1.1  | read only, as every run                                 | ok | -  | ok      | F13, O1                |
+| 1.2  | `init` for real, Actions click in the browser           | ok | ok | stale   | F5, F6, F7, F8, F9, O4 |
+| 1.3  | 1                                                       | ok | ok | stale   | F2                     |
+| 1.4  | browser (Setup, permission set, record page)            | ok | ok | ok      | F10                    |
+| 1.5  | 1                                                       | ok | ok | stale   | F2, F4, F11, F12       |
+| 1.6  | 3 (`prflow.sh`), merge box in the browser               | ok | ok | ok      | F13, O5                |
+| 1.7  | `claim.mjs`, form in the browser                        | ok | ok | ok      | F14, F15               |
+| 2.1  | 2 (backpromote plan and run)                            | ok | ok | stale   | F16, F17, O6, O7       |
+| 2.2  | browser (field), 3 (flow XML), 2 (retriever)            | ok | ok | ok      | F18, F19               |
+| 2.3  | browser (Required), 3 (action file for the dialog)      | ok | ok | stale   | F20, F21               |
+| 2.4  | 2 (export), 3 (org build, workspace file, action files) | ok | ok | ok      | O8                     |
+| 2.5  | 3, tests through the headless panel                     | ok | ok | ok      | F22                    |
+| 2.6  | browser (FLS), 2 (retrieve, clean)                      | ok | ok | ok      |                        |
+| 2.7  | 3 (Flow Builder as XML), browser (grant), simulate      | ok | ok | ok      | F23                    |
+| 2.8  | 3 (layout XML), 2 (retrieve, reset selection)           | ok | ok | ok      | F24                    |
+| 2.9  | 2 and 3, claim                                          | ok | ok | ok      |                        |
+| 3.1  | browser (New branch), 2 (`auth.mjs` x4), 3 (protection) | ok | ok | sampled |                        |
+| 3.2  | simulate, review via the API (3), squash                | ok | ok | sampled |                        |
+| 3.3  | job log read                                            | ok | ok | sampled |                        |
+| 3.4  | simulate, merge order                                   | ok | ok | sampled | F32                    |
+| 3.5  | browser (remote site), 3 (no-overwrite file), 2 (notes) | ok | ok | sampled | F25, F26, F27          |
+| 3.6  | 3 (promotions), 2 (DORA)                                | ok | ok | sampled |                        |
+| 3.7  | simulate, 3                                             | ok | ok | sampled | F28, O9                |
+| 3.8  | 2 (`mon.mjs`), 3 (workflow run)                         | ok | ok | stale   | F29, step 7 not done   |
+| 3.9  | 2                                                       | ok | ok | sampled |                        |
+| 3.10 | simulate x5, 2 (`promotion:create`), 3, **beta image**  | ok | ok | sampled | F30                    |
+| 3.11 | 3, 2 (release notes, DORA)                              | ok | ok | sampled | F31                    |
 
 Every level ended on its own `Check my work` green: Level 1 6 of 6, Level 2 9 of 9, Level 3
 11 of 11. The Level 3 audit verified 24 checks.
