@@ -151,17 +151,23 @@ Full notes in the run's findings file. Fixed means fixed in this run, and the st
 
 - **F30 (blocker)**: release 8.10.1. Until then no learner can merge Lab 3.10's promotion.
 
-### Screenshots, not recaptured (the harness needs the screen)
+### Screenshots
 
-- **F2**: Lab 1.3 and three Lab 1.5 pictures show the Level 2 state (US-024 branch, 4 open Pull
-  Requests).
-- **F9**: training menu pictures of Levels 1, 2 and 3 miss `Update my course` (and `Trigger my
-  workflows` on Level 1); the Level 2 and 3 index pages count eight and ten cards.
-- **F11**: Lab 1.5's commit picture has an Edit Deployment Action dialog open over it.
-- **F16**: Lab 2.1's backpromote picture shows other stories and an older branch name.
-- **F21**: Lab 2.3's actions list shows 9 actions of other stories.
-- **F29**: Lab 3.8's first report picture is taken in the wrong repository, the one the step warns
-  about.
+Recaptured with the harness after the walk (course PR #43; the harness change is in extension
+PR #528):
+
+- **F2 (fixed)**: the Level 1 pipeline pictures are taken on a fresh pipeline, on the learner's
+  `features/US-014-panels-required` branch with no Pull Request (new `pipeline-cards-level1`
+  variant; `pipeline-packages-menu` moved to that state, since only Lab 1.5 shows it).
+- **F9 (fixed for Levels 2 and 3)**: the Level 2 and 3 menus and the Level 2 side bar menu show
+  **Update my course**. Lab 1.2's `training-menu-authorization` was taken by hand (the harness
+  cannot capture the authorization prompt) and still shows 5 Level 1 cards.
+- **F11 (fixed)**: the Lab 1.5 commit picture has no dialog over it.
+- **O4 (fixed)**: the Lab 1.2 org picture shows `integration` in the status bar.
+- **F16, F21 (not fixed)**: the backpromote list and the actions list come from the extension's
+  git provider fixture (#51-#53, nine actions). A recapture cannot change them; the fixture has to.
+- **F29 (not fixed)**: Lab 3.8's first report picture needs a workspace that is a monitoring
+  repository, which the harness has no state for.
 
 ### Observations
 
@@ -232,5 +238,6 @@ Not changed, with the reason:
 - **Lab 1.1** was read, not performed.
 - **French** was not walked. It was restamped and checked for structure only.
 - **Pass C on Level 3 was sampled**, not every image opened.
-- **No screenshot was recaptured**: six findings above wait for the harness and a free screen.
+- **Screenshots**: F16, F21, F29 and the Lab 1.2 authorization picture are still stale (see
+  above).
 - **An agent is not a beginner.** Prose clarity was not really tested.
