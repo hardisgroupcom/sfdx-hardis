@@ -185,21 +185,22 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 ### Documentation
 
-| Command                                                                               | What an agent can do                                                                                                    |
-|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)                       | Export an Excel data dictionary of objects with fields, validation rules, and record types. Flag: `--objects`           |
-| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)           | Generate a detailed report of Permission Set Group assignments and included permission sets                             |
-| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                                 | Display where custom fields are referenced across metadata components (impact analysis)                                 |
-| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                           | Convert a Salesforce Flow metadata file into a human-readable Markdown description                                      |
-| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                             | Publish MkDocs-generated documentation to Cloudflare Pages                                                              |
-| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)             | Synchronize MkDocs documentation to a Confluence space                                                                  |
-| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)             | Publish MkDocs documentation inside a Salesforce org (static resource, Visualforce page and Custom Tab)                 |
-| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)                 | Measure field-level data completeness across sObjects for documentation and cleanup planning                            |
-| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)                     | Manage prompt override files for customizing AI-generated documentation output                                          |
-| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)               | Convert a `package.xml` into a human-readable Markdown change summary                                                   |
-| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)                       | Generate reference documentation for a Salesforce CLI plugin                                                            |
-| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)                     | Generate the full Salesforce project documentation as Markdown: objects, flows, profiles, Apex, LWC, packages, and more |
-| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md) | Generate a visual Flow diff markdown between two commits for deployment review                                          |
+| Command                                                                               | What an agent can do                                                                                                     |
+|---------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)                       | Export an Excel data dictionary of objects with fields, validation rules, and record types. Flag: `--objects`            |
+| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)           | Generate a detailed report of Permission Set Group assignments and included permission sets                              |
+| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                                 | Display where custom fields are referenced across metadata components (impact analysis)                                  |
+| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                           | Convert a Salesforce Flow metadata file into a human-readable Markdown description                                       |
+| [**hardis:doc:metadata-deps**](hardis/doc/metadata-deps.md)                           | Find which metadata components use a selected component. Flags: `--type`, `--name`, `--id`, `--component-type`, `--bulk` |
+| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                             | Publish MkDocs-generated documentation to Cloudflare Pages                                                               |
+| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)             | Synchronize MkDocs documentation to a Confluence space                                                                   |
+| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)             | Publish MkDocs documentation inside a Salesforce org (static resource, Visualforce page and Custom Tab)                  |
+| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)                 | Measure field-level data completeness across sObjects for documentation and cleanup planning                             |
+| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)                     | Manage prompt override files for customizing AI-generated documentation output                                           |
+| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)               | Convert a `package.xml` into a human-readable Markdown change summary                                                    |
+| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)                       | Generate reference documentation for a Salesforce CLI plugin                                                             |
+| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)                     | Generate the full Salesforce project documentation as Markdown: objects, flows, profiles, Apex, LWC, packages, and more  |
+| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md) | Generate a visual Flow diff markdown between two commits for deployment review                                           |
 
 ### Org Utils
 

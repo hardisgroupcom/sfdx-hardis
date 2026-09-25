@@ -44,6 +44,7 @@
 | [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) |       |
 | [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       |       |
 | [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
+| [**hardis:doc:metadata-deps**](hardis/doc/metadata-deps.md)                 |       |
 | [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   |       |
 | [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)   |       |
 | [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   |       |
