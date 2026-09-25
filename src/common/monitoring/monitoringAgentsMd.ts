@@ -101,7 +101,7 @@ export function buildDeploymentRepositoryStatus(config: any): string {
       '**No deployment repository is configured on this branch.** The first time a question would need the CI/CD project or its pipelines, ask the user whether they want to set one:',
       '',
       '1. Ask for the address of the sfdx-hardis CI/CD repository that deploys to this org (for example `https://github.com/my-company/my-project`). It is optional: if the user declines, answer with this repository alone and do not ask again in this conversation.',
-      '2. If the user gives one, store it with `sf hardis:org:configure:monitoring-deployment-repository --agent --repository <address>`, run at the root of this repository. That command checks the address and keeps the rest of `.sfdx-hardis.yml` and its comments. If the `sf` CLI or sfdx-hardis is not installed, write `deploymentRepository: <address>` in `.sfdx-hardis.yml` yourself, changing only that line.',
+      '2. If the user gives one, check that it is a git repository address (`https://host/path`, `ssh://host/path` or `user@host:path`), then write it as `deploymentRepository: <address>` in `.sfdx-hardis.yml` at the root of this branch. Change only that line, and keep the rest of the file and its comments as they are.',
       '3. Ask whether the other monitoring branches of this repository (`git branch -a`) are deployed by the same repository. It is usually the case: each branch has its own `.sfdx-hardis.yml`, and the user has to update them one by one.',
       '4. Tell the user to commit and push the change (do not do it unless they ask), and that the next backup rewrites this file with it. Then use it right away, as explained below.',
       '',

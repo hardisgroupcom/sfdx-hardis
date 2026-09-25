@@ -955,8 +955,6 @@
   "deploymentFailed": "Déploiement échoué :\n{{deployRes}}",
   "deploymentOfConnectedAppCompletedSuccessfully": "Déploiement de {{connectedApps}} application(s) connectée(s) terminé avec succès",
   "deploymentPlanGenerationIsDisabledInProject": "La génération du plan de déploiement est désactivée dans la configuration du projet. Activez-la avec enableDeprecatedDeploymentPlan: true dans .sfdx-hardis.yml",
-  "deploymentRepositoryAgentModeNeedsValue": "En mode agent, passez --repository <adresse> pour définir le repository de déploiement, ou --clear pour le supprimer.",
-  "deploymentRepositoryNotMonitoringRepo": "Il n'y a pas de .sfdx-hardis.yml à la racine de ce dossier : lancez cette commande à la racine d'un repository de monitoring, sur la branche de l'org monitorée.",
   "deploymentRepositoryPrompt": "Quelle est l'adresse du repository CI/CD qui déploie dans cette org ? (optionnel)",
   "deploymentRepositoryPromptDescription": "Le repository du projet sfdx-hardis dont les pipelines déploient dans cette org. Il est enregistré dans deploymentRepository, et le fichier AGENTS.md écrit à chaque sauvegarde indique aux agents de code de chercher aussi dans ce repository et ses pipelines. Laissez vide pour passer, ou pour supprimer la valeur actuelle.",
   "deploymentRepositoryPromptInvalid": "Saisissez l'adresse d'un repository git, comme https://github.com/my-company/my-project ou git@github.com:my-company/my-project.git",

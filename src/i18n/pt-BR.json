@@ -879,8 +879,6 @@
   "deltaPackageXmlDiffToBeMerged": "Diff do package.xml Delta a ser mesclado em {{file}}:",
   "deltaTypeItemsKept": "Tipo {{type}}: {{count}} item(ns) modificado(s) entre os commits comparados, mantido(s) no delta",
   "deployAllCertFilesSavedBeforeRefresh": "Isso realizará o deploy de todos os arquivos e definições de certificado salvos antes da atualização.",
-  "deploymentRepositoryAgentModeNeedsValue": "No modo agente, passe --repository <endereço> para definir o repositório de implantação, ou --clear para removê-lo.",
-  "deploymentRepositoryNotMonitoringRepo": "Não há nenhum .sfdx-hardis.yml na raiz desta pasta: execute este comando na raiz de um repositório de monitoramento, na branch da org monitorada.",
   "deploymentRepositoryPrompt": "Qual é o endereço do repositório de CI/CD que implanta nesta org? (opcional)",
   "deploymentRepositoryPromptDescription": "O repositório do projeto sfdx-hardis cujos pipelines implantam nesta org. Ele é salvo como deploymentRepository, e o arquivo AGENTS.md gravado a cada backup orienta os agentes de código a pesquisar também nesse repositório e em seus pipelines. Deixe vazio para pular ou para remover o valor atual.",
   "deploymentRepositoryPromptInvalid": "Informe o endereço de um repositório git, como https://github.com/my-company/my-project ou git@github.com:my-company/my-project.git",

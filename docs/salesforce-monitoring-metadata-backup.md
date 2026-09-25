@@ -26,7 +26,7 @@ Only the block between the `sfdx-hardis-monitoring-agents-start` and `sfdx-hardi
 
 Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to the address of the sfdx-hardis CI/CD repository that deploys to the org. [Configure Org Monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) asks for it, and suggests the value already set on another monitoring branch. It is the mirror of `monitoringRepository` in the CI/CD repository. When it is missing, the coding agent offers to set it the first time a question needs it.
 
-To set it, change it or remove it later, run [hardis:org:configure:monitoring-deployment-repository](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring-deployment-repository/) on the monitoring branch, or use **Set deployment repository** in the Org Monitoring panel of VS Code, which runs it. Commit and push `.sfdx-hardis.yml` afterwards.
+To set it, change it or remove it later, edit `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch, or use **Set deployment repository** in the Org Monitoring panel of VS Code. Commit and push `.sfdx-hardis.yml` afterwards.
 
 `AGENTS.md` then tells the agent to:
 

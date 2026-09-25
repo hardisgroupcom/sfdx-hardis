@@ -955,8 +955,6 @@
   "deploymentFailed": "Wdrożenie nie powiodło się:\n{{deployRes}}",
   "deploymentOfConnectedAppCompletedSuccessfully": "Wdrożenie {{connectedApps}} Connected App(s) zakończone pomyślnie",
   "deploymentPlanGenerationIsDisabledInProject": "Generowanie planu wdrożenia jest wyłączone w konfiguracji projektu. Włącz je za pomocą enableDeprecatedDeploymentPlan: true w .sfdx-hardis.yml",
-  "deploymentRepositoryAgentModeNeedsValue": "W trybie agenta przekaż --repository <adres>, aby ustawić repozytorium wdrożeń, lub --clear, aby je usunąć.",
-  "deploymentRepositoryNotMonitoringRepo": "W katalogu głównym tego folderu nie ma pliku .sfdx-hardis.yml: uruchom to polecenie w katalogu głównym repozytorium monitorowania, na branchu monitorowanej org.",
   "deploymentRepositoryPrompt": "Jaki jest adres repozytorium CI/CD, które wdraża do tej org? (opcjonalnie)",
   "deploymentRepositoryPromptDescription": "Repozytorium projektu sfdx-hardis, którego pipeline'y wdrażają do tej org. Jest zapisywane jako deploymentRepository, a plik AGENTS.md zapisywany przy każdym backupie wskazuje agentom kodującym, aby przeszukiwali także to repozytorium i jego pipeline'y. Pozostaw puste, aby pominąć lub usunąć bieżącą wartość.",
   "deploymentRepositoryPromptInvalid": "Wprowadź adres repozytorium git, np. https://github.com/my-company/my-project lub git@github.com:my-company/my-project.git",

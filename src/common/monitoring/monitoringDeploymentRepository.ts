@@ -100,8 +100,7 @@ export type DeploymentRepositoryChange =
   | { action: 'none' };
 
 // Decides what to do with deploymentRepository, from the flags or by asking the user.
-// Shared by hardis:org:configure:monitoring and hardis:org:configure:monitoring-deployment-repository,
-// so that both validate, suggest and clear the value the same way.
+// An empty answer removes a value set before.
 export async function resolveDeploymentRepositoryChange(
   commandThis: any,
   options: { repository?: string; clear?: boolean; interactive: boolean; currentBranch: string },

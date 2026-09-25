@@ -953,8 +953,6 @@
   "deploymentFailed": "デプロイに失敗しました:\n{{deployRes}}",
   "deploymentOfConnectedAppCompletedSuccessfully": "{{connectedApps}} 個の接続アプリケーションのデプロイが正常に完了しました",
   "deploymentPlanGenerationIsDisabledInProject": "プロジェクト設定でデプロイ計画の生成が無効になっています。.sfdx-hardis.yml で enableDeprecatedDeploymentPlan: true を設定して有効にしてください",
-  "deploymentRepositoryAgentModeNeedsValue": "エージェントモードでは、デプロイリポジトリを設定するには --repository <アドレス> を、削除するには --clear を指定してください。",
-  "deploymentRepositoryNotMonitoringRepo": "このフォルダーのルートに .sfdx-hardis.yml がありません。監視リポジトリのルートで、監視対象の組織の branch 上でこのコマンドを実行してください。",
   "deploymentRepositoryPrompt": "この組織にデプロイする CI/CD リポジトリのアドレスは何ですか? (任意)",
   "deploymentRepositoryPromptDescription": "パイプラインがこの組織にデプロイする sfdx-hardis プロジェクトのリポジトリです。deploymentRepository として保存され、バックアップのたびに書き込まれる AGENTS.md ファイルが、このリポジトリとそのパイプラインも調べるようコーディングエージェントに指示します。スキップする場合、または現在の値を削除する場合は空欄のままにしてください。",
   "deploymentRepositoryPromptInvalid": "https://github.com/my-company/my-project や git@github.com:my-company/my-project.git のような Git リポジトリのアドレスを入力してください",

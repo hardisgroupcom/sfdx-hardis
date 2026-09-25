@@ -955,8 +955,6 @@
   "deploymentFailed": "Implementatie mislukt:\n{{deployRes}}",
   "deploymentOfConnectedAppCompletedSuccessfully": "Implementatie van {{connectedApps}} Connected App(s) succesvol voltooid",
   "deploymentPlanGenerationIsDisabledInProject": "Het genereren van een deployment plan is uitgeschakeld in de projectconfiguratie. Schakel het in met enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml",
-  "deploymentRepositoryAgentModeNeedsValue": "Geef in agentmodus --repository <adres> mee om de deployment-repository in te stellen, of --clear om hem te verwijderen.",
-  "deploymentRepositoryNotMonitoringRepo": "Er staat geen .sfdx-hardis.yml in de hoofdmap van deze map: voer deze opdracht uit in de hoofdmap van een monitoring-repository, op de branch van de gemonitorde org.",
   "deploymentRepositoryPrompt": "Wat is het adres van de CI/CD-repository die naar deze org deployt? (optioneel)",
   "deploymentRepositoryPromptDescription": "De repository van het sfdx-hardis-project waarvan de pipelines naar deze org deployen. Hij wordt opgeslagen als deploymentRepository, en het bestand AGENTS.md dat bij elke backup wordt geschreven, vraagt coding agents om ook in deze repository en zijn pipelines te zoeken. Laat leeg om over te slaan, of om de huidige waarde te verwijderen.",
   "deploymentRepositoryPromptInvalid": "Voer het adres van een git-repository in, zoals https://github.com/my-company/my-project of git@github.com:my-company/my-project.git",
