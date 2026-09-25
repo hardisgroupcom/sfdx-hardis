@@ -332,6 +332,21 @@ describe('messageNumberIsPullRequestOf()', () => {
     expect(messageNumberIsPullRequestOf(2, { hash: 'x' }, true, new Map([[2, {}]]), window)).to.be.true;
   });
 
+  it('drops a number of the fork merged outside the window when its title is not in the message', () => {
+    const forkPrs = new Map([[1, { mergeCommitSha: 'old', title: 'Promotion integration to uat' }]]);
+    expect(messageNumberIsPullRequestOf(1, { hash: 'u1', message: 'US-001 Add the field (#1)' }, true, forkPrs, window)).to.be.false;
+    const samePr = new Map([[1, { mergeCommitSha: 'old', title: 'US-001 Add the field' }]]);
+    expect(messageNumberIsPullRequestOf(1, { hash: 'u1', message: 'US-001 add the field (#1)' }, true, samePr, window)).to.be.true;
+  });
+
+  it('keeps the vehicle merge detection away from a number that is not this repository\'s', () => {
+    const forkPrs = new Map([[3, { sourceBranch: 'integration', mergeCommitSha: 'f3' }]]);
+    const commit = { hash: 'u3', message: 'Merge pull request #3 from upstream/feature-x' };
+    const isPullRequestOf = (num: number, c: { hash: string }) => messageNumberIsPullRequestOf(num, c, true, forkPrs, new Set(['f3', 'u3']));
+    expect(mergedSourceBranches(commit, new Map(), forkPrs, isPullRequestOf)).to.deep.equal(['feature-x']);
+    expect(mergedSourceBranches(commit, new Map(), forkPrs)).to.deep.equal(['feature-x', 'integration']);
+  });
+
   it('trusts the message when the Pull Requests could not be listed', () => {
     expect(messageNumberIsPullRequestOf(41, { hash: 'u41' }, false, new Map(), window)).to.be.true;
   });

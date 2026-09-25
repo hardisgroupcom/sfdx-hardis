@@ -131,7 +131,9 @@ export async function resolveReleaseScope(
       await assertTagExists(previousTag, commandRef);
     }
     const toCommit = await getCommitForTag(releaseTag);
-    const fromCommit = previousTag ? await getCommitForTag(previousTag) : toCommit;
+    // The first release tag has no tag before it: bound the range with the first parent of the
+    // tagged commit, as the post mode does for a first promotion, rather than an empty range
+    const fromCommit = previousTag ? await getCommitForTag(previousTag) : (await getFirstParentCommit(toCommit)) || toCommit;
     const targetBranch = flags["target-branch"] || (await detectTargetBranchForTag(releaseTag, majorOrgs, agentMode));
     return { fromCommit, toCommit, releaseTag, previousTag, targetBranch, mode };
   }
@@ -1077,17 +1079,24 @@ export async function collectDeploymentActions(
  * One row per action, with its status. The notes of a branch report the status in the org of that
  * branch: a manual step ticked in integration is still to do in uat, and taking the best status
  * across orgs printed it as done in the notes of uat. An action with no entry for that branch yet,
- * as when previewing a promotion that has not run, keeps its best status across orgs.
+ * as when previewing a promotion that has not run, has not run there: it reads as pending. An
+ * action only ever skipped in that org does not apply to it, and is left out.
  */
 export function filterAndDedupeDeploymentActions(entries: DeploymentActionStateEntry[], targetBranch?: string): DeploymentActionStateEntry[] {
   const statusPriority: Record<string, number> = { success: 3, failed: 2, manual: 1 };
   const byKey = new Map<string, DeploymentActionStateEntry>();
-  const isTarget = (entry: DeploymentActionStateEntry) => !!targetBranch && entry.orgBranch === targetBranch;
+  const target = (targetBranch || "").trim();
+  const isTarget = (entry: DeploymentActionStateEntry) => !!target && (entry.orgBranch || "").trim() === target;
+  const keyOf = (entry: DeploymentActionStateEntry) => `${entry.actionId}::${entry.when}::${entry.prNumber ?? ""}`;
+  // A runOnlyOnceByOrg action is skipped on every deployment after the one that ran it, so a skip
+  // only removes the action when nothing else was recorded for it in the target org
+  const ranInTarget = new Set(entries.filter((entry) => isTarget(entry) && entry.status !== "skipped").map(keyOf));
+  const skippedInTarget = new Set(entries.filter((entry) => isTarget(entry) && entry.status === "skipped").map(keyOf));
   for (const entry of entries) {
-    if (entry.status === "skipped") {
+    const key = keyOf(entry);
+    if (entry.status === "skipped" || (skippedInTarget.has(key) && !ranInTarget.has(key))) {
       continue;
     }
-    const key = `${entry.actionId}::${entry.when}::${entry.prNumber ?? ""}`;
     const existing = byKey.get(key);
     const better = !existing
       || (isTarget(entry) && !isTarget(existing))
@@ -1096,7 +1105,10 @@ export function filterAndDedupeDeploymentActions(entries: DeploymentActionStateE
       byKey.set(key, entry);
     }
   }
-  return sortDeploymentActions(Array.from(byKey.values()));
+  const rows = Array.from(byKey.values()).map((entry) =>
+    target && !isTarget(entry) ? { ...entry, orgBranch: target, status: "pending" as const, jobId: "", jobUrl: "", date: "" } : entry,
+  );
+  return sortDeploymentActions(rows);
 }
 
 function sortDeploymentActions(entries: DeploymentActionStateEntry[]): DeploymentActionStateEntry[] {
@@ -1382,6 +1394,7 @@ function getStatusIcon(status: string): string {
     case "failed": return "\u274c";
     case "manual": return "\ud83d\udc4b";
     case "skipped": return "\u26aa";
+    case "pending": return "\u23f3";
     default: return "\u2753";
   }
 }

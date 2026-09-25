@@ -29,7 +29,9 @@ export interface DeploymentActionStateEntry {
   executionOrder: number;
   // 'warning' is a failed action whose definition allows failure: the deployment went on, so the
   // outcome must not read as an error in the comment, but the action did not succeed either.
-  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped';
+  // 'pending' is never stored: the release notes of a branch use it for an action with no entry in
+  // the org of that branch yet.
+  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped' | 'pending';
   jobId: string;
   jobUrl: string;
   date: string;

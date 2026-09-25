@@ -29,8 +29,23 @@ describe('filterAndDedupeDeploymentActions()', () => {
     expect(rows[0].status).to.equal('manual');
   });
 
-  it('keeps the best status across orgs when that branch has no entry yet', () => {
-    expect(filterAndDedupeDeploymentActions(entries, 'preprod')[0].status).to.equal('success');
+  it('reads as pending when that branch has no entry yet, as a promotion that has not run', () => {
+    const rows = filterAndDedupeDeploymentActions(entries, 'preprod');
+    expect(rows[0].status).to.equal('pending');
+    expect(rows[0].orgBranch).to.equal('preprod');
+  });
+
+  it('keeps the best status across orgs when no branch is given', () => {
     expect(filterAndDedupeDeploymentActions(entries)[0].status).to.equal('success');
+  });
+
+  it('matches the branch whatever spaces surround it', () => {
+    expect(filterAndDedupeDeploymentActions([entry('uat ', 'manual')], ' uat')[0].status).to.equal('manual');
+  });
+
+  it('leaves out an action only skipped in that org, not one skipped after it ran', () => {
+    expect(filterAndDedupeDeploymentActions([entry('uat', 'skipped'), entry('integration', 'manual')], 'uat')).to.have.length(0);
+    const ranOnce = filterAndDedupeDeploymentActions([entry('uat', 'success'), entry('uat', 'skipped')], 'uat');
+    expect(ranOnce.map((row) => row.status)).to.deep.equal(['success']);
   });
 });
