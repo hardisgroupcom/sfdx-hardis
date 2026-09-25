@@ -24,10 +24,63 @@ The git history of a branch is the change history of the org, one commit per day
 
 - What changed recently: `git log --stat -n 10`
 - When a component changed: `git log --follow -p -- force-app/main/default/flows/My_Flow.flow-meta.xml`
-- What changed between two dates: `git log --since=2026-01-01 --until=2026-01-31 --name-status`
+- What changed between two dates: see [Report of the changes between two dates](#report-of-the-changes-between-two-dates)
 - Compare two orgs: `git diff origin/monitoring_myclient origin/monitoring_myclient__uat_sandbox -- force-app/main/default/objects/Account`
 
 A commit shows the state of the org at the time of the backup, not who made the change or when during the day. The author of the commit is the CI user or bot. To know which user changed something in Setup, the org's Setup Audit Trail is the source (the `AUDIT_TRAIL` check reports suspect entries).
+
+## Report of the changes between two dates
+
+When the user asks what changed in the org between two dates and does not ask for another format, write the answer in a markdown file with the format below, then give its path and a two or three line summary in the chat.
+
+### Collect the changes
+
+1. Take both dates as whole days, in UTC, both included. When only one date is given, the second one is today.
+2. List the backup commits of the current branch in that range, newest first:
+
+   ```sh
+   git log --since="2026-01-01 00:00:00 +0000" --until="2026-01-31 23:59:59 +0000" --name-status -M --format="COMMIT %H %s" -- force-app installedPackages
+   ```
+
+3. For each commit, take the date and time from its message (`org state on YYYY-MM-DD HH:MM`). If the message has none, use the commit date in UTC (`git show -s --date=format-local:"%Y-%m-%d %H:%M" --format=%cd <sha>` with `TZ=UTC`).
+4. Skip commits that change no file under `force-app/` or `installedPackages/`.
+
+### Turn files into components
+
+- Report **components**, not files. A component made of several files counts once: an Apex class and its `-meta.xml`, all the files of an LWC or Aura bundle, a static resource and its content.
+- Use the Metadata API type names, as in `manifest/package-all-org-items.xml`: `ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`, `LightningComponentBundle`, `AuraDefinitionBundle`, `Flow`, `CustomObject`, `CustomField`, `ValidationRule`, `RecordType`, `ListView`, `CompactLayout`, `WebLink`, `Layout`, `FlexiPage`, `PermissionSet`, `PermissionSetGroup`, `Profile`, `CustomLabels`, `CustomMetadata`, `StaticResource`, `EmailTemplate`, `Report`, `Dashboard`... When unsure of a type or a member name, look it up in that manifest.
+- Name members the way the manifest does. Object sub-components carry the object name: `objects/Account/fields/VAT__c.field-meta.xml` is **CustomField** `Account.VAT__c`, `objects/Account/validationRules/Check_VAT.validationRule-meta.xml` is **ValidationRule** `Account.Check_VAT`.
+- A change in `installedPackages/<Package>.json` is type **InstalledPackage**, named after the package. For an update, add the old and new version numbers: `My Package (1.2 -> 1.3)`.
+- Git status `A` is Added, `D` is Removed, `M` is Updated. A rename (`R`) is the old name Removed and the new name Added. A component with added and updated files in the same commit is Added. A component with only some files deleted is Updated.
+
+### Output format
+
+```markdown
+# Org changes from 2026-01-01 to 2026-01-31
+
+Org: https://myclient.my.salesforce.com (branch monitoring_myclient)
+
+## 2026-01-28 00:12
+
+- Added
+  - **ApexClass**: InvoiceService, InvoiceServiceTest
+  - **CustomField**: Account.VAT__c
+- Updated
+  - **Flow**: Account_After_Update
+
+## 2026-01-15 00:09
+
+- Removed
+  - **Layout**: Account-Old Account Layout
+```
+
+- One `##` section per backup commit, newest first, titled with its date and time in UTC.
+- Inside each section, the groups `Added`, `Removed` and `Updated`, in that order. Leave out a group with no component.
+- One line per metadata type: the type in bold, then its members separated by a comma and a space. Sort types and members alphabetically.
+- The org URL comes from `instanceUrl` in `.sfdx-hardis.yml`.
+- If nothing changed in the range, write the title, the org line and `No change detected in this period.`
+- Write the file to `hardis-report/org-changes-<from>-to-<to>.md` (git ignores that folder), unless the user gives another path.
+- Report only what the commits show. Do not guess who made a change or why.
 
 ## Files and folders
 
