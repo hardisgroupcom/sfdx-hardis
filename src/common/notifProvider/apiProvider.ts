@@ -17,6 +17,44 @@ import { t } from '../utils/i18n.js';
 const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
 const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
 
+// Loki refuses a line above its size limit (256 KB on Grafana Cloud), and the whole entry is then
+// lost, metrics aside. Cutting _logElements to a row count is not enough: 500 Apex errors with their
+// stack traces weigh more than that. In order, until the line fits: cap the rows, cut the text (no
+// dashboard reads it, they read the rows), then halve the rows.
+export function fitLokiLogData(
+  data: any,
+  maxBytes: number,
+  maxElements: number,
+): { json: string; initialBytes: number; finalBytes: number; logElementsKept: number } {
+  const byteLength = (value: string) => new TextEncoder().encode(value).length;
+  let json = JSON.stringify(data);
+  const initialBytes = byteLength(json);
+  const allElements: any[] = Array.isArray(data?._logElements) ? data._logElements : [];
+  if (initialBytes <= maxBytes) {
+    return { json, initialBytes, finalBytes: initialBytes, logElementsKept: allElements.length };
+  }
+  const fitted = Object.assign({}, data);
+  let kept = Math.min(allElements.length, maxElements);
+  const apply = () => {
+    if (kept < allElements.length) {
+      fitted._logElements = allElements.slice(0, kept);
+      fitted._logElementsTruncated = true;
+      fitted._logElementsTotal = allElements.length;
+    }
+    json = JSON.stringify(fitted);
+  };
+  apply();
+  if (byteLength(json) > maxBytes && typeof fitted._logBodyText === "string" && fitted._logBodyText.length > 100) {
+    fitted._logBodyText = fitted._logBodyText.slice(0, 100) + "\n ... (truncated)";
+    apply();
+  }
+  while (byteLength(json) > maxBytes && kept > 0) {
+    kept = Math.floor(kept / 2);
+    apply();
+  }
+  return { json, initialBytes, finalBytes: byteLength(json), logElementsKept: kept };
+}
+
 export class ApiProvider extends NotifProviderRoot {
   protected apiUrl: string | null;
   public payload: ApiNotifMessage;
@@ -193,29 +231,22 @@ export class ApiProvider extends NotifProviderRoot {
     const currentTimeNanoseconds = Date.now() * 1000 * 1000;
     const payloadCopy = Object.assign({}, this.payload);
     delete payloadCopy.data;
-    let payloadDataJson = JSON.stringify(this.payload.data);
-    const bodyBytesLen = new TextEncoder().encode(payloadDataJson).length;
-    // Truncate log elements if log entry is too big
-    if (bodyBytesLen > MAX_LOKI_LOG_LENGTH) {
-      const newPayloadData = Object.assign({}, this.payload.data);
-      const logElements: Array<any> = newPayloadData._logElements;
-      if (logElements.length > TRUNCATE_LOKI_ELEMENTS_LENGTH) {
-        const truncatedLogElements = logElements.slice(0, TRUNCATE_LOKI_ELEMENTS_LENGTH);
-        newPayloadData._logElements = truncatedLogElements;
-        newPayloadData._logElementsTruncated = true;
-        payloadDataJson = JSON.stringify(newPayloadData);
-        uxLog(
-          "log",
-          this,
-          c.grey(
-            `[ApiProvider] Truncated _logElements from ${logElements.length} to ${truncatedLogElements.length} to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`,
-          ),
-        );
-      } else {
-        newPayloadData._logBodyText = (newPayloadData._logBodyText || "").slice(0, 100) + "\n ... (truncated)";
-        payloadDataJson = JSON.stringify(newPayloadData);
-        uxLog("log", this, c.grey(`[ApiProvider] Truncated _logBodyText to 100 to avoid Loki entry max size reached (initial size: ${bodyBytesLen} bytes)`));
-      }
+    const { json: payloadDataJson, initialBytes, finalBytes, logElementsKept } = fitLokiLogData(
+      this.payload.data,
+      MAX_LOKI_LOG_LENGTH,
+      TRUNCATE_LOKI_ELEMENTS_LENGTH,
+    );
+    if (finalBytes !== initialBytes) {
+      uxLog(
+        "log",
+        this,
+        c.grey(
+          `[ApiProvider] Reduced the Loki entry from ${initialBytes} to ${finalBytes} bytes to stay under ${MAX_LOKI_LOG_LENGTH} (kept ${logElementsKept} _logElements)`,
+        ),
+      );
+    }
+    if (finalBytes > MAX_LOKI_LOG_LENGTH) {
+      uxLog("warning", this, c.yellow(`[ApiProvider] Loki entry is still ${finalBytes} bytes after truncation: Loki may refuse it`));
     }
     this.payloadFormatted = {
       streams: [

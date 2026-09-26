@@ -499,17 +499,22 @@ const silentOrgsTable = tablePanel('Silent orgs (no notification for 36h)', {
   noValue: 'No silent org',
 });
 
-const backupFailuresTable = tablePanel('Orgs with backup failures (7d)', {
+// A failed backup sends no BACKUP notification at all (the job stops before notifying), so a
+// failure can only be seen as a missing backup: backed up in the last 7 days, but not for 36h
+const missingBackupsExpr = `(sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[36h])) > 0)`;
+const MISSING_BACKUPS_DESCRIPTION =
+  'Orgs backed up in the last 7 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs.';
+
+const missingBackupsTable = tablePanel('Orgs without backup for 36h', {
   datasource: DS_LOKI,
   gridPos: { w: 8, h: 9 },
-  description: 'Orgs whose metadata backup reported an error in the last 7 days. Click a row to open the org dashboard.',
-  targets: [lokiTarget(`sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", severity=~"error|critical", $env, orgIdentifier=~"$org"}[7d]))`, { instant: true })],
+  description: MISSING_BACKUPS_DESCRIPTION + ' Click a row to open the org dashboard.',
+  targets: [lokiTarget(missingBackupsExpr, { instant: true })],
   transformations: [
-    organize({ excludeByName: { Time: true }, renameByName: { orgIdentifier: 'Org', Value: 'Failures (7d)' } }),
+    organize({ excludeByName: { Time: true, Value: true }, renameByName: { orgIdentifier: 'Org' } }),
   ],
   links: orgHomeLink('Org'),
-  noValue: 'No backup failure',
-  sortBy: [{ displayName: 'Failures (7d)', desc: true }],
+  noValue: 'No missing backup',
 });
 
 const fleetDashboard = dashboard({
@@ -545,13 +550,13 @@ const fleetDashboard = dashboard({
           ],
           thresholds: THRESHOLDS_COUNT,
         }),
-        statPanel('Orgs with backup failures (7d)', {
+        statPanel('Orgs without backup (36h)', {
           datasource: DS_LOKI,
-          targets: [lokiTarget(`count(sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", severity=~"error|critical", $env, orgIdentifier=~"$org"}[7d])))`, { instant: true })],
+          targets: [lokiTarget(`count(${missingBackupsExpr})`, { instant: true })],
           thresholds: THRESHOLDS_COUNT,
           noValue: '0',
-          description: 'Click to see the list of orgs with backup failures.',
-          links: viewPanelLink('fleet', backupFailuresTable, 'Show failing orgs'),
+          description: MISSING_BACKUPS_DESCRIPTION + ' Click to see the list.',
+          links: viewPanelLink('fleet', missingBackupsTable, 'Show orgs without backup'),
         }),
         statPanel('Orgs reporting (36h)', {
           datasource: DS_LOKI,
@@ -782,7 +787,7 @@ const fleetDashboard = dashboard({
           links: orgHomeLink('Org'),
           sortBy: [{ displayName: 'Notifications (36h)', desc: true }],
         }),
-        backupFailuresTable,
+        missingBackupsTable,
       ],
     },
   ],

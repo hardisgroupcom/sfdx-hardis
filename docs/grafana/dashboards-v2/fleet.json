@@ -258,7 +258,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Orgs with backup failures (7d)",
+      "title": "Orgs without backup (36h)",
       "datasource": {
         "type": "loki",
         "uid": "${ds_loki}"
@@ -275,13 +275,13 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "count(sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", severity=~\"error|critical\", $env, orgIdentifier=~\"$org\"}[7d])))",
+          "expr": "count((sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[36h])) > 0))",
           "queryType": "instant",
           "direction": "backward",
           "refId": "A"
         }
       ],
-      "description": "Click to see the list of orgs with backup failures.",
+      "description": "Orgs backed up in the last 7 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs. Click to see the list.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -307,7 +307,7 @@
           "noValue": "0",
           "links": [
             {
-              "title": "Show failing orgs",
+              "title": "Show orgs without backup",
               "url": "/d/sfdx-hardis-v2-fleet/?viewPanel=2&${__all_variables}&${__url_time_range}"
             }
           ]
@@ -1821,7 +1821,7 @@
     {
       "id": 2,
       "type": "table",
-      "title": "Orgs with backup failures (7d)",
+      "title": "Orgs without backup for 36h",
       "datasource": {
         "type": "loki",
         "uid": "${ds_loki}"
@@ -1838,24 +1838,24 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", severity=~\"error|critical\", $env, orgIdentifier=~\"$org\"}[7d]))",
+          "expr": "(sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[36h])) > 0)",
           "queryType": "instant",
           "direction": "backward",
           "refId": "A"
         }
       ],
-      "description": "Orgs whose metadata backup reported an error in the last 7 days. Click a row to open the org dashboard.",
+      "description": "Orgs backed up in the last 7 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs. Click a row to open the org dashboard.",
       "transformations": [
         {
           "id": "organize",
           "options": {
             "excludeByName": {
               "__proxy_source__": true,
-              "Time": true
+              "Time": true,
+              "Value": true
             },
             "renameByName": {
-              "orgIdentifier": "Org",
-              "Value": "Failures (7d)"
+              "orgIdentifier": "Org"
             }
           }
         }
@@ -1874,7 +1874,7 @@
               }
             ]
           },
-          "noValue": "No backup failure",
+          "noValue": "No missing backup",
           "links": [
             {
               "title": "Open org dashboard",
@@ -1902,13 +1902,7 @@
           ],
           "show": false
         },
-        "showHeader": true,
-        "sortBy": [
-          {
-            "displayName": "Failures (7d)",
-            "desc": true
-          }
-        ]
+        "showHeader": true
       }
     }
   ],
