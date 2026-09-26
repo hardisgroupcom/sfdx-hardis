@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- [Monitoring backup](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#query-the-monitoring-history-in-grafana): the `AGENTS.md` of a monitoring repository lets coding agents query the logs and metrics sent to Grafana, using the new `grafanaUrl` property.
+- [Grafana](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/): a notification with thousands of rows, like a day of Apex errors, is no longer refused by Loki.
+- [Monitoring backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/) sends an error notification when it fails, and the Grafana Fleet Overview and backup alert rule report failed backups and orgs without a successful backup for 36 hours.
+
 ## [8.11.0] 2026-09-26
 
 - [Monitoring backup](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) writes an `AGENTS.md` file explaining the monitoring repository, so a coding agent can answer questions about the org, also from the deployment repository and the pipeline logs when the new `deploymentRepository` property is set.

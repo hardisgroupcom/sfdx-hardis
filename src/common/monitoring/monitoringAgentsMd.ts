@@ -86,23 +86,54 @@ export async function buildMonitoringAgentsMdBlock(config: any): Promise<string>
   const commands = resolveMonitoringCommands(monitoringCommandsDefault, config?.monitoringCommands);
   const table = buildMonitoringCommandsTable(commands, getMonitoringDisable(config));
   const deploymentRepositoryStatus = buildDeploymentRepositoryStatus(config);
+  const grafanaStatus = buildGrafanaStatus(config);
   // Replacer functions: a value from the configuration may hold $$, $& or $', which a replacement
   // string would expand instead of copying
   return template
     .replace('{{monitoringCommandsTable}}', () => table)
     .replace('{{deploymentRepositoryStatus}}', () => deploymentRepositoryStatus)
+    .replace('{{grafanaStatus}}', () => grafanaStatus)
     .trimEnd() + '\n';
 }
 
+function configString(config: any, key: string): string {
+  return typeof config?.[key] === 'string' ? config[key].trim() : '';
+}
+
+// The Grafana instance that receives the monitoring logs and metrics: only non-secret settings
+// come from .sfdx-hardis.yml, the token always comes from the environment
+export function buildGrafanaStatus(config: any): string {
+  const grafanaUrl = configString(config, 'grafanaUrl');
+  if (grafanaUrl === '') {
+    return [
+      '**No Grafana instance is configured on this branch.** When a question needs the history of the monitoring checks and `GRAFANA_API_URL` is not set either, ask the user whether the monitoring sends its results to a Grafana instance:',
+      '',
+      '1. It is optional: if the user declines, answer without Grafana and do not ask again in this conversation.',
+      '2. If the user gives its URL (for example `https://mycompany.grafana.net`), write it as `grafanaUrl: <url>` in `.sfdx-hardis.yml` at the root of this branch. Change only that line, and never write a token in that file.',
+      '3. Tell the user to commit and push the change (do not do it unless they ask), and that the other monitoring branches need the same line. Then use it right away, as explained below.',
+    ].join('\n');
+  }
+  const lines = [`The Grafana instance that receives the monitoring results is \`${grafanaUrl}\` (\`grafanaUrl\` in \`.sfdx-hardis.yml\`).`];
+  const lokiUid = configString(config, 'grafanaLokiDatasourceUid');
+  const promUid = configString(config, 'grafanaPrometheusDatasourceUid');
+  if (lokiUid !== '') {
+    lines.push(`Its Loki datasource uid is \`${lokiUid}\`.`);
+  }
+  if (promUid !== '') {
+    lines.push(`Its Prometheus datasource uid is \`${promUid}\`.`);
+  }
+  return lines.join(' ');
+}
+
 export function buildDeploymentRepositoryStatus(config: any): string {
-  const deploymentRepository = typeof config?.deploymentRepository === 'string' ? config.deploymentRepository.trim() : '';
+  const deploymentRepository = configString(config, 'deploymentRepository');
   if (deploymentRepository === '') {
     return [
       '**No deployment repository is configured on this branch.** The first time a question would need the CI/CD project or its pipelines, ask the user whether they want to set one:',
       '',
       '1. Ask for the address of the sfdx-hardis CI/CD repository that deploys to this org (for example `https://github.com/my-company/my-project`). It is optional: if the user declines, answer with this repository alone and do not ask again in this conversation.',
       '2. If the user gives one, check that it is a git repository address (`https://host/path`, `ssh://host/path` or `user@host:path`), then write it as `deploymentRepository: <address>` in `.sfdx-hardis.yml` at the root of this branch. Change only that line, and keep the rest of the file and its comments as they are.',
-      '3. Ask whether the other monitoring branches of this repository (`git branch -a`) are deployed by the same repository. It is usually the case: each branch has its own `.sfdx-hardis.yml`, and the user has to update them one by one.',
+      '3. Ask whether the other monitoring branches of this repository (`git fetch --all` then `git branch -r`) are deployed by the same repository. It is usually the case: each branch has its own `.sfdx-hardis.yml`, and the user has to update them one by one.',
       '4. Tell the user to commit and push the change (do not do it unless they ask), and that the next backup rewrites this file with it. Then use it right away, as explained below.',
       '',
       'The user can also set it from the Org Monitoring panel of VS Code.',
@@ -110,7 +141,7 @@ export function buildDeploymentRepositoryStatus(config: any): string {
   }
   const providerType = GitProvider.getProviderTypeFromRemoteUrl(deploymentRepository);
   const lines = [`The deployment repository of this org is \`${deploymentRepository}\`${providerType ? ` (git provider: \`${providerType}\`)` : ''}, from \`deploymentRepository\` in \`.sfdx-hardis.yml\`.`];
-  const deploymentBranch = typeof config?.deploymentBranch === 'string' ? config.deploymentBranch.trim() : '';
+  const deploymentBranch = configString(config, 'deploymentBranch');
   if (deploymentBranch !== '') {
     lines.push(`Its branch \`${deploymentBranch}\` deploys to this org (\`deploymentBranch\` in \`.sfdx-hardis.yml\`).`);
   } else {

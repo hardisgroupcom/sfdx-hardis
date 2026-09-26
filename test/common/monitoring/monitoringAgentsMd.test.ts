@@ -7,6 +7,7 @@ import {
   AGENTS_MD_END_MARKER,
   AGENTS_MD_START_MARKER,
   buildDeploymentRepositoryStatus,
+  buildGrafanaStatus,
   buildMonitoringAgentsMdBlock,
   mergeAgentsMdBlock,
   writeMonitoringAgentsMd,
@@ -108,6 +109,54 @@ describe('monitoringAgentsMd', () => {
       expect(getMonitoringDisable({ monitoringDisable: ['ORG_LIMITS'] })).to.deep.equal(['ORG_LIMITS']);
       process.env.MONITORING_DISABLE = '$(MONITORING_DISABLE)';
       expect(getMonitoringDisable({ monitoringDisable: ['ORG_LIMITS'] })).to.deep.equal(['ORG_LIMITS']);
+    });
+  });
+
+  describe('grafana', () => {
+    it('tells the agent to ask for the instance when there is none, never for a token in the file', () => {
+      const status = buildGrafanaStatus({});
+      expect(status).to.include('No Grafana instance is configured');
+      expect(status).to.include('`grafanaUrl: <url>` in `.sfdx-hardis.yml`');
+      expect(status).to.include('never write a token in that file');
+    });
+
+    it('names the instance and the datasource uids when set', () => {
+      expect(buildGrafanaStatus({ grafanaUrl: 'https://acme.grafana.net' })).to.equal(
+        'The Grafana instance that receives the monitoring results is `https://acme.grafana.net` (`grafanaUrl` in `.sfdx-hardis.yml`).'
+      );
+      const withUids = buildGrafanaStatus({
+        grafanaUrl: 'https://acme.grafana.net',
+        grafanaLokiDatasourceUid: 'grafanacloud-logs',
+        grafanaPrometheusDatasourceUid: 'grafanacloud-prom',
+      });
+      expect(withUids).to.include('Its Loki datasource uid is `grafanacloud-logs`.');
+      expect(withUids).to.include('Its Prometheus datasource uid is `grafanacloud-prom`.');
+    });
+
+    it('fills the Grafana section of the rendered block', async () => {
+      const content = await buildMonitoringAgentsMdBlock({ grafanaUrl: 'https://acme.grafana.net' });
+      expect(content).to.not.include('{{grafanaStatus}}');
+      expect(content).to.include('## Monitoring results in Grafana');
+      expect(content).to.include('`https://acme.grafana.net`');
+    });
+
+    it('keeps Salesforce org access read-only and behind the user consent', async () => {
+      const content = await buildMonitoringAgentsMdBlock({});
+      expect(content).to.include('## Salesforce org access: read-only, with consent');
+      expect(content).to.include('**Ask first, every time.**');
+      expect(content).to.include('Any other command against an org counts as a write: do not run it, even when the user asks.');
+      expect(content).to.include('- Never write to a Salesforce org:');
+      // The allowlist must never grow a command that can write
+      const section = content.slice(content.indexOf('**Read, never write.**'), content.indexOf('Any other command against an org'));
+      for (const writeCommand of ['sf project deploy', 'sf data create', 'sf data update', 'sf data delete', 'sf data upsert', 'sf data import', 'sf apex run', 'sf hardis']) {
+        expect(section).to.not.include(writeCommand);
+      }
+    });
+
+    it('keeps the LogQL line_format templates of the recipes, which look like placeholders', async () => {
+      const content = await buildMonitoringAgentsMdBlock({});
+      expect(content).to.include('line_format "{{.t}}" | keep type');
+      expect(content).to.not.match(/\{\{[a-zA-Z]+\}\}/);
     });
   });
 

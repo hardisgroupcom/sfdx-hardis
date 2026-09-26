@@ -10,7 +10,7 @@ Read this file before answering questions about the org, and answer from the fil
 
 ## How it works
 
-- **One git branch per monitored org.** Branch names usually look like `monitoring_<client>` for production and `monitoring_<client>__<sandbox>` for sandboxes. The branch you are on is the org you are looking at. Run `git branch -a` to list the other monitored orgs.
+- **One git branch per monitored org.** Branch names usually look like `monitoring_<client>` for production and `monitoring_<client>__<sandbox>` for sandboxes. The branch you are on is the org you are looking at. Run `git fetch --all` then `git branch -r` to list the other monitored orgs.
 - **The org and user of the branch** are in `.sfdx-hardis.yml` (`instanceUrl`, `targetUsername`). Authentication secrets are CI variables, never files of the repository.
 - **Every night, the backup job** runs `sf hardis:org:monitor:backup`: it lists all the metadata of the org, retrieves it in source format, then commits the result on the branch with a message like `chore(monitoring): org state on 2026-01-31 00:12 for monitoring_myclient`. A day without changes in the org makes no commit.
 - **Then other jobs run** on the same branch, and they do not commit anything:
@@ -28,7 +28,7 @@ The git history of a branch is the change history of the org, one commit per day
 - What changed between two dates: see [Report of the changes between two dates](#report-of-the-changes-between-two-dates)
 - Compare two orgs: `git diff origin/monitoring_myclient origin/monitoring_myclient__uat_sandbox -- force-app/main/default/objects/Account`
 
-A commit shows the state of the org at the time of the backup, not who made the change or when during the day. The author of the commit is the CI user or bot. To know which user changed something in Setup, the org's Setup Audit Trail is the source (the `AUDIT_TRAIL` check reports suspect entries).
+A commit shows the state of the org at the time of the backup, not who made the change or when during the day. The author of the commit is the CI user or bot. To know which user changed something in Setup, the org's Setup Audit Trail is the source (the `AUDIT_TRAIL` check reports suspect entries, see [Grafana](#monitoring-results-in-grafana); reading the org itself needs the user's consent, see [Salesforce org access](#salesforce-org-access-read-only-with-consent)).
 
 ## Report of the changes between two dates
 
@@ -213,6 +213,142 @@ Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deplo
 
 In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
 
+## Monitoring results in Grafana
+
+{{grafanaStatus}}
+
+The results of the monitoring checks are not stored in this repository. When the pipeline sets `NOTIF_API_URL` and `NOTIF_API_METRICS_URL`, every notification of the backup and of `sf hardis:org:monitor:all` is also sent to Grafana: one JSON log line to Loki with the whole report, and its numbers to Prometheus. The CI/CD pipeline of the deployment repository sends each deployment there too. That is the day by day history of the org, and what the [Org Monitoring by sfdx-hardis dashboards](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/) display. Use it for questions like:
+
+- How did the API requests usage evolve over the last three months? Which limit is closest to its maximum?
+- On which days did Apex errors spike, and which classes caused them? Which Flows fail the most this week?
+- When will the data storage be full at the current pace?
+- Which users have not logged in for six months? Which licenses are unused?
+- What did the last Security Health Check report, and how did the score evolve?
+- Which deployments reached this org this month, and did they succeed?
+- Did the backup run every night this month?
+- Which other monitored orgs have this package installed, or more Apex errors than this one?
+
+### Connect
+
+1. **Grafana instance**: the `GRAFANA_API_URL` environment variable, else `grafanaUrl` in `.sfdx-hardis.yml` (see above). Below, `$GRAFANA_API_URL` stands for that URL, without a trailing `/`.
+2. **Token**: a Grafana tool you already have (a Grafana MCP server) needs nothing more. Otherwise use the `GRAFANA_API_TOKEN` environment variable, or the same name in the `.env` file at the root of this repository, loaded as described for the git providers. A service account token with the **Viewer** role is enough. When the instance restricts data source permissions, the service account also needs the **Query** permission on the Loki and Prometheus data sources (**Connections** > **Data sources** > the data source > **Permissions**): without it, calls answer `Access denied to datasource`. The token never goes in `.sfdx-hardis.yml`.
+3. **No token**: tell the user they can create a service account token with the Viewer role (Grafana: **Administration** > **Users and access** > **Service accounts**) and put it as `GRAFANA_API_TOKEN` in `.env`, then answer without Grafana. Do not reuse the `NOTIF_API_*` credentials of the pipeline: they are CI secrets, usually allowed to write only.
+
+Only send `GET` requests. Queries hold `{`, `"` and `|`, so let curl encode them:
+
+```sh
+curl -sG -H "Authorization: Bearer $GRAFANA_API_TOKEN" "$LOKI/query_range" \
+  --data-urlencode 'query={source="sfdx-hardis", orgIdentifier="acme", type="ORG_LIMITS"} | json t="_title" | line_format "{{.t}}" | keep type' \
+  --data-urlencode 'start=2026-09-01T00:00:00Z' --data-urlencode 'limit=10'
+```
+
+### Find the datasources
+
+Use `grafanaLokiDatasourceUid` and `grafanaPrometheusDatasourceUid` from `.sfdx-hardis.yml` when they are set. Otherwise call `GET $GRAFANA_API_URL/api/datasources`: it lists only the datasources the token can query. Keep the ones of type `loki` and `prometheus`, leaving out the Grafana Cloud internal ones (`alert-state-history`, `usage-insights`, `ml-metrics` or `usage` in the uid). On Grafana Cloud they are usually `grafanacloud-logs` and `grafanacloud-prom`: try them first. When several remain, keep the one where `count(last_over_time({source="sfdx-hardis"}[2d]))` (Prometheus, `/query`) or `sum(count_over_time({source="sfdx-hardis"}[1d]))` (Loki, `/query`) returns data. A datasource that answers an error, like `Invalid data source URL`, is not the one. When none has sfdx-hardis data, the token probably lacks the Query permission: tell the user (see above). Offer to write the two uids in `.sfdx-hardis.yml`, so the next agent skips this step.
+
+Below, `$LOKI` stands for `$GRAFANA_API_URL/api/datasources/proxy/uid/<loki uid>/loki/api/v1` and `$PROM` for `$GRAFANA_API_URL/api/datasources/proxy/uid/<prometheus uid>/api/v1`.
+
+### Find this org
+
+Every log line and metric has a `gitIdentifier` label: `<repository name>/<branch>` of the job that sent it. For this branch, it is the last part of `git remote get-url origin` without `.git`, a `/`, then `git branch --show-current`. Get the `orgIdentifier` from it:
+
+```sh
+curl -sG -H "Authorization: Bearer $GRAFANA_API_TOKEN" "$PROM/label/orgIdentifier/values" \
+  --data-urlencode 'match[]={source="sfdx-hardis", gitIdentifier="acme-monitoring/monitoring_acme__uat_sandbox"}'
+```
+
+If that returns nothing, the `orgIdentifier` is usually `instanceUrl` of `.sfdx-hardis.yml` without `https://` and `.my.salesforce.com`, dots replaced by `__`: `https://acme--uat.sandbox.my.salesforce.com` gives `acme--uat__sandbox`. The pipeline can override it with `SFDX_HARDIS_MONITORING_KEY`, so check it exists in `GET $PROM/label/orgIdentifier/values`. Query all the orgs of this repository the same way, with the other branches of `git branch -r`.
+
+Which checks send data for this org, and how many lines in 30 days: `GET $LOKI/query` with `query=sum by (type) (count_over_time({source="sfdx-hardis", orgIdentifier="acme"}[30d]))`. An org monitored by the backup only sends `BACKUP`.
+
+### What is sent
+
+Labels, on logs and metrics:
+
+- `source`: always `sfdx-hardis`
+- `orgIdentifier`: the monitored org (see above)
+- `type`: the notification type. The `notificationTypes` of the checks listed below, plus `BACKUP` (each backup, with severity `error` and an `error` field when it failed), `MONITORING_SUMMARY` (each run of the checks) and `DEPLOYMENT` (each deployment by the CI/CD pipeline, its `gitIdentifier` is then the deployment repository and branch)
+- `severity` (logs only): `critical`, `error`, `warning`, `info`, `success` or `log`
+- `gitIdentifier`: `<repository name>/<branch>` of the job that sent it
+
+Grafana Cloud adds `service_name` and `detected_level`: ignore them.
+
+**Log lines** are JSON documents: `_title` (one line summary), `_logBodyText` (the notification text), `_logElements` (the rows of the report, cut at 500 rows or fewer when the line is too big, then `_logElementsTruncated` is true and `_logElementsTotal` gives the number of rows before the cut), `metric` (the main value), `_metrics`, `_jobUrl` (the CI job that sent it) and `_dateTime`. Some types add their own fields: `topFailingApex` (`APEX_ERROR`), `topFailingFlows` and `topFailingSteps` (`FLOW_ERROR`), `installedPackages` (`BACKUP`), `licenses` (`LICENSES`), `limits` (`ORG_LIMITS`), `entitlements` (`USAGE_ENTITLEMENTS`), `healthScoreDetails` (weekly `MONITORING_SUMMARY` only). To know the fields of a type, read one line of it with `limit=1`.
+
+**Metrics**: each key of `_metrics` gives `<Key>_metric`, plus `<Key>_percent`, `<Key>_max` and `<Key>_min` when the key has these values (`ORG_LIMITS` gives `DailyApiRequests_metric`, `DailyApiRequests_max` and `DailyApiRequests_percent`). With a Prometheus Pushgateway instead of Grafana Cloud, the main value is `<Key>` without `_metric`. Key names mix cases (`ApexErrors`, `unusedApexClasses`, `UNUSED_USERS`): list them instead of guessing, with `GET $PROM/label/__name__/values` and `match[]={source="sfdx-hardis", type="ORG_LIMITS", orgIdentifier="acme"}`.
+
+**Personal data**: when the checks run in CI, the user fields of their reports (username, email, first and last name, user Id) are pseudonymized, like `user_ee329d2dc7` or `id_219ea85aee`. Never try to find who is behind an alias. Other text is sent as is, like the commit authors in a `DEPLOYMENT` line, and by default the users who made the Setup Audit Trail actions: auditing needs their names.
+
+### Query rules
+
+- **Metrics arrive once a day.** A plain selector looks back 5 minutes only and returns nothing: wrap it in a range function. `last_over_time(...[2d])` for the current value (`[8d]` for the weekly health score, longer for checks that run weekly or monthly, see the frequency in the checks table), `max_over_time(...[30d])` for a peak, and `last_over_time(...[1d])` with `query_range` and `step=1d` for a daily history.
+- **A daily point is dated the day after.** With `last_over_time(...[1d])` and `step=1d`, the point at `2026-09-23T00:00:00Z` holds the value sent during 2026-09-22. And the checks run at night on the day before: `ApexErrors` sent on 2026-09-22 counts the errors of 2026-09-21 (the `_title` of the log line says "over the last 1 day(s)"). Say which day you mean.
+- **Windows and ranges are capped.** On Grafana Cloud, a range function window (`[30d]`) cannot exceed 32 days (`err-mimir-max-query-length`). For a longer period, use `query_range` with `step=1d` over the whole period, and compute the peak or average from the points.
+- **Retention depends on the Grafana plan.** The Grafana Cloud free tier keeps logs and metrics about 14 days; paid plans usually keep logs about 30 days and metrics about 13 months. Before answering about an older period, check the date of the first point you got, and say so when the history is shorter than the question.
+- **A log query covers 30 days at most.** Loki refuses a query longer than 30 days (`the query time range exceeds the limit`) or older than its retention. A calendar month from midnight to midnight is already too long: for "the last month" or "the last 30 days", pass a `start` 29 days ago at `00:00:00Z` and no `end` (it defaults to now). For an older period, use the metrics.
+- **Always pass `start` to Loki**: without it, a query only reads the last hour, and label values the last 6 hours. `start` and `end` take RFC 3339 dates in UTC, like `2026-09-01T00:00:00Z`, on both APIs. A log query that does not select an org can hit the 500 streams limit: add `orgIdentifier`, or count with `sum(count_over_time(...))`.
+- **Keep only `.data.result`** of the answers (with `jq` or `node`): Loki adds a `stats` object that is often bigger than the result.
+- **A log line can weigh hundreds of KB** (a day with thousands of Apex errors). Never pull raw lines over a range. Extract the fields you need with `| json a="field" | line_format "{{.a}}" | keep type`, and use `limit=1` for the latest report. `keep type` stops Loki from copying the extracted fields into the labels of each result. The rows of one report can still be large (hundreds of users or errors): save the answer to a file under `hardis-report/` and filter it there, rather than reading it whole.
+- **A metric can exist without its log line.** Loki refuses a line bigger than its size limit (256 KB on Grafana Cloud). Recent sfdx-hardis versions cut the rows until the line fits, older ones lost the whole line on days with thousands of errors: the numbers are in Prometheus, the rows and the `topFailing*` fields are not. Say so, and give the numbers.
+- **No data is not zero.** When a query returns nothing, check the org, the metric name and the time range before answering, and say that there is no data.
+
+### Grafana recipes
+
+Replace `acme` with the `orgIdentifier`. `$PROM/query` returns one value, `$PROM/query_range` with `start`, `end` and `step=1d` a daily history. `$LOKI/query_range` with `start` and `limit` returns lines, `$LOKI/query` counts lines.
+
+Limits and capacity:
+
+- The 10 most used limits: `topk(10, max by (__name__) (last_over_time({__name__=~".+_percent", source="sfdx-hardis", type="ORG_LIMITS", orgIdentifier="acme"}[2d])))`
+- History of one limit, with `query_range`: `max(last_over_time(DailyApiRequests_percent{source="sfdx-hardis", orgIdentifier="acme"}[1d]))`. Its peak over 30 days: `max(max_over_time(DailyApiRequests_percent{source="sfdx-hardis", orgIdentifier="acme"}[30d]))`. Over three months, take the highest point of the daily history instead.
+- Days until the data storage is full, at the pace of the last 30 days: `(100 - last_over_time(DataStorageMB_percent{source="sfdx-hardis", orgIdentifier="acme"}[2d])) / clamp_min(deriv(DataStorageMB_percent{source="sfdx-hardis", orgIdentifier="acme"}[30d]) * 86400, 0.000001)`. A huge result means it does not grow. Same with `FileStorageMB_percent`.
+
+Errors:
+
+- Apex errors per day, with `query_range`: `max(last_over_time(ApexErrors_metric{source="sfdx-hardis", orgIdentifier="acme"}[1d]))`, and `FlowErrors_metric` for Flows. This week against the previous one: `sum(sum_over_time(ApexErrors_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d])) - sum(sum_over_time(ApexErrors_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d] offset 7d))`
+- The classes behind the errors, day by day: `{source="sfdx-hardis", orgIdentifier="acme", type="APEX_ERROR"} | json n="metric", top="topFailingApex" | line_format "{{.n}} errors, top: {{.top}}" | keep type`. For Flows, `topFailingFlows` and `topFailingSteps` of `FLOW_ERROR`.
+- The days a class or a message appears in the error reports: `{source="sfdx-hardis", orgIdentifier="acme", type="APEX_ERROR"} |= "InvoiceService" | json t="_title" | line_format "{{.t}}" | keep type`, then read the `_logElements` of one of these days for the stack traces.
+- Everything that went wrong recently: `{source="sfdx-hardis", orgIdentifier="acme", severity=~"error|critical"} | json t="_title" | line_format "{{.t}}" | keep type`
+
+Latest report of a check, with its rows: `{source="sfdx-hardis", orgIdentifier="acme", type="UNUSED_USERS"} | json t="_title", e="_logElements" | line_format "{{.t}} {{.e}}" | keep type` with `limit=1`. It works for every type: `LICENSES`, `ORG_HEALTH_CHECK`, `AUDIT_TRAIL`, `UNSECURED_CONNECTED_APPS`, `RELEASE_UPDATES`... For inactive users, `UNUSED_USERS` covers every license, `UNUSED_USERS_CRM_6_MONTHS` and `UNUSED_USERS_EXPERIENCE_6_MONTHS` split internal and Experience Cloud users. A report cut at 500 rows cannot be compared row by row with another one: compare their counts.
+
+Scores and trends (other names: list them, see above):
+
+- Health score and its sub-scores, computed weekly: `max by (__name__) (last_over_time({__name__=~"HealthScore.*_metric", source="sfdx-hardis", orgIdentifier="acme"}[8d]))`. The reasons are only on the weekly `MONITORING_SUMMARY` line, with a `start` 8 days ago: `{source="sfdx-hardis", orgIdentifier="acme", type="MONITORING_SUMMARY"} |= "healthScoreDetails" | json d="healthScoreDetails" | line_format "{{.d}}" | keep type` with `limit=1`.
+- Metrics the dashboards use: `ApexTestsCodeCoverage_metric`, `Score_metric` and `HighRisk_metric` (Security Health Check), `SuspectMetadataUpdates_metric` (audit trail), `ACTIVE_USERS_CRM_WEEKLY_metric`, `UNUSED_USERS_CRM_6_MONTHS_metric`, `unusedApexClasses_metric`, `MetadatasWithoutDescription_metric`, `AiUsageCreditsTotal_metric`, `deploymentsTotal_metric`, `deploymentSuccessRate_metric`, `DoraLeadTimeDays_metric`.
+
+Backups, checks and deployments:
+
+- Did the backup succeed every night, with `$LOKI/query_range` and `step=1d`: `sum by (severity) (count_over_time({source="sfdx-hardis", orgIdentifier="acme", type="BACKUP"}[1d]))`. An `error` point is a failed backup. A day with no point at all had no backup: the job did not run, or it ran with an sfdx-hardis version that sent nothing on failure, and the pipeline logs of this repository say why.
+- Why a backup failed: `{source="sfdx-hardis", orgIdentifier="acme", type="BACKUP", severity="error"} | json e="error" | line_format "{{.e}}" | keep type` gives the error message of each failure.
+- Checks that failed in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones is only in the pipeline logs.
+- Deployments to this org: `{source="sfdx-hardis", orgIdentifier="acme", type="DEPLOYMENT"} | json t="_title", j="_jobUrl" | line_format "{{.t}} {{.j}}" | keep severity`. The `_logBodyText` of a deployment lists its deployment actions, its commits and the link of its Pull Request.
+
+All the monitored orgs (leave out `orgIdentifier`):
+
+- The orgs with the most Apex errors in 7 days: `topk(10, sum by (orgIdentifier) (sum_over_time(ApexErrors_metric{source="sfdx-hardis"}[7d])))`
+- The orgs where a package is installed, with `$LOKI/query`: `sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"} |= "\"SubscriberPackageNamespace\":\"FSL\"" [7d]))`. Match the namespace exactly, or the name with `|~ "\"SubscriberPackageName\":\"[^\"]*(?i:field service)"`: a bare word also matches the rest of the line. Each entry of `installedPackages` has `SubscriberPackageName`, `SubscriberPackageNamespace` and `SubscriberPackageVersionNumber`.
+- The orgs without a successful backup for 36 hours, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[36h])) > 0)`
+- The orgs that stopped sending data, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[36h])) > 0)`. The last day each org sent data, in one call, with `$LOKI/query_range`, `step=1d` and a `start` 7 days ago: `sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[1d]))`, then take the last point of each series.
+
+### Answer
+
+- Give the values with their dates in UTC, and say which check they come from.
+- Add the link of the dashboard that shows the answer, when the instance has them (`GET $GRAFANA_API_URL/api/search?folderUIDs=sfdx-hardis-v2`): `$GRAFANA_API_URL/d/<uid>?var-org=acme&from=now-30d&to=now`. The uids: `sfdx-hardis-v2-org-home` (overview of one org), `sfdx-hardis-v2-org-reliability` (Apex and Flow errors), `sfdx-hardis-v2-org-limits`, `sfdx-hardis-v2-org-devops` (deployments), `sfdx-hardis-v2-org-security`, `sfdx-hardis-v2-org-debt` (technical debt, test coverage), `sfdx-hardis-v2-org-adoption` (users, licenses), `sfdx-hardis-v2-org-usage` (AI credits, consumption), `sfdx-hardis-v2-dtl-indicator` (any metric, with `var-type` and `var-metric`), `sfdx-hardis-v2-fleet` (all the orgs).
+
+## Salesforce org access: read-only, with consent
+
+Answer from this repository, its git history, the deployment repository and Grafana first: most questions need no connection to the org. Connect to the org only when a question needs live data none of them hold, like a record count, a setting that is not backed up, or the Setup Audit Trail entries of a given day.
+
+1. **Ask first, every time.** Tell the user which org, what you want to read and why, and wait for an explicit yes. Never connect to an org without it, and ask again for another org.
+2. **Use an org the user authenticated.** `sf org list` shows them: pick the one whose instance URL is `instanceUrl` of `.sfdx-hardis.yml`, and always pass it explicitly with `--target-org <alias or username>`, never rely on the default org. If it is not there, ask the user to log in with the **Org Manager** of the VS Code extension sfdx-hardis, or to run `sf org login web --instance-url <instanceUrl> --alias <alias>` themselves. Never use the credentials of the monitoring pipeline (CI variables, certificates): they are not meant for you.
+3. **Read, never write.** The only commands you may run against the org are:
+   - `sf data query --query "<SOQL>" --target-org <org>`, with `--use-tooling-api` for Tooling API objects. Add a `LIMIT`, and prefer `COUNT()` or aggregate queries to pulling thousands of records.
+   - `sf org list metadata --metadata-type <type> --target-org <org>` and `sf org list limits --target-org <org>`
+   - `sf apex list log --target-org <org>` and `sf apex get log --log-id <id> --target-org <org>`
+   - `sf org display --target-org <org>`, never with `--verbose`, and never show its access token.
+
+Any other command against an org counts as a write: do not run it, even when the user asks. That includes `sf project deploy`, `sf project retrieve` (it rewrites this repository), every `sf data` command other than `query`, `sf apex run` (anonymous Apex can change data), `sf apex run test`, `sf org assign`, `sf org create`, `sf org delete`, `sf org generate password`, every `sf hardis` command, and any REST, SOAP, Metadata or Tooling API call other than a read. When the user wants something changed in the org, explain that this repository only watches the org: the change goes through the deployment repository and its CI/CD pipeline, or the user makes it themselves.
+
 ## Files and folders
 
 | Path | Content |
@@ -227,7 +363,7 @@ In the logs of this repository, the job that runs `sf hardis:org:monitor:backup`
 | `manifest/chunks/` | Only in full mode (`--full`): the list of items split in several retrieves. |
 | `docs/` | Project documentation generated from the metadata after each backup, unless disabled: objects, Apex, Flows with their visual history (`docs/flows/*-history.md`), Lightning pages, profiles, permission sets, packages, and an object model diagram. |
 | `mkdocs.yml` | Menu and settings of the documentation site built from `docs/`. |
-| `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, and the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org. |
+| `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org, and the `grafanaUrl` (and optional datasource uids) that receives the monitoring results. Never a secret. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |
 | `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. |
 | `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. |
@@ -253,11 +389,12 @@ The other way around, a component in `force-app/` but not in `manifest/package-a
 
 ## Rules for coding agents
 
-- Never deploy anything from this repository to an org.
+- Never write to a Salesforce org: no deployment, no data change, no anonymous Apex, no test run, no permission or user change, whatever the org and whoever asks. Only read it, only after the user said yes, as described in [Salesforce org access](#salesforce-org-access-read-only-with-consent).
 - Do not edit the files under `force-app/`, `manifest/package-all-org-items.xml`, `manifest/package-backup-items.xml`, `installedPackages/` or `docs/`: the next backup overwrites them.
 - Changes worth making here are configuration: `manifest/package-skip-items.xml`, `.sfdx-hardis.yml`, the pipeline file. They apply to the branch they are committed on, so to one org.
 - To answer "what does this org do", read the sources in `force-app/main/default/` first, then the generated `docs/` when present. Before describing a component, check that it is still in `manifest/package-all-org-items.xml`.
 - Only read the deployment repository and the git servers. Never commit, push, check out a branch in the local clone of the deployment repository, create a branch, comment, approve or merge a Pull Request, start, retry or cancel a pipeline, or change a variable or a setting of either repository.
+- Only read Grafana: never create, change or delete a dashboard, an alert rule, a silence, a datasource or a service account.
 - Never print a token, and never write one in a file or in an answer.
 
 ## Documentation

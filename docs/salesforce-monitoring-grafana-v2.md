@@ -101,13 +101,13 @@ The entry point: all monitored orgs at a glance.
 
 ![Fleet Overview](assets/images/grafana-v2-fleet.png)
 
-- **Fleet at a glance**: monitored orgs, fleet average health score, total errors (7d), orgs with backup failures, orgs reporting, silent orgs. Each stat opens its detail list.
+- **Fleet at a glance**: monitored orgs, fleet average health score, total errors (7d), orgs without backup for 36 hours, orgs reporting, silent orgs. Each stat opens its detail list.
 - **Environment filter**: display all orgs, production only, or sandboxes only (sandboxes are recognized by their org identifier).
 - **Monitored orgs table**: one row per org with health score, worst limit %, Apex/Flow errors (7d totals and daily averages). Click any cell to open the org's dashboard.
 - **Health sub-scores by org**: the weekly composite score broken down (reliability, limits, security, tests, debt).
 - **Errors across the fleet**: errors per day for all orgs, fleet-wide daily averages.
 - **Recent alerts and search**: latest error/critical notifications (org, type, severity), plus license and package search criteria.
-- **Freshness and backups**: silent orgs (no notification for 36h: the monitoring job probably failed), orgs reporting, backup failures.
+- **Freshness and backups**: silent orgs (no notification for 36h: the monitoring job probably failed), orgs reporting, orgs without a successful backup for 36h (the backup failed, or its job did not run).
 
 ### 01 - Org Home
 
@@ -236,7 +236,7 @@ The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupc
 | Salesforce org limit above 90%                                      | Any limit of any org exceeds 90% usage                                                                             |
 | Salesforce storage projected full within 14 days                    | Data or File storage trends toward 100% (30-day linear regression)                                                 |
 | Salesforce Apex/Flow error spike                                    | Daily errors exceed twice the 7-day average                                                                        |
-| Salesforce metadata backup failed                                   | A BACKUP notification with error severity was received                                                             |
+| Salesforce metadata backup failed                                   | A backup sent an error notification, or an org has no successful backup for 36 hours (its job did not run)         |
 | Salesforce org monitoring is silent                                 | An org sent nothing for 36 hours (its monitoring job probably failed)                                              |
 | Salesforce org health score degraded                                | Score below 60, or dropped by more than 20 points                                                                  |
 | Salesforce usage-based entitlement over or projected over allowance | An entitlement has already consumed its full allowance, or is on track to exceed 150% of it before the period ends |
@@ -263,6 +263,12 @@ Then, in both cases:
 
 1. In **Alerting** -> **Alert rules**, unpause the rules you want
 2. Configure your [contact points and notification policies](https://grafana.com/docs/grafana/latest/alerting/configure-notifications/) (Slack, email, ...)
+
+## Ask a coding agent
+
+The same logs and metrics can answer questions asked to a coding agent (Claude Code, Codex, Gemini, Copilot...) opened in your monitoring repository, like "How did the API requests limit evolve this quarter?". Set `grafanaUrl` in the `.sfdx-hardis.yml` of the monitoring branches (and optionally `grafanaLokiDatasourceUid` and `grafanaPrometheusDatasourceUid`), and give the agent a service account token with the **Viewer** role as `GRAFANA_API_TOKEN` in a `.env` file. The `AGENTS.md` written by each backup tells the agent how to query them, read-only. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent).
+
+`sf hardis:org:configure:grafana-dashboards` also reads `grafanaUrl` when neither `--grafana-url` nor `GRAFANA_API_URL` is set.
 
 ## Privacy
 

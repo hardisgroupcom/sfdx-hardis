@@ -342,6 +342,9 @@ A big project has hundreds of Pull Requests, so:
   in the CLI, the 9 `src/i18n/*.json` in the extension).
 - Any behaviour change: re-run the A/B regression check with the feature **off** before saying it
   is safe. A green unit suite has already missed a flag-off regression once.
+- The monitoring `AGENTS.md` explains promotion branches and the Pull Request scope of
+  `deploy:smart` to coding agents: when their behaviour changes, load the `monitoring-agents-md`
+  skill and update its "How the CI/CD pipeline works" section.
 - The feature is in Beta: keep the "(Beta)" mention in the docs page, the JSON schema description
   and the settings UI. It moved from "(experimental)" in September 2026, so a new mention is written
   "(Beta)", capital B, like backpromote.

@@ -239,7 +239,8 @@ export const notificationTypesDefault: Record<NotifMessageType, NotificationType
     category: "orgActivity",
     icon: "utility:archive",
     colorClass: "backup",
-    emittedSeverities: ["info", "log"],
+    // error: the backup failed (sent by hardis:org:monitor:backup before it exits with the error)
+    emittedSeverities: ["error", "info", "log"],
     defaults: { messaging: "info", email: "off", api: "log" },
   },
   // Emitted once per successful deployment by the deploy pipeline (see handlePostDeploymentNotifications in gitUtils). Exposes every severity so UIs do not lock users in.

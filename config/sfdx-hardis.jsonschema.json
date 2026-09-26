@@ -2071,6 +2071,36 @@
       "title": "Deployment repository",
       "type": "string"
     },
+    "grafanaLokiDatasourceUid": {
+      "$id": "#/properties/grafanaLokiDatasourceUid",
+      "description": "Uid of the Loki datasource of the Grafana instance (grafanaUrl) that receives the sfdx-hardis logs. Optional: coding agents and hardis:org:configure:grafana-dashboards detect it when it is not set. Found in Connections -> Data sources, in the URL of the datasource page.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/",
+      "examples": [
+        "grafanacloud-logs"
+      ],
+      "title": "Grafana Loki datasource uid",
+      "type": "string"
+    },
+    "grafanaPrometheusDatasourceUid": {
+      "$id": "#/properties/grafanaPrometheusDatasourceUid",
+      "description": "Uid of the Prometheus datasource of the Grafana instance (grafanaUrl) that receives the sfdx-hardis metrics. Optional: coding agents and hardis:org:configure:grafana-dashboards detect it when it is not set. Found in Connections -> Data sources, in the URL of the datasource page.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/",
+      "examples": [
+        "grafanacloud-prom"
+      ],
+      "title": "Grafana Prometheus datasource uid",
+      "type": "string"
+    },
+    "grafanaUrl": {
+      "$id": "#/properties/grafanaUrl",
+      "description": "URL of the Grafana instance that receives the sfdx-hardis monitoring logs and metrics (NOTIF_API_URL, NOTIF_API_METRICS_URL). The AGENTS.md file of a monitoring repository tells coding agents to query it, and hardis:org:configure:grafana-dashboards uses it when --grafana-url and GRAFANA_API_URL are not set. Never put the token here: it goes in the GRAFANA_API_TOKEN environment variable, or in a .env file that git ignores.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/",
+      "examples": [
+        "https://mycompany.grafana.net"
+      ],
+      "title": "Grafana URL",
+      "type": "string"
+    },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
       "default": "integration",
