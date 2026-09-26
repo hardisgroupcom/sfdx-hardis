@@ -8,11 +8,11 @@ Course Pull Request: [#52](https://github.com/hardisgroupcom/sfdx-hardis-trainin
 
 ## Versions under test
 
-| What          | Version                                                                             |
-|---------------|-------------------------------------------------------------------------------------|
-| sfdx-hardis   | 8.11.1, linked build of `main` (45a233cb7)                                          |
-| Extension     | not exercised (8.8.1 on disk)                                                       |
-| Course        | `fix/lab-2-1-merge-teammate-pr`, ahead of the published site (`main` @ 2308217)     |
+| What        | Version                                                                         |
+|-------------|---------------------------------------------------------------------------------|
+| sfdx-hardis | 8.11.1, linked build of `main` (45a233cb7)                                      |
+| Extension   | not exercised (8.8.1 on disk)                                                   |
+| Course      | `fix/lab-2-1-merge-teammate-pr`, ahead of the published site (`main` @ 2308217) |
 
 The published site does not carry any of this yet.
 
@@ -35,23 +35,23 @@ their folder, which `check-site.mjs` caught.
 
 ## Lab by lab
 
-| Lab           | Fidelity                                                   | A (read) | B (do)                              | C (images)                             |
-|---------------|------------------------------------------------------------|----------|-------------------------------------|----------------------------------------|
-| 2.1 step 1    | 3: `node scripts/training.mjs simulate`, the menu's command | OK       | OK after F1, F2, F3                 | OK, 4 images, pills match the text     |
-| 2.1 steps 2-5 | not walked                                                 | -        | -                                   | -                                      |
-| 2.7 step 2    | 3, US-018                                                  | OK       | OK after F3                         | the menu image, unchanged              |
-| 2.9 part 3    | 3, US-019                                                  | OK       | OK after F3, F4                     | none in that part                      |
+| Lab           | Fidelity                                                    | A (read) | B (do)              | C (images)                         |
+|---------------|-------------------------------------------------------------|----------|---------------------|------------------------------------|
+| 2.1 step 1    | 3: `node scripts/training.mjs simulate`, the menu's command | OK       | OK after F1, F2, F3 | OK, 4 images, pills match the text |
+| 2.1 steps 2-5 | not walked                                                  | -        | -                   | -                                  |
+| 2.7 step 2    | 3, US-018                                                   | OK       | OK after F3         | the menu image, unchanged          |
+| 2.9 part 3    | 3, US-019                                                   | OK       | OK after F3, F4     | none in that part                  |
 
 Cases walked for the command, all against the real fork:
 
-| Case                                                      | Result                                              |
-|-----------------------------------------------------------|-----------------------------------------------------|
-| US-017, Yes to the merge, checks green                    | Merged by the command about 3.5 min after the push  |
-| US-017, a check red                                       | Stops, prints the PR address, merges nothing        |
-| US-017 again while its Pull Request is open               | Same PR, new commit, address printed (after F2)     |
-| US-017 again once merged                                  | "already merged" and the merged PR address          |
-| Learner merges on GitHub while the command waits          | Detected, next step printed (after F3)              |
-| Fixed Level 2 start state, Level 1 audit                  | Same result as the current start state              |
+| Case                                             | Result                                             |
+|--------------------------------------------------|----------------------------------------------------|
+| US-017, Yes to the merge, checks green           | Merged by the command about 3.5 min after the push |
+| US-017, a check red                              | Stops, prints the PR address, merges nothing       |
+| US-017 again while its Pull Request is open      | Same PR, new commit, address printed (after F2)    |
+| US-017 again once merged                         | "already merged" and the merged PR address         |
+| Learner merges on GitHub while the command waits | Detected, next step printed (after F3)             |
+| Fixed Level 2 start state, Level 1 audit         | Same result as the current start state             |
 
 ## Findings
 
