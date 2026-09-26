@@ -184,6 +184,18 @@ Traps that cost earlier runs time:
   opening an **Erase** link hard-deletes at once (its token is the confirmation). Handover Item
   and Panel Batch answered "internal server error" to Erase and did not block the seed; Installation
   is the one that matters.
+- **After Lab 3.1, a teardown also takes the CI login away** (2026-09-26). The teardown deletes
+  the External Client App the JWT login uses, and **Reset this level** keeps the JWT pipeline
+  configuration, so every check on `integration` then fails at *client identifier invalid*.
+  Re-running `init` does not bring it back (it skips the credentials once the pipeline is on JWT):
+  redo Add/Configure Org for that branch with `scripts/auth.mjs`, and merge the new key it writes
+  through a Pull Request.
+- **`Reset this level` leaves the clone on `integration`.** A run that tests a script from a local
+  branch has to check that branch out again after every reset, or it tests the published script
+  without saying so (2026-09-26, one wasted Pull Request).
+- **Testing a merge the learner makes while a command waits is a race.** Poll every two seconds and
+  merge the moment both required checks pass: the command polls every fifteen, so this usually
+  lands first or in the same second, which is the case worth seeing.
 - **Git Bash rewrites arguments that look like paths.** A leading `/` becomes a Windows path:
   `sf org open --path /lightning/...` turns into `C:/Program Files/Git/lightning/...` and Salesforce
   answers *Invalid Page Redirection*. An argument with a `:` is read as a path list:
