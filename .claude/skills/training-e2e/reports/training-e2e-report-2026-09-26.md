@@ -137,6 +137,13 @@ Level 1 and 30 of Level 3's 60 images, and **no Level 2 image**.
 - **N11**: Lab 3.7 step 6 names the tickets as pill 3 of the deployment comment; the picture (a
   Level 1 comment, 34 sent / 5 changed) has no tickets, and its pill 3 marks the Quick Deploy line.
   Text aligned on the picture, and it says the counts are from an earlier deployment.
+- **N12 (reported by a learner after the walk)**: Lab 2.2 has the learner leave **Visible** unticked
+  for every profile on the new `Crew_Warning_Sent__c`. Flow Builder only lists the fields the person
+  editing the flow can read, so **Update Triggering Record** cannot pick it and the `crewTooSmall`
+  formula cannot use it: the lab stops at step 2. Both walks of the day missed it because they wrote
+  the flow as XML instead of clicking Flow Builder. Reproduced in `helios-dev` with the admin's
+  describe. The lab ticks **Visible** for System Administrator only now, and says how to fix a field
+  created without it.
 - Changelog `## 2026-09-26`; French `source_rev` restamped for the five labs edited in both
   languages.
 

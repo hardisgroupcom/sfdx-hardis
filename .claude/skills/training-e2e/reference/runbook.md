@@ -192,6 +192,11 @@ Traps that cost earlier runs time:
   then give `git -C` a `C:/...` path, which the prefix no longer converts from `/c/...`.
 - **Anonymous Apex compiles against the fields the running user can see.** A script that grants a
   new field and then writes it fails to compile at the first mention of the field. Two runs.
+- **Writing a flow as XML skips what Flow Builder would refuse.** Flow Builder only offers the fields
+  the person editing the flow can read. Lab 2.2 told learners to hide their new field from every
+  profile, and a learner was stuck at the first Flow Builder step while two walks passed, both with
+  the flow deployed as XML (2026-09-26). When a lab has a flow reference a field, check the admin
+  can read it: `sf sobject describe` as that user lists only readable fields.
 - **A Setup step done through the API is invisible to source tracking.** Granting a field through
   `FieldPermissions` DML does not put the permission set into Recent Changes the way the Setup
   screen does, so the Metadata Retriever list of that lab no longer matches the picture. Say so in
