@@ -74,6 +74,16 @@ Cases walked for the command, all against the real fork:
 - **F4. US-019's closing line talked about Lab 3.4 when run from Level 2**, and US-018's only about
   Lab 2.7 when run from Level 3. Both name the two labs now.
 
+### Code review (high) of the course Pull Request
+
+Fixed and walked again: the wait now gives the learner their branch and their work back before it
+starts (the first version kept them on Romain's branch, work stashed, for minutes); checks are read
+only once the Pull Request carries the pushed commit, and the merge uses `--match-head-commit`; the
+wait reuses `waitForPullRequestChecks` of **Update my course**, so a fork with no checks is reported
+after three minutes; a scripted `--yes` merges only with `--merge`; Level 2 wording only prints in
+Level 2. Re-verified on PR #46 (merged by the command, learner branch and uncommitted file back
+during the wait), #47 (learner merged first, detected) and #48 (`--yes` alone, left open).
+
 ### Not fixed
 
 - **No picture of a Training command panel.** Labs 2.1 and 2.7 show the Training menu, then
@@ -92,6 +102,10 @@ Cases walked for the command, all against the real fork:
   `auth.mjs` and merged the new key through config PR #41 on the fork, with the F1 fix in the same
   PR so the rest of the run had a correct start state.
 - The GitHub merges of the "learner merges while it waits" cases were `gh pr merge`, not a click.
+- The walks ran with `--yes`, which answers the questions without the panel; after the review
+  fix, `--merge` stands for the Yes a learner clicks.
+- The fork is left with `integration` at the Level 2 start plus US-017 and US-018, and the JWT key
+  of PR #41 kept by the reset; `helios-integration` holds the Level 2 app plus those two stories.
 
 ## What this run did not cover
 
