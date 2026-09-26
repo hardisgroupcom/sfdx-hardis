@@ -8,11 +8,11 @@ Course Pull Request: [#52](https://github.com/hardisgroupcom/sfdx-hardis-trainin
 
 ## Versions under test
 
-| What        | Version                                                                         |
-|-------------|---------------------------------------------------------------------------------|
-| sfdx-hardis | 8.11.1, linked build of `main` (45a233cb7)                                      |
-| Extension   | not exercised (8.8.1 on disk, 3bbe3102)                                         |
-| Course      | `fix/lab-2-1-merge-teammate-pr`: walked at 12da99d, review fixes at 56ebdf5     |
+| What        | Version                                                                     |
+|-------------|-----------------------------------------------------------------------------|
+| sfdx-hardis | 8.11.1, linked build of `main` (45a233cb7)                                  |
+| Extension   | not exercised (8.8.1 on disk, 3bbe3102)                                     |
+| Course      | `fix/lab-2-1-merge-teammate-pr`: walked at 12da99d, review fixes at 56ebdf5 |
 
 The published site does not carry any of this yet.
 
@@ -35,12 +35,12 @@ their folder, which `check-site.mjs` caught.
 
 ## Lab by lab
 
-| Lab           | Fidelity                                                    | A (read) | B (do)              | C (images)                         |
-|---------------|-------------------------------------------------------------|----------|---------------------|------------------------------------|
-| 2.1 step 1    | 3: `node scripts/training.mjs simulate`, the menu's command | OK       | OK after F1, F2, F3 | OK, 4 images; F5 (no panel image)  |
-| 2.1 steps 2-5 | not walked                                                  | -        | -                   | -                                  |
+| Lab           | Fidelity                                                    | A (read) | B (do)              | C (images)                        |
+|---------------|-------------------------------------------------------------|----------|---------------------|-----------------------------------|
+| 2.1 step 1    | 3: `node scripts/training.mjs simulate`, the menu's command | OK       | OK after F1, F2, F3 | OK, 4 images; F5 (no panel image) |
+| 2.1 steps 2-5 | not walked                                                  | -        | -                   | -                                 |
 | 2.7 step 2    | 3, US-018                                                   | OK       | OK after F3         | menu image unchanged; F5          |
-| 2.9 part 3    | 3, US-019                                                   | OK       | OK after F3, F4     | none in that part                  |
+| 2.9 part 3    | 3, US-019                                                   | OK       | OK after F3, F4     | none in that part                 |
 
 Cases walked for the command, all against the real fork:
 
