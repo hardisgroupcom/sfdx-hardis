@@ -307,6 +307,7 @@
   "backpromoteWindowChosen": "Backpromote-Fenster: von Pull Request {{number}} bis zum Head von {{parentBranch}}",
   "backpromoteWindowEmpty": "Nichts zu backpromoten: das Fenster enthält weder Metadaten noch eine Deployment-Aktion",
   "backpromoteWorktreeRemoved": "{{branch}} war im Worktree {{worktree}} ausgecheckt: dieser Worktree wurde entfernt, damit der Backpromote den Branch verwenden kann",
+  "backupFailureNotificationError": "Die Benachrichtigung über das fehlgeschlagene Backup konnte nicht gesendet werden: {{message}}",
   "backupFolderAlreadyExistsContinueOrRestart": "Für diese Sandbox existiert bereits ein Backup-Ordner: {{projectPath}}. Möchten Sie damit fortfahren oder von vorne beginnen?",
   "backupFolderAlreadyExistsDescription": "Fortfahren: Die bereits gespeicherten Elemente werden beibehalten (jeder Abschnitt fragt vor einem erneuten Abruf nach). Neu starten: Das vorhandene Backup wird gelöscht und ein neues gestartet.",
   "backupFolderOrgMismatch": "Der ausgewählte Backup-Ordner ({{folder}}) stimmt nicht mit der Ziel-Org ({{instanceUrl}}) überein. Das Wiederherstellen eines Backups in eine andere Org kann beide Sandboxes beschädigen und zu Datenverlust bei den Zugangsdaten führen.",

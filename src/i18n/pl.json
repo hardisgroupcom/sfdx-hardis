@@ -307,6 +307,7 @@
   "backpromoteWindowChosen": "Okno backpromote: od Pull Request {{number}} do head brancha {{parentBranch}}",
   "backpromoteWindowEmpty": "Nic do backpromote: okno nie zawiera żadnych metadanych ani akcji wdrożeniowej",
   "backpromoteWorktreeRemoved": "{{branch}} był używany w worktree {{worktree}}: ten worktree został usunięty, aby backpromote mógł użyć tego branch",
+  "backupFailureNotificationError": "Nie udało się wysłać powiadomienia o nieudanej kopii zapasowej: {{message}}",
   "backupFolderAlreadyExistsContinueOrRestart": "Dla tego sandbox już istnieje folder kopii zapasowej: {{projectPath}}. Czy chcesz kontynuować z nim, czy zacząć od nowa?",
   "backupFolderAlreadyExistsDescription": "Kontynuuj: zachowuje elementy już zapisane (każda sekcja zapyta przed ponownym pobraniem). Zacznij od nowa: usuwa istniejącą kopię zapasową i rozpoczyna nową.",
   "backupFolderOrgMismatch": "Wybrany folder kopii zapasowej ({{folder}}) nie odpowiada docelowemu org ({{instanceUrl}}). Przywrócenie kopii zapasowej do innego org może uszkodzić oba sandboxy i spowodować utratę poświadczeń.",

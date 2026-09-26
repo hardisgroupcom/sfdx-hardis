@@ -499,11 +499,12 @@ const silentOrgsTable = tablePanel('Silent orgs (no notification for 36h)', {
   noValue: 'No silent org',
 });
 
-// A failed backup sends no BACKUP notification at all (the job stops before notifying), so a
-// failure can only be seen as a missing backup: backed up in the last 30 days, but not for 36h
-const missingBackupsExpr = `(sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[36h])) > 0)`;
+// Successful backups only: a failed backup sends an error BACKUP notification, and a backup job
+// that did not run sends nothing. Both leave an org without a successful backup for 36h.
+// (Older sfdx-hardis versions sent nothing on failure either.)
+const missingBackupsExpr = `(sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", severity!~"error|critical", $env, orgIdentifier=~"$org"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", severity!~"error|critical", $env, orgIdentifier=~"$org"}[36h])) > 0)`;
 const MISSING_BACKUPS_DESCRIPTION =
-  'Orgs backed up in the last 30 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs.';
+  'Orgs backed up in the last 30 days but without a successful backup for 36 hours: the backup failed (its error notification tells why) or the backup job did not run (its pipeline logs tell why). An org whose whole monitoring stopped is also in the silent orgs.';
 
 const missingBackupsTable = tablePanel('Orgs without backup for 36h', {
   datasource: DS_LOKI,

@@ -107,7 +107,7 @@ The entry point: all monitored orgs at a glance.
 - **Health sub-scores by org**: the weekly composite score broken down (reliability, limits, security, tests, debt).
 - **Errors across the fleet**: errors per day for all orgs, fleet-wide daily averages.
 - **Recent alerts and search**: latest error/critical notifications (org, type, severity), plus license and package search criteria.
-- **Freshness and backups**: silent orgs (no notification for 36h: the monitoring job probably failed), orgs reporting, orgs without backup for 36h (a failed backup sends no notification, so it shows as a missing one).
+- **Freshness and backups**: silent orgs (no notification for 36h: the monitoring job probably failed), orgs reporting, orgs without a successful backup for 36h (the backup failed, or its job did not run).
 
 ### 01 - Org Home
 
@@ -236,7 +236,7 @@ The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupc
 | Salesforce org limit above 90%                                      | Any limit of any org exceeds 90% usage                                                                             |
 | Salesforce storage projected full within 14 days                    | Data or File storage trends toward 100% (30-day linear regression)                                                 |
 | Salesforce Apex/Flow error spike                                    | Daily errors exceed twice the 7-day average                                                                        |
-| Salesforce metadata backup failed                                   | An org backed up in the last 30 days has no backup for 36 hours (the backup job failed or did not run)             |
+| Salesforce metadata backup failed                                   | A backup sent an error notification, or an org has no successful backup for 36 hours (its job did not run)         |
 | Salesforce org monitoring is silent                                 | An org sent nothing for 36 hours (its monitoring job probably failed)                                              |
 | Salesforce org health score degraded                                | Score below 60, or dropped by more than 20 points                                                                  |
 | Salesforce usage-based entitlement over or projected over allowance | An entitlement has already consumed its full allowance, or is on track to exceed 150% of it before the period ends |

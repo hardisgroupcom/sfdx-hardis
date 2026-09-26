@@ -165,7 +165,8 @@ groups:
                     params: [0]
                     type: gt
       # ----------------------------------------------------------------------
-      # 4. Metadata backup failed: no backup for 36 hours (a failure sends no notification)
+      # 4. Metadata backup failed (error notification in the last 26 hours),
+      #    or did not run (no successful backup for 36 hours)
       # ----------------------------------------------------------------------
       - uid: sfdx-hardis-v2-backup-failed
         title: Salesforce metadata backup failed
@@ -177,10 +178,10 @@ groups:
         labels:
           source: sfdx-hardis
         annotations:
-          summary: 'Org {{ $labels.orgIdentifier }}: no metadata backup for 36 hours, the backup job failed or did not run'
+          summary: 'Org {{ $labels.orgIdentifier }}: the metadata backup failed, or no successful backup for 36 hours'
         data:
-          # A failed backup sends no notification, so the rule detects the missing one:
-          # backed up in the last 30 days, but not for 36 hours
+          # A failed backup sends an error BACKUP notification; a backup job that did not run
+          # sends nothing, so the rule also detects the missing successful backup
           - refId: A
             relativeTimeRange:
               from: 2592000
@@ -189,7 +190,7 @@ groups:
             model:
               refId: A
               queryType: instant
-              expr: '(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[36h])) > 0)'
+              expr: '(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity=~"error|critical"}[26h])) > 0) or ((sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[36h])) > 0))'
           - refId: B
             datasourceUid: __expr__
             model:

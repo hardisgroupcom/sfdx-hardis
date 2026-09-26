@@ -275,13 +275,13 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "count((sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[36h])) > 0))",
+          "expr": "count((sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", severity!~\"error|critical\", $env, orgIdentifier=~\"$org\"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", severity!~\"error|critical\", $env, orgIdentifier=~\"$org\"}[36h])) > 0))",
           "queryType": "instant",
           "direction": "backward",
           "refId": "A"
         }
       ],
-      "description": "Orgs backed up in the last 30 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs. Click to see the list.",
+      "description": "Orgs backed up in the last 30 days but without a successful backup for 36 hours: the backup failed (its error notification tells why) or the backup job did not run (its pipeline logs tell why). An org whose whole monitoring stopped is also in the silent orgs. Click to see the list.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1838,13 +1838,13 @@
             "type": "loki",
             "uid": "${ds_loki}"
           },
-          "expr": "(sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", $env, orgIdentifier=~\"$org\"}[36h])) > 0)",
+          "expr": "(sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", severity!~\"error|critical\", $env, orgIdentifier=~\"$org\"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source=\"sfdx-hardis\", type=\"BACKUP\", severity!~\"error|critical\", $env, orgIdentifier=~\"$org\"}[36h])) > 0)",
           "queryType": "instant",
           "direction": "backward",
           "refId": "A"
         }
       ],
-      "description": "Orgs backed up in the last 30 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs. Click a row to open the org dashboard.",
+      "description": "Orgs backed up in the last 30 days but without a successful backup for 36 hours: the backup failed (its error notification tells why) or the backup job did not run (its pipeline logs tell why). An org whose whole monitoring stopped is also in the silent orgs. Click a row to open the org dashboard.",
       "transformations": [
         {
           "id": "organize",

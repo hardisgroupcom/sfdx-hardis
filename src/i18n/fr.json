@@ -307,6 +307,7 @@
   "backpromoteWindowChosen": "Fenêtre de backpromote : de la Pull Request {{number}} jusqu'à la tête de {{parentBranch}}",
   "backpromoteWindowEmpty": "Rien à backpromoter : la fenêtre ne contient ni métadonnées ni action de déploiement",
   "backpromoteWorktreeRemoved": "{{branch}} était utilisée par le worktree {{worktree}} : ce worktree a été supprimé pour que le backpromote puisse utiliser la branche",
+  "backupFailureNotificationError": "Impossible d'envoyer la notification d'échec de la sauvegarde : {{message}}",
   "backupFolderAlreadyExistsContinueOrRestart": "Un dossier de sauvegarde existe déjà pour ce sandbox : {{projectPath}}. Voulez-vous continuer avec celui-ci ou recommencer à zéro ?",
   "backupFolderAlreadyExistsDescription": "Continuer : conserve les éléments déjà sauvegardés (chaque section demandera avant de les récupérer à nouveau). Recommencer : supprime la sauvegarde existante et en démarre une nouvelle.",
   "backupFolderOrgMismatch": "Le dossier de sauvegarde sélectionné ({{folder}}) ne correspond pas à l'org cible ({{instanceUrl}}). Restaurer une sauvegarde dans un org différent peut corrompre les deux sandbox et faire perdre des identifiants.",

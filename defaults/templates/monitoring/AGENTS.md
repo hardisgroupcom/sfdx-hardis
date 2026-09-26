@@ -267,7 +267,7 @@ Labels, on logs and metrics:
 
 - `source`: always `sfdx-hardis`
 - `orgIdentifier`: the monitored org (see above)
-- `type`: the notification type. The `notificationTypes` of the checks listed below, plus `BACKUP` (each backup), `MONITORING_SUMMARY` (each run of the checks) and `DEPLOYMENT` (each deployment by the CI/CD pipeline, its `gitIdentifier` is then the deployment repository and branch)
+- `type`: the notification type. The `notificationTypes` of the checks listed below, plus `BACKUP` (each backup, with severity `error` and an `error` field when it failed), `MONITORING_SUMMARY` (each run of the checks) and `DEPLOYMENT` (each deployment by the CI/CD pipeline, its `gitIdentifier` is then the deployment repository and branch)
 - `severity` (logs only): `critical`, `error`, `warning`, `info`, `success` or `log`
 - `gitIdentifier`: `<repository name>/<branch>` of the job that sent it
 
@@ -317,7 +317,8 @@ Scores and trends (other names: list them, see above):
 
 Backups, checks and deployments:
 
-- Did the backup run every night, with `$LOKI/query_range` and `step=1d`: `sum(count_over_time({source="sfdx-hardis", orgIdentifier="acme", type="BACKUP"}[1d]))`. A day missing from the result had no backup: the backup sends no notification when it fails, so the pipeline logs of this repository say why.
+- Did the backup succeed every night, with `$LOKI/query_range` and `step=1d`: `sum by (severity) (count_over_time({source="sfdx-hardis", orgIdentifier="acme", type="BACKUP"}[1d]))`. An `error` point is a failed backup. A day with no point at all had no backup: the job did not run, or it ran with an sfdx-hardis version that sent nothing on failure, and the pipeline logs of this repository say why.
+- Why a backup failed: `{source="sfdx-hardis", orgIdentifier="acme", type="BACKUP", severity="error"} | json e="error" | line_format "{{.e}}" | keep type` gives the error message of each failure.
 - Checks that failed in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones is only in the pipeline logs.
 - Deployments to this org: `{source="sfdx-hardis", orgIdentifier="acme", type="DEPLOYMENT"} | json t="_title", j="_jobUrl" | line_format "{{.t}} {{.j}}" | keep severity`. The `_logBodyText` of a deployment lists its deployment actions, its commits and the link of its Pull Request.
 
@@ -325,7 +326,7 @@ All the monitored orgs (leave out `orgIdentifier`):
 
 - The orgs with the most Apex errors in 7 days: `topk(10, sum by (orgIdentifier) (sum_over_time(ApexErrors_metric{source="sfdx-hardis"}[7d])))`
 - The orgs where a package is installed, with `$LOKI/query`: `sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"} |= "\"SubscriberPackageNamespace\":\"FSL\"" [7d]))`. Match the namespace exactly, or the name with `|~ "\"SubscriberPackageName\":\"[^\"]*(?i:field service)"`: a bare word also matches the rest of the line. Each entry of `installedPackages` has `SubscriberPackageName`, `SubscriberPackageNamespace` and `SubscriberPackageVersionNumber`.
-- The orgs without backup for 36 hours, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[36h])) > 0)`
+- The orgs without a successful backup for 36 hours, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[36h])) > 0)`
 - The orgs that stopped sending data, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[36h])) > 0)`. The last day each org sent data, in one call, with `$LOKI/query_range`, `step=1d` and a `start` 7 days ago: `sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[1d]))`, then take the last point of each series.
 
 ### Answer

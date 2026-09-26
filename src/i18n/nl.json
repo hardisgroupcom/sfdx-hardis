@@ -307,6 +307,7 @@
   "backpromoteWindowChosen": "Backpromote-venster: van Pull Request {{number}} tot de head van {{parentBranch}}",
   "backpromoteWindowEmpty": "Niets te backpromoten: het venster bevat geen metadata en geen implementatieactie",
   "backpromoteWorktreeRemoved": "{{branch}} was uitgecheckt in de worktree {{worktree}}: die worktree is verwijderd zodat de backpromote de branch kan gebruiken",
+  "backupFailureNotificationError": "De melding van de mislukte back-up kon niet worden verzonden: {{message}}",
   "backupFolderAlreadyExistsContinueOrRestart": "Er bestaat al een backup-map voor deze sandbox: {{projectPath}}. Wil je hiermee doorgaan of helemaal opnieuw beginnen?",
   "backupFolderAlreadyExistsDescription": "Doorgaan: behoudt de items die al zijn opgeslagen (elke sectie vraagt het voordat items opnieuw worden opgehaald). Opnieuw beginnen: verwijdert de bestaande backup en start een nieuwe.",
   "backupFolderOrgMismatch": "De geselecteerde backup-map ({{folder}}) komt niet overeen met de doel-org ({{instanceUrl}}). Het herstellen van een backup in een andere org kan beide sandboxes beschadigen en credentials laten verloren gaan.",
