@@ -47,7 +47,7 @@ When the monitoring sends its notifications to [Grafana](salesforce-monitoring-g
 - Optional: pin the datasources with `grafanaLokiDatasourceUid` and `grafanaPrometheusDatasourceUid`. Otherwise the agent detects them.
 - Give the agent a Grafana service account token with the **Viewer** role, as `GRAFANA_API_TOKEN` in the `.env` file. Never put the token in `.sfdx-hardis.yml`. If your instance restricts data source permissions, also give that service account the **Query** permission on the Loki and Prometheus data sources.
 
-The agent queries Loki and Prometheus through the Grafana API, and only reads: it never changes a dashboard, an alert or a datasource. On Grafana Cloud, the logs (the detail of each report) are kept about 30 days, and the metrics about 13 months: questions about an older period get numbers, not the detail rows.
+The agent queries Loki and Prometheus through the Grafana API, and only reads: it never changes a dashboard, an alert or a datasource. How far back it can answer depends on your Grafana plan: the Grafana Cloud free tier keeps logs and metrics about 14 days, paid plans usually keep the logs (the detail of each report) about 30 days and the metrics about 13 months.
 
 ### Grafana example
 

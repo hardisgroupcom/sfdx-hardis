@@ -2170,6 +2170,7 @@
   "logElementsCount": "Log elements count: {{elementCount}}",
   "logInViaBrowserFrontdoor": "Log in via browser using frontdoor.jsp...",
   "loginToAnotherOrg": "Login to another org",
+  "lokiEntryReduced": "[ApiProvider] Reduced the Loki entry from {{initialBytes}} to {{finalBytes}} bytes to stay under {{maxBytes}} (kept {{kept}} _logElements)",
   "lokiEntryStillTooBig": "[ApiProvider] The Loki entry is still {{bytes}} bytes after truncation: Loki may refuse it",
   "lookAtThePackageMetadataToRestore": "Look at the package-metadata-to-restore.xml file in {{saveProjectPath}} to see what will be restored.",
   "lookingForCertificates": "Looking for certificates...",

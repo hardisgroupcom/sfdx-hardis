@@ -190,7 +190,7 @@ groups:
             model:
               refId: A
               queryType: instant
-              expr: '(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity=~"error|critical"}[26h])) > 0) or ((sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[36h])) > 0))'
+              expr: '(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity=~"error|critical"}[26h])) > 0) or ((sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP", severity!~"error|critical"}[36h])) > 0))'
           - refId: B
             datasourceUid: __expr__
             model:

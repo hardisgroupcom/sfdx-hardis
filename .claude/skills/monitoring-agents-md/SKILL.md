@@ -73,7 +73,7 @@ fs.writeFileSync('AGENTS-set.md', await buildMonitoringAgentsMdBlock({ deploymen
 npx markdownlint-cli2 AGENTS-unset.md AGENTS-set.md
 ```
 
-When the Grafana section changed, run its queries against a live instance. The script only sends GET requests; it reads the token from `GRAFANA_API_TOKEN` or `GRAFANA_TOKEN` in `.env` (a Viewer service account of cloudity.grafana.net, with the Query permission on `grafanacloud-logs` and `grafanacloud-prom`). Pass the `orgIdentifier` of an org that runs the backup and all the checks (list them with `sum by (orgIdentifier, type) (count_over_time({source="sfdx-hardis"}[2d]))`): EMPTY only means the org does not send that type, FAIL is a broken query. Never write that `orgIdentifier`, or any other customer name, in a file, a commit or a Pull Request.
+When the Grafana section changed, run its queries against a live instance. The script only sends GET requests; it reads the instance from `GRAFANA_API_URL` and the token from `GRAFANA_API_TOKEN` (or `GRAFANA_TOKEN`), in the environment or in `.env` (a Viewer service account, with the Query permission on the Loki and Prometheus datasources; `GRAFANA_LOKI_UID` and `GRAFANA_PROM_UID` default to the Grafana Cloud `grafanacloud-logs` and `grafanacloud-prom`). Never write a Grafana URL in the repository: it stays in `.env`. Pass the `orgIdentifier` of an org that runs the backup and all the checks (list them with `sum by (orgIdentifier, type) (count_over_time({source="sfdx-hardis"}[2d]))`): EMPTY only means the org does not send that type, FAIL is a broken query. Never write that `orgIdentifier`, or any other customer name, in a file, a commit or a Pull Request.
 
 ```sh
 node .claude/skills/monitoring-agents-md/verify-grafana-recipes.mjs <orgIdentifier>

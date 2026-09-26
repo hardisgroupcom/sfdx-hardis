@@ -237,7 +237,12 @@ In agent mode:
       // another instance given by --grafana-url or GRAFANA_API_URL
       let configUidsApply = false;
       try {
-        configUidsApply = typeof config.grafanaUrl === 'string' && normalizeGrafanaUrl(config.grafanaUrl) === grafanaUrl;
+        // Compare parsed URLs: the host is case-insensitive, and URL() lowercases it
+        const instanceKey = (url: string) => {
+          const parsed = new URL(normalizeGrafanaUrl(url));
+          return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+        };
+        configUidsApply = typeof config.grafanaUrl === 'string' && instanceKey(config.grafanaUrl) === instanceKey(grafanaUrl);
       } catch {
         configUidsApply = false;
       }

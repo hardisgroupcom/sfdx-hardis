@@ -2,19 +2,20 @@
 // Grafana instance, with GET requests only (read-only).
 // Usage, from the repository root:
 //   node .claude/skills/monitoring-agents-md/verify-grafana-recipes.mjs <orgIdentifier>
-// Token: GRAFANA_API_TOKEN, or GRAFANA_TOKEN in the .env of the repository (Viewer role, with the
-// Query permission on both datasources). URL: GRAFANA_API_URL, default https://cloudity.grafana.net
+// Instance: GRAFANA_API_URL, required, in the environment or in the .env of the repository (no default:
+// the token is only sent where you say). Token: GRAFANA_API_TOKEN, or GRAFANA_TOKEN, same places
+// (Viewer role, with the Query permission on both datasources).
 import fs from 'fs';
 
 const envFile = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
 const fromEnvFile = (name) => (envFile.match(new RegExp(`^${name}=(.*)$`, 'm'))?.[1] || '').replace(/["\r]/g, '').trim();
 const token = process.env.GRAFANA_API_TOKEN || fromEnvFile('GRAFANA_API_TOKEN') || fromEnvFile('GRAFANA_TOKEN');
-const baseUrl = (process.env.GRAFANA_API_URL || 'https://cloudity.grafana.net').replace(/\/$/, '');
+const baseUrl = (process.env.GRAFANA_API_URL || fromEnvFile('GRAFANA_API_URL')).replace(/\/$/, '');
 const lokiUid = process.env.GRAFANA_LOKI_UID || 'grafanacloud-logs';
 const promUid = process.env.GRAFANA_PROM_UID || 'grafanacloud-prom';
 const org = process.argv[2];
-if (!token || !org) {
-  console.error('Usage: node verify-grafana-recipes.mjs <orgIdentifier>, with GRAFANA_API_TOKEN set or GRAFANA_TOKEN in .env');
+if (!token || !org || !baseUrl) {
+  console.error('Usage: node verify-grafana-recipes.mjs <orgIdentifier>, with GRAFANA_API_URL and GRAFANA_API_TOKEN (or GRAFANA_TOKEN) in the environment or in .env');
   process.exit(2);
 }
 

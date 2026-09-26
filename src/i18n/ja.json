@@ -2164,6 +2164,7 @@
   "logElementsCount": "ログ要素数: {{elementCount}}",
   "logInViaBrowserFrontdoor": "frontdoor.jsp を使用してブラウザ経由でログインしています...",
   "loginToAnotherOrg": "別の組織にログイン",
+  "lokiEntryReduced": "[ApiProvider] {{maxBytes}} 未満に収めるため、Loki エントリを {{initialBytes}} バイトから {{finalBytes}} バイトに縮小しました ({{kept}} 件の _logElements を保持)",
   "lokiEntryStillTooBig": "[ApiProvider] 切り詰め後も Loki エントリが {{bytes}} バイトあります。Loki に拒否される可能性があります",
   "lookAtThePackageMetadataToRestore": "リストアされる内容を確認するには、{{saveProjectPath}} の package-metadata-to-restore.xml ファイルをご覧ください。",
   "lookingForCertificates": "証明書を検索しています...",

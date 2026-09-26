@@ -16,7 +16,7 @@ import { t } from '../utils/i18n.js';
 
 // A positive whole number from the environment, else the default: a typo must never disable truncation
 function positiveIntFromEnv(name: string, defaultValue: number): number {
-  const value = Number(process.env[name]);
+  const value = Number(getEnvVar(name));
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : defaultValue;
 }
 const MAX_LOKI_LOG_LENGTH = positiveIntFromEnv("MAX_LOKI_LOG_LENGTH", 200000);
@@ -249,7 +249,7 @@ export class ApiProvider extends NotifProviderRoot {
         "log",
         this,
         c.grey(
-          `[ApiProvider] Reduced the Loki entry from ${initialBytes} to ${finalBytes} bytes to stay under ${MAX_LOKI_LOG_LENGTH} (kept ${logElementsKept} _logElements)`,
+          t('lokiEntryReduced', { initialBytes, finalBytes, maxBytes: MAX_LOKI_LOG_LENGTH, kept: logElementsKept }),
         ),
       );
     }

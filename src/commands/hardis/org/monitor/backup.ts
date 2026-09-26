@@ -28,6 +28,18 @@ import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitorin
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+// The message of a failed CLI call starts with "Command failed: <full command line>" (which can
+// hold a username), then its output: the cause is at the end, so keep the end
+export function backupErrorMessage(error: any, maxLength = 2000): string {
+  let message = String(error?.message || error || 'Unknown error');
+  if (message.startsWith('Command failed:')) {
+    const firstLineEnd = message.indexOf('\n');
+    message = firstLineEnd > -1 ? message.slice(firstLineEnd + 1) : 'Command failed';
+  }
+  message = message.trim() || 'Command failed';
+  return message.length > maxLength ? '... ' + message.slice(message.length - maxLength) : message;
+}
+
 export default class MonitorBackup extends SfCommand<any> {
   public static title = 'Backup DX sources';
 
@@ -292,6 +304,7 @@ In agent mode:
     // A failed backup must be reported: without a notification, nothing tells it apart from a backup
     // that did not run (Grafana panels and alerts, messaging channels)
     let backupDone = false;
+    let retrieved = false;
     try {
       // Update apiVersion if necessary
       await updateSfdxProjectApiVersion();
@@ -359,6 +372,7 @@ In agent mode:
       }
 
       this.diffFiles = await MetadataUtils.listChangedFiles();
+      retrieved = true;
 
       // Write output file
       if (this.diffFiles.length > 0) {
@@ -429,7 +443,7 @@ In agent mode:
       });
     } catch (e: any) {
       if (!backupDone) {
-        await this.postBackupFailureNotification(flags, e);
+        await this.postBackupFailureNotification(flags, e, retrieved);
       }
       throw e;
     }
@@ -501,15 +515,18 @@ In agent mode:
   }
 
   // Never throws: the error of the backup is the one the job must fail with
-  private async postBackupFailureNotification(flags: any, error: any) {
+  private async postBackupFailureNotification(flags: any, error: any, retrieved = false) {
     try {
       const conn = flags['target-org']?.getConnection();
       await setConnectionVariables(conn);// Required for some notifications providers like Email
       const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
-      const errorMessage = String(error?.message || error || 'Unknown error').slice(0, 2000);
+      const errorMessage = backupErrorMessage(error);
       await NotifProvider.postNotifications({
         type: 'BACKUP',
-        text: `Metadata backup failed in ${orgMarkdown}`,
+        // After the retrieve, the metadata is backed up: only the report of the changes failed
+        text: retrieved
+          ? `Metadata backup of ${orgMarkdown} retrieved, but its report of the changes failed`
+          : `Metadata backup failed in ${orgMarkdown}`,
         buttons: await getNotificationButtons(),
         attachments: [{ text: errorMessage }],
         severity: 'error',
