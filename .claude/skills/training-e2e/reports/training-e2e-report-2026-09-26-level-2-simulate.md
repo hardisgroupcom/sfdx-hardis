@@ -11,8 +11,8 @@ Course Pull Request: [#52](https://github.com/hardisgroupcom/sfdx-hardis-trainin
 | What        | Version                                                                         |
 |-------------|---------------------------------------------------------------------------------|
 | sfdx-hardis | 8.11.1, linked build of `main` (45a233cb7)                                      |
-| Extension   | not exercised (8.8.1 on disk)                                                   |
-| Course      | `fix/lab-2-1-merge-teammate-pr`, ahead of the published site (`main` @ 2308217) |
+| Extension   | not exercised (8.8.1 on disk, 3bbe3102)                                         |
+| Course      | `fix/lab-2-1-merge-teammate-pr`: walked at 12da99d, review fixes at 56ebdf5     |
 
 The published site does not carry any of this yet.
 
@@ -37,9 +37,9 @@ their folder, which `check-site.mjs` caught.
 
 | Lab           | Fidelity                                                    | A (read) | B (do)              | C (images)                         |
 |---------------|-------------------------------------------------------------|----------|---------------------|------------------------------------|
-| 2.1 step 1    | 3: `node scripts/training.mjs simulate`, the menu's command | OK       | OK after F1, F2, F3 | OK, 4 images, pills match the text |
+| 2.1 step 1    | 3: `node scripts/training.mjs simulate`, the menu's command | OK       | OK after F1, F2, F3 | OK, 4 images; F5 (no panel image)  |
 | 2.1 steps 2-5 | not walked                                                  | -        | -                   | -                                  |
-| 2.7 step 2    | 3, US-018                                                   | OK       | OK after F3         | the menu image, unchanged          |
+| 2.7 step 2    | 3, US-018                                                   | OK       | OK after F3         | menu image unchanged; F5          |
 | 2.9 part 3    | 3, US-019                                                   | OK       | OK after F3, F4     | none in that part                  |
 
 Cases walked for the command, all against the real fork:
@@ -68,7 +68,7 @@ Cases walked for the command, all against the real fork:
   GitHub API yet, retrying" twice.** `gh pr create` fails the same way when the PR exists. Fixed: the
   open PR is looked up first.
 - **F3. A learner merge in the same second as the command's merge was reported as "could not be
-  merged, merge it yourself".** Measured twice: both merges in the same second, and GitHub still
+  merged, merge it yourself".** Seen twice, measured once: both merges in the same second, and GitHub still
   answered OPEN right after. Fixed: the state is read again for ten seconds, and a real failure now
   shows GitHub's own message.
 - **F4. US-019's closing line talked about Lab 3.4 when run from Level 2**, and US-018's only about
@@ -81,17 +81,21 @@ starts (the first version kept them on Romain's branch, work stashed, for minute
 only once the Pull Request carries the pushed commit, and the merge uses `--match-head-commit`; the
 wait reuses `waitForPullRequestChecks` of **Update my course**, so a fork with no checks is reported
 after three minutes; a scripted `--yes` merges only with `--merge`; Level 2 wording only prints in
-Level 2. Re-verified on PR #46 (merged by the command, learner branch and uncommitted file back
+Level 2. Re-verified on the fork's PR #46 (merged by the command, learner branch and uncommitted file back
 during the wait), #47 (learner merged first, detected) and #48 (`--yes` alone, left open).
 
 ### Not fixed
 
-- **No picture of a Training command panel.** Labs 2.1 and 2.7 show the Training menu, then
+- **F5. No picture of a Training command panel.** Labs 2.1 and 2.7 show the Training menu, then
   describe the three questions in a table. The extension screenshot harness has no scenario for a
   Training command, which is a node script rather than an `sf` command, so a capture needs a mock in
   `../vscode-sfdx-hardis` first.
 
 ## Deviations from what a learner does
+
+- The fork was not reset first, against the runbook: it carried the end of the Level 3 walk. That
+  left Level 3 Apex in `helios-integration`, the cause of the first red check and of the teardown
+  below.
 
 - Every simulation ran from the course branch's script, committed on a local learner branch,
   because the published start branches do not carry it yet.

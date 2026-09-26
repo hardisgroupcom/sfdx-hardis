@@ -188,13 +188,13 @@ Traps that cost earlier runs time:
   the External Client App the JWT login uses, and **Reset this level** keeps the JWT pipeline
   configuration, so every check on `integration` then fails at *client identifier invalid*.
   Re-running `init` does not bring it back (it skips the credentials once the pipeline is on JWT):
-  redo Add/Configure Org for that branch with `scripts/auth.mjs`, and merge the new key it writes
+  redo Add/Configure Org for that branch with this skill's `scripts/auth.mjs` (not the course's), and merge the new key it writes
   through a Pull Request.
 - **`Reset this level` leaves the clone on `integration`.** A run that tests a script from a local
   branch has to check that branch out again after every reset, or it tests the published script
   without saying so (2026-09-26, one wasted Pull Request).
 - **Testing a merge the learner makes while a command waits is a race.** Poll every two seconds and
-  merge the moment both required checks pass: the command polls every fifteen, so this usually
+  merge the moment both required checks pass: the command polls every twenty (`waitForPullRequestChecks`), so this usually
   lands first or in the same second, which is the case worth seeing.
 - **Git Bash rewrites arguments that look like paths.** A leading `/` becomes a Windows path:
   `sf org open --path /lightning/...` turns into `C:/Program Files/Git/lightning/...` and Salesforce
