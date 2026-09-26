@@ -173,6 +173,35 @@ Traps that cost earlier runs time:
   project template's workflows, mostly unpinned actions and images. It warns and never blocks;
   Lab 1.6 explains the ⚠️ line it leaves on a green comment.
 
+- **A teardown of an org that was used needs two things Salesforce does not do on its own**
+  (2026-09-26). Old flow versions refuse the destructive deploy even deactivated (`insufficient
+  access rights on cross-reference id`; `helios-preprod` had 31 after one walk), and deleted
+  objects sit under Setup > Deleted Objects for 15 days, where `Installation__c.Account__c` keeps
+  the `Installations` relationship name: the next `init` then fails on all three scratch orgs with
+  *There is already a Child Relationship named Installations on Account*. The course's teardown
+  deletes the versions and uses `--purge-on-delete` since training PR #48. On an org torn down
+  before that, erase by hand: `/p/setup/custent/DeletedEntitiesList?setupid=CustomObjects`, and
+  opening an **Erase** link hard-deletes at once (its token is the confirmation). Handover Item
+  and Panel Batch answered "internal server error" to Erase and did not block the seed; Installation
+  is the one that matters.
+- **Git Bash rewrites arguments that look like paths.** A leading `/` becomes a Windows path:
+  `sf org open --path /lightning/...` turns into `C:/Program Files/Git/lightning/...` and Salesforce
+  answers *Invalid Page Redirection*. An argument with a `:` is read as a path list:
+  `git show origin/integration:.github/workflows/x.yml` reached git as
+  `origin\integration;.github\workflows\x.yml`. Prefix those commands with `MSYS_NO_PATHCONV=1`, and
+  then give `git -C` a `C:/...` path, which the prefix no longer converts from `/c/...`.
+- **Anonymous Apex compiles against the fields the running user can see.** A script that grants a
+  new field and then writes it fails to compile at the first mention of the field. Two runs.
+- **Writing a flow as XML skips what Flow Builder would refuse.** Flow Builder only offers the fields
+  the person editing the flow can read. Lab 2.2 told learners to hide their new field from every
+  profile, and a learner was stuck at the first Flow Builder step while two walks passed, both with
+  the flow deployed as XML (2026-09-26). When a lab has a flow reference a field, check the admin
+  can read it: `sf sobject describe` as that user lists only readable fields.
+- **A Setup step done through the API is invisible to source tracking.** Granting a field through
+  `FieldPermissions` DML does not put the permission set into Recent Changes the way the Setup
+  screen does, so the Metadata Retriever list of that lab no longer matches the picture. Say so in
+  the report when a lab is done that way.
+
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
 branches from the course, and clones the shared repository into `$RUN` the way a learner does. Three
@@ -340,6 +369,19 @@ retrofit the default is `helios-dev` again, which is why Labs 3.6 and 3.11 say t
 before the DORA report. Skip that line and the report reads a scratch org with no history
 (2026-09-25).
 
+**The course and the CLI release in two steps, and the site publishes what `main` of the course
+says.** On 2026-09-26 Lab 3.8 on the course's `main` described the deployment repository question
+and the `AGENTS.md` of the backup (CLI #2241), which were in the beta and not in the released 8.10.0.
+The walk ran the local linked CLI, so the question was asked, and the monitoring job ran the released
+image, so no `AGENTS.md` was written. Compare a lab's claims with `git merge-base --is-ancestor <commit>
+v<latest>` before reporting it as broken, and release the CLI before the course Pull Request that
+describes it publishes.
+
+**The Developer Edition orgs speak French.** Their Setup pages read *Écraser*, *Restaurer*, *Tous les
+e-mails*, and a deployment error reads *Une relation enfant portant le nom ... existe déjà*. A CDP
+script that matches English labels reports nothing to do there; match on link targets or element
+names instead.
+
 Lab 3.8 runs in a **second repository**, the monitoring one, with its own secrets
 (`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Two things about its first run:
 
@@ -483,7 +525,20 @@ course's origin, then reset the fork as usual and force-push that local branch t
 the fork only). Every major branch the learner's world derives then carries the step from the
 start, so no Pull Request has to smuggle it in later.
 
-What to expect and to record:
+**Pushing an override onto a brand new fork fools `init`** (2026-09-26). A push that touches a
+workflow file makes GitHub list every workflow as `active` before anyone clicked the Actions
+banner, so `init` prints "Actions are on" and no job ever runs. Either click the banner on the
+fork's Actions page before the override push, or right after it and before `init`. `gh run list`
+on the fork staying empty after the first Pull Request is the symptom.
+
+**The image tag alone is a different override, for a different question.** Putting
+`ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta` in the `container:` line of `check-deploy.yml` and
+`process-deploy.yml` (one `E2E ONLY` commit on `main` and on each `training/start-level-*` of the
+fork) runs whatever `beta` last published. It answers "does the course work on the next release",
+costs nothing per job, and proves nothing about a fix branch that is not in that beta yet. Record the
+beta version and the image push time, not a branch. The list below is for the source-build override.
+
+What to expect and to record, with the source-build override:
 
 - each overridden job pays the clone + `yarn install` + `tsc -b`, two to four minutes;
 - the run report must say the jobs ran an unreleased build, name the branch and the commit, and
