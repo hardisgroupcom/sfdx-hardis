@@ -45,9 +45,9 @@ When the monitoring sends its notifications to [Grafana](salesforce-monitoring-g
 
 - Put the URL of the Grafana instance as `grafanaUrl` in the `.sfdx-hardis.yml` of the monitoring branch, or in the `GRAFANA_API_URL` environment variable. When it is missing, the agent offers to set it.
 - Optional: pin the datasources with `grafanaLokiDatasourceUid` and `grafanaPrometheusDatasourceUid`. Otherwise the agent detects them.
-- Give the agent a Grafana service account token with the **Viewer** role, as `GRAFANA_API_TOKEN` in the `.env` file. Never put the token in `.sfdx-hardis.yml`.
+- Give the agent a Grafana service account token with the **Viewer** role, as `GRAFANA_API_TOKEN` in the `.env` file. Never put the token in `.sfdx-hardis.yml`. If your instance restricts data source permissions, also give that service account the **Query** permission on the Loki and Prometheus data sources.
 
-The agent queries Loki and Prometheus through the Grafana API, and only reads: it never changes a dashboard, an alert or a datasource.
+The agent queries Loki and Prometheus through the Grafana API, and only reads: it never changes a dashboard, an alert or a datasource. On Grafana Cloud, the logs (the detail of each report) are kept about 30 days, and the metrics about 13 months: questions about an older period get numbers, not the detail rows.
 
 ### Grafana example
 

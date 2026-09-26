@@ -139,6 +139,12 @@ describe('monitoringAgentsMd', () => {
       expect(content).to.include('## Monitoring results in Grafana');
       expect(content).to.include('`https://acme.grafana.net`');
     });
+
+    it('keeps the LogQL line_format templates of the recipes, which look like placeholders', async () => {
+      const content = await buildMonitoringAgentsMdBlock({});
+      expect(content).to.include('line_format "{{.t}}" | keep type');
+      expect(content).to.not.match(/\{\{[a-zA-Z]+\}\}/);
+    });
   });
 
   describe('deployment repository', () => {

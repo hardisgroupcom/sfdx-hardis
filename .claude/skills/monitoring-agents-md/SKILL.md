@@ -31,8 +31,9 @@ Placeholders filled from the branch configuration at each backup: `{{monitoringC
 | The backup commit message or schedule (`defaults/monitoring/*` pipelines), the jobs that run after it | **How it works**, **Collect the changes** (step 2 and 3 read the message format and the schedule) |
 | The monitoring pipeline templates (job names, artifacts, provider files) | **How it works**, **Files and folders**, the last paragraph of **Git server access** |
 | Monitoring commands, notification types, frequencies, `monitoringCommands`, `monitoringDisable`, `MONITORING_DISABLE` | Rendered automatically by `buildMonitoringCommandsTable`: check the table still renders, and update **Labels** (Grafana) if a `type` changes |
-| Metric keys, the Loki payload (`_title`, `_logElements`, `_metrics`, `_jobUrl`...), labels (`orgIdentifier`, `type`, `severity`, `gitIdentifier`), metric naming (`<Key>_metric`, `_percent`...), `NOTIF_API_*` variables | **Monitoring results in Grafana** (Labels, Query) |
-| `hardis:org:configure:grafana-dashboards`, `GRAFANA_API_URL`, `GRAFANA_API_TOKEN`, the dashboards folder or uids, datasource detection | **Monitoring results in Grafana** (Connect, Find the datasources, Query) |
+| Metric keys, the Loki payload (`_title`, `_logElements`, `_metrics`, `_jobUrl`, type-specific fields like `topFailingApex`...), labels (`orgIdentifier`, `type`, `severity`, `gitIdentifier`), metric naming (`<Key>_metric`, `_percent`...), pseudonymization, `NOTIF_API_*` variables | **Monitoring results in Grafana** (Find this org, What is sent, Grafana recipes) |
+| A metric used by the v2 dashboards (renamed, removed), the severity or the presence of a notification (the backup sends none when it fails) | **Grafana recipes**: every query there was run against a live instance, run them again |
+| `hardis:org:configure:grafana-dashboards`, `GRAFANA_API_URL`, `GRAFANA_API_TOKEN`, the dashboards folder or uids, datasource detection | **Monitoring results in Grafana** (Connect, Find the datasources, Answer) |
 | Config keys of a monitoring branch (`deploymentRepository`, `deploymentBranch`, `grafanaUrl`, `grafana*DatasourceUid`...) | **Files and folders** (`.sfdx-hardis.yml` row) and the matching status builder in `monitoringAgentsMd.ts` |
 | `hardis:org:configure:monitoring` questions or flags | The status builders (they tell the agent how the user sets a value) |
 | CI/CD pipeline behavior: `deploy:smart` scope (`manifest/package.xml`, no-overwrite, delta, smart tests), `mergeTargets`, branch config files, deployment actions (types, `context`, `runOnlyOnceByOrg`, `scripts/actions/`), promotion branches, Pull Request comments, CI workflow file names | **How the CI/CD pipeline works** |
@@ -70,5 +71,13 @@ fs.writeFileSync('AGENTS-set.md', await buildMonitoringAgentsMdBlock({ deploymen
 ```sh
 npx markdownlint-cli2 AGENTS-unset.md AGENTS-set.md
 ```
+
+When the Grafana section changed, run its queries against a live instance. The script only sends GET requests; it reads the token from `GRAFANA_API_TOKEN` or `GRAFANA_TOKEN` in `.env` (a Viewer service account of cloudity.grafana.net, with the Query permission on `grafanacloud-logs` and `grafanacloud-prom`). Pass the `orgIdentifier` of an org that runs the backup and all the checks (list them with `sum by (orgIdentifier, type) (count_over_time({source="sfdx-hardis"}[2d]))`): EMPTY only means the org does not send that type, FAIL is a broken query. Never write that `orgIdentifier`, or any other customer name, in a file, a commit or a Pull Request.
+
+```sh
+node .claude/skills/monitoring-agents-md/verify-grafana-recipes.mjs <orgIdentifier>
+```
+
+Grafana stays read-only, in these checks as in the text: never create, change or delete anything there.
 
 Last, check the three documentation pages listed above still match, and run the `training-impact` skill if a question the course shows changes.
