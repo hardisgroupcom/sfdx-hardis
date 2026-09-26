@@ -24,9 +24,12 @@ MODE=${2:-merge}
 # already carries finished runs from its previous branch (the deploy of the
 # merge that produced it), so "some check exists and none is pending" is not
 # proof of anything. Wait for the two checks every protected branch of this
-# course requires to be present.
+# course requires to be present, on the head commit: after a push onto an open
+# Pull Request (a teammate's fix, Lab 3.2) the checks of the previous commit still
+# read pass, and a merge on them is refused as soon as the new ones register.
 for _ in $(seq 1 30); do
-  L=$(gh pr checks "$PR" -R "$R" 2>/dev/null | cut -f1)
+  HEAD=$(gh pr view "$PR" -R "$R" --json headRefOid -q .headRefOid)
+  L=$(gh api "repos/$R/commits/$HEAD/check-runs" --paginate -q '.check_runs[].name' 2>/dev/null)
   echo "$L" | grep -q "Simulate Deployment to Major Org" && echo "$L" | grep -q "Mega-Linter" && break
   sleep 10
 done
