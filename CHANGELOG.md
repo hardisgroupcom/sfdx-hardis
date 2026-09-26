@@ -3,6 +3,9 @@
 ## [beta] (main)
 
 - [Monitoring backup](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#query-the-monitoring-history-in-grafana): the `AGENTS.md` of a monitoring repository lets coding agents query the logs and metrics sent to Grafana, using the new `grafanaUrl` property.
+
+## [8.11.0] 2026-09-26
+
 - [Monitoring backup](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) writes an `AGENTS.md` file explaining the monitoring repository, so a coding agent can answer questions about the org, also from the deployment repository and the pipeline logs when the new `deploymentRepository` property is set.
 - [Monitoring](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): the `MONITORING_DISABLE` env variable has priority over the `monitoringDisable` property, and spaces around its keys are ignored.
 - New [Free training](https://sfdx-hardis.cloudity.com/salesforce-devops-training/) page presenting the hands-on Salesforce DevOps course, linked from the menu, the home page and the guides.

@@ -66,6 +66,8 @@ almost always be yes to.
 
    ```bash
    node scripts/build/universe.mjs --check    # the generated files match what the sources say
+   node scripts/build/lab-crossrefs.mjs --check       # pages.yml refuses to publish without these two
+   node scripts/build/lab-command-links.mjs --check
    node scripts/verify/check-commands.mjs     # every command a lab needs still exists
    node scripts/verify/check-links.mjs        # every URL
    node scripts/verify/check-pills.mjs        # drawn pills versus referenced pills
