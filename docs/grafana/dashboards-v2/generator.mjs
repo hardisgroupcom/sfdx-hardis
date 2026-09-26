@@ -500,10 +500,10 @@ const silentOrgsTable = tablePanel('Silent orgs (no notification for 36h)', {
 });
 
 // A failed backup sends no BACKUP notification at all (the job stops before notifying), so a
-// failure can only be seen as a missing backup: backed up in the last 7 days, but not for 36h
-const missingBackupsExpr = `(sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[36h])) > 0)`;
+// failure can only be seen as a missing backup: backed up in the last 30 days, but not for 36h
+const missingBackupsExpr = `(sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({${SRC}, type="BACKUP", $env, orgIdentifier=~"$org"}[36h])) > 0)`;
 const MISSING_BACKUPS_DESCRIPTION =
-  'Orgs backed up in the last 7 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs.';
+  'Orgs backed up in the last 30 days but not for 36 hours: their backup job failed or did not run, and its pipeline logs say why. A failed backup sends no notification, so a missing backup is the only way to see it. An org whose whole monitoring stopped is also in the silent orgs.';
 
 const missingBackupsTable = tablePanel('Orgs without backup for 36h', {
   datasource: DS_LOKI,

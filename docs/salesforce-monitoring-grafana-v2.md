@@ -236,7 +236,7 @@ The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupc
 | Salesforce org limit above 90%                                      | Any limit of any org exceeds 90% usage                                                                             |
 | Salesforce storage projected full within 14 days                    | Data or File storage trends toward 100% (30-day linear regression)                                                 |
 | Salesforce Apex/Flow error spike                                    | Daily errors exceed twice the 7-day average                                                                        |
-| Salesforce metadata backup failed                                   | An org backed up in the last 7 days has no backup for 36 hours (the backup job failed or did not run)              |
+| Salesforce metadata backup failed                                   | An org backed up in the last 30 days has no backup for 36 hours (the backup job failed or did not run)             |
 | Salesforce org monitoring is silent                                 | An org sent nothing for 36 hours (its monitoring job probably failed)                                              |
 | Salesforce org health score degraded                                | Score below 60, or dropped by more than 20 points                                                                  |
 | Salesforce usage-based entitlement over or projected over allowance | An entitlement has already consumed its full allowance, or is on track to exceed 150% of it before the period ends |

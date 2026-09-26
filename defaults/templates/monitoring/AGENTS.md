@@ -325,7 +325,7 @@ All the monitored orgs (leave out `orgIdentifier`):
 
 - The orgs with the most Apex errors in 7 days: `topk(10, sum by (orgIdentifier) (sum_over_time(ApexErrors_metric{source="sfdx-hardis"}[7d])))`
 - The orgs where a package is installed, with `$LOKI/query`: `sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"} |= "\"SubscriberPackageNamespace\":\"FSL\"" [7d]))`. Match the namespace exactly, or the name with `|~ "\"SubscriberPackageName\":\"[^\"]*(?i:field service)"`: a bare word also matches the rest of the line. Each entry of `installedPackages` has `SubscriberPackageName`, `SubscriberPackageNamespace` and `SubscriberPackageVersionNumber`.
-- The orgs without backup for 36 hours, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[36h])) > 0)`
+- The orgs without backup for 36 hours, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[36h])) > 0)`
 - The orgs that stopped sending data, with `$LOKI/query`: `(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[36h])) > 0)`. The last day each org sent data, in one call, with `$LOKI/query_range`, `step=1d` and a `start` 7 days ago: `sum by (orgIdentifier) (count_over_time({source="sfdx-hardis"}[1d]))`, then take the last point of each series.
 
 ### Answer

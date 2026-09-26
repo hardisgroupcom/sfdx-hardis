@@ -180,16 +180,16 @@ groups:
           summary: 'Org {{ $labels.orgIdentifier }}: no metadata backup for 36 hours, the backup job failed or did not run'
         data:
           # A failed backup sends no notification, so the rule detects the missing one:
-          # backed up in the last 7 days, but not for 36 hours
+          # backed up in the last 30 days, but not for 36 hours
           - refId: A
             relativeTimeRange:
-              from: 604800
+              from: 2592000
               to: 0
             datasourceUid: ${DS_LOKI}
             model:
               refId: A
               queryType: instant
-              expr: '(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[7d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[36h])) > 0)'
+              expr: '(sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[30d])) > 0) unless (sum by (orgIdentifier) (count_over_time({source="sfdx-hardis", type="BACKUP"}[36h])) > 0)'
           - refId: B
             datasourceUid: __expr__
             model:
