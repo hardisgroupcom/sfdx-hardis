@@ -184,10 +184,12 @@ Traps that cost earlier runs time:
   opening an **Erase** link hard-deletes at once (its token is the confirmation). Handover Item
   and Panel Batch answered "internal server error" to Erase and did not block the seed; Installation
   is the one that matters.
-- **Git Bash rewrites a leading `/` in arguments into a Windows path.** `sf org open --path
-  /lightning/...` becomes `C:/Program Files/Git/lightning/...` and Salesforce answers *Invalid Page
-  Redirection*; `git show origin/x:path` breaks the same way. Prefix the command with
-  `MSYS_NO_PATHCONV=1`.
+- **Git Bash rewrites arguments that look like paths.** A leading `/` becomes a Windows path:
+  `sf org open --path /lightning/...` turns into `C:/Program Files/Git/lightning/...` and Salesforce
+  answers *Invalid Page Redirection*. An argument with a `:` is read as a path list:
+  `git show origin/integration:.github/workflows/x.yml` reached git as
+  `origin\integration;.github\workflows\x.yml`. Prefix those commands with `MSYS_NO_PATHCONV=1`, and
+  then give `git -C` a `C:/...` path, which the prefix no longer converts from `/c/...`.
 - **Anonymous Apex compiles against the fields the running user can see.** A script that grants a
   new field and then writes it fails to compile at the first mention of the field. Two runs.
 - **A Setup step done through the API is invisible to source tracking.** Granting a field through
@@ -522,12 +524,16 @@ start, so no Pull Request has to smuggle it in later.
 workflow file makes GitHub list every workflow as `active` before anyone clicked the Actions
 banner, so `init` prints "Actions are on" and no job ever runs. Either click the banner on the
 fork's Actions page before the override push, or right after it and before `init`. `gh run list`
-on the fork staying empty after the first Pull Request is the symptom. The cheapest override is
-the image tag alone: `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta` in the `container:` line of
-`check-deploy.yml` and `process-deploy.yml`, one `E2E ONLY` commit on `main` and on each
-`training/start-level-*` of the fork.
+on the fork staying empty after the first Pull Request is the symptom.
 
-What to expect and to record:
+**The image tag alone is a different override, for a different question.** Putting
+`ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta` in the `container:` line of `check-deploy.yml` and
+`process-deploy.yml` (one `E2E ONLY` commit on `main` and on each `training/start-level-*` of the
+fork) runs whatever `beta` last published. It answers "does the course work on the next release",
+costs nothing per job, and proves nothing about a fix branch that is not in that beta yet. Record the
+beta version and the image push time, not a branch. The list below is for the source-build override.
+
+What to expect and to record, with the source-build override:
 
 - each overridden job pays the clone + `yarn install` + `tsc -b`, two to four minutes;
 - the run report must say the jobs ran an unreleased build, name the branch and the commit, and

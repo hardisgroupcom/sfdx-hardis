@@ -16,7 +16,8 @@ The run produced **11 findings** (N1 to N11), all but two fixed in course PR
   refuses to build when `lab-crossrefs.mjs --check` fails, and PR #43 added four lab mentions without
   links. Both merges of 2026-09-25 (#43 and #47) never went live: the published Lab 1.4 still sends
   the learner to a Details tab that does not exist. The links are fixed, the check now runs on every
-  Pull Request, and `preflight.sh` fails when the last publish of `main` failed.
+  Pull Request, and `preflight.sh` reports **site published** as MISSING when the last publish of
+  `main` failed.
 - **N8 (release)**: Lab 3.8 on the course's `main` describes the deployment repository question and
   the `AGENTS.md` of the backup (CLI #2241), which are in `8.10.1-beta` and not in the released
   8.10.0. **Release 8.10.1 before merging PR #48**, which would publish that text. The same release
@@ -161,7 +162,7 @@ Level 1 and 30 of Level 3's 60 images, and **no Level 2 image**.
   *Helios Monitoring*, which teardown's `sfdxhardis*` pattern cannot find. It answers the fork's
   address and accepts the offered name now.
 - `preflight.sh` reports **site published** from the last `pages.yml` run of `main`; `SKILL.md`
-  lists `lab-crossrefs` and `lab-command-links` among the cheap checks; the runbook has six new traps
+  lists `lab-crossrefs` and `lab-command-links` among the cheap checks; the runbook has seven new traps
   (teardown of a used org, Git Bash path conversion, anonymous Apex compile, API grants invisible to
   source tracking, an override push fooling `init`, French orgs, release order).
 
