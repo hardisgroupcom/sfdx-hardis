@@ -28,7 +28,7 @@ The git history of a branch is the change history of the org, one commit per day
 - What changed between two dates: see [Report of the changes between two dates](#report-of-the-changes-between-two-dates)
 - Compare two orgs: `git diff origin/monitoring_myclient origin/monitoring_myclient__uat_sandbox -- force-app/main/default/objects/Account`
 
-A commit shows the state of the org at the time of the backup, not who made the change or when during the day. The author of the commit is the CI user or bot. To know which user changed something in Setup, the org's Setup Audit Trail is the source (the `AUDIT_TRAIL` check reports suspect entries).
+A commit shows the state of the org at the time of the backup, not who made the change or when during the day. The author of the commit is the CI user or bot. To know which user changed something in Setup, the org's Setup Audit Trail is the source (the `AUDIT_TRAIL` check reports suspect entries, see [Grafana](#monitoring-results-in-grafana); reading the org itself needs the user's consent, see [Salesforce org access](#salesforce-org-access-read-only-with-consent)).
 
 ## Report of the changes between two dates
 
@@ -333,6 +333,20 @@ All the monitored orgs (leave out `orgIdentifier`):
 - Give the values with their dates in UTC, and say which check they come from.
 - Add the link of the dashboard that shows the answer, when the instance has them (`GET $GRAFANA_API_URL/api/search?folderUIDs=sfdx-hardis-v2`): `$GRAFANA_API_URL/d/<uid>?var-org=acme&from=now-30d&to=now`. The uids: `sfdx-hardis-v2-org-home` (overview of one org), `sfdx-hardis-v2-org-reliability` (Apex and Flow errors), `sfdx-hardis-v2-org-limits`, `sfdx-hardis-v2-org-devops` (deployments), `sfdx-hardis-v2-org-security`, `sfdx-hardis-v2-org-debt` (technical debt, test coverage), `sfdx-hardis-v2-org-adoption` (users, licenses), `sfdx-hardis-v2-org-usage` (AI credits, consumption), `sfdx-hardis-v2-dtl-indicator` (any metric, with `var-type` and `var-metric`), `sfdx-hardis-v2-fleet` (all the orgs).
 
+## Salesforce org access: read-only, with consent
+
+Answer from this repository, its git history, the deployment repository and Grafana first: most questions need no connection to the org. Connect to the org only when a question needs live data none of them hold, like a record count, a setting that is not backed up, or the Setup Audit Trail entries of a given day.
+
+1. **Ask first, every time.** Tell the user which org, what you want to read and why, and wait for an explicit yes. Never connect to an org without it, and ask again for another org.
+2. **Use an org the user authenticated.** `sf org list` shows them: pick the one whose instance URL is `instanceUrl` of `.sfdx-hardis.yml`, and always pass it explicitly with `--target-org <alias or username>`, never rely on the default org. If it is not there, ask the user to log in with the **Org Manager** of the VS Code extension sfdx-hardis, or to run `sf org login web --instance-url <instanceUrl> --alias <alias>` themselves. Never use the credentials of the monitoring pipeline (CI variables, certificates): they are not meant for you.
+3. **Read, never write.** The only commands you may run against the org are:
+   - `sf data query --query "<SOQL>" --target-org <org>`, with `--use-tooling-api` for Tooling API objects. Add a `LIMIT`, and prefer `COUNT()` or aggregate queries to pulling thousands of records.
+   - `sf org list metadata --metadata-type <type> --target-org <org>` and `sf org list limits --target-org <org>`
+   - `sf apex list log --target-org <org>` and `sf apex get log --log-id <id> --target-org <org>`
+   - `sf org display --target-org <org>`, never with `--verbose`, and never show its access token.
+
+Any other command against an org counts as a write: do not run it, even when the user asks. That includes `sf project deploy`, `sf project retrieve` (it rewrites this repository), every `sf data` command other than `query`, `sf apex run` (anonymous Apex can change data), `sf apex run test`, `sf org assign`, `sf org create`, `sf org delete`, `sf org generate password`, every `sf hardis` command, and any REST, SOAP, Metadata or Tooling API call other than a read. When the user wants something changed in the org, explain that this repository only watches the org: the change goes through the deployment repository and its CI/CD pipeline, or the user makes it themselves.
+
 ## Files and folders
 
 | Path | Content |
@@ -373,7 +387,7 @@ The other way around, a component in `force-app/` but not in `manifest/package-a
 
 ## Rules for coding agents
 
-- Never deploy anything from this repository to an org.
+- Never write to a Salesforce org: no deployment, no data change, no anonymous Apex, no test run, no permission or user change, whatever the org and whoever asks. Only read it, only after the user said yes, as described in [Salesforce org access](#salesforce-org-access-read-only-with-consent).
 - Do not edit the files under `force-app/`, `manifest/package-all-org-items.xml`, `manifest/package-backup-items.xml`, `installedPackages/` or `docs/`: the next backup overwrites them.
 - Changes worth making here are configuration: `manifest/package-skip-items.xml`, `.sfdx-hardis.yml`, the pipeline file. They apply to the branch they are committed on, so to one org.
 - To answer "what does this org do", read the sources in `force-app/main/default/` first, then the generated `docs/` when present. Before describing a component, check that it is still in `manifest/package-all-org-items.xml`.

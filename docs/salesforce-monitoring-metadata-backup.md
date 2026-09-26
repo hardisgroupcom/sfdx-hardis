@@ -37,7 +37,7 @@ To set it, change it or remove it later, edit `deploymentRepository` in the `.sf
 
 It can then answer questions like "Was this change deployed by the pipeline, or made directly in production?" or "Why did last night's backup fail?".
 
-The agent uses the git provider CLI you are already logged in with, or tokens in a `.env` file at the root of the monitoring repository, with the variable names sfdx-hardis uses (`CI_SFDX_HARDIS_GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN`, `CI_SFDX_HARDIS_BITBUCKET_TOKEN`). It only reads: no push, no comment, no pipeline run.
+The agent uses the git provider CLI you are already logged in with, or tokens in a `.env` file at the root of the monitoring repository, with the variable names sfdx-hardis uses (`CI_SFDX_HARDIS_GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN`, `CI_SFDX_HARDIS_BITBUCKET_TOKEN`). It only reads: no push, no comment, no pipeline run. It answers without connecting to your Salesforce org; when a question needs live org data, it asks you first, uses an org you authenticated (for example from the Org Manager of VS Code), runs read-only queries only, and never writes to the org.
 
 #### Query the monitoring history in Grafana
 

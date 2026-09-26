@@ -2164,6 +2164,7 @@
   "logElementsCount": "Anzahl der Log-Elemente: {{elementCount}}",
   "logInViaBrowserFrontdoor": "Anmeldung über den Browser mit frontdoor.jsp...",
   "loginToAnotherOrg": "In einer anderen Org anmelden",
+  "lokiEntryStillTooBig": "[ApiProvider] Der Loki-Eintrag ist nach dem Kürzen immer noch {{bytes}} Bytes groß: Loki lehnt ihn möglicherweise ab",
   "lookAtThePackageMetadataToRestore": "Sehen Sie sich die Datei package-metadata-to-restore.xml in {{saveProjectPath}} an, um zu sehen, was wiederhergestellt wird.",
   "lookingForCertificates": "Suche nach Zertifikaten...",
   "lookingForLwcJsFiles": "Suche nach LWC '{{lwcName}}' JS-Dateien...",

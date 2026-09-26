@@ -2163,6 +2163,7 @@
   "logElementsCount": "ログ要素数: {{elementCount}}",
   "logInViaBrowserFrontdoor": "frontdoor.jsp を使用してブラウザ経由でログインしています...",
   "loginToAnotherOrg": "別の組織にログイン",
+  "lokiEntryStillTooBig": "[ApiProvider] 切り詰め後も Loki エントリが {{bytes}} バイトあります。Loki に拒否される可能性があります",
   "lookAtThePackageMetadataToRestore": "リストアされる内容を確認するには、{{saveProjectPath}} の package-metadata-to-restore.xml ファイルをご覧ください。",
   "lookingForCertificates": "証明書を検索しています...",
   "lookingForLwcJsFiles": "LWC '{{lwcName}}' の JS ファイルを検索しています...",

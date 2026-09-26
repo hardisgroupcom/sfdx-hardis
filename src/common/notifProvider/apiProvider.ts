@@ -14,21 +14,26 @@ import fs from '../utils/fsUtils.js';
 import * as path from "path";
 import { t } from '../utils/i18n.js';
 
-const MAX_LOKI_LOG_LENGTH = Number(process.env.MAX_LOKI_LOG_LENGTH || 200000);
-const TRUNCATE_LOKI_ELEMENTS_LENGTH = Number(process.env.TRUNCATE_LOKI_ELEMENTS_LENGTH || 500);
+// A positive whole number from the environment, else the default: a typo must never disable truncation
+function positiveIntFromEnv(name: string, defaultValue: number): number {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : defaultValue;
+}
+const MAX_LOKI_LOG_LENGTH = positiveIntFromEnv("MAX_LOKI_LOG_LENGTH", 200000);
+const TRUNCATE_LOKI_ELEMENTS_LENGTH = positiveIntFromEnv("TRUNCATE_LOKI_ELEMENTS_LENGTH", 500);
 
 // Loki refuses a line above its size limit (256 KB on Grafana Cloud), and the whole entry is then
 // lost, metrics aside. Cutting _logElements to a row count is not enough: 500 Apex errors with their
 // stack traces weigh more than that. In order, until the line fits: cap the rows, cut the text (no
-// dashboard reads it, they read the rows), then halve the rows.
+// dashboard reads it, they read the rows), then drop rows in proportion to the excess.
 export function fitLokiLogData(
   data: any,
   maxBytes: number,
   maxElements: number,
 ): { json: string; initialBytes: number; finalBytes: number; logElementsKept: number } {
-  const byteLength = (value: string) => new TextEncoder().encode(value).length;
   let json = JSON.stringify(data);
-  const initialBytes = byteLength(json);
+  let bytes = Buffer.byteLength(json, "utf8");
+  const initialBytes = bytes;
   const allElements: any[] = Array.isArray(data?._logElements) ? data._logElements : [];
   if (initialBytes <= maxBytes) {
     return { json, initialBytes, finalBytes: initialBytes, logElementsKept: allElements.length };
@@ -42,17 +47,20 @@ export function fitLokiLogData(
       fitted._logElementsTotal = allElements.length;
     }
     json = JSON.stringify(fitted);
+    bytes = Buffer.byteLength(json, "utf8");
   };
   apply();
-  if (byteLength(json) > maxBytes && typeof fitted._logBodyText === "string" && fitted._logBodyText.length > 100) {
+  if (bytes > maxBytes && typeof fitted._logBodyText === "string" && fitted._logBodyText.length > 100) {
     fitted._logBodyText = fitted._logBodyText.slice(0, 100) + "\n ... (truncated)";
     apply();
   }
-  while (byteLength(json) > maxBytes && kept > 0) {
-    kept = Math.floor(kept / 2);
+  while (bytes > maxBytes && kept > 0) {
+    // Rows weigh about the same: scale by the excess, and always drop at least one row
+    kept = Math.min(kept - 1, Math.floor(kept * (maxBytes / bytes)));
+    kept = Math.max(kept, 0);
     apply();
   }
-  return { json, initialBytes, finalBytes: byteLength(json), logElementsKept: kept };
+  return { json, initialBytes, finalBytes: bytes, logElementsKept: kept };
 }
 
 export class ApiProvider extends NotifProviderRoot {
@@ -246,7 +254,7 @@ export class ApiProvider extends NotifProviderRoot {
       );
     }
     if (finalBytes > MAX_LOKI_LOG_LENGTH) {
-      uxLog("warning", this, c.yellow(`[ApiProvider] Loki entry is still ${finalBytes} bytes after truncation: Loki may refuse it`));
+      uxLog("warning", this, c.yellow(t('lokiEntryStillTooBig', { bytes: finalBytes })));
     }
     this.payloadFormatted = {
       streams: [

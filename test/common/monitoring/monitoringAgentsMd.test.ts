@@ -140,6 +140,19 @@ describe('monitoringAgentsMd', () => {
       expect(content).to.include('`https://acme.grafana.net`');
     });
 
+    it('keeps Salesforce org access read-only and behind the user consent', async () => {
+      const content = await buildMonitoringAgentsMdBlock({});
+      expect(content).to.include('## Salesforce org access: read-only, with consent');
+      expect(content).to.include('**Ask first, every time.**');
+      expect(content).to.include('Any other command against an org counts as a write: do not run it, even when the user asks.');
+      expect(content).to.include('- Never write to a Salesforce org:');
+      // The allowlist must never grow a command that can write
+      const section = content.slice(content.indexOf('**Read, never write.**'), content.indexOf('Any other command against an org'));
+      for (const writeCommand of ['sf project deploy', 'sf data create', 'sf data update', 'sf data delete', 'sf data upsert', 'sf data import', 'sf apex run', 'sf hardis']) {
+        expect(section).to.not.include(writeCommand);
+      }
+    });
+
     it('keeps the LogQL line_format templates of the recipes, which look like placeholders', async () => {
       const content = await buildMonitoringAgentsMdBlock({});
       expect(content).to.include('line_format "{{.t}}" | keep type');

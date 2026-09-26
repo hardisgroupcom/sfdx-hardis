@@ -45,6 +45,7 @@ When in doubt, grep the template for the name you are changing: `grep -n "<name>
 ## Rules for the text
 
 - **Describe what the product does, from the source.** Read the command, not its name. Two facts were wrong in the first version and corrected by the maintainer: `deploy:smart` deploys `manifest/package.xml` minus the no-overwrite items already in the org (not the package directories), and the backup never deletes files (existence comes from `manifest/package-all-org-items.xml`).
+- **Salesforce orgs: read-only, and only with the user's explicit consent.** This is a hard rule. The section **Salesforce org access** lists the only commands an agent may run against an org: it is an allowlist, never add a command that can write (deploy, data change, anonymous Apex, test run, permission or user change, any `sf hardis` command). The agent asks before connecting, uses an org the user authenticated (VS Code Org Manager or `sf org login web` run by the user), never the CI credentials, and refuses write requests.
 - **The agent only reads.** Never add an instruction that pushes, comments, runs a pipeline, or changes Grafana. The one write allowed is a single line of `.sfdx-hardis.yml`, after asking the user, and never a secret.
 - **Secrets stay out of `.sfdx-hardis.yml`**: tokens come from the environment, a `.env` file (git ignores it in monitoring repositories), or a CLI the user is logged in with.
 - **Prefer discovery to lists that rot**: tell the agent how to list metric names, label values or datasources rather than hardcoding them.

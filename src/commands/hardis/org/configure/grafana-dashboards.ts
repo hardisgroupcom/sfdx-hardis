@@ -50,7 +50,7 @@ Key functionalities:
 - **Optional alert pack:** with \`--with-alerts\`, imports the 6 alert rules (org limit above 90%, storage exhaustion forecast, error spike, missing backup, silent org, health score degradation). All rules are imported **paused**, so they trigger no evaluation and no cost until you enable them from **Alerting -> Alert rules** and configure your contact points. Alert rules need explicit datasource uids: the command auto-detects the Prometheus/Mimir and Loki datasources receiving sfdx-hardis data (Grafana Cloud internal datasources are filtered out), and \`--prom-uid\` / \`--loki-uid\` pin the choice when several candidates exist.
 - **Verification:** each imported dashboard is read back through the API, and the command prints the direct URL to the Fleet Overview.
 
-Authentication uses a Grafana service account token provided via \`--grafana-token\` or the \`GRAFANA_API_TOKEN\` environment variable (prefer the environment variable: flag values can end up in shell history and local log files). The instance URL comes from \`--grafana-url\`, \`GRAFANA_API_URL\` or the \`grafanaUrl\` property of \`.sfdx-hardis.yml\`, in that order, and the alert pack datasources can be pinned with the \`grafanaPrometheusDatasourceUid\` and \`grafanaLokiDatasourceUid\` properties. The token never goes in the configuration file. An Editor role is enough for the dashboards; \`--with-alerts\` additionally needs datasource read and alert provisioning permissions.
+Authentication uses a Grafana service account token provided via \`--grafana-token\` or the \`GRAFANA_API_TOKEN\` environment variable (prefer the environment variable: flag values can end up in shell history and local log files). The instance URL comes from \`--grafana-url\`, \`GRAFANA_API_URL\` or the \`grafanaUrl\` property of \`.sfdx-hardis.yml\`, in that order, and the alert pack datasources can be pinned with the \`grafanaPrometheusDatasourceUid\` and \`grafanaLokiDatasourceUid\` properties, used only when the instance is that \`grafanaUrl\`. The token never goes in the configuration file. An Editor role is enough for the dashboards; \`--with-alerts\` additionally needs datasource read and alert provisioning permissions.
 
 This command requires no Salesforce org: it only talks to Grafana and GitHub. Configure the [API integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/) first so the dashboards have data to display.
 
@@ -233,8 +233,24 @@ In agent mode:
       } catch (e: any) {
         throw this.grafanaApiError('GET /api/datasources', e);
       }
-      promUid = await this.resolveDatasourceUid(datasources, 'prometheus', flags['prom-uid'] || config.grafanaPrometheusDatasourceUid);
-      lokiUid = await this.resolveDatasourceUid(datasources, 'loki', flags['loki-uid'] || config.grafanaLokiDatasourceUid);
+      // The datasource uids of .sfdx-hardis.yml belong to its grafanaUrl: never apply them to
+      // another instance given by --grafana-url or GRAFANA_API_URL
+      let configUidsApply = false;
+      try {
+        configUidsApply = typeof config.grafanaUrl === 'string' && normalizeGrafanaUrl(config.grafanaUrl) === grafanaUrl;
+      } catch {
+        configUidsApply = false;
+      }
+      promUid = await this.resolveDatasourceUid(
+        datasources,
+        'prometheus',
+        flags['prom-uid'] || (configUidsApply ? config.grafanaPrometheusDatasourceUid : undefined)
+      );
+      lokiUid = await this.resolveDatasourceUid(
+        datasources,
+        'loki',
+        flags['loki-uid'] || (configUidsApply ? config.grafanaLokiDatasourceUid : undefined)
+      );
       let groups;
       try {
         const alertsYaml = await fetchGitHubRawFile(ref, GRAFANA_V2_ALERTS_PATH);

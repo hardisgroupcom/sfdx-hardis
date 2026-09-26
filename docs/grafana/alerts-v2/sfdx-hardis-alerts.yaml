@@ -165,7 +165,7 @@ groups:
                     params: [0]
                     type: gt
       # ----------------------------------------------------------------------
-      # 4. Metadata backup failed in the last 26 hours
+      # 4. Metadata backup failed: no backup for 36 hours (a failure sends no notification)
       # ----------------------------------------------------------------------
       - uid: sfdx-hardis-v2-backup-failed
         title: Salesforce metadata backup failed
