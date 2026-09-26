@@ -28,27 +28,27 @@ The run produced **11 findings** (N1 to N11), all but two fixed in course PR
 
 ## Versions under test
 
-| Thing              | Version                                                                                                         |
-|--------------------|-----------------------------------------------------------------------------------------------------------------|
-| sfdx-hardis        | `main` at `6b09ed97d`, linked working copy (8.10.0 + unreleased #2236, #2239, #2241)                            |
-| vscode-sfdx-hardis | `main` at `79f200cd` (8.8.0 + #528, #530), built `yarn compile && yarn dev` for the lab driver                  |
-| Course             | `main` at `ada37fd`, then branch `fix/training-e2e-2026-09-25-night` (PR #48)                                   |
-| CI images          | pipeline jobs `sfdx-hardis-ubuntu:beta` = `8.10.1-beta202609251713.0` (image pushed 17:25Z, npm 17:17Z)         |
-| Monitoring jobs    | `sfdx-hardis-ubuntu:latest` = 8.10.0, the image a learner gets (monitoring is not overridden)                   |
-| Salesforce CLI     | @salesforce/cli 2.151.6, node 24.11.1                                                                           |
-| Published site     | **behind `main` by two merges** (N3): what a learner reads today is the course before 2026-09-25 midday         |
+| Thing              | Version                                                                                                 |
+|--------------------|---------------------------------------------------------------------------------------------------------|
+| sfdx-hardis        | `main` at `6b09ed97d`, linked working copy (8.10.0 + unreleased #2236, #2239, #2241)                    |
+| vscode-sfdx-hardis | `main` at `79f200cd` (8.8.0 + #528, #530), built `yarn compile && yarn dev` for the lab driver          |
+| Course             | `main` at `ada37fd`, then branch `fix/training-e2e-2026-09-25-night` (PR #48)                           |
+| CI images          | pipeline jobs `sfdx-hardis-ubuntu:beta` = `8.10.1-beta202609251713.0` (image pushed 17:25Z, npm 17:17Z) |
+| Monitoring jobs    | `sfdx-hardis-ubuntu:latest` = 8.10.0, the image a learner gets (monitoring is not overridden)           |
+| Salesforce CLI     | @salesforce/cli 2.151.6, node 24.11.1                                                                   |
+| Published site     | **behind `main` by two merges** (N3): what a learner reads today is the course before 2026-09-25 midday |
 
 ## Environment
 
-| Item             | State                                                                                                   |
-|------------------|---------------------------------------------------------------------------------------------------------|
-| Fork             | `nvuillam/sfdx-hardis-training`, deleted by the user and recreated with `gh repo fork` (init's own call) |
-| Beta override    | one fork-only `E2E ONLY` commit on the fork's `main` and `training/start-level-1..3` (image tag only)     |
-| Scratch orgs     | `helios-dev`, `-integration`, `-uat` of this morning, **torn down** (after N1 and N2), then re-seeded   |
-| `helios-prod`    | Developer Edition, Dev Hub, **French-speaking user**; torn down, deleted objects erased, re-seeded      |
-| `helios-preprod` | Developer Edition, French-speaking user; same                                                           |
-| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring-0926`, new and private                                        |
-| Learner clone    | `C:/git/training-run`                                                                                   |
+| Item             | State                                                                                                                      |
+|------------------|----------------------------------------------------------------------------------------------------------------------------|
+| Fork             | `nvuillam/sfdx-hardis-training`, deleted by the user and recreated with `gh repo fork` (init's own call)                   |
+| Beta override    | one fork-only `E2E ONLY` commit on the fork's `main` and `training/start-level-1..3` (image tag only)                      |
+| Scratch orgs     | `helios-dev`, `-integration`, `-uat` of this morning, **torn down** (after N1 and N2), then re-seeded                      |
+| `helios-prod`    | Developer Edition, Dev Hub, **French-speaking user**; torn down, deleted objects erased, re-seeded                         |
+| `helios-preprod` | Developer Edition, French-speaking user; same                                                                              |
+| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring-0926`, new and private                                                           |
+| Learner clone    | `C:/git/training-run`                                                                                                      |
 | Browser on CDP   | the user's Chrome on 9222, used for Setup (field wizard, Required, Deleted Objects, Deliverability) and the Actions banner |
 
 ## The cheap checks
@@ -65,35 +65,35 @@ Fidelity: **1** lab driver, **2** headless panel (`panel.mjs`, `auth.mjs`, `mon.
 `sf` / `git` / `gh` / API, **browser** the real Setup or GitHub page over CDP. Pass A read, B do,
 C look at the images.
 
-| Lab  | Fidelity                                                                   | A  | B  | C       | Findings            |
-|------|----------------------------------------------------------------------------|----|----|---------|---------------------|
-| 1.1  | read only                                                                  | ok | -  | ok      | O3                  |
-| 1.2  | `init` (x3), Actions banner in the browser                                 | ok | ok | ok      | N1, N2, D1          |
-| 1.3  | 1                                                                          | ok | ok | ok      |                     |
-| 1.4  | browser (field wizard), 3 (grants, record values)                          | ok | ok | ok      | N3, D2              |
-| 1.5  | 3 (retrieve, commit), 1 (Save/Publish)                                     | ok | ok | ok      | O1                  |
-| 1.6  | 3 (`gh pr create`, `prflow.sh`)                                            | ok | ok | ok      | N4, O2              |
-| 1.7  | 2 (new, save), browser (field), 3 (grant, list view as metadata)           | ok | ok | not opened |                  |
-| 2.1  | 2 (`backpromote --plan` / `--agent`)                                       | ok | ok | not opened |                  |
-| 2.2  | browser (field), 3 (flow version), 2                                       | ok | ok | not opened |                  |
-| 2.3  | browser (Required + its warning dialog), 3 (action file), 2                | ok | ok | not opened |                  |
-| 2.4  | 3 (object, grants, records, workspace file, action file), 2 (export)       | ok | ok | not opened | N5                  |
-| 2.5  | 3 (Apex paste, deploy), 2 (Apex tests, save)                               | ok | ok | not opened |                  |
-| 2.6  | 3 (grants), 2                                                              | ok | ok | not opened |                  |
-| 2.7  | 3 (flows as XML, merge resolution), 2, simulate                            | ok | ok | not opened |                  |
-| 2.8  | 3 (layout, whole-org retrieve), 2 (`resetselection`)                       | ok | ok | not opened |                  |
-| 2.9  | 3 (org build, grants through metadata), 2, simulate                        | ok | ok | not opened | N2 aftermath        |
-| 3.1  | 3 (branch, protection, config), 2 (`auth.mjs` x4)                          | ok | ok | ok      | N6, O4              |
-| 3.2  | simulate, 3 (review comment), squash                                       | ok | ok | ok      | H1                  |
-| 3.3  | log read, simulate, fix                                                    | ok | ok | ok      | D3                  |
-| 3.4  | simulate x2, 3 (comment)                                                   | ok | ok | ok      |                     |
-| 3.5  | 3 (UAT hand edit, no-overwrite file, ticks), 2 (notes)                     | ok | ok | ok      | N5 verified, N7, O5 |
-| 3.6  | 3, browser (Deliverability), 2 (DORA)                                      | ok | ok | sampled | N7, N9, O6          |
-| 3.7  | simulate, 3, 2 (retrofit)                                                  | ok | ok | sampled | N10, N11            |
-| 3.8  | 2 (`mon.mjs`), 3 (Run workflow)                                            | ok | ok | sampled | N8, H2              |
-| 3.9  | 2, protected page proven                                                   | ok | ok | ok      |                     |
-| 3.10 | simulate x5, 2 (`promotion:create`), 3 (resolution by hand), **beta**      | ok | ok | ok      |                     |
-| 3.11 | simulate, 3, 2 (notes, DORA)                                               | ok | ok | ok      |                     |
+| Lab  | Fidelity                                                              | A  | B  | C          | Findings            |
+|------|-----------------------------------------------------------------------|----|----|------------|---------------------|
+| 1.1  | read only                                                             | ok | -  | ok         | O3                  |
+| 1.2  | `init` (x3), Actions banner in the browser                            | ok | ok | ok         | N1, N2, D1          |
+| 1.3  | 1                                                                     | ok | ok | ok         |                     |
+| 1.4  | browser (field wizard), 3 (grants, record values)                     | ok | ok | ok         | N3, D2              |
+| 1.5  | 3 (retrieve, commit), 1 (Save/Publish)                                | ok | ok | ok         | O1                  |
+| 1.6  | 3 (`gh pr create`, `prflow.sh`)                                       | ok | ok | ok         | N4, O2              |
+| 1.7  | 2 (new, save), browser (field), 3 (grant, list view as metadata)      | ok | ok | not opened |                     |
+| 2.1  | 2 (`backpromote --plan` / `--agent`)                                  | ok | ok | not opened |                     |
+| 2.2  | browser (field), 3 (flow version), 2                                  | ok | ok | not opened |                     |
+| 2.3  | browser (Required + its warning dialog), 3 (action file), 2           | ok | ok | not opened |                     |
+| 2.4  | 3 (object, grants, records, workspace file, action file), 2 (export)  | ok | ok | not opened | N5                  |
+| 2.5  | 3 (Apex paste, deploy), 2 (Apex tests, save)                          | ok | ok | not opened |                     |
+| 2.6  | 3 (grants), 2                                                         | ok | ok | not opened |                     |
+| 2.7  | 3 (flows as XML, merge resolution), 2, simulate                       | ok | ok | not opened |                     |
+| 2.8  | 3 (layout, whole-org retrieve), 2 (`resetselection`)                  | ok | ok | not opened |                     |
+| 2.9  | 3 (org build, grants through metadata), 2, simulate                   | ok | ok | not opened | N2 aftermath        |
+| 3.1  | 3 (branch, protection, config), 2 (`auth.mjs` x4)                     | ok | ok | ok         | N6, O4              |
+| 3.2  | simulate, 3 (review comment), squash                                  | ok | ok | ok         | H1                  |
+| 3.3  | log read, simulate, fix                                               | ok | ok | ok         | D3                  |
+| 3.4  | simulate x2, 3 (comment)                                              | ok | ok | ok         |                     |
+| 3.5  | 3 (UAT hand edit, no-overwrite file, ticks), 2 (notes)                | ok | ok | ok         | N5 verified, N7, O5 |
+| 3.6  | 3, browser (Deliverability), 2 (DORA)                                 | ok | ok | sampled    | N7, N9, O6          |
+| 3.7  | simulate, 3, 2 (retrofit)                                             | ok | ok | sampled    | N10, N11            |
+| 3.8  | 2 (`mon.mjs`), 3 (Run workflow)                                       | ok | ok | sampled    | N8, H2              |
+| 3.9  | 2, protected page proven                                              | ok | ok | ok         |                     |
+| 3.10 | simulate x5, 2 (`promotion:create`), 3 (resolution by hand), **beta** | ok | ok | ok         |                     |
+| 3.11 | simulate, 3, 2 (notes, DORA)                                          | ok | ok | ok         |                     |
 
 Levels 1 and 2 had their pictures recaptured and reviewed this morning; tonight's pass C opened
 Level 1 and 30 of Level 3's 60 images, and **no Level 2 image**.

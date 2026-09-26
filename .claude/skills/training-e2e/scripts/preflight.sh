@@ -99,9 +99,9 @@ say "course branch" OK "$(git -C "$COURSE" branch --show-current 2>/dev/null) @ 
 PAGES=$(gh run list -R "$UPSTREAM" --workflow pages.yml --branch main -L 1 --json conclusion,headSha -q '.[0] | "\(.conclusion) \(.headSha[0:7])"' 2>/dev/null)
 MAIN=$(gh api "repos/$UPSTREAM/commits/main" -q '.sha[0:7]' 2>/dev/null)
 case "$PAGES" in
-  "success $MAIN") say "site published" OK "main @ $MAIN" ;;
-  success*) say "site published" WARN "last publish at ${PAGES#success }, main is $MAIN: a publish may still be running" ;;
-  *) say "site published" MISSING "the last publish of main failed ($PAGES): learners read an older course. gh run list -R $UPSTREAM --workflow pages.yml" ;;
+"success $MAIN") say "site published" OK "main @ $MAIN" ;;
+success*) say "site published" WARN "last publish at ${PAGES#success }, main is $MAIN: a publish may still be running" ;;
+*) say "site published" MISSING "the last publish of main failed ($PAGES): learners read an older course. gh run list -R $UPSTREAM --workflow pages.yml" ;;
 esac
 echo
 echo "The published site is what a learner reads. When the course working copy is"
