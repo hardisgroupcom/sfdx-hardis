@@ -6,15 +6,17 @@ import { getReportDirectory } from '../../config/index.js';
 import fs from './fsUtils.js';
 import { createXlsxFromCsvFiles } from './filesUtils.js';
 import { t } from './i18n.js';
-import { createTempDir, execSfdxJson, isCI, uxLog, uxLogTable } from './index.js';
+import { isCI, uxLog, uxLogTable } from './index.js';
 import { prompts } from './prompts.js';
-import { soqlQueryTooling } from './apiUtils.js';
+import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 
 const SALESFORCE_ID_RE = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
 const METADATA_TYPE_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
 const OTHER_TYPE_VALUE = '__other__';
+const UNKNOWN_TYPE = 'Unknown';
 const TOOLING_ROW_CAP = 2000;
+const CUSTOM_OBJECT_SUFFIX_RE = /__(c|mdt|e|b|x|kav|share|history|feed)$/i;
 const DEPENDENCY_FIELDS =
   'MetadataComponentId, MetadataComponentName, MetadataComponentType, ' +
   'RefMetadataComponentId, RefMetadataComponentName, RefMetadataComponentType';
@@ -22,7 +24,6 @@ const DEPENDENCY_FIELDS =
 interface LookupConfig {
   selectField: string;
   whereField: string;
-  transformName?: (raw: string) => string;
 }
 
 export interface MetadataDepsFlags {
@@ -78,12 +79,6 @@ const LOOKUP_CONFIG: Record<string, LookupConfig> = {
   AuraDefinitionBundle: { selectField: 'DeveloperName', whereField: 'DeveloperName' },
   LightningComponentBundle: { selectField: 'DeveloperName', whereField: 'DeveloperName' },
   FlexiPage: { selectField: 'DeveloperName', whereField: 'DeveloperName' },
-  Flow: { selectField: 'DeveloperName', whereField: 'DeveloperName' },
-  CustomObject: {
-    selectField: 'DeveloperName',
-    whereField: 'DeveloperName',
-    transformName: stripCustomSuffix,
-  },
   CustomPermission: { selectField: 'DeveloperName', whereField: 'DeveloperName' },
 };
 
@@ -100,7 +95,17 @@ export function soqlString(value: string): string {
 }
 
 export function stripCustomSuffix(value: string): string {
-  return value.endsWith('__c') ? value.slice(0, -3) : value;
+  return value.replace(CUSTOM_OBJECT_SUFFIX_RE, '');
+}
+
+// "ns__Obj__c" -> { namespace: "ns", developerName: "Obj" }, "MyType__mdt" -> { developerName: "MyType" }
+export function parseCustomObjectName(name: string): { namespace?: string; developerName: string } {
+  const withoutSuffix = stripCustomSuffix(name.trim());
+  const separator = withoutSuffix.indexOf('__');
+  if (separator > 0) {
+    return { namespace: withoutSuffix.slice(0, separator), developerName: withoutSuffix.slice(separator + 2) };
+  }
+  return { developerName: withoutSuffix };
 }
 
 export function customFieldDeveloperName(fieldApi: string): string {
@@ -124,10 +129,18 @@ export function parseCustomFieldName(name: string): { table?: string; developerN
 }
 
 export function buildLookupSoql(type: string, name: string): string {
+  if (type === 'Flow') {
+    // Tooling Flow records are versions without DeveloperName: resolve through FlowDefinition
+    return `SELECT Id, DeveloperName, ActiveVersionId, LatestVersionId FROM FlowDefinition WHERE DeveloperName = ${soqlString(name)}`;
+  }
+  if (type === 'CustomObject') {
+    const parsed = parseCustomObjectName(name);
+    const namespaceClause = parsed.namespace ? ` AND NamespacePrefix = ${soqlString(parsed.namespace)}` : '';
+    return `SELECT Id, DeveloperName FROM CustomObject WHERE DeveloperName = ${soqlString(parsed.developerName)}${namespaceClause}`;
+  }
   const config = LOOKUP_CONFIG[type];
   if (config) {
-    const normalizedName = config.transformName ? config.transformName(name) : name;
-    return `SELECT Id, ${config.selectField} FROM ${type} WHERE ${config.whereField} = ${soqlString(normalizedName)}`;
+    return `SELECT Id, ${config.selectField} FROM ${type} WHERE ${config.whereField} = ${soqlString(name)}`;
   }
   return `SELECT Id, Name FROM ${type} WHERE Name = ${soqlString(name)}`;
 }
@@ -146,7 +159,7 @@ export function buildCustomFieldLookupSoql(developerName: string, entityKeys: st
 
 export function buildUsedBySoql(id: string, type?: string, componentType?: string): string {
   const clauses = [`RefMetadataComponentId = ${soqlString(id)}`];
-  if (type && type !== 'StandardEntity') {
+  if (type && type !== 'StandardEntity' && type !== UNKNOWN_TYPE) {
     clauses.push(`RefMetadataComponentType = ${soqlString(type)}`);
   }
   if (componentType) {
@@ -211,7 +224,18 @@ export async function lookupMetadataComponents(
 
   try {
     const result = await soqlQueryTooling(query, connection);
-    return (result.records ?? []).map((record: Record<string, unknown>) => {
+    const records: Array<Record<string, unknown>> = result.records ?? [];
+    if (type === 'Flow') {
+      // Dependencies point to a Flow version: use the active one, else the latest
+      return records
+        .map((record) => ({
+          id: String(record.ActiveVersionId ?? record.LatestVersionId ?? ''),
+          name: String(record.DeveloperName ?? name),
+          type,
+        }))
+        .filter((selection) => selection.id !== '');
+    }
+    return records.map((record) => {
       const developerName = record.DeveloperName ? String(record.DeveloperName) : '';
       const table =
         objectApi ||
@@ -233,43 +257,19 @@ export async function lookupMetadataComponents(
   }
 }
 
-function commandDoubleQuote(value: string): string {
-  return `"${value.replaceAll('"', '\\"')}"`;
-}
-
-async function queryUsedByBulk(
-  query: string,
-  targetOrg: string,
-  commandThis: any
-): Promise<Array<Record<string, unknown>>> {
-  const tempDir = await createTempDir();
-  const queryFile = path.join(tempDir, 'metadata-deps.soql');
-  await fs.writeFile(queryFile, query, 'utf8');
-  try {
-    const result = await execSfdxJson(
-      `sf data query --use-tooling-api --bulk --file ${commandDoubleQuote(queryFile)} --target-org ${commandDoubleQuote(targetOrg)}`,
-      commandThis,
-      { fail: true, output: false, debug: false }
-    );
-    return result?.result?.records ?? result?.records ?? [];
-  } finally {
-    await fs.remove(tempDir);
-  }
-}
-
 export async function queryUsedBy(
   connection: Connection,
   selection: MetadataComponentSelection,
-  options: { componentType?: string; bulk?: boolean; targetOrg: string; commandThis: any }
+  options: { componentType?: string; bulk?: boolean; commandThis: any }
 ): Promise<MetadataDependencyRow[]> {
   if (selection.type === 'StandardEntity') {
     uxLog('warning', options.commandThis, c.yellow(t('metadataDepsStandardEntityFilterSkipped')));
   }
   const query = buildUsedBySoql(selection.id, selection.type, options.componentType);
   const records = options.bulk
-    ? await queryUsedByBulk(query, options.targetOrg, options.commandThis)
+    ? (await bulkQueryTooling(query, connection)).records ?? []
     : (await soqlQueryTooling(query, connection)).records ?? [];
-  if (!options.bulk && records.length === TOOLING_ROW_CAP) {
+  if (!options.bulk && records.length >= TOOLING_ROW_CAP) {
     uxLog(
       'warning',
       options.commandThis,
@@ -318,9 +318,6 @@ async function promptForSelectionInput(
         },
       ],
     });
-    if (typeAnswer.value === 'exitNow') {
-      return { type: '' };
-    }
     selectedType = String(typeAnswer.value);
     uxLog('action', commandThis, c.cyan(t('metadataDepsTitle')));
   }
@@ -368,8 +365,6 @@ export async function resolveMetadataComponent(
   commandThis: any
 ): Promise<MetadataComponentSelection | null> {
   let type = validateType(flags.type?.trim());
-  const componentType = validateType(flags.componentType?.trim());
-  flags.componentType = componentType;
   let name = flags.name?.trim();
   let id = flags.id?.trim();
 
@@ -381,15 +376,13 @@ export async function resolveMetadataComponent(
   }
   if (!id && !(type && name)) {
     const prompted = await promptForSelectionInput(commandThis, type, name);
-    if (!prompted.type) {
-      return null;
-    }
     type = prompted.type;
     name = prompted.name;
     id = prompted.id;
   }
   if (id) {
-    return { id, name: name || id, type: type || 'Unknown' };
+    // Without --type, used-by rows are not filtered on RefMetadataComponentType
+    return { id, name: name || id, type: type || UNKNOWN_TYPE };
   }
 
   uxLog('action', commandThis, c.cyan(t('metadataDepsResolvingComponent', { type, name })));
@@ -416,9 +409,6 @@ export async function resolveMetadataComponent(
     })),
   });
   uxLog('action', commandThis, c.cyan(t('metadataDepsTitle')));
-  if (answer.value === 'exitNow') {
-    return null;
-  }
   return matches.find((match) => match.id === answer.value) ?? null;
 }
 
@@ -475,7 +465,8 @@ export async function writeMetadataDepsReports(
   });
   await fs.remove(summaryCsv);
   if (!(await fs.pathExists(xlsxFile))) {
-    throw new SfError(t('releaseNotesXlsxGenerationFailed', { message: xlsxFile }));
+    // createXlsxFromCsvFiles logs the cause as a warning instead of throwing
+    throw new SfError(t('metadataDepsXlsxGenerationFailed', { file: xlsxFile }));
   }
   uxLog('log', commandThis, c.grey(usedByCsv));
   uxLog('log', commandThis, c.grey(xlsxFile));
@@ -494,17 +485,20 @@ export async function runMetadataDeps(
   flags: MetadataDepsFlags,
   commandThis: any
 ): Promise<any> {
+  const componentType = validateType(flags.componentType?.trim());
   const selection = await resolveMetadataComponent(connection, flags, commandThis);
   if (!selection) {
     return { outputString: t('metadataDepsCancelled'), cancelled: true };
   }
   uxLog('action', commandThis, c.cyan(t('metadataDepsQueryingUsedBy', { name: selection.name })));
   const rows = await queryUsedBy(connection, selection, {
-    componentType: flags.componentType,
+    componentType,
     bulk: flags.bulk,
-    targetOrg,
     commandThis,
   });
+  if (selection.type === UNKNOWN_TYPE && rows.length > 0) {
+    selection.type = rows[0].targetType || UNKNOWN_TYPE;
+  }
   if (rows.length === 0) {
     uxLog('warning', commandThis, c.yellow(t('metadataDepsEmptyUsedBy')));
   } else {
@@ -524,6 +518,7 @@ export async function runMetadataDeps(
       [columns.targetName]: row.targetName,
       [columns.targetType]: row.targetType,
     }));
+    // No uxLogTableWithReport: the used-by CSV written below holds every row and is sent to VS Code
     uxLogTable(commandThis, tableRows, Object.values(columns));
   }
   uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));

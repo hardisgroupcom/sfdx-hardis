@@ -1,6 +1,7 @@
 import { uxLog } from './index.js';
 import c from 'chalk';
 import { randomUUID } from 'crypto';
+import Papa from 'papaparse';
 import { Connection } from '@salesforce/core';
 import { createSpinner, Spinner } from './spinner.js';
 import { CommandLogLineQuery, WebSocketClient } from '../websocketClient.js';
@@ -175,6 +176,67 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     } else {
       throw e;
     }
+  }
+}
+
+// Same as bulkQuery, on the Tooling API (/tooling/jobs/query). jsforce bulk2 only targets /jobs/query,
+// and sf data query has no Tooling bulk mode.
+export async function bulkQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
+  registerAnonymizationSalt(conn?.instanceUrl);
+  const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
+  const query = startQueryLog('bulk');
+  uxLog("log", this, c.grey('[BulkApiV2 Tooling] ' + c.italic(queryLabel)), { query });
+  const pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
+  const pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
+  const jobsPath = `/services/data/v${conn.getApiVersion()}/tooling/jobs/query`;
+  spinnerQ = createSpinner({ text: `[BulkApiV2 Tooling] Bulk Query: ${queryLabel}` }).start();
+  try {
+    let jobInfo: any = await conn.request({
+      method: 'POST',
+      url: jobsPath,
+      body: JSON.stringify({ operation: 'query', query: soqlQuery }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const jobId = jobInfo.id;
+    const startTime = Date.now();
+    while (jobInfo.state !== 'JobComplete') {
+      if (['Failed', 'Aborted'].includes(jobInfo.state)) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: jobInfo.state, message: jobInfo.errorMessage ?? '' }));
+      }
+      if (Date.now() - startTime > pollTimeout) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: jobInfo.state, message: 'Polling timed out' }));
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      jobInfo = await conn.request({ method: 'GET', url: `${jobsPath}/${jobId}` });
+    }
+    // Results are paged with the Sforce-Locator response header, which conn.request does not expose
+    const records: any[] = [];
+    let locator = '';
+    do {
+      const locatorParam = locator ? `?locator=${encodeURIComponent(locator)}` : '';
+      const response = await fetch(`${conn.instanceUrl}${jobsPath}/${jobId}/results${locatorParam}`, {
+        headers: { Authorization: `Bearer ${conn.accessToken}`, Accept: 'text/csv' },
+      });
+      if (!response.ok) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: response.status, message: await response.text() }));
+      }
+      const parsed = Papa.parse(await response.text(), { header: true, skipEmptyLines: true });
+      records.push(...parsed.data);
+      locator = response.headers.get('sforce-locator') ?? '';
+    } while (locator && locator !== 'null');
+    spinnerQ.succeed(`[BulkApiV2 Tooling] Bulk Query completed with ${records.length} results.`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2 Tooling] Bulk Query completed with ${records.length} results.`), {
+        query: { ...query, status: 'completed', recordCount: records.length },
+      });
+    }
+    return { records };
+  } catch (e: any) {
+    spinnerQ.fail(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`), { query: { ...query, status: 'error' } });
+    }
+    throw e;
   }
 }
 

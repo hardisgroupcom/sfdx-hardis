@@ -17,9 +17,9 @@ export default class HardisDocMetadataDeps extends SfCommand<any> {
 Select a common metadata type and API name interactively, or pass \`--type\` and \`--name\`. The command resolves the component to a Salesforce Id, queries Tooling API \`MetadataComponentDependency\`, and reports the inbound (used-by) dependencies.
 
 - **Metadata-aware lookup:** Uses \`Name\` or \`DeveloperName\` according to the metadata type. Custom fields accept \`Object.Field__c\` and are resolved without filtering on the unsupported \`FullName\` field.
-- **Direct Id:** Pass \`--id\` to skip lookup, especially for Tooling types that cannot be resolved by name.
+- **Direct Id:** Pass \`--id\` to skip lookup, especially for Tooling types that cannot be resolved by name. Without \`--type\`, dependencies are not filtered on the selected component type.
 - **Dependent type filter:** Pass \`--component-type Flow\` (for example) to keep only one type of dependent component.
-- **Large graphs:** Pass \`--bulk\` for Tooling Bulk queries, including Report dependencies and graphs that can exceed 2,000 rows.
+- **Large graphs:** Pass \`--bulk\` to run a Tooling API Bulk API 2.0 query job, including Report dependencies and graphs that can exceed 2,000 rows. Developer Edition orgs reject Bulk queries on this object.
 - **Reports:** Writes a Used by CSV and an Excel workbook with Summary and Used by sheets under \`hardis-report/metadata-deps/<api-name>-<type>/\`.
 
 \`MetadataComponentDependency\` is a beta Salesforce object. Its coverage depends on the org and Salesforce release. Profiles, Permission Sets, List Views, approval processes, sharing rules and some relationship metadata may be absent from the graph.
@@ -38,7 +38,10 @@ In agent mode, pass either \`--id\`, or both \`--type\` and \`--name\`. If looku
 <summary>Technical explanations</summary>
 
 - The selected component is the \`RefMetadataComponent*\` side of \`MetadataComponentDependency\`; each \`MetadataComponent*\` row is a component that uses it.
-- Flow, Aura, LWC, FlexiPage, CustomObject and CustomPermission lookup uses \`DeveloperName\`. Apex and Visualforce lookup uses \`Name\`.
+- Aura, LWC, FlexiPage, CustomObject and CustomPermission lookup uses \`DeveloperName\`. Apex and Visualforce lookup uses \`Name\`.
+- Flow lookup queries \`FlowDefinition\` by \`DeveloperName\` and uses the active Flow version, or the latest one when no version is active.
+- CustomObject lookup strips the suffix (\`__c\`, \`__mdt\`, \`__e\`...) and filters on \`NamespacePrefix\` for namespaced objects.
+- \`--bulk\` creates a query job on \`/services/data/vXX.X/tooling/jobs/query\`, polls it, and reads the CSV results page by page.
 - Custom field lookup splits \`Object.Field__c\`, resolves the object through \`EntityDefinition\`, and filters \`CustomField\` by \`DeveloperName\` plus \`TableEnumOrId\` / \`EntityDefinitionId\`.
 - Salesforce does not allow \`RefMetadataComponentType = 'StandardEntity'\`; for this type the command filters by Id only.
 </details>
@@ -69,7 +72,7 @@ In agent mode, pass either \`--id\`, or both \`--type\` and \`--name\`. If looku
     }),
     bulk: Flags.boolean({
       default: false,
-      description: 'Use sf data query with Tooling Bulk API for large dependency graphs and Reports',
+      description: 'Use a Tooling API Bulk API 2.0 query job for large dependency graphs and Reports',
     }),
     agent: Flags.boolean({
       default: false,

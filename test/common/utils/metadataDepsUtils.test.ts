@@ -8,6 +8,7 @@ import {
   isSalesforceId,
   mapUsedByRows,
   parseCustomFieldName,
+  parseCustomObjectName,
   sanitizeFsName,
   soqlString,
   stripCustomSuffix,
@@ -21,7 +22,6 @@ describe('metadataDepsUtils', () => {
     });
 
     for (const type of [
-      'Flow',
       'AuraDefinitionBundle',
       'LightningComponentBundle',
       'FlexiPage',
@@ -34,9 +34,27 @@ describe('metadataDepsUtils', () => {
       });
     }
 
-    it('strips the __c suffix for CustomObject', () => {
+    it('resolves Flow through FlowDefinition, not the Flow version DeveloperName', () => {
+      const query = buildLookupSoql('Flow', 'MyFlow');
+      expect(query).to.contain("FROM FlowDefinition WHERE DeveloperName = 'MyFlow'");
+      expect(query).to.contain('ActiveVersionId');
+      expect(query).to.contain('LatestVersionId');
+    });
+
+    it('strips the custom suffix for CustomObject', () => {
       expect(stripCustomSuffix('MyObject__c')).to.equal('MyObject');
+      expect(stripCustomSuffix('MyType__mdt')).to.equal('MyType');
+      expect(stripCustomSuffix('MyEvent__e')).to.equal('MyEvent');
       expect(buildLookupSoql('CustomObject', 'MyObject__c')).to.contain("DeveloperName = 'MyObject'");
+      expect(buildLookupSoql('CustomObject', 'MyType__mdt')).to.contain("DeveloperName = 'MyType'");
+    });
+
+    it('filters CustomObject on NamespacePrefix when the name is namespaced', () => {
+      expect(parseCustomObjectName('ns__Obj__c')).to.deep.equal({ namespace: 'ns', developerName: 'Obj' });
+      expect(parseCustomObjectName('Obj__c')).to.deep.equal({ developerName: 'Obj' });
+      const query = buildLookupSoql('CustomObject', 'ns__Obj__c');
+      expect(query).to.contain("DeveloperName = 'Obj'");
+      expect(query).to.contain("NamespacePrefix = 'ns'");
     });
 
     it('escapes SOQL backslashes and quotes', () => {
@@ -72,6 +90,11 @@ describe('metadataDepsUtils', () => {
       expect(query).to.contain("RefMetadataComponentId = '01pxx0000000001AAA'");
       expect(query).to.contain("RefMetadataComponentType = 'ApexClass'");
       expect(query).to.contain("MetadataComponentType = 'Flow'");
+    });
+
+    it('does not filter RefMetadataComponentType when the type is unknown (--id only)', () => {
+      expect(buildUsedBySoql('01pxx0000000001AAA', 'Unknown')).not.to.contain('RefMetadataComponentType =');
+      expect(buildUsedBySoql('01pxx0000000001AAA')).not.to.contain('RefMetadataComponentType =');
     });
 
     it('does not filter RefMetadataComponentType for StandardEntity', () => {
