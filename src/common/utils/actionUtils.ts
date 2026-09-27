@@ -10,6 +10,7 @@ import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { clearListMajorOrgsCache } from './orgConfigUtils.js';
 import { t } from './i18n.js';
+import { dumpRepositoryYaml } from './yamlUtils.js';
 
 export type ActionScope = 'project' | 'branch' | 'pr';
 export type { ActionWhen };
@@ -79,7 +80,7 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
   }
   doc[configKey] = actions;
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   // A created or updated branch config file changes the major orgs list: drop its cache.
   if (scope === 'branch') {
     clearListMajorOrgsCache();
@@ -600,7 +601,7 @@ export async function writeTestClasses(scope: ActionScope, classes: string[], br
   }
   doc['deploymentApexTestClasses'] = classes;
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   // A created or updated branch config file changes the major orgs list: drop its cache.
   if (scope === 'branch') {
     clearListMajorOrgsCache();

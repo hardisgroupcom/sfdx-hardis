@@ -7,7 +7,7 @@ import { open } from '../../../../common/utils/openUtils.js';
 import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { CONSTANTS, getEnvVar } from '../../../../config/index.js';
+import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
 import {
   buildAlertRuleGroups,
   createGrafanaClient,
@@ -47,10 +47,10 @@ Key functionalities:
 - **Guided start:** in interactive mode, the command first asks whether a Grafana instance is already available. If not, it opens the [Grafana free-tier setup guide](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/#grafana-setup) (Grafana Cloud free tier: free forever, no credit card required) instead of asking for a URL.
 - **Folder creation:** creates the \`Org Monitoring by sfdx-hardis\` folder (uid \`sfdx-hardis-v2\`) if missing.
 - **Dashboard import:** downloads the dashboard definitions from the sfdx-hardis GitHub repository (\`--ref\` selects the branch or tag, default \`main\`) and imports them with \`overwrite: true\`. Re-running the command upgrades the dashboards in place: uids are stable, bookmarks and links keep working. The dashboards resolve their Prometheus and Loki datasources by themselves (hidden variables), so no datasource configuration is needed for this part.
-- **Optional alert pack:** with \`--with-alerts\`, imports the 6 alert rules (org limit above 90%, storage exhaustion forecast, error spike, backup failure, silent org, health score degradation). All rules are imported **paused**, so they trigger no evaluation and no cost until you enable them from **Alerting -> Alert rules** and configure your contact points. Alert rules need explicit datasource uids: the command auto-detects the Prometheus/Mimir and Loki datasources receiving sfdx-hardis data (Grafana Cloud internal datasources are filtered out), and \`--prom-uid\` / \`--loki-uid\` pin the choice when several candidates exist.
+- **Optional alert pack:** with \`--with-alerts\`, imports the 6 alert rules (org limit above 90%, storage exhaustion forecast, error spike, missing backup, silent org, health score degradation). All rules are imported **paused**, so they trigger no evaluation and no cost until you enable them from **Alerting -> Alert rules** and configure your contact points. Alert rules need explicit datasource uids: the command auto-detects the Prometheus/Mimir and Loki datasources receiving sfdx-hardis data (Grafana Cloud internal datasources are filtered out), and \`--prom-uid\` / \`--loki-uid\` pin the choice when several candidates exist.
 - **Verification:** each imported dashboard is read back through the API, and the command prints the direct URL to the Fleet Overview.
 
-Authentication uses a Grafana service account token provided via \`--grafana-token\` or the \`GRAFANA_API_TOKEN\` environment variable (prefer the environment variable: flag values can end up in shell history and local log files). The instance URL comes from \`--grafana-url\` or \`GRAFANA_API_URL\`. An Editor role is enough for the dashboards; \`--with-alerts\` additionally needs datasource read and alert provisioning permissions.
+Authentication uses a Grafana service account token provided via \`--grafana-token\` or the \`GRAFANA_API_TOKEN\` environment variable (prefer the environment variable: flag values can end up in shell history and local log files). The instance URL comes from \`--grafana-url\`, \`GRAFANA_API_URL\` or the \`grafanaUrl\` property of \`.sfdx-hardis.yml\`, in that order, and the alert pack datasources can be pinned with the \`grafanaPrometheusDatasourceUid\` and \`grafanaLokiDatasourceUid\` properties, used only when the instance is that \`grafanaUrl\`. The token never goes in the configuration file. An Editor role is enough for the dashboards; \`--with-alerts\` additionally needs datasource read and alert provisioning permissions.
 
 This command requires no Salesforce org: it only talks to Grafana and GitHub. Configure the [API integration](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/) first so the dashboards have data to display.
 
@@ -89,7 +89,7 @@ In agent mode:
 
   public static flags: any = {
     'grafana-url': Flags.string({
-      description: 'Grafana instance URL (defaults to GRAFANA_API_URL environment variable)',
+      description: 'Grafana instance URL (defaults to GRAFANA_API_URL environment variable, then to grafanaUrl in .sfdx-hardis.yml)',
     }),
     'grafana-token': Flags.string({
       description: 'Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)',
@@ -154,12 +154,16 @@ In agent mode:
       }
     }
 
+    // Non-secret Grafana settings can live in .sfdx-hardis.yml; the token never does
+    const config = await getConfig('user');
     const rawUrl = await this.resolveInput(
       flags['grafana-url'],
       'GRAFANA_API_URL',
       t('promptGrafanaUrl'),
       t('promptGrafanaUrlDescription'),
-      t('errorGrafanaUrlMissing')
+      t('errorGrafanaUrlMissing'),
+      false,
+      config.grafanaUrl
     );
     let grafanaUrl: string;
     try {
@@ -229,8 +233,29 @@ In agent mode:
       } catch (e: any) {
         throw this.grafanaApiError('GET /api/datasources', e);
       }
-      promUid = await this.resolveDatasourceUid(datasources, 'prometheus', flags['prom-uid']);
-      lokiUid = await this.resolveDatasourceUid(datasources, 'loki', flags['loki-uid']);
+      // The datasource uids of .sfdx-hardis.yml belong to its grafanaUrl: never apply them to
+      // another instance given by --grafana-url or GRAFANA_API_URL
+      let configUidsApply = false;
+      try {
+        // Compare parsed URLs: the host is case-insensitive, and URL() lowercases it
+        const instanceKey = (url: string) => {
+          const parsed = new URL(normalizeGrafanaUrl(url));
+          return parsed.origin + parsed.pathname.replace(/\/+$/, '');
+        };
+        configUidsApply = typeof config.grafanaUrl === 'string' && instanceKey(config.grafanaUrl) === instanceKey(grafanaUrl);
+      } catch {
+        configUidsApply = false;
+      }
+      promUid = await this.resolveDatasourceUid(
+        datasources,
+        'prometheus',
+        flags['prom-uid'] || (configUidsApply ? config.grafanaPrometheusDatasourceUid : undefined)
+      );
+      lokiUid = await this.resolveDatasourceUid(
+        datasources,
+        'loki',
+        flags['loki-uid'] || (configUidsApply ? config.grafanaLokiDatasourceUid : undefined)
+      );
       let groups;
       try {
         const alertsYaml = await fetchGitHubRawFile(ref, GRAFANA_V2_ALERTS_PATH);
@@ -282,7 +307,8 @@ In agent mode:
     promptMessage: string,
     promptDescription: string,
     errorMessage: string,
-    sensitive = false
+    sensitive = false,
+    configValue?: string
   ): Promise<string> {
     if (flagValue) {
       return flagValue;
@@ -290,6 +316,9 @@ In agent mode:
     const envValue = getEnvVar(envVarName);
     if (envValue) {
       return envValue;
+    }
+    if (typeof configValue === 'string' && configValue.trim() !== '') {
+      return configValue.trim();
     }
     if (!isCI && !this.agentMode) {
       const response = await prompts({

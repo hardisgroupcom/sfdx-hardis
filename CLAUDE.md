@@ -32,6 +32,7 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 
 - `monitoring-notifications` skill: load it whenever a monitoring command, notification type, routing threshold, metric key, or logElements shape is created, updated, or deleted.
 - `grafana-dashboards` skill: rules and workflow for the "Org Monitoring by sfdx-hardis" v2 dashboards (`docs/grafana/dashboards-v2`). Load it for any dashboard or alert-rule work, and for every indicator evolution: **any change to a monitoring indicator must also handle its impact on the Grafana dashboards.**
+- `monitoring-agents-md` skill: the `AGENTS.md` that the monitoring backup writes for coding agents. Load it for any change to what it describes: the backup output, the monitoring pipelines and commands, what is sent to Grafana, monitoring config keys, the CI/CD pipeline behavior, git provider APIs or token variables. **A change that makes it wrong must update it in the same PR.**
 - Generic Grafana skills (`dashboarding`, `promql`, `loki`, `alerting-irm`) are vendored in `.claude/skills/` from [grafana/skills](https://github.com/grafana/skills) via `npx skills` (tracked in `skills-lock.json`, refresh with `npx skills update`). They are agent-agnostic: any coding agent reading `.claude/skills/` can use them.
 
 ## Promotion Branches Skills

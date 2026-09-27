@@ -10,17 +10,20 @@
 import { spawnSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { LOGS, MONRUN, PANEL, EMAIL, HERE } from "./env.mjs";
+import { LOGS, MONRUN, PANEL, EMAIL, HERE, FORK } from "./env.mjs";
 
 const answers = [
   { q: "configure the sfdx-hardis monitoring pre-requisites", choice: "Yes" },
   { q: "select or connect to the org that you want to monitor", choice: "\\(helios-prod\\)" },
+  // Lab 3.8 step 2, since training PR #47: the fork, recorded so that a coding agent
+  // opened in the monitoring repository can reach the pipeline too
+  { q: "address of the CI/CD repository", value: `https://github.com/${FORK}`, optional: true },
   { q: "does not exist on the remote server.*push", choice: "Yes|yes", optional: true },
   { q: "SSL certificate", choice: "self-signed", optional: true },
   { q: "configure the SF CLI External Client App|Connected App on your org", choice: "Yes", optional: true },
   { q: "storage mode", choice: "decryption key as secret", optional: true },
   { q: "confirm when variables have been set", choice: ".", optional: true },
-  { q: "name the External Client App|name of the", value: "Helios Monitoring", optional: true },
+  { q: "name the External Client App|name of the", value: "__INITIAL__", optional: true },
   { q: "email", value: EMAIL, optional: true },
   { q: "profile", choice: "^(System Administrator|Administrateur syst)", optional: true },
   { q: "save the configuration on the remote server|auto-commit", choice: "Yes|yes", optional: true }

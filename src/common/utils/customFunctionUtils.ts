@@ -5,6 +5,7 @@ import fs from './fsUtils.js';
 import { getConfig } from '../../config/index.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
+import { dumpRepositoryYaml } from './yamlUtils.js';
 
 /**
  * Custom functions let a project package a script (node, python or bash) behind a typed
@@ -149,7 +150,7 @@ export async function writeCustomFunctionsToProjectFile(functions: CustomFunctio
     doc[CUSTOM_FUNCTIONS_CONFIG_KEY] = functions;
   }
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   return configFile;
 }
 

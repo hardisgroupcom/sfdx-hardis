@@ -86,6 +86,10 @@ for (const file of files) {
     touched.docs.add(doc[1]);
   }
 }
+// Helios ships a copy of the default no-overwrite list, minus the RemoteSiteSetting block Lab 3.5 adds
+if (files.includes("defaults/ci/manifest/package-no-overwrite.xml")) {
+  touched.config.add("packageNoOverwritePath");
+}
 for (const match of diff.matchAll(/\bhardis:[a-z0-9:]+/g)) {
   touched.commands.add(match[0]);
 }

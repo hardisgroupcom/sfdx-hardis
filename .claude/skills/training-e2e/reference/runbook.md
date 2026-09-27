@@ -126,7 +126,7 @@ Four things the 2026-09-21 run paid for, driving Salesforce Setup over CDP:
 `scripts/env.sh` and `scripts/env.mjs` derive all of this from the skill's own location and let every
 value be overridden. Nothing is tied to one machine.
 
-Two traps that cost the 2026-09-21 run time:
+Traps that cost earlier runs time:
 
 - **Build the extension `yarn compile && yarn dev`, in that order.** Both are needed: `yarn compile`
   (tsc) builds the test harness under `out/test/`, `yarn dev` (webpack) builds `out/extension.js` and
@@ -153,6 +153,66 @@ Two traps that cost the 2026-09-21 run time:
 - **Docker Desktop is usually not running on the workstation.** `docker run ... sf plugins` to read
   the version inside an image fails on the daemon socket. Read the version from the job instead,
   or from the registry timestamps.
+- **A brand new fork runs no workflow until someone clicks the Actions banner** ("I understand my
+  workflows, go ahead and enable them"). The API lists zero workflows until then. Since 2026-09-25
+  `init` notices it, opens the Actions page and waits up to 10 minutes: click the green button in
+  the browser, which is also what Lab 1.2 now tells the learner. Before that fix `init` printed
+  Actions OK and the first Pull Request got no checks. A run with no browser passes
+  `--no-actions-wait` and clicks the banner some other way before step 7 pushes.
+- **The CDP attach can hang** after hours of use, even once your own tab is closed. Do not restart
+  the user's Chrome and never call `browser.close()`. For the badge claim, open the issue with
+  `gh issue create` using the form's exact body and the `badge-claim` label, and record the step as
+  fidelity 3.
+- **Never chain a branch delete after a merge command.** When the merge is refused (a check still
+  running, a review missing), deleting the head branch closes the Pull Request. Delete only after
+  `gh pr view <n> --json state` says `MERGED`; `delete_branch_on_merge` is on in the fork anyway.
+- **`backpromote --reset` is not the panel's Back button.** The button only checks out the branch
+  you were on. `--reset` leaves the clone on a detached HEAD at `origin/<parent>`.
+- **Leave MegaLinter's GitHub Actions auditor (zizmor) without a token.** Without one it prints a
+  single warning. Giving it `GITHUB_TOKEN` (2026-09-25) turned that into about 70 findings on the
+  project template's workflows, mostly unpinned actions and images. It warns and never blocks;
+  Lab 1.6 explains the ⚠️ line it leaves on a green comment.
+
+- **A teardown of an org that was used needs two things Salesforce does not do on its own**
+  (2026-09-26). Old flow versions refuse the destructive deploy even deactivated (`insufficient
+  access rights on cross-reference id`; `helios-preprod` had 31 after one walk), and deleted
+  objects sit under Setup > Deleted Objects for 15 days, where `Installation__c.Account__c` keeps
+  the `Installations` relationship name: the next `init` then fails on all three scratch orgs with
+  *There is already a Child Relationship named Installations on Account*. The course's teardown
+  deletes the versions and uses `--purge-on-delete` since training PR #48. On an org torn down
+  before that, erase by hand: `/p/setup/custent/DeletedEntitiesList?setupid=CustomObjects`, and
+  opening an **Erase** link hard-deletes at once (its token is the confirmation). Handover Item
+  and Panel Batch answered "internal server error" to Erase and did not block the seed; Installation
+  is the one that matters.
+- **After Lab 3.1, a teardown also takes the CI login away** (2026-09-26). The teardown deletes
+  the External Client App the JWT login uses, and **Reset this level** keeps the JWT pipeline
+  configuration, so every check on `integration` then fails at *client identifier invalid*.
+  Re-running `init` does not bring it back (it skips the credentials once the pipeline is on JWT):
+  redo Add/Configure Org for that branch with this skill's `scripts/auth.mjs` (not the course's), and merge the new key it writes
+  through a Pull Request.
+- **`Reset this level` leaves the clone on `integration`.** A run that tests a script from a local
+  branch has to check that branch out again after every reset, or it tests the published script
+  without saying so (2026-09-26, one wasted Pull Request).
+- **Testing a merge the learner makes while a command waits is a race.** Poll every two seconds and
+  merge the moment both required checks pass: the command polls every twenty (`waitForPullRequestChecks`), so this usually
+  lands first or in the same second, which is the case worth seeing.
+- **Git Bash rewrites arguments that look like paths.** A leading `/` becomes a Windows path:
+  `sf org open --path /lightning/...` turns into `C:/Program Files/Git/lightning/...` and Salesforce
+  answers *Invalid Page Redirection*. An argument with a `:` is read as a path list:
+  `git show origin/integration:.github/workflows/x.yml` reached git as
+  `origin\integration;.github\workflows\x.yml`. Prefix those commands with `MSYS_NO_PATHCONV=1`, and
+  then give `git -C` a `C:/...` path, which the prefix no longer converts from `/c/...`.
+- **Anonymous Apex compiles against the fields the running user can see.** A script that grants a
+  new field and then writes it fails to compile at the first mention of the field. Two runs.
+- **Writing a flow as XML skips what Flow Builder would refuse.** Flow Builder only offers the fields
+  the person editing the flow can read. Lab 2.2 told learners to hide their new field from every
+  profile, and a learner was stuck at the first Flow Builder step while two walks passed, both with
+  the flow deployed as XML (2026-09-26). When a lab has a flow reference a field, check the admin
+  can read it: `sf sobject describe` as that user lists only readable fields.
+- **A Setup step done through the API is invisible to source tracking.** Granting a field through
+  `FieldPermissions` DML does not put the permission set into Recent Changes the way the Setup
+  screen does, so the Metadata Retriever list of that lab no longer matches the picture. Say so in
+  the report when a lab is done that way.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
@@ -284,7 +344,7 @@ opening them by hand: what the simulator produces is what the lab describes.
 - `hardis:work:resetselection` resets the **commits**: a soft reset, a restore of `manifest/`, and
   `canForcePush`. There is no stored list of ticked items, and no screen that shows one.
 
-## 7. Level 3, ten labs
+## 7. Level 3, eleven labs
 
 The release manager. This is the level where the course touches the orgs and the repository hardest.
 
@@ -315,6 +375,24 @@ The role split is the point of this level, and it is easy to break by being help
   configuration** (`node scripts/training.mjs publish`), which opens a Pull Request. **Nobody pushes
   to a major branch.**
 - Pull Request titles say "Release" only into `main`, and "Promotion" otherwise.
+
+**`work:new` sets the default org to the one of the story's branch.** After Lab 3.7's or 3.10's
+retrofit the default is `helios-dev` again, which is why Labs 3.6 and 3.11 say to set `helios-prod`
+before the DORA report. Skip that line and the report reads a scratch org with no history
+(2026-09-25).
+
+**The course and the CLI release in two steps, and the site publishes what `main` of the course
+says.** On 2026-09-26 Lab 3.8 on the course's `main` described the deployment repository question
+and the `AGENTS.md` of the backup (CLI #2241), which were in the beta and not in the released 8.10.0.
+The walk ran the local linked CLI, so the question was asked, and the monitoring job ran the released
+image, so no `AGENTS.md` was written. Compare a lab's claims with `git merge-base --is-ancestor <commit>
+v<latest>` before reporting it as broken, and release the CLI before the course Pull Request that
+describes it publishes.
+
+**The Developer Edition orgs speak French.** Their Setup pages read *Écraser*, *Restaurer*, *Tous les
+e-mails*, and a deployment error reads *Une relation enfant portant le nom ... existe déjà*. A CDP
+script that matches English labels reports nothing to do there; match on link targets or element
+names instead.
 
 Lab 3.8 runs in a **second repository**, the monitoring one, with its own secrets
 (`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Two things about its first run:
@@ -371,7 +449,9 @@ in the course), never yet against real orgs in this shape. What a walk has to re
   Lab 3.11 now also asserts US-058 and US-060 reached `main`.
 - **Known on the released CLI**: until a release ships `promotionConflictMarkersIgnoredFiles`
   (PR #2236, in `sfdx-hardis@beta` since 8.10.1-beta202609241317.0), the check job of a promotion
-  Pull Request also names the two Lab 2.7 files; the lab's "If it goes wrong" says so. To prove the
+  Pull Request also names the two Lab 2.7 files; the lab's "If it goes wrong" says so. **On
+  2026-09-25 that was still true of the released 8.10.0, and it blocks the learner**: branch
+  protection forbids merging red, so Lab 3.10 cannot be finished until 8.10.1 ships. To prove the
   lab green in CI, point the fork's two deployment workflows at `sfdx-hardis-ubuntu:beta` (or use
   the unreleased-build override of section 8). **Check what the `beta` image really holds**: on
   2026-09-24 it was built two minutes before the registry served the beta it was meant to install,
@@ -457,7 +537,20 @@ course's origin, then reset the fork as usual and force-push that local branch t
 the fork only). Every major branch the learner's world derives then carries the step from the
 start, so no Pull Request has to smuggle it in later.
 
-What to expect and to record:
+**Pushing an override onto a brand new fork fools `init`** (2026-09-26). A push that touches a
+workflow file makes GitHub list every workflow as `active` before anyone clicked the Actions
+banner, so `init` prints "Actions are on" and no job ever runs. Either click the banner on the
+fork's Actions page before the override push, or right after it and before `init`. `gh run list`
+on the fork staying empty after the first Pull Request is the symptom.
+
+**The image tag alone is a different override, for a different question.** Putting
+`ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta` in the `container:` line of `check-deploy.yml` and
+`process-deploy.yml` (one `E2E ONLY` commit on `main` and on each `training/start-level-*` of the
+fork) runs whatever `beta` last published. It answers "does the course work on the next release",
+costs nothing per job, and proves nothing about a fix branch that is not in that beta yet. Record the
+beta version and the image push time, not a branch. The list below is for the source-build override.
+
+What to expect and to record, with the source-build override:
 
 - each overridden job pays the clone + `yarn install` + `tsc -b`, two to four minutes;
 - the run report must say the jobs ran an unreleased build, name the branch and the commit, and

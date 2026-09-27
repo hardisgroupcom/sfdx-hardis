@@ -93,6 +93,19 @@ echo
 echo "course site"
 say "live site" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://hardisgroupcom.github.io/sfdx-hardis-training/ | grep -q 200 && echo OK || echo WARN)" "https://hardisgroupcom.github.io/sfdx-hardis-training/"
 say "course branch" OK "$(git -C "$COURSE" branch --show-current 2>/dev/null) @ $(git -C "$COURSE" log --oneline -1 2>/dev/null)"
+# A site that answers 200 can still be days behind main: pages.yml refuses to
+# publish when a --check of the derived files fails, and nothing else says so.
+# On 2026-09-25 two merges in a row never went live.
+PAGES=$(gh run list -R "$UPSTREAM" --workflow pages.yml --branch main -L 1 --json status,conclusion,headSha -q '.[0] | "\(.status) \(.conclusion) \(.headSha[0:7])"' 2>/dev/null || true)
+MAIN=$(gh api "repos/$UPSTREAM/commits/main" -q '.sha[0:7]' 2>/dev/null || true)
+case "$PAGES" in
+"") say "site published" WARN "unknown: GitHub did not answer (see the github section above)" ;;
+"completed success $MAIN") say "site published" OK "main @ $MAIN" ;;
+"completed success "*) say "site published" WARN "last publish at ${PAGES##* }, main is $MAIN: the publish of main has not started yet" ;;
+"completed failure "*) say "site published" MISSING "the last publish of main failed (${PAGES##* }): learners read an older course. gh run list -R $UPSTREAM --workflow pages.yml" ;;
+completed*) say "site published" WARN "the last publish of main ended ${PAGES#completed }: check it. gh run list -R $UPSTREAM --workflow pages.yml" ;;
+*) say "site published" WARN "a publish of main is running (${PAGES##* }): run preflight again in a few minutes" ;;
+esac
 echo
 echo "The published site is what a learner reads. When the course working copy is"
 echo "ahead of it, say so in the report: a fix that is not on main yet is not live."

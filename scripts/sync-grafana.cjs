@@ -101,7 +101,11 @@ async function syncGrafanaDashboards() {
   const dotenv = dotenvModule.default || dotenvModule;
   dotenv.config();
 
-  const baseUrl = process.env.GRAFANA_BASE_URL || "https://cloudity.grafana.net";
+  // No default instance: the token is only sent to the Grafana named in the environment or .env
+  const baseUrl = process.env.GRAFANA_BASE_URL || process.env.GRAFANA_API_URL;
+  if (!baseUrl) {
+    throw new Error("Set GRAFANA_BASE_URL (or GRAFANA_API_URL) in the environment or in .env");
+  }
   const folderUid = process.env.GRAFANA_FOLDER_UID || "cdklj9xhp8074d";
   const dashboardsDir = path.resolve(__dirname, "../docs/grafana/dashboards");
 

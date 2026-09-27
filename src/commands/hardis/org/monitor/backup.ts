@@ -23,9 +23,22 @@ import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
 import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitoringAgentsMd.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+// The message of a failed CLI call starts with "Command failed: <full command line>" (which can
+// hold a username), then its output: the cause is at the end, so keep the end
+export function backupErrorMessage(error: any, maxLength = 2000): string {
+  let message = String(error?.message || error || 'Unknown error');
+  if (message.startsWith('Command failed:')) {
+    const firstLineEnd = message.indexOf('\n');
+    message = firstLineEnd > -1 ? message.slice(firstLineEnd + 1) : 'Command failed';
+  }
+  message = message.trim() || 'Command failed';
+  return message.length > maxLength ? '... ' + message.slice(message.length - maxLength) : message;
+}
 
 export default class MonitorBackup extends SfCommand<any> {
   public static title = 'Backup DX sources';
@@ -67,7 +80,13 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 ## In CI/CD
 
-This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When the backup fails, it sends a \`BACKUP\` notification with the \`error\` severity and the error message, then exits with that error.
+
+## Coding agents
+
+After each backup, the command writes an \`AGENTS.md\` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
+
+Only the block between the \`sfdx-hardis-monitoring-agents-start\` and \`sfdx-hardis-monitoring-agents-end\` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A \`CLAUDE.md\` file that imports \`AGENTS.md\` is also created when the repository has none.
 
 ## Troubleshooting
 
@@ -282,139 +301,155 @@ In agent mode:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
-    // Update apiVersion if necessary
-    await updateSfdxProjectApiVersion();
+    // A failed backup must be reported: without a notification, nothing tells it apart from a backup
+    // that did not run (Grafana panels and alerts, messaging channels)
+    let backupDone = false;
+    let retrieved = false;
+    try {
+      // Update apiVersion if necessary
+      await updateSfdxProjectApiVersion();
 
-    // Build target org full manifest
-    uxLog(
-      "action",
-      this,
-      c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
-    );
-    const packageXmlFullFile = 'manifest/package-all-org-items.xml';
-    await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
+      // Build target org full manifest
+      uxLog(
+        "action",
+        this,
+        c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
+      );
+      const packageXmlFullFile = 'manifest/package-all-org-items.xml';
+      await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
 
-    // List namespaces used in the org
-    this.namespaces = [];
-    this.installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    for (const installedPackage of this.installedPackages) {
-      if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
-        this.namespaces.push(installedPackage.SubscriberPackageNamespace);
-      }
-    }
-
-    // Create force-app/main/default if not exists
-    await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
-
-    // Check if we have package-skip_items.xml
-    if (this.full) {
-      await this.extractMetadatasFull(packageXmlFullFile, flags);
-    }
-    else {
-      await this.extractMetadatasFiltered(packageXmlFullFile, flags);
-    }
-
-    // Write installed packages
-    uxLog("action", this, c.cyan(t('writeInstalledPackages')));
-    const installedPackagesLog: any[] = [];
-    const packageFolder = path.join(process.cwd(), 'installedPackages');
-    await fs.ensureDir(packageFolder);
-    for (const installedPackage of this.installedPackages) {
-      const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
-      const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
-      delete installedPackage.Id; // Not needed for diffs
-      await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
-      const installedPackageLog = {
-        SubscriberPackageName: installedPackage.SubscriberPackageName,
-        SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
-        SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
-        SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
-        SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
-      };
-      installedPackagesLog.push(installedPackageLog);
-      // Clean repo: Remove previous versions of file names
-      const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
-      const fileNameNoSepBad2 = fileName;
-      for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
-        if (oldFileName === fileNameNoSep) {
-          continue;
-        }
-        const oldFilePath = path.join(packageFolder, oldFileName);
-        if (fs.existsSync(oldFilePath)) {
-          await fs.remove(oldFilePath);
+      // List namespaces used in the org
+      this.namespaces = [];
+      this.installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+      for (const installedPackage of this.installedPackages) {
+        if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
+          this.namespaces.push(installedPackage.SubscriberPackageNamespace);
         }
       }
 
-    }
+      // Create force-app/main/default if not exists
+      await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
 
-    this.diffFiles = await MetadataUtils.listChangedFiles();
+      // Check if we have package-skip_items.xml
+      if (this.full) {
+        await this.extractMetadatasFull(packageXmlFullFile, flags);
+      }
+      else {
+        await this.extractMetadatasFiltered(packageXmlFullFile, flags);
+      }
 
-    // Write output file
-    if (this.diffFiles.length > 0) {
-      const filesHumanUnformatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), false);
-      const severityIconLog = getSeverityIcon('log');
-      this.outputFile = await generateReportPath('backup-updated-files', this.outputFile);
-      this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
-        return {
-          File: diffFile.path.replace('force-app/main/default/', ''),
-          ChangeType: diffFile.index === '?' ? 'A' : diffFile.index,
-          FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
-          WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
-          PrevName: diffFile?.from || '',
-          severity: 'log',
-          severityIcon: severityIconLog,
+      // Write installed packages
+      uxLog("action", this, c.cyan(t('writeInstalledPackages')));
+      const installedPackagesLog: any[] = [];
+      const packageFolder = path.join(process.cwd(), 'installedPackages');
+      await fs.ensureDir(packageFolder);
+      for (const installedPackage of this.installedPackages) {
+        const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
+        const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
+        delete installedPackage.Id; // Not needed for diffs
+        await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
+        const installedPackageLog = {
+          SubscriberPackageName: installedPackage.SubscriberPackageName,
+          SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
+          SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
+          SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
+          SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
         };
-      });
-      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
-    }
+        installedPackagesLog.push(installedPackageLog);
+        // Clean repo: Remove previous versions of file names
+        const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
+        const fileNameNoSepBad2 = fileName;
+        for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
+          if (oldFileName === fileNameNoSep) {
+            continue;
+          }
+          const oldFilePath = path.join(packageFolder, oldFileName);
+          if (fs.existsSync(oldFilePath)) {
+            await fs.remove(oldFilePath);
+          }
+        }
 
-    // Build notifications
-    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
-    const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No updates detected in ${orgMarkdown}`;
-    let notifAttachments: MessageAttachment[] = [];
-    if (this.diffFiles.length > 0) {
-      const filesHumanFormatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), true);
-      notifSeverity = 'info';
-      notifText = `Updates detected in ${orgMarkdown}`;
-      notifAttachments = [
-        {
-          text: this.diffFiles
-            .map((diffFile) => {
-              let flag = '';
-              if (diffFile.index && diffFile.index !== ' ') {
-                flag = ` (${diffFile.index === '?' ? 'A' : diffFile.index})`;
-              }
-              const line = `- ${filesHumanFormatted.get(diffFile.path)}` + flag;
-              return line;
-            })
-            .join('\n'),
+      }
+
+      this.diffFiles = await MetadataUtils.listChangedFiles();
+      retrieved = true;
+
+      // Write output file
+      if (this.diffFiles.length > 0) {
+        const filesHumanUnformatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), false);
+        const severityIconLog = getSeverityIcon('log');
+        this.outputFile = await generateReportPath('backup-updated-files', this.outputFile);
+        this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
+          return {
+            File: diffFile.path.replace('force-app/main/default/', ''),
+            ChangeType: diffFile.index === '?' ? 'A' : diffFile.index,
+            FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
+            WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
+            PrevName: diffFile?.from || '',
+            severity: 'log',
+            severityIcon: severityIconLog,
+          };
+        });
+        this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
+      }
+
+      // Build notifications
+      const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
+      let notifSeverity: NotifSeverity = 'log';
+      let notifText = `No updates detected in ${orgMarkdown}`;
+      let notifAttachments: MessageAttachment[] = [];
+      if (this.diffFiles.length > 0) {
+        const filesHumanFormatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), true);
+        notifSeverity = 'info';
+        notifText = `Updates detected in ${orgMarkdown}`;
+        notifAttachments = [
+          {
+            text: this.diffFiles
+              .map((diffFile) => {
+                let flag = '';
+                if (diffFile.index && diffFile.index !== ' ') {
+                  flag = ` (${diffFile.index === '?' ? 'A' : diffFile.index})`;
+                }
+                const line = `- ${filesHumanFormatted.get(diffFile.path)}` + flag;
+                return line;
+              })
+              .join('\n'),
+          },
+        ];
+      } else {
+        uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
+      }
+
+      // Post notifications
+      backupDone = true;
+      await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
+      await NotifProvider.postNotifications({
+        type: 'BACKUP',
+        text: notifText,
+        buttons: notifButtons,
+        attachments: notifAttachments,
+        severity: notifSeverity,
+        sideImage: 'backup',
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.diffFilesSimplified,
+        data: {
+          metric: this.diffFilesSimplified.length,
+          installedPackages: installedPackagesLog,
         },
-      ];
-    } else {
-      uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
+        metrics: {
+          UpdatedMetadatas: this.diffFilesSimplified.length,
+        },
+      });
+    } catch (e: any) {
+      if (!backupDone) {
+        await this.postBackupFailureNotification(flags, e, retrieved);
+      }
+      throw e;
     }
 
-    // Post notifications
-    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
-    await NotifProvider.postNotifications({
-      type: 'BACKUP',
-      text: notifText,
-      buttons: notifButtons,
-      attachments: notifAttachments,
-      severity: notifSeverity,
-      sideImage: 'backup',
-      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      logElements: this.diffFilesSimplified,
-      data: {
-        metric: this.diffFilesSimplified.length,
-        installedPackages: installedPackagesLog,
-      },
-      metrics: {
-        UpdatedMetadatas: this.diffFilesSimplified.length,
-      },
-    });
+    // Written after the notification, so that an update of AGENTS.md is never reported as an org change
+    await this.writeAgentsMd();
 
     // Ask interactively only after backup is done and just before doc generation.
     if (!isCI && !agentMode && !skipDocFlagProvided) {
@@ -479,6 +514,48 @@ In agent mode:
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }
 
+  // Never throws: the error of the backup is the one the job must fail with
+  private async postBackupFailureNotification(flags: any, error: any, retrieved = false) {
+    try {
+      const conn = flags['target-org']?.getConnection();
+      await setConnectionVariables(conn);// Required for some notifications providers like Email
+      const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
+      const errorMessage = backupErrorMessage(error);
+      await NotifProvider.postNotifications({
+        type: 'BACKUP',
+        // After the retrieve, the metadata is backed up: only the report of the changes failed
+        text: retrieved
+          ? `Metadata backup of ${orgMarkdown} retrieved, but its report of the changes failed`
+          : `Metadata backup failed in ${orgMarkdown}`,
+        buttons: await getNotificationButtons(),
+        attachments: [{ text: errorMessage }],
+        severity: 'error',
+        sideImage: 'backup',
+        attachedFiles: [],
+        logElements: [],
+        data: { error: errorMessage },
+        metrics: {},
+      });
+    } catch (notifError: any) {
+      uxLog("warning", this, c.yellow(t('backupFailureNotificationError', { message: notifError?.message || String(notifError) })));
+    }
+  }
+
+
+  private async writeAgentsMd() {
+    try {
+      const config = await getConfig('user');
+      const agentsMdResult = await writeMonitoringAgentsMd(config);
+      if (agentsMdResult.updatedFiles.length > 0) {
+        uxLog("action", this, c.cyan(t('monitoringAgentsMdUpdated', { files: agentsMdResult.updatedFiles.join(', ') })));
+      }
+      if (agentsMdResult.markersBroken) {
+        uxLog("warning", this, c.yellow(t('monitoringAgentsMdMarkersBroken')));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('errorWhileWritingMonitoringAgentsMd', { message: e.message })));
+    }
+  }
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
     let packageXmlToExtract = packageXmlFullFile;

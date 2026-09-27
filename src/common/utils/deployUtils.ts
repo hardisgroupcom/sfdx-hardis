@@ -32,7 +32,7 @@ import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitU
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parsePackageXmlFile, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
@@ -1060,7 +1060,7 @@ async function buildDeploymentPackageXmls(
     uxLog("other", this, t('emptyPackageXmlNothingToDeploy'));
     return [];
   }
-  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
+  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFile });
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDir = await createTempDir();
@@ -1220,6 +1220,16 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     uxLog("action", this, c.cyan(t('handlingPackageNoOverwriteXmlMetadataThat')));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
+      // Listing the target org takes minutes on a large org: skip it when no type of the
+      // deployment package is protected, as nothing could be removed from the package anyway
+      if (options.packageXmlFile) {
+        const protectedTypes = Object.keys(await parsePackageXmlFile(packageNoOverwrite));
+        const packageTypes = Object.keys(await parsePackageXmlFile(options.packageXmlFile));
+        if (!packageTypes.some((type) => protectedTypes.includes(type))) {
+          uxLog("log", this, c.grey('[NoOverwrite] ' + t('noOverwriteNoProtectedTypeInPackage')));
+          return null;
+        }
+      }
       const tmpDir = await createTempDir();
       // Build target org package.xml
       uxLog("action", this, c.cyan('[NoOverwrite] ' + t('listingTargetOrgContentForNoOverwrite')));

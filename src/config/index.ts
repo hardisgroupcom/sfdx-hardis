@@ -221,6 +221,29 @@ async function loadFromRemoteConfigFile(url) {
   return remoteConfig;
 }
 
+// A file with a YAML syntax error parses into a partial document: writing it back would silently
+// drop what could not be read, so refuse to edit it and say which file to fix
+function readEditableYamlDocument(configFile: string) {
+  const previous = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf-8') : '';
+  const doc = parseYamlDocument(previous);
+  if (doc.errors.length > 0) {
+    throw new SfError(`${configFile} is not valid YAML, fix it before updating it: ${doc.errors[0].message}`);
+  }
+  return doc;
+}
+
+// Remove keys from a configuration file, keeping the rest of it and its comments as they are
+export async function removeFromConfigFile(configFile: string, keys: string[]) {
+  if (!fs.existsSync(configFile)) {
+    return;
+  }
+  const doc = readEditableYamlDocument(configFile);
+  for (const key of keys) {
+    doc.delete(key);
+  }
+  await fs.writeFile(configFile, doc.toString({ lineWidth: 0 }));
+}
+
 // Update configuration file
 export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = '') {
   let explorer;
@@ -233,8 +256,7 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
   // configuration is written by hand and its comments explain why each value is
   // what it is. Loading it and dumping it back would drop every one of them, and
   // rewrap the lines, the first time any command stored a value.
-  const previous = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf-8') : '';
-  const doc = parseYamlDocument(previous);
+  const doc = readEditableYamlDocument(configFile);
   for (const [key, value] of Object.entries(propValues)) {
     doc.set(key, value);
   }

@@ -46,6 +46,15 @@ export interface BackpromoteTargetOrgInfo {
 }
 
 /**
+ * The name of the target org in what a person reads. `sandboxName` stays the key of the
+ * backpromote branch and of the Backpromotes comment rows, and a scratch org has no sandbox name,
+ * so it holds the org id there: the alias is what its owner calls it.
+ */
+export function backpromoteOrgDisplayName(targetOrg: Pick<BackpromoteTargetOrgInfo, 'orgType' | 'alias' | 'sandboxName'>): string {
+  return targetOrg.orgType === 'scratch' && targetOrg.alias ? targetOrg.alias : targetOrg.sandboxName;
+}
+
+/**
  * Only development environments receive a backpromote: a developer sandbox, a scratch org, or a
  * Developer Edition org used as somebody's dev environment. A production org, or the org of a major
  * branch, is refused: the CI/CD pipeline deploys those.
@@ -72,7 +81,7 @@ export async function getBackpromoteTargetOrgInfo(options: {
   const orgId = String(organization.Id || options.conn.getAuthInfoFields()?.orgId || '');
   const refusal = findBackpromoteTargetOrgRefusal({ isSandbox: isSandboxOrg, isDeveloperEdition, username: options.username, instanceUrl, majorOrgs: await listMajorOrgs() });
   const sandboxName = deriveSandboxName({ instanceUrl, username: options.username, orgId, override: options.sandboxNameOverride });
-  let message = t('backpromoteCheckTargetOrgOk', { sandboxName });
+  let message = t('backpromoteCheckTargetOrgOk', { sandboxName: backpromoteOrgDisplayName({ orgType, alias: options.alias, sandboxName }) });
   if (refusal?.reason === 'production') {
     message = t('backpromoteTargetOrgIsProduction', { username: options.username });
   } else if (refusal?.reason === 'majorOrg') {

@@ -16,7 +16,7 @@ import { generateMonitoringAiSummary } from '../../../../common/utils/monitoring
 import { generateMonitoringPptxReport } from '../../../../common/utils/monitoringPptxReport.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
-import { resolveMonitoringCommands, shouldRunCommandNow } from '../../../../common/notifProvider/notificationConfig.js';
+import { getMonitoringDisable, resolveMonitoringCommands, shouldRunCommandNow } from '../../../../common/notifProvider/notificationConfig.js';
 import { getTitleI18nKey, monitoringCommandsDefault } from '../../../../common/monitoring/monitoringDefaults.js';
 import { computeHealthScore } from '../../../../common/monitoring/healthScore.js';
 import type { MonitoringCommandEntry } from '../../../../common/notifProvider/types.js';
@@ -211,8 +211,7 @@ ${this.getDefaultCommandsMarkdown()}
 
     const config = await getConfig('user');
     const commands = resolveMonitoringCommands(MonitorAll.monitoringCommandsDefault, config.monitoringCommands);
-    const monitoringDisable =
-      config.monitoringDisable ?? (process.env?.MONITORING_DISABLE ? process.env.MONITORING_DISABLE.split(',') : []);
+    const monitoringDisable = getMonitoringDisable(config);
     const codingAgentGenerateReports =
       getEnvVar('SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS') === 'true' ? true :
         getEnvVar('SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS') === 'false' ? false :
