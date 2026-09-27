@@ -107,6 +107,7 @@ procedure.
 | An LWC panel is redesigned                     | **Screenshots are wrong**, the text may still be right                             | [[training-update]] re-runs the Helios capture |
 | A new feature, nothing existing changed        | **None**, unless it replaces a path a lab takes                                    | Say "none" and move on                         |
 | Behaviour a seeded failure depends on          | **Breaking, and silent.** The lab still reads fine and the failure no longer fires | A training Pull Request, and re-walk the lab   |
+| `defaults/ci/manifest/package-no-overwrite.xml` | **Text and screenshots.** Helios ships a copy of it without `RemoteSiteSetting`, which Lab 3.5 adds | Copy the change into Helios, check Labs 3.3 to 3.5 |
 
 The screenshot rows are never just a re-capture. Every click a lab describes has to be shown, the
 pills have to be redrawn and every image has to be looked at again. The hard rules for that live in
