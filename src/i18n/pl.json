@@ -2462,6 +2462,7 @@
   "noObjectsWithLocalCustomizations": "Nie znaleziono obiektów z lokalnymi dostosowaniami; przerywanie.",
   "noOrgSelectedEnsureYouKnow": "Nie wybrano org. Upewnij się, że wiesz, co robisz.",
   "noOverwriteKeepIntro": "Wykrywanie, które elementy package-no-overwrite.xml już istnieją w docelowym org: istniejący element zostanie zabezpieczony (nie zostanie nadpisany), natomiast element nieobecny w org zostanie utworzony przez wdrożenie...",
+  "noOverwriteNoProtectedTypeInPackage": "Żaden typ pakietu wdrożenia nie jest wymieniony w package-no-overwrite.xml: nie ma nic do zabezpieczenia, więc zawartość docelowej org nie jest pobierana",
   "noOverwriteRemoveIntro": "Usuwanie z pakietu wdrożenia elementów chronionych przez package-no-overwrite.xml, ponieważ już istnieją w docelowym org (wersje z org są zachowywane)...",
   "noOverwriteTypeItemsProtected": "Typ {{type}}: {{count}} element(ów) już istnieje w docelowym org, zostaną zabezpieczone (nie zostaną nadpisane)",
   "noOverwriteTypeItemsRemoved": "Typ {{type}}: {{removed}} element(ów) pominiętych, ponieważ już istnieją w docelowym org (zabezpieczone), {{count}} element(ów) do wdrożenia",

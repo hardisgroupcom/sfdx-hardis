@@ -2462,6 +2462,7 @@
   "noObjectsWithLocalCustomizations": "Aucun objet avec des personnalisations locales trouvé ; abandon.",
   "noOrgSelectedEnsureYouKnow": "Aucune org sélectionnée. Assurez-vous de savoir ce que vous faites, et surtout de pas tout casser 🙃",
   "noOverwriteKeepIntro": "Détection des éléments de package-no-overwrite.xml déjà présents dans l'org cible : un élément existant sera protégé (non écrasé), tandis qu'un élément absent de l'org sera créé par le déploiement...",
+  "noOverwriteNoProtectedTypeInPackage": "Aucun type du package de déploiement n'est listé dans package-no-overwrite.xml : rien à protéger, le contenu de l'org cible n'est donc pas listé",
   "noOverwriteRemoveIntro": "Retrait du package de déploiement des éléments protégés par package-no-overwrite.xml, car ils existent déjà dans l'org cible (les versions de l'org sont conservées)...",
   "noOverwriteTypeItemsProtected": "Type {{type}} : {{count}} élément(s) déjà présent(s) dans l'org cible, protégé(s) (non écrasé(s))",
   "noOverwriteTypeItemsRemoved": "Type {{type}} : {{removed}} élément(s) ignoré(s) car déjà présent(s) dans l'org cible (protégé(s)), {{count}} élément(s) à déployer",
