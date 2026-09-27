@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no metadata type of the deployment package is in package-no-overwrite.xml, which saves minutes on large orgs.
+
 ## [8.11.1] 2026-09-26
 
 - [Monitoring backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/) sends an error notification when it fails, and the Grafana Fleet Overview and backup alert rule report failed backups and orgs without a successful backup for 36 hours.

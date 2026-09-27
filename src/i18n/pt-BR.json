@@ -2430,6 +2430,7 @@
   "noObjectsWithLocalCustomizations": "Nenhum objeto com personalizações locais encontrado; abortando.",
   "noOrgSelectedEnsureYouKnow": "Nenhuma org selecionada. Certifique-se de saber o que está fazendo.",
   "noOverwriteKeepIntro": "Detectando quais itens do package-no-overwrite.xml já existem na org de destino: um item existente será protegido (não sobrescrito), enquanto um item ausente na org será criado pela implantação...",
+  "noOverwriteNoProtectedTypeInPackage": "Nenhum tipo do pacote de implantação está listado em package-no-overwrite.xml: nada a proteger, então o conteúdo da org de destino não é listado",
   "noOverwriteRemoveIntro": "Removendo do pacote de implantação os itens protegidos pelo package-no-overwrite.xml, porque já existem na org de destino (as versões da org são mantidas)...",
   "noOverwriteTypeItemsProtected": "Tipo {{type}}: {{count}} item(ns) já existente(s) na org de destino, protegido(s) (não sobrescrito(s))",
   "noOverwriteTypeItemsRemoved": "Tipo {{type}}: {{removed}} item(ns) ignorado(s) por já existir(em) na org de destino (protegido(s)), {{count}} item(ns) para implantar",

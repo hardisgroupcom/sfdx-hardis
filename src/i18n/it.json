@@ -2462,6 +2462,7 @@
   "noObjectsWithLocalCustomizations": "Nessun oggetto con personalizzazioni locali trovato; operazione annullata.",
   "noOrgSelectedEnsureYouKnow": "Nessuna org selezionata. Assicurati di sapere cosa stai facendo.",
   "noOverwriteKeepIntro": "Rilevamento degli elementi di package-no-overwrite.xml già presenti nell'org di destinazione: un elemento esistente verrà protetto (non sovrascritto), mentre un elemento assente dall'org verrà creato dalla distribuzione...",
+  "noOverwriteNoProtectedTypeInPackage": "Nessun tipo del pacchetto di distribuzione è elencato in package-no-overwrite.xml: niente da proteggere, quindi il contenuto della org di destinazione non viene elencato",
   "noOverwriteRemoveIntro": "Rimozione dal pacchetto di distribuzione degli elementi protetti da package-no-overwrite.xml, perché esistono già nell'org di destinazione (vengono mantenute le versioni dell'org)...",
   "noOverwriteTypeItemsProtected": "Tipo {{type}}: {{count}} elemento/i già presente/i nell'org di destinazione, protetto/i (non sovrascritto/i)",
   "noOverwriteTypeItemsRemoved": "Tipo {{type}}: {{removed}} elemento/i ignorato/i perché già presente/i nell'org di destinazione (protetto/i), {{count}} elemento/i da distribuire",
