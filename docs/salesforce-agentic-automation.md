@@ -227,30 +227,30 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 ### Org Utils
 
-| Command                                                                                                       | What an agent can do                                                                |
-|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [**hardis:datacloud:extract:agentforce-conversations**](hardis/datacloud/extract/agentforce-conversations.md) | Export Agentforce conversation logs from Data Cloud for analysis                    |
-| [**hardis:datacloud:extract:agentforce-feedback**](hardis/datacloud/extract/agentforce-feedback.md)           | Export user feedback records from Agentforce sessions in Data Cloud                 |
-| [**hardis:datacloud:sql-query**](hardis/datacloud/sql-query.md)                                               | Run ad-hoc or predefined SQL queries on Data Cloud objects                          |
-| [**hardis:org:community:update**](hardis/org/community/update.md)                                             | Programmatically publish or unpublish a Salesforce Community                        |
-| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                                       | Delete data from a Salesforce org using an SFDMU workspace configuration            |
-| [**hardis:org:data:export**](hardis/org/data/export.md)                                                       | Export data from a Salesforce org using an SFDMU workspace configuration            |
-| [**hardis:org:data:import**](hardis/org/data/import.md)                                                       | Import structured data into a Salesforce org from an SFDMU workspace                |
-| [**hardis:org:files:export**](hardis/org/files/export.md)                                                     | Mass-download files attached to Salesforce records                                  |
-| [**hardis:org:files:import**](hardis/org/files/import.md)                                                     | Mass-upload files and attach them to Salesforce records                             |
-| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                             | Fix list views whose scope `Mine` must be replaced with `Everything` for deployment |
-| [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                                   | List the metadata components of a type (names and Ids), or the folders of a folder type. Flags: `--type`, `--folder`, `--refresh`|
-| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                               | Run a SOQL query against multiple orgs and aggregate results                        |
-| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                                   | Delete accumulated Apex debug logs from an org                                      |
-| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                                         | Delete obsolete Flow versions to reduce storage and technical debt                  |
-| [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                                   | Remove permission attributes from Profiles after migrating to Permission Sets       |
-| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                                       | Run Agentforce agent tests in the target org and report pass / fail results         |
-| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                           | Run Apex tests in the target org and report pass / fail / coverage results          |
-| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                                     | Fix `.invalid` email suffixes on sandbox users so they can log in                   |
-| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                                       | Freeze user logins (temporarily suspend access without deactivating)                |
-| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                                   | Unfreeze previously frozen users to restore their access                            |
-| [**hardis:org:user:unlink-security-key**](hardis/org/user/unlink-security-key.md)                             | Disconnect U2F / MFA registrations from users via automated Salesforce Setup        |
-| [**hardis:org:diagnose:mfa**](hardis/org/diagnose/mfa.md)                                                     | Audit MFA configuration gaps (enforcement, bypass perms, privileged users, SSO)     |
+| Command                                                                                                       | What an agent can do                                                                                                              |
+|---------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:datacloud:extract:agentforce-conversations**](hardis/datacloud/extract/agentforce-conversations.md) | Export Agentforce conversation logs from Data Cloud for analysis                                                                  |
+| [**hardis:datacloud:extract:agentforce-feedback**](hardis/datacloud/extract/agentforce-feedback.md)           | Export user feedback records from Agentforce sessions in Data Cloud                                                               |
+| [**hardis:datacloud:sql-query**](hardis/datacloud/sql-query.md)                                               | Run ad-hoc or predefined SQL queries on Data Cloud objects                                                                        |
+| [**hardis:org:community:update**](hardis/org/community/update.md)                                             | Programmatically publish or unpublish a Salesforce Community                                                                      |
+| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                                       | Delete data from a Salesforce org using an SFDMU workspace configuration                                                          |
+| [**hardis:org:data:export**](hardis/org/data/export.md)                                                       | Export data from a Salesforce org using an SFDMU workspace configuration                                                          |
+| [**hardis:org:data:import**](hardis/org/data/import.md)                                                       | Import structured data into a Salesforce org from an SFDMU workspace                                                              |
+| [**hardis:org:files:export**](hardis/org/files/export.md)                                                     | Mass-download files attached to Salesforce records                                                                                |
+| [**hardis:org:files:import**](hardis/org/files/import.md)                                                     | Mass-upload files and attach them to Salesforce records                                                                           |
+| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                             | Fix list views whose scope `Mine` must be replaced with `Everything` for deployment                                               |
+| [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                                   | List the metadata components of a type (names and Ids), or the folders of a folder type. Flags: `--type`, `--folder`, `--refresh` |
+| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                               | Run a SOQL query against multiple orgs and aggregate results                                                                      |
+| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                                   | Delete accumulated Apex debug logs from an org                                                                                    |
+| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                                         | Delete obsolete Flow versions to reduce storage and technical debt                                                                |
+| [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                                   | Remove permission attributes from Profiles after migrating to Permission Sets                                                     |
+| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                                       | Run Agentforce agent tests in the target org and report pass / fail results                                                       |
+| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                           | Run Apex tests in the target org and report pass / fail / coverage results                                                        |
+| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                                     | Fix `.invalid` email suffixes on sandbox users so they can log in                                                                 |
+| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                                       | Freeze user logins (temporarily suspend access without deactivating)                                                              |
+| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                                   | Unfreeze previously frozen users to restore their access                                                                          |
+| [**hardis:org:user:unlink-security-key**](hardis/org/user/unlink-security-key.md)                             | Disconnect U2F / MFA registrations from users via automated Salesforce Setup                                                      |
+| [**hardis:org:diagnose:mfa**](hardis/org/diagnose/mfa.md)                                                     | Audit MFA configuration gaps (enforcement, bypass perms, privileged users, SSO)                                                   |
 
 ### Metadata Utils
 

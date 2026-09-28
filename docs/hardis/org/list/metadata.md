@@ -36,18 +36,18 @@ The command has no prompt: `--type` is required, and `--agent` only confirms the
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|folder|option|Folder to list, for Report, Dashboard, Document and EmailTemplate||||
-|json|boolean|Format output as json.||||
-|refresh|boolean|List the org again instead of using the cached listing||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined|veurtio+demo.73193ee31bf8@agentforce.com|||
-|type|option|Metadata API type to list (for example ApexClass, CustomField or Report)||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                              |                 Default                  | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                    |                                          |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                          |                                          |          |         |
+| flags-dir         | option  | undefined                                                                |                                          |          |         |
+| folder            | option  | Folder to list, for Report, Dashboard, Document and EmailTemplate        |                                          |          |         |
+| json              | boolean | Format output as json.                                                   |                                          |          |         |
+| refresh           | boolean | List the org again instead of using the cached listing                   |                                          |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required            |                                          |          |         |
+| target-org<br/>-o | option  | undefined                                                                | veurtio+demo.73193ee31bf8@agentforce.com |          |         |
+| type              | option  | Metadata API type to list (for example ApexClass, CustomField or Report) |                                          |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                |                                          |          |         |
 
 ## Examples
 
