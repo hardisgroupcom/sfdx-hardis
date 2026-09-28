@@ -2142,6 +2142,7 @@
   "lintAccessHeader": "Sprawdź, czy elementy (klasy Apex i pola niestandardowe) są uwzględnione w co najmniej jednym Permission Set lub Profile.",
   "listAvailableCustomSettings": "Wyświetlanie dostępnych Custom Settings w org...",
   "listMetadataComponents": "{{count}} komponent(ów) typu {{type}}",
+  "listMetadataFolderNotSupported": "Typ {{type}} nie ma folderów: należy usunąć --folder",
   "listMetadataFolders": "{{count}} folder(ów) typu {{type}}",
   "listMetadataNotListable": "Metadata API nie może wyświetlić typu {{type}}",
   "listOfUsersThatWillBeFrozen": "Lista {{userLoginsToFreeze}} użytkowników, którzy zostaną zamrożeni:",

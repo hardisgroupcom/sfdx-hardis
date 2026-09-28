@@ -2141,6 +2141,7 @@
   "lintAccessHeader": "Prüfen Sie, ob Elemente (Apex-Klassen und benutzerdefinierte Felder) in mindestens einem Permission Set oder Profile enthalten sind.",
   "listAvailableCustomSettings": "Verfügbare Custom Settings in der Org werden aufgelistet...",
   "listMetadataComponents": "{{count}} Komponente(n) vom Typ {{type}}",
+  "listMetadataFolderNotSupported": "Der Typ {{type}} hat keine Ordner: Entfernen Sie --folder",
   "listMetadataFolders": "{{count}} Ordner von {{type}}",
   "listMetadataNotListable": "Die Metadata API kann den Typ {{type}} nicht auflisten",
   "listOfUsersThatWillBeFrozen": "Liste der {{userLoginsToFreeze}} Benutzer, die eingefroren werden:",

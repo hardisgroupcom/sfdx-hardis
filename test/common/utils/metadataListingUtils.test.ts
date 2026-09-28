@@ -15,7 +15,10 @@ function fakeConnection(listings: Record<string, unknown>, queries: any[] = []) 
         queries.push(query[0]);
         const key = query[0].folder ? `${query[0].type}:${query[0].folder}` : query[0].type;
         if (!(key in listings)) {
-          throw new Error('INVALID_TYPE');
+          throw new Error('INVALID_TYPE: Unknown type:' + key);
+        }
+        if (listings[key] instanceof Error) {
+          throw listings[key];
         }
         return listings[key];
       },
@@ -69,11 +72,36 @@ describe('metadataListingUtils', () => {
     );
     const folders = await listOrgMetadata(connection, { type: 'Report' });
     expect(folders.kind).to.equal('folders');
-    expect(folders.items.map((item) => item.fullName)).to.deep.equal(['SalesReports']);
+    // unfiled$public holds the Public Reports, and listMetadata never returns it
+    expect(folders.items.map((item) => item.fullName)).to.deep.equal(['SalesReports', 'unfiled$public']);
     const content = await listOrgMetadata(connection, { type: 'Report', folder: 'SalesReports' });
     expect(content).to.deep.include({ kind: 'components', folder: 'SalesReports' });
     expect(content.items.map((item) => item.fullName)).to.deep.equal(['SalesReports/Pipeline']);
     expect(queries).to.deep.equal([{ type: 'ReportFolder' }, { type: 'Report', folder: 'SalesReports' }]);
+  });
+
+  it('lists the Classic and the Lightning email template folders', async () => {
+    const connection = fakeConnection({
+      EmailFolder: [{ fullName: 'ClassicTemplates', id: '00l000000000002AAA' }],
+      EmailTemplateFolder: [{ fullName: 'LightningTemplates', id: '00l000000000003AAA' }],
+    });
+    const folders = await listOrgMetadata(connection, { type: 'EmailTemplate' });
+    expect(folders.items.map((item) => item.fullName)).to.deep.equal([
+      'ClassicTemplates',
+      'LightningTemplates',
+      'unfiled$public',
+    ]);
+  });
+
+  it('throws on a failure that is not an unknown type, instead of answering not listable', async () => {
+    const connection = fakeConnection({ ApexClass: new Error('INVALID_SESSION_ID: Session expired or invalid') });
+    let failure: unknown;
+    try {
+      await listOrgMetadata(connection, { type: 'ApexClass' });
+    } catch (error) {
+      failure = error;
+    }
+    expect(String(failure)).to.contain('INVALID_SESSION_ID');
   });
 
   it('answers not listable instead of failing for a type the Metadata API cannot list', async () => {

@@ -2146,6 +2146,7 @@
   "lintAccessHeader": "Check if elements (Apex classes and custom fields) are included in at least one Permission Set or Profile.",
   "listAvailableCustomSettings": "Listing available Custom Settings in the org...",
   "listMetadataComponents": "{{count}} component(s) of type {{type}}",
+  "listMetadataFolderNotSupported": "Type {{type}} has no folders: remove --folder",
   "listMetadataFolders": "{{count}} folder(s) of {{type}}",
   "listMetadataNotListable": "The Metadata API cannot list type {{type}}",
   "listOfUsersThatWillBeFrozen": "List of {{userLoginsToFreeze}} users that will be frozen:",

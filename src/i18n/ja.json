@@ -2140,6 +2140,7 @@
   "lintAccessHeader": "要素 (Apex クラスおよびカスタム項目) が少なくとも 1 つの権限セットまたはプロファイルに含まれているか確認します。",
   "listAvailableCustomSettings": "組織内の利用可能なカスタム設定を一覧取得しています...",
   "listMetadataComponents": "{{type}} タイプのコンポーネント {{count}} 件",
+  "listMetadataFolderNotSupported": "タイプ {{type}} にはフォルダがありません。--folder を外してください",
   "listMetadataFolders": "{{type}} のフォルダ {{count}} 件",
   "listMetadataNotListable": "Metadata API ではタイプ {{type}} を一覧表示できません",
   "listOfUsersThatWillBeFrozen": "凍結される {{userLoginsToFreeze}} 名のユーザーの一覧:",

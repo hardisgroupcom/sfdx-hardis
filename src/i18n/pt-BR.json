@@ -2111,6 +2111,7 @@
   "lintAccessHeader": "Verificar se os elementos (classes Apex e campos personalizados) estão incluídos em pelo menos um Conjunto de Permissões ou Perfil.",
   "listAvailableCustomSettings": "Listando Configurações Personalizadas disponíveis na org...",
   "listMetadataComponents": "{{count}} componente(s) do tipo {{type}}",
+  "listMetadataFolderNotSupported": "O tipo {{type}} não tem pastas: remova --folder",
   "listMetadataFolders": "{{count}} pasta(s) de {{type}}",
   "listMetadataNotListable": "A Metadata API não consegue listar o tipo {{type}}",
   "listOfUsersThatWillBeFrozen": "Lista de {{userLoginsToFreeze}} usuários que serão congelados:",

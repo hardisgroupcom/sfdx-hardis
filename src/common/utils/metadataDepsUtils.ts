@@ -12,7 +12,7 @@ import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { withOrgApiCache } from '../cache/orgApiCache.js';
-import { ListedComponent, listMetadataComponents } from './metadataListingUtils.js';
+import { isFolderType, ListedComponent, listMetadataComponentsOrNull } from './metadataListingUtils.js';
 import { glob } from 'glob';
 import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS, getSfdxProjectPackageDirectories } from './projectUtils.js';
 import { listMetadataTypes } from '../metadata-utils/metadataList.js';
@@ -247,8 +247,7 @@ export async function lookupListedComponent(
   name: string,
   options: { refresh?: boolean } = {}
 ): Promise<{ id: string; fromCache: boolean } | null> {
-  const inFolder = listMetadataTypes().some((metadataType) => metadataType.xmlName === type && metadataType.inFolder);
-  const folder = inFolder && name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : undefined;
+  const folder = isFolderType(type) && name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : undefined;
   const decode = (value: string): string => {
     try {
       return decodeURIComponent(value);
@@ -259,11 +258,11 @@ export async function lookupListedComponent(
   const findMatch = (components: ListedComponent[] | null) =>
     (components ?? []).find((component) => component.fullName === name || decode(component.fullName) === name);
 
-  let listed = await listMetadataComponents(connection, type, folder, { refresh: options.refresh });
+  let listed = await listMetadataComponentsOrNull(connection, type, folder, { refresh: options.refresh });
   let match = findMatch(listed.value);
   if (!match && listed.fromCache && listed.value !== null) {
     // The component may have been deployed after the list was cached
-    listed = await listMetadataComponents(connection, type, folder, { refresh: true });
+    listed = await listMetadataComponentsOrNull(connection, type, folder, { refresh: true });
     match = findMatch(listed.value);
   }
   return match ? { id: match.id, fromCache: listed.fromCache } : null;
@@ -375,10 +374,10 @@ export async function enrichUsedByRows(
       const typeRows = rows.filter((row) => row.usedByType === type);
       const nameByIdOf = (listed: ListedComponent[] | null) =>
         new Map((listed ?? []).filter((component) => component.id).map((c) => [id15(c.id), c.fullName]));
-      let listed = await listMetadataComponents(connection, type);
+      let listed = await listMetadataComponentsOrNull(connection, type);
       let nameById = nameByIdOf(listed.value);
       if (listed.fromCache && typeRows.some((row) => !nameById.has(id15(row.usedById)))) {
-        listed = await listMetadataComponents(connection, type, undefined, { refresh: true });
+        listed = await listMetadataComponentsOrNull(connection, type, undefined, { refresh: true });
         nameById = nameByIdOf(listed.value);
       }
       for (const row of typeRows) {
