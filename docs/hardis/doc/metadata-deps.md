@@ -48,20 +48,20 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|bulk|boolean|Use a Tooling API Bulk API 2.0 query job for large dependency graphs and Reports||||
-|component-type|option|Only return dependent components of this Tooling metadata type||||
-|flags-dir|option|undefined||||
-|id|option|Salesforce Id of the selected component (15 or 18 characters); skips name lookup||||
-|json|boolean|Format output as json.||||
-|name|option|API name of the selected component (for example MyClass or Account.Status__c)||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|source-file|option|Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name||||
-|target-org<br/>-o|option|undefined|veurtio+demo.73193ee31bf8@agentforce.com|||
-|type|option|Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                                     |                 Default                  | Required | Options |
+|:------------------|:-------:|:----------------------------------------------------------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                           |                                          |          |         |
+| bulk              | boolean | Use a Tooling API Bulk API 2.0 query job for large dependency graphs and Reports                                |                                          |          |         |
+| component-type    | option  | Only return dependent components of this Tooling metadata type                                                  |                                          |          |         |
+| flags-dir         | option  | undefined                                                                                                       |                                          |          |         |
+| id                | option  | Salesforce Id of the selected component (15 or 18 characters); skips name lookup                                |                                          |          |         |
+| json              | boolean | Format output as json.                                                                                          |                                          |          |         |
+| name              | option  | API name of the selected component (for example MyClass or Account.Status__c)                                   |                                          |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                   |                                          |          |         |
+| source-file       | option  | Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name |                                          |          |         |
+| target-org<br/>-o | option  | undefined                                                                                                       | veurtio+demo.73193ee31bf8@agentforce.com |          |         |
+| type              | option  | Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)                    |                                          |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                       |                                          |          |         |
 
 ## Examples
 
