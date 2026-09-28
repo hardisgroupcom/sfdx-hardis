@@ -5,6 +5,7 @@ import {
   buildUsedBySoql,
   customFieldDeveloperName,
   isMetadataType,
+  isStandardObjectName,
   isSalesforceId,
   mapUsedByRows,
   parseCustomFieldName,
@@ -59,6 +60,15 @@ describe('metadataDepsUtils', () => {
 
     it('escapes SOQL backslashes and quotes', () => {
       expect(soqlString("A\\B'C")).to.equal("'A\\\\B\\'C'");
+    });
+  });
+
+  describe('standard objects', () => {
+    it('treats a name without __ as a standard object', () => {
+      expect(isStandardObjectName('Account')).to.equal(true);
+      expect(isStandardObjectName('Installation__c')).to.equal(false);
+      expect(isStandardObjectName('ns__Obj__c')).to.equal(false);
+      expect(isStandardObjectName('MyType__mdt')).to.equal(false);
     });
   });
 

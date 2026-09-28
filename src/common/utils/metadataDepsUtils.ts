@@ -10,6 +10,7 @@ import { isCI, uxLog, uxLogTable } from './index.js';
 import { prompts } from './prompts.js';
 import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
+import { MetadataUtils } from '../metadata-utils/index.js';
 
 const SALESFORCE_ID_RE = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
 const METADATA_TYPE_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
@@ -31,6 +32,7 @@ export interface MetadataDepsFlags {
   name?: string;
   id?: string;
   componentType?: string;
+  sourceFile?: string;
   bulk?: boolean;
   agent?: boolean;
 }
@@ -106,6 +108,11 @@ export function parseCustomObjectName(name: string): { namespace?: string; devel
     return { namespace: withoutSuffix.slice(0, separator), developerName: withoutSuffix.slice(separator + 2) };
   }
   return { developerName: withoutSuffix };
+}
+
+// Standard objects (Account, Opportunity...) have no "__" in their API name
+export function isStandardObjectName(name: string): boolean {
+  return !name.trim().includes('__');
 }
 
 export function customFieldDeveloperName(fieldApi: string): string {
@@ -200,6 +207,18 @@ export async function lookupMetadataComponents(
   type: string,
   name: string
 ): Promise<MetadataComponentSelection[]> {
+  if (type === 'CustomObject' && isStandardObjectName(name)) {
+    // Standard objects are not CustomObject records: their DurableId in EntityDefinition is their API name
+    const entityResult = await soqlQueryTooling(
+      `SELECT DurableId, QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = ${soqlString(name.trim())}`,
+      connection
+    );
+    return (entityResult.records ?? []).map((record: Record<string, unknown>) => ({
+      id: String(record.DurableId),
+      name: String(record.QualifiedApiName),
+      type: 'StandardEntity',
+    }));
+  }
   let query: string;
   let objectApi: string | undefined;
   if (type === 'CustomField') {
@@ -368,6 +387,23 @@ export async function resolveMetadataComponent(
   let name = flags.name?.trim();
   let id = flags.id?.trim();
 
+  const sourceFile = flags.sourceFile?.trim();
+  if (sourceFile) {
+    if (id || type || name) {
+      throw new SfError(t('metadataDepsSourceFileExclusive'));
+    }
+    if (!fs.existsSync(sourceFile)) {
+      throw new SfError(t('metadataDepsSourceFileMissing', { file: sourceFile }));
+    }
+    const resolved = MetadataUtils.resolveMetadataFromFile(sourceFile);
+    if (!resolved) {
+      throw new SfError(t('metadataDepsSourceFileNotMetadata', { file: sourceFile }));
+    }
+    type = resolved.type;
+    name = resolved.name;
+    uxLog('action', commandThis, c.cyan(t('metadataDepsSourceFileResolved', { file: sourceFile, type, name })));
+  }
+
   if (id && !isSalesforceId(id)) {
     throw new SfError(t('metadataDepsInvalidId'));
   }
@@ -392,7 +428,8 @@ export async function resolveMetadataComponent(
     return null;
   }
   if (matches.length === 1) {
-    return matches[0];
+    // Keep the API name the user gave (Account.Status__c) rather than the Tooling DeveloperName (Account.Status)
+    return { ...matches[0], name: name! };
   }
   if (flags.agent || isCI) {
     throw new SfError(t('metadataDepsMultipleMatchesAgent'));
@@ -490,7 +527,7 @@ export async function runMetadataDeps(
   if (!selection) {
     return { outputString: t('metadataDepsCancelled'), cancelled: true };
   }
-  uxLog('action', commandThis, c.cyan(t('metadataDepsQueryingUsedBy', { name: selection.name })));
+  uxLog('action', commandThis, c.cyan(t('metadataDepsQueryingUsedBy', { name: selection.name, org: targetOrg })));
   const rows = await queryUsedBy(connection, selection, {
     componentType,
     bulk: flags.bulk,
@@ -499,30 +536,22 @@ export async function runMetadataDeps(
   if (selection.type === UNKNOWN_TYPE && rows.length > 0) {
     selection.type = rows[0].targetType || UNKNOWN_TYPE;
   }
+  uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
+  const report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
   if (rows.length === 0) {
     uxLog('warning', commandThis, c.yellow(t('metadataDepsEmptyUsedBy')));
   } else {
-    const columns = {
-      usedById: t('metadataDepsColUsedById'),
-      usedByName: t('metadataDepsColUsedByName'),
-      usedByType: t('metadataDepsColUsedByType'),
-      targetId: t('metadataDepsColTargetId'),
-      targetName: t('metadataDepsColTargetName'),
-      targetType: t('metadataDepsColTargetType'),
-    };
-    const tableRows = rows.map((row) => ({
-      [columns.usedById]: row.usedById,
-      [columns.usedByName]: row.usedByName,
-      [columns.usedByType]: row.usedByType,
-      [columns.targetId]: row.targetId,
-      [columns.targetName]: row.targetName,
-      [columns.targetType]: row.targetType,
-    }));
-    // No uxLogTableWithReport: the used-by CSV written below holds every row and is sent to VS Code
-    uxLogTable(commandThis, tableRows, Object.values(columns));
+    // Readable columns only, kept expanded in VS Code: the Ids and the target are in the CSV and Excel reports
+    uxLog('action', commandThis, c.cyan(t('metadataDepsUsedByTable', { name: selection.name, count: rows.length })), {
+      alwaysVisible: true,
+    });
+    const columns = [t('docMdColType'), t('docMdColName')];
+    const tableRows = [...rows]
+      .sort((a, b) => a.usedByType.localeCompare(b.usedByType) || a.usedByName.localeCompare(b.usedByName))
+      .map((row) => ({ [columns[0]]: row.usedByType, [columns[1]]: row.usedByName }));
+    // No uxLogTableWithReport: the used-by CSV written above holds every row and is sent to VS Code
+    uxLogTable(commandThis, tableRows, columns);
   }
-  uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
-  const report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
   const outputString = t('metadataDepsGenerated', { name: selection.name, count: rows.length });
   uxLog('success', commandThis, c.green(outputString));
   return {
