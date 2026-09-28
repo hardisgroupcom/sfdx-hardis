@@ -30,6 +30,7 @@ This command is designed to remove temporary files, stored configurations, and o
 The command's technical implementation is straightforward:
 
 - **Direct Function Call:** It directly invokes the \`clearCache()\` function, which is imported from uri../../../common/cache/index.jsuri.
+- **Org API cache:** It also removes the results of technical API calls cached per org Id (\`listMetadata\`, \`EntityDefinition\`...) under \`~/.sfdx/sfdx-hardis-cache/orgs/\`.
 - **Cache Management Logic:** The uriclearCache()\` function encapsulates the logic for identifying and removing the specific files and directories that constitute the sfdx-hardis cache.
 
 ### Agent Mode

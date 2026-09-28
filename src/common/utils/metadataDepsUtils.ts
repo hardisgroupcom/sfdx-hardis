@@ -11,6 +11,7 @@ import { prompts } from './prompts.js';
 import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
+import { withOrgApiCache } from '../cache/orgApiCache.js';
 import { listMetadataTypes } from '../metadata-utils/metadataList.js';
 
 const SALESFORCE_ID_RE = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
@@ -233,13 +234,19 @@ export async function lookupListedComponent(
 ): Promise<{ id: string } | null> {
   const inFolder = listMetadataTypes().some((metadataType) => metadataType.xmlName === type && metadataType.inFolder);
   const folder = inFolder && name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : undefined;
-  let listed: any;
-  try {
-    listed = await connection.metadata.list([folder ? { type, folder } : { type }], getApiVersion(connection));
-  } catch {
-    return null;
-  }
-  const components: any[] = Array.isArray(listed) ? listed : listed ? [listed] : [];
+  // Only names and Ids are cached. null means the type cannot be listed.
+  const listComponents = async (): Promise<Array<{ fullName: string; id: string }> | null> => {
+    try {
+      const listed = await connection.metadata.list([folder ? { type, folder } : { type }], getApiVersion(connection));
+      const components: any[] = Array.isArray(listed) ? listed : listed ? [listed] : [];
+      return components.map((component) => ({
+        fullName: String(component?.fullName ?? ''),
+        id: String(component?.id ?? ''),
+      }));
+    } catch {
+      return null;
+    }
+  };
   const decode = (value: string): string => {
     try {
       return decodeURIComponent(value);
@@ -247,21 +254,42 @@ export async function lookupListedComponent(
       return value;
     }
   };
-  const match = components.find(
-    (component) => component?.fullName === name || decode(String(component?.fullName ?? '')) === name
-  );
-  return match ? { id: String(match.id ?? '') } : null;
+  const findMatch = (components: Array<{ fullName: string; id: string }> | null) =>
+    (components ?? []).find((component) => component.fullName === name || decode(component.fullName) === name);
+
+  const cacheKey = `listMetadata:${type}${folder ? `:${folder}` : ''}`;
+  const cached = await withOrgApiCache(connection, cacheKey, listComponents);
+  let match = findMatch(cached.value);
+  if (!match && cached.fromCache) {
+    // The component may have been deployed after the list was cached
+    match = findMatch((await withOrgApiCache(connection, cacheKey, listComponents, { refresh: true })).value);
+  }
+  return match ? { id: match.id } : null;
+}
+
+// EntityDefinition of an object API name, cached: object Ids do not change
+async function queryEntityDefinitions(
+  connection: Connection,
+  qualifiedApiName: string
+): Promise<Array<{ DurableId: string; QualifiedApiName: string }>> {
+  const result = await withOrgApiCache(connection, `entityDefinition:${qualifiedApiName}`, async () => {
+    const entityResult = await soqlQueryTooling(
+      `SELECT DurableId, QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = ${soqlString(qualifiedApiName)}`,
+      connection
+    );
+    return (entityResult.records ?? []).map((record: Record<string, unknown>) => ({
+      DurableId: String(record.DurableId),
+      QualifiedApiName: String(record.QualifiedApiName),
+    }));
+  });
+  return result.value;
 }
 
 // Standard objects are not CustomObject records: their DurableId in EntityDefinition is their API name
 async function lookupStandardObject(connection: Connection, name: string): Promise<MetadataComponentSelection[]> {
-  const entityResult = await soqlQueryTooling(
-    `SELECT DurableId, QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = ${soqlString(name.trim())}`,
-    connection
-  );
-  return (entityResult.records ?? []).map((record: Record<string, unknown>) => ({
-    id: String(record.DurableId),
-    name: String(record.QualifiedApiName),
+  return (await queryEntityDefinitions(connection, name.trim())).map((record) => ({
+    id: record.DurableId,
+    name: record.QualifiedApiName,
     type: 'StandardEntity',
   }));
 }
@@ -283,11 +311,7 @@ async function lookupToolingComponents(
     const entityKeys: string[] = [];
     if (parsed.table) {
       entityKeys.push(parsed.table);
-      const entityResult = await soqlQueryTooling(
-        `SELECT DurableId, QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = ${soqlString(parsed.table)}`,
-        connection
-      );
-      const durableId = entityResult.records?.[0]?.DurableId;
+      const durableId = (await queryEntityDefinitions(connection, parsed.table))[0]?.DurableId;
       if (durableId && !entityKeys.includes(String(durableId))) {
         entityKeys.push(String(durableId));
       }
