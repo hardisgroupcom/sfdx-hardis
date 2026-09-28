@@ -239,6 +239,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:org:files:export**](hardis/org/files/export.md)                                                     | Mass-download files attached to Salesforce records                                  |
 | [**hardis:org:files:import**](hardis/org/files/import.md)                                                     | Mass-upload files and attach them to Salesforce records                             |
 | [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                             | Fix list views whose scope `Mine` must be replaced with `Everything` for deployment |
+| [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                                   | List the metadata components of a type (names and Ids), or the folders of a folder type. Flags: `--type`, `--folder`, `--refresh`|
 | [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                               | Run a SOQL query against multiple orgs and aggregate results                        |
 | [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                                   | Delete accumulated Apex debug logs from an org                                      |
 | [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                                         | Delete obsolete Flow versions to reduce storage and technical debt                  |

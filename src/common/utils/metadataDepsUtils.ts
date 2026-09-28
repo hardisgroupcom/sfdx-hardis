@@ -2,7 +2,7 @@ import path from 'path';
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import Papa from 'papaparse';
-import { getApiVersion, getReportDirectory } from '../../config/index.js';
+import { getReportDirectory } from '../../config/index.js';
 import fs from './fsUtils.js';
 import { createXlsxFromCsvFiles } from './filesUtils.js';
 import { t } from './i18n.js';
@@ -12,6 +12,7 @@ import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { withOrgApiCache } from '../cache/orgApiCache.js';
+import { ListedComponent, listMetadataComponents } from './metadataListingUtils.js';
 import { glob } from 'glob';
 import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS, getSfdxProjectPackageDirectories } from './projectUtils.js';
 import { listMetadataTypes } from '../metadata-utils/metadataList.js';
@@ -266,43 +267,6 @@ export async function lookupListedComponent(
     match = findMatch(listed.value);
   }
   return match ? { id: match.id, fromCache: listed.fromCache } : null;
-}
-
-interface ListedComponent {
-  fullName: string;
-  id: string;
-}
-
-// listMetadata of a type (in a folder for Report, Dashboard...), cached per org: only names and Ids are kept.
-// value is null when the type cannot be listed. Never cached for Flow: activating another version in Setup
-// changes the Id.
-async function listMetadataComponents(
-  connection: Connection,
-  type: string,
-  folder?: string,
-  options: { refresh?: boolean } = {}
-): Promise<{ value: ListedComponent[] | null; fromCache: boolean }> {
-  const listComponents = async (): Promise<ListedComponent[] | null> => {
-    try {
-      const listed = await connection.metadata.list([folder ? { type, folder } : { type }], getApiVersion(connection));
-      const components: any[] = Array.isArray(listed) ? listed : listed ? [listed] : [];
-      return components.map((component) => ({
-        fullName: String(component?.fullName ?? ''),
-        id: String(component?.id ?? ''),
-      }));
-    } catch {
-      return null;
-    }
-  };
-  if (type === 'Flow') {
-    return { value: await listComponents(), fromCache: false };
-  }
-  const cacheKey = `listMetadata:${type}${folder ? `:${folder}` : ''}`;
-  // A failed listing is not cached: the type may be listable next time (network error, expired session...)
-  return await withOrgApiCache(connection, cacheKey, listComponents, {
-    refresh: options.refresh,
-    shouldCache: (value) => value !== null,
-  });
 }
 
 // Setup page of a component: Flow Builder for a Flow, the list page for the bundles without a detail page,

@@ -134,6 +134,7 @@
 | [**hardis:org:files:import**](hardis/org/files/import.md)                                           |       |
 | [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                   |       |
 | [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)                     |       |
+| [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                         |       |
 | [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                             |       |
 | [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                       |       |
 | [**hardis:org:monitor:errors**](hardis/org/monitor/errors.md)                                       |       |
