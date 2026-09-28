@@ -55,21 +55,21 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|component-type|option|Only return dependent components of this Tooling metadata type||||
-|direction|option|used-by: the components that use the selected one; uses: the components the selected one uses|used-by||used-by<br/>uses|
-|flags-dir|option|undefined||||
-|id|option|Salesforce Id of the selected component (15 or 18 characters); skips name lookup||||
-|json|boolean|Format output as json.||||
-|name|option|API name of the selected component (for example MyClass or Account.Status__c)||||
-|skip-report|boolean|Do not write the CSV and Excel reports nor print the result table: the caller shows the --json result itself (the VS Code panel)||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|source-file|option|Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name||||
-|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com|||
-|type|option|Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name              |  Type   | Description                                                                                                                      |            Default            | Required |     Options      |
+|:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|:-----------------------------:|:--------:|:----------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                            |                               |          |                  |
+| component-type    | option  | Only return dependent components of this Tooling metadata type                                                                   |                               |          |                  |
+| direction         | option  | used-by: the components that use the selected one; uses: the components the selected one uses                                    |            used-by            |          | used-by<br/>uses |
+| flags-dir         | option  | undefined                                                                                                                        |                               |          |                  |
+| id                | option  | Salesforce Id of the selected component (15 or 18 characters); skips name lookup                                                 |                               |          |                  |
+| json              | boolean | Format output as json.                                                                                                           |                               |          |                  |
+| name              | option  | API name of the selected component (for example MyClass or Account.Status__c)                                                    |                               |          |                  |
+| skip-report       | boolean | Do not write the CSV and Excel reports nor print the result table: the caller shows the --json result itself (the VS Code panel) |                               |          |                  |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                    |                               |          |                  |
+| source-file       | option  | Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name                  |                               |          |                  |
+| target-org<br/>-o | option  | undefined                                                                                                                        | nicolas.vuillamy@cloudity.com |          |                  |
+| type              | option  | Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)                                     |                               |          |                  |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                        |                               |          |                  |
 
 ## Examples
 
