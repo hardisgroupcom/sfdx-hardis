@@ -23,7 +23,7 @@ import {
   parseCustomObjectName,
   queryAllDependencyRecords,
   queryDependencies,
-  queryFolderedNames,
+  queryNamesInFolders,
   sanitizeFsName,
   soqlString,
   splitDependencyQueryPart,
@@ -382,7 +382,7 @@ describe('metadataDepsUtils', () => {
         ],
         Folder: [{ Id: '00l000000000001AAA', DeveloperName: 'SalesReports' }],
       });
-      const names = await queryFolderedNames(connection, 'Report', [
+      const names = await queryNamesInFolders(connection, 'Report', [
         '00O000000000001AAA',
         '00O000000000002AAA',
         '00O000000000003AAA',
@@ -596,7 +596,7 @@ describe('metadataDepsUtils', () => {
 
     // Developer Edition orgs reject Bulk queries on this object: the rows are read with smaller queries
     const bulkRejected = async (): Promise<never> => {
-      throw new Error('INVALIDENTITY: Bulk API is not supported for this entity');
+      throw new Error('InvalidEntity : Entity MetadataComponentDependency is not supported by the Bulk API');
     };
     const splitOptions = (direction: 'used-by' | 'uses', componentType?: string) => ({
       direction,

@@ -51,10 +51,8 @@ reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no pat
 # Fixing it here would mean overriding a dependency two majors past its declared range (5.x -> 7.x),
 # whose parser options and record/info semantics changed, with no test coverage of that path. The
 # real fix belongs upstream: remove once @jsforce/jsforce-node moves to csv-parse 7.x. Added 2026-09-09.
-[[IgnoredVulns]]
-id = "GHSA-8cw4-87c7-c6xx"
-reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."
-
+# OSV reports this finding under CVE-2026-85063 with GHSA-8cw4-87c7-c6xx as an alias, and an ignore
+# only counts as used when it matches the reported id: listing the GHSA id as well fails as an unused ignore.
 [[IgnoredVulns]]
 id = "CVE-2026-85063"
-reason = "Same finding as GHSA-8cw4-87c7-c6xx, ignored under the same id alias."
+reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."

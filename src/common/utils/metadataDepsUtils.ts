@@ -559,7 +559,7 @@ export async function enrichDependencies(
       }
       if (isFolderType(type)) {
         // listMetadata needs a folder for these types: their Folder/Name API names come from SOQL instead
-        const names = await queryFolderedNames(connection, type, typeRows.map((row) => row.id));
+        const names = await queryNamesInFolders(connection, type, typeRows.map((row) => row.id));
         for (const row of typeRows) {
           row.apiName = names.get(id15(row.id)) ?? '';
           row.setupPath = buildSetupPath(type, row.id);
@@ -614,7 +614,7 @@ async function addLocalFiles(type: string, rows: MetadataDependency[]): Promise<
 }
 
 // sObject and folder field of each folder type: its API name is <folder DeveloperName>/<DeveloperName>
-const FOLDERED_OBJECTS: Record<string, { object: string; folderField: string }> = {
+const FOLDER_OBJECTS: Record<string, { object: string; folderField: string }> = {
   Report: { object: 'Report', folderField: 'OwnerId' },
   Dashboard: { object: 'Dashboard', folderField: 'FolderId' },
   EmailTemplate: { object: 'EmailTemplate', folderField: 'FolderId' },
@@ -624,13 +624,13 @@ const FOLDERED_OBJECTS: Record<string, { object: string; folderField: string }> 
 // Folder/Name API names of Report, Dashboard, EmailTemplate and Document Ids, 200 Ids per SOQL query.
 // A component whose folder is the org (Id starting with 00D) is in unfiled$public. One in a personal
 // folder (a user Id) keeps an empty API name: it cannot be retrieved.
-export async function queryFolderedNames(
+export async function queryNamesInFolders(
   connection: Connection,
   type: string,
   ids: string[]
 ): Promise<Map<string, string>> {
   const names = new Map<string, string>();
-  const config = FOLDERED_OBJECTS[type];
+  const config = FOLDER_OBJECTS[type];
   const uniqueIds = [...new Set(ids.filter((id) => isSalesforceId(id)))];
   if (!config || uniqueIds.length === 0) {
     return names;

@@ -30,7 +30,7 @@ export function isFolderType(type: string): boolean {
 }
 
 // The Metadata API answers INVALID_TYPE for a type it can not list (Tooling-only type, misspelled type...)
-export function isUnlistableTypeError(error: unknown): boolean {
+export function isNotListableTypeError(error: unknown): boolean {
   const text = `${(error as any)?.name ?? ''} ${(error as any)?.errorCode ?? ''} ${(error as any)?.message ?? error}`;
   return /INVALID_TYPE/i.test(text);
 }
@@ -53,7 +53,7 @@ export async function listMetadataComponents(
         id: String(component?.id ?? ''),
       }));
     } catch (error) {
-      if (isUnlistableTypeError(error)) {
+      if (isNotListableTypeError(error)) {
         return null;
       }
       throw error;
