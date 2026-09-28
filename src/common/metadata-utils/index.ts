@@ -435,7 +435,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   // bundle, a field file to "Object.Field__c"). Returns null when the file is not Salesforce metadata.
   public static resolveMetadataFromFile(filePath: string): { type: string; name: string } | null {
     try {
-      // Ignore .forceignore: a forceignored file is still a component of the org
+      // Ignore .forceignore: a file listed in .forceignore is still a component of the org
       const component = new MetadataResolver(undefined, undefined, false).getComponentsFromPath(path.resolve(filePath))[0];
       return component ? { type: component.type.name, name: component.fullName } : null;
     } catch {

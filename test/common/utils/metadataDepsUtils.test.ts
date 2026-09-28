@@ -125,7 +125,7 @@ describe('metadataDepsUtils', () => {
       let root: string;
       // Same fake connection, on an org with an Id so that the cache applies
       const cachedConnection = (components: unknown[], queries: unknown[]) =>
-        ({ ...fakeConnection(components, queries), getAuthInfoFields: () => ({ orgId: '00DCACHE' }) }) as any;
+        ({ ...fakeConnection(components, queries), getAuthInfoFields: () => ({ orgId: '00D000000000001' }) }) as any;
 
       beforeEach(async () => {
         root = await fs.mkdtemp(path.join(os.tmpdir(), 'metadata-deps-cache-'));
@@ -251,7 +251,7 @@ describe('metadataDepsUtils', () => {
         let calls = 0;
         const connection = {
           getApiVersion: () => '65.0',
-          getAuthInfoFields: () => ({ orgId: '00DENRICH' }),
+          getAuthInfoFields: () => ({ orgId: '00D000000000002' }),
           metadata: {
             list: async () => {
               calls++;
