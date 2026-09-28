@@ -69,9 +69,9 @@ A modern replacement for the standard Org Browser. Filter by **type, name, last 
 
 ### Metadata Dependencies
 
-Find which components of an org use an Apex class, a Flow, a field, a layout or any other metadata. Open it from the row menu of the Metadata Retriever, the right-click menu of a metadata file, the Commands menu or the Org Monitoring page.
+Find which components of an org use an Apex class, a Flow, a field, a layout or any other metadata, or which components it uses: the **Used by / Uses** switch reads the selected component either way. Open it from the row menu of the Metadata Retriever, the right-click menu of a metadata file (in the Explorer or in the file itself), the Commands menu or the Org Monitoring page.
 
-From the list, open the local file of a dependent or its page in Setup (Flow Builder for a Flow), drill down to what uses it, retrieve the selected ones into your project, and generate a CSV/Excel report. Dependencies are read from the org, so a change that is not deployed yet is not included. The panel runs [hardis:doc:metadata-deps](hardis/doc/metadata-deps.md).
+From the list, open the local file of a component or its page in Setup (Flow Builder for a Flow), drill down to what uses it or to what it uses, retrieve the selected ones into your project, and generate a CSV/Excel report. Dependencies are read from the org, so a change that is not deployed yet is not included. The panel runs [hardis:doc:metadata-deps](hardis/doc/metadata-deps.md).
 
 ![Metadata Dependencies](assets/images/metadata-dependencies.png)
 

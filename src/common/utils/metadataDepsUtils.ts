@@ -32,12 +32,16 @@ interface LookupConfig {
   whereField: string;
 }
 
+// used-by: the components that use the selected one; uses: the components the selected one uses
+export type DependencyDirection = 'used-by' | 'uses';
+
 export interface MetadataDepsFlags {
   type?: string;
   name?: string;
   id?: string;
   componentType?: string;
   sourceFile?: string;
+  direction?: DependencyDirection;
   skipReport?: boolean;
   bulk?: boolean;
   agent?: boolean;
@@ -51,21 +55,21 @@ export interface MetadataComponentSelection {
   idFromCache?: boolean;
 }
 
-export interface MetadataDependencyRow {
-  usedById: string;
-  usedByName: string;
-  usedByType: string;
-  targetId: string;
-  targetName: string;
-  targetType: string;
-  // Filled by enrichUsedByRows: Metadata API name (empty when the type cannot be listed),
+// A component on the other side of a dependency: one that uses the selected component (used-by),
+// or one the selected component uses (uses)
+export interface MetadataDependency {
+  id: string;
+  // Name as Salesforce stores it in the dependency data: a label or a DeveloperName ("Account Layout", "Status")
+  name: string;
+  type: string;
+  // Filled by enrichDependencies: Metadata API name (empty when the type cannot be listed),
   // Setup path of the component, and its source file in the project (empty when absent)
-  usedByApiName: string;
-  usedBySetupPath: string;
-  usedByLocalFile: string;
-  // Flow only: the versions of the Flow that use the component, newest first. The dependency data holds one
-  // row per Flow version: they are merged into one row per Flow, whose Id is the active (else newest) version.
-  usedByVersions?: FlowVersion[];
+  apiName: string;
+  setupPath: string;
+  localFile: string;
+  // Flow only: the versions of the Flow in the dependency, newest first. The dependency data holds one row per
+  // Flow version: they are merged into one row per Flow, whose Id is the active (else newest) version.
+  versions?: FlowVersion[];
 }
 
 export interface FlowVersion {
@@ -186,32 +190,48 @@ export function buildCustomFieldLookupSoql(developerName: string, entityKeys: st
   return `SELECT Id, DeveloperName, TableEnumOrId, EntityDefinitionId FROM CustomField WHERE ${clauses.join(' AND ')}`;
 }
 
-export function buildUsedBySoql(id: string, type?: string, componentType?: string): string {
-  const clauses = [`RefMetadataComponentId = ${soqlString(id)}`];
+// Fields prefix of the selected component and of the other component in a MetadataComponentDependency row:
+// Ref* is the used component, the unprefixed side the component that uses it
+function directionSides(direction: DependencyDirection): { selected: string; other: string } {
+  return direction === 'uses'
+    ? { selected: 'MetadataComponent', other: 'RefMetadataComponent' }
+    : { selected: 'RefMetadataComponent', other: 'MetadataComponent' };
+}
+
+export function buildDependenciesSoql(
+  id: string,
+  type?: string,
+  componentType?: string,
+  direction: DependencyDirection = 'used-by'
+): string {
+  const sides = directionSides(direction);
+  const clauses = [`${sides.selected}Id = ${soqlString(id)}`];
   if (type && type !== 'StandardEntity' && type !== UNKNOWN_TYPE) {
-    clauses.push(`RefMetadataComponentType = ${soqlString(type)}`);
+    clauses.push(`${sides.selected}Type = ${soqlString(type)}`);
   }
   if (componentType) {
-    clauses.push(`MetadataComponentType = ${soqlString(componentType)}`);
+    clauses.push(`${sides.other}Type = ${soqlString(componentType)}`);
   }
   return `SELECT ${DEPENDENCY_FIELDS} FROM MetadataComponentDependency WHERE ${clauses.join(' AND ')}`;
 }
 
-export function mapUsedByRows(records: Array<Record<string, unknown>>): MetadataDependencyRow[] {
+// The other component of each row, whatever the direction
+export function mapDependencies(
+  records: Array<Record<string, unknown>>,
+  direction: DependencyDirection = 'used-by'
+): MetadataDependency[] {
+  const other = directionSides(direction).other;
   const stringValue = (record: Record<string, unknown>, key: string): string => {
     const value = record[key];
     return value == null ? '' : String(value);
   };
   return records.map((record) => ({
-    usedById: stringValue(record, 'MetadataComponentId'),
-    usedByName: stringValue(record, 'MetadataComponentName'),
-    usedByType: stringValue(record, 'MetadataComponentType'),
-    targetId: stringValue(record, 'RefMetadataComponentId'),
-    targetName: stringValue(record, 'RefMetadataComponentName'),
-    targetType: stringValue(record, 'RefMetadataComponentType'),
-    usedByApiName: '',
-    usedBySetupPath: '',
-    usedByLocalFile: '',
+    id: stringValue(record, `${other}Id`),
+    name: stringValue(record, `${other}Name`),
+    type: stringValue(record, `${other}Type`),
+    apiName: '',
+    setupPath: '',
+    localFile: '',
   }));
 }
 
@@ -289,7 +309,12 @@ export function buildSetupPath(type: string, id: string): string {
   if (type === 'AuraDefinitionBundle') {
     return '/lightning/setup/LightningComponents/home';
   }
-  return id ? `/${id}` : '';
+  // A standard object is identified by its API name (Account), not by a record Id
+  if (type === 'StandardEntity') {
+    return id ? `/lightning/setup/ObjectManager/${id}/Details/view` : '';
+  }
+  // Only a real Salesforce Id opens a Setup page (some dependency rows carry a name, like "User")
+  return isSalesforceId(id) ? `/${id}` : '';
 }
 
 // Main file of a bundle (LWC, Aura), the one a user expects to open
@@ -367,60 +392,72 @@ export async function findLocalFiles(type: string, apiNames: string[]): Promise<
   return found;
 }
 
-// Adds to each dependent what a UI needs to act on it: its Metadata API name (MetadataComponentName is a
+// Adds to each dependency what a UI needs to act on it: its Metadata API name (the dependency data holds a
 // label or a DeveloperName, such as "Account Layout" or "Status"), its Setup page and its local source file.
-// The types are listed in parallel, one cached listing per type. A dependent missing from a cached listing
+// The types are listed in parallel, one cached listing per type. A component missing from a cached listing
 // (created since) makes its type listed again. Types that cannot be listed (CronTrigger...) keep an empty
-// API name.
-export async function enrichUsedByRows(
+// API name. A standard object (StandardEntity, on the used side) is named by its Id, its API name.
+export async function enrichDependencies(
   connection: Connection,
-  rows: MetadataDependencyRow[]
-): Promise<MetadataDependencyRow[]> {
+  dependencies: MetadataDependency[]
+): Promise<MetadataDependency[]> {
   const id15 = (id: string) => id.slice(0, 15);
-  const types = [...new Set(rows.map((row) => row.usedByType))];
+  const types = [...new Set(dependencies.map((dependency) => dependency.type))];
   await Promise.all(
     types.map(async (type) => {
-      const typeRows = rows.filter((row) => row.usedByType === type);
+      const typeRows = dependencies.filter((dependency) => dependency.type === type);
+      if (type === 'StandardEntity') {
+        for (const row of typeRows) {
+          row.apiName = row.id;
+          row.setupPath = buildSetupPath(type, row.id);
+        }
+        await addLocalFiles('CustomObject', typeRows);
+        return;
+      }
       const nameByIdOf = (listed: ListedComponent[] | null) =>
         new Map((listed ?? []).filter((component) => component.id).map((c) => [id15(c.id), c.fullName]));
       let listed = await listMetadataComponentsOrNull(connection, type);
       let nameById = nameByIdOf(listed.value);
-      if (listed.fromCache && typeRows.some((row) => !nameById.has(id15(row.usedById)))) {
+      if (listed.fromCache && typeRows.some((row) => !nameById.has(id15(row.id)))) {
         listed = await listMetadataComponentsOrNull(connection, type, undefined, { refresh: true });
         nameById = nameByIdOf(listed.value);
       }
       for (const row of typeRows) {
-        row.usedByApiName = nameById.get(id15(row.usedById)) ?? '';
-        row.usedBySetupPath = buildSetupPath(type, row.usedById);
+        row.apiName = nameById.get(id15(row.id)) ?? '';
+        row.setupPath = buildSetupPath(type, row.id);
       }
       if (type === 'Flow') {
         // The listing only knows the active or newest version of each Flow: every version is resolved
         const versions = await queryFlowVersions(
           connection,
-          typeRows.map((row) => row.usedById)
+          typeRows.map((row) => row.id)
         );
         for (const row of typeRows) {
-          const version = versions.get(id15(row.usedById));
+          const version = versions.get(id15(row.id));
           if (version) {
-            row.usedByApiName = version.developerName;
-            row.usedByVersions = [{ id: row.usedById, versionNumber: version.versionNumber, status: version.status }];
+            row.apiName = version.developerName;
+            row.versions = [{ id: row.id, versionNumber: version.versionNumber, status: version.status }];
           }
         }
       }
-      try {
-        const localFiles = await findLocalFiles(
-          type,
-          typeRows.map((row) => row.usedByApiName)
-        );
-        for (const row of typeRows) {
-          row.usedByLocalFile = (row.usedByApiName && localFiles.get(row.usedByApiName)) || '';
-        }
-      } catch {
-        // No sfdx project here: no local files
-      }
+      await addLocalFiles(type, typeRows);
     })
   );
-  return mergeFlowVersionRows(rows);
+  return mergeFlowVersions(dependencies);
+}
+
+async function addLocalFiles(type: string, rows: MetadataDependency[]): Promise<void> {
+  try {
+    const localFiles = await findLocalFiles(
+      type,
+      rows.map((row) => row.apiName)
+    );
+    for (const row of rows) {
+      row.localFile = (row.apiName && localFiles.get(row.apiName)) || '';
+    }
+  } catch {
+    // No sfdx project here: no local files
+  }
 }
 
 // Version number, status and Flow API name of Flow version Ids, 200 Ids per Tooling query
@@ -453,40 +490,40 @@ async function queryFlowVersions(
 
 // One row per Flow instead of one row per Flow version. The kept row is the active version, else the
 // newest one, so its Id, Setup page and drill-down point at the version a user expects.
-export function mergeFlowVersionRows(rows: MetadataDependencyRow[]): MetadataDependencyRow[] {
-  const merged: MetadataDependencyRow[] = [];
-  const flowRowByName = new Map<string, MetadataDependencyRow>();
-  for (const row of rows) {
-    if (row.usedByType !== 'Flow' || !row.usedByApiName || !row.usedByVersions) {
+export function mergeFlowVersions(dependencies: MetadataDependency[]): MetadataDependency[] {
+  const merged: MetadataDependency[] = [];
+  const flowRowByName = new Map<string, MetadataDependency>();
+  for (const row of dependencies) {
+    if (row.type !== 'Flow' || !row.apiName || !row.versions) {
       merged.push(row);
       continue;
     }
-    const existing = flowRowByName.get(row.usedByApiName);
+    const existing = flowRowByName.get(row.apiName);
     if (!existing) {
-      flowRowByName.set(row.usedByApiName, row);
+      flowRowByName.set(row.apiName, row);
       merged.push(row);
       continue;
     }
-    const versions = [...(existing.usedByVersions ?? []), ...row.usedByVersions];
-    const rowVersion = row.usedByVersions[0];
+    const versions = [...(existing.versions ?? []), ...row.versions];
+    const rowVersion = row.versions[0];
     // The version the row keeps so far, not the first one merged
-    const existingVersion = (existing.usedByVersions ?? []).find((version) => version.id === existing.usedById);
+    const existingVersion = (existing.versions ?? []).find((version) => version.id === existing.id);
     const rowWins =
       rowVersion.status === 'Active' ||
       (existingVersion?.status !== 'Active' && rowVersion.versionNumber > (existingVersion?.versionNumber ?? 0));
     if (rowWins) {
-      existing.usedById = row.usedById;
-      existing.usedByName = row.usedByName;
-      existing.usedBySetupPath = row.usedBySetupPath;
+      existing.id = row.id;
+      existing.name = row.name;
+      existing.setupPath = row.setupPath;
     }
-    existing.usedByVersions = versions;
+    existing.versions = versions;
   }
   for (const row of flowRowByName.values()) {
     // Newest first, the kept version first when it is not the newest (an active older version)
-    row.usedByVersions = [...(row.usedByVersions ?? [])].sort((a, b) => b.versionNumber - a.versionNumber);
-    const kept = row.usedByVersions.findIndex((version) => version.id === row.usedById);
+    row.versions = [...(row.versions ?? [])].sort((a, b) => b.versionNumber - a.versionNumber);
+    const kept = row.versions.findIndex((version) => version.id === row.id);
     if (kept > 0) {
-      row.usedByVersions.unshift(...row.usedByVersions.splice(kept, 1));
+      row.versions.unshift(...row.versions.splice(kept, 1));
     }
   }
   return merged;
@@ -589,12 +626,14 @@ async function lookupToolingComponents(
   }
 }
 
-export async function queryUsedBy(
+// Dependencies of the selected component in one direction. selectedType is the type of the selected
+// component as the dependency data knows it, for a selection made by Id only.
+export async function queryDependencies(
   connection: Connection,
   selection: MetadataComponentSelection,
-  options: { componentType?: string; bulk?: boolean; commandThis: any }
-): Promise<MetadataDependencyRow[]> {
-  const query = buildUsedBySoql(selection.id, selection.type, options.componentType);
+  options: { componentType?: string; bulk?: boolean; direction: DependencyDirection; commandThis: any }
+): Promise<{ dependencies: MetadataDependency[]; selectedType: string }> {
+  const query = buildDependenciesSoql(selection.id, selection.type, options.componentType, options.direction);
   const records = options.bulk
     ? (await bulkQueryTooling(query, connection)).records ?? []
     : (await soqlQueryTooling(query, connection)).records ?? [];
@@ -605,7 +644,8 @@ export async function queryUsedBy(
       c.yellow(t('metadataDepsRowCapWarning', { count: TOOLING_ROW_CAP }))
     );
   }
-  return mapUsedByRows(records);
+  const selectedType = records.length > 0 ? String(records[0][`${directionSides(options.direction).selected}Type`] ?? '') : '';
+  return { dependencies: mapDependencies(records, options.direction), selectedType };
 }
 
 function validateType(type: string | undefined): string | undefined {
@@ -761,8 +801,9 @@ function formatTimestamp(date: Date): string {
 
 export async function writeMetadataDepsReports(
   selection: MetadataComponentSelection,
-  rows: MetadataDependencyRow[],
+  dependencies: MetadataDependency[],
   targetOrg: string,
+  direction: DependencyDirection,
   commandThis: any
 ): Promise<MetadataDepsReport> {
   const reportRoot = await getReportDirectory();
@@ -773,63 +814,60 @@ export async function writeMetadataDepsReports(
   );
   await fs.ensureDir(reportDir);
   const timestamp = formatTimestamp(new Date());
-  const stem = `${sanitizeFsName(selection.name)}-used-by-${timestamp}`;
-  const usedByCsv = path.join(reportDir, `${stem}.csv`);
+  const stem = `${sanitizeFsName(selection.name)}-${direction}-${timestamp}`;
+  const dependenciesCsv = path.join(reportDir, `${stem}.csv`);
   const summaryCsv = path.join(reportDir, `${stem}-summary.csv`);
   const xlsxBase = path.join(reportDir, `${stem}.csv`);
   const xlsxFile = path.join(reportDir, 'xls', `${stem}.xlsx`);
-  const fields = [
-    'usedById',
-    'usedByApiName',
-    'usedByName',
-    'usedByType',
-    'usedByVersions',
-    'targetId',
-    'targetName',
-    'targetType',
-  ];
+  const fields = ['id', 'apiName', 'name', 'type', 'versions'];
+  const uses = direction === 'uses';
   const summary = [
     { Field: 'Component', Value: selection.name },
     { Field: 'Type', Value: selection.type },
     { Field: 'Id', Value: selection.id },
     { Field: 'Org', Value: targetOrg },
-    { Field: 'Used by (count)', Value: String(rows.length) },
+    { Field: 'Direction', Value: uses ? 'Uses' : 'Used by' },
+    { Field: uses ? 'Uses (count)' : 'Used by (count)', Value: String(dependencies.length) },
     { Field: 'Generated at', Value: new Date().toISOString() },
   ];
 
   await fs.writeFile(
-    usedByCsv,
+    dependenciesCsv,
     Papa.unparse({
       fields,
-      data: rows.map((row) =>
+      data: dependencies.map((row) =>
         fields.map((field) =>
-          field === 'usedByVersions' ? formatFlowVersions(row.usedByVersions) : row[field as keyof MetadataDependencyRow]
+          field === 'versions' ? formatFlowVersions(row.versions) : row[field as keyof MetadataDependency]
         )
       ),
     }),
     'utf8'
   );
   await fs.writeFile(summaryCsv, Papa.unparse(summary), 'utf8');
-  WebSocketClient.sendReportFileMessage(usedByCsv, t('metadataDepsReportCsv'), 'report');
-  await createXlsxFromCsvFiles([summaryCsv, usedByCsv], xlsxBase, {
-    xlsFileTitle: t('metadataDepsReportXlsx'),
+  WebSocketClient.sendReportFileMessage(
+    dependenciesCsv,
+    t(uses ? 'metadataDepsReportUsesCsv' : 'metadataDepsReportCsv'),
+    'report'
+  );
+  await createXlsxFromCsvFiles([summaryCsv, dependenciesCsv], xlsxBase, {
+    xlsFileTitle: t(uses ? 'metadataDepsReportUsesXlsx' : 'metadataDepsReportXlsx'),
     worksheetNames: {
       [summaryCsv]: 'Summary',
-      [usedByCsv]: 'Used by',
+      [dependenciesCsv]: uses ? 'Uses' : 'Used by',
     },
-    forceTextColumns: ['usedById', 'targetId', 'Id', 'Value'],
+    forceTextColumns: ['id', 'Id', 'Value'],
   });
   await fs.remove(summaryCsv);
   if (!(await fs.pathExists(xlsxFile))) {
     // createXlsxFromCsvFiles logs the cause as a warning instead of throwing
     throw new SfError(t('metadataDepsXlsxGenerationFailed', { file: xlsxFile }));
   }
-  uxLog('log', commandThis, c.grey(usedByCsv));
+  uxLog('log', commandThis, c.grey(dependenciesCsv));
   uxLog('log', commandThis, c.grey(xlsxFile));
   return {
     reportDir,
     reportFiles: [
-      { type: 'csv', file: usedByCsv },
+      { type: 'csv', file: dependenciesCsv },
       { type: 'xlsx', file: xlsxFile },
     ],
   };
@@ -846,49 +884,62 @@ export async function runMetadataDeps(
   if (!selection) {
     return { outputString: t('metadataDepsCancelled'), cancelled: true };
   }
-  uxLog('action', commandThis, c.cyan(t('metadataDepsQueryingUsedBy', { name: selection.name, org: targetOrg })));
-  const queryOptions = { componentType, bulk: flags.bulk, commandThis };
-  let rows = await queryUsedBy(connection, selection, queryOptions);
-  if (rows.length === 0 && selection.idFromCache) {
+  const direction: DependencyDirection = flags.direction === 'uses' ? 'uses' : 'used-by';
+  const uses = direction === 'uses';
+  uxLog(
+    'action',
+    commandThis,
+    c.cyan(t(uses ? 'metadataDepsQueryingUses' : 'metadataDepsQueryingUsedBy', { name: selection.name, org: targetOrg }))
+  );
+  const queryOptions = { componentType, bulk: flags.bulk, direction, commandThis };
+  let queried = await queryDependencies(connection, selection, queryOptions);
+  if (queried.dependencies.length === 0 && selection.idFromCache) {
     // A cached Id can belong to a component deleted then created again with the same name
     const fresh = await lookupListedComponent(connection, selection.type, selection.name, { refresh: true });
     if (fresh?.id && fresh.id !== selection.id) {
       selection.id = fresh.id;
-      rows = await queryUsedBy(connection, selection, queryOptions);
+      queried = await queryDependencies(connection, selection, queryOptions);
     }
   }
-  rows = await enrichUsedByRows(connection, rows);
-  if (selection.type === UNKNOWN_TYPE && rows.length > 0) {
-    selection.type = rows[0].targetType || UNKNOWN_TYPE;
+  const dependencies = await enrichDependencies(connection, queried.dependencies);
+  if (selection.type === UNKNOWN_TYPE && queried.selectedType) {
+    selection.type = queried.selectedType;
   }
-  if (rows.length === 0) {
-    uxLog('warning', commandThis, c.yellow(t('metadataDepsEmptyUsedBy')));
+  if (dependencies.length === 0) {
+    uxLog('warning', commandThis, c.yellow(t(uses ? 'metadataDepsEmptyUses' : 'metadataDepsEmptyUsedBy')));
   } else if (!flags.skipReport) {
-    // Readable columns only, kept expanded in VS Code: the Ids and the target are in the CSV and Excel reports
-    uxLog('action', commandThis, c.cyan(t('metadataDepsUsedByTable', { name: selection.name, count: rows.length })), {
-      alwaysVisible: true,
-    });
+    // Readable columns only, kept expanded in VS Code: the Ids are in the CSV and Excel reports
+    uxLog(
+      'action',
+      commandThis,
+      c.cyan(
+        t(uses ? 'metadataDepsUsesTable' : 'metadataDepsUsedByTable', { name: selection.name, count: dependencies.length })
+      ),
+      { alwaysVisible: true }
+    );
     const columns = [t('docMdColType'), t('docMdColName')];
-    const tableRows = [...rows]
-      .sort((a, b) => a.usedByType.localeCompare(b.usedByType) || a.usedByName.localeCompare(b.usedByName))
-      .map((row) => ({ [columns[0]]: row.usedByType, [columns[1]]: row.usedByApiName || row.usedByName }));
-    // No uxLogTableWithReport: the used-by CSV written below holds every row and is sent to VS Code.
+    const tableRows = [...dependencies]
+      .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
+      .map((row) => ({ [columns[0]]: row.type, [columns[1]]: row.apiName || row.name }));
+    // No uxLogTableWithReport: the CSV written below holds every row and is sent to VS Code.
     // The table comes first, so a report failure never hides the result.
     uxLogTable(commandThis, tableRows, columns);
   }
   let report: MetadataDepsReport | Record<string, never> = {};
   if (!flags.skipReport) {
     uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
-    report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
+    report = await writeMetadataDepsReports(selection, dependencies, targetOrg, direction, commandThis);
   }
+  const counts = { name: selection.name, count: dependencies.length };
   const outputString = flags.skipReport
-    ? t('metadataDepsFound', { name: selection.name, count: rows.length })
-    : t('metadataDepsGenerated', { name: selection.name, count: rows.length });
+    ? t(uses ? 'metadataDepsFoundUses' : 'metadataDepsFound', counts)
+    : t(uses ? 'metadataDepsGeneratedUses' : 'metadataDepsGenerated', counts);
   uxLog('success', commandThis, c.green(outputString));
   return {
     outputString,
-    component: { id: selection.id, name: selection.name, type: selection.type, org: targetOrg },
-    usedBy: rows,
+    direction,
+    selected: { id: selection.id, name: selection.name, type: selection.type, org: targetOrg },
+    dependencies,
     ...report,
   };
 }

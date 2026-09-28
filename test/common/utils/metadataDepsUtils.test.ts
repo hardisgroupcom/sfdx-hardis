@@ -7,17 +7,17 @@ import {
   buildCustomFieldLookupSoql,
   buildLookupSoql,
   buildSetupPath,
-  buildUsedBySoql,
+  buildDependenciesSoql,
   customFieldDeveloperName,
-  enrichUsedByRows,
+  enrichDependencies,
   findLocalFiles,
   formatFlowVersions,
-  mergeFlowVersionRows,
+  mergeFlowVersions,
   isMetadataType,
   isStandardObjectName,
   lookupListedComponent,
   isSalesforceId,
-  mapUsedByRows,
+  mapDependencies,
   parseCustomFieldName,
   parseCustomObjectName,
   sanitizeFsName,
@@ -183,16 +183,13 @@ describe('metadataDepsUtils', () => {
   });
 
   describe('dependent rows for the VS Code panel', () => {
-    const row = (usedById: string, usedByType: string, usedByName: string) => ({
-      usedById,
-      usedByName,
-      usedByType,
-      targetId: '01Ixx0000000001AAA',
-      targetName: 'Installation',
-      targetType: 'CustomObject',
-      usedByApiName: '',
-      usedBySetupPath: '',
-      usedByLocalFile: '',
+    const row = (id: string, type: string, name: string) => ({
+      id,
+      name,
+      type,
+      apiName: '',
+      setupPath: '',
+      localFile: '',
     });
 
     it('builds the Setup path of a component', () => {
@@ -206,6 +203,22 @@ describe('metadataDepsUtils', () => {
       expect(buildSetupPath('AuraDefinitionBundle', '0Ab000000000001AAA')).to.equal(
         '/lightning/setup/LightningComponents/home'
       );
+      expect(buildSetupPath('StandardEntity', 'Account')).to.equal('/lightning/setup/ObjectManager/Account/Details/view');
+      expect(buildSetupPath('User', 'User')).to.equal('');
+    });
+
+    it('names a used standard object by its API name, without listing it', async () => {
+      const connection = {
+        getApiVersion: () => '65.0',
+        metadata: {
+          list: async () => {
+            throw new Error('the standard objects must not be listed');
+          },
+        },
+      } as any;
+      const [account] = await enrichDependencies(connection, [row('Account', 'StandardEntity', 'Account')]);
+      expect(account.apiName).to.equal('Account');
+      expect(account.setupPath).to.equal('/lightning/setup/ObjectManager/Account/Details/view');
     });
 
     it('adds the Metadata API name matched on the Id, with one listing per type', async () => {
@@ -227,19 +240,19 @@ describe('metadataDepsUtils', () => {
           },
         },
       } as any;
-      const rows = await enrichUsedByRows(connection, [
+      const rows = await enrichDependencies(connection, [
         row('00h000000000001AAA', 'Layout', 'Account Layout'),
         row('00N000000000001', 'CustomField', 'Crew_Workload'),
         row('00N000000000002AAA', 'CustomField', 'Other'),
         row('08e000000000001AAA', 'CronTrigger', '08e000000000001AAA'),
       ]);
-      expect(rows.map((r) => r.usedByApiName)).to.deep.equal([
+      expect(rows.map((r) => r.apiName)).to.deep.equal([
         'Account-Account Layout',
         'Installation__c.Crew_Workload__c',
         '',
         '',
       ]);
-      expect(rows[0].usedBySetupPath).to.equal('/00h000000000001AAA');
+      expect(rows[0].setupPath).to.equal('/00h000000000001AAA');
       expect(queries.map((query) => query[0].type)).to.have.members(['Layout', 'CustomField', 'CronTrigger']);
     });
 
@@ -261,11 +274,11 @@ describe('metadataDepsUtils', () => {
             },
           },
         } as any;
-        await enrichUsedByRows(connection, [row('01p000000000001AAA', 'ApexClass', 'OldClass')]);
+        await enrichDependencies(connection, [row('01p000000000001AAA', 'ApexClass', 'OldClass')]);
         // Created after the listing was cached
         listing.push({ fullName: 'NewClass', id: '01p000000000002AAA' });
-        const rows = await enrichUsedByRows(connection, [row('01p000000000002AAA', 'ApexClass', 'NewClass')]);
-        expect(rows[0].usedByApiName).to.equal('NewClass');
+        const rows = await enrichDependencies(connection, [row('01p000000000002AAA', 'ApexClass', 'NewClass')]);
+        expect(rows[0].apiName).to.equal('NewClass');
         expect(calls).to.equal(2);
       } finally {
         process.env.SFDX_HARDIS_ORG_API_CACHE_DIR = previousDir;
@@ -316,41 +329,38 @@ describe('metadataDepsUtils', () => {
   });
 
   describe('Flow versions', () => {
-    const flowRow = (usedById: string, versionNumber: number, status: string) => ({
-      usedById,
-      usedByName: 'Installation Assign Crew',
-      usedByType: 'Flow',
-      targetId: '01I000000000001AAA',
-      targetName: 'Installation',
-      targetType: 'CustomObject',
-      usedByApiName: 'Installation_Assign_Crew',
-      usedBySetupPath: `/builder_platform_interaction/flowBuilder.app?flowId=${usedById}`,
-      usedByLocalFile: '',
-      usedByVersions: [{ id: usedById, versionNumber, status }],
+    const flowRow = (id: string, versionNumber: number, status: string) => ({
+      id,
+      name: 'Installation Assign Crew',
+      type: 'Flow',
+      apiName: 'Installation_Assign_Crew',
+      setupPath: `/builder_platform_interaction/flowBuilder.app?flowId=${id}`,
+      localFile: '',
+      versions: [{ id, versionNumber, status }],
     });
 
     it('merges the versions of a Flow into one row that keeps the active version', () => {
-      const merged = mergeFlowVersionRows([
+      const merged = mergeFlowVersions([
         flowRow('301000000000001AAA', 1, 'Obsolete'),
         flowRow('301000000000004AAA', 4, 'Active'),
         flowRow('301000000000003AAA', 3, 'Obsolete'),
       ]);
       expect(merged).to.have.length(1);
-      expect(merged[0].usedById).to.equal('301000000000004AAA');
-      expect(merged[0].usedBySetupPath).to.contain('301000000000004AAA');
-      expect(merged[0].usedByVersions?.map((version) => version.versionNumber)).to.deep.equal([4, 3, 1]);
-      expect(formatFlowVersions(merged[0].usedByVersions)).to.equal('4 (Active); 3; 1');
+      expect(merged[0].id).to.equal('301000000000004AAA');
+      expect(merged[0].setupPath).to.contain('301000000000004AAA');
+      expect(merged[0].versions?.map((version) => version.versionNumber)).to.deep.equal([4, 3, 1]);
+      expect(formatFlowVersions(merged[0].versions)).to.equal('4 (Active); 3; 1');
     });
 
     it('keeps the newest version when no version is active, and leaves other rows alone', () => {
-      const other = { ...flowRow('01p000000000001AAA', 0, ''), usedByType: 'ApexClass', usedByVersions: undefined };
-      const merged = mergeFlowVersionRows([
+      const other = { ...flowRow('01p000000000001AAA', 0, ''), type: 'ApexClass', versions: undefined };
+      const merged = mergeFlowVersions([
         flowRow('301000000000002AAA', 2, 'Obsolete'),
         other,
         flowRow('301000000000005AAA', 5, 'Draft'),
       ]);
       expect(merged).to.have.length(2);
-      expect(merged[0].usedById).to.equal('301000000000005AAA');
+      expect(merged[0].id).to.equal('301000000000005AAA');
       expect(merged[1]).to.equal(other);
     });
   });
@@ -386,48 +396,45 @@ describe('metadataDepsUtils', () => {
     });
   });
 
-  describe('used-by SOQL', () => {
-    it('filters the referenced component and dependent type', () => {
-      const query = buildUsedBySoql('01pxx0000000001AAA', 'ApexClass', 'Flow');
+  describe('dependencies SOQL and mapping', () => {
+    const record = {
+      MetadataComponentId: '301A',
+      MetadataComponentName: 'UsesTarget',
+      MetadataComponentType: 'Flow',
+      RefMetadataComponentId: '01pA',
+      RefMetadataComponentName: 'Target',
+      RefMetadataComponentType: 'ApexClass',
+    };
+
+    it('used-by: filters on the referenced component, and on the type of the component that uses it', () => {
+      const query = buildDependenciesSoql('01pxx0000000001AAA', 'ApexClass', 'Flow');
       expect(query).to.contain("RefMetadataComponentId = '01pxx0000000001AAA'");
       expect(query).to.contain("RefMetadataComponentType = 'ApexClass'");
-      expect(query).to.contain("MetadataComponentType = 'Flow'");
+      expect(query).to.contain("AND MetadataComponentType = 'Flow'");
     });
 
-    it('does not filter RefMetadataComponentType when the type is unknown (--id only)', () => {
-      expect(buildUsedBySoql('01pxx0000000001AAA', 'Unknown')).not.to.contain('RefMetadataComponentType =');
-      expect(buildUsedBySoql('01pxx0000000001AAA')).not.to.contain('RefMetadataComponentType =');
+    it('uses: filters on the component that uses, and on the type of the used component', () => {
+      const query = buildDependenciesSoql('301xx0000000001AAA', 'Flow', 'CustomField', 'uses');
+      expect(query).to.contain("WHERE MetadataComponentId = '301xx0000000001AAA'");
+      expect(query).to.contain("AND MetadataComponentType = 'Flow'");
+      expect(query).to.contain("RefMetadataComponentType = 'CustomField'");
+      expect(query).not.to.contain('RefMetadataComponentId =');
     });
 
-    it('does not filter RefMetadataComponentType for StandardEntity', () => {
-      const query = buildUsedBySoql('01Ixx0000000001AAA', 'StandardEntity');
-      expect(query).not.to.contain('RefMetadataComponentType =');
+    it('does not filter the selected type when it is unknown (--id only) or StandardEntity', () => {
+      expect(buildDependenciesSoql('01pxx0000000001AAA', 'Unknown')).not.to.contain('RefMetadataComponentType =');
+      expect(buildDependenciesSoql('01pxx0000000001AAA')).not.to.contain('RefMetadataComponentType =');
+      expect(buildDependenciesSoql('01Ixx0000000001AAA', 'StandardEntity')).not.to.contain('RefMetadataComponentType =');
+      expect(buildDependenciesSoql('01pxx0000000001AAA', 'Unknown', undefined, 'uses')).not.to.contain(
+        'AND MetadataComponentType ='
+      );
     });
 
-    it('maps the Tooling direction to used-by columns', () => {
-      expect(
-        mapUsedByRows([
-          {
-            MetadataComponentId: '301A',
-            MetadataComponentName: 'UsesTarget',
-            MetadataComponentType: 'Flow',
-            RefMetadataComponentId: '01pA',
-            RefMetadataComponentName: 'Target',
-            RefMetadataComponentType: 'ApexClass',
-          },
-        ])
-      ).to.deep.equal([
-        {
-          usedById: '301A',
-          usedByName: 'UsesTarget',
-          usedByType: 'Flow',
-          targetId: '01pA',
-          targetName: 'Target',
-          targetType: 'ApexClass',
-          usedByApiName: '',
-          usedBySetupPath: '',
-          usedByLocalFile: '',
-        },
+    it('maps the other component of each row, in both directions', () => {
+      const empty = { apiName: '', setupPath: '', localFile: '' };
+      expect(mapDependencies([record])).to.deep.equal([{ id: '301A', name: 'UsesTarget', type: 'Flow', ...empty }]);
+      expect(mapDependencies([record], 'uses')).to.deep.equal([
+        { id: '01pA', name: 'Target', type: 'ApexClass', ...empty },
       ]);
     });
   });
