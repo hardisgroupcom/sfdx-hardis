@@ -11,6 +11,8 @@ import {
   customFieldDeveloperName,
   enrichUsedByRows,
   findLocalFiles,
+  formatFlowVersions,
+  mergeFlowVersionRows,
   isMetadataType,
   isStandardObjectName,
   lookupListedComponent,
@@ -310,6 +312,46 @@ describe('metadataDepsUtils', () => {
         process.chdir(previousCwd);
         await fs.remove(root);
       }
+    });
+  });
+
+  describe('Flow versions', () => {
+    const flowRow = (usedById: string, versionNumber: number, status: string) => ({
+      usedById,
+      usedByName: 'Installation Assign Crew',
+      usedByType: 'Flow',
+      targetId: '01I000000000001AAA',
+      targetName: 'Installation',
+      targetType: 'CustomObject',
+      usedByApiName: 'Installation_Assign_Crew',
+      usedBySetupPath: `/builder_platform_interaction/flowBuilder.app?flowId=${usedById}`,
+      usedByLocalFile: '',
+      usedByVersions: [{ id: usedById, versionNumber, status }],
+    });
+
+    it('merges the versions of a Flow into one row that keeps the active version', () => {
+      const merged = mergeFlowVersionRows([
+        flowRow('301000000000001AAA', 1, 'Obsolete'),
+        flowRow('301000000000004AAA', 4, 'Active'),
+        flowRow('301000000000003AAA', 3, 'Obsolete'),
+      ]);
+      expect(merged).to.have.length(1);
+      expect(merged[0].usedById).to.equal('301000000000004AAA');
+      expect(merged[0].usedBySetupPath).to.contain('301000000000004AAA');
+      expect(merged[0].usedByVersions?.map((version) => version.versionNumber)).to.deep.equal([4, 3, 1]);
+      expect(formatFlowVersions(merged[0].usedByVersions)).to.equal('4 (Active); 3; 1');
+    });
+
+    it('keeps the newest version when no version is active, and leaves other rows alone', () => {
+      const other = { ...flowRow('01p000000000001AAA', 0, ''), usedByType: 'ApexClass', usedByVersions: undefined };
+      const merged = mergeFlowVersionRows([
+        flowRow('301000000000002AAA', 2, 'Obsolete'),
+        other,
+        flowRow('301000000000005AAA', 5, 'Draft'),
+      ]);
+      expect(merged).to.have.length(2);
+      expect(merged[0].usedById).to.equal('301000000000005AAA');
+      expect(merged[1]).to.equal(other);
     });
   });
 

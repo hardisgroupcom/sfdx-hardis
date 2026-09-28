@@ -63,6 +63,15 @@ export interface MetadataDependencyRow {
   usedByApiName: string;
   usedBySetupPath: string;
   usedByLocalFile: string;
+  // Flow only: the versions of the Flow that use the component, newest first. The dependency data holds one
+  // row per Flow version: they are merged into one row per Flow, whose Id is the active (else newest) version.
+  usedByVersions?: FlowVersion[];
+}
+
+export interface FlowVersion {
+  id: string;
+  versionNumber: number;
+  status: string;
 }
 
 export interface MetadataDepsReport {
@@ -384,6 +393,20 @@ export async function enrichUsedByRows(
         row.usedByApiName = nameById.get(id15(row.usedById)) ?? '';
         row.usedBySetupPath = buildSetupPath(type, row.usedById);
       }
+      if (type === 'Flow') {
+        // The listing only knows the active or newest version of each Flow: every version is resolved
+        const versions = await queryFlowVersions(
+          connection,
+          typeRows.map((row) => row.usedById)
+        );
+        for (const row of typeRows) {
+          const version = versions.get(id15(row.usedById));
+          if (version) {
+            row.usedByApiName = version.developerName;
+            row.usedByVersions = [{ id: row.usedById, versionNumber: version.versionNumber, status: version.status }];
+          }
+        }
+      }
       try {
         const localFiles = await findLocalFiles(
           type,
@@ -397,7 +420,83 @@ export async function enrichUsedByRows(
       }
     })
   );
-  return rows;
+  return mergeFlowVersionRows(rows);
+}
+
+// Version number, status and Flow API name of Flow version Ids, 200 Ids per Tooling query
+async function queryFlowVersions(
+  connection: Connection,
+  ids: string[]
+): Promise<Map<string, { developerName: string; versionNumber: number; status: string }>> {
+  const versions = new Map<string, { developerName: string; versionNumber: number; status: string }>();
+  const uniqueIds = [...new Set(ids.filter((id) => id !== ''))];
+  for (let index = 0; index < uniqueIds.length; index += 200) {
+    const chunk = uniqueIds.slice(index, index + 200);
+    try {
+      const result = await soqlQueryTooling(
+        `SELECT Id, Definition.DeveloperName, VersionNumber, Status FROM Flow WHERE Id IN (${chunk.map(soqlString).join(', ')})`,
+        connection
+      );
+      for (const record of result.records ?? []) {
+        versions.set(String(record.Id).slice(0, 15), {
+          developerName: String(record.Definition?.DeveloperName ?? ''),
+          versionNumber: Number(record.VersionNumber ?? 0),
+          status: String(record.Status ?? ''),
+        });
+      }
+    } catch {
+      // Versions stay unresolved: their rows keep their own Id and label
+    }
+  }
+  return versions;
+}
+
+// One row per Flow instead of one row per Flow version. The kept row is the active version, else the
+// newest one, so its Id, Setup page and drill-down point at the version a user expects.
+export function mergeFlowVersionRows(rows: MetadataDependencyRow[]): MetadataDependencyRow[] {
+  const merged: MetadataDependencyRow[] = [];
+  const flowRowByName = new Map<string, MetadataDependencyRow>();
+  for (const row of rows) {
+    if (row.usedByType !== 'Flow' || !row.usedByApiName || !row.usedByVersions) {
+      merged.push(row);
+      continue;
+    }
+    const existing = flowRowByName.get(row.usedByApiName);
+    if (!existing) {
+      flowRowByName.set(row.usedByApiName, row);
+      merged.push(row);
+      continue;
+    }
+    const versions = [...(existing.usedByVersions ?? []), ...row.usedByVersions];
+    const rowVersion = row.usedByVersions[0];
+    // The version the row keeps so far, not the first one merged
+    const existingVersion = (existing.usedByVersions ?? []).find((version) => version.id === existing.usedById);
+    const rowWins =
+      rowVersion.status === 'Active' ||
+      (existingVersion?.status !== 'Active' && rowVersion.versionNumber > (existingVersion?.versionNumber ?? 0));
+    if (rowWins) {
+      existing.usedById = row.usedById;
+      existing.usedByName = row.usedByName;
+      existing.usedBySetupPath = row.usedBySetupPath;
+    }
+    existing.usedByVersions = versions;
+  }
+  for (const row of flowRowByName.values()) {
+    // Newest first, the kept version first when it is not the newest (an active older version)
+    row.usedByVersions = [...(row.usedByVersions ?? [])].sort((a, b) => b.versionNumber - a.versionNumber);
+    const kept = row.usedByVersions.findIndex((version) => version.id === row.usedById);
+    if (kept > 0) {
+      row.usedByVersions.unshift(...row.usedByVersions.splice(kept, 1));
+    }
+  }
+  return merged;
+}
+
+// "4 (Active); 3; 2; 1" for the reports
+export function formatFlowVersions(versions?: FlowVersion[]): string {
+  return (versions ?? [])
+    .map((version) => (version.status === 'Active' ? `${version.versionNumber} (Active)` : String(version.versionNumber)))
+    .join('; ');
 }
 
 // EntityDefinition of an object API name, cached: object Ids do not change
@@ -679,7 +778,16 @@ export async function writeMetadataDepsReports(
   const summaryCsv = path.join(reportDir, `${stem}-summary.csv`);
   const xlsxBase = path.join(reportDir, `${stem}.csv`);
   const xlsxFile = path.join(reportDir, 'xls', `${stem}.xlsx`);
-  const fields = ['usedById', 'usedByApiName', 'usedByName', 'usedByType', 'targetId', 'targetName', 'targetType'];
+  const fields = [
+    'usedById',
+    'usedByApiName',
+    'usedByName',
+    'usedByType',
+    'usedByVersions',
+    'targetId',
+    'targetName',
+    'targetType',
+  ];
   const summary = [
     { Field: 'Component', Value: selection.name },
     { Field: 'Type', Value: selection.type },
@@ -693,7 +801,11 @@ export async function writeMetadataDepsReports(
     usedByCsv,
     Papa.unparse({
       fields,
-      data: rows.map((row) => fields.map((field) => row[field as keyof MetadataDependencyRow])),
+      data: rows.map((row) =>
+        fields.map((field) =>
+          field === 'usedByVersions' ? formatFlowVersions(row.usedByVersions) : row[field as keyof MetadataDependencyRow]
+        )
+      ),
     }),
     'utf8'
   );
@@ -745,7 +857,7 @@ export async function runMetadataDeps(
       rows = await queryUsedBy(connection, selection, queryOptions);
     }
   }
-  await enrichUsedByRows(connection, rows);
+  rows = await enrichUsedByRows(connection, rows);
   if (selection.type === UNKNOWN_TYPE && rows.length > 0) {
     selection.type = rows[0].targetType || UNKNOWN_TYPE;
   }
