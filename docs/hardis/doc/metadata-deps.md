@@ -68,7 +68,7 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 |skip-report|boolean|Do not write the CSV and Excel reports nor print the result table: the caller shows the --json result itself (the VS Code panel)||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |source-file|option|Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name||||
-|target-org<br/>-o|option|undefined|veurtio+demo.73193ee31bf8@agentforce.com|||
+|target-org<br/>-o|option|undefined|nicolas.vuillamy@cloudity.com|||
 |type|option|Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)||||
 |websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 

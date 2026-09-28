@@ -8,7 +8,7 @@ import { createXlsxFromCsvFiles } from './filesUtils.js';
 import { t } from './i18n.js';
 import { isCI, uxLog, uxLogTable } from './index.js';
 import { prompts } from './prompts.js';
-import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
+import { bulkQueryTooling, soqlQuery, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { withOrgApiCache } from '../cache/orgApiCache.js';
@@ -414,6 +414,16 @@ export async function enrichDependencies(
         await addLocalFiles('CustomObject', typeRows);
         return;
       }
+      if (isFolderType(type)) {
+        // listMetadata needs a folder for these types: their Folder/Name API names come from SOQL instead
+        const names = await queryFolderedNames(connection, type, typeRows.map((row) => row.id));
+        for (const row of typeRows) {
+          row.apiName = names.get(id15(row.id)) ?? '';
+          row.setupPath = buildSetupPath(type, row.id);
+        }
+        await addLocalFiles(type, typeRows);
+        return;
+      }
       const nameByIdOf = (listed: ListedComponent[] | null) =>
         new Map((listed ?? []).filter((component) => component.id).map((c) => [id15(c.id), c.fullName]));
       let listed = await listMetadataComponentsOrNull(connection, type);
@@ -458,6 +468,70 @@ async function addLocalFiles(type: string, rows: MetadataDependency[]): Promise<
   } catch {
     // No sfdx project here: no local files
   }
+}
+
+// sObject and folder field of each folder type: its API name is <folder DeveloperName>/<DeveloperName>
+const FOLDERED_OBJECTS: Record<string, { object: string; folderField: string }> = {
+  Report: { object: 'Report', folderField: 'OwnerId' },
+  Dashboard: { object: 'Dashboard', folderField: 'FolderId' },
+  EmailTemplate: { object: 'EmailTemplate', folderField: 'FolderId' },
+  Document: { object: 'Document', folderField: 'FolderId' },
+};
+
+// Folder/Name API names of Report, Dashboard, EmailTemplate and Document Ids, 200 Ids per SOQL query.
+// A component whose folder is the org (Id starting with 00D) is in unfiled$public. One in a personal
+// folder (a user Id) keeps an empty API name: it cannot be retrieved.
+export async function queryFolderedNames(
+  connection: Connection,
+  type: string,
+  ids: string[]
+): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  const config = FOLDERED_OBJECTS[type];
+  const uniqueIds = [...new Set(ids.filter((id) => isSalesforceId(id)))];
+  if (!config || uniqueIds.length === 0) {
+    return names;
+  }
+  try {
+    const components: Array<{ id: string; developerName: string; folderId: string }> = [];
+    for (let index = 0; index < uniqueIds.length; index += 200) {
+      const chunk = uniqueIds.slice(index, index + 200);
+      const result = await soqlQuery(
+        `SELECT Id, DeveloperName, ${config.folderField} FROM ${config.object} WHERE Id IN (${chunk.map(soqlString).join(', ')})`,
+        connection
+      );
+      for (const record of result.records ?? []) {
+        components.push({
+          id: String(record.Id),
+          developerName: String(record.DeveloperName ?? ''),
+          folderId: String(record[config.folderField] ?? ''),
+        });
+      }
+    }
+    const folderIds = [...new Set(components.map((component) => component.folderId).filter((id) => id.startsWith('00l')))];
+    const folderNames = new Map<string, string>();
+    for (let index = 0; index < folderIds.length; index += 200) {
+      const chunk = folderIds.slice(index, index + 200);
+      const result = await soqlQuery(
+        `SELECT Id, DeveloperName FROM Folder WHERE Id IN (${chunk.map(soqlString).join(', ')})`,
+        connection
+      );
+      for (const record of result.records ?? []) {
+        folderNames.set(String(record.Id).slice(0, 15), String(record.DeveloperName ?? ''));
+      }
+    }
+    for (const component of components) {
+      const folder = component.folderId.startsWith('00D')
+        ? 'unfiled$public'
+        : folderNames.get(component.folderId.slice(0, 15)) ?? '';
+      if (folder && component.developerName) {
+        names.set(component.id.slice(0, 15), `${folder}/${component.developerName}`);
+      }
+    }
+  } catch {
+    // Names stay unresolved: the rows keep their label, and can still be opened in Setup
+  }
+  return names;
 }
 
 // Version number, status and Flow API name of Flow version Ids, 200 Ids per Tooling query
@@ -648,6 +722,11 @@ export async function queryDependencies(
   return { dependencies: mapDependencies(records, options.direction), selectedType };
 }
 
+// Title shown after each prompt: it says which direction is read
+function selectionTitle(flags: MetadataDepsFlags): string {
+  return t(flags.direction === 'uses' ? 'metadataDepsTitleUses' : 'metadataDepsTitle');
+}
+
 function validateType(type: string | undefined): string | undefined {
   if (!type) {
     return undefined;
@@ -660,6 +739,7 @@ function validateType(type: string | undefined): string | undefined {
 
 async function promptForSelectionInput(
   commandThis: any,
+  title: string,
   initialType?: string,
   initialName?: string
 ): Promise<{
@@ -688,7 +768,7 @@ async function promptForSelectionInput(
       ],
     });
     selectedType = String(typeAnswer.value);
-    uxLog('action', commandThis, c.cyan(t('metadataDepsTitle')));
+    uxLog('action', commandThis, c.cyan(title));
   }
 
   if (selectedType === OTHER_TYPE_VALUE) {
@@ -708,7 +788,7 @@ async function promptForSelectionInput(
         validate: (value: string) => isSalesforceId(value.trim()) || t('metadataDepsInvalidId'),
       },
     ]);
-    uxLog('action', commandThis, c.cyan(t('metadataDepsTitle')));
+    uxLog('action', commandThis, c.cyan(title));
     return { type: String(otherAnswer.type).trim(), id: String(otherAnswer.id).trim() };
   }
 
@@ -724,7 +804,7 @@ async function promptForSelectionInput(
     description: t('metadataDepsEnterNameDesc', { hint }),
     validate: (value: string) => value.trim().length > 0,
   });
-  uxLog('action', commandThis, c.cyan(t('metadataDepsTitle')));
+  uxLog('action', commandThis, c.cyan(title));
   return { type, name: String(nameAnswer.value).trim() };
 }
 
@@ -758,7 +838,7 @@ export async function resolveMetadataComponent(
     throw new SfError(t('metadataDepsAgentRequiresFlags'));
   }
   if (!id && !(type && name)) {
-    const prompted = await promptForSelectionInput(commandThis, type, name);
+    const prompted = await promptForSelectionInput(commandThis, selectionTitle(flags), type, name);
     type = prompted.type;
     name = prompted.name;
     id = prompted.id;
@@ -791,7 +871,7 @@ export async function resolveMetadataComponent(
       description: match.id,
     })),
   });
-  uxLog('action', commandThis, c.cyan(t('metadataDepsTitle')));
+  uxLog('action', commandThis, c.cyan(selectionTitle(flags)));
   return matches.find((match) => match.id === answer.value) ?? null;
 }
 
@@ -893,8 +973,9 @@ export async function runMetadataDeps(
   );
   const queryOptions = { componentType, bulk: flags.bulk, direction, commandThis };
   let queried = await queryDependencies(connection, selection, queryOptions);
-  if (queried.dependencies.length === 0 && selection.idFromCache) {
-    // A cached Id can belong to a component deleted then created again with the same name
+  if (queried.dependencies.length === 0 && selection.idFromCache && !uses) {
+    // A cached Id can belong to a component deleted then created again with the same name. Only checked
+    // in used-by mode: many components use nothing, so an empty uses result is not a sign of a stale Id
     const fresh = await lookupListedComponent(connection, selection.type, selection.name, { refresh: true });
     if (fresh?.id && fresh.id !== selection.id) {
       selection.id = fresh.id;
@@ -919,15 +1000,16 @@ export async function runMetadataDeps(
     );
     const columns = [t('docMdColType'), t('docMdColName')];
     const tableRows = [...dependencies]
-      .sort((a, b) => a.type.localeCompare(b.type) || a.name.localeCompare(b.name))
-      .map((row) => ({ [columns[0]]: row.type, [columns[1]]: row.apiName || row.name }));
+      .map((row) => ({ type: row.type, displayName: row.apiName || row.name }))
+      .sort((a, b) => a.type.localeCompare(b.type) || a.displayName.localeCompare(b.displayName))
+      .map((row) => ({ [columns[0]]: row.type, [columns[1]]: row.displayName }));
     // No uxLogTableWithReport: the CSV written below holds every row and is sent to VS Code.
     // The table comes first, so a report failure never hides the result.
     uxLogTable(commandThis, tableRows, columns);
   }
   let report: MetadataDepsReport | Record<string, never> = {};
   if (!flags.skipReport) {
-    uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
+    uxLog('action', commandThis, c.cyan(t(uses ? 'metadataDepsWritingUsesReport' : 'metadataDepsWritingReport')));
     report = await writeMetadataDepsReports(selection, dependencies, targetOrg, direction, commandThis);
   }
   const counts = { name: selection.name, count: dependencies.length };

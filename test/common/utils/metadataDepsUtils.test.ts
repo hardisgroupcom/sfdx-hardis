@@ -20,6 +20,7 @@ import {
   mapDependencies,
   parseCustomFieldName,
   parseCustomObjectName,
+  queryFolderedNames,
   sanitizeFsName,
   soqlString,
   stripCustomSuffix,
@@ -325,6 +326,55 @@ describe('metadataDepsUtils', () => {
         process.chdir(previousCwd);
         await fs.remove(root);
       }
+    });
+  });
+
+  describe('folder types (Report, Dashboard, EmailTemplate, Document)', () => {
+    // Fake connection answering SOQL queries on Report and Folder, and refusing any listMetadata call
+    const soqlConnection = (records: Record<string, any[]>) =>
+      ({
+        getApiVersion: () => '65.0',
+        query: async (query: string) => ({
+          records: records[query.includes('FROM Folder') ? 'Folder' : 'Report'] ?? [],
+          done: true,
+          totalSize: 0,
+        }),
+        metadata: {
+          list: async () => {
+            throw new Error('folder types must not be listed without a folder');
+          },
+        },
+      }) as any;
+
+    it('names reports Folder/DeveloperName, unfiled$public for the org folder, nothing for a personal folder', async () => {
+      const connection = soqlConnection({
+        Report: [
+          { Id: '00O000000000001AAA', DeveloperName: 'Pipeline', OwnerId: '00l000000000001AAA' },
+          { Id: '00O000000000002AAA', DeveloperName: 'Public_One', OwnerId: '00D000000000001AAA' },
+          { Id: '00O000000000003AAA', DeveloperName: 'Mine', OwnerId: '005000000000001AAA' },
+        ],
+        Folder: [{ Id: '00l000000000001AAA', DeveloperName: 'SalesReports' }],
+      });
+      const names = await queryFolderedNames(connection, 'Report', [
+        '00O000000000001AAA',
+        '00O000000000002AAA',
+        '00O000000000003AAA',
+      ]);
+      expect(names.get('00O000000000001')).to.equal('SalesReports/Pipeline');
+      expect(names.get('00O000000000002')).to.equal('unfiled$public/Public_One');
+      expect(names.has('00O000000000003')).to.equal(false);
+    });
+
+    it('resolves report dependencies without listing Report', async () => {
+      const connection = soqlConnection({
+        Report: [{ Id: '00O000000000001AAA', DeveloperName: 'Pipeline', OwnerId: '00l000000000001AAA' }],
+        Folder: [{ Id: '00l000000000001AAA', DeveloperName: 'SalesReports' }],
+      });
+      const [report] = await enrichDependencies(connection, [
+        { id: '00O000000000001AAA', name: 'Pipeline', type: 'Report', apiName: '', setupPath: '', localFile: '' },
+      ]);
+      expect(report.apiName).to.equal('SalesReports/Pipeline');
+      expect(report.setupPath).to.equal('/00O000000000001AAA');
     });
   });
 

@@ -24,7 +24,7 @@ Select a common metadata type and API name interactively, pass \`--type\` and \`
 - **Standard objects:** \`--type CustomObject --name Account\` looks up standard objects too. Standard fields are not in the Salesforce dependency data, only custom fields are.
 - **Direct Id:** Pass \`--id\` to skip lookup. Without \`--type\`, dependencies are not filtered on the selected component type.
 - **Type filter:** Pass \`--component-type Flow\` (for example) to keep only one type of component on the other side of the dependency.
-- **Large graphs:** Pass \`--bulk\` to run a Tooling API Bulk API 2.0 query job, including Report dependencies and graphs that can exceed 2,000 rows. Developer Edition orgs reject Bulk queries on this object.
+- **Large graphs:** Pass \`--bulk\` to run a Tooling API Bulk API 2.0 query job, for graphs that can exceed 2,000 rows. Developer Edition orgs reject Bulk queries on this object, and on some orgs the Bulk API returns fewer rows than the default query (Flow dependencies can be missing): use it only when the default query hits the 2,000 row cap.
 - **VS Code panel:** In VS Code, the Metadata Dependencies panel shows the result in both directions, opens the files and the Setup pages of the components, drills down and retrieves them. It runs this command with \`--json --skip-report\`.
 - **Reports:** Writes a CSV and an Excel workbook with a Summary sheet and a Used by (or Uses) sheet under \`hardis-report/metadata-deps/<api-name>-<type>/\`.
 
