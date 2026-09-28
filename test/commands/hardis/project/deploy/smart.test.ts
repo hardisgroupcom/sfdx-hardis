@@ -38,15 +38,30 @@ describe('SmartDeploy REST deployment option', () => {
     }
   });
 
-  it('sets the Salesforce CLI environment variable from branch config', () => {
-    const logs = applyRestDeploymentOption({ useRestDeploy: true });
+  it('deploys with REST by default', () => {
+    const logs = applyRestDeploymentOption();
 
     expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.equal('true');
     expect(logs).to.have.length(1);
     expect(logs[0]).to.include('[RestDeployment]');
   });
 
-  it('allows the sfdx-hardis environment variable to enable REST deployment', () => {
+  it('falls back to SOAP when branch config disables REST', () => {
+    const logs = applyRestDeploymentOption({ useRestDeploy: false });
+
+    expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.equal('false');
+    expect(logs).to.have.length(1);
+  });
+
+  it('falls back to SOAP when the sfdx-hardis environment variable is false', () => {
+    process.env[HARDIS_REST_DEPLOY_ENV_VAR] = 'false';
+
+    applyRestDeploymentOption({ useRestDeploy: true });
+
+    expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.equal('false');
+  });
+
+  it('allows the sfdx-hardis environment variable to override disabled branch config', () => {
     process.env[HARDIS_REST_DEPLOY_ENV_VAR] = 'true';
 
     applyRestDeploymentOption({ useRestDeploy: false });
@@ -54,34 +69,25 @@ describe('SmartDeploy REST deployment option', () => {
     expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.equal('true');
   });
 
-  it('allows an explicit false environment value to override enabled branch config', () => {
-    process.env[HARDIS_REST_DEPLOY_ENV_VAR] = 'false';
-
-    const logs = applyRestDeploymentOption({ useRestDeploy: true });
-
-    expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.be.undefined;
-    expect(logs).to.be.empty;
-  });
-
   it('falls back to branch config for an unresolved Azure variable expression', () => {
     process.env[HARDIS_REST_DEPLOY_ENV_VAR] = '$(SFDX_HARDIS_USE_REST_DEPLOY)';
 
-    applyRestDeploymentOption({ useRestDeploy: true });
+    applyRestDeploymentOption({ useRestDeploy: false });
 
-    expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.equal('true');
+    expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.equal('false');
   });
 
-  it('leaves the Salesforce CLI environment variable unchanged when the option is disabled', () => {
+  it('keeps a Salesforce CLI environment variable already set when sfdx-hardis is not configured', () => {
     process.env[SF_REST_DEPLOY_ENV_VAR] = 'false';
 
-    const logs = applyRestDeploymentOption({ useRestDeploy: false });
+    const logs = applyRestDeploymentOption();
 
     expect(process.env[SF_REST_DEPLOY_ENV_VAR]).to.equal('false');
     expect(logs).to.be.empty;
   });
 
   it('passes the Salesforce CLI environment variable to spawned commands', async () => {
-    applyRestDeploymentOption({ useRestDeploy: true });
+    applyRestDeploymentOption();
 
     const result = await execCommand(
       `"${process.execPath}" -p "process.env.${SF_REST_DEPLOY_ENV_VAR}"`,

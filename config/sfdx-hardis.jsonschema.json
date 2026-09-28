@@ -3857,8 +3857,10 @@
     },
     "useRestDeploy": {
       "$id": "#/properties/useRestDeploy",
-      "default": false,
-      "description": "Deploy with the Metadata REST API instead of the SOAP Metadata API used by default by the Salesforce CLI.\nEquivalent of \"sf config set org-metadata-rest-deploy=true\", but applied only to the deployments started by sfdx-hardis, without modifying your sf configuration.\nCan also be activated with env variable SFDX_HARDIS_USE_REST_DEPLOY=true.",
+      "default": true,
+      "description": "Deploy with the Metadata REST API (default) instead of the SOAP Metadata API used by default by the Salesforce CLI. Set to false to deploy with SOAP.
+Equivalent of \"sf config set org-metadata-rest-deploy=true|false\", but applied only to the deployments started by sfdx-hardis, without modifying your sf configuration.
+Can also be set with env variable SFDX_HARDIS_USE_REST_DEPLOY=false.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#metadata-rest-api",
       "title": "Deploy with Metadata REST API",
       "type": "boolean"

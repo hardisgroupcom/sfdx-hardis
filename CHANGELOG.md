@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#metadata-rest-api) deploys with the Metadata REST API by default, which is faster and accepts larger packages than SOAP. Set `useRestDeploy: false` or `SFDX_HARDIS_USE_REST_DEPLOY=false` to deploy with SOAP. Your sf configuration is not modified.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no metadata type of the deployment package is in package-no-overwrite.xml, which saves minutes on large orgs.
 
 ## [8.11.1] 2026-09-26
