@@ -20,6 +20,12 @@ If you do not want to use QuickDeploy, define variable `SFDX_HARDIS_QUICK_DEPLOY
 - [Gitlab Merge requests notes config](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-gitlab/)
 - [Azure Pull Requests comments config](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-azure/)
 
+### Metadata REST API
+
+Deployments use the Metadata REST API by default, which is faster and accepts larger packages than the SOAP Metadata API used by default by the Salesforce CLI. To deploy with SOAP instead, define property `useRestDeploy: false` in `config/.sfdx-hardis.yml`, or set env variable `SFDX_HARDIS_USE_REST_DEPLOY=false`. When neither is set, a `SF_ORG_METADATA_REST_DEPLOY` env variable already defined is kept.
+
+This is the equivalent of `sf config set org-metadata-rest-deploy=true|false`, applied only to the deployments started by this command: your sf configuration is left untouched.
+
 ### Delta deployments
 
 To activate delta deployments, define property `useDeltaDeployment: true` in `config/.sfdx-hardis.yml`.
