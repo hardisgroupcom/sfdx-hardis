@@ -3304,6 +3304,13 @@ export function listMetadataTypes() {
         xmlName: 'ReferencedDashboard',
       },
       {
+        directoryName: 'referralIntakeConfigurations',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'referralIntakeConfiguration',
+        xmlName: 'ReferralIntakeConfiguration',
+      },
+      {
         directoryName: 'registeredExternalServices',
         inFolder: false,
         metaFile: false,

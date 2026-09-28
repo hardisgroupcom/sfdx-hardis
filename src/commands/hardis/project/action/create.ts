@@ -10,10 +10,10 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
-  ACTION_TYPES,
   ActionScope,
   ActionWhen,
   buildAction,
+  listAvailableActionTypes,
   logActionSummary,
   parseBranchListFlag,
   readActions,
@@ -21,6 +21,8 @@ import {
   validateActionParameters,
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
+import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
+import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -107,8 +109,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      options: ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'],
-      description: 'Type of action',
+      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, remove-packagexml-items) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'Human-readable label for the action',
@@ -145,6 +146,10 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     }),
     'packagexml-items': Flags.string({
       description: 'Semicolon-separated list of package.xml items to remove before deployment, each in format TypeName:Member1,Member2 (for remove-packagexml-items type). Example: "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    }),
+    'function-input': Flags.string({
+      multiple: true,
+      description: 'Value of a custom function input, as name=value. Repeat the flag once per input',
     }),
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
@@ -201,7 +206,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     // Collect type
     const type: PrePostCommand['type'] = agentMode || isCI
       ? this.requireFlag(flags.type, 'type') as PrePostCommand['type']
-      : flags.type || await this.promptType();
+      : flags.type || await this.promptType(when);
 
     // Collect label
     const label: string = agentMode || isCI
@@ -258,31 +263,65 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
         .split(/[;\n]/)
         .map((item: string) => item.trim())
         .filter(Boolean);
+    } else if (!isBuiltInActionType(type)) {
+      // Custom function: the type is the function id, and its declared inputs become parameters
+      const definition = await getCustomFunctionById(type);
+      if (!definition) {
+        throw new SfError(t('actionValidationUnknownType', { type }));
+      }
+      // Values passed with --function-input pre-fill the prompts rather than replacing them, so
+      // supplying one input interactively does not skip the questions for the others.
+      const flagInputs = castFunctionInputValues(
+        parseFunctionInputFlags(flags['function-input'] || []),
+        definition
+      );
+      const collectedInputs = agentMode || isCI
+        ? flagInputs
+        : await this.promptCustomFunctionInputs(definition, flagInputs);
+      Object.assign(parameters, collectedInputs);
     }
+
+    // A custom function may ship defaults for the action fields, which flags and prompts override
+    const functionDefaults = isBuiltInActionType(type) ? undefined : (await getCustomFunctionById(type))?.defaults;
 
     // Collect context
     // remove-packagexml-items must also run during deployment checks, so it defaults to all contexts
-    const defaultContext = type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only';
+    const defaultContext = functionDefaults?.context
+      || (type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only');
     const context = (flags.context || (!agentMode && !isCI ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
-    let allowFailure = flags['allow-failure'];
+    let allowFailure = flags['allow-failure'] === true ? true : functionDefaults?.allowFailure === true;
     let runOnlyOnceByOrg = flags['run-only-once-by-org'];
+    if (functionDefaults?.runOnlyOnceByOrg !== undefined && flags['run-only-once-by-org'] === true) {
+      // true is also the flag default, so it cannot be told apart from "not passed": let the
+      // function default win, and --no-run-only-once-by-org still forces false.
+      runOnlyOnceByOrg = functionDefaults.runOnlyOnceByOrg;
+    }
     let customUsername = flags['custom-username'] || '';
-    let includeTargetBranches = parseBranchListFlag(flags['include-target-branches']);
-    let excludeTargetBranches = parseBranchListFlag(flags['exclude-target-branches']);
+    let includeTargetBranches = flags['include-target-branches'] !== undefined
+      ? parseBranchListFlag(flags['include-target-branches'])
+      : functionDefaults?.includeTargetBranches || [];
+    let excludeTargetBranches = flags['exclude-target-branches'] !== undefined
+      ? parseBranchListFlag(flags['exclude-target-branches'])
+      : functionDefaults?.excludeTargetBranches || [];
 
     if (!agentMode && !isCI) {
+      // Each prompt is seeded with the value resolved so far, so the defaults a custom function
+      // declares are what the user is offered instead of being silently dropped.
       if (!flags['allow-failure']) {
-        allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'));
+        allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), allowFailure);
       }
       if (!flags['include-target-branches'] && !flags['exclude-target-branches']) {
-        const branchFilter = await this.promptTargetBranchFilter();
+        const branchFilter = await this.promptTargetBranchFilter({
+          includeTargetBranches,
+          excludeTargetBranches,
+        });
         includeTargetBranches = branchFilter.includeTargetBranches || [];
         excludeTargetBranches = branchFilter.excludeTargetBranches || [];
       }
       if (type !== 'remove-packagexml-items') {
-        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), flags['run-only-once-by-org']);
+        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), runOnlyOnceByOrg);
       }
       if (!flags['custom-username']) {
         customUsername = await this.promptText(t('actionPromptCustomUsername'), '');
@@ -309,7 +348,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     });
 
     // Validate parameters
-    const validationErrors = await validateActionParameters(action);
+    const validationErrors = await validateActionParameters(action, when);
     if (validationErrors.length > 0) {
       throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
     }
@@ -361,12 +400,12 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     return response.value as ActionWhen;
   }
 
-  private async promptType(): Promise<PrePostCommand['type']> {
+  private async promptType(when: ActionWhen): Promise<PrePostCommand['type']> {
     const response = await prompts({
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('selectActionType')),
-      choices: ACTION_TYPES.map(t2 => ({ title: t2, value: t2 })),
+      choices: await listAvailableActionTypes(when),
       description: t('selectActionType'),
     });
     return response.value as PrePostCommand['type'];

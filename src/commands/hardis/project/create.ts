@@ -238,7 +238,7 @@ Optional flag:
       "action",
       this,
       c.cyan(
-        t('sfdxProjectCreatedContinueSteps', { docUrl: CONSTANTS.DOC_URL_ROOT + '/salesforce-ci-cd-setup-home/' })
+        t('sfdxProjectCreatedContinueSteps', { docUrl: CONSTANTS.DOC_URL_ROOT + '/salesforce-devops-setup-home/' })
       )
     );
 

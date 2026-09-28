@@ -35,8 +35,9 @@ import { listMajorOrgs, restoreListViewMine } from '../../../../common/utils/org
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { buildCheckDeployCommitSummary, callSfdxGitDelta, getGitDeltaScope, handlePostDeploymentNotifications } from '../../../../common/utils/gitUtils.js';
 import { parsePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
-import { listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
+import { applyPromotionInheritedBehaviors, listAllPullRequestsForCurrentScope } from '../../../../common/utils/pullRequestUtils.js';
 import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCommandUtils.js';
+import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
 
@@ -54,7 +55,7 @@ export default class SmartDeploy extends SfCommand<any> {
 
 In case of errors, [tips to fix them](${CONSTANTS.DOC_URL_ROOT}/deployTips/) will be included within the error messages.
 
-> See the [whole sfdx-hardis smart deployment workflow explained in detail](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-smart-deployment.md)
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-smart-deployment/)
 
 ### Quick Deploy
 
@@ -62,9 +63,9 @@ In case Pull Request comments are configured on the project, Quick Deploy will t
 
 If you do not want to use QuickDeploy, define variable \`SFDX_HARDIS_QUICK_DEPLOY=false\`
 
-- [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-github/)
-- [Gitlab Merge requests notes config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-gitlab/)
-- [Azure Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-azure/)
+- [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-github/)
+- [Gitlab Merge requests notes config](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-gitlab/)
+- [Azure Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-azure/)
 
 ### Metadata REST API
 
@@ -163,12 +164,12 @@ deploymentApexTestClasses:
 
 If necessary,you can define the following files:
 
-- \`manifest/package-no-overwrite.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
+- \`manifest/package-no-overwrite.xml\`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org). The target org content is listed only when the deployment package contains one of its metadata types.
   - Supports \`<members>*</members>\` (all members of a type), exact names, and glob-style patterns such as \`<members>*__dlm</members>\` or \`<members>Prod_*</members>\`.
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: \`packageNoOverwritePath: manifest/package-no-overwrite-main.xml\` in config file \`config/.sfdx-hardis.main.yml\`)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
-See [Overwrite management documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-config-overwrite/)
+See [Overwrite management documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-overwrite/)
 
 ### Packages installation
 
@@ -217,6 +218,8 @@ Post-deployment actions are never run when the metadata deployment failed: they 
 Deployment actions and selected Apex test classes are scoped to the Pull Request that has just been merged when it comes from a feature branch. A merge from a major branch (ex: integration -> uat) or from a retrofit branch (ex: retrofit/from-main -> integration) keeps those of every Pull Request merged into the source major branch since its last promotion, and a merge into the production branch keeps those of every Pull Request carried by the go-live merge. Pull Requests merged upstream (ex: a hotfix in main) are included as soon as their commits arrive in the window.
 
 If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request: re-run the failed deployment job, or move the actions to a new Pull Request.
+
+With \`enablePromotionBranches: true\`, a merge from a [promotion branch (Beta)](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/) (named \`promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>\`, ex: \`promotion/uat/preprod/2026-09-06-1430\`, assembled by cherry-picking approved User Stories) keeps the deployment actions, Apex test classes and custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the Pull Requests declared in its description with \`promotionPullRequests: [482, 487]\`.
 
 After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of \`runOnlyOnceByOrg\`.
 
@@ -392,6 +395,27 @@ In agent mode:
 - Use \`--source-branch\` to specify the source git branch (overrides local git branch detection via \`FORCE_SOURCE_BRANCH\`).
 - Use \`--target-branch\` to specify the target git branch. This sets \`FORCE_TARGET_BRANCH\` for delta/PR scope and also sets \`CONFIG_BRANCH\` so the target branch config file (\`config/branches/.sfdx-hardis-BRANCHNAME.yml\`) is loaded - providing the correct \`targetUsername\` for that org automatically.
 - If a deployment action requires a \`customUsername\` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.3 - Fix broken records with an Apex deployment action](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
+- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
+- [Lab 3.2 - Review and merge a contributor Pull Request](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.6 - Release to production and read your DORA metrics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
@@ -533,6 +557,25 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
 
+    // A promotion branch may only be validated, never deployed: a deployment job running from it
+    // ships the promotion to the org before it is reviewed and merged. Checked before anything is
+    // computed, because the answer is to fix the CI configuration, not to let the job continue.
+    assertPromotionBranchIsNotDeployed(this, this.configInfo, this.checkOnly, currentGitBranch);
+
+    // Promotion branch: inherit the custom behaviors (NO_DELTA, PURGE_FLOW_VERSIONS...) of the
+    // Pull Requests it declares, before the delta decision reads them. No-op unless
+    // enablePromotionBranches is set and the Pull Request is a promotion one.
+    // Deliberately NOT behind the deployment actions kill switch: that switch is about running
+    // pre/post deployment commands, while these keywords decide how the metadata itself is
+    // deployed. Suppressing them would ship a delta where a story asked for a full deployment.
+    // A promotion Pull Request resolves its scope by fetching the declared Pull Requests by id,
+    // so this does not run the branch history scan the kill switch is meant to avoid.
+    await applyPromotionInheritedBehaviors(this.checkOnly);
+    // A promotion branch may carry conflicts committed on purpose (--on-conflict
+    // commit-with-markers): stop here while the markers are still in the sources, after saying so
+    // in a Pull Request comment (nothing is deployed, so no other comment would ever be posted)
+    await assertNoPromotionConflictMarkers(this, this.configInfo, this.checkOnly);
+
     await this.initTestLevelAndTestClasses(flags.testlevel, flags.runtests);
 
     await this.handlePackages(targetUsername);
@@ -584,10 +627,16 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const deployExecuted = !this.checkOnly && deployXmlCount > 0 ? true : false;
 
     // Set ListViews to scope Mine if defined in .sfdx-hardis.yml
-    if (this.configInfo.listViewsToSetToMine && deployExecuted) {
-      await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
-        debug: this.debugMode,
-      });
+    // A list view left on "Everything" is a nuisance, not a failed deployment: the metadata is in the
+    // org by now, so a browser that cannot reach a page must not fail the job.
+    if ((this.configInfo.listViewsToSetToMine || []).length > 0 && deployExecuted) {
+      try {
+        await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
+          debug: this.debugMode,
+        });
+      } catch (e: any) {
+        uxLog("warning", this, c.yellow(t('listViewsMineNotRestored', { message: e.message })));
+      }
     }
 
     // Post-destructive Flow deletions. A blocked Flow fails the command before any success comment or

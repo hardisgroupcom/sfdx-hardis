@@ -17,7 +17,7 @@
 
 ## File Operations
 
-- Use `fs-extra` (not native `fs`).
+- Use native `fs` (not `fs-extra`, which is no longer a dependency). In `src/`, `src/common/utils/fsUtils.ts` wraps native `fs` with the extra helpers (`ensureDir`, `remove`, `copy`, `readJson`...).
 
 ## User Input
 

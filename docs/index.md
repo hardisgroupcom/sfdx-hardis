@@ -3,14 +3,12 @@
 
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
-_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_
-
 **New:** [**What's new in sfdx-hardis v8**](https://sfdx-hardis.cloudity.com/sfdx-hardis-v8/) - Deployment Actions are generally available, Pull Request comments are redesigned, and the VS Code extension is rebuilt.
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-201.1k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-223.4k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![MegaLinter](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml?query=branch%3Amain)
@@ -24,7 +22,7 @@ Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by 
 
 It is free and open-source, and lets you:
 
-- [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 
 ![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/sfdx-hardis-pipeline-view.gif)
 
@@ -46,11 +44,11 @@ If you need help to get the most out of sfdx-hardis, Cloudity's international te
 
 [_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)
 
-___
+---
 
 **sfdx-hardis** commands and configuration are best used from the [**SFDX Hardis Visual Studio Code extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-___
+---
 
 _Featured on SalesforceBen_
 
@@ -64,25 +62,101 @@ _See Dreamforce presentation_
 
 <!-- installation.md start -->
 
-### With IDE
+### Which installation do I need?
 
-You can install [Visual Studio Code](https://code.visualstudio.com/), then the VS Code extension [SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+There are three ways to install sfdx-hardis, and you only need one of them.
 
-Once installed, click on ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in the VS Code left bar, click on **Install dependencies** and follow the installation instructions.
+| Your situation                                                                                                            | What to install                                                                                  | Terminal needed |
+|---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|-----------------|
+| You want to use sfdx-hardis on your computer, with menus and buttons instead of commands. This is how most people use it. | [Visual Studio Code and the SFDX Hardis extension](#install-with-visual-studio-code-recommended) | No              |
+| You are at ease with a terminal and only want the commands.                                                               | [The sfdx-hardis plugin for Salesforce CLI](#install-as-a-salesforce-cli-plugin)                 | Yes             |
+| You are setting up a CI/CD pipeline (GitHub, GitLab, Azure, Bitbucket).                                                   | [A ready to use Docker image](#run-in-cicd-with-a-docker-image)                                  | Yes             |
+
+Not sure? Take the first one: it also installs the command line version for you.
+
+---
+
+### Install with Visual Studio Code (recommended)
+
+Visual Studio Code, usually shortened to **VS Code**, is a free application published by Microsoft. sfdx-hardis runs inside it and adds its own menus and buttons, so you can use every feature without typing a single command.
+
+You do not need to know VS Code, or to write code, to follow the five steps below. Plan about 15 minutes, mostly waiting for downloads.
+
+#### Step 1: Install Visual Studio Code
+
+Go to [code.visualstudio.com](https://code.visualstudio.com/), download the version for your system (Windows, macOS or Linux), then run the downloaded file and keep the proposed options.
+
+If VS Code is already on your computer, jump to step 2.
+
+#### Step 2: Install the SFDX Hardis extension
+
+- Start VS Code.
+- In the vertical bar of icons on the left, called the Activity Bar, click the **Extensions** icon <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/vscode-extensions-icon.png" alt="VS Code Extensions icon" height="22"/> (four small squares, the top right one tilted). Keyboard shortcut: `Ctrl+Shift+X`, or `Cmd+Shift+X` on macOS.
+- Type `sfdx hardis` in the search box.
+- Click **SFDX Hardis** in the results, then click **Install**.
+- If VS Code asks whether you trust the publisher, accept: the extension is published by **NicolasVuillamy**, the author of sfdx-hardis.
+
+You can also do it from your browser: open the [SFDX Hardis page on the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis), click **Install**, and let the browser hand over to VS Code.
+
+#### Step 3: Open the sfdx-hardis panel
+
+Once the extension is installed, a new icon ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) appears in the Activity Bar, on the left. Click it (arrow 1 below): the sfdx-hardis menus appear, and the **Welcome** page opens.
+
+At the top of the Welcome page, click the **dependencies** button (arrow 2 below).
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
 
+#### Step 4: Install the dependencies
+
+To talk to Salesforce and to Git, sfdx-hardis needs a few other free tools. The setup page lists them all, with a green check on those you already have.
+
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-screenshot.png)
 
-When everything is green, you are all set.
+- Click **Install** or **Upgrade** on every line that is not green, or click **Run pending installs** to handle them one after the other.
+- **Node.js** and **Git** are the two you may have to install by yourself: download them from [nodejs.org](https://nodejs.org/en/) and [git-scm.com](https://git-scm.com/downloads), then click **Re-check** on the line.
+- Close VS Code and open it again at the end, so it sees the newly installed tools.
 
-_You can also watch the video tutorial below_
+When every line is green, the installation is over.
+
+#### Step 5: Connect to your Salesforce org
+
+Go back to the Welcome page and click **Connect** to log in to your first org. The same page then gives you access to all the features.
+
+Where to go next:
+
+- [What you can do from the VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/)
+- [Set up a Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
+- [Monitor a Salesforce org](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
+
+#### Video tutorial
+
+If you prefer to watch someone do it first, follow the video below.
 
 [![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
-___
+#### If something does not work
 
-### As SFDX Plugin
+- A line stays red after you installed the tool: close VS Code, open it again, then click **Re-check** on that line.
+- A command does nothing: open the setup page again, a dependency may still be missing or outdated.
+- Still stuck? Open a [GitHub issue](https://github.com/hardisgroupcom/sfdx-hardis/issues), the maintainers and the community answer there.
+
+#### Other VS Code compatible IDEs
+
+The extension is published on both the Visual Studio Marketplace and the [Open VSX Registry](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis), so the steps above also work in the IDEs built on VS Code, on desktop or in the browser.
+
+|                                                                                                                                                                                                                                                                                                                                                                                                      | IDE                                                                                                                         | Install from                                                                                                        |
+|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscode.png" alt="Visual Studio Code" height="48"/>                                                                                                                                                                                                                                                           | [Visual Studio Code](https://code.visualstudio.com/)                                                                        | [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-agentforce-vibes.png" alt="Agentforce Vibes IDE" height="48"/>                                                                                                                                                                                                                                               | [Agentforce Vibes IDE](https://www.salesforce.com/agentforce/developers/vibe-coding/ide/) and other browser IDEs            | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-cursor.png" alt="Cursor" height="48"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-windsurf.png" alt="Windsurf" height="48"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscodium.png" alt="VSCodium" height="48"/> | [Cursor](https://cursor.com/), [Windsurf](https://windsurf.com/), [VSCodium](https://vscodium.com/) and other VS Code forks | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+
+The only requirement is the same as for VS Code: the IDE must be able to run the Salesforce CLI (Agentforce Vibes IDE ships it preinstalled).
+
+---
+
+### Install as a Salesforce CLI plugin
+
+For those who prefer to type commands in a terminal. If you followed the VS Code steps above, this is already done.
 
 #### Pre-requisites
 
@@ -105,11 +179,11 @@ sf plugins install sfdmu
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
 
-___
+---
 
-### Docker
+### Run in CI/CD with a Docker image
 
-You can use sfdx-hardis docker images to run in CI.
+For pipelines: the images already contain Node.js, the Salesforce CLI, sfdx-hardis and its plugins, so a job starts without installing anything.
 
 > All our Docker images are checked for security issues with [MegaLinter by OX Security](https://megalinter.io/latest/)
 
@@ -182,6 +256,18 @@ _See [Dockerfile-ubuntu](https://github.com/hardisgroupcom/sfdx-hardis/blob/main
 ```sh-session
 sf hardis:<COMMAND> <OPTIONS>
 ```
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+[Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+
+- [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 10 labs, the pipeline up to production, releases, hotfixes, monitoring
+
+<!-- training-links:end -->
 
 ## Events
 
@@ -402,27 +488,27 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 #### CI/CD Workflows
 
-- Complete CI/CD workflow for Salesforce projects - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- Complete CI/CD workflow for Salesforce projects - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 
 [![Dreamforce demo video: Easy Salesforce CI/CD with sfdx-hardis and open-source only !](https://img.youtube.com/vi/zEYqTd2txU4/0.jpg)](https://www.youtube.com/watch?v=zEYqTd2txU4){target=blank}
 
-- How to start a new User Story in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+- How to start a new User Story in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-create-new-user-story/)
 
 [![Create New User Story](https://img.youtube.com/vi/WOqssZwjPhw/0.jpg)](https://www.youtube.com/watch?v=WOqssZwjPhw){target=blank}
 
-- How to commit updates and create merge requests - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
+- How to commit updates and create merge requests - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/)
 
 [![Publish User Story Tutorial](https://img.youtube.com/vi/Ik6whtflmfY/0.jpg)](https://www.youtube.com/watch?v=Ik6whtflmfY){target=blank}
 
-- How to resolve git merge conflicts in Visual Studio Code - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-validate-merge-request/)
+- How to resolve git merge conflicts in Visual Studio Code - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-validate-merge-request/)
 
 [![Merge Conflicts Resolution](https://img.youtube.com/vi/lz5OuKzvadQ/0.jpg)](https://www.youtube.com/watch?v=lz5OuKzvadQ){target=blank}
 
-- How to install packages in your org - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/)
+- How to install packages in your org - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/)
 
 [![Install Packages Tutorial](https://img.youtube.com/vi/5-MgqoSLUls/0.jpg)](https://www.youtube.com/watch?v=5-MgqoSLUls){target=blank}
 
-- Configure CI server authentication to Salesforce orgs - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/)
+- Configure CI server authentication to Salesforce orgs - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/)
 
 [![Configure CI Authentication](https://img.youtube.com/vi/OzREUu5utVI/0.jpg)](https://www.youtube.com/watch?v=OzREUu5utVI){target=blank}
 
@@ -434,11 +520,11 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 #### Integrations
 
-- Configure Slack integration for deployment notifications - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
+- Configure Slack integration for deployment notifications - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-slack/)
 
 [![Slack Integration](https://img.youtube.com/vi/se292ABGUmI/0.jpg)](https://www.youtube.com/watch?v=se292ABGUmI){target=blank}
 
-- How to create a Personal Access Token in GitLab - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-clone-repository/)
+- How to create a Personal Access Token in GitLab - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-clone-repository/)
 
 [![GitLab Personal Access Token](https://img.youtube.com/vi/9y5VmmYHuIg/0.jpg)](https://www.youtube.com/watch?v=9y5VmmYHuIg){target=blank}
 
@@ -471,6 +557,7 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we will help you
   - Run `yarn` to install dependencies
   - Run `sf plugins link` to link the local sfdx-hardis to the Salesforce CLI
   - Run `tsc --watch` to transpile TypeScript into JavaScript every time you update a TS file
+  - Optional, recommended on Windows: export `NODE_OPTIONS="--import file:///<path-to-your-clone>/scripts/disable-auto-transpile.mjs"` in your shell profile or VS Code terminal environment. A linked plugin is normally re-transpiled from TypeScript at every command (about 3 extra seconds per run): since `tsc --watch` already keeps `lib/` fresh, this preload makes commands start from the compiled sources instead, as fast as an installed plugin. Remove the variable to run live TypeScript again.
 - Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands with the VS Code SFDX Hardis extension debug setting)
 
 Note: To test a feature from CI, you can add the following code in your workflow before running sfdx-hardis commands:
@@ -553,13 +640,13 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Quentin Tiercelin](https://github.com/TiercelinQ), for the commands to [detect unsecure permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/) and [generate a data dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/)
 - [Pranay Jaiswal](https://github.com/pranayjswl007), for smarter [audit trail monitoring](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) with allowed actions per user
 - [Maciej Ptak](https://github.com/0ptaq0), for fixing Flow git diff on projects with custom package directories
-- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-activate-org/)
+- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-activate-org/)
 - [Maxime Guenego](https://github.com/maximeg44), for the metadata lint commands: [unused metadata](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/), [inactive metadata](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/) and [missing descriptions](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
 - [Meric Asaner](https://github.com/masaner), for the [unused users detection](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) and bulkified Flow deletions
 - [Brahim Laissaoui](https://github.com/laissaouibrahim), for major [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) improvements (batched processing, Attachments support)
 - [Dimitri Monge](https://github.com/dimitrimonge), for the [user freeze/unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) commands and the Jenkins and GitHub Actions pipeline templates
 - [zzyviolette](https://github.com/zzyviolette), for restoring Connected Apps after a [sandbox refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
-- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-ms-teams/)
 - [Maksym Petrov](https://github.com/maksym-petrov-ct), for Apex Trigger support in [project documentation generation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and CI runner cost savings
 - [Manoel Calixto](https://github.com/manoelcalixto), for robustness fixes on sources cleaning and Flow documentation
 - [Piotr](https://github.com/piotrekkr), for the [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) filename format options
@@ -588,6 +675,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - Dutch: [Timo Pouw](https://www.linkedin.com/in/timopouw/)
 
 <!-- contributors.md end -->
+
+
 
 ## Commands
 
@@ -698,8 +787,10 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:data:delete**](hardis/org/data/delete.md)                                             |       |
 | [**hardis:org:data:export**](hardis/org/data/export.md)                                             |       |
 | [**hardis:org:data:import**](hardis/org/data/import.md)                                             |       |
+| [**hardis:org:diagnose:ai-usage**](hardis/org/diagnose/ai-usage.md)                                 |       |
 | [**hardis:org:diagnose:apex-api-version**](hardis/org/diagnose/apex-api-version.md)                 |       |
 | [**hardis:org:diagnose:audittrail**](hardis/org/diagnose/audittrail.md)                             |       |
+| [**hardis:org:diagnose:consumption-alerts**](hardis/org/diagnose/consumption-alerts.md)             |       |
 | [**hardis:org:diagnose:deployments**](hardis/org/diagnose/deployments.md)                           |       |
 | [**hardis:org:diagnose:flex-queue**](hardis/org/diagnose/flex-queue.md)                             |       |
 | [**hardis:org:diagnose:instanceupgrade**](hardis/org/diagnose/instanceupgrade.md)                   |       |
@@ -716,6 +807,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)       |       |
 | [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                     |       |
 | [**hardis:org:diagnose:unusedusers**](hardis/org/diagnose/unusedusers.md)                           |       |
+| [**hardis:org:diagnose:usage-entitlements**](hardis/org/diagnose/usage-entitlements.md)             |       |
 | [**hardis:org:ext-client-app:rotate-credentials**](hardis/org/ext-client-app/rotate-credentials.md) |       |
 | [**hardis:org:files:export**](hardis/org/files/export.md)                                           |       |
 | [**hardis:org:files:import**](hardis/org/files/import.md)                                           |       |
@@ -817,6 +909,8 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:project:lint**](hardis/project/lint.md)                                                 |       |
 | [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) |       |
 | [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           |       |
+| [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                         |       |
+| [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md)       |       |
 | [**hardis:project:skills:import**](hardis/project/skills/import.md)                               |       |
 
 ### hardis:scratch
@@ -840,6 +934,12 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:source:deploy**](hardis/source/deploy.md)     |       |
 | [**hardis:source:push**](hardis/source/push.md)         |       |
 | [**hardis:source:retrieve**](hardis/source/retrieve.md) |       |
+
+### hardis:ticket
+
+| Command                                       | Title |
+|:----------------------------------------------|:------|
+| [**hardis:ticket:get**](hardis/ticket/get.md) |       |
 
 ### hardis:work
 

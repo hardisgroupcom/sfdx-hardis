@@ -1,6 +1,6 @@
 ---
 title: Detect Apex classes and triggers with deprecated API version (Salesforce monitoring)
-description: Schedule weekly checks for Apex classes and triggers deployed with deprecated API versions
+description: With sfdx-hardis, schedule weekly checks for Apex classes and triggers deployed with deprecated API versions
 ---
 <!-- markdownlint-disable MD013 -->
 

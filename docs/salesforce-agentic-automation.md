@@ -1,6 +1,6 @@
 ---
 title: sfdx-hardis with AI Coding Agents
-description: How to drive Salesforce DevOps tasks non-interactively with Claude Code, GitHub Copilot, Gemini CLI, Cursor, and other AI coding agents using the --agent flag
+description: With sfdx-hardis, how to drive Salesforce DevOps tasks non-interactively with Claude Code, GitHub Copilot, Gemini CLI, Cursor, and other AI coding agents using the --agent flag
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -21,6 +21,7 @@ Salesforce DevOps involves many repetitive, multi-step operations: creating feat
 - **Fail fast**: if a required parameter is missing, the command exits immediately with a descriptive error listing available options.
 - **Composable**: commands can be chained as agent tool calls or shell scripts.
 - **Works everywhere**: any agent that understands skills and can run shell commands can drive sfdx-hardis: Claude Code, Copilot, Gemini, Cursor, Codex, or your own automation.
+- **Answers about your orgs**: a monitoring repository explains itself to agents, so they can answer what changed in an org, when, and through which Pull Request. See [below](#ask-questions-about-your-org-history-and-deployments).
 
 ---
 
@@ -89,7 +90,7 @@ The skills folder depends on your agent:
 | Cursor         | `.cursor/skills/`  |
 | OpenAI Codex   | `.codex/skills/`   |
 
-See [Using AI Coding Agents](salesforce-ci-cd-agent-skills.md) for more detailed skill examples including org diagnostics.
+See [Using AI Coding Agents](salesforce-devops-agent-skills.md) for more detailed skill examples including org diagnostics.
 
 ---
 
@@ -114,25 +115,54 @@ See [Installation](installation.md) for all available image variants.
 
 ---
 
+## Ask Questions About Your Org History and Deployments
+
+A [monitoring repository](salesforce-monitoring-home.md) holds a nightly backup of each org, one commit per day with changes. At each backup, sfdx-hardis writes an `AGENTS.md` file at its root, with a `CLAUDE.md` pointing to it. It explains to the agent how the monitoring works, what each file holds, what the backup skips, and how to read the git history. There are no skills to install: open the monitoring repository with your agent and ask.
+
+- "What changed in production last week?"
+- "When was the `Check_VAT` validation rule last modified, and what changed?"
+- "Write the report of the changes between March 1 and March 31." The agent writes a markdown file grouping the Added, Removed and Updated components by metadata type
+- "Which monitoring checks run on this org, and on which day?"
+
+Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to the address of your sfdx-hardis CI/CD repository, and the agent also searches it. It clones it next to the monitoring repository, read-only, finds the branch that deploys to the org, and reads the Pull Requests and the pipeline logs of both repositories with `gh`, `glab`, `az` or the Bitbucket API:
+
+- "Was this Flow change deployed by the pipeline, or made directly in production?"
+- "Which Pull Request brought this Apex class to production, and when?"
+- "Why did last night's deployment to UAT fail?"
+- "Why did last night's backup fail?"
+
+Set `grafanaUrl` too, and the agent also queries the logs and metrics the monitoring sends to [Grafana](salesforce-monitoring-grafana-v2.md), through the Grafana API: "How did the API requests limit evolve this quarter?", "On which days did Apex errors spike?".
+
+The agent uses a git provider CLI you are already logged in with, or tokens from a `.env` file (a read-only `GRAFANA_API_TOKEN` for Grafana). It only reads: it never pushes, comments, starts a pipeline or changes Grafana. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent).
+
+---
+
 ## All Agent-Ready Commands
 
 The table below lists every sfdx-hardis command that supports `--agent`. Click the command name to open its full reference page.
 
 ### Devops
 
-| Command                                                                               | What an agent can do                                                                                                                                                |
-|---------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         | Retrieve installed packages from an org and optionally update project config                                                                                        |
-| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md) | Retrieve the full CRM Analytics configuration from an org                                                                                                           |
-| [**hardis:project:create**](hardis/project/create.md)                                 | Scaffold a new SFDX project with sfdx-hardis configuration                                                                                                          |
-| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                     | Smart-deploy SFDX sources with delta, dependency resolution, and pre/post hooks                                                                                     |
-| [**hardis:scratch:pull**](hardis/scratch/pull.md)                                     | Pull the latest metadata changes from a scratch org into the local SFDX project                                                                                     |
-| [**hardis:scratch:push**](hardis/scratch/push.md)                                     | Push local SFDX project metadata to the scratch org                                                                                                                 |
-| [**hardis:work:new**](hardis/work/new.md)                                             | Create a new User Story git branch and optionally provision a scratch org or sandbox. Required flags: `--task-name`, `--target-branch`; optional: `--branch-prefix` |
-| [**hardis:work:resetselection**](hardis/work/resetselection.md)                       | Soft-reset staged commits to re-evaluate which changes go into the Pull Request                                                                                     |
-| [**hardis:work:save**](hardis/work/save.md)                                           | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push. Optional: `--targetbranch`, `--noclean`, `--nogit`                               |
-| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                           | Generate release notes with tickets, Pull Requests, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main`           |
-| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                               | Generate a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent --target-org`                                |
+| Command                                                                                     | What an agent can do                                                                                                                                                                |
+|---------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)               | Retrieve installed packages from an org and optionally update project config                                                                                                        |
+| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)       | Retrieve the full CRM Analytics configuration from an org                                                                                                                           |
+| [**hardis:project:create**](hardis/project/create.md)                                       | Scaffold a new SFDX project with sfdx-hardis configuration                                                                                                                          |
+| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                           | Smart-deploy SFDX sources with delta, dependency resolution, and pre/post hooks                                                                                                     |
+| [**hardis:scratch:pull**](hardis/scratch/pull.md)                                           | Pull the latest metadata changes from a scratch org into the local SFDX project                                                                                                     |
+| [**hardis:scratch:push**](hardis/scratch/push.md)                                           | Push local SFDX project metadata to the scratch org                                                                                                                                 |
+| [**hardis:work:new**](hardis/work/new.md)                                                   | Create a new User Story git branch and optionally provision a scratch org or sandbox. Required flags: `--task-name`, `--target-branch`; optional: `--branch-prefix`                 |
+| [**hardis:work:resetselection**](hardis/work/resetselection.md)                             | Soft-reset staged commits to re-evaluate which changes go into the Pull Request                                                                                                     |
+| [**hardis:work:save**](hardis/work/save.md)                                                 | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push. Optional: `--targetbranch`, `--noclean`, `--nogit`                                               |
+| [**hardis:work:backpromote**](hardis/work/backpromote.md)                                   | Bring into a developer sandbox what was merged in the parent branch since the last backpromote (Beta). Replaces `hardis:work:refresh`. Use `--auto` to decide everything from flags |
+| [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md) | List the User Stories that could be promoted from a major branch, read-only, with `--source-branch` and `--json`. Creates and closes nothing (Beta)                                 |
+| [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                   | Assemble a promotion branch carrying only the chosen User Stories, and open its Pull Request, with `--agent --source-branch --pull-requests` (Beta)                                 |
+| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                                 | Generate release notes with tickets, Pull Requests, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main`                           |
+| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                                     | Generate a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent --target-org`                                                |
+| [**hardis:project:function:create**](hardis/project/function/create.md)                     | Declare a node, python or bash script as a deployment action type, with `--id --label --runtime --script --inputs --outputs`                                                        |
+| [**hardis:project:function:list**](hardis/project/function/list.md)                         | List the custom functions of the project and check their runtimes, with `--json` and `--check-runtimes`                                                                             |
+| [**hardis:project:function:update**](hardis/project/function/update.md)                     | Change a custom function definition. Required: `--id`                                                                                                                               |
+| [**hardis:project:function:delete**](hardis/project/function/delete.md)                     | Remove a custom function. Required: `--id`; `--force` to delete one still used by deployment actions                                                                                |
 
 ### Monitoring
 
@@ -297,13 +327,12 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:source:deploy**](hardis/source/deploy.md)                                     | Deploy local SFDX project sources to a Salesforce org                                                         |
 | [**hardis:source:push**](hardis/source/push.md)                                         | Push local SFDX sources to a scratch org                                                                      |
 | [**hardis:source:retrieve**](hardis/source/retrieve.md)                                 | Retrieve metadata from an org and update local SFDX sources                                                   |
-| [**hardis:work:refresh**](hardis/work/refresh.md)                                       | Pull latest changes from target branch, merge, and push to the current scratch org or sandbox                 |
 
 ---
 
 ## See Also
 
-- [Using AI Coding Agents (Detailed Guide)](salesforce-ci-cd-agent-skills.md): step-by-step skills for Claude Code, Copilot, and other agents
+- [Using AI Coding Agents (Detailed Guide)](salesforce-devops-agent-skills.md): step-by-step skills for Claude Code, Copilot, and other agents
 - [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md): auto-fix deployment errors with AI agents
 - [AI Setup](salesforce-ai-setup.md): configure LLM providers (Claude, OpenAI, Gemini, Ollama) for sfdx-hardis AI features
 - [Deployment Agent](salesforce-deployment-agent-home.md): AI-assisted deployment error resolution

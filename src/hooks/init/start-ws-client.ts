@@ -8,6 +8,32 @@ const DISABLE_WEBSOCKET_COMMANDS = new Set([
   'hardis:config:monitoring-defaults',
 ]);
 
+// Commands a VS Code panel runs itself in the background, with --json, to feed its own UI.
+// They must not show up as a command in the extension: the panel is waiting for a JSON
+// document, not for a command execution tab, and a panel that refreshes on every click
+// would open one on every click.
+// The same commands started by a click run in a terminal without --json and keep their tab.
+const BACKGROUND_JSON_COMMANDS = new Set([
+  'hardis:project:function:list', // DevOps Pipeline and Pipeline Configuration panels
+  'hardis:scratch:pool:view', // Status panel
+  'hardis:work:backpromote', // Backpromote (Beta) panel
+]);
+
+/**
+ * True when this run is a background call made by a VS Code panel rather than something the
+ * user started. The Backpromote (Beta) panel drives its plan step with --plan, which already
+ * means "answer me with the plan", so it counts even without --json on the command line.
+ */
+export function isBackgroundJsonCall(commandId: string, argv: string[]): boolean {
+  if (!BACKGROUND_JSON_COMMANDS.has(commandId)) {
+    return false;
+  }
+  if (commandId === 'hardis:work:backpromote' && argv.includes('--plan')) {
+    return true;
+  }
+  return argv.includes('--json');
+}
+
 const hook: Hook<'init'> = async (options) => {
   const commandId = options?.id || '';
 
@@ -38,6 +64,12 @@ const hook: Hook<'init'> = async (options) => {
 
   // Fast path: skip WebSocket for known CLI-only commands without loading the class
   if (DISABLE_WEBSOCKET_COMMANDS.has(commandId)) {
+    return;
+  }
+
+  // Background calls a VS Code panel makes to feed itself: connecting would open an empty
+  // command execution tab next to the panel that is waiting for the JSON document
+  if (isBackgroundJsonCall(commandId, options?.argv || [])) {
     return;
   }
 

@@ -1,6 +1,6 @@
 ---
 title: Detect unused Connected Apps (Salesforce monitoring)
-description: Schedule weekly checks of Connected Apps that are not used anymore, but still accessible
+description: With sfdx-hardis, schedule weekly checks of Connected Apps that are not used anymore, but still accessible
 ---
 <!-- markdownlint-disable MD013 -->
 

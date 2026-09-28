@@ -1,0 +1,93 @@
+---
+title: Configure Integrations between sfdx-hardis and Gitlab
+description: With sfdx-hardis, post Notes on Gitlab Merge Request from CI jobs
+---
+<!-- markdownlint-disable MD013 -->
+
+## GitLab Merge Request notes
+
+To avoid having to open job logs to see deployment errors, sfdx-hardis can post them as notes on the Merge Request UI.
+
+To use this capability:
+
+- Go to Settings -> Access Tokens -> Create a project access token with level **Developer** and scope **api**, and name it **SFDX HARDIS BOT**
+
+![image](https://github.com/hardisgroupcom/sfdx-hardis/assets/129843004/b6669469-d71a-4cd8-9c5b-5d1d7d03e341)
+
+
+- Go to Settings -> CI/CD -> Variables -> Create a variable named **CI_SFDX_HARDIS_GITLAB_TOKEN** and paste the access token value
+
+![image](https://github.com/hardisgroupcom/sfdx-hardis/assets/129843004/e4e0b473-0327-4856-88e4-070c2084ba48)
+
+
+Every time you create a Merge Request, the CI job posts its result as a note.
+
+- Example with deployment errors
+
+![](assets/images/gitlab-mr-comment.jpg)
+
+- Example with failing test classes
+
+![](assets/images/gitlab-mr-comment-failed-tests.jpg)
+
+Notes:
+
+- This integration works with the sfdx-hardis pipeline, but also with home-made pipelines: just call [sf hardis:project:deploy:start](https://sfdx-hardis.cloudity.com/hardis/project/deploy/start/) instead of `sf project:deploy:start`.
+
+- This integration uses the following variables:
+  - CI_SFDX_HARDIS_GITLAB_TOKEN
+  - CI_SERVER_URL (provided by GitLab CI)
+  - CI_PROJECT_ID (provided by GitLab CI)
+  - CI_MERGE_REQUEST_IID (provided by GitLab CI)
+  - CI_JOB_NAME (provided by GitLab CI)
+  - CI_JOB_URL (provided by GitLab CI)
+  - GITLAB_API_REJECT_UNAUTHORIZED: set to `"false"` to allow the connection even without a valid certificate (can be useful on on-premise GitLab instances)
+
+## Using GitLab integration from Jenkins
+
+When running on **Jenkins**, sfdx-hardis automatically detects the Jenkins environment and maps its variables to GitLab CI equivalents. You only need to set:
+
+| Variable                    | Description                                                                                             |
+|:----------------------------|:--------------------------------------------------------------------------------------------------------|
+| CI_SFDX_HARDIS_GITLAB_TOKEN | A GitLab project access token with **Developer** role and **api** scope, stored as a Jenkins credential |
+
+The following variables are **automatically derived** from Jenkins built-in variables:
+
+- `CI_SERVER_URL`, `CI_PROJECT_PATH`: parsed from `GIT_URL` (git remote)
+- `CI_PROJECT_ID`: resolved via the GitLab API using the project path
+- `CI_COMMIT_REF_NAME`: from `GIT_BRANCH` / `CHANGE_BRANCH`
+- `CI_JOB_URL`: from `BUILD_URL`
+- `CI_JOB_NAME`: from `JOB_NAME`
+- `CI_MERGE_REQUEST_IID`: from `CHANGE_ID` (Jenkins Multibranch Pipeline)
+- `CI_PROJECT_URL`: built from `CI_SERVER_URL` and `CI_PROJECT_PATH`
+
+## Instructions for using Coding Agents
+
+When using auto-fix with coding agents, the pipeline must be able to push a fix branch and create/update Merge Requests.
+
+This works for both:
+
+- GitLab.com
+- GitLab self-managed / on-premise instances
+
+Add this in your workflow before running `sf hardis:*` commands:
+
+```yaml
+before_script:
+  - |
+      if [ -n "${CI_SFDX_HARDIS_GITLAB_TOKEN:-}" ]; then
+        git config user.email "sfdx-hardis-bot@cloudity.com"
+        git config user.name "sfdx-hardis Bot"
+        git remote set-url origin "https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        echo "[sfdx-hardis] GitLab push/MR auth enabled for coding agents"
+      else
+        echo "[sfdx-hardis] Skipping coding-agent GitLab auth setup: CI_SFDX_HARDIS_GITLAB_TOKEN is not set"
+      fi
+```
+
+Required secret/variable:
+
+- `CI_SFDX_HARDIS_GITLAB_TOKEN`:
+  - Go to **Project -> Settings -> Access Tokens**.
+  - Create a Project Access Token with role **Developer** (or higher), scopes **api** and **write_repository**.
+  - Store it as a **masked** CI/CD variable named `CI_SFDX_HARDIS_GITLAB_TOKEN`.

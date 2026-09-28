@@ -1,0 +1,19 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "result": {
+    "actionsRun": [
+      "e2e-pre-{{S1}}",
+      "e2e-post-{{S2}}",
+      "e2e-pre-{{S3}}"
+    ],
+    "actionsPending": [
+      "e2e-manual-{{S1}}"
+    ],
+    "commentedPullRequests": [
+      "{{S1}}",
+      "{{S2}}",
+      "{{S3}}"
+    ]
+  }
+}

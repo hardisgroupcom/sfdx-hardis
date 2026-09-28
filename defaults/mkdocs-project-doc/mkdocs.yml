@@ -82,7 +82,6 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
-  - javascripts/gtag.js
   - javascripts/jstree-handler.js
   # Rewritten by sfdx-hardis on every run: put project behavior in javascripts/tables.js
   - javascripts/sfdx-hardis-doc-labels.js
@@ -95,6 +94,13 @@ extra_css:
   # Loaded last so it overrides the project stylesheet: sfdx-hardis rewrites it on every run
   - stylesheets/sfdx-hardis-doc.css
 extra:
+  # Google Analytics. Uncomment and put your own measurement id in it, and the
+  # theme sends the page view of the page a reader lands on plus one per instant
+  # navigation. Leave it out and no request is made at all.
+  #
+  # analytics:
+  #   provider: google
+  #   property: G-XXXXXXXXXX
   social:
     - icon: fontawesome/regular/circle-question
       link: https://github.com/hardisgroupcom/sfdx-hardis/issues

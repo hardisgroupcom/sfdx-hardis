@@ -16,6 +16,7 @@ import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
 import fs from '../common/utils/fsUtils.js';
 import * as yaml from 'js-yaml';
+import { parseDocument as parseYamlDocument } from 'yaml';
 import * as os from 'os';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
@@ -152,8 +153,31 @@ export const setConfig = async (layer: string, propValues: any): Promise<string 
   return await setInConfigFile(configSearchPlaces, propValues);
 };
 
+/**
+ * The last configuration successfully read from each set of files, kept for the rest of the run.
+ *
+ * A configuration file can become unreadable while a command is running: hardis:project:promotion:create
+ * commits git conflict markers on purpose when a cherry-pick conflicts, and config/.sfdx-hardis.yml is
+ * a file like any other. Crashing on the next read would stop the command halfway, with a branch
+ * assembled and no Pull Request. The configuration read before the conflict is used instead, with a
+ * warning naming the file to fix.
+ */
+const lastGoodConfigs: Record<string, any> = {};
+
+/** Configuration files holding git conflict markers, among the ones that were searched */
+function conflictedConfigFiles(searchPlaces: string[]): string[] {
+  return searchPlaces.filter((searchPlace) => {
+    try {
+      return fs.existsSync(searchPlace) && fs.readFileSync(searchPlace, 'utf-8').includes('<<<<<<<');
+    } catch {
+      return false;
+    }
+  });
+}
+
 // Load configuration from file
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
+  const cacheKey = searchPlaces.join('|');
   try {
     const configExplorer = await cosmiconfig(moduleName, {
       searchPlaces,
@@ -163,12 +187,22 @@ async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
       const remoteConfig = await loadFromRemoteConfigFile(config.extends);
       config = Object.assign(remoteConfig, config);
     }
+    // A shallow copy: getConfig merges the layers into the object it gets back, and what is
+    // memorized here must not collect the keys of the layers above it
+    lastGoodConfigs[cacheKey] = Object.assign({}, config);
     return config;
   } catch (err) {
-    uxLog("error", this, c.red('[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message));
-    throw new SfError(
-      '[sfdx-hardis] Unable to read configuration file.\n' + (err as Error).message
-    );
+    const conflictedFiles = conflictedConfigFiles(searchPlaces);
+    const detail =
+      conflictedFiles.length > 0
+        ? t('configFileConflictMarkers', { file: conflictedFiles.join(', ') })
+        : (err as Error).message;
+    if (lastGoodConfigs[cacheKey]) {
+      uxLog("warning", this, c.yellow(t('configFileUnreadableUsingPrevious', { message: detail })));
+      return Object.assign({}, lastGoodConfigs[cacheKey]);
+    }
+    uxLog("error", this, c.red('[sfdx-hardis] Unable to read configuration file.\n' + detail));
+    throw new SfError('[sfdx-hardis] Unable to read configuration file.\n' + detail);
   }
 }
 
@@ -187,6 +221,29 @@ async function loadFromRemoteConfigFile(url) {
   return remoteConfig;
 }
 
+// A file with a YAML syntax error parses into a partial document: writing it back would silently
+// drop what could not be read, so refuse to edit it and say which file to fix
+function readEditableYamlDocument(configFile: string) {
+  const previous = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf-8') : '';
+  const doc = parseYamlDocument(previous);
+  if (doc.errors.length > 0) {
+    throw new SfError(`${configFile} is not valid YAML, fix it before updating it: ${doc.errors[0].message}`);
+  }
+  return doc;
+}
+
+// Remove keys from a configuration file, keeping the rest of it and its comments as they are
+export async function removeFromConfigFile(configFile: string, keys: string[]) {
+  if (!fs.existsSync(configFile)) {
+    return;
+  }
+  const doc = readEditableYamlDocument(configFile);
+  for (const key of keys) {
+    doc.delete(key);
+  }
+  await fs.writeFile(configFile, doc.toString({ lineWidth: 0 }));
+}
+
 // Update configuration file
 export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = '') {
   let explorer;
@@ -195,13 +252,17 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
     const configExplorer = await explorer.search();
     configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
   }
-  let doc: any = {};
-  if (fs.existsSync(configFile)) {
-    doc = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+  // The file is edited in place rather than rebuilt from a JS object: a project
+  // configuration is written by hand and its comments explain why each value is
+  // what it is. Loading it and dumping it back would drop every one of them, and
+  // rewrap the lines, the first time any command stored a value.
+  const doc = readEditableYamlDocument(configFile);
+  for (const [key, value] of Object.entries(propValues)) {
+    doc.set(key, value);
   }
-  doc = Object.assign(doc, propValues);
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  // lineWidth 0: never fold a long value, so a URL or a sentence stays on one line
+  await fs.writeFile(configFile, doc.toString({ lineWidth: 0 }));
   if (explorer) {
     explorer.clearCaches();
   }

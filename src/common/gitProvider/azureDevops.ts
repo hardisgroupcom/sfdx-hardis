@@ -1,4 +1,4 @@
-import { GitProviderRoot, PullRequestCommentRef } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from '../utils/fsUtils.js';
@@ -6,12 +6,15 @@ import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../ut
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
-import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
+import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -148,6 +151,29 @@ export class AzureDevopsProvider extends GitProviderRoot {
       });
       process.env.SYSTEM_ACCESSTOKEN = accessTokenResp.token;
     }
+  }
+
+  /**
+   * https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequestcreate?sourceRef=&targetRef=
+   */
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    const parsed = AzureDevopsProvider.parseAzureRepoUrl(remoteUrl);
+    if (!parsed) {
+      return null;
+    }
+    const collectionUri = parsed.collectionUri.replace(/\/$/, "");
+    const repoPath = `${collectionUri}/${encodeURIComponent(parsed.teamProject)}/_git/${encodeURIComponent(parsed.repositoryId)}`;
+    return buildPrCreateUrl((body) => {
+      const params = new URLSearchParams({
+        sourceRef: request.sourceBranch,
+        targetRef: request.targetBranch,
+        title: request.title,
+      });
+      if (body) {
+        params.set("description", body);
+      }
+      return `${repoPath}/pullrequestcreate?${params.toString()}`;
+    }, request.body || "");
   }
 
   public getLabel(): string {
@@ -313,10 +339,26 @@ ${this.getPipelineVariablesConfig()}
       if (!pullRequest.workItemRefs) {
         pullRequest.workItemRefs = pullRequestWorkItemRefs;
       }
-      return this.completePullRequestInfo(latestMergedPullRequestOnBranch[0]);
+      return this.completePullRequestInfo(await this.completeTruncatedDescription(azureGitApi, pullRequest));
     }
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUnableToFindPrInfo')));
     return null;
+  }
+
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    if (!repositoryId || !teamProject) {
+      return false;
+    }
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      await azureGitApi.updatePullRequest({ status: PullRequestStatus.Abandoned }, repositoryId, pullRequestNumber, teamProject);
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
   }
 
   public async listPullRequests(filters: {
@@ -369,7 +411,7 @@ ${this.getPipelineVariablesConfig()}
     // Complete results with PR comments (stored in providerInfo)
     const results: CommonPullRequestInfo[] = [];
     for (const pullRequest of pullRequests) {
-      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, pullRequest);
+      const pr: GitPullRequest & { threads?: any[] } = Object.assign({}, await this.completeTruncatedDescription(azureGitApi, pullRequest));
       uxLog("log", this, c.grey(t('gettingThreadsForPr', { pullRequest: pullRequest.pullRequestId })));
       const existingThreads = await azureGitApi.getThreads(pullRequest.repository?.id || "", pullRequest.pullRequestId || 0, teamProject);
       pr.threads = existingThreads.filter(thread => !thread.isDeleted);
@@ -497,6 +539,33 @@ ${this.getPipelineVariablesConfig()}
       }
     }
     return latest;
+  }
+
+  public async getPullRequestById(pullRequestId: number): Promise<CommonPullRequestInfo | null> {
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
+      if (!pullRequest || !pullRequest.targetRefName) {
+        return null;
+      }
+      // Azure Pull Request ids are unique per organization, not per repository: without this check
+      // a number copied from another repository of the same organization would resolve, and its
+      // deployment actions and Apex test classes would be run against this project's org.
+      const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+      if (repositoryId && pullRequest.repository?.id && pullRequest.repository.id !== repositoryId) {
+        uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrOtherRepository', { id: pullRequestId })));
+        return null;
+      }
+      // status 3 is "completed" (merged). An abandoned Pull Request also carries a closedDate, and
+      // completePullRequestInfo derives mergedDate from it, so it would look merged to the callers.
+      if (pullRequest.status !== undefined && pullRequest.status !== 3) {
+        return this.completePullRequestInfo({ ...pullRequest, closedDate: undefined });
+      }
+      return this.completePullRequestInfo(pullRequest);
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrByIdNotFound', { id: pullRequestId, message: String(err) })));
+      return null;
+    }
   }
 
   public async listPullRequestsInBranchSinceLastMerge(
@@ -633,8 +702,9 @@ ${this.getPipelineVariablesConfig()}
     allBranches: string[],
     commitIds: Set<string>,
   ): Promise<CommonPullRequestInfo[]> {
-    const prPromises = allBranches.map(async (branchName) => {
-      try {
+    // Adaptive batches of the Azure ladder, shrunk only when the provider throttles
+    const prResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      {
         const prs = await gitApi.getPullRequests(
           process.env.BUILD_REPOSITORY_ID!,
           {
@@ -648,18 +718,12 @@ ${this.getPipelineVariablesConfig()}
         // does not suggest that all these PRs are part of the scope.
         uxLog("other", this, c.grey(`[Azure Integration] Fetched ${prs?.length || 0} recently completed PRs targeting branch ${branchName}, as candidates to match against the commits window`));
         return prs || [];
-      } catch (err) {
-        uxLog(
-          "warning",
-          this,
-          c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`),
-        );
-        return [];
       }
+    }, {
+      sizes: PROVIDER_BATCH_PROFILES.azure,
+      onError: (err, branchName) => uxLog("warning", this, c.yellow(`Error fetching completed PRs for branch ${branchName}: ${String(err)}`)),
     });
-
-    const prResults = await Promise.all(prPromises);
-    const allMergedPRs: any[] = prResults.flat();
+    const allMergedPRs: any[] = prResults.flatMap((prs) => prs || []);
 
     // Keep PRs whose merge commit (or source commit) is in our commit list
     const relevantPRs = allMergedPRs.filter((pr) => {
@@ -681,7 +745,11 @@ ${this.getPipelineVariablesConfig()}
         uniquePRsMap.set(pr.pullRequestId, pr);
       }
     }
-    return Array.from(uniquePRsMap.values()).map((pr) => this.completePullRequestInfo(pr));
+    const completed: CommonPullRequestInfo[] = [];
+    for (const pr of uniquePRsMap.values()) {
+      completed.push(this.completePullRequestInfo(await this.completeTruncatedDescription(gitApi, pr)));
+    }
+    return completed;
   }
 
   // Posts a note on the merge request
@@ -710,12 +778,12 @@ ${this.getPipelineVariablesConfig()}
     const SYSTEM_TEAMPROJECT = (process.env.SYSTEM_TEAMPROJECT || "").replace(/ /g, "%20");
     const azureBuildUri = `${SYSTEM_COLLECTIONURI}${encodeURIComponent(SYSTEM_TEAMPROJECT)}/_build/results?buildId=${buildId}&view=logs&j=${jobId}`;
     // Build thread message
-    const messageKey = prMessage.messageKey + "-" + azureJobName + "-" + pullRequestId;
+    const messageKey = prMessage.messageKey + "-" + this.jobMessageKeySegment(azureJobName) + "-" + pullRequestId;
     let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
 <br/>
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${azureJobName}](${azureBuildUri})_
+${this.buildPoweredByFooter(azureJobName, azureBuildUri)}
 
 ${getBannerMarkdownAndLink()}
 
@@ -798,6 +866,11 @@ ${getBannerMarkdownAndLink()}
     return false;
   }
 
+  // "A description for a pull request must not be longer than 4000 characters."
+  public getMaxPullRequestDescriptionLength(): number | null {
+    return 4000;
+  }
+
   // Convert sfdx-hardis PR status to Azure Thread status value
   private pullRequestStatusToAzureThreadStatus(prMessage: PullRequestMessageRequest) {
     return prMessage.status === "valid"
@@ -814,6 +887,62 @@ ${getBannerMarkdownAndLink()}
     return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(
       process.env.SYSTEM_TEAMPROJECT || "",
     )}/_git/${encodeURIComponent(repositoryName)}/pullrequest/${pullRequestId}`;
+  }
+
+  // Azure DevOps truncates the description of a Pull Request returned by the list API, with no
+  // marker saying so. Everything sfdx-hardis reads from a description is then silently lost: the
+  // promotionPullRequests declaration of a promotion branch, the deploymentApexTestClasses blocks,
+  // the custom behavior keywords. The single Pull Request API returns the whole description, so it
+  // is read again for every listed Pull Request whose description is long enough to have been cut.
+  private static readonly LIST_DESCRIPTION_TRUNCATION_LENGTH = 400;
+
+  private async completeTruncatedDescription(azureGitApi: any, pullRequest: GitPullRequest): Promise<GitPullRequest> {
+    const listedDescription = pullRequest.description || "";
+    if (listedDescription.length < AzureDevopsProvider.LIST_DESCRIPTION_TRUNCATION_LENGTH) {
+      return pullRequest;
+    }
+    // One API call per Pull Request whose description was cut adds up fast on a repository with a
+    // long history, and the description of a merged or abandoned Pull Request no longer moves. The
+    // cache is keyed on the state seen right now, so a reopened Pull Request is read again.
+    const repositoryKey = await this.pullRequestCacheRepositoryKey();
+    const cached = await getCachedPullRequestDescription(
+      "azure",
+      repositoryKey,
+      pullRequest.pullRequestId || 0,
+      pullRequest.status,
+    );
+    if (cached !== null) {
+      return Object.assign({}, pullRequest, { description: cached });
+    }
+    try {
+      const fullPullRequest = await azureGitApi.getPullRequestById(pullRequest.pullRequestId);
+      const fullDescription = fullPullRequest?.description || "";
+      if (fullDescription.length > listedDescription.length) {
+        await setCachedPullRequestDescription(
+          "azure",
+          repositoryKey,
+          pullRequest.pullRequestId || 0,
+          pullRequest.status,
+          fullDescription,
+        );
+        return Object.assign({}, pullRequest, { description: fullDescription });
+      }
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[Azure Integration] Unable to read the full description of Pull Request ${pullRequest.pullRequestId}: ${(e as Error).message}`));
+    }
+    return pullRequest;
+  }
+
+  // Identifies the repository the cached descriptions belong to, from the git remote of the working
+  // copy: that is the identifier vscode-sfdx-hardis agrees on, so the two share one cache. Read
+  // once per process, since it costs a git call.
+  private cachedRepositoryKey: string | null = null;
+
+  private async pullRequestCacheRepositoryKey(): Promise<string> {
+    if (this.cachedRepositoryKey === null) {
+      this.cachedRepositoryKey = repositoryKeyFromRemoteUrl((await getGitRepoUrl()) || "");
+    }
+    return this.cachedRepositoryKey;
   }
 
   private completePullRequestInfo(prData: GitPullRequest): CommonPullRequestInfo {

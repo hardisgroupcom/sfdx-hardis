@@ -1,0 +1,12 @@
+{
+  "exitStatus": 0,
+  "status": "blocked",
+  "checks": [
+    {
+      "id": "parentBranch",
+      "ok": false,
+      "messageContains": "not an allowed parent branch"
+    }
+  ],
+  "windowNull": true
+}

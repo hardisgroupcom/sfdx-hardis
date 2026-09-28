@@ -87,34 +87,39 @@ export function classificationLabel(classification: DoraClassification): string 
   return t(`doraReport${classification.level.charAt(0).toUpperCase() + classification.level.slice(1)}`);
 }
 
+// ISO 8601 week (weeks start on Monday, week 1 holds the first Thursday), in local time like the
+// dates it groups. Every weekly bucket of the report uses it, so a label and its records always agree
+export function weekKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayOfWeek = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayOfWeek);
+  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
+  const weekNum = Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
 export function groupByWeek(records: DeployRecord[]): Map<string, number> {
   const weeks = new Map<string, number>();
   for (const r of records) {
     const d = parseDatetime(r.CompletedDate) || parseDatetime(r.CreatedDate);
     if (!d) continue;
-    const year = d.getFullYear();
-    const jan1 = new Date(year, 0, 1);
-    const dayOfYear = Math.floor((d.getTime() - jan1.getTime()) / 86400000) + 1;
-    const weekNum = Math.ceil(dayOfYear / 7);
-    const key = `${year}-W${String(weekNum).padStart(2, '0')}`;
+    const key = weekKey(d);
     weeks.set(key, (weeks.get(key) || 0) + 1);
   }
   return weeks;
 }
 
-export function buildWeekLabels(periodDays: number): string[] {
+export function buildWeekLabels(periodDays: number, now: Date = new Date()): string[] {
   const labels: string[] = [];
-  const now = new Date();
-  const start = new Date(now.getTime() - periodDays * 86400000);
-  const current = new Date(start);
+  const current = new Date(now.getTime() - periodDays * 86400000);
   while (current <= now) {
-    const year = current.getFullYear();
-    const jan1 = new Date(year, 0, 1);
-    const dayOfYear = Math.floor((current.getTime() - jan1.getTime()) / 86400000) + 1;
-    const weekNum = Math.ceil(dayOfYear / 7);
-    const key = `${year}-W${String(weekNum).padStart(2, '0')}`;
+    const key = weekKey(current);
     if (!labels.includes(key)) labels.push(key);
     current.setDate(current.getDate() + 7);
   }
+  // Stepping by 7 days from the start of the period can stop short of the current week, whose
+  // records would then be counted by no label
+  const currentWeek = weekKey(now);
+  if (!labels.includes(currentWeek)) labels.push(currentWeek);
   return labels;
 }

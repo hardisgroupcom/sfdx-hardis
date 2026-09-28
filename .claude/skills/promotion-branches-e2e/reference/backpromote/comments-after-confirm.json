@@ -1,0 +1,12 @@
+{
+  "{{S1}}": {
+    "comment": true,
+    "actions": [
+      {
+        "id": "e2e-manual-{{S1}}",
+        "status": "success",
+        "count": 1
+      }
+    ]
+  }
+}

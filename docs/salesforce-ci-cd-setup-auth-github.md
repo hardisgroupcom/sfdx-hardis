@@ -1,41 +1,11 @@
 ---
 title: Configure GitHub CI/CD variables
-description: Learn how to configure CI/CD variables for CI Server authentication to automate deployments with GitHub
+description: This page moved to salesforce-devops-setup-auth-github
+search:
+  exclude: true
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Define sfdx-hardis environment variables
+## Page moved
 
-- Go to **Repository -> Settings -> Secrets and variables -> Actions** _(you must have GitHub permissions to access this menu)_
-
-![](assets/images/screenshot-monitoring-github-variable.png.jpg)
-
-- Create a new secret with the following info:
-  - name: **YOUR_VARIABLE_NAME**
-  - value: `Your variable value`
-
-![](assets/images/screenshot-monitoring-github-variable-add.png.jpg)
-
-More info: [GitHub documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository){target=blank}
-
-## Reference variables in your pipeline YAML files
-
-Once you have defined your secret variables in GitHub Actions, reference them in your pipeline YAML files with the syntax `VARIABLE_NAME: ${{ secrets.VARIABLE_NAME }}`, so that their values are passed to the pipeline.
-
-Example:
-
-```yaml
-          SFDX_CLIENT_ID_MY_ORG: ${{ secrets.SFDX_CLIENT_ID_MY_ORG }}
-          SFDX_CLIENT_KEY_MY_ORG: ${{ secrets.SFDX_CLIENT_KEY_MY_ORG }}
-```
-
-Impacted YAML files, if present in your repository:
-
-- `.github/workflows/check-deploy.yml`
-- `.github/workflows/process-deploy.yml`
-- `.github/workflows/org-monitoring.yml`
-
-## Auto-fix branches
-
-Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
-This prevents recursive or redundant deploy/check executions on auto-generated fix branches.
+[Configure GitHub CI/CD variables](salesforce-devops-setup-auth-github.md)

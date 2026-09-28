@@ -1,6 +1,6 @@
 ---
 title: How to monitor your Salesforce Org
-description: Free Salesforce Metadata BackUp, plus many extra monitoring features like Grafana Dashboards
+description: With sfdx-hardis, free Salesforce Metadata BackUp, plus many extra monitoring features like Grafana Dashboards
 ---
 
 <!-- markdownlint-disable MD013 -->
@@ -22,6 +22,7 @@ Keep a **daily, version-tracked backup** of all the metadata in your Salesforce 
 - **Catch problems early**: failing Apex tests, security issues, deprecated API calls, org limits, overdue Release Updates are all surfaced automatically.
 - **Stay admin-friendly**: works on any API-enabled org. No CI/CD project required.
 - **Route the right signal to the right channel**: stream everything to Grafana while keeping Slack and Teams reserved for warnings and errors only.
+- **Ask a coding agent**: open the monitoring repository in Claude Code, Codex, Gemini or Copilot and ask what changed, when, and whether it came through your CI/CD pipeline.
 
 ---
 
@@ -90,6 +91,31 @@ Get **Slack** or **Teams** notifications when something needs attention.
 
 ---
 
+## Ask your coding agent
+
+Each backup writes an `AGENTS.md` file at the root of the monitoring repository. It tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file holds, and how to read the git history. Open the repository with your agent and ask:
+
+- "What changed in production last week?"
+- "When was the `Check_VAT` validation rule last modified, and what changed?"
+- "Write the report of the changes between March 1 and March 31."
+- "Is `Invoice__c.Status__c` the same in production and in the UAT sandbox?"
+
+Set `deploymentRepository` to the address of your sfdx-hardis CI/CD repository, and the agent also searches its branches, its Pull Requests and the pipeline logs of both repositories:
+
+- "Was this Flow change deployed by the pipeline, or made directly in production?"
+- "Which Pull Request brought this Apex class to production, and when?"
+- "Why did last night's deployment to UAT fail?"
+- "Why did last night's backup fail?"
+
+Set `grafanaUrl` too, with a read-only Grafana token in a `.env` file, and the agent also queries the logs and metrics your monitoring sends to Grafana:
+
+- "How did the API requests limit evolve this quarter?"
+- "On which days did Apex errors spike, and which classes were involved?"
+
+The agent only reads: it never pushes, comments, starts a pipeline or changes Grafana. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent) for the details.
+
+---
+
 ## How it works
 
 Every night (or on your own schedule), a CI job extracts all metadata from the org and pushes a new commit to the monitoring repository whenever something changed.
@@ -106,9 +132,9 @@ Additional jobs then run on top of the backup: Apex tests, code quality, legacy 
 
 Each notification type (audit trail, org limits, Apex tests, ...) can be configured **per channel** with its own severity threshold. Configure it from the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) or directly in `.sfdx-hardis.yml`.
 
-- **Messaging channels**: [Slack](salesforce-ci-cd-setup-integration-slack.md) and [Microsoft Teams](salesforce-ci-cd-setup-integration-ms-teams.md)
-- **Email**: [any recipient list](salesforce-ci-cd-setup-integration-email.md), with per-notification-type overrides
-- **API / Grafana / Prometheus**: [external endpoints](salesforce-ci-cd-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
+- **Messaging channels**: [Slack](salesforce-devops-setup-integration-slack.md) and [Microsoft Teams](salesforce-devops-setup-integration-ms-teams.md)
+- **Email**: [any recipient list](salesforce-devops-setup-integration-email.md), with per-notification-type overrides
+- **API / Grafana / Prometheus**: [external endpoints](salesforce-devops-setup-integration-api.md) for dashboards (e.g. Grafana Loki, Prometheus)
 
 **Personal data stays private**: when monitoring runs in CI, usernames, emails, user Ids and client IPs are replaced by stable pseudonyms in generated reports and in every notification channel, so dashboards and shared files carry no readable end-user identity. Levels and overrides are described in [Security & Privacy](salesforce-security-privacy.md#data-anonymization).
 
@@ -180,3 +206,13 @@ See [Monitoring configuration](salesforce-monitoring-config-home.md#monitoring-c
 _Prefer reading? Here are the slides:_
 
 <div style="text-align:center"><iframe src="https://www.slideshare.net/slideshow/embed_code/key/jxxBlqw7iup8Gh?hostedIn=slideshare&page=upload" width="476" height="400" frameborder="0" marginwidth="0" marginheight="0" scrolling="no"></iframe></div>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+
+- [Lab 3.8 - Monitor your production org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-8-monitor-your-production-org/)
+
+<!-- training-links:end -->

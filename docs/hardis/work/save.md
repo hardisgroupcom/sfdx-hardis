@@ -82,7 +82,7 @@ autoRemoveUserPermissions:
   - WorkCalibrationUser
 ```
 
-Advanced instructions are available in the [Publish a User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/).
+Advanced instructions are available in the [Publish a User Story documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>

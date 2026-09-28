@@ -1,18 +1,11 @@
 ---
 title: Configure Bitbucket CI/CD variables
-description: Learn how to configure CI/CD variables for CI Server authentication to automate deployments with Bitbucket Pipelines
+description: This page moved to salesforce-devops-setup-auth-bitbucket
+search:
+  exclude: true
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Define sfdx-hardis environment variables
+## Page moved
 
-- Go to **Project -> Repository Settings -> Repository Variables** _(you must have Bitbucket permissions to access this menu)_
-
-![](assets/images/screenshot-bitbucket-variables.png)
-
-More info: [Bitbucket documentation](https://support.atlassian.com/bitbucket-cloud/docs/variables-and-secrets/#Secured-variables){target=blank}
-
-## Auto-fix branches
-
-Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
-This prevents recursive or redundant deploy/check executions on auto-generated fix branches.
+[Configure Bitbucket CI/CD variables](salesforce-devops-setup-auth-bitbucket.md)

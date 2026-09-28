@@ -1,0 +1,635 @@
+import c from 'chalk';
+import * as yaml from 'js-yaml';
+import { CommonPullRequestInfo } from '../gitProvider/index.js';
+import { uxLog } from './index.js';
+import { t } from './i18n.js';
+
+/**
+ * Promotion branches: a branch assembled by cherry-picking approved User Stories from a major
+ * branch (ex: uat), so they reach the next major branch (ex: preprod) before the rest of the
+ * promotion window. The cherry-picked commits carry new SHAs, so the Pull Request scope, which
+ * matches merged Pull Requests by merge commit SHA, cannot find the stories. The promotion Pull
+ * Request declares them instead, in a YAML block of its description:
+ *
+ * ```yaml
+ * promotionPullRequests: [482, 487, 491]
+ * ```
+ *
+ * Everything here is pure logic over config and Pull Request data: no git, no provider call, so
+ * the CLI and the VS Code extension can apply the same rules. Nothing in this module has any
+ * effect while `enablePromotionBranches` is false.
+ */
+
+export const PROMOTION_PULL_REQUESTS_KEY = 'promotionPullRequests';
+export const PROMOTION_BRANCH_PREFIX = 'promotion';
+// promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<HHMM>, then -2, -3... when taken
+export const PROMOTION_BRANCH_NAME_EXAMPLE = 'promotion/uat/preprod/2026-09-06-1430';
+
+export interface PromotionBranchConfig {
+  enabled: boolean;
+  /**
+   * Steps a promotion may be assembled on (allowedPromotionSteps). Empty means every step is
+   * allowed, which is what a project gets until it declares the list.
+   */
+  allowedSteps: PromotionStep[];
+}
+
+/**
+ * One authorized promotion step. An empty target means "any target of that source branch".
+ */
+export interface PromotionStep {
+  source: string;
+  target: string;
+}
+
+export interface PromotionBranchNameParts {
+  sourceBranch: string;
+  targetBranch: string;
+  date: string;
+  /**
+   * UTC hour and minutes the promotion was assembled at (HHMM). Null for a name of the first
+   * releases of the feature, which carried a counter after the date instead.
+   */
+  time: string | null;
+  /** 1 unless the name ends with -2, -3... because the same name was already taken */
+  counter: number;
+}
+
+/**
+ * How a Pull Request relates to the promotion branch feature.
+ * - promotion: prefixed branch carrying a declared list, the feature applies
+ * - prefix-without-key: named like a promotion branch but declares nothing, treated as a feature branch
+ * - key-without-prefix: declares a list on an ordinary branch, the list is ignored
+ * - none: not concerned
+ */
+export type PromotionPullRequestKind = 'promotion' | 'prefix-without-key' | 'key-without-prefix' | 'none';
+
+export type InheritedCustomBehavior = {
+  behavior: keyof CommonPullRequestInfo['customBehaviors'];
+  keyword: string;
+  fromPullRequests: string[];
+};
+
+const CUSTOM_BEHAVIOR_KEYWORDS: Record<keyof CommonPullRequestInfo['customBehaviors'], string> = {
+  noDeltaDeployment: 'NO_DELTA',
+  purgeFlowVersions: 'PURGE_FLOW_VERSIONS',
+  destructiveChangesAfterDeployment: 'DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT',
+  flowDeleteInterviews: 'FLOW_DELETE_INTERVIEWS',
+};
+
+export function getPromotionBranchConfig(config: any): PromotionBranchConfig {
+  return {
+    enabled: config?.enablePromotionBranches === true,
+    allowedSteps: parsePromotionSteps(config?.allowedPromotionSteps),
+  };
+}
+
+/**
+ * Read allowedPromotionSteps: the source and target branches a release manager may assemble a
+ * promotion between. Entries are objects ({ source: uat, target: preprod }); a "uat > preprod"
+ * string is accepted too, since the config file is often edited by hand. An entry without a
+ * target allows every target of that source branch.
+ *
+ * Anything unusable is left out, so the caller can compare the count with the configured one and
+ * tell "no restriction" from "a restriction nobody can read".
+ */
+export function parsePromotionSteps(raw: any): PromotionStep[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  const steps: PromotionStep[] = [];
+  for (const entry of raw) {
+    let source = '';
+    let target = '';
+    if (typeof entry === 'string') {
+      const parts = entry.split(/\s*(?:->|→|>)\s*/).map((part) => part.trim());
+      source = parts[0] || '';
+      target = parts.length > 1 ? parts[1] || '' : '';
+    } else if (entry && typeof entry === 'object') {
+      source = typeof entry.source === 'string' ? entry.source.trim() : '';
+      target = typeof entry.target === 'string' ? entry.target.trim() : '';
+    }
+    if (!source) {
+      continue;
+    }
+    const alreadyThere = steps.some(
+      (step) => step.source.toLowerCase() === source.toLowerCase() && step.target.toLowerCase() === target.toLowerCase(),
+    );
+    if (!alreadyThere) {
+      steps.push({ source, target });
+    }
+  }
+  return steps;
+}
+
+/**
+ * True when a promotion from source to target is authorized. An empty list authorizes everything:
+ * the restriction is opt-in, so a pipeline that never declared it keeps working as before.
+ */
+export function isPromotionStepAllowed(steps: PromotionStep[], sourceBranch: string, targetBranch: string): boolean {
+  if (!steps || steps.length === 0) {
+    return true;
+  }
+  const source = (sourceBranch || '').toLowerCase();
+  const target = (targetBranch || '').toLowerCase();
+  return steps.some((step) => step.source.toLowerCase() === source && (step.target === '' || step.target.toLowerCase() === target));
+}
+
+/**
+ * The branches of `sourceBranches` a promotion may start from.
+ */
+export function allowedPromotionSourceBranches(steps: PromotionStep[], sourceBranches: string[]): string[] {
+  if (!steps || steps.length === 0) {
+    return [...sourceBranches];
+  }
+  const sources = steps.map((step) => step.source.toLowerCase());
+  return sourceBranches.filter((branch) => sources.includes((branch || '').toLowerCase()));
+}
+
+/**
+ * The branches of `targetBranches` a promotion from `sourceBranch` may go to.
+ */
+export function allowedPromotionTargetBranches(steps: PromotionStep[], sourceBranch: string, targetBranches: string[]): string[] {
+  if (!steps || steps.length === 0) {
+    return [...targetBranches];
+  }
+  return targetBranches.filter((branch) => isPromotionStepAllowed(steps, sourceBranch, branch));
+}
+
+/**
+ * The allowed steps as a single line, for a prompt, a log or an error message.
+ * Ex: "uat -> preprod, preprod -> main".
+ */
+export function formatPromotionSteps(steps: PromotionStep[]): string {
+  if (!steps || steps.length === 0) {
+    return '-';
+  }
+  return steps.map((step) => `${step.source} -> ${step.target || '*'}`).join(', ');
+}
+
+// HHMM of a valid time of day: 0000 to 2359
+const PROMOTION_BRANCH_TIME_REGEX = /^([01]\d|2[0-3])[0-5]\d$/;
+
+/**
+ * Split a promotion branch name into its parts. The convention is not configurable:
+ * promotion/<source major branch>/<target major branch>/<YYYY-MM-DD>-<HHMM>, with -2, -3... added
+ * only when that name is already taken. The name alone says where the stories come from and where
+ * they go, and the minute it was assembled at keeps two promotions apart without anybody having to
+ * count the branches of the day. Returns null for anything else, including a bare "promotion/xxx".
+ *
+ * The first releases of the feature named the branches <YYYY-MM-DD>-<counter>, and promotions
+ * assembled with them can still be open or waiting in a branch: they are still recognized. A group
+ * of four digits that is a valid time of day is read as the time, which a counter of the old
+ * convention never reached.
+ */
+export function parsePromotionBranchName(branchName: string): PromotionBranchNameParts | null {
+  const segments = (branchName || '').trim().split('/');
+  if (segments.length !== 4 || segments[0].toLowerCase() !== PROMOTION_BRANCH_PREFIX) {
+    return null;
+  }
+  const [, sourceBranch, targetBranch, suffix] = segments;
+  const suffixMatch = suffix.match(/^(\d{4}-\d{2}-\d{2})-(\d+)(?:-(\d+))?$/);
+  if (!sourceBranch || !targetBranch || !suffixMatch) {
+    return null;
+  }
+  const [, date, first, second] = suffixMatch;
+  if (second !== undefined) {
+    // <HHMM>-<n>: the part before the counter must really be a time
+    return PROMOTION_BRANCH_TIME_REGEX.test(first)
+      ? { sourceBranch, targetBranch, date, time: first, counter: parseInt(second, 10) }
+      : null;
+  }
+  if (PROMOTION_BRANCH_TIME_REGEX.test(first)) {
+    return { sourceBranch, targetBranch, date, time: first, counter: 1 };
+  }
+  return { sourceBranch, targetBranch, date, time: null, counter: parseInt(first, 10) };
+}
+
+/**
+ * True for a branch following the promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM> convention (or
+ * the <YYYY-MM-DD>-<counter> one of the first releases).
+ */
+export function isPromotionBranchName(branchName: string): boolean {
+  return parsePromotionBranchName(branchName) !== null;
+}
+
+/**
+ * True for a branch that starts with promotion/ but does not follow the convention: named
+ * like a promotion branch by hand, it is treated as an ordinary feature branch with a warning.
+ */
+export function hasPromotionPrefixOnly(branchName: string): boolean {
+  const name = (branchName || '').trim().toLowerCase();
+  return name.startsWith(PROMOTION_BRANCH_PREFIX + '/') && !isPromotionBranchName(branchName);
+}
+
+/**
+ * Build a promotion branch name, stamped with the current UTC date and minute unless a date is
+ * given. UTC, not the local time: two release managers in different time zones assembling at the
+ * same moment must compute the same name, so the collision check sees it.
+ *
+ * The counter is left out when it is 1, which is the case of every name that is not taken yet: a
+ * second promotion of the same step in the same minute gets -2, then -3...
+ */
+export function buildPromotionBranchName(sourceBranch: string, targetBranch: string, date: Date = new Date(), counter = 1): string {
+  const iso = date.toISOString();
+  const day = iso.substring(0, 10);
+  const time = iso.substring(11, 13) + iso.substring(14, 16);
+  const base = `${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/${day}-${time}`;
+  const n = Math.floor(counter);
+  return n >= 2 ? `${base}-${n}` : base;
+}
+
+/**
+ * Every promotion branch name of a step named in a text: a git log, a merge commit message, a
+ * Pull Request description.
+ *
+ * A promotion branch merged and then deleted (a repository can be set up to delete the head
+ * branch of a merged Pull Request) is not a ref any more, on the remote or locally, so nothing
+ * would stop a later promotion from taking its name back. The merge commit of the target branch
+ * still names it, whatever the git provider, and that name must not be handed out twice.
+ */
+export function extractPromotionBranchNames(text: string): string[] {
+  // The convention has exactly four segments and the source and target branch names may not hold
+  // a "/", so the name stops after the time and its optional counter: "into 'preprod'" after it
+  // is not part of it. The second group is optional and greedy, so -1430-2 is read whole.
+  const segment = String.raw`[^\s/'"\\]+`;
+  const suffix = String.raw`\d{4}-\d{2}-\d{2}-\d+(?:-\d+)?`;
+  const nameRegex = new RegExp(`${PROMOTION_BRANCH_PREFIX}/${segment}/${segment}/${suffix}`, 'gi');
+  const matches = (text || '').match(nameRegex) || [];
+  return [...new Set(matches.filter((name) => isPromotionBranchName(name)))];
+}
+
+/**
+ * Pull Request numbers declared in the YAML block of a Pull Request description.
+ * Accepts numbers and strings ("482", "#482", "!482", "PR 482"), ignores anything else, and
+ * returns null when the key is absent, so the caller can tell "not declared" from "declared empty".
+ */
+export function parsePromotionPullRequestIds(description: string | null | undefined): number[] | null {
+  const yamlBlocks = extractYamlBlocks(description || '');
+  let found = false;
+  const ids: number[] = [];
+  for (const block of yamlBlocks) {
+    let parsed: any;
+    try {
+      parsed = yaml.load(block);
+    } catch {
+      continue;
+    }
+    if (!parsed || typeof parsed !== 'object' || !Object.prototype.hasOwnProperty.call(parsed, PROMOTION_PULL_REQUESTS_KEY)) {
+      continue;
+    }
+    found = true;
+    const rawList = parsed[PROMOTION_PULL_REQUESTS_KEY];
+    const items = Array.isArray(rawList) ? rawList : rawList == null ? [] : [rawList];
+    for (const item of items) {
+      const id = normalizePullRequestId(item);
+      if (id === null) {
+        // Never drop a declaration in silence: the scope of a deployment depends on this list
+        uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionDeclarationNotUnderstood', {
+          value: typeof item === 'string' ? item : JSON.stringify(item),
+          key: PROMOTION_PULL_REQUESTS_KEY,
+        })));
+        continue;
+      }
+      if (!ids.includes(id)) {
+        ids.push(id);
+      }
+    }
+  }
+  return found ? ids : null;
+}
+
+function normalizePullRequestId(item: any): number | null {
+  if (typeof item === 'number') {
+    return Number.isInteger(item) && item > 0 ? item : null;
+  }
+  if (typeof item === 'string') {
+    // A whole reference and nothing else: "482", "#482", "!482", "PR 482". Anything holding more
+    // than one number ("482, 487", written without brackets) is rejected rather than silently
+    // reduced to its last one.
+    const match = item.trim().match(/^(?:PR\s*)?[#!]?(\d+)$/i);
+    if (match) {
+      const id = parseInt(match[1], 10);
+      return id > 0 ? id : null;
+    }
+  }
+  return null;
+}
+
+// Every ```yaml fenced block of a description, not only the first: the release manager may keep
+// the promotion list apart from the deploymentApexTestClasses block.
+function extractYamlBlocks(description: string): string[] {
+  const blocks: string[] = [];
+  const regex = /```ya?ml\s*\r?\n([\s\S]*?)```/gi;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(description)) !== null) {
+    blocks.push(match[1]);
+  }
+  return blocks;
+}
+
+export function classifyPromotionPullRequest(
+  pr: Pick<CommonPullRequestInfo, 'sourceBranch' | 'description'> | null | undefined,
+  config: PromotionBranchConfig,
+): PromotionPullRequestKind {
+  if (!config.enabled || !pr) {
+    return 'none';
+  }
+  const hasValidName = isPromotionBranchName(pr.sourceBranch);
+  const declaredIds = parsePromotionPullRequestIds(pr.description);
+  if (hasValidName && declaredIds !== null) {
+    return 'promotion';
+  }
+  if (hasValidName || hasPromotionPrefixOnly(pr.sourceBranch)) {
+    return 'prefix-without-key';
+  }
+  if (declaredIds !== null) {
+    return 'key-without-prefix';
+  }
+  return 'none';
+}
+
+export function isPromotionPullRequest(
+  pr: Pick<CommonPullRequestInfo, 'sourceBranch' | 'description'> | null | undefined,
+  config: PromotionBranchConfig,
+): boolean {
+  return classifyPromotionPullRequest(pr, config) === 'promotion';
+}
+
+/**
+ * The promotion rules only apply when the Pull Request actually goes where its name announces.
+ * A promotion branch retargeted by hand (ex: promotion/uat/preprod opened against main) would
+ * otherwise run the carried stories' deployment actions and Apex test classes in the wrong org,
+ * so it is treated as an ordinary branch instead, with the mismatch warned about.
+ */
+export function isPromotionPullRequestForItsTarget(
+  pr: Pick<CommonPullRequestInfo, 'sourceBranch' | 'description' | 'targetBranch'> | null | undefined,
+  config: PromotionBranchConfig,
+): boolean {
+  if (!isPromotionPullRequest(pr, config)) {
+    return false;
+  }
+  const parts = parsePromotionBranchName(pr!.sourceBranch)!;
+  const actualTarget = (pr!.targetBranch || '').toLowerCase();
+  return actualTarget === '' || parts.targetBranch.toLowerCase() === actualTarget;
+}
+
+/**
+ * Log the cases where the feature is nearly, but not, applicable. Silent when nothing looks like
+ * a promotion branch, so ordinary jobs keep their exact output.
+ */
+export function warnAboutPromotionPullRequestMisuse(pr: CommonPullRequestInfo | null, config: PromotionBranchConfig): void {
+  if (!pr) {
+    return;
+  }
+  if (!config.enabled) {
+    if (hasPromotionPrefixOnly(pr.sourceBranch) || isPromotionBranchName(pr.sourceBranch) || parsePromotionPullRequestIds(pr.description) !== null) {
+      uxLog('log', null, c.grey('[PromotionBranch] ' + t('promotionBranchFeatureDisabled', { pr: pr.idStr })));
+    }
+    return;
+  }
+  const kind = classifyPromotionPullRequest(pr, config);
+  if (kind === 'prefix-without-key' && hasPromotionPrefixOnly(pr.sourceBranch)) {
+    // Named by hand without the convention: the declared list, if any, is ignored too
+    uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchNameInvalid', { branch: pr.sourceBranch, example: PROMOTION_BRANCH_NAME_EXAMPLE })));
+  } else if (kind === 'prefix-without-key') {
+    uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchWithoutDeclaredScope', { branch: pr.sourceBranch, key: PROMOTION_PULL_REQUESTS_KEY })));
+  } else if (kind === 'key-without-prefix') {
+    uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionKeyOnNonPromotionBranch', { branch: pr.sourceBranch, key: PROMOTION_PULL_REQUESTS_KEY, example: PROMOTION_BRANCH_NAME_EXAMPLE })));
+  } else if (kind === 'promotion') {
+    // The name announces the target: say so when the Pull Request goes somewhere else
+    const parts = parsePromotionBranchName(pr.sourceBranch)!;
+    if (pr.targetBranch && parts.targetBranch.toLowerCase() !== pr.targetBranch.toLowerCase()) {
+      // Treated as an ordinary branch from here on (see isPromotionPullRequestForItsTarget)
+      uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchTargetMismatch', { branch: pr.sourceBranch, expected: parts.targetBranch, actual: pr.targetBranch })));
+    } else if (!isPromotionStepAllowed(config.allowedSteps, parts.sourceBranch, parts.targetBranch)) {
+      // Assembled outside the steps the project authorizes: deployed all the same, since refusing
+      // it here would block a branch that is already merged, but never in silence
+      uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionBranchStepNotAllowed', {
+        branch: pr.sourceBranch,
+        source: parts.sourceBranch,
+        target: parts.targetBranch,
+        steps: formatPromotionSteps(config.allowedSteps),
+      })));
+    }
+  }
+}
+
+/**
+ * Validate the declared Pull Requests once fetched: a missing one (typo, deleted, other
+ * repository) and one still open (its content cannot be in the branch) are skipped with a
+ * warning, never an error. The release manager's list is otherwise taken as is.
+ */
+export function filterDeclaredPullRequests(
+  declaredIds: number[],
+  fetched: Map<number, CommonPullRequestInfo | null>,
+  promotionPr: CommonPullRequestInfo,
+): CommonPullRequestInfo[] {
+  const kept: CommonPullRequestInfo[] = [];
+  for (const id of declaredIds) {
+    const pr = fetched.get(id) || null;
+    if (!pr) {
+      uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionDeclaredPrNotFound', { id, pr: promotionPr.idStr })));
+      continue;
+    }
+    if (!pr.mergedDate) {
+      uxLog('warning', null, c.yellow('[PromotionBranch] ' + t('promotionDeclaredPrNotMerged', { id, pr: promotionPr.idStr })));
+      continue;
+    }
+    if (pr.idNumber === promotionPr.idNumber) {
+      continue;
+    }
+    kept.push(markCarriedBy(pr, promotionPr));
+  }
+  return kept;
+}
+
+/**
+ * A story reached through a promotion Pull Request keeps a pointer to it, so the scope paragraph
+ * and the job log can say where it comes from. Stored on providerInfo to leave the common type
+ * untouched for the providers.
+ */
+export function markCarriedBy(pr: CommonPullRequestInfo, promotionPr: CommonPullRequestInfo): CommonPullRequestInfo {
+  pr.providerInfo = pr.providerInfo || {};
+  pr.providerInfo.sfdxHardisCarriedBy = {
+    idStr: promotionPr.idStr,
+    idNumber: promotionPr.idNumber,
+    sourceBranch: promotionPr.sourceBranch,
+    webUrl: promotionPr.webUrl,
+  };
+  return pr;
+}
+
+export function getCarriedBy(pr: CommonPullRequestInfo): { idStr: string; idNumber: number; sourceBranch: string; webUrl: string } | null {
+  return pr?.providerInfo?.sfdxHardisCarriedBy || null;
+}
+
+/**
+ * Expansion of a promotion window: every promotion Pull Request found in it brings the stories it
+ * declares, so a later `preprod -> main` merge replays their actions and test classes in production
+ * even though their cherry-picked commits never matched by SHA.
+ *
+ * The expansion follows the promotions it finds on the way: a `preprod -> main` promotion declares
+ * the `uat -> preprod` promotion it carried, whose own declaration holds the User Stories. That is
+ * the normal shape of a four level pipeline, and `known` makes it terminate: a Pull Request is
+ * expanded once, whatever the number of levels above it.
+ */
+export async function expandPromotionPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+  fetchPullRequest: (id: number) => Promise<CommonPullRequestInfo | null>,
+): Promise<CommonPullRequestInfo[]> {
+  if (!config.enabled) {
+    return pullRequests;
+  }
+  const result: CommonPullRequestInfo[] = [...pullRequests];
+  const known = new Set(pullRequests.map((pr) => pr.idNumber));
+  // Iterate over `result`, which grows as declared Pull Requests are added
+  for (let index = 0; index < result.length; index++) {
+    const pr = result[index];
+    if (!isPromotionPullRequest(pr, config)) {
+      continue;
+    }
+    const declaredIds = parsePromotionPullRequestIds(pr.description) || [];
+    const fetched = new Map<number, CommonPullRequestInfo | null>();
+    for (const id of declaredIds) {
+      if (known.has(id)) {
+        continue; // already in the window on its own, nothing to add
+      }
+      fetched.set(id, await fetchPullRequest(id));
+    }
+    const carried = filterDeclaredPullRequests([...fetched.keys()], fetched, pr);
+    for (const story of carried) {
+      known.add(story.idNumber);
+      result.push(story);
+    }
+    if (carried.length > 0) {
+      uxLog('log', null, c.grey('[PromotionBranch] ' + t('promotionWindowExpanded', {
+        pr: pr.idStr,
+        count: carried.length,
+        prList: carried.map((story) => `#${story.idStr}`).join(', '),
+      })));
+    }
+  }
+  return result;
+}
+
+/**
+ * The promotion Pull Request inherits the custom behaviors of the stories it carries (OR): what a
+ * story declared, it needs in every org it reaches. Mutates `target` in place, which is the object
+ * shared through GitProvider.getPullRequestInfo({ useCache: true }), and returns what was inherited
+ * with its origin so the check comment can say where each keyword came from.
+ */
+export function mergeInheritedCustomBehaviors(
+  target: CommonPullRequestInfo,
+  sources: CommonPullRequestInfo[],
+): InheritedCustomBehavior[] {
+  const inherited: InheritedCustomBehavior[] = [];
+  target.customBehaviors = target.customBehaviors || {};
+  for (const behavior of Object.keys(CUSTOM_BEHAVIOR_KEYWORDS) as Array<keyof CommonPullRequestInfo['customBehaviors']>) {
+    const fromPullRequests = sources
+      .filter((source) => source.idNumber !== target.idNumber && source.customBehaviors?.[behavior] === true)
+      .map((source) => source.idStr);
+    if (fromPullRequests.length === 0) {
+      continue;
+    }
+    // Already set on the promotion Pull Request itself: nothing inherited, nothing to report
+    if (target.customBehaviors[behavior] === true) {
+      continue;
+    }
+    target.customBehaviors[behavior] = true;
+    inherited.push({ behavior, keyword: CUSTOM_BEHAVIOR_KEYWORDS[behavior], fromPullRequests });
+  }
+  return inherited;
+}
+
+/**
+ * Markdown line for the check comment listing the inherited keywords with their origin.
+ */
+export function buildInheritedBehaviorsMarkdown(inherited: InheritedCustomBehavior[], pullRequests: CommonPullRequestInfo[]): string {
+  if (inherited.length === 0) {
+    return '';
+  }
+  const linkFor = (idStr: string): string => {
+    const pr = pullRequests.find((candidate) => candidate.idStr === idStr);
+    return pr?.webUrl ? `[#${idStr}](${pr.webUrl})` : `#${idStr}`;
+  };
+  const items = inherited.map((item) => `\`${item.keyword}\` inherited from ${item.fromPullRequests.map(linkFor).join(', ')}`);
+  return `ℹ️ Custom behaviors inherited from the carried Pull Requests: ${items.join('; ')}.`;
+}
+
+/**
+ * Promotion Pull Requests (merged into the target of a window, or any branch downstream) that
+ * declare a given story: the story has already been shipped there. Used to annotate promotion
+ * windows, never to remove the story from them: its original merge commit is still to be
+ * promoted, and its actions are idempotent through their state comment.
+ */
+export function findPromotionsCarrying(
+  storyIdNumber: number,
+  promotionPullRequests: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+): CommonPullRequestInfo[] {
+  return findPromotionsCarryingIndexed(storyIdNumber, buildPromotionIndex(promotionPullRequests, config));
+}
+
+/**
+ * The declarations of every merged promotion Pull Request, parsed once. A pipeline with a
+ * thousand Pull Requests would otherwise parse the same YAML blocks once per story.
+ */
+export type PromotionIndex = Map<number, CommonPullRequestInfo[]>;
+
+export function buildPromotionIndex(
+  promotionPullRequests: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+): PromotionIndex {
+  const index: PromotionIndex = new Map();
+  if (!config.enabled) {
+    return index;
+  }
+  for (const pr of promotionPullRequests) {
+    if (!isPromotionPullRequest(pr, config) || !pr.mergedDate) {
+      continue;
+    }
+    for (const storyIdNumber of parsePromotionPullRequestIds(pr.description) || []) {
+      if (storyIdNumber === pr.idNumber) {
+        continue; // a promotion never carries itself
+      }
+      const carriers = index.get(storyIdNumber) || [];
+      if (!carriers.some((carrier) => carrier.idNumber === pr.idNumber)) {
+        carriers.push(pr);
+      }
+      index.set(storyIdNumber, carriers);
+    }
+  }
+  return index;
+}
+
+export function findPromotionsCarryingIndexed(storyIdNumber: number, index: PromotionIndex): CommonPullRequestInfo[] {
+  return index.get(storyIdNumber) || [];
+}
+
+/**
+ * Markdown sentence appended to the scope paragraph of a promotion window: which stories of the
+ * window were already deployed through a promotion branch, and where.
+ */
+export function buildAlreadyPromotedMarkdown(
+  entries: Array<{ story: CommonPullRequestInfo; promotions: CommonPullRequestInfo[] }>,
+): string {
+  const lines = entries
+    .filter((entry) => entry.promotions.length > 0)
+    .map((entry) => {
+      const storyLink = entry.story.webUrl ? `[#${entry.story.idStr}](${entry.story.webUrl})` : `#${entry.story.idStr}`;
+      const via = entry.promotions
+        .map((promotion) => {
+          const link = promotion.webUrl ? `[#${promotion.idStr}](${promotion.webUrl})` : `#${promotion.idStr}`;
+          const date = promotion.mergedDate ? ` on ${String(promotion.mergedDate).substring(0, 10)}` : '';
+          return `\`${promotion.sourceBranch}\` (${link}, into \`${promotion.targetBranch}\`${date})`;
+        })
+        .join(', ');
+      return `- ${storyLink} already deployed via ${via}`;
+    });
+  if (lines.length === 0) {
+    return '';
+  }
+  return `ℹ️ Some Pull Requests of this promotion window were already deployed through a promotion branch. Their metadata is redeployed as a no-op and their actions are skipped where already performed:\n${lines.join('\n')}`;
+}

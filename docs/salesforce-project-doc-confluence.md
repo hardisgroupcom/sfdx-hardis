@@ -1,6 +1,6 @@
 ---
 title: Publish Salesforce Project Documentation to Confluence
-description: Learn how to automatically publish your MkDocs project documentation to Atlassian Confluence
+description: With sfdx-hardis, learn how to automatically publish your MkDocs project documentation to Atlassian Confluence
 ---
 <!-- markdownlint-disable MD013 -->
 

@@ -9,14 +9,14 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, migrateGtagJsToMkDocsAnalytics, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import { linkifyWorksheetUrls } from '../../../common/utils/filesUtils.js';
 import { glob } from 'glob';
-import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS, listApexFiles, listAuraBundleFiles, listFlowFiles, listPageFiles, listVisualforceComponentFiles, listVisualforcePageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
+import { GLOB_IGNORE_PATTERNS, METADATA_DOC_GLOB_IGNORE_PATTERNS, PACKAGE_DIRECTORY_DOC_GLOB_IGNORE_PATTERNS, globMetadataInPackageDirectories, listApexFiles, listAuraBundleFiles, listFlowFiles, listPageFiles, listVisualforceComponentFiles, listVisualforcePageFiles, returnApexType } from '../../../common/utils/projectUtils.js';
 import { buildComponentReferenceIndex, ComponentReferenceIndex, getComponentReferences } from '../../../common/utils/metadataReferenceUtils.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
@@ -177,6 +177,16 @@ sf hardis:doc:project2markdown --agent
 In agent mode, all interactive prompts are skipped. All flags remain available and behave identically - use them to control which documentation sections are generated.
 
 ${this.htmlInstructions}
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.9 - Generate the Salesforce project documentation](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-9-generate-the-project-documentation/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
@@ -847,7 +857,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfProfilesDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const profilesForMenu: any = { [t('docMdAllProfiles')]: "profiles/index.md" };
-    const profilesFiles = (await glob("**/profiles/**.profile-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }));
+    const profilesFiles = (await globMetadataInPackageDirectories("**/profiles/**.profile-meta.xml"));
     sortCrossPlatform(profilesFiles);
     if (profilesFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noProfileFoundInTheProject')));
@@ -896,7 +906,7 @@ ${this.htmlInstructions}
     uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetsDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
     const psForMenu: any = { [t('docMdAllPermissionSets')]: "permissionsets/index.md" };
-    const psFiles = (await glob("**/permissionsets/**.permissionset-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }));
+    const psFiles = (await globMetadataInPackageDirectories("**/permissionsets/**.permissionset-meta.xml"));
     sortCrossPlatform(psFiles);
     if (psFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noPermissionSetFoundInTheProject')));
@@ -947,7 +957,7 @@ ${this.htmlInstructions}
   private async generatePermissionSetGroupsDocumentation() {
     uxLog("action", this, c.cyan(t('preparingGenerationOfPermissionSetGroupsDocumentation')));
     const psgForMenu: any = { [t('docMdAllPermissionSetGroups')]: "permissionsetgroups/index.md" };
-    const psgFiles = (await glob("**/permissionsetgroups/**.permissionsetgroup-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }))
+    const psgFiles = (await globMetadataInPackageDirectories("**/permissionsetgroups/**.permissionsetgroup-meta.xml"))
     sortCrossPlatform(psgFiles);
     if (psgFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noPermissionSetGroupFoundInThe')));
@@ -1000,7 +1010,7 @@ ${this.htmlInstructions}
   private async generateRolesDocumentation() {
     uxLog("action", this, c.cyan(t('generatingRolesDocumentation')));
     uxLog("log", this, t('ifYouDontWantProfilesDoc'));
-    const roleFiles = (await glob("**/roles/**.role-meta.xml", { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS }));
+    const roleFiles = (await globMetadataInPackageDirectories("**/roles/**.role-meta.xml"));
     sortCrossPlatform(roleFiles);
     if (roleFiles.length === 0) {
       uxLog("log", this, c.yellow(t('noRoleFoundInTheProject')));
@@ -1034,10 +1044,7 @@ ${this.htmlInstructions}
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const assignmentRulesForMenu: any = { [t('docMdAllAssignmentRules')]: "assignmentRules/index.md" };
-    const assignmentRulesFiles = (await glob("**/assignmentRules/**.assignmentRules-meta.xml", {
-      cwd: process.cwd(),
-      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
-    }));
+    const assignmentRulesFiles = (await globMetadataInPackageDirectories("**/assignmentRules/**.assignmentRules-meta.xml"));
     sortCrossPlatform(assignmentRulesFiles);
     const builder = new XMLBuilder();
 
@@ -1101,10 +1108,7 @@ ${this.htmlInstructions}
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const approvalProcessesForMenu: any = { [t('docMdAllApprovalProcesses')]: "approvalProcesses/index.md" }
-    const approvalProcessFiles = (await glob("**/approvalProcesses/**.approvalProcess-meta.xml", {
-      cwd: process.cwd(),
-      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
-    }));
+    const approvalProcessFiles = (await globMetadataInPackageDirectories("**/approvalProcesses/**.approvalProcess-meta.xml"));
     sortCrossPlatform(approvalProcessFiles);
 
     if (approvalProcessFiles.length === 0) {
@@ -1155,10 +1159,7 @@ ${this.htmlInstructions}
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const autoResponseRulesForMenu: any = { [t('docMdAllAutoResponseRules')]: "autoResponseRules/index.md" };
-    const autoResponseRulesFiles = (await glob("**/autoResponseRules/**.autoResponseRules-meta.xml", {
-      cwd: process.cwd(),
-      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
-    }));
+    const autoResponseRulesFiles = (await globMetadataInPackageDirectories("**/autoResponseRules/**.autoResponseRules-meta.xml"));
     sortCrossPlatform(autoResponseRulesFiles);
     const builder = new XMLBuilder();
 
@@ -1222,10 +1223,7 @@ ${this.htmlInstructions}
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const escalationRulesForMenu: any = { [t('docMdAllEscalationRules')]: "escalationRules/index.md" };
-    const escalationRulesFiles = (await glob("**/escalationRules/**.escalationRules-meta.xml", {
-      cwd: process.cwd(),
-      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
-    }));
+    const escalationRulesFiles = (await globMetadataInPackageDirectories("**/escalationRules/**.escalationRules-meta.xml"));
     sortCrossPlatform(escalationRulesFiles);
     const builder = new XMLBuilder();
 
@@ -1289,10 +1287,7 @@ ${this.htmlInstructions}
     uxLog("log", this, t('ifYouDontWantAutomationsDoc'));
 
     const workflowRulesForMenu: any = { [t('docMdAllWorkflowRules')]: "workflowRules/index.md" };
-    const workflowRulesFiles = (await glob("**/workflows/**.workflow-meta.xml", {
-      cwd: process.cwd(),
-      ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
-    }));
+    const workflowRulesFiles = (await globMetadataInPackageDirectories("**/workflows/**.workflow-meta.xml"));
     sortCrossPlatform(workflowRulesFiles);
     const builder = new XMLBuilder();
 
@@ -1394,18 +1389,6 @@ ${this.htmlInstructions}
         { overwrite: true }
       );
     }
-    // gtag.js carries the measurement id of the project, so it is not an owned asset: rewriting
-    // it would throw away an id someone configured. A project that never set one still calls
-    // googletagmanager.com on every page load with the placeholder, which the current default now
-    // guards against, so that file is refreshed only while it still declares the placeholder.
-    const projectGtagFile = path.join(process.cwd(), "docs", "javascripts", "gtag.js");
-    if (fs.existsSync(projectGtagFile) && /gtag_id\s*=\s*"G-XXXXXXXXXX"/.test(await fs.readFile(projectGtagFile, "utf8"))) {
-      await fs.copy(
-        path.join(PACKAGE_ROOT_DIR, "defaults/mkdocs-project-doc/docs/javascripts/gtag.js"),
-        projectGtagFile,
-        { overwrite: true }
-      );
-    }
     const docLabels = {
       filterTableRows: t('docJsFilterTableRows'),
       filterRowsPlaceholder: t('docJsFilterRowsPlaceholder'),
@@ -1416,15 +1399,9 @@ ${this.htmlInstructions}
       `// Generated by sfdx-hardis: labels the documentation draws in the browser.\n` +
       `window.SFDX_HARDIS_DOC_LABELS = ${JSON.stringify(docLabels, null, 2)};\n`
     );
+    // The nav is filled in just below, so there is nothing for the user to add by hand
     if (!mkdocsYmlFileExists) {
       uxLog("log", this, c.grey(t('baseMkdocsFilesCopiedInYourSalesforce')));
-      uxLog(
-        "warning",
-        this,
-        c.yellow(
-          t('manuallyUpdateMkdocsYml')
-        )
-      );
     }
     // Update mkdocs nav items
     const mkdocsYml: any = readMkDocsFile(mkdocsYmlFile);
@@ -1458,7 +1435,6 @@ ${this.htmlInstructions}
       "https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js",
       "https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js",
       "javascripts/tables.js",
-      "javascripts/gtag.js",
       "javascripts/jstree-handler.js",
       // Labels first: the script below reads them
       SFDX_HARDIS_DOC_LABELS_JS,
@@ -1471,6 +1447,10 @@ ${this.htmlInstructions}
       }
     }
     mkdocsYml.extra_javascript = extraJavascript;
+
+    // Analytics used to be a gtag.js copied into the project, which never counted the page a
+    // reader landed on. The id moves to extra.analytics, where the theme reads it.
+    await migrateGtagJsToMkDocsAnalytics(process.cwd(), mkdocsYml);
 
     // Add missing CSS if necessary
     const allCss = [
@@ -1764,7 +1744,7 @@ ${this.htmlInstructions}
   private async generateLinksInfo(): Promise<string> {
     uxLog("log", this, c.cyan(t('generateMasterdetailAndLookupInfosToProvide')));
     const findFieldsPattern = `**/objects/**/fields/**.field-meta.xml`;
-    const matchingFieldFiles = (await glob(findFieldsPattern, { cwd: process.cwd(), ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS })).map(file => file.replace(/\\/g, '/'));
+    const matchingFieldFiles = (await globMetadataInPackageDirectories(findFieldsPattern)).map(file => file.replace(/\\/g, '/'));
     const customFieldsLinks: string[] = [];
     for (const fieldFile of matchingFieldFiles) {
       const fieldXml = fs.readFileSync(fieldFile, "utf8").toString();
@@ -2346,10 +2326,7 @@ ${this.htmlInstructions}
       this.componentReferenceIndexPromise = (async () => {
         uxLog("action", this, c.cyan(t('collectingMetadataReferences')));
         const packageDirs = this.project?.getPackageDirectories() || [];
-        const lwcMetaFiles = await glob(`**/lwc/*/*.js-meta.xml`, {
-          cwd: process.cwd(),
-          ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS
-        });
+        const lwcMetaFiles = await globMetadataInPackageDirectories(`**/lwc/*/*.js-meta.xml`);
         const knownNames = {
           apexPages: (await listVisualforcePageFiles(packageDirs)).map(file => path.basename(file, ".page-meta.xml")),
           apexComponents: (await listVisualforceComponentFiles(packageDirs)).map(file => path.basename(file, ".component-meta.xml")),

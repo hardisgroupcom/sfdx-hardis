@@ -30,6 +30,14 @@ export interface PromptsQuestion {
   optionsPerPage?: number;
 }
 
+/**
+ * Test seam over the question reformatting below: it is the step that has to keep the terminal
+ * prompt and the VS Code QuickPick in agreement about defaults and preselection.
+ */
+export function prepareQuestionsForTests(questions: PromptsQuestion[]): any[] {
+  return reformatQuestions(questions);
+}
+
 // Centralized prompts function
 export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Promise<Record<string, any>> {
   if (isCI) {
@@ -37,6 +45,12 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Pro
     throw new SfError("Nothing should be prompted during CI!");
   }
   const questionsRaw = Array.isArray(options) ? options : [options];
+  const questionsReformatted: any = reformatQuestions(questionsRaw);
+  // Prompt user
+  return promptWithReformattedQuestions(questionsReformatted);
+}
+
+function reformatQuestions(questionsRaw: PromptsQuestion[]): any[] {
   const questionsReformatted: any = [];
   for (const question of questionsRaw) {
     if (!question.message.startsWith("🦙")) {
@@ -63,9 +77,24 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Pro
     if (["select", "multiselect"].includes(question.type) && question.optionsPerPage == null) {
       question.optionsPerPage = 9999;
     }
+    // The VS Code QuickPick pre-selects from choice.selected, while the terminal prompt reads
+    // question.initial: mark the choices so a preselection reaches both. Without this, a caller
+    // passing initial (ex: the stories ticked in the DevOps Pipeline, sent by
+    // hardis:project:promotion:create --pull-requests) sees them unselected in VS Code.
+    if (["select", "multiselect"].includes(question.type) && question.initial != null && Array.isArray(question.choices)) {
+      const initialValues = Array.isArray(question.initial) ? question.initial : [question.initial];
+      for (const choice of question.choices as any[]) {
+        if (choice && choice.selected !== true && initialValues.includes(choice.value)) {
+          choice.selected = true;
+        }
+      }
+    }
     questionsReformatted.push(question);
   }
-  // Prompt user
+  return questionsReformatted;
+}
+
+async function promptWithReformattedQuestions(questionsReformatted: any): Promise<Record<string, any>> {
   let answers: any = {};
   if (WebSocketClient.isAlive()) {
     // Use UI prompt

@@ -25,9 +25,9 @@ export const GLOB_IGNORE_PATTERNS = [
 // glob tests every ignore pattern against every walked path, so a pattern that never matches only costs
 // time, and most of the repository root folders never show up inside a package directory.
 // The ones kept here would be walked whenever the glob root turns out to be a project root after all:
-// a project declaring "." as a package directory, a --folder pointing at the repository, or the blank
-// project the backpromote conflict detection retrieves into. Walking .git alone can mean tens of
-// thousands of loose objects, which costs far more than testing a handful of patterns.
+// a project declaring "." as a package directory, a --folder pointing at the repository, or a blank
+// project a command retrieves into. Walking .git alone can mean tens of thousands of loose objects,
+// which costs far more than testing a handful of patterns.
 export const PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS = [
   '**/node_modules/**',
   '**/.git/**',
@@ -74,6 +74,30 @@ export async function getSfdxProjectPackageDirectories(cwd = process.cwd()): Pro
     uxLog("warning", this, c.yellow(t('warningUnableToReadPackageDirectoriesFrom', { error: e.message })));
   }
   return defaultPackageDirectories;
+}
+
+/**
+ * The metadata files matching a glob pattern, searched in the package directories of
+ * sfdx-project.json only, and returned relative to cwd. A repository can hold other copies of the
+ * same metadata (fixtures, samples, backups, training start states) that are not the project:
+ * documenting them too writes the same page several times, from whichever copy comes last.
+ * Outside of an SFDX project, the whole folder is searched as before.
+ */
+export async function globMetadataInPackageDirectories(pattern: string, cwd = process.cwd()): Promise<string[]> {
+  if (!isSfdxProject(cwd)) {
+    return await glob(pattern, { cwd, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
+  }
+  const files = new Set<string>();
+  for (const packageDirectory of await getSfdxProjectPackageDirectories(cwd)) {
+    if (!(await fs.pathExists(packageDirectory.fullPath))) {
+      continue;
+    }
+    const found = await glob(pattern, { cwd: packageDirectory.fullPath, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
+    for (const file of found) {
+      files.add(path.join(packageDirectory.path, file));
+    }
+  }
+  return [...files];
 }
 
 export async function createBlankSfdxProject(cwd = process.cwd(), debug = false) {

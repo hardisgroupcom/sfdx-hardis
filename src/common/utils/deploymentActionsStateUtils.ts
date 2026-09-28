@@ -6,6 +6,7 @@ import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.j
 import { readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
+import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
@@ -28,11 +29,16 @@ export interface DeploymentActionStateEntry {
   executionOrder: number;
   // 'warning' is a failed action whose definition allows failure: the deployment went on, so the
   // outcome must not read as an error in the comment, but the action did not succeed either.
-  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped';
+  // 'pending' is never stored: the release notes of a branch use it for an action with no entry in
+  // the org of that branch yet.
+  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped' | 'pending';
   jobId: string;
   jobUrl: string;
   date: string;
   output?: string;
+  // Values a custom function returned. Persisted so a runOnlyOnceByOrg action, skipped on later
+  // deployments, can still feed ${{ actions.<id>.outputs.<name> }} references.
+  outputs?: Record<string, any>;
   prNumber?: number;
   prUrl?: string;
 }
@@ -144,26 +150,28 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
   if (showProgress) {
     WebSocketClient.sendProgressStartMessage(t('loadingDeploymentActionsStateFromPrs', { count: uniquePrs.length }), uniquePrs.length);
   }
-  let counter = 0;
-  for (const prNumber of uniquePrs) {
-    try {
-      const body = await GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber);
-      if (body) {
-        const entries = parseDeploymentActionsCommentBody(body);
-        state.entriesByPr.set(prNumber, entries);
-        uxLog("log", null, c.grey(`[DeploymentActions] ${t('loadedDeploymentActionsStateEntries', { count: entries.length, pr: prNumber })}`));
-        // Full entries are diagnostic data: keep them out of the console unless DEBUG is enabled
-        debug(`Deployment actions state entries loaded from PR #${prNumber}: ${JSON.stringify(entries, null, 2)}`);
-      } else {
-        state.entriesByPr.set(prNumber, []);
+  // One comment read per Pull Request, in the adaptive batches of the git provider's ladder, shrunk
+  // only when the provider throttles
+  const bodies = await mapInAdaptiveBatchesSettled(uniquePrs, (prNumber) => GitProvider.tryGetDeploymentActionsCommentBodyForPr(prNumber), {
+    sizes: gitProviderBatchSizes(await GitProvider.getInstance()),
+    onBackoff: (size, e, waitMs) => uxLog("log", null, c.grey('[DeploymentActions] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
+    onError: (e, prNumber) => uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`)),
+    onProgress: (done, total) => {
+      if (showProgress) {
+        WebSocketClient.sendProgressStepMessage(done, total);
       }
-    } catch (e) {
-      uxLog("warning", null, c.yellow(`Could not load deployment actions state from PR #${prNumber}: ${(e as Error).message}`));
+    },
+  });
+  for (const [index, prNumber] of uniquePrs.entries()) {
+    const body = bodies[index];
+    if (body) {
+      const entries = parseDeploymentActionsCommentBody(body);
+      state.entriesByPr.set(prNumber, entries);
+      uxLog("log", null, c.grey(`[DeploymentActions] ${t('loadedDeploymentActionsStateEntries', { count: entries.length, pr: prNumber })}`));
+      // Full entries are diagnostic data: keep them out of the console unless DEBUG is enabled
+      debug(`Deployment actions state entries loaded from PR #${prNumber}: ${JSON.stringify(entries, null, 2)}`);
+    } else {
       state.entriesByPr.set(prNumber, []);
-    }
-    counter++;
-    if (showProgress) {
-      WebSocketClient.sendProgressStepMessage(counter, uniquePrs.length);
     }
   }
   if (showProgress) {
@@ -196,12 +204,20 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
   }
   const entries = state.entriesByPr.get(sourcePrNumber)!;
   const idx = entries.findIndex(e => e.actionId === entry.actionId && e.orgBranch === entry.orgBranch);
-  // A skip is the absence of an outcome, not an outcome: it must never erase the record that the
-  // action was performed in the org. Without this, a ticked check-only manual action ping-pongs
-  // forever on deployment jobs: the checkbox sync records success, the context skip overwrites it
-  // with skipped, and the next job's sync cannot find the success entry and records the tick
-  // again, re-dating the entry and rewriting the Pull Request comment on every run.
-  if (idx >= 0 && entry.status === 'skipped' && entries[idx].status === 'success') {
+  // A skip is the absence of an outcome, not an outcome: it must never erase what is already known
+  // about the action in this org, whatever that is.
+  //
+  // Without this, a ticked check-only manual action ping-pongs forever on deployment jobs: the
+  // checkbox sync records success, the context skip overwrites it with skipped, and the next job's
+  // sync cannot find the success entry and records the tick again, re-dating the entry and
+  // rewriting the Pull Request comment on every run.
+  //
+  // It matters just as much for a manual action still waiting to be performed. Any later job whose
+  // scope holds the Pull Request skips that action as "already run in this org" and used to write
+  // `skipped` over the `manual` entry - which drops the action from the "Pending manual actions"
+  // list. The release manager then has no checkbox left to tick, and the org branch displays a
+  // skip for a step nobody ever performed.
+  if (idx >= 0 && entry.status === 'skipped' && entries[idx].status !== 'skipped') {
     return;
   }
   if (idx >= 0) {
@@ -355,6 +371,9 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
         jobUrl: jobLinkMatch ? jobLinkMatch[2] : '',
         date: dateMatch ? dateMatch[1] : '',
         output: '',
+        // Replayed to a runOnlyOnceByOrg action skipped on this run, so the actions consuming
+        // its outputs keep resolving after the first deployment
+        outputs: decodeOutputsMarker(cell),
       });
     }
   }
@@ -407,6 +426,51 @@ function buildMatrixStatusLegend(usedIcons: string[]): string {
   const used = new Set(usedIcons);
   const parts = MATRIX_STATUS_LEGEND.filter((entry) => used.has(entry.icon)).map((entry) => `${entry.icon} ${entry.label}`);
   return parts.length > 0 ? `\n*Legend: ${parts.join(' · ')}*\n` : '';
+}
+
+/**
+ * Outputs of a custom function, carried inside the matrix cell as an HTML comment.
+ *
+ * The whole deployment actions state round-trips through the markdown of the Pull Request
+ * comment, so anything not written here is lost between two jobs. An HTML comment is invisible
+ * in the rendered comment, and base64 keeps the JSON free of the characters that would break the
+ * table or close the comment early ("|", newlines, "-->").
+ */
+const OUTPUTS_MARKER_REGEX = /<!--\s*outputs:([A-Za-z0-9+/=]+)\s*-->/;
+
+/**
+ * Outputs bigger than this are not persisted: the comment has a size guard, and a replayed value
+ * that large is a payload, not an identifier a later action interpolates.
+ */
+const MAX_PERSISTED_OUTPUTS_CHARS = 2000;
+
+export function encodeOutputsMarker(outputs?: Record<string, any>): string {
+  if (!outputs || Object.keys(outputs).length === 0) {
+    return '';
+  }
+  try {
+    const encoded = Buffer.from(JSON.stringify(outputs), 'utf8').toString('base64');
+    if (encoded.length > MAX_PERSISTED_OUTPUTS_CHARS) {
+      return '';
+    }
+    return `<!-- outputs:${encoded} -->`;
+  } catch (_e) {
+    // A value that cannot be serialized (a cycle) must not break the whole comment
+    return '';
+  }
+}
+
+export function decodeOutputsMarker(cell: string): Record<string, any> | undefined {
+  const match = OUTPUTS_MARKER_REGEX.exec(cell || '');
+  if (!match) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(match[1], 'base64').toString('utf8'));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : undefined;
+  } catch (_e) {
+    return undefined;
+  }
 }
 
 function getStatusIcon(status: DeploymentActionStateEntry['status']): string {
@@ -537,7 +601,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
         const jobRef = e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
         const statusIcon = getStatusIcon(e.status);
         usedMatrixIcons.push(statusIcon);
-        return `${statusIcon}${dateStr}${jobRef}`;
+        return `${statusIcon}${dateStr}${jobRef}${encodeOutputsMarker(e.outputs)}`;
       });
       body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
     }

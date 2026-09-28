@@ -11,7 +11,7 @@ import * as yaml from 'js-yaml';
 import { uxLog } from '../../../../common/utils/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { Config } from '@oclif/core';
-import { readMkDocsFile, writeMkDocsFile } from '../../../../common/docBuilder/docUtils.js';
+import { migrateGtagJsToMkDocsAnalytics, readMkDocsFile, writeMkDocsFile } from '../../../../common/docBuilder/docUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -40,7 +40,7 @@ After the initial run, you will need to manually update:
 
 - \`mkdocs.yml\`: Customize the project title, theme, and other site settings. Zensical reads this file directly.
 - \`.github/workflows/build-deploy-docs.yml\`: Configure the GitHub Actions workflow for automatic documentation deployment.
-- \`docs/javascripts/gtag.js\`: If desired, set up Google Analytics tracking.
+- \`mkdocs.yml\`, key \`extra.analytics\`: If desired, set up Google Analytics tracking with your own measurement id.
 
 Finally, activate GitHub Pages with \`gh_pages\` as the target branch. This will enable automatic documentation rebuilding and publishing to GitHub Pages upon each merge into your \`master\`/\`main\` branch.
 
@@ -167,6 +167,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
       }
       return navItem;
     });
+    // Analytics used to be a gtag.js copied into the project, which never counted the page a
+    // reader landed on. The id moves to extra.analytics, where the theme reads it.
+    await migrateGtagJsToMkDocsAnalytics(process.cwd(), mkdocsYml);
     await writeMkDocsFile(mkdocsYmlFile, mkdocsYml);
 
     // Return an object to be displayed with --json

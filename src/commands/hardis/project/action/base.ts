@@ -6,6 +6,7 @@ import { ActionBranchFilterMode, ActionScope, ActionWhen, listActionTargetBranch
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { CustomFunctionDefinition } from '../../../../common/utils/customFunctionUtils.js';
 
 /**
  * Base class for hardis:project:action:* commands.
@@ -137,5 +138,43 @@ export abstract class ActionCommandBase extends SfCommand<any> {
       description: message,
     });
     return response.value === true;
+  }
+
+  /**
+   * Ask for the value of every input a custom function declares, rendering each one according to
+   * its declared type. `currentValues` pre-fills the answers when updating an existing action.
+   *
+   * A secret input asks for the NAME of a CI/CD variable, never for the value: the value is read
+   * from the environment when the action runs, so it never reaches a configuration file.
+   */
+  protected async promptCustomFunctionInputs(
+    definition: CustomFunctionDefinition,
+    currentValues: Record<string, any> = {}
+  ): Promise<Record<string, any>> {
+    const parameters: Record<string, any> = {};
+    for (const input of definition.inputs || []) {
+      const currentValue = currentValues[input.name] ?? input.default;
+      const message = `${input.label || input.name}${input.required ? ' *' : ''}`;
+      if (input.type === 'boolean') {
+        parameters[input.name] = await this.promptConfirm(message, currentValue === true);
+        continue;
+      }
+      if (input.type === 'select') {
+        parameters[input.name] = await this.promptSelect(
+          message,
+          (input.options || []).map((option) => ({ title: option, value: option })),
+          currentValue != null ? String(currentValue) : undefined
+        );
+        continue;
+      }
+      const promptMessage = input.type === 'secret' ? t('enterSecretVariableName', { name: input.label || input.name }) : message;
+      const answer = await this.promptText(promptMessage, currentValue != null ? String(currentValue) : '');
+      if (answer === '' && !input.required) {
+        // Nothing typed and nothing required: leave the parameter out so the function default wins
+        continue;
+      }
+      parameters[input.name] = input.type === 'number' && answer !== '' ? Number(answer) : answer;
+    }
+    return parameters;
   }
 }

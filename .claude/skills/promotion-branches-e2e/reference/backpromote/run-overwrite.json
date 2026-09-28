@@ -1,0 +1,11 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "result": {
+    "deployed": 1,
+    "noExclusion": true,
+    "commentedPullRequests": [
+      "{{S5}}"
+    ]
+  }
+}

@@ -11,7 +11,7 @@ Post notifications related to:
 
 ### Integrations
 
-According to the [integrations you configured](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-flow-visual-git-diff/)
+According to the [integrations you configured](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](https://sfdx-hardis.cloudity.com/salesforce-deployment-agent-flow-visual-git-diff/)
 
   - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
 

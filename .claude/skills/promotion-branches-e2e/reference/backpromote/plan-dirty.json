@@ -1,0 +1,10 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "selected": "{{S11}}",
+  "checkoutClean": false,
+  "dirtyFilesContain": [
+    "NOTES.md"
+  ],
+  "onBackpromoteBranch": false
+}

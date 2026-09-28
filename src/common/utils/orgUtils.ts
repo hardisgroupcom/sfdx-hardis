@@ -232,6 +232,7 @@ export async function promptOrg(
       Command: commandThis,
       devHub: options.devHub === true,
       setDefault: options.setDefault !== false,
+      alias: options.alias,
     });
     const justConnectedOrg = globalThis.justConnectedOrg;
     if (!justConnectedOrg?.username) {
@@ -345,10 +346,12 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Get connected Status and instance URL
   let connectedStatus;
   let instanceUrl;
+  let scratchOrgStatus;
   let orgResult: any;
   if (typeof targetOrg !== 'string') {
     instanceUrl = targetOrg.instanceUrl;
     connectedStatus = targetOrg.connectedStatus;
+    scratchOrgStatus = targetOrg.status;
     orgResult = targetOrg;
     targetOrg = targetOrg.username;
   }
@@ -362,6 +365,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     });
     connectedStatus = displayResult?.result?.connectedStatus || "error";
     instanceUrl = displayResult?.result?.instanceUrl || "error";
+    scratchOrgStatus = displayResult?.result?.status;
     orgResult = displayResult.result
   }
   // Org is connected ("Unknown" is the status reported for scratch orgs)
@@ -379,6 +383,13 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
       throw new SfError(t('authenticationDidNotConnectAnyOrg'));
     }
     return loginRes.result;
+  }
+  // A scratch org reports no connectedStatus at all: sf org display gives its
+  // lifecycle in "status" instead. Read after the checks above, never before,
+  // so that a scratch org still inside its 30 days but whose token was revoked
+  // is sent to re-authenticate rather than reported as working.
+  if (scratchOrgStatus === "Active") {
+    return orgResult;
   }
   // We shouldn't be here 😊
   uxLog("warning", this, c.yellow(t('whatAreWeDoingHerePleaseCreate') + instanceUrl + ":" + connectedStatus));

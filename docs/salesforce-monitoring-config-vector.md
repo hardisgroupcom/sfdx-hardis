@@ -216,7 +216,7 @@ After setting up Vector, you can:
 
 - [Monitoring Home](salesforce-monitoring-home.md): Overview of all monitoring features
 - [Monitoring Configuration](salesforce-monitoring-config-home.md): Configuration guides
-- [API Integration](salesforce-ci-cd-setup-integration-api.md): Direct API integration (without Vector)
+- [API Integration](salesforce-devops-setup-integration-api.md): Direct API integration (without Vector)
 
 ## Sample Vector Configuration
 

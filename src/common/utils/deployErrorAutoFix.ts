@@ -134,6 +134,20 @@ export async function autoFixDeployErrors(
       uxLog("action", this, c.green(t("codingAgentPullRequestCreated", { url: prUrl })));
     } else {
       uxLog("warning", this, c.yellow(t("codingAgentPullRequestCreationFailed")));
+      // The branch is pushed: a link to the provider form, with the branches, the title and the
+      // description already filled in, is what turns a failed API call into one click
+      const createUrl = await GitProvider.getPullRequestCreateUrl({
+        title: `fix: auto-fix deployment errors on ${currentBranch}`,
+        body: prDescription,
+        sourceBranch: fixBranch,
+        targetBranch: currentBranch,
+      });
+      if (createUrl) {
+        uxLog("action", this, c.cyan(t(
+          createUrl.bodyIncluded ? "gitProviderCreatePullRequestLink" : "gitProviderCreatePullRequestLinkNoBody",
+          { url: createUrl.url },
+        )));
+      }
       await GitProvider.logAutoFixRemediation("pr-create");
     }
 

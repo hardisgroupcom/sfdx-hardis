@@ -444,7 +444,10 @@ function isGitAuthError(error: any): boolean {
 
 // Helper function to prompt for git credentials and update remote URL
 async function handleGitAuthError(operation: string): Promise<boolean> {
-  if (isCI) {
+  // Nobody can answer a prompt in a CI job, and neither can they in a background --json run a VS
+  // Code panel started: no WebSocket to show the question in VS Code, and no terminal to type in.
+  // Asking there waits forever, with the panel spinning on a command that never answers.
+  if (isCI || (!globalThis.webSocketClient && process.argv.includes('--json'))) {
     uxLog("error", this, c.red(t('gitFailedDueToAuthenticationErrorIn', { operation })));
     return false;
   }
@@ -742,8 +745,16 @@ export async function assertBranchNotInOtherWorktree(branchName: string): Promis
  * - Fetches origin/<target> and creates the new branch from it, falling back to the local <target> ref.
  * - If the branch already exists and is free, checks it out (resume work).
  * - If the branch is checked out in another worktree, throws a clear error.
+ *
+ * `refuseExisting` turns the resume into an error: a promotion branch is always assembled from
+ * scratch on top of its target branch, so checking out a branch that already exists (or the
+ * stale remote-tracking ref of one deleted on the remote) would silently carry its commits.
  */
-export async function createWorkBranchFromTarget(branchName: string, targetBranch: string): Promise<void> {
+export async function createWorkBranchFromTarget(
+  branchName: string,
+  targetBranch: string,
+  options: { refuseExisting?: boolean } = {}
+): Promise<void> {
   if (!isGitRepo()) {
     throw new SfError('[sfdx-hardis] You must be within a git repository');
   }
@@ -761,6 +772,9 @@ export async function createWorkBranchFromTarget(branchName: string, targetBranc
   const localBranches = await git().branchLocal();
   // Resume an existing local branch
   if (localBranches.all.includes(branchName)) {
+    if (options.refuseExisting === true) {
+      throw new SfError(t('gitBranchAlreadyExistsLocally', { branch: branchName }));
+    }
     await git().checkout(branchName);
     uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
     return;
@@ -769,6 +783,9 @@ export async function createWorkBranchFromTarget(branchName: string, targetBranc
   // Resume a branch that exists only on origin (git creates the local tracking branch)
   const remoteBranches = await git().branch(['-r']);
   if (remoteBranches.all.includes(`origin/${branchName}`)) {
+    if (options.refuseExisting === true) {
+      throw new SfError(t('gitBranchAlreadyExistsOnRemote', { branch: branchName }));
+    }
     await git().checkout(branchName);
     uxLog("action", this, c.green(t('checkedOutGitBranch', { branchName: c.bold(branchName) })));
     return;
@@ -807,6 +824,9 @@ export async function checkGitClean(options: any) {
       try {
         await execCommand('git add --all', this, { output: true, fail: true });
         await execCommand('git stash', this, { output: true, fail: true });
+        // Say it: a file somebody was writing disappears from the working tree here, and a
+        // "git stash" line among the commands does not tell anyone where it went
+        uxLog("action", this, c.cyan(t('uncommittedChangesStashed', { localUpdates })));
       } catch (e) {
         uxLog("warning", this, c.yellow(c.bold(t('youMightNeedToRunTheFollowing'))));
         uxLog("warning", this, c.yellow(c.bold(t('gitConfigSystemCoreLongpathsTrue'))));
@@ -1988,7 +2008,7 @@ export async function generateSSLCertificate(
     uxLog(
       "log",
       commandThis,
-      c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/` })))
+      c.grey(c.yellow(t('helpToConfigureCiCdVariablesUrl', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/` })))
     );
     uxLog(
       "warning",
@@ -2017,7 +2037,7 @@ export async function generateSSLCertificate(
       uxLog("log", commandThis, c.cyan(t('encryptedCertificateKeyFileDeletedLocally', { targetKeyFile })));
     }
 
-    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`, t('helpToConfigureCiVariables'), "docUrl");
     await prompts({
       type: 'confirm',
       message: c.cyanBright(externalStorage ? t('pleaseConfirmWhenSecretsStoredInPasswordManager') : t('pleaseConfirmWhenVariablesHaveBeenSet')),
@@ -2199,7 +2219,7 @@ export async function generateSSLCertificate(
           placeholder: t('placeholderExternalClientAppDescription'),
         })).value;
     } else {
-      appDescription = `External Client App used by sfdx-hardis for CI/CD authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`;
+      appDescription = `External Client App used by sfdx-hardis for CI/CD authentication. Documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`;
     }
 
     // Sanitize app name for metadata
@@ -2326,7 +2346,7 @@ async function configureCaSignedCertificate(branchName: string, commandThis: any
   const aliasUpper = branchName.toUpperCase();
   const clientIdVar = `SFDX_CLIENT_ID_${aliasUpper}`;
   const clientCertVar = `SFDX_CLIENT_CERT_${aliasUpper}`;
-  const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/#use-a-ca-signed-certificate`;
+  const docUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/#use-a-ca-signed-certificate`;
 
   uxLog("action", commandThis, c.cyan(t('caSignedConfigureForBranch', { branchName: c.bold(branchName) })));
   uxLog("log", commandThis, c.grey(t('caSignedManualEcaInstructions')));

@@ -1,0 +1,18 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "sandboxName": "{{SANDBOX}}",
+  "scanFound": false,
+  "selected": 0,
+  "windowNull": true,
+  "beforeRefresh": [
+    "{{S1}}",
+    "{{S2}}",
+    "{{S3}}"
+  ],
+  "notBackpromoted": [
+    "{{S1}}",
+    "{{S2}}",
+    "{{S3}}"
+  ]
+}

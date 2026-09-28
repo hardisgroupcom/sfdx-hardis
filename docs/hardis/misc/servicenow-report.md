@@ -13,6 +13,8 @@ Define the following environment variables (in CICD variables or locally in a **
 
 You also need to define JSON configuration file(e) in folder **config/user-stories/**
 
+When a user story carries several tickets in the field named by `ticketField`, separate them with a comma, a semicolon or a space. The command splits on all three, and on a mix of them, so each ticket becomes its own report row and is looked up in ServiceNow on its own.
+
 Example:
 
 ```json

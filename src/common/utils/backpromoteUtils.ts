@@ -1,36 +1,17 @@
 /* jscpd:ignore-start */
-import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import * as Diff from 'diff';
+import { spawnSync } from 'child_process';
 import fs from './fsUtils.js';
 import * as path from 'path';
-import {
-  createTempDir,
-  execCommand,
-  git,
-  gitFetch,
-  isCI,
-  uxLog,
-} from './index.js';
-import { buildOrgManifest } from './deployUtils.js';
-import { analyzeDeployErrorLogs } from './deployTips.js';
-import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
+import { git, uxLog } from './index.js';
 import { GitProvider } from '../gitProvider/index.js';
-// callSfdxGitDelta is used by the command file directly
-
-import { countPackageXmlItems, isPackageXmlEmpty, parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
-import { generateCsvFile, generateReportPath, uxLogTableWithReport } from './filesUtils.js';
-import { generatePdfFileFromMarkdown } from './markdownUtils.js';
-import { prompts } from './prompts.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
-import { MetadataUtils } from '../metadata-utils/index.js';
-import { listMajorOrgs } from './orgConfigUtils.js';
+import { parsePromotionBranchName } from './promotionBranchUtils.js';
 import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
-import { createBlankSfdxProject } from './projectUtils.js';
-import { OrgDiffItem, WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
+import { BackpromoteActionRow, BackpromoteCommentStore, upsertActionRow } from './backpromoteCommentUtils.js';
 
 // ---- Interfaces ----
 
@@ -50,91 +31,244 @@ export interface BackpromotePrGroup {
     author: string;
     webUrl: string;
     sourceBranch: string;
+    /** The commit that names this Pull Request (its merge commit, or its squash commit) */
+    commit?: string;
   }>;
   /** PR-scoped configs for deployment actions and test classes (merged from all associated PRs) */
   prConfigs: Array<{ config: any; prId: number; prTitle: string }>;
 }
 
-export interface OrgConflictItem {
-  metadataType: string;
-  metadataName: string;
-  status: 'modified' | 'added' | 'deleted' | 'unchanged';
-  localPath: string;
-  /** Path to the file retrieved from the org (left side of a visual diff). May be empty for items that don't have an org-side file. */
-  orgPath: string;
-  diffPreview: string;
-  diffMarkdown: string;
-  hasOrgChanges: boolean;
+// ---- List first-parent commits with associated PRs ----
+
+/**
+ * A merge commit that resolves to no Pull Request number is represented by a "virtual" Pull
+ * Request built from its source branch, so the work still shows up. It must be added at most once
+ * per group, and never when a real Pull Request of that same branch is already in the group: a
+ * branch merged twice (a re-merge, a fix pushed after the first merge) would otherwise be listed
+ * once with its number and once as an unusable "-" row.
+ */
+export function shouldAddVirtualPullRequest(
+  associatedPrs: Array<{ sourceBranch?: string }>,
+  seenPrIds: Set<number>,
+  sourceBranch: string
+): boolean {
+  if (!sourceBranch || seenPrIds.has(0)) {
+    return false;
+  }
+  return !associatedPrs.some((pr) => (pr.sourceBranch || '').toLowerCase() === sourceBranch.toLowerCase());
 }
 
-export interface BackpromoteState {
-  lastCommit: string;
-  lastTimestamp: string;
-  parentBranch: string;
-}
-
-// ---- Resolve parent branch ----
-
-export async function resolveParentBranch(
-  commandThis: any,
-  flagOverride: string | null,
-  agentMode: boolean,
-  currentBranch: string,
-): Promise<string> {
-  if (flagOverride) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteParentBranchAutoSelected', { parentBranch: c.green(flagOverride) })));
-    return flagOverride;
-  }
-  const config = await getConfig('project');
-  const userConfig = await getConfig('user');
-  // The branch that the current feature branch was created from (set by work:new)
-  const originBranch = userConfig?.localStorageBranchTargets?.[currentBranch] || null;
-  const recommendedBranch = originBranch || config.developmentBranch || 'integration';
-
-  if (agentMode || isCI) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteParentBranchAutoSelected', { parentBranch: c.green(recommendedBranch) })));
-    return recommendedBranch;
-  }
-  // Interactive: let user choose from major org branches (+ developmentBranch)
-  const majorOrgs = await listMajorOrgs();
-  const majorBranchNames = new Set(majorOrgs.map((org: any) => org.branchName).filter(Boolean));
-  // Also include developmentBranch even if it's not a major org
-  if (config.developmentBranch) {
-    majorBranchNames.add(config.developmentBranch);
-  }
-
-  const branchChoices: any[] = [];
-  // Add recommended branch first
-  if (majorBranchNames.has(recommendedBranch)) {
-    branchChoices.push({
-      title: `${recommendedBranch} (${t('recommended')})`,
-      value: recommendedBranch,
-    });
-  }
-  // Add remaining major branches
-  for (const branchName of majorBranchNames) {
-    if (branchName !== recommendedBranch) {
-      branchChoices.push({ title: branchName, value: branchName });
+/**
+ * `<child> <parent> <parent>...` lines of `git rev-list --parents`, as a map.
+ */
+export function parseCommitParents(revListOutput: string): Map<string, string[]> {
+  const parents = new Map<string, string[]>();
+  for (const line of (revListOutput || '').split('\n')) {
+    const hashes = line.trim().split(/\s+/).filter((hash) => hash.length > 0);
+    if (hashes.length > 0) {
+      parents.set(hashes[0], hashes.slice(1));
     }
   }
-  const branchRes = await prompts({
-    type: 'select',
-    message: c.cyanBright(t('backpromoteSelectParentBranch')),
-    description: t('backpromoteSelectParentBranch'),
-    name: 'value',
-    choices: branchChoices,
-  });
-  return branchRes.value || recommendedBranch;
+  return parents;
 }
 
-// ---- List first-parent commits with associated PRs ----
+/**
+ * The commits each first-parent commit of a branch brought in.
+ *
+ * Walking the graph, not comparing dates: a cherry-picked commit keeps the author date it had on
+ * the branch it came from, so it lands out of order. Attributing it by date gives it to whichever
+ * merge happens to bracket that date, which for a promotion branch is the wrong one: the stories
+ * of a promotion end up counted under the merge before it, and the merge that really carried them
+ * ends up empty. Promotion branches are made of nothing but cherry-picks, so this is the normal
+ * case, not an edge case.
+ *
+ * A commit shared by two merges belongs to the older one, which is why the first-parent commits
+ * are walked oldest first.
+ *
+ * `extraBoundaries` are commits that stop the walk without getting a list of their own: a vehicle
+ * merge opened up into the commits it brought in is no longer a candidate, but it must not be
+ * swallowed by the merge that follows it either.
+ */
+export function attributeCommitsToFirstParents<T extends { hash: string }>(
+  firstParentCommits: T[],
+  allCommits: T[],
+  parentsByHash: Map<string, string[]>,
+  extraBoundaries: Set<string> = new Set(),
+): Map<string, T[]> {
+  const commitByHash = new Map(allCommits.map((commit) => [commit.hash, commit]));
+  const positionByHash = new Map(allCommits.map((commit, index) => [commit.hash, index]));
+  const firstParentShas = new Set([...firstParentCommits.map((commit) => commit.hash), ...extraBoundaries]);
+  const assigned = new Set<string>();
+  const result = new Map<string, T[]>();
+  for (const mergeCommit of firstParentCommits) {
+    const collected: T[] = [];
+    const queue: string[] = [mergeCommit.hash];
+    const visited = new Set<string>();
+    while (queue.length > 0) {
+      const hash = queue.shift() as string;
+      if (visited.has(hash)) {
+        continue;
+      }
+      visited.add(hash);
+      // Another first-parent commit owns its own side of the history, and a commit already
+      // attributed belongs to the older merge that brought it in
+      if ((hash !== mergeCommit.hash && firstParentShas.has(hash)) || assigned.has(hash)) {
+        continue;
+      }
+      const commit = commitByHash.get(hash);
+      if (!commit) {
+        continue; // outside the window being listed
+      }
+      collected.push(commit);
+      assigned.add(hash);
+      for (const parentHash of parentsByHash.get(hash) || []) {
+        queue.push(parentHash);
+      }
+    }
+    // Back to the order of `git log`, which the Pull Request matching below relies on
+    collected.sort((a, b) => (positionByHash.get(a.hash) ?? 0) - (positionByHash.get(b.hash) ?? 0));
+    result.set(mergeCommit.hash, collected);
+  }
+  return result;
+}
+
+/** How many times a vehicle merge may be opened up again: integration -> uat -> preprod is 2 */
+const MAX_VEHICLE_SPLIT_DEPTH = 5;
+// Numbers read in messages but missed by the listing of merged Pull Requests, asked for one by one
+const MAX_PULL_REQUESTS_FETCHED_BY_NUMBER = 50;
+
+/**
+ * The branches a merge commit merged in, as far as they can be read: the message ("Merge branch
+ * 'X' into Y" for git and GitLab, "Merge pull request #N from org/X" for GitHub) and the source
+ * branch of the Pull Request the merge commit closed.
+ *
+ * Only the merge commit itself is looked at, never the commits it brought in: a feature branch
+ * that synced with its major branch before being merged holds such a merge, and reading it here
+ * would turn the feature into a vehicle.
+ */
+export function mergedSourceBranches(
+  commit: { hash: string; message: string; body?: string },
+  mergeCommitToPr: Map<string, number>,
+  prDetailsMap: Map<number, any>,
+  isPullRequestOf: (num: number, commit: { hash: string; message: string; body?: string }) => boolean = () => true,
+): string[] {
+  const branches: string[] = [];
+  const messageBranch = extractSourceBranchFromMessage(commit.message);
+  if (messageBranch) {
+    branches.push(messageBranch);
+  }
+  const gitHubMatch = commit.message.match(/Merge pull request #\d+ from (\S+)/);
+  if (gitHubMatch) {
+    // owner/branch, and a branch name can hold slashes of its own
+    const parts = gitHubMatch[1].split('/');
+    branches.push(parts.length > 1 ? parts.slice(1).join('/') : gitHubMatch[1]);
+  }
+  // Azure DevOps writes the same sentence without the # and with the target branch after it, and
+  // the source branch is given as it is, with no owner in front
+  const azureMatch = commit.message.match(/Merge pull request \d+ from (\S+) into \S+/);
+  if (azureMatch) {
+    branches.push(azureMatch[1]);
+  }
+  const prNumber = mergeCommitToPr.get(commit.hash) ?? extractPrNumbersFromCommit(commit).find((num) => isPullRequestOf(num, commit));
+  const pullRequest = prNumber ? prDetailsMap.get(prNumber) : null;
+  if (pullRequest?.sourceBranch) {
+    branches.push(pullRequest.sourceBranch);
+  }
+  return [...new Set(branches.filter((branch) => branch))];
+}
+
+/**
+ * Whether a merge only moves other merges: a major branch merged into the next one
+ * (integration -> uat), or a promotion branch merged into its target.
+ */
+export function isVehicleMerge(branches: string[], majorBranchNames: string[]): boolean {
+  const majorBranches = new Set((majorBranchNames || []).map((branch) => (branch || '').toLowerCase()).filter((branch) => branch));
+  return branches.some(
+    (branch) => majorBranches.has(branch.toLowerCase()) || parsePromotionBranchName(branch) !== null
+  );
+}
+
+/**
+ * Replace every vehicle merge of a first-parent list by the first-parent commits it brought in.
+ *
+ * A promotion cherry-picks one candidate at a time, and a candidate is a first-parent commit of
+ * the source branch. On a pipeline where User Stories are merged into `integration` and
+ * `integration` is then merged into `uat`, every first-parent commit of `uat` is one of those
+ * major-to-major merges: the whole promotion window is a single row, and picking one User Story
+ * carries every story merged in the same sync. Opening the vehicle up gives back one row per
+ * User Story, each cherry-picking its own merge commit.
+ *
+ * The list stays in `git log` order (newest first), the sub-commits taking the place of the
+ * vehicle they came from. The loop runs again over what it produced, so a promotion merged into
+ * `integration` and carried to `uat` by a sync is opened up in turn. Only a merge with exactly two
+ * parents is opened up: an octopus merge would lose every side but the second one.
+ *
+ * A sub-commit already listed elsewhere is never added a second time. Branches merged both ways
+ * produce exactly that: `main` merged into `uat` opens up into the first-parent commits of `main`,
+ * one of which is a `uat` -> `main` back-merge, and opening that one up in turn gives back the
+ * `uat` commits the list started from. The repeats were offered twice in the promotion prompt, and
+ * a vehicle whose whole content is already listed carries nothing, so it is dropped rather than
+ * kept as a row that cherry-picks a merge commit.
+ */
+export async function splitVehicleMerges<T extends { hash: string; message: string }>(
+  firstParentCommits: T[],
+  majorBranchNames: string[],
+  parentsByHash: Map<string, string[]>,
+  windowHashes: Set<string>,
+  vehicleBranchesOf: (commit: T) => string[],
+  logFirstParents: (fromCommit: string, toCommit: string) => Promise<T[]>,
+): Promise<T[]> {
+  let current = firstParentCommits;
+  for (let depth = 0; depth < MAX_VEHICLE_SPLIT_DEPTH; depth++) {
+    let changed = false;
+    const next: T[] = [];
+    // What the list already holds: the commits still to be walked at this depth, plus the ones
+    // already pushed. The vehicle being opened up is leaving the list, so it never counts itself.
+    const presentHashes = new Set(current.map((commit) => commit.hash));
+    for (const commit of current) {
+      const parents = parentsByHash.get(commit.hash) || [];
+      if (parents.length !== 2 || !isVehicleMerge(vehicleBranchesOf(commit), majorBranchNames)) {
+        next.push(commit);
+        continue;
+      }
+      const subCommits = await logFirstParents(parents[0], parents[1]);
+      // A back-merge from the target branch opens up into commits that sit before the merge base,
+      // outside the window being listed: nothing is known about them, and they are already in the
+      // target branch anyway. The vehicle stays whole rather than becoming a page of dead rows.
+      if (subCommits.length === 0 || subCommits.some((subCommit) => !windowHashes.has(subCommit.hash))) {
+        next.push(commit);
+        continue;
+      }
+      const newSubCommits = subCommits.filter(
+        (subCommit) => subCommit.hash !== commit.hash && !presentHashes.has(subCommit.hash)
+      );
+      changed = true;
+      if (newSubCommits.length === 0) {
+        // Everything this vehicle carries is already listed on its own rows: it adds nothing.
+        continue;
+      }
+      for (const subCommit of newSubCommits) {
+        presentHashes.add(subCommit.hash);
+      }
+      next.push(...newSubCommits);
+    }
+    current = next;
+    if (!changed) {
+      break;
+    }
+  }
+  return current;
+}
 
 export async function listMergedPrsWithCommits(
   parentBranch: string,
   currentBranch: string,
   sinceCommit: string | null,
   commandThis: any,
+  options: { splitVehicleMergesFrom?: string[]; maxCount?: number } = {},
 ): Promise<BackpromotePrGroup[]> {
+  const maxCount = options.maxCount && options.maxCount > 0 ? options.maxCount : 50;
+  const maxAllCommits = Math.max(500, maxCount * 10);
   uxLog('action', commandThis, c.cyan(t('backpromoteListingMergedPrs', { parentBranch: c.green(parentBranch) })));
 
   // Get first-parent commits on the parent branch (only direct merges/commits, not inherited ones)
@@ -143,8 +277,8 @@ export async function listMergedPrsWithCommits(
     if (sinceCommit) {
       firstParentLog = await git().log(['--first-parent', `${sinceCommit}..${parentBranch}`]);
     } else {
-      // No starting point: show recent history (50 commits)
-      firstParentLog = await git().log(['--first-parent', '-n', '50', parentBranch]);
+      // No starting point: the most recent first-parent commits
+      firstParentLog = await git().log(['--first-parent', '-n', String(maxCount), parentBranch]);
     }
   } catch {
     return [];
@@ -157,8 +291,15 @@ export async function listMergedPrsWithCommits(
   // by looking at ALL commits reachable from it (not just first-parent)
   const allCommitsLog = sinceCommit
     ? await git().log([`${sinceCommit}..${parentBranch}`]).catch(() => null)
-    : await git().log(['-n', '500', parentBranch]).catch(() => null);
+    : await git().log(['-n', String(maxAllCommits), parentBranch]).catch(() => null);
   const allCommits = [...(allCommitsLog?.all || [])];
+
+  // The parent of every commit of the window, in one call: which merge brought a commit in is a
+  // question about the graph, and answering it from the dates is wrong for cherry-picks.
+  const revListArgs = sinceCommit
+    ? ['rev-list', '--parents', `${sinceCommit}..${parentBranch}`]
+    : ['rev-list', '--parents', '-n', String(maxAllCommits), parentBranch];
+  const parentsByHash = parseCommitParents(await git().raw(revListArgs).catch(() => ''));
 
   // Discover PRs from all commits using the three strategies
   const prNumbersFromCommits = extractPrNumbersFromCommits(allCommits);
@@ -170,10 +311,43 @@ export async function listMergedPrsWithCommits(
   const prDetailsMap = new Map<number, any>();
   const mergeCommitToPr = new Map<string, number>();
   const sourceBranchToPr = new Map<string, number>();
+  // Whether the merged Pull Requests of this repository could be listed: only then can a number read
+  // in a commit message be told apart from one that is not a Pull Request here
+  let mergedPrsListed = false;
 
   if (gitProvider) {
     try {
-      const allMergedPrs = (await gitProvider.listPullRequests({ status: 'merged' })) || [];
+      // Bounded by the window being listed: asking for every merged Pull Request of the repository
+      // costs one extra API call per Pull Request on some providers
+      const oldestCommitDate = allCommits
+        .map((commit) => new Date(commit.date))
+        .filter((date) => !isNaN(date.getTime()))
+        .sort((a, b) => a.getTime() - b.getTime())[0];
+      // GitHub, Bitbucket and Azure DevOps filter on the creation date: a long-lived Pull Request is
+      // created long before the merge that puts it in the window
+      const minDate = oldestCommitDate ? new Date(oldestCommitDate.getTime() - 180 * 24 * 60 * 60 * 1000) : undefined;
+      const listedPrs = await gitProvider.listPullRequests({ status: 'merged', ...(minDate ? { minDate } : {}) });
+      // GitHub and GitLab answer null when the API call failed: nothing can be told apart then
+      mergedPrsListed = Array.isArray(listedPrs);
+      const allMergedPrs = [...(listedPrs || [])];
+      // The listing is bounded (pages, creation date, and Azure DevOps answers [] when its
+      // repository is not configured), so a number it misses may still be a Pull Request here. Those
+      // are asked for one by one: every number when nothing was listed, else only the numbers up to
+      // the highest one listed. A number above it is not a Pull Request merged here, which is the
+      // fork case, and asking would cost one call per upstream Pull Request.
+      if (mergedPrsListed) {
+        const listedNumbers = new Set(allMergedPrs.map((pr) => pr.idNumber).filter((num) => num));
+        const highestListed = Math.max(0, ...listedNumbers);
+        const toFetch = [...prNumbersFromCommits]
+          .filter((num) => !listedNumbers.has(num) && (listedNumbers.size === 0 || num <= highestListed))
+          .slice(0, MAX_PULL_REQUESTS_FETCHED_BY_NUMBER);
+        const fetched = await Promise.all(toFetch.map((num) => gitProvider.getPullRequestById(num).catch(() => null)));
+        for (const pr of fetched) {
+          if (pr?.idNumber && pr.mergedDate) {
+            allMergedPrs.push(pr);
+          }
+        }
+      }
       for (const pr of allMergedPrs) {
         const prNum = pr.idNumber;
         if (!prNum) continue;
@@ -192,25 +366,57 @@ export async function listMergedPrsWithCommits(
       uxLog('warning', commandThis, c.yellow(`[Backpromote] Unable to list pull requests: ${(e as Error).message}`));
     }
   }
+  const isPullRequestOf = (num: number, commit: { hash: string; message: string; body?: string }) =>
+    messageNumberIsPullRequestOf(num, commit, mergedPrsListed, prDetailsMap, commitShaSet);
+
+  // A merge that only moves other merges (integration -> uat, a promotion merged into its target)
+  // is opened up into the commits it brought in, so a promotion can carry one User Story instead
+  // of a whole sync window. Only promotion:create asks for it, backpromote keeps its own grouping.
+  const splitFrom = options.splitVehicleMergesFrom;
+  const vehicleMergeHashes = new Set<string>();
+  let firstParentNewestFirst = [...firstParentLog.all];
+  if (splitFrom) {
+    const windowHashes = new Set(allCommits.map((commit) => commit.hash));
+    firstParentNewestFirst = await splitVehicleMerges(
+      firstParentNewestFirst,
+      splitFrom,
+      parentsByHash,
+      windowHashes,
+      (commit) => mergedSourceBranches(commit, mergeCommitToPr, prDetailsMap, isPullRequestOf),
+      async (fromCommit, toCommit) => {
+        const log = await git().log(['--first-parent', `${fromCommit}..${toCommit}`]).catch(() => null);
+        return [...(log?.all || [])];
+      },
+    );
+    const keptHashes = new Set(firstParentNewestFirst.map((commit) => commit.hash));
+    for (const commit of firstParentLog.all) {
+      if (!keptHashes.has(commit.hash)) {
+        vehicleMergeHashes.add(commit.hash);
+      }
+    }
+  }
+
+  // The commits each candidate brought in, read from the graph (see attributeCommitsToFirstParents).
+  // The vehicle merges that were opened up still stop the walk: their own message names the sync,
+  // not a User Story, and it must not be attributed to the merge that follows them.
+  const childCommitsByMerge = attributeCommitsToFirstParents(
+    [...firstParentNewestFirst].reverse(),
+    allCommits,
+    parentsByHash,
+    vehicleMergeHashes,
+  );
 
   // Build groups: one per first-parent commit, with associated PRs as details
-  const firstParentCommits = [...firstParentLog.all].reverse(); // Chronological order
-  const firstParentShas = new Set(firstParentCommits.map((c) => c.hash));
+  const firstParentCommits = [...firstParentNewestFirst].reverse(); // Chronological order
   const prGroups: BackpromotePrGroup[] = [];
+  // The action files present at the parent ref, listed once: one `git show` per Pull Request
+  // was one process per Pull Request, for a file most of them do not have
+  const actionFilesAtRef = listActionFilesAtRef(parentBranch);
 
-  for (let i = 0; i < firstParentCommits.length; i++) {
-    const commit = firstParentCommits[i];
+  for (const commit of firstParentCommits) {
 
-    // Find all child commits reachable from this commit but not from the previous first-parent commit
-    // These are the commits that were "brought in" by this merge
-    const childCommits = allCommits.filter((c) => {
-      if (firstParentShas.has(c.hash) && c.hash !== commit.hash) return false;
-      // Check if this commit's date is between the previous and current first-parent commits
-      const commitDate = new Date(c.date).getTime();
-      const currentDate = new Date(commit.date).getTime();
-      const prevDate = i > 0 ? new Date(firstParentCommits[i - 1].date).getTime() : 0;
-      return commitDate > prevDate && commitDate <= currentDate;
-    });
+    // The commits this merge brought in, read from the graph (see attributeCommitsToFirstParents)
+    const childCommits = childCommitsByMerge.get(commit.hash) || [commit];
 
     // Discover associated PRs from child commits
     const associatedPrs: BackpromotePrGroup['associatedPrs'] = [];
@@ -219,9 +425,15 @@ export async function listMergedPrsWithCommits(
 
     for (const childCommit of childCommits) {
       let prNum: number | null = null;
-      const prNumbersInMsg = extractPrNumbersFromMessage(childCommit.message);
-      if (prNumbersInMsg.length > 0) prNum = prNumbersInMsg[0];
-      if (prNum === null && mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
+      // The provider naming this very commit as the merge of a Pull Request is the surest answer
+      if (mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
+      // A number in a message is only a Pull Request of this repository when the provider knows it.
+      // A fork carries the squash commits of the repository it was forked from, "(#41)" included:
+      // taken as is, that number sent the reads of the Backpromotes comments to a Pull Request that
+      // does not exist here, and the whole plan stopped on a 404.
+      if (prNum === null) {
+        prNum = extractPrNumbersFromCommit(childCommit).find((num) => isPullRequestOf(num, childCommit)) ?? null;
+      }
       const sourceBranch = extractSourceBranchFromMessage(childCommit.message);
       if (prNum === null && sourceBranch && sourceBranchToPr.has(sourceBranch)) prNum = sourceBranchToPr.get(sourceBranch)!;
 
@@ -235,13 +447,15 @@ export async function listMergedPrsWithCommits(
           author: prDetail?.authorName || childCommit.author_name,
           webUrl: prDetail?.webUrl || '',
           sourceBranch: prDetail?.sourceBranch || sourceBranch || '',
+          commit: childCommit.hash,
         });
-        const prConfig = await loadPrConfig(prNum);
+        const prConfig = await loadPrConfig(prNum, parentBranch, actionFilesAtRef);
         if (prConfig) prConfigs.push({ config: prConfig, prId: prNum, prTitle });
-      } else if (sourceBranch && !seenPrIds.has(0)) {
+      } else if (sourceBranch && shouldAddVirtualPullRequest(associatedPrs, seenPrIds, sourceBranch)) {
         // Virtual PR from source branch name
         const titleMatch = childCommit.message.match(/^(.+?)\s*Merge branch/);
         const title = titleMatch ? titleMatch[1].trim() : sourceBranch;
+        seenPrIds.add(0);
         associatedPrs.push({
           id: 0,
           title: title || sourceBranch,
@@ -265,6 +479,48 @@ export async function listMergedPrsWithCommits(
   }
 
   return prGroups;
+}
+
+/**
+ * Whether a number read in the message of a commit names a Pull Request of this repository that
+ * this commit belongs to.
+ *
+ * A fork carries the history of the repository it was forked from, with that repository's numbers
+ * in its squash subjects: "(#41)" can name no Pull Request here at all, and "(#1)" can name one of
+ * the fork's own that has nothing to do with the commit. The provider tells the two apart: a
+ * number it does not list is not a Pull Request here, and a number whose merge commit is another
+ * commit of the same window is not this commit's, unless this commit is a cherry-pick of work from
+ * it, which is what a promotion branch is made of. A merge commit outside the window proves
+ * nothing on its own (Azure DevOps can report one that never reached the target branch), so there
+ * the title of the Pull Request has to be in the message: the fork's own #1, merged before the
+ * window, does not carry the title of the course's #1. The message is trusted as it is when the
+ * Pull Requests could not be listed at all.
+ */
+export function messageNumberIsPullRequestOf(
+  num: number,
+  commit: { hash: string; message?: string; body?: string },
+  mergedPrsListed: boolean,
+  prDetailsMap: Map<number, { mergeCommitSha?: string; title?: string }>,
+  windowShas: Set<string>,
+): boolean {
+  if (!mergedPrsListed) {
+    return true;
+  }
+  const pr = prDetailsMap.get(num);
+  if (!pr) {
+    return false;
+  }
+  if (!pr.mergeCommitSha || pr.mergeCommitSha === commit.hash) {
+    return true;
+  }
+  if (/\(cherry picked from commit [0-9a-f]{7,40}\)/.test(commit.body || '')) {
+    return true;
+  }
+  if (windowShas.has(pr.mergeCommitSha)) {
+    return false;
+  }
+  const title = (pr.title || '').trim().toLowerCase();
+  return !title || `${commit.message || ''}\n${commit.body || ''}`.toLowerCase().includes(title);
 }
 
 // Extract all source branch names from merge commit messages
@@ -293,19 +549,44 @@ function extractSourceBranchFromMessage(message: string): string | null {
 }
 
 // Extract all PR/MR numbers referenced in commit messages
-function extractPrNumbersFromCommits(commits: Array<{ message: string }>): Set<number> {
+function extractPrNumbersFromCommits(commits: Array<{ message: string; body?: string }>): Set<number> {
   const prNumbers = new Set<number>();
   for (const commit of commits) {
-    for (const num of extractPrNumbersFromMessage(commit.message)) {
+    for (const num of extractPrNumbersFromCommit(commit)) {
       prNumbers.add(num);
     }
   }
   return prNumbers;
 }
 
+/**
+ * The Pull Request numbers of a commit. git log gives the subject as `message` and the rest as
+ * `body`, and GitLab writes its merge request number in the body ("Merge branch 'X' into 'Y'",
+ * then "See merge request group/project!12"): read from the subject alone, a GitLab merge commit
+ * names no merge request, and every candidate of a promotion listed without the provider is a "-"
+ * row that cannot be selected. Only the GitLab sentence is read in the body, never the generic #N
+ * references a description may hold.
+ */
+export function extractPrNumbersFromCommit(commit: { message: string; body?: string }): number[] {
+  const fromSubject = extractPrNumbersFromMessage(commit.message || '');
+  if (fromSubject.length > 0 || !commit.body) {
+    return fromSubject;
+  }
+  const numbers: number[] = [];
+  const pattern = /See merge request [^!\s]*!(\d+)/g;
+  let match;
+  while ((match = pattern.exec(commit.body)) !== null) {
+    const num = parseInt(match[1], 10);
+    if (num > 0) {
+      numbers.push(num);
+    }
+  }
+  return [...new Set(numbers)];
+}
+
 // Extract PR/MR numbers from a single commit message.
 // Matches patterns like: #123, Merge pull request #123, !123 (GitLab MR syntax)
-function extractPrNumbersFromMessage(message: string): number[] {
+export function extractPrNumbersFromMessage(message: string): number[] {
   const numbers: number[] = [];
   // GitHub: "Merge pull request #123" or just "#123" in the message
   // GitLab: "Merge branch ... into ... See merge request org/repo!123"
@@ -314,8 +595,14 @@ function extractPrNumbersFromMessage(message: string): number[] {
     /Merge pull request #(\d+)/g,
     /See merge request [^!]*!(\d+)/g,
     /Merged PR (\d+)/g,
-    // Generic #NNN reference (but avoid matching issue numbers in the middle of words)
-    /(?:^|\s)#(\d+)(?:\s|$|[,.):])/g,
+    // Azure DevOps completing a Pull Request without fast-forward, which is what keeps the -x
+    // trailers of a cherry-pick: "Merge pull request 52 from feature/X into integration", with no #
+    /Merge pull request (\d+) from \S+ into \S+/g,
+    // Generic #NNN reference (but avoid matching issue numbers in the middle of words).
+    // An opening bracket counts as a boundary: a GitHub squash merge writes the number as
+    // "US-057 Park an installation that is waiting for parts (#7)", so requiring whitespace
+    // before the # missed the most common commit subject GitHub produces.
+    /(?:^|[\s([])#(\d+)(?:\s|$|[,.):\]])/g,
   ];
   for (const pattern of patterns) {
     let match;
@@ -329,834 +616,78 @@ function extractPrNumbersFromMessage(message: string): number[] {
   return [...new Set(numbers)];
 }
 
-// Load PR-scoped config file if it exists
-async function loadPrConfig(prId: number): Promise<any | null> {
-  const prConfigFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
-  if (!fs.existsSync(prConfigFile)) {
-    return null;
+/**
+ * The deployment actions and Apex test classes a Pull Request declares, read from the parent branch
+ * ref rather than from the checked out branch: a backpromote runs from a User Story branch that is
+ * behind the parent branch, where the file of a Pull Request merged since does not exist yet.
+ */
+async function loadPrConfig(prId: number, ref: string | null, filesAtRef: Set<string> | null = null): Promise<any | null> {
+  const repoPath = `scripts/actions/.sfdx-hardis.${prId}.yml`;
+  let content: string | null = null;
+  if (ref && (filesAtRef === null || filesAtRef.has(repoPath))) {
+    const show = spawnSync('git', ['show', `${ref}:${repoPath}`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    if (show.status === 0) {
+      content = show.stdout;
+    }
+  }
+  if (content === null) {
+    const prConfigFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
+    if (!fs.existsSync(prConfigFile)) {
+      return null;
+    }
+    content = await fs.readFile(prConfigFile, 'utf-8');
   }
   try {
     const yaml = await import('js-yaml');
-    return yaml.load(await fs.readFile(prConfigFile, 'utf-8'));
+    return yaml.load(content);
   } catch {
     return null;
   }
 }
 
-// ---- Select backpromote scope ----
-
-export async function selectBackpromoteScope(
-  prGroups: BackpromotePrGroup[],
-  lastBackpromoteState: BackpromoteState | null,
-  commandThis: any,
-  agentMode: boolean,
-  fromFlag: string | null = null,
-): Promise<{ targetCommit: string; selectedPrs: BackpromotePrGroup[]; fromCommit: string }> {
-  if (lastBackpromoteState) {
-    uxLog('log', commandThis, c.grey(t('backpromoteLastRunInfo', {
-      date: lastBackpromoteState.lastTimestamp,
-      commit: lastBackpromoteState.lastCommit.substring(0, 7),
-    })));
+/** The Pull Request action files present at a ref (scripts/actions/.sfdx-hardis.<pr>.yml), null when the ref cannot be read */
+function listActionFilesAtRef(ref: string | null): Set<string> | null {
+  if (!ref) {
+    return null;
   }
-
-  const lastGroup = prGroups[prGroups.length - 1];
-  const targetCommit = lastGroup.commit.hash;
-
-  if (agentMode || isCI) {
-    // In agent mode: select only the next (first) commit
-    const firstGroup = prGroups[0];
-    const label = firstGroup.commit.message.substring(0, 60);
-    uxLog('action', commandThis, c.cyan(t('backpromoteAgentAutoSelectedNextPr', {
-      id: firstGroup.commit.hash.substring(0, 7) + ' ' + label,
-    })));
-    const fromCommit = lastBackpromoteState?.lastCommit || fromFlag || firstGroup.commit.hash;
-    return {
-      targetCommit: firstGroup.commit.hash,
-      selectedPrs: [firstGroup],
-      fromCommit,
-    };
+  // --full-tree: from a sub-folder, ls-tree reads the path relative to it and lists nothing
+  const result = spawnSync('git', ['ls-tree', '-r', '--full-tree', '--name-only', ref, '--', 'scripts/actions'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (result.status !== 0) {
+    return null;
   }
-
-  // Interactive mode: single select prompt to pick a starting point.
-  // Display newest first so the most recent commits are at the top.
-  // Everything from the selected commit up to the parent branch HEAD will be backpromoted.
-  const lastCommit = lastBackpromoteState?.lastCommit || null;
-  let initialIndex = 0;
-
-  // Build choices in reverse order (newest first) but store the original index as value
-  const choices: Array<{ title: string; value: number; description?: string }> = [];
-  for (let i = prGroups.length - 1; i >= 0; i--) {
-    const group = prGroups[i];
-    const commitShort = group.commit.hash.substring(0, 7);
-    const commitLabel = `${formatDateTime(group.commit.date)} - ${group.commit.message} [${commitShort}]`;
-
-    // Build PR details as description
-    let prDetails: string | undefined;
-    if (group.associatedPrs.length > 0) {
-      prDetails = group.associatedPrs.map((pr) => {
-        return pr.id > 0
-          ? `  PR #${pr.id} - ${pr.title} (${t('by')} ${pr.author})`
-          : `  ${pr.title} (${t('by')} ${pr.author})`;
-      }).join('\n');
-    }
-
-    // Mark the last backpromoted commit
-    const isLastBackpromote = lastCommit && group.commit.hash.startsWith(lastCommit.substring(0, 7));
-    if (isLastBackpromote) {
-      initialIndex = choices.length; // Position in the reversed list
-    }
-    const suffix = isLastBackpromote ? ` <-- ${t('backpromoteLastBackpromoteMarker')}` : '';
-
-    choices.push({
-      title: `${commitLabel}${suffix}`,
-      value: i, // Original index in prGroups
-      description: prDetails,
-    });
-  }
-
-  const selectRes = await prompts({
-    type: 'select',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteSelectScope')),
-    description: t('backpromoteSelectScope'),
-    choices,
-    initial: initialIndex,
-  });
-
-  const selectedIndex = selectRes.value ?? 0;
-  // All commits from the selected starting point to the end are included
-  const selectedPrs = prGroups.slice(selectedIndex);
-  const fromCommit = selectedIndex > 0
-    ? prGroups[selectedIndex - 1].commit.hash
-    : (lastBackpromoteState?.lastCommit || fromFlag || selectedPrs[0].commit.hash);
-
-  return {
-    targetCommit,
-    selectedPrs,
-    fromCommit,
-  };
-}
-
-// ---- Ensure branch is up to date with parent ----
-
-export async function ensureBranchUpToDate(
-  parentBranch: string,
-  currentBranch: string,
-  commandThis: any,
-): Promise<void> {
-  uxLog('action', commandThis, c.cyan(t('backpromoteCheckingBranchUpToDate', {
-    parentBranch: c.green(parentBranch),
-    currentBranch: c.green(currentBranch),
-  })));
-
-  // Fetch latest state of the parent branch
-  await gitFetch({ output: true });
-
-  // Check if the feature branch contains the latest parent branch commit
-  const parentRef = (
-    await execCommand(`git rev-parse origin/${parentBranch}`, commandThis, { output: false })
-  ).stdout.replace(/[\n\r]/g, '');
-  const mergeBase = (
-    await execCommand(`git merge-base origin/${parentBranch} ${currentBranch}`, commandThis, { output: false })
-  ).stdout.replace(/[\n\r]/g, '');
-
-  if (parentRef !== mergeBase) {
-    throw new SfError(
-      t('backpromoteBranchNotUpToDate', {
-        currentBranch,
-        parentBranch,
-      })
-    );
-  }
-
-  uxLog('log', commandThis, c.cyan(t('backpromoteBranchUpToDate', {
-    currentBranch: c.green(currentBranch),
-    parentBranch: c.green(parentBranch),
-  })));
-}
-
-// ---- Detect org conflicts ----
-
-export interface OrgConflictResult {
-  conflicts: OrgConflictItem[];
-  success: boolean;
-  errorMessage?: string;
-  /** Temp directory holding org-retrieved files. Kept alive after detection so VS Code can use it for visual diffs. */
-  tmpRetrieveDir?: string;
-  /** Path of an empty placeholder file used as the right side of the diff for "deleted locally" conflicts. */
-  emptyPlaceholderPath?: string;
-}
-
-export async function detectOrgConflicts(
-  deltaPackageXml: string,
-  targetUsername: string,
-  commandThis: any,
-  debugMode: boolean,
-): Promise<OrgConflictResult> {
-  uxLog('action', commandThis, c.cyan(t('backpromoteDetectingOrgConflicts')));
-
-  // The temp dir is intentionally NOT cleaned at the end of this function:
-  // org-retrieved files must remain on disk so VS Code can keep displaying
-  // them in the side-by-side diff editor opened by promptOpenVisualDiffsInVsCode.
-  const tmpRetrieveDir = await createTempDir();
-  const conflicts: OrgConflictItem[] = [];
-  let emptyPlaceholderPath: string | undefined;
-
-  // First, filter the delta package.xml to only include items that exist in the org.
-  // This prevents retrieve failures caused by metadata types or members not present in the target sandbox.
-  const filteredPackageXml = path.join(tmpRetrieveDir, 'filtered-package.xml');
-  const packageXmlForRetrieve = await filterPackageXmlToOrgAvailable(deltaPackageXml, filteredPackageXml, targetUsername, commandThis);
-
-  if (!packageXmlForRetrieve) {
-    return { conflicts, success: true, tmpRetrieveDir }; // Nothing to retrieve
-  }
-
-  // Create a blank sfdx project in the temp directory so the retrieve command works
-  await createBlankSfdxProject(tmpRetrieveDir);
-  const blankProjectDir = path.join(tmpRetrieveDir, 'sfdx-hardis-blank-project');
-
-  // Retrieve filtered metadata from the org into the blank project
-  let retrieveSuccess = false;
-  let retrieveError = '';
-  try {
-    const retrieveCmd = `sf project retrieve start -x "${packageXmlForRetrieve}" -o ${targetUsername} --output-dir "${blankProjectDir}" --wait 60 --json`;
-    const result = await execCommand(retrieveCmd, commandThis, {
-      fail: true,
-      output: debugMode,
-      debug: debugMode,
-      cwd: blankProjectDir,
-    });
-    retrieveSuccess = result.status === 0 || !result.stderr;
-    if (!retrieveSuccess) {
-      retrieveError = result.stderr || result.stdout || 'Unknown error';
-    }
-  } catch (e) {
-    retrieveError = (e as Error).message;
-  }
-
-  if (!retrieveSuccess) {
-    uxLog('error', commandThis, c.red(t('backpromoteConflictDetectionFailed')));
-    uxLog('error', commandThis, c.red(retrieveError));
-    return { conflicts, success: false, errorMessage: retrieveError, tmpRetrieveDir };
-  }
-
-  uxLog("action", commandThis, c.cyan(t('backpromoteComparingWithLocal')));
-
-  // Parse the delta package.xml to know which metadata items to check
-  const deltaContent = await parsePackageXmlFile(deltaPackageXml);
-  const retrievePackageDir = [{ fullPath: path.resolve(blankProjectDir), path: blankProjectDir }];
-
-  // Walk through retrieved metadata and compare with local
-  for (const metadataType of Object.keys(deltaContent)) {
-    const members = deltaContent[metadataType];
-    // Locate the local and the retrieved source files of all the members in a single pass each,
-    // instead of walking the package directories once per member
-    const localFileByMember = await MetadataUtils.findMetaFilesFromTypeAndNames(metadataType, members);
-    const retrievedFileByMember = await MetadataUtils.findMetaFilesFromTypeAndNames(
-      metadataType,
-      members,
-      retrievePackageDir
-    );
-    for (const member of members) {
-      // Find the local file using existing utility
-      const localFile = localFileByMember.get(member) ?? null;
-      // Find the retrieved (org) file in the temp directory
-      const retrievedFile = retrievedFileByMember.get(member) ?? null;
-
-      if (!retrievedFile || !fs.existsSync(retrievedFile)) {
-        continue; // Metadata not in org, nothing to compare
-      }
-
-      let status: OrgConflictItem['status'] = 'unchanged';
-      let diffPreview = '';
-      let diffMarkdown = '';
-      let hasOrgChanges = false;
-
-      if (!localFile || !fs.existsSync(localFile)) {
-        status = 'deleted';
-        hasOrgChanges = true;
-        diffPreview = t('backpromoteFileExistsInOrgNotLocal');
-        diffMarkdown = `> ${t('backpromoteFileExistsInOrgNotLocal')}\n`;
-        // Lazily create a single empty placeholder file used as the "right" side
-        // of the visual diff in VS Code for items that don't exist locally.
-        if (!emptyPlaceholderPath) {
-          emptyPlaceholderPath = path.join(tmpRetrieveDir, '.empty');
-          await fs.writeFile(emptyPlaceholderPath, '', 'utf-8');
-        }
-      } else {
-        const orgContentRaw = await fs.readFile(retrievedFile, 'utf-8');
-        const localContentRaw = await fs.readFile(localFile, 'utf-8');
-
-        // Normalize content before comparing: unify line endings, trim trailing whitespace per line
-        const orgContent = normalizeForDiff(orgContentRaw);
-        const localContent = normalizeForDiff(localContentRaw);
-
-        // Compute diff ignoring whitespace differences. Whitespace-only diffs
-        // (indentation, leading/trailing spaces) must not count as a conflict.
-        const diffResult = Diff.diffLines(orgContent, localContent, { ignoreWhitespace: true });
-        const hasRealChanges = diffResult.some((p) => p.added || p.removed);
-
-        if (hasRealChanges) {
-          status = 'modified';
-          hasOrgChanges = true;
-
-          // Build short preview from first changed lines
-          const previewParts: string[] = [];
-          for (const part of diffResult) {
-            if (previewParts.length >= 5) break;
-            if (part.added) {
-              previewParts.push(`+${part.value.split('\n')[0]}`);
-            } else if (part.removed) {
-              previewParts.push(`-${part.value.split('\n')[0]}`);
-            }
-          }
-          diffPreview = previewParts.join(' | ');
-          const totalChanges = diffResult.filter((p) => p.added || p.removed).length;
-          if (totalChanges > 5) {
-            diffPreview += ` ... (+${totalChanges - 5} more)`;
-          }
-
-          // Build markdown with git-diff style: show only a few context lines around changes
-          const contextLines = 3;
-          diffMarkdown = buildDiffMarkdown(diffResult, contextLines);
-        }
-      }
-
-      if (hasOrgChanges) {
-        conflicts.push({
-          metadataType,
-          metadataName: member,
-          status,
-          localPath: localFile || '',
-          orgPath: retrievedFile,
-          diffPreview,
-          diffMarkdown,
-          hasOrgChanges,
-        });
-      }
-    }
-  }
-
-  if (conflicts.length > 0) {
-    uxLog('warning', commandThis, c.yellow(t('backpromoteOrgConflictsFound', { count: conflicts.length })));
-  } else {
-    uxLog('action', commandThis, c.green(t('backpromoteNoOrgConflicts')));
-  }
-
-  return { conflicts, success: true, tmpRetrieveDir, emptyPlaceholderPath };
-}
-
-// ---- Generate conflict report ----
-
-export async function generateConflictReport(
-  conflicts: OrgConflictItem[],
-  commandThis: any,
-): Promise<{ excelPath: string; pdfPath: string | false }> {
-  uxLog('action', commandThis, c.cyan(t('backpromoteGeneratingConflictReport')));
-  const getConflictStatusLabel = (status: OrgConflictItem['status']) => {
-    if (status === 'modified') {
-      return t('backpromoteConflictStatusModifiedInOrg');
-    }
-    if (status === 'deleted') {
-      return t('backpromoteConflictStatusDeletedLocally');
-    }
-    return status;
-  };
-
-  // CSV/Excel report
-  const reportData = conflicts.map((item) => ({
-    'Metadata Type': item.metadataType,
-    'Name': item.metadataName,
-    'Status': getConflictStatusLabel(item.status),
-    'Diff Preview': item.diffPreview,
-    'Local Path': item.localPath,
-  }));
-
-  const csvPath = await generateReportPath('backpromote-conflicts', '', {
-    withDate: true,
-    withBranchName: true,
-    fileExtension: 'csv',
-  });
-  const csvResult = await generateCsvFile(reportData, csvPath, {
-    fileTitle: t('backpromoteConflictReportTitle'),
-  });
-  const excelPath = csvResult?.xlsxFile || csvPath;
-  uxLog('log', commandThis, c.cyan(t('backpromoteConflictReportGenerated', { excelPath: c.bold(excelPath) })));
-
-  // Markdown -> PDF report
-  const mdPath = csvPath.replace('.csv', '.md');
-  let mdContent = `# ${t('backpromoteConflictReportTitle')}\n\n`;
-  mdContent += `${t('backpromoteConflictReportGeneratedAt', { date: new Date().toISOString() })}\n\n`;
-  mdContent += `**${conflicts.length}** ${t('backpromoteConflictReportSummary')}\n\n`;
-
-  // Summary table with hyperlinks to details
-  mdContent += `| # | ${t('backpromoteConflictReportTypeLabel')} | ${t('backpromoteConflictReportNameLabel')} | ${t('backpromoteConflictReportStatusLabel')} |\n`;
-  mdContent += `|---|------|------|--------|\n`;
-  for (let i = 0; i < conflicts.length; i++) {
-    const item = conflicts[i];
-    const anchor = `${item.metadataType.toLowerCase()}-${item.metadataName.toLowerCase()}`.replace(/[^a-z0-9-]/g, '-');
-    const itemStatusLabel = getConflictStatusLabel(item.status);
-    mdContent += `| ${i + 1} | ${item.metadataType} | [${item.metadataName}](#${anchor}) | ${itemStatusLabel} |\n`;
-  }
-  mdContent += '\n---\n\n';
-
-  // Detailed diffs
-  for (const item of conflicts) {
-    const itemStatusLabel = getConflictStatusLabel(item.status);
-    mdContent += `## ${item.metadataType}/${item.metadataName}\n\n`;
-    mdContent += `**${t('backpromoteConflictReportStatusLabel')}:** ${itemStatusLabel} | **${t('backpromoteConflictReportPathLabel')}:** \`${item.localPath}\`\n\n`;
-    if (item.diffMarkdown) {
-      mdContent += item.diffMarkdown + '\n';
-    }
-    mdContent += '---\n\n';
-  }
-
-  await fs.writeFile(mdPath, mdContent, 'utf-8');
-  // Try to generate PDF (5 min timeout for large reports), fall back to markdown if it fails
-  uxLog('log', commandThis, c.grey(t('backpromoteStartingReportGeneration')));
-  let pdfPath: string | false = false;
-  try {
-    pdfPath = await generatePdfFileFromMarkdown(mdPath, { timeoutMs: 300000 });
-  } catch (e) {
-    uxLog('warning', commandThis, c.yellow(`[Backpromote] PDF generation failed: ${(e as Error).message}`));
-  }
-  if (pdfPath) {
-    uxLog('log', commandThis, c.cyan(t('backpromoteConflictReportPdfGenerated', { pdfPath: c.bold(pdfPath) })));
-    WebSocketClient.sendReportFileMessage(pdfPath, t('backpromoteConflictReportPdfLabel'), 'report');
-    uxLog('action', commandThis, c.yellow(t('backpromoteOpenReportToCheckOverwrites')));
-  } else {
-    WebSocketClient.sendReportFileMessage(mdPath, t('backpromoteConflictReportTitle') + ' (MD)', 'report');
-    uxLog('action', commandThis, c.yellow(t('backpromoteOpenReportToCheckOverwrites')));
-  }
-
-  return { excelPath, pdfPath };
-}
-
-// ---- Prompt to open visual diffs in VS Code ----
-
-export async function promptOpenVisualDiffsInVsCode(
-  conflicts: OrgConflictItem[],
-  emptyPlaceholderPath: string | undefined,
-  commandThis: any,
-  agentMode: boolean,
-): Promise<boolean> {
-  if (agentMode || isCI) {
-    return false;
-  }
-  if (conflicts.length === 0) {
-    return false;
-  }
-  if (!WebSocketClient.isAlive()) {
-    return false;
-  }
-
-  const confirmRes = await prompts({
-    type: 'confirm',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteOpenVisualDiffsInVsCodePrompt')),
-    description: t('backpromoteOpenVisualDiffsInVsCodePrompt'),
-    initial: true,
-  });
-
-  if (confirmRes.value !== true) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteVisualDiffsSkippedByUser')));
-    return false;
-  }
-
-  const diffs: OrgDiffItem[] = [];
-  let placeholder = emptyPlaceholderPath;
-  for (const item of conflicts) {
-    if (item.status === 'added' && item.localPath) {
-      // File exists locally but not in org - show empty left side vs local file
-      if (!placeholder) {
-        placeholder = path.join(path.dirname(item.localPath), '.empty');
-        await fs.writeFile(placeholder, '', 'utf-8');
-      }
-      diffs.push({
-        leftPath: placeholder,
-        rightPath: item.localPath,
-        title: t('backpromoteVisualDiffTitleAddedLocally', {
-          type: item.metadataType,
-          name: item.metadataName,
-        }),
-        metadataType: item.metadataType,
-        metadataName: item.metadataName,
-        status: 'added',
-      });
-    } else if (item.status === 'deleted' && item.orgPath) {
-      // File exists in org but not locally - show org file vs empty right side
-      if (!placeholder) {
-        placeholder = path.join(path.dirname(item.orgPath), '.empty');
-        await fs.writeFile(placeholder, '', 'utf-8');
-      }
-      diffs.push({
-        leftPath: item.orgPath,
-        rightPath: placeholder,
-        title: t('backpromoteVisualDiffTitleDeletedLocally', {
-          type: item.metadataType,
-          name: item.metadataName,
-        }),
-        metadataType: item.metadataType,
-        metadataName: item.metadataName,
-        status: 'deleted',
-      });
-    } else if (item.status === 'modified' && item.orgPath && item.localPath) {
-      diffs.push({
-        leftPath: item.orgPath,
-        rightPath: item.localPath,
-        title: t('backpromoteVisualDiffTitleModified', {
-          type: item.metadataType,
-          name: item.metadataName,
-        }),
-        metadataType: item.metadataType,
-        metadataName: item.metadataName,
-        status: 'modified',
-      });
-    }
-  }
-
-  if (diffs.length === 0) {
-    return false;
-  }
-
-  WebSocketClient.sendVscodeDiffMessage(diffs);
-  uxLog('action', commandThis, c.cyan(t('backpromoteVisualDiffsOpenedInVsCode', { count: diffs.length })));
-  return true;
-}
-
-// ---- Prompt metadata validation ----
-
-export async function promptMetadataValidation(
-  deltaPackageXml: string,
-  destructiveChangesXml: string | null,
-  conflicts: OrgConflictItem[],
-  commandThis: any,
-  agentMode: boolean,
-  instanceUrl: string = '',
-  diffsShownInVsCode: boolean = false,
-): Promise<{ validatedPackageXml: string; validatedDestructiveXml: string | null }> {
-  const deltaContent = await parsePackageXmlFile(deltaPackageXml);
-
-  // Build flat list of items
-  const allItems: Array<{ type: string; member: string; hasConflict: boolean }> = [];
-  for (const mdType of Object.keys(deltaContent)) {
-    for (const member of deltaContent[mdType]) {
-      const conflict = conflicts.find((c) => c.metadataType === mdType && c.metadataName === member);
-      allItems.push({ type: mdType, member, hasConflict: !!conflict });
-    }
-  }
-
-  if (allItems.length === 0) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteNoDelta')));
-    return { validatedPackageXml: deltaPackageXml, validatedDestructiveXml: destructiveChangesXml };
-  }
-
-  uxLog('log', commandThis, c.cyan(t('backpromoteDeltaSummary', {
-    addedModified: allItems.length,
-    deleted: destructiveChangesXml && fs.existsSync(destructiveChangesXml) ? await countPackageXmlItems(destructiveChangesXml) : 0,
-  })));
-
-  // Display items table (skipped when diffs are already shown in VS Code)
-  if (!diffsShownInVsCode) {
-    const tableData = allItems.map((item) => ({
-      'Type': item.type,
-      'Name': item.member,
-      'Conflict': item.hasConflict ? `⚠️ ${t('backpromoteModifiedInOrg')}` : '-',
-    }));
-    await uxLogTableWithReport(commandThis, tableData, ['Type', 'Name', 'Conflict'], {
-      fileNamePrefix: 'backpromote-delta-items',
-      fileTitle: 'Backpromote delta items',
-    });
-  }
-
-  if (agentMode || isCI) {
-    // In agent mode, deploy everything
-    return { validatedPackageXml: deltaPackageXml, validatedDestructiveXml: destructiveChangesXml };
-  }
-
-  // Interactive: let user deselect items
-  const choices = allItems.map((item) => ({
-    title: `${item.type}/${item.member}${item.hasConflict ? ` \u26a0\ufe0f (${t('backpromoteModifiedInOrg')})` : ''}`,
-    value: `${item.type}::${item.member}`,
-    selected: true,
-  }));
-
-  const selectRes = await prompts({
-    type: 'multiselect',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteSelectMetadataToDeploy', { instanceUrl })),
-    description: t('backpromoteSelectMetadataToDeploy', { instanceUrl }),
-    choices,
-  });
-
-  const selectedSet = new Set<string>(selectRes.value || allItems.map((i) => `${i.type}::${i.member}`));
-
-  // Build filtered package.xml
-  const filteredContent: Record<string, string[]> = {};
-  for (const item of allItems) {
-    const key = `${item.type}::${item.member}`;
-    if (selectedSet.has(key)) {
-      if (!filteredContent[item.type]) {
-        filteredContent[item.type] = [];
-      }
-      filteredContent[item.type].push(item.member);
-    }
-  }
-
-  const validatedPackageXml = deltaPackageXml.replace('package.xml', 'package-validated.xml');
-  await writePackageXmlFile(validatedPackageXml, filteredContent);
-
-  return { validatedPackageXml, validatedDestructiveXml: destructiveChangesXml };
-}
-
-// ---- Prompt after conflict detection failure ----
-
-export async function promptConfirmContinueAfterConflictFailure(
-  errorMessage: string,
-  commandThis: any,
-): Promise<boolean> {
-  uxLog('error', commandThis, c.red(t('backpromoteConflictDetectionFailed')));
-  uxLog('error', commandThis, c.red(errorMessage));
-  uxLog('warning', commandThis, c.yellow(t('backpromoteConflictDetectionFailedExplain')));
-
-  const confirmRes = await prompts({
-    type: 'confirm',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteConflictDetectionFailedContinue')),
-    description: t('backpromoteConflictDetectionFailedContinue'),
-    initial: false,
-  });
-
-  return confirmRes.value === true;
-}
-
-// ---- Handle destructive changes ----
-
-export async function confirmDestructiveChanges(
-  destructiveChangesXml: string,
-  commandThis: any,
-  agentMode: boolean,
-): Promise<boolean> {
-  if (!fs.existsSync(destructiveChangesXml) || await isPackageXmlEmpty(destructiveChangesXml)) {
-    return false;
-  }
-
-  const destructiveContent = await parsePackageXmlFile(destructiveChangesXml);
-  let totalItems = 0;
-  const items: Array<{ Type: string; Name: string }> = [];
-  for (const mdType of Object.keys(destructiveContent)) {
-    for (const member of destructiveContent[mdType]) {
-      items.push({ Type: mdType, Name: member });
-      totalItems++;
-    }
-  }
-
-  uxLog('warning', commandThis, c.yellow(t('backpromoteDestructiveChangesWarning', { count: totalItems })));
-  await uxLogTableWithReport(commandThis, items, ['Type', 'Name'], {
-    fileNamePrefix: 'backpromote-destructive-changes',
-    fileTitle: 'Backpromote destructive changes',
-  });
-
-  if (agentMode || isCI) {
-    uxLog('warning', commandThis, c.yellow(t('backpromoteDestructiveChangesAutoConfirmed')));
-    return true;
-  }
-
-  const confirmRes = await prompts({
-    type: 'confirm',
-    name: 'value',
-    message: c.cyanBright(t('backpromoteConfirmDestructiveChanges')),
-    description: t('backpromoteConfirmDestructiveChanges'),
-    initial: false,
-  });
-
-  return confirmRes.value === true;
-}
-
-// ---- Deploy metadata ----
-
-export async function deployBackpromoteMetadata(
-  packageXmlFile: string,
-  destructiveChangesFile: string | null,
-  targetUsername: string,
-  testClasses: string[],
-  commandThis: any,
-  debugMode: boolean,
-  agentMode: boolean = false,
-): Promise<void> {
-  if (!fs.existsSync(packageXmlFile) || await isPackageXmlEmpty(packageXmlFile)) {
-    // Check if we have destructive changes only
-    if (!destructiveChangesFile || !fs.existsSync(destructiveChangesFile) || await isPackageXmlEmpty(destructiveChangesFile)) {
-      uxLog('action', commandThis, c.cyan(t('backpromoteNoDelta')));
-      return;
-    }
-  }
-
-  const itemCount = fs.existsSync(packageXmlFile) ? await countPackageXmlItems(packageXmlFile) : 0;
-  uxLog('action', commandThis, c.cyan(t('backpromoteDeploying', { count: itemCount })));
-
-  const testLevel = testClasses.length > 0 ? 'RunSpecifiedTests' : 'NoTestRun';
-  if (testClasses.length > 0) {
-    uxLog('log', commandThis, c.grey(t('backpromoteTestClassesFromPrs', { classes: testClasses.join(', ') })));
-  }
-
-  const deployCmd =
-    `sf project deploy start` +
-    ` --manifest "${packageXmlFile}"` +
-    ' --ignore-warnings' +
-    ' --ignore-conflicts' +
-    ` --test-level ${testLevel}` +
-    (testClasses.length > 0 ? ` --tests ${testClasses.join(',')}` : '') +
-    (destructiveChangesFile && fs.existsSync(destructiveChangesFile) ? ` --post-destructive-changes "${destructiveChangesFile}"` : '') +
-    ` -o ${targetUsername}` +
-    ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
-    ' --json';
-
-  const result = await runDeploy(deployCmd, testLevel, commandThis, debugMode);
-
-  // If deployment failed because of test classes or coverage, offer to retry without tests
-  if (!result.success && testClasses.length > 0 && (result.hasTestFailures || result.hasCoverageFailures)) {
-    uxLog('warning', commandThis, c.yellow(t('backpromoteDeployTestFailure')));
-    let retryWithoutTests = agentMode; // Agent mode: auto-retry without tests
-    if (!retryWithoutTests && !isCI) {
-      const retryRes = await prompts({
-        type: 'confirm',
-        name: 'value',
-        message: c.cyanBright(t('backpromoteRetryWithoutTests')),
-        description: t('backpromoteRetryWithoutTests'),
-        initial: true,
-      });
-      retryWithoutTests = retryRes.value === true;
-    }
-    if (retryWithoutTests) {
-      uxLog('action', commandThis, c.cyan(t('backpromoteRetryingWithoutTests')));
-      const noTestCmd =
-        `sf project deploy start` +
-        ` --manifest "${packageXmlFile}"` +
-        ' --ignore-warnings' +
-        ' --ignore-conflicts' +
-        ' --test-level NoTestRun' +
-        (destructiveChangesFile && fs.existsSync(destructiveChangesFile) ? ` --post-destructive-changes "${destructiveChangesFile}"` : '') +
-        ` -o ${targetUsername}` +
-        ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
-        ' --json';
-      const retryResult = await runDeploy(noTestCmd, 'NoTestRun', commandThis, debugMode);
-      await writeDeployReport(retryResult, targetUsername, itemCount, 'NoTestRun', [], packageXmlFile, destructiveChangesFile, commandThis);
-      if (!retryResult.success) {
-        throw new SfError(t('backpromoteDeployFailed'));
-      }
-      uxLog('warning', commandThis, c.yellow(t('backpromoteDeploySuccessButFixTests')));
-      uxLog('action', commandThis, c.green(t('backpromoteDeploySuccess', { count: itemCount })));
-      return;
-    }
-  }
-
-  await writeDeployReport(result, targetUsername, itemCount, testLevel, testClasses, packageXmlFile, destructiveChangesFile, commandThis);
-
-  if (!result.success) {
-    throw new SfError(t('backpromoteDeployFailed'));
-  }
-
-  uxLog('action', commandThis, c.green(t('backpromoteDeploySuccess', { count: itemCount })));
-}
-
-// ---- Deploy helpers ----
-
-interface DeployResult {
-  success: boolean;
-  output: string;
-  hasTestFailures: boolean;
-  hasCoverageFailures: boolean;
-}
-
-async function runDeploy(
-  deployCmd: string,
-  _testLevel: string,
-  commandThis: any,
-  debugMode: boolean,
-): Promise<DeployResult> {
-  try {
-    const deployResult = await execCommand(deployCmd, commandThis, {
-      fail: true,
-      output: true,
-      debug: debugMode,
-    });
-    return { success: true, output: deployResult.stdout || '', hasTestFailures: false, hasCoverageFailures: false };
-  } catch (e) {
-    const output = ((e as any).stdout || '') + ((e as any).stderr || '');
-    const { errLog, failedTests, errorsAndTips } = await analyzeDeployErrorLogs(output, true, { label: 'backpromote' });
-    uxLog('error', commandThis, c.red(t('backpromoteDeployFailed')));
-    uxLog('error', commandThis, c.red('\n' + errLog));
-    const hasTestFailures = (failedTests || []).length > 0;
-    const hasCoverageFailures = (errorsAndTips || []).some(
-      (item: any) => item?.tip?.label === 'CodeCoverageWarning'
-    );
-    return { success: false, output, hasTestFailures, hasCoverageFailures };
-  }
-}
-
-async function writeDeployReport(
-  result: { success: boolean; output: string },
-  targetUsername: string,
-  itemCount: number,
-  testLevel: string,
-  testClasses: string[],
-  packageXmlFile: string,
-  destructiveChangesFile: string | null,
-  commandThis: any,
-): Promise<void> {
-  const reportPath = await generateReportPath('backpromote-deploy', '', {
-    withDate: true,
-    withBranchName: true,
-    fileExtension: 'log',
-  });
-  const reportContent = [
-    'Backpromote Deployment Report',
-    `Date: ${new Date().toISOString()}`,
-    `Target org: ${targetUsername}`,
-    `Status: ${result.success ? 'SUCCESS' : 'FAILED'}`,
-    `Items: ${itemCount}`,
-    `Test level: ${testLevel}`,
-    testClasses.length > 0 ? `Test classes: ${testClasses.join(', ')}` : '',
-    `Package XML: ${packageXmlFile}`,
-    destructiveChangesFile ? `Destructive changes: ${destructiveChangesFile}` : '',
-    '',
-    '--- Deployment output ---',
-    result.output,
-  ].filter(Boolean).join('\n');
-  await fs.writeFile(reportPath, reportContent, 'utf-8');
-  uxLog('log', commandThis, c.grey(t('backpromoteDeployReportSaved', { reportPath })));
-  WebSocketClient.sendReportFileMessage(reportPath, t('backpromoteDeployReportLabel'), 'report');
+  return new Set((result.stdout || '').split(/\r?\n/).map((line) => line.trim().replace(/\\/g, '/')).filter((line) => line !== ''));
 }
 
 // ---- Execute deployment actions ----
 
-export async function executeBackpromoteActions(
+export type BackpromoteActionCandidate = PrePostCommand & { prLabel: string; prId: number; commitHash: string };
+
+/**
+ * The deployment actions of the given groups for one phase. Actions not meant for developer
+ * sandboxes are dropped, and so are the ones of the check-deployment-only context: a backpromote is
+ * a real deployment. Branch filters are evaluated against the parent branch: the sandbox stands for
+ * the branch it is backpromoted from. An invalid definition (both filter lists set) is a warning
+ * rather than a failure: backpromote is an interactive developer command, not a pipeline gate.
+ */
+export function collectBackpromoteActions(
   selectedPrs: BackpromotePrGroup[],
-  currentBranch: string,
+  parentBranch: string,
   phase: 'commandsPreDeploy' | 'commandsPostDeploy',
-  targetUsername: string,
-  conn: any,
   commandThis: any,
-  agentMode: boolean,
-): Promise<void> {
-  // Collect actions from selected PRs for the given phase only
-  const allActions: Array<PrePostCommand & { prLabel: string; prId: number }> = [];
-
-  // A backpromote always deploys to a developer sandbox, so branch filters are evaluated against
-  // the dev-sandboxes virtual name (the feature branch name stays eligible too).
-  const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, currentBranch];
-
-  for (const prGroup of selectedPrs) {
+): BackpromoteActionCandidate[] {
+  const allActions: BackpromoteActionCandidate[] = [];
+  const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, parentBranch];
+  // Newest first: when two Pull Requests declare the same action id, the newest one owns it (and
+  // its comment gets the row); the result goes back to the chronological order of the groups
+  const groupIndex = new Map(selectedPrs.map((group, index) => [group.commit.hash, index]));
+  for (const prGroup of [...selectedPrs].reverse()) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
       const commands = prConfig[phase];
       if (!Array.isArray(commands)) continue;
       const prLabel = prId > 0 ? `#${prId} - ${prTitle}` : prTitle;
       for (const cmd of commands) {
-        // Actions not meant for developer sandboxes are dropped from the selection list: there is
-        // no Pull Request comment here to carry a skipped row. An invalid definition (both filter
-        // lists set) is a warning rather than a failure: backpromote is an interactive developer
-        // command, not a pipeline gate.
+        if (!cmd || !cmd.id) continue;
+        if (cmd.context === 'check-deployment-only') continue;
         const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
         if (branchFilterVerdict.run === false) {
           if (branchFilterVerdict.invalid) {
@@ -1166,380 +697,128 @@ export async function executeBackpromoteActions(
           }
           continue;
         }
-        allActions.push({ ...cmd, prLabel, prId });
+        if (allActions.some((action) => action.id === cmd.id)) {
+          continue;
+        }
+        allActions.push({ ...cmd, prLabel, prId, commitHash: prGroup.commit.hash });
       }
     }
   }
+  return allActions.sort((a, b) => (groupIndex.get(a.commitHash) ?? 0) - (groupIndex.get(b.commitHash) ?? 0));
+}
 
-  if (allActions.length === 0) {
-    return;
-  }
+export interface BackpromoteActionsOutcome {
+  run: string[];
+  skipped: string[];
+  failed: string[];
+  pending: string[];
+}
 
-  const phaseLabel = phase === 'commandsPreDeploy' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy');
-  uxLog('action', commandThis, c.cyan(t('backpromoteExecutingActions', { count: allActions.length })));
-
-  const manualActions: Array<{ label: string; username: string; prLabel: string }> = [];
-  const actionEntries: BackpromoteActionEntry[] = await loadBackpromoteActionsState(currentBranch);
-
-  // Let the user select which actions to run (already-executed ones are deselected by default)
-  let selectedActionIds: Set<string>;
-  if (!agentMode && !isCI) {
-    const actionChoices = allActions.map((action) => {
-      const existing = actionEntries.find((e) => e.actionId === action.id && e.status === 'success');
-      const alreadyDone = !!existing;
-      const suffix = alreadyDone ? ` (${t('backpromoteActionAlreadyDone', { date: formatShortDate(existing!.date) })})` : '';
-      return {
-        title: `[${phaseLabel}] ${action.label} (${action.prLabel})${suffix}`,
-        value: action.id,
-        selected: !alreadyDone,
-      };
-    });
-    const selectRes = await prompts({
-      type: 'multiselect',
-      name: 'value',
-      message: c.cyanBright(t('backpromoteSelectActions', { phase: phaseLabel })),
-      description: t('backpromoteSelectActions', { phase: phaseLabel }),
-      choices: actionChoices,
-    });
-    selectedActionIds = new Set<string>(selectRes.value || []);
-  } else {
-    // Agent mode: auto-exclude already-executed actions
-    selectedActionIds = new Set<string>(
-      allActions
-        .filter((action) => !actionEntries.find((e) => e.actionId === action.id && e.status === 'success'))
-        .map((action) => action.id)
-    );
-    // Log skipped actions
-    for (const action of allActions) {
-      if (!selectedActionIds.has(action.id)) {
-        const existing = actionEntries.find((e) => e.actionId === action.id && e.status === 'success');
-        uxLog('log', commandThis, c.grey(`[Backpromote] ${t('backpromoteSkippingActionAlreadyExecutedOn', { label: action.label, date: existing?.date || '' })}`));
-      }
+/**
+ * Run the actions of one phase in the sandbox, with the actions table of the "Backpromotes" comment
+ * as the state store: an action with a success row for this sandbox and org id is skipped (unless
+ * runOnlyOnceByOrg is false), and every outcome is written as soon as the action finishes, so that
+ * an action that ran before a failed deployment is not run again. A manual action, or an action
+ * whose custom username cannot be authenticated, is written as pending: the user confirms it later.
+ */
+export async function executeBackpromoteActions(options: {
+  actions: BackpromoteActionCandidate[];
+  phase: 'commandsPreDeploy' | 'commandsPostDeploy';
+  selectedActionIds: Set<string>;
+  alreadyRun: Map<string, BackpromoteActionRow>;
+  sandboxName: string;
+  orgId: string;
+  user: string;
+  conn: any;
+  store: BackpromoteCommentStore;
+  commandThis: any;
+}): Promise<BackpromoteActionsOutcome> {
+  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [] };
+  const phase: 'pre' | 'post' = options.phase === 'commandsPreDeploy' ? 'pre' : 'post';
+  const record = async (action: BackpromoteActionCandidate, status: BackpromoteActionRow['status']) => {
+    if (action.prId <= 0) {
+      return;
     }
+    const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase, sandboxName: options.sandboxName, orgId: options.orgId, date: new Date().toISOString(), status, user: options.user };
+    try {
+      await options.store.update(action.prId, (state) => upsertActionRow(state, row));
+    } catch (e) {
+      uxLog('warning', options.commandThis, c.yellow(t('backpromoteCommentWriteFailed', { pr: action.prId, message: (e as Error).message })));
+    }
+  };
+  const toRun = options.actions.filter((action) => options.selectedActionIds.has(action.id));
+  if (toRun.length === 0) {
+    return outcome;
   }
-
-  if (selectedActionIds.size === 0) {
-    uxLog('action', commandThis, c.cyan(`[Backpromote] ${t('backpromoteNoPhaseActionsSelected', { phase: phaseLabel })}`));
-    return;
-  }
-
-  uxLog('action', commandThis, c.cyan(t('backpromoteExecutingActions', { count: selectedActionIds.size })));
-
-  // Store connection for actions that need it
-  globalThis.jsForceConn = conn;
-
-  for (const action of allActions) {
-    if (!selectedActionIds.has(action.id)) {
+  uxLog('action', options.commandThis, c.cyan(t('backpromoteExecutingActions', { count: toRun.length, phase: phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy') })));
+  globalThis.jsForceConn = options.conn;
+  for (const action of toRun) {
+    const previous = options.alreadyRun.get(action.id);
+    if (previous && previous.status === 'success' && action.runOnlyOnceByOrg !== false) {
+      uxLog('log', options.commandThis, c.grey(t('backpromoteActionAlreadyRun', { label: action.label, date: previous.date.substring(0, 10) })));
+      outcome.skipped.push(action.id);
       continue;
     }
-
-    let actionStatus: BackpromoteActionEntry['status'] = 'failed';
-
+    if (action.type === 'manual') {
+      uxLog('warning', options.commandThis, c.yellow(t('backpromoteManualActionPending', { label: action.label })));
+      outcome.pending.push(action.id);
+      await record(action, 'pending');
+      continue;
+    }
+    let actionInstance: any = null;
     if (action.customUsername) {
-      // Try LoginAs
-      const user = await findUserByUsernameLike(action.customUsername, conn);
-      if (!user) {
-        uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', {
-          username: action.customUsername,
-          label: action.label,
-        })));
-        manualActions.push({ label: action.label, username: action.customUsername, prLabel: action.prLabel });
-        actionStatus = 'manual';
-      } else {
+      const user = await findUserByUsernameLike(action.customUsername, options.conn).catch(() => null);
+      let authenticated = false;
+      if (user) {
         try {
-          const instanceUrl = conn.instanceUrl;
-          const authResult = await authOrg('', { forceUsername: user.Username, instanceUrl, setDefault: false });
-          if (authResult === true) {
-            uxLog('log', commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
-            const actionInstance = await ActionsProvider.buildActionInstance(action);
-            actionInstance.customUsernameToUse = user.Username;
-            try {
-              uxLog('action', commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
-              await actionInstance.run(action);
-              uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
-              actionStatus = 'success';
-            } catch (e) {
-              uxLog('error', commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
-            }
-          } else {
-            uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: user.Username, label: action.label })));
-            manualActions.push({ label: action.label, username: action.customUsername, prLabel: action.prLabel });
-            actionStatus = 'manual';
-          }
+          authenticated = (await authOrg('', { forceUsername: user.Username, instanceUrl: options.conn.instanceUrl, setDefault: false })) === true;
         } catch {
-          uxLog('warning', commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: action.customUsername, label: action.label })));
-          manualActions.push({ label: action.label, username: action.customUsername, prLabel: action.prLabel });
-          actionStatus = 'manual';
+          authenticated = false;
         }
       }
+      if (!user || !authenticated) {
+        uxLog('warning', options.commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: action.customUsername, label: action.label })));
+        outcome.pending.push(action.id);
+        await record(action, 'pending');
+        continue;
+      }
+      uxLog('log', options.commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
+      actionInstance = await ActionsProvider.buildActionInstance(action);
+      actionInstance.customUsernameToUse = user.Username;
     } else {
-      // Execute directly
-      const actionInstance = await ActionsProvider.buildActionInstance(action);
-      if (actionInstance) {
-        try {
-          uxLog('action', commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
-          await actionInstance.run(action);
-          uxLog('success', commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
-          actionStatus = 'success';
-        } catch (e) {
-          uxLog('error', commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
-        }
-      }
+      actionInstance = await ActionsProvider.buildActionInstance(action);
     }
-
-    // Record action state in user config
-    const entryIndex = actionEntries.findIndex((e) => e.actionId === action.id);
-    const entry: BackpromoteActionEntry = {
-      actionId: action.id,
-      actionLabel: action.label,
-      prId: action.prId,
-      status: actionStatus,
-      date: new Date().toISOString(),
-    };
-    if (entryIndex >= 0) {
-      actionEntries[entryIndex] = entry;
+    if (!actionInstance) {
+      outcome.skipped.push(action.id);
+      continue;
+    }
+    let status: BackpromoteActionRow['status'] = 'success';
+    try {
+      uxLog('action', options.commandThis, c.cyan(t('backpromoteRunningAction', { label: action.label })));
+      const result = await actionInstance.run(action);
+      const code = result?.statusCode || 'success';
+      if (code === 'manual') {
+        status = 'pending';
+      } else if (['failed', 'not-run'].includes(code)) {
+        status = 'failed';
+      } else if (code === 'skipped') {
+        outcome.skipped.push(action.id);
+        continue;
+      }
+    } catch (e) {
+      uxLog('error', options.commandThis, c.red(`[Backpromote] ${t('backpromoteActionFailedWithMessage', { label: action.label, message: (e as Error).message })}`));
+      status = 'failed';
+    }
+    if (status === 'success') {
+      uxLog('success', options.commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
+      outcome.run.push(action.id);
+    } else if (status === 'pending') {
+      outcome.pending.push(action.id);
     } else {
-      actionEntries.push(entry);
+      outcome.failed.push(action.id);
     }
-    await saveBackpromoteActionsState(currentBranch, actionEntries);
+    await record(action, status);
   }
-
-  // Handle manual actions with one-by-one validation
-  if (manualActions.length > 0 && !agentMode && !isCI) {
-    uxLog('action', commandThis, c.cyan(t('backpromoteManualActionsRequired', { count: manualActions.length })));
-    for (const manualAction of manualActions) {
-      const actionRes = await prompts({
-        type: 'text',
-        name: 'value',
-        message: c.cyanBright(t('backpromoteManualActionPrompt', {
-          label: manualAction.label,
-          username: manualAction.username,
-        })),
-        description: t('backpromoteManualActionPrompt', {
-          label: manualAction.label,
-          username: manualAction.username,
-        }),
-      });
-      if (actionRes.value === 's' || actionRes.value === 'S') {
-        uxLog('action', commandThis, c.cyan(t('backpromoteManualActionSkipped', { label: manualAction.label })));
-      } else {
-        uxLog('action', commandThis, c.cyan(t('backpromoteManualActionCompleted', { label: manualAction.label })));
-        // Update state to success
-        const entryIdx = actionEntries.findIndex((e) => e.actionLabel === manualAction.label && e.status === 'manual');
-        if (entryIdx >= 0) {
-          actionEntries[entryIdx].status = 'success';
-          actionEntries[entryIdx].date = new Date().toISOString();
-          await saveBackpromoteActionsState(currentBranch, actionEntries);
-        }
-      }
-    }
-  } else if (manualActions.length > 0) {
-    // In agent mode, just log the manual actions
-    uxLog('warning', commandThis, c.yellow(t('backpromoteManualActionsRequired', { count: manualActions.length })));
-    for (const manualAction of manualActions) {
-      uxLog('warning', commandThis, c.yellow(t('backpromoteActionRequiresLoginAs', {
-        label: manualAction.label,
-        username: manualAction.username,
-      })));
-    }
-  }
-}
-
-// ---- State management ----
-
-export async function loadBackpromoteState(currentBranch: string): Promise<BackpromoteState | null> {
-  const config = await getConfig('user');
-  const states = config.backpromoteState || {};
-  const state = states[currentBranch];
-  if (state && state.lastCommit) {
-    return state as BackpromoteState;
-  }
-  return null;
-}
-
-export async function saveBackpromoteState(
-  currentBranch: string,
-  targetCommit: string,
-  parentBranch: string,
-  commandThis: any,
-): Promise<void> {
-  const config = await getConfig('user');
-  const states = config.backpromoteState || {};
-  states[currentBranch] = {
-    lastCommit: targetCommit,
-    lastTimestamp: new Date().toISOString(),
-    parentBranch,
-  };
-  await setConfig('user', { backpromoteState: states });
-  uxLog('log', commandThis, c.grey(t('backpromoteStateSaved', { commit: targetCommit.substring(0, 7) })));
-}
-
-// ---- Deployment actions state in user config ----
-
-export interface BackpromoteActionEntry {
-  actionId: string;
-  actionLabel: string;
-  prId: number;
-  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped';
-  date: string;
-}
-
-export async function loadBackpromoteActionsState(currentBranch: string): Promise<BackpromoteActionEntry[]> {
-  const config = await getConfig('user');
-  const actionsState = config.backpromoteActionsState || {};
-  return actionsState[currentBranch] || [];
-}
-
-export async function saveBackpromoteActionsState(
-  currentBranch: string,
-  entries: BackpromoteActionEntry[],
-): Promise<void> {
-  const config = await getConfig('user');
-  const actionsState = config.backpromoteActionsState || {};
-  actionsState[currentBranch] = entries;
-  await setConfig('user', { backpromoteActionsState: actionsState });
-}
-
-// ---- Collect test classes from PRs ----
-
-export function collectTestClassesFromPrs(selectedPrs: BackpromotePrGroup[]): string[] {
-  const testClasses: string[] = [];
-  for (const prGroup of selectedPrs) {
-    for (const { config: prConfig } of prGroup.prConfigs) {
-      if (prConfig?.deploymentApexTestClasses && Array.isArray(prConfig.deploymentApexTestClasses)) {
-        testClasses.push(...prConfig.deploymentApexTestClasses);
-      }
-    }
-  }
-  // Deduplicate
-  return [...new Set(testClasses)];
-}
-
-// ---- Filter package.xml to org-available items ----
-
-async function filterPackageXmlToOrgAvailable(
-  deltaPackageXml: string,
-  outputPackageXml: string,
-  targetUsername: string,
-  commandThis: any,
-): Promise<string | null> {
-  const deltaContent = await parsePackageXmlFile(deltaPackageXml);
-  if (Object.keys(deltaContent).length === 0) {
-    return null;
-  }
-
-  // Build a full org manifest to know what metadata exists in the target sandbox
-  const orgManifestPath = await buildOrgManifest(targetUsername, null, null, { excludePackages: true, logType: "log" });
-  const orgContent = await parsePackageXmlFile(orgManifestPath);
-
-  // Intersect: keep only delta items that exist in the org
-  const filteredContent: Record<string, string[]> = {};
-  const filteredOutItems: Array<{ Type: string; Name: string }> = [];
-  let remainingCount = 0;
-
-  for (const metadataType of Object.keys(deltaContent)) {
-    const orgMembers = new Set<string>(orgContent[metadataType] || []);
-    for (const member of deltaContent[metadataType]) {
-      if (orgMembers.has(member)) {
-        if (!filteredContent[metadataType]) {
-          filteredContent[metadataType] = [];
-        }
-        filteredContent[metadataType].push(member);
-        remainingCount++;
-      } else {
-        filteredOutItems.push({ Type: metadataType, Name: member });
-      }
-    }
-  }
-
-  // Display filtered-out items
-  if (filteredOutItems.length > 0) {
-    uxLog('log', commandThis, c.grey(t('backpromoteFilteredOutItems', { count: filteredOutItems.length })));
-    await uxLogTableWithReport(commandThis, filteredOutItems, ['Type', 'Name'], {
-      fileNamePrefix: 'backpromote-filtered-out-items',
-      fileTitle: 'Backpromote filtered out items',
-    });
-  }
-  uxLog('log', commandThis, c.grey(t('backpromoteFilteredRemainingItems', { count: remainingCount })));
-
-  if (Object.keys(filteredContent).length === 0) {
-    return null;
-  }
-
-  await writePackageXmlFile(outputPackageXml, filteredContent);
-  return outputPackageXml;
-}
-
-// ---- Helper: format date ----
-
-// Build markdown diff output showing only a few context lines around each change
-function buildDiffMarkdown(diffResult: Diff.Change[], contextLines: number): string {
-  // Flatten all parts into tagged lines
-  const taggedLines: Array<{ tag: '+' | '-' | ' '; text: string }> = [];
-  for (const part of diffResult) {
-    const lines = part.value.replace(/\n$/, '').split('\n');
-    const tag = part.added ? '+' : part.removed ? '-' : ' ';
-    for (const line of lines) {
-      taggedLines.push({ tag: tag as '+' | '-' | ' ', text: line });
-    }
-  }
-
-  // Determine which lines to show: changed lines + contextLines before/after
-  const showLine = new Array(taggedLines.length).fill(false);
-  for (let i = 0; i < taggedLines.length; i++) {
-    if (taggedLines[i].tag !== ' ') {
-      const from = Math.max(0, i - contextLines);
-      const to = Math.min(taggedLines.length - 1, i + contextLines);
-      for (let j = from; j <= to; j++) {
-        showLine[j] = true;
-      }
-    }
-  }
-
-  // Build output with "..." separators between non-contiguous shown regions
-  let md = '```diff\n';
-  let lastShownIndex = -2;
-  for (let i = 0; i < taggedLines.length; i++) {
-    if (!showLine[i]) continue;
-    if (lastShownIndex >= 0 && i - lastShownIndex > 1) {
-      md += '  ...\n';
-    }
-    const { tag, text } = taggedLines[i];
-    md += `${tag} ${text}\n`;
-    lastShownIndex = i;
-  }
-  md += '```\n';
-  return md;
-}
-
-// Normalize content for diff comparison: unify line endings, trim trailing whitespace per line
-function normalizeForDiff(content: string): string {
-  return content
-    .replace(/\r\n/g, '\n')   // CRLF -> LF
-    .replace(/\r/g, '\n')     // CR -> LF
-    .split('\n')
-    .map((line) => line.trimEnd()) // Trim trailing whitespace per line
-    .join('\n')
-    .trimEnd() + '\n';        // Ensure single trailing newline
-}
-
-function formatShortDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    return d.toISOString().split('T')[0];
-  } catch {
-    return dateStr;
-  }
-}
-
-function formatDateTime(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    const date = d.toISOString().split('T')[0];
-    const time = d.toISOString().split('T')[1].substring(0, 5);
-    return `${date} ${time}`;
-  } catch {
-    return dateStr;
-  }
+  return outcome;
 }
 /* jscpd:ignore-end */

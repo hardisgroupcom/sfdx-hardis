@@ -1,6 +1,6 @@
 ---
 title: Host your AI-enhanced Salesforce Project Documentation on Cloudflare free tier
-description: Learn how to host your project doc pages on Cloudflare free tier up to 50 users
+description: With sfdx-hardis, learn how to host your project doc pages on Cloudflare free tier up to 50 users
 ---
 <!-- markdownlint-disable MD013 -->
 

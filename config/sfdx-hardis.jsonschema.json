@@ -584,7 +584,7 @@
     "autoCleanTypes": {
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving/publishing a User Story, sfdx-hardis can automatically clean the sources before submitting a Pull Request.\nSelect the cleanings that will be automatically applied on your project.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-cleaning/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-cleaning/",
       "examples": [
         [
           "dashboards",
@@ -720,6 +720,18 @@
       },
       "title": "Labels for available PR/MR target branches",
       "type": "array"
+    },
+    "backpromoteScanLimit": {
+      "$id": "#/properties/backpromoteScanLimit",
+      "description": "Number of merged Pull Requests of the parent branch that sf hardis:work:backpromote reads, newest first, to find the last backpromote of a sandbox in the Backpromotes Pull Request comments. When no row is found within this limit, nothing is pre-selected and the user picks the start Pull Request (or extends the scan with --scan-limit).",
+      "default": 100,
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/backpromote/",
+      "examples": [
+        100,
+        250
+      ],
+      "title": "Backpromote history scan limit",
+      "type": "integer"
     },
     "branchPrefixChoices": {
       "$id": "#/properties/branchPrefixChoices",
@@ -866,34 +878,43 @@
           },
           "type": {
             "$id": "#/properties/commandsPreDeploy/items/properties/type",
-            "description": "Type of the action",
+            "description": "Type of the action: a built-in type, or the id of a custom function declared in customFunctions",
             "title": "Type",
             "type": "string",
-            "enum": [
-              "command",
-              "data",
-              "apex",
-              "schedule-batch",
-              "publish-community",
-              "manual",
-              "remove-packagexml-items"
-            ],
-            "enumNames": [
-              "Command",
-              "Data Import",
-              "Apex Script",
-              "Schedule Batch",
-              "Publish Community",
-              "Manual Action",
-              "Remove package.xml Items"
-            ],
             "examples": [
               "command",
               "data",
               "apex",
               "publish-community",
               "manual",
-              "remove-packagexml-items"
+              "remove-packagexml-items",
+              "notifySlack"
+            ],
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "data",
+                  "apex",
+                  "schedule-batch",
+                  "publish-community",
+                  "manual",
+                  "remove-packagexml-items"
+                ],
+                "enumNames": [
+                  "Command",
+                  "Data Import",
+                  "Apex Script",
+                  "Schedule Batch",
+                  "Publish Community",
+                  "Manual Action",
+                  "Remove package.xml Items"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Id of a custom function declared in the customFunctions property of config/.sfdx-hardis.yml"
+              }
             ]
           },
           "when": {
@@ -1119,32 +1140,41 @@
           },
           "type": {
             "$id": "#/properties/commandsPostDeploy/items/properties/type",
-            "description": "Type of the action",
+            "description": "Type of the action: a built-in type, or the id of a custom function declared in customFunctions",
             "title": "Type",
             "type": "string",
-            "enum": [
-              "command",
-              "data",
-              "apex",
-              "schedule-batch",
-              "publish-community",
-              "manual"
-            ],
-            "enumNames": [
-              "Command",
-              "Data Import",
-              "Apex Script",
-              "Schedule Batch",
-              "Publish Community",
-              "Manual Action"
-            ],
             "examples": [
               "command",
               "data",
               "apex",
               "schedule-batch",
               "publish-community",
-              "manual"
+              "manual",
+              "notifySlack"
+            ],
+            "anyOf": [
+              {
+                "enum": [
+                  "command",
+                  "data",
+                  "apex",
+                  "schedule-batch",
+                  "publish-community",
+                  "manual"
+                ],
+                "enumNames": [
+                  "Command",
+                  "Data Import",
+                  "Apex Script",
+                  "Schedule Batch",
+                  "Publish Community",
+                  "Manual Action"
+                ]
+              },
+              {
+                "type": "string",
+                "description": "Id of a custom function declared in the customFunctions property of config/.sfdx-hardis.yml"
+              }
             ]
           },
           "when": {
@@ -1497,6 +1527,312 @@
       "title": "Custom commands position",
       "type": "string"
     },
+    "customFunctions": {
+      "$id": "#/properties/customFunctions",
+      "title": "Custom functions",
+      "description": "Scripts (node, python or bash) usable as deployment action types. The id of a function is a valid value for the type property of a deployment action. Defined at project level only.",
+      "type": "array",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-custom-functions/",
+      "examples": [
+        [
+          {
+            "id": "notifySlack",
+            "label": "Notify Slack channel",
+            "runtime": "node",
+            "script": "scripts/functions/notify-slack.js",
+            "when": "post-deploy",
+            "inputs": [
+              {
+                "name": "channel",
+                "label": "Channel",
+                "type": "string",
+                "required": true
+              },
+              {
+                "name": "severity",
+                "type": "select",
+                "options": [
+                  "info",
+                  "warning",
+                  "critical"
+                ],
+                "default": "info"
+              },
+              {
+                "name": "webhookToken",
+                "type": "secret",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "name": "messageId",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/customFunctions/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Custom function definition",
+        "required": [
+          "id",
+          "runtime",
+          "script"
+        ],
+        "properties": {
+          "id": {
+            "$id": "#/properties/customFunctions/items/properties/id",
+            "description": "Function id. This is the value to use as the type of a deployment action, so it must not collide with a built-in action type",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "$id": "#/properties/customFunctions/items/properties/label",
+            "description": "Label of the function (what does it do ?)",
+            "title": "Label",
+            "type": "string"
+          },
+          "description": {
+            "$id": "#/properties/customFunctions/items/properties/description",
+            "description": "Longer description displayed in the deployment action editor",
+            "title": "Description",
+            "type": "string"
+          },
+          "runtime": {
+            "$id": "#/properties/customFunctions/items/properties/runtime",
+            "description": "Interpreter used to run the script. node is the interpreter running sfdx-hardis, python tries python3 then python, bash is taken from PATH",
+            "title": "Runtime",
+            "type": "string",
+            "enum": [
+              "node",
+              "python",
+              "bash"
+            ],
+            "enumNames": [
+              "Node.js",
+              "Python",
+              "Bash"
+            ]
+          },
+          "script": {
+            "$id": "#/properties/customFunctions/items/properties/script",
+            "description": "Path to the script file, relative to the repository root",
+            "title": "Script",
+            "type": "string",
+            "examples": [
+              "scripts/functions/notify-slack.js"
+            ]
+          },
+          "timeout": {
+            "$id": "#/properties/customFunctions/items/properties/timeout",
+            "description": "Maximum duration of a run, in seconds. The script is killed and the action fails past it",
+            "title": "Timeout",
+            "type": "number",
+            "default": 600
+          },
+          "when": {
+            "$id": "#/properties/customFunctions/items/properties/when",
+            "description": "Restrict the function to one deployment phase. Unset means it can be used in both",
+            "title": "When",
+            "type": "string",
+            "enum": [
+              "pre-deploy",
+              "post-deploy"
+            ],
+            "enumNames": [
+              "Pre-Deployment",
+              "Post-Deployment"
+            ]
+          },
+          "allowedContexts": {
+            "$id": "#/properties/customFunctions/items/properties/allowedContexts",
+            "description": "Restrict the execution contexts an action using this function may declare. Unset means all of them",
+            "title": "Allowed contexts",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "all",
+                "check-deployment-only",
+                "process-deployment-only"
+              ]
+            }
+          },
+          "defaults": {
+            "$id": "#/properties/customFunctions/items/properties/defaults",
+            "description": "Default action fields applied when an action of this type is created. They can be overridden per action",
+            "title": "Defaults",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "context": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/context",
+                "description": "Default execution context of an action using this function",
+                "title": "Context",
+                "type": "string",
+                "enum": [
+                  "all",
+                  "check-deployment-only",
+                  "process-deployment-only"
+                ]
+              },
+              "allowFailure": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/allowFailure",
+                "description": "Default allowFailure of an action using this function",
+                "title": "Allow failure",
+                "type": "boolean"
+              },
+              "runOnlyOnceByOrg": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/runOnlyOnceByOrg",
+                "description": "Default runOnlyOnceByOrg of an action using this function",
+                "title": "Run only once by org",
+                "type": "boolean"
+              },
+              "includeTargetBranches": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/includeTargetBranches",
+                "description": "Default includeTargetBranches of an action using this function",
+                "title": "Include target branches",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludeTargetBranches": {
+                "$id": "#/properties/customFunctions/items/properties/defaults/properties/excludeTargetBranches",
+                "description": "Default excludeTargetBranches of an action using this function",
+                "title": "Exclude target branches",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "inputs": {
+            "$id": "#/properties/customFunctions/items/properties/inputs",
+            "description": "Parameters an action using this function provides. Each one reaches the script as SFDX_HARDIS_IN_<NAME>",
+            "title": "Inputs",
+            "type": "array",
+            "items": {
+              "$id": "#/properties/customFunctions/items/properties/inputs/items",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/name",
+                  "description": "Input name. Passed to the script as the SFDX_HARDIS_IN_<NAME> environment variable (uppercased)",
+                  "title": "Name",
+                  "type": "string"
+                },
+                "label": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/label",
+                  "description": "Label displayed in the deployment action editor",
+                  "title": "Label",
+                  "type": "string"
+                },
+                "description": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/description",
+                  "description": "Help text displayed under the field",
+                  "title": "Description",
+                  "type": "string"
+                },
+                "type": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/type",
+                  "description": "Input type. A secret input stores the NAME of a CI/CD variable, never its value: sfdx-hardis reads the variable from the environment when the action runs, and masks it in logs and comments",
+                  "title": "Type",
+                  "type": "string",
+                  "default": "string",
+                  "enum": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "select",
+                    "multiline",
+                    "secret"
+                  ],
+                  "enumNames": [
+                    "Text",
+                    "Number",
+                    "Checkbox",
+                    "Picklist",
+                    "Long text",
+                    "Secret (CI/CD variable name)"
+                  ]
+                },
+                "required": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/required",
+                  "description": "When true, an action using this function must provide a value",
+                  "title": "Required",
+                  "type": "boolean",
+                  "default": false
+                },
+                "default": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/default",
+                  "description": "Value used when an action does not provide one",
+                  "title": "Default value"
+                },
+                "options": {
+                  "$id": "#/properties/customFunctions/items/properties/inputs/items/properties/options",
+                  "description": "Allowed values, for inputs of type select",
+                  "title": "Options",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "outputs": {
+            "$id": "#/properties/customFunctions/items/properties/outputs",
+            "description": "Values the script returns as a JSON object on the last line of its stdout. They are displayed in reports and can be consumed by later actions",
+            "title": "Outputs",
+            "type": "array",
+            "items": {
+              "$id": "#/properties/customFunctions/items/properties/outputs/items",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/name",
+                  "description": "Output name. The script must return it in the JSON object of its last stdout line, and later actions read it with ${{ actions.<actionId>.outputs.<name> }}",
+                  "title": "Name",
+                  "type": "string"
+                },
+                "label": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/label",
+                  "description": "Label displayed in reports",
+                  "title": "Label",
+                  "type": "string"
+                },
+                "description": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/description",
+                  "description": "What the output contains",
+                  "title": "Description",
+                  "type": "string"
+                },
+                "type": {
+                  "$id": "#/properties/customFunctions/items/properties/outputs/items/properties/type",
+                  "description": "Free-form type hint",
+                  "title": "Type",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "customOrgColors": {
       "$id": "#/properties/customOrgColors",
       "additionalProperties": true,
@@ -1714,6 +2050,57 @@
       "title": "Apex Test Classes to run during deployments (NOT RECOMMENDED) (Beta)",
       "type": "array"
     },
+    "deploymentBranch": {
+      "$id": "#/properties/deploymentBranch",
+      "description": "In a monitoring repository, the branch of the deployment repository (deploymentRepository) that deploys to the monitored org. Optional: without it, coding agents find the branch whose config/branches/.sfdx-hardis.<branch>.yml has the same instanceUrl as the monitored org.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent",
+      "examples": [
+        "main",
+        "preprod"
+      ],
+      "title": "Deployment branch",
+      "type": "string"
+    },
+    "deploymentRepository": {
+      "$id": "#/properties/deploymentRepository",
+      "description": "In a monitoring repository, the address of the sfdx-hardis CI/CD repository that deploys to the monitored org, the mirror of monitoringRepository. The AGENTS.md file written by the monitoring backup tells coding agents to search it, and the pipelines of both repositories, and the Org Monitoring panel of VS Code offers to open it.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent",
+      "examples": [
+        "https://github.com/my-company/my-project"
+      ],
+      "title": "Deployment repository",
+      "type": "string"
+    },
+    "grafanaLokiDatasourceUid": {
+      "$id": "#/properties/grafanaLokiDatasourceUid",
+      "description": "Uid of the Loki datasource of the Grafana instance (grafanaUrl) that receives the sfdx-hardis logs. Optional: coding agents and hardis:org:configure:grafana-dashboards detect it when it is not set. Found in Connections -> Data sources, in the URL of the datasource page.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/",
+      "examples": [
+        "grafanacloud-logs"
+      ],
+      "title": "Grafana Loki datasource uid",
+      "type": "string"
+    },
+    "grafanaPrometheusDatasourceUid": {
+      "$id": "#/properties/grafanaPrometheusDatasourceUid",
+      "description": "Uid of the Prometheus datasource of the Grafana instance (grafanaUrl) that receives the sfdx-hardis metrics. Optional: coding agents and hardis:org:configure:grafana-dashboards detect it when it is not set. Found in Connections -> Data sources, in the URL of the datasource page.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/",
+      "examples": [
+        "grafanacloud-prom"
+      ],
+      "title": "Grafana Prometheus datasource uid",
+      "type": "string"
+    },
+    "grafanaUrl": {
+      "$id": "#/properties/grafanaUrl",
+      "description": "URL of the Grafana instance that receives the sfdx-hardis monitoring logs and metrics (NOTIF_API_URL, NOTIF_API_METRICS_URL). The AGENTS.md file of a monitoring repository tells coding agents to query it, and hardis:org:configure:grafana-dashboards uses it when --grafana-url and GRAFANA_API_URL are not set. Never put the token here: it goes in the GRAFANA_API_TOKEN environment variable, or in a .env file that git ignores.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/",
+      "examples": [
+        "https://mycompany.grafana.net"
+      ],
+      "title": "Grafana URL",
+      "type": "string"
+    },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
       "default": "integration",
@@ -1871,7 +2258,7 @@
       "$id": "#/properties/disableDeploymentActions",
       "default": false,
       "description": "Disable the deployment actions feature: commandsPreDeploy and commandsPostDeploy from the branch config and from Pull Requests are not collected nor run, and no Pull Request scope is computed. Use it when the git provider API cannot handle the Pull Request history processing (very large repositories). Can also be set with the SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env variable.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#disable-deployment-actions",
       "examples": [
         true
       ],
@@ -1919,6 +2306,83 @@
       "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
       "type": "boolean"
     },
+    "allowedPromotionSteps": {
+      "$id": "#/properties/allowedPromotionSteps",
+      "description": "Beta feature. Required as soon as enablePromotionBranches is true.\nSource and target branches a release manager is allowed to assemble a promotion between (ex: only from uat to preprod).\nEvery other step is left out of the prompts of sf hardis:project:promotion:create and of the DevOps Pipeline, and naming one anyway fails the command.\nLeave an entry without a target to allow every merge target of that source branch.\nWhile the list is missing, sf hardis:project:promotion:create stops and asks for it: no promotion can be assembled before the project says between which branches.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/",
+      "examples": [
+        [
+          {
+            "source": "uat",
+            "target": "preprod"
+          },
+          {
+            "source": "preprod",
+            "target": "main"
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/allowedPromotionSteps/items",
+        "additionalProperties": false,
+        "description": "One authorized promotion step, from a major branch to another one",
+        "properties": {
+          "source": {
+            "$id": "#/properties/allowedPromotionSteps/items/properties/source",
+            "description": "Major branch holding the approved User Stories (ex: uat)",
+            "examples": [
+              "uat"
+            ],
+            "title": "Source branch",
+            "type": "string"
+          },
+          "target": {
+            "$id": "#/properties/allowedPromotionSteps/items/properties/target",
+            "description": "Major branch the promotion goes to (ex: preprod). Leave empty to allow every merge target of the source branch",
+            "examples": [
+              "preprod"
+            ],
+            "title": "Target branch",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "Allowed promotion step",
+        "type": "object"
+      },
+      "title": "Allowed promotion steps (Beta)",
+      "type": "array"
+    },
+    "enablePromotionBranches": {
+      "$id": "#/properties/enablePromotionBranches",
+      "description": "Beta feature. Enable promotion branches: a branch named promotion/<source branch>/<target branch>/<YYYY-MM-DD>-<HHMM> (ex: promotion/uat/preprod/2026-09-06-1430) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable promotion branches (Beta)",
+      "type": "boolean"
+    },
+    "promotionConflictMarkersIgnoredFiles": {
+      "$id": "#/properties/promotionConflictMarkersIgnoredFiles",
+      "description": "Beta feature. The deployment check of a promotion Pull Request fails while any tracked file of the branch still holds git conflict markers (lines starting with <<<<<<< or >>>>>>>).\nList here, as git glob patterns relative to the repository root, the files that hold such lines on purpose (ex: documentation about merge conflicts, merge driver fixtures), so they do not block every promotion.\n'*' does not cross a '/', use '**' for any depth.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/",
+      "examples": [
+        [
+          "labs/**/*.md",
+          "docs/merge-conflicts.md"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Files allowed to hold conflict markers (Beta)",
+      "type": "array"
+    },
     "enableDeploymentApexTestClasses": {
       "$id": "#/properties/enableDeploymentApexTestClasses",
       "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",
@@ -1965,11 +2429,28 @@
     },
     "genericTicketingProviderUrlBuilder": {
       "$id": "#/properties/genericTicketingProviderUrlBuilder",
-      "description": "URL pattern to build ticket URLs from ticket IDs. Use {ticketId} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{ticketId}",
+      "description": "URL pattern to build ticket URLs from ticket IDs. Use {REF} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{REF}",
       "examples": [
-        "https://tickets.mycompany.com/ticket/{ticketId}"
+        "https://tickets.mycompany.com/ticket/{REF}"
       ],
       "title": "Generic Ticketing Provider URL Builder",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "GENERIC"
+        }
+      ]
+    },
+    "genericTicketingProviderDetailsUrlBuilder": {
+      "$id": "#/properties/genericTicketingProviderDetailsUrlBuilder",
+      "description": "Optional. URL pattern of a JSON document describing a ticket, with {REF} as placeholder for the ticket ID. The JSON gives the ticket title in subject (or title, or summary) and optionally its status in status. When set, Pull Request comments, release notes and notifications show the title and the status next to each ticket link. Send a token with the GENERIC_TICKETING_PROVIDER_TOKEN variable when the URL requires one.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/",
+      "examples": [
+        "https://tickets.mycompany.com/api/ticket/{REF}.json"
+      ],
+      "title": "Generic Ticketing Provider Details URL Builder",
       "type": "string",
       "visible-conditions": [
         {
@@ -2145,7 +2626,7 @@
       "$id": "#/properties/installPackagesDuringCheckDeploy",
       "default": false,
       "description": "If your configuration contains an installedPackages property, activating this option allows you to make sfdx-hardis automatically install packages during the Deployments Check workflow, and not to wait after the merge of the Pull Request.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/",
       "examples": [
         true
       ],
@@ -2239,7 +2720,7 @@
       "$id": "#/properties/manualActionsMode",
       "default": "externalFile",
       "description": "Defines how manual actions are managed for deployments.\n- **externalFile** (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl, and hardis:work:save reminds you to update it at the end of a run.\n- **sfdxHardis**: Manual actions are managed directly within sfdx-hardis, as deployment actions of type `manual`. They are listed in the Pull Request comments, where they can be ticked off once performed, and no external file is required.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-deploy/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/",
       "enum": [
         "externalFile",
         "sfdxHardis"
@@ -2747,7 +3228,7 @@
     },
     "monitoringDisable": {
       "$id": "#/properties/monitoringDisable",
-      "description": "List of commands to skip during monitoring jobs",
+      "description": "List of commands to skip during monitoring jobs. The MONITORING_DISABLE env variable (comma-separated keys, for example AUDIT_TRAIL,LICENSES) has priority over it.",
       "examples": [
         [
           "METADATA_STATUS",
@@ -2794,7 +3275,10 @@
       "$id": "#/properties/monitoringMfaLoginHistoryLookbackDays",
       "default": 30,
       "description": "Number of days back the hardis:org:diagnose:mfa command scans LoginHistory for non-MFA direct UI logins.",
-      "examples": [30, 60],
+      "examples": [
+        30,
+        60
+      ],
       "title": "MFA diagnose - LoginHistory lookback (days)",
       "type": "number"
     },
@@ -2802,9 +3286,23 @@
       "$id": "#/properties/monitoringMfaPhishingResistantLookbackDays",
       "default": 180,
       "description": "Number of days back the hardis:org:diagnose:mfa command scans VerificationHistory for phishing-resistant MFA registration / usage per privileged user. The Salesforce July 1 2026 enforcement requires Sys Admin / ModifyAllData / ViewAllData / CustomizeApplication / AuthorApex users to have a security key (U2F / WebAuthn / built-in authenticator) registered.",
-      "examples": [90, 180, 365],
+      "examples": [
+        90,
+        180,
+        365
+      ],
       "title": "MFA diagnose - VerificationHistory lookback (days)",
       "type": "number"
+    },
+    "monitoringRepository": {
+      "$id": "#/properties/monitoringRepository",
+      "description": "In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project. Its mirror in the monitoring repository is deploymentRepository.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+      "examples": [
+        "https://github.com/my-company/my-project-monitoring"
+      ],
+      "title": "Monitoring repository",
+      "type": "string"
     },
     "monitoringUnsecureConnectedAppsIgnore": {
       "$id": "#/properties/monitoringUnsecureConnectedAppsIgnore",
@@ -2834,7 +3332,7 @@
     "newTaskNameRegex": {
       "$id": "#/properties/newTaskNameRegex",
       "default": "",
-      "description": "If you define a regular expression, it will be used to validate the name of new User Stories.\nFor example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'",
+      "description": "If you define a regular expression, it will be used to validate the name of new User Stories.\nFor example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'\nThe regex is tested against the User Story name as typed by the user, so it can require spaces. Once the name is validated, spaces and special characters are replaced by '-' to build the git branch name.",
       "examples": [
         "^[A-Z]+-[0-9]+ .*",
         "^CLOUDITY-[0-9]+ .*",
@@ -2879,7 +3377,7 @@
       "$id": "#/properties/orgAuthenticationMode",
       "default": "encryptedCert",
       "description": "Defines how the CI/CD pipeline authenticates to Salesforce orgs.\n- **encryptedCert** (default): Authentication uses encrypted certificate key files committed to the repository. The pipeline view will warn if a key file is missing for a branch.\n- **secretsOnly**: Authentication relies solely on CI/CD secrets variables (e.g. SFDX_HARDIS_CERT_<ORG>). No key file is required, and the pipeline view will not warn about missing certificate files.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/",
       "enum": [
         "encryptedCert",
         "secretsOnly"
@@ -3186,10 +3684,18 @@
       "title": "Skip update .gitignore file",
       "type": "boolean"
     },
+    "offerSandboxInit": {
+      "$id": "#/properties/offerSandboxInit",
+      "default": false,
+      "description": "Set to true to have New User Story (hardis:work:new) offer to initialize the selected dev sandbox: install the installed packages, assign initPermissionSets, run scratchOrgInitApexScripts and load scripts/data/ScratchInit.\nIt never deploys metadata: bring what the team merged into a sandbox with a backpromote.\nIgnored when sharedDevSandboxes is true.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-create-new-user-story/",
+      "title": "Offer to initialize the sandbox on New User Story",
+      "type": "boolean"
+    },
     "sharedDevSandboxes": {
       "$id": "#/properties/sharedDevSandboxes",
       "default": false,
-      "description": "Set to true if contributors can share dev sandboxes\nIf active, contributors will never be asked to refresh their sandbox metadata, to avoid to overwrite by accident their colleagues work :)",
+      "description": "Set to true if contributors can share dev sandboxes\nIf active, contributors are never offered to initialize their sandbox on New User Story, to avoid overwriting their colleagues work by accident",
       "title": "Contributors can share Dev Sandboxes",
       "type": "boolean"
     },
@@ -3245,7 +3751,7 @@
       "$id": "#/properties/serviceNowAddDeploymentTag",
       "default": false,
       "description": "Add a tag on ServiceNow records when they are deployed in a major org. A ServiceNow tag is a record of the global label table, created on first use: keep it disabled unless the CI user is allowed to write there.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "title": "ServiceNow Add Deployment Tag",
       "type": "boolean",
       "visible-conditions": [
@@ -3260,7 +3766,7 @@
       "$id": "#/properties/serviceNowCommentField",
       "default": "work_notes",
       "description": "Journal field the deployment comment is written into. work_notes is the internal journal, comments is read by the person who opened the record.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "work_notes",
         "comments"
@@ -3278,7 +3784,7 @@
     "serviceNowTablePrefixes": {
       "$id": "#/properties/serviceNowTablePrefixes",
       "description": "Additional record number prefixes, and the ServiceNow table each one belongs to, as PREFIX:table,PREFIX:table. Use it to reach the tables of a scoped application.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "STRY:x_acme_story",
         "STRY:x_acme_story,DEFECT:x_acme_defect"
@@ -3296,7 +3802,7 @@
     "serviceNowTicketRegex": {
       "$id": "#/properties/serviceNowTicketRegex",
       "description": "Regular expression to identify ServiceNow record numbers in commits, branch names and Pull Request descriptions. The first capturing group must be the whole record number. Example: (INC[0-9]{7})",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "(INC[0-9]{7})",
         "((?:INC|CHG|RITM)[0-9]{4,})"
@@ -3337,7 +3843,7 @@
       "$id": "#/properties/useDeltaDeployment",
       "default": false,
       "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches.\nWhen active, Delta Deployments allow to deploy only the metadatas in the branch / User Story, and not the full sources of the SFDX project.\nNote: Even if activated, Delta Deployments will be applied only for Pull Requests from minor (features,hotfixes) to major branches (integration,preprod).",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-delta-deployment/#delta-mode",
       "title": "Use Delta Deployment",
       "type": "boolean"
     },
@@ -3345,7 +3851,7 @@
       "$id": "#/properties/useDeltaDeploymentWithDependencies",
       "default": false,
       "description": "Also deploy dependencies of the metadatas identified by delta deployment, to avoid broken deployments due to missing dependencies.\n Example: removed picklist value in a field, that is still used in a record type.",
-      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-delta-deployment/#delta-with-dependencies-beta",
       "title": "Use Delta Deployment with dependencies (beta)",
       "type": "boolean"
     },

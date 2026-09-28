@@ -308,6 +308,53 @@ describe('createWorkBranchFromTarget()', () => {
     expect(await headHash(workDir)).to.equal(remoteTip);
   });
 
+  // A promotion branch is assembled from its target branch, never resumed: the counter of
+  // hardis:project:promotion:create believing a name is free when a branch or a stale
+  // remote-tracking ref still holds it must stop the command, not build on top of that branch.
+  it('refuses an existing local branch with refuseExisting, and says how to free the name', async () => {
+    const base = await makeSandbox('refuse-local');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.checkout(['-b', 'promotion/uat/preprod/2026-09-06-1', 'main']);
+    await commitFile(workDir, 'promoted.txt', 'already merged\n', 'feat: story A');
+    await g.checkout('main');
+    process.chdir(workDir);
+
+    let err: Error | undefined;
+    try {
+      await createWorkBranchFromTarget('promotion/uat/preprod/2026-09-06-1', 'main', { refuseExisting: true });
+    } catch (e) {
+      err = e as Error;
+    }
+    expect(err, 'expected createWorkBranchFromTarget to throw').to.be.instanceOf(Error);
+    expect(err!.message).to.contain('promotion/uat/preprod/2026-09-06-1');
+    expect(err!.message).to.contain('git branch -D');
+    // The branch was not checked out, so nothing was assembled on top of it
+    expect(await currentBranch(workDir)).to.equal('main');
+  });
+
+  it('refuses a stale remote-tracking ref with refuseExisting', async () => {
+    const base = await makeSandbox('refuse-remote');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.checkout(['-b', 'promotion/uat/preprod/2026-09-06-1', 'main']);
+    await commitFile(workDir, 'promoted.txt', 'already merged\n', 'feat: story A');
+    await g.raw(['push', 'origin', 'promotion/uat/preprod/2026-09-06-1']);
+    await g.checkout('main');
+    // What a merged promotion looks like once its branch is deleted on the remote and the local
+    // branch is gone, before anybody pruned: only the remote-tracking ref is left
+    await g.raw(['branch', '-D', 'promotion/uat/preprod/2026-09-06-1']);
+    process.chdir(workDir);
+
+    let err: Error | undefined;
+    try {
+      await createWorkBranchFromTarget('promotion/uat/preprod/2026-09-06-1', 'main', { refuseExisting: true });
+    } catch (e) {
+      err = e as Error;
+    }
+    expect(err, 'expected createWorkBranchFromTarget to throw').to.be.instanceOf(Error);
+    expect(err!.message).to.contain('git fetch --prune');
+    expect(await currentBranch(workDir)).to.equal('main');
+  });
+
   it('falls back to the local target ref when origin has no matching branch', async () => {
     const base = await makeSandbox('fallback-local');
     const { workDir, mainTip } = await setupWithEmptyOrigin(base);

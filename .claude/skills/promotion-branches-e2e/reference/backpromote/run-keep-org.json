@@ -1,0 +1,13 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "result": {
+    "deployed": 0,
+    "excludedReasons": {
+      "StaticResource:E2E_S3": "keptOrg"
+    },
+    "commentedPullRequests": [
+      "{{S6}}"
+    ]
+  }
+}

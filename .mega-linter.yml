@@ -70,6 +70,10 @@ SPELL_LYCHEE_ARGUMENTS:
   - "429"
 SPELL_LYCHEE_UNSECURED_ENV_VARIABLES:
   - GITHUB_TOKEN
+# Skills vendored from grafana/skills and oxsecurity/megalinter (see skills-lock.json).
+# Their content is refreshed with `npx skills update`, so their links are upstream's
+# to fix: loki/SKILL.md points at references/*.md that upstream does not ship at all.
+SPELL_LYCHEE_FILTER_REGEX_EXCLUDE: "\\.claude/skills/(alerting-irm|dashboarding|loki|megalinter(-check|-fix|-setup)?|promql)/"
 SPELL_FILTER_REGEX_EXCLUDE: "Dockerfile(-.+)?"
 
 REPORTERS_MARKDOWN_SUMMARY_TYPE: table-sections

@@ -64,6 +64,22 @@ describe('xmlUtils XML engine characterization', () => {
     });
   }
 
+  it('keeps the final line break of the file it rewrites, and adds none to a new file', async () => {
+    const tmpDir = await makeTmpDir();
+    try {
+      const parsed = await parseXmlFile(path.join(fixturesDir, 'profile-sample.xml'));
+      const withBreak = path.join(tmpDir, 'with-break.xml');
+      await fs.writeFile(withBreak, '<?xml version="1.0" encoding="UTF-8"?>\n<Profile/>\n');
+      await writeXmlFile(withBreak, parsed);
+      expect((await fs.readFile(withBreak, 'utf8')).endsWith('</Profile>\n')).to.equal(true);
+      const created = path.join(tmpDir, 'created.xml');
+      await writeXmlFile(created, parsed);
+      expect((await fs.readFile(created, 'utf8')).endsWith('</Profile>')).to.equal(true);
+    } finally {
+      await fs.remove(tmpDir);
+    }
+  });
+
   it('parses empty leafs as [""] and attributed nil elements as [{ $: ... }]', async () => {
     const labels = await parseXmlFile(path.join(fixturesDir, 'custom-labels-sample.xml'));
     expect(labels.CustomLabels.labels[1].shortDescription).to.deep.equal(['']);

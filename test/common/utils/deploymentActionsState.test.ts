@@ -258,6 +258,40 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(state.entriesByPr.get(483)[0].status).to.equal('success');
     });
 
+    // Seen on the Bitbucket end to end run: a manual action of a story still waiting to be
+    // performed in uat. Any later job whose scope holds that Pull Request skips the action as
+    // "already run in this org", which used to overwrite the manual entry with a skip. The action
+    // then disappeared from the "Pending manual actions" list, so the release manager had no
+    // checkbox left to tick and the org branch showed a skip for a step nobody had performed.
+    it('keeps a manual action waiting when a later job skips it', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'manual', jobId: '111', date: '2026-09-07T21:01:00.000Z' }), 483);
+      upsertActionInState(entry({ status: 'skipped', jobId: '222', date: '2026-09-07T21:57:00.000Z' }), 483);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      const kept = state.entriesByPr.get(483).find((e: DeploymentActionStateEntry) => e.actionId === 'action-1');
+      expect(kept.status).to.equal('manual');
+      expect(kept.jobId).to.equal('111');
+    });
+
+    it('keeps a failure when a later job skips the same action', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'failed', jobId: '111' }), 483);
+      upsertActionInState(entry({ status: 'skipped', jobId: '222' }), 483);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      expect(state.entriesByPr.get(483)[0].status).to.equal('failed');
+    });
+
+    it('still lets a manual action become a success once it is ticked', () => {
+      delete (globalThis as any)._deploymentActionsMultiPrState;
+      upsertActionInState(entry({ status: 'manual', jobId: '111' }), 483);
+      upsertActionInState(entry({ status: 'success', jobId: '222' }), 483);
+
+      const state = (globalThis as any)._deploymentActionsMultiPrState;
+      expect(state.entriesByPr.get(483)[0].status).to.equal('success');
+    });
+
     it('records a skip normally when the action has no entry yet for the org', () => {
       delete (globalThis as any)._deploymentActionsMultiPrState;
       upsertActionInState(entry({ status: 'skipped', orgBranch: 'uat' }), 483);
@@ -416,5 +450,62 @@ describe('Manual action checkboxes', () => {
     const untickedBody = `- [ ] ${spacedMarker} Enable feature X\n`;
     const res = checkManualActionCheckboxInBody(untickedBody, spacedId, 'uat');
     expect(res.changed).to.be.true;
+  });
+});
+
+/**
+ * The whole state round-trips through the markdown of the Pull Request comment, so outputs that
+ * are not serialized there are lost between two jobs. Without this, a runOnlyOnceByOrg action
+ * would replay nothing and every later deployment would break the actions consuming its outputs.
+ */
+describe('Deployment Actions state comment - custom function outputs', () => {
+  it('round-trips the outputs of an action through build and parse', () => {
+    const entries = [entry({ outputs: { accountId: '001xx000003DHPl', count: 3 } })];
+    const parsed = parseDeploymentActionsCommentBody(
+      buildDeploymentActionsCommentBody(entries, undefined, 42)
+    );
+    expect(parsed).to.have.length(1);
+    expect(parsed[0].outputs).to.deep.equal({ accountId: '001xx000003DHPl', count: 3 });
+  });
+
+  it('keeps the other cell values readable next to the outputs marker', () => {
+    const entries = [entry({ outputs: { accountId: '001' } })];
+    const parsed = parseDeploymentActionsCommentBody(
+      buildDeploymentActionsCommentBody(entries, undefined, 42)
+    );
+    expect(parsed[0].status).to.equal('success');
+    expect(parsed[0].date).to.equal('2026-08-14');
+    expect(parsed[0].jobId).to.equal('1234');
+    expect(parsed[0].jobUrl).to.equal('https://ci.example.com/1234');
+  });
+
+  it('hides the marker from the rendered comment', () => {
+    const body = buildDeploymentActionsCommentBody([entry({ outputs: { a: 'b' } })], undefined, 42);
+    // An HTML comment renders as nothing, and must not break the markdown table
+    expect(body).to.match(/<!-- outputs:[A-Za-z0-9+/=]+ -->/);
+    expect(body.split('\n').filter((line) => line.includes('outputs:'))).to.have.length(1);
+  });
+
+  it('writes no marker when the action returned no output', () => {
+    const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
+    expect(body).to.not.match(/outputs:/);
+    expect(parseDeploymentActionsCommentBody(body)[0].outputs).to.equal(undefined);
+  });
+
+  it('drops outputs too large to belong in a Pull Request comment', () => {
+    const body = buildDeploymentActionsCommentBody(
+      [entry({ outputs: { blob: 'x'.repeat(5000) } })],
+      undefined,
+      42
+    );
+    expect(body).to.not.match(/outputs:/);
+  });
+
+  it('survives a value containing the characters that would break the table', () => {
+    const outputs = { tricky: 'a | b\nc --> d "e"' };
+    const parsed = parseDeploymentActionsCommentBody(
+      buildDeploymentActionsCommentBody([entry({ outputs })], undefined, 42)
+    );
+    expect(parsed[0].outputs).to.deep.equal(outputs);
   });
 });

@@ -16,6 +16,8 @@ import {
   getGitRepoUrl,
   git,
   gitFetch,
+  isAgentMode,
+  isCI,
   uxLog,
 } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
@@ -147,6 +149,21 @@ export async function selectTargetBranch(options: { message?: string } = {}) {
   if (availableTargetBranches === null && config.developmentBranch) {
     uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(config.developmentBranch) })));
     return config.developmentBranch;
+  }
+
+  // A project that declares a single target branch is not asking a question:
+  // it is stating a fact. Same when nobody can answer, in CI or in agent mode.
+  if (availableTargetBranches && availableTargetBranches.length === 1) {
+    const onlyBranch = availableTargetBranches[0].split(',')[0];
+    uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(onlyBranch) })));
+    return onlyBranch;
+  }
+  if ((isCI || isAgentMode()) && availableTargetBranches) {
+    const defaultBranch = config.developmentBranch && availableTargetBranches.some((branch) => branch.split(',')[0] === config.developmentBranch)
+      ? config.developmentBranch
+      : availableTargetBranches[0].split(',')[0];
+    uxLog("action", this, c.cyan(t('automaticallySelectedTargetBranchIs', { config: c.green(defaultBranch) })));
+    return defaultBranch;
   }
 
   // Request info to build branch name. ex features/config/MYTASK
@@ -343,7 +360,7 @@ export async function computeCommitsSummary(checkOnly, pullRequestInfo: CommonPu
   // LEGACY: free-text "MANUAL ACTION:" markers typed in commit messages / Pull Request bodies.
   // Superseded by deployment actions of type "manual" (commandsPreDeploy / commandsPostDeploy),
   // which carry an id, a phase, instructions and a tracked per-org status.
-  // See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/
+  // See https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/
   // Kept for projects that still rely on it; notifications nudge users towards deployment actions.
   const manualActions: any[] = [];
   const tickets: Ticket[] = [];

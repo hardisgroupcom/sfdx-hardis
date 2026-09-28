@@ -1,6 +1,6 @@
 ---
 title: Org and Instance Upgrade Info (Salesforce monitoring)
-description: Schedule weekly checks of org details, Salesforce instance status, and next major upgrade date
+description: With sfdx-hardis, schedule weekly checks of org details, Salesforce instance status, and next major upgrade date
 ---
 <!-- markdownlint-disable MD013 -->
 

@@ -1,6 +1,6 @@
 ---
 title: Work with Cloudity
-description: See how Cloudity can help you as a Salesforce Consulting Partner
+description: With sfdx-hardis, see how Cloudity can help you as a Salesforce Consulting Partner
 ---
 
 ## Your Expert Salesforce Partner

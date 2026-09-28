@@ -1469,7 +1469,8 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
     const reportDir = await getReportDirectory();
     const fileNameParts: string[] = [fileNamePrefix];
     if (withBranchName) {
-      fileNameParts.push(!isGitRepo() ? 'no-git' : process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || 'branch-not-found');
+      // No slash left in the file name part, whatever the number of slashes of the branch name
+      fileNameParts.push((!isGitRepo() ? 'no-git' : process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || 'branch-not-found').replace(/[\\/]/g, '__'));
     }
     if (withDate) {
       fileNameParts.push(new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0]);

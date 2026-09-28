@@ -1,7 +1,6 @@
 ---
 name: test
 description: Build, lint, and run tests to verify the implementation. Fourth step of the contribution workflow, use after /implement.
-disable-model-invocation: true
 allowed-tools: Read Glob Grep Write Edit Bash
 argument-hint: "[additional context]"
 model: sonnet
@@ -22,7 +21,8 @@ Verify the implementation by building, linting, and running tests.
    ```bash
    ./bin/dev.js hardis:<category>:<action> [flags]
    ```
-5. **Report results**: Summarize what passed and what failed.
+5. **Test the extension**: If vscode-sfdx-hardis was changed, run its checks from its folder as its `test` skill describes: `yarn lint`, `yarn dev`, `yarn compile`, `yarn test`, and `yarn test:ui` when panels, tree views or command launching changed (build order matters).
+6. **Report results**: Summarize what passed and what failed, for each repository.
 
 ## Common Issues
 

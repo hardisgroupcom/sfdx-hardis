@@ -66,10 +66,16 @@ markdown_extensions:
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
-  - javascripts/gtag.js
 extra_css:
   - stylesheets/extra.css
 extra:
+  # Google Analytics. Uncomment and put your own measurement id in it, and the
+  # theme sends the page view of the page a reader lands on plus one per instant
+  # navigation. Leave it out and no request is made at all.
+  #
+  # analytics:
+  #   provider: google
+  #   property: G-XXXXXXXXXX
   social:
     - icon: fontawesome/regular/circle-question
       link: https://github.com/hardisgroupcom/sfdx-hardis/issues

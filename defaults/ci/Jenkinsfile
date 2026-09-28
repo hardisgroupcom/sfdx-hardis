@@ -23,7 +23,7 @@
 //    The main agent uses ghcr.io/hardisgroupcom/sfdx-hardis:latest.
 //    MegaLinter runs via `docker run` inside that agent (Docker socket must be mounted).
 //
-// Doc & support: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/
+// Doc & support: https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-jenkins/
 
 // MANUAL: List every branch that triggers a real deployment to a Salesforce org
 def DEPLOYMENT_BRANCHES = [

@@ -50,7 +50,7 @@ matchCondition = "AND"
 paths = ['''test/common/utils/filesUtils\.test\.ts''']
 regexes = ['''(API Name,)?Length/Precision''']
 
-# docs/salesforce-ci-cd-setup-auth.md (~line 90):
+# docs/salesforce-devops-setup-auth.md (~line 90):
 # Documentation listing the supported PEM private-key HEADER formats
 # ("-----BEGIN PRIVATE KEY-----" / "-----BEGIN RSA PRIVATE KEY-----") so users
 # know which formats sfdx-hardis accepts. These are format labels with no key
@@ -58,17 +58,17 @@ regexes = ['''(API Name,)?Length/Precision''']
 [[allowlists]]
 description = "PEM private-key format labels in CI/CD auth setup docs"
 matchCondition = "AND"
-paths = ['''docs/salesforce-ci-cd-setup-auth\.md''']
+paths = ['''docs/salesforce-devops-setup-auth\.md''']
 regexes = ['''-----BEGIN (RSA )?PRIVATE KEY-----''']
 
-# docs/salesforce-ci-cd-setup-integration-api.md (~line 213):
+# docs/salesforce-devops-setup-integration-api.md (~line 213):
 # Example value "NOTIF_API_METRICS_BASIC_AUTH_USERNAME=1596503" - a Grafana Cloud
 # numeric account username shown as a setup example (the doc explicitly says to
 # leave the password empty). Not a token. Flagged by the grafana-cloud-api-token rule.
 [[allowlists]]
 description = "Grafana username example in CI/CD integration API setup docs"
 matchCondition = "AND"
-paths = ['''docs/salesforce-ci-cd-setup-integration-api\.md''']
+paths = ['''docs/salesforce-devops-setup-integration-api\.md''']
 regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']
 
 # src/i18n/*.json: the translation key "sandboxRefreshPostChecksReminder" is
@@ -78,12 +78,15 @@ regexes = ['''NOTIF_API_METRICS_BASIC_AUTH_USERNAME=\d+''']
 # "sandboxRefreshConfiguration", whose translated value ends with "sandbox" in
 # several locales (es, fr, it, nl, pl, pt-BR) - so the rule fires on the key name
 # itself. It is an i18n key, not a token.
+# Same case for "backpromoteTargetOrgIsProduction" (32 characters), preceded by
+# "backpromoteTargetOrgIsMajorOrg", whose value ends with "sandbox or a scratch org."
+# within the rule window.
 #
 # This entry is deliberately secret-scoped only, with no "paths": adding a "paths"
 # key here makes betterleaks skip the matching files wholesale (verified with
 # betterleaks 1.7.3 - a planted AWS key in src/i18n/fr.json went undetected),
 # regardless of matchCondition. Matching on the key name alone keeps every byte of
-# the locale files scanned while suppressing just this one false positive.
+# the locale files scanned while suppressing just these false positives.
 [[allowlists]]
-description = "i18n key sandboxRefreshPostChecksReminder matches the Box token shape"
-regexes = ['''sandboxRefreshPostChecksReminder''']
+description = "32-character i18n keys that match the Box token shape"
+regexes = ['''(sandboxRefreshPostChecksReminder|backpromoteTargetOrgIsProduction)''']

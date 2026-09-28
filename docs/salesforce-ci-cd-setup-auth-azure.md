@@ -1,43 +1,11 @@
 ---
 title: Configure Azure CI/CD variables
-description: Learn how to configure CI/CD variables for CI Server authentication to automate deployments with Azure Pipelines
+description: This page moved to salesforce-devops-setup-auth-azure
+search:
+  exclude: true
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Pre-requisites
+## Page moved
 
-If you are building a CI/CD pipeline, follow the steps in [Configure Integrations between sfdx-hardis and Azure Pipelines](salesforce-ci-cd-setup-integration-azure.md) to create your pipelines.
-
-## Define sfdx-hardis environment variables
-
-- Go to **Project -> Pipelines**
-- Select your pipeline
-- Click on **Edit**, then on **Variables**
-- Enter the variable name and value
-- Don't forget to click on **Save**
-
-![](assets/images/screenshot-monitoring-azure-variable.png)
-
-More info: [Azure documentation](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/variables?view=azure-devops&tabs=classic%2Cbatch){target=blank}
-
-## Reference variables in your pipeline YAML files
-
-Once you have defined your secret variables in Azure Pipelines, reference them in your pipeline YAML files with the syntax `VARIABLE_NAME: $(VARIABLE_NAME)`, so that their values are passed to the pipeline.
-
-Example:
-
-```yaml
-          SFDX_CLIENT_ID_MY_ORG: $(SFDX_CLIENT_ID_MY_ORG)
-          SFDX_CLIENT_KEY_MY_ORG: $(SFDX_CLIENT_KEY_MY_ORG)
-```
-
-Impacted YAML files, if present in your repository:
-
-- `azure-pipelines-checks.yml`
-- `azure-pipelines-deployment.yml`
-- `azure-pipelines.yml`
-
-## Auto-fix branches
-
-Default CI templates skip steps that run `sf hardis` commands when the current branch starts with `auto-fix/`.
-This prevents recursive or redundant deploy/check executions on auto-generated fix branches.
+[Configure Azure CI/CD variables](salesforce-devops-setup-auth-azure.md)

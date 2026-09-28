@@ -1,6 +1,6 @@
 ---
 title: Flow Visual Git Diff
-description: Visual Flow diffs in deployment comments
+description: With sfdx-hardis, visual Flow diffs in deployment comments
 ---
 
 <!-- markdownlint-disable MD013 -->

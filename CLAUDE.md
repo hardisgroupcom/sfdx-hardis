@@ -26,11 +26,46 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 3. `/implement` -- Implement the changes in source code
 4. `/test` -- Build, lint, and run tests
 
+Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-extension-vscode-sfdx-hardis).
+
 ## Monitoring and Grafana Skills
 
 - `monitoring-notifications` skill: load it whenever a monitoring command, notification type, routing threshold, metric key, or logElements shape is created, updated, or deleted.
 - `grafana-dashboards` skill: rules and workflow for the "Org Monitoring by sfdx-hardis" v2 dashboards (`docs/grafana/dashboards-v2`). Load it for any dashboard or alert-rule work, and for every indicator evolution: **any change to a monitoring indicator must also handle its impact on the Grafana dashboards.**
+- `monitoring-agents-md` skill: the `AGENTS.md` that the monitoring backup writes for coding agents. Load it for any change to what it describes: the backup output, the monitoring pipelines and commands, what is sent to Grafana, monitoring config keys, the CI/CD pipeline behavior, git provider APIs or token variables. **A change that makes it wrong must update it in the same PR.**
 - Generic Grafana skills (`dashboarding`, `promql`, `loki`, `alerting-irm`) are vendored in `.claude/skills/` from [grafana/skills](https://github.com/grafana/skills) via `npx skills` (tracked in `skills-lock.json`, refresh with `npx skills update`). They are agent-agnostic: any coding agent reading `.claude/skills/` can use them.
+
+## Promotion Branches Skills
+
+- `promotion-branches` skill: how the promotion branches feature (`enablePromotionBranches`, `sf hardis:project:promotion:create`) works across sfdx-hardis and vscode-sfdx-hardis, its invariants, and every file to touch. Load it for any work on promotion branches, on the Pull Request scope of `deploy:smart`, on release notes filtering, or on the DevOps Pipeline windows, counters and toggles.
+- `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches or backpromote change in a way unit tests cannot cover.
+- `backpromote` skill: how a coding agent drives `sf hardis:work:backpromote` (plan, decide, run, solve the merges it asks for, confirm manual actions) and where the feature lives in both repositories. Load it for any work on backpromote, on the "Backpromotes" Pull Request comments or on the VS Code Backpromote panel.
+
+## VS Code Extension (vscode-sfdx-hardis)
+
+Most users run sfdx-hardis through the VS Code extension [vscode-sfdx-hardis](https://github.com/hardisgroupcom/vscode-sfdx-hardis) (local clone: `../vscode-sfdx-hardis`). Every task run from this repository must take its impact on the extension into account.
+
+- `vscode-sfdx-hardis` skill: load it whenever a change touches command flags, prompts, `--json` output, `WebSocketClient` messages, the JSON schema or the command list, and whenever a request mentions VS Code, the extension, a panel, an LWC or the DevOps Pipeline.
+- The analysis and the design always state the extension impact, even when it is "none".
+- A feature available in both must behave the same: the CLI is the engine and the extension passes it flags. Never reimplement CLI logic in the extension.
+- Work in the extension follows the extension's own `CLAUDE.md`, `.claude/skills` (`analyze`, `design`, `implement`, `test`...) and `.claude/agents`, not the sfdx-hardis ones. One PR per repository, cross-linked.
+
+## Training (sfdx-hardis-training)
+
+The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/) course walks learners through this product, click by click, with screenshots taken from the real extension. A change here can break a lab silently: the text still reads fine and the click no longer does what it says.
+
+- `training-impact` skill: load it for any change touching a command name or flag, a prompt, `--json` output, a config key, a report file, a doc page URL, an LWC panel, or any behavior a lab walks through. It reads `training-manifest.json` from the sibling clone and names the affected labs.
+- `training-update` skill: load it once `training-impact` says there is an impact. It performs the edits in the sibling training repository, including regenerating the Helios screenshots.
+- `training-publish` skill: the Trailhead Trailmixes and the Cloudity badges. Load it for the Trailmix titles, copy, step lists and URLs, and for anything touching the badges, the claim issue or the audit's promises to a learner.
+- `training-e2e` skill: walk the course as a learner, in a real fork against real orgs, checking that every step works and every screenshot still matches the text. Load it when the user asks to test the training or walk the labs, and when a change is too broad for reading the labs to settle it. It is the only one of these that finds defects nobody predicted.
+- **The analysis and the design always state the training impact, even when it is "none".**
+- **The course ships in English and French, and `labs/en/` is always the reference.** Every change starts in English; the translations follow it and never lead it. The structure is English in every locale: same file names, same ids, same URLs, same `depends_on`. A lab that a change affects is affected in every language, and a fix that lands only in `labs/fr/` is a fact nobody else can find.
+- `node scripts/check-training-impact.mjs` names the affected labs mechanically. It only covers names: a behavior that changed under an unchanged name needs the skill.
+- `sfdx-hardis-training` is always a sibling directory, cloned there if absent, like `../vscode-sfdx-hardis` already is.
+
+One Pull Request per repository, cross-linked. Order: CLI, then the extension, then the training. A change that invalidates a lab is not finished until the training Pull Request is open.
+
+**Every change made from here to a sibling repository updates that repository's own `CHANGELOG.md`**, in the same Pull Request: `## Unreleased` in `../vscode-sfdx-hardis`, `## [beta] (main)` here, and in `../sfdx-hardis-training`, which has no versions, a `## YYYY-MM-DD` heading with the date of the day (add it at the top if it does not exist yet). The `changelog` skill's style rules apply to all three.
 
 ## Behavior Preferences
 

@@ -1969,6 +1969,46 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionbackpromoteScanLimit">
+    <div class="card">
+        <div class="card-header" id="headingbackpromoteScanLimit">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#backpromoteScanLimit"
+                        aria-expanded="" aria-controls="backpromoteScanLimit" onclick="setAnchor('#backpromoteScanLimit')"><span class="property-name">backpromoteScanLimit</span></button>
+            </h2>
+        </div>
+
+        <div id="backpromoteScanLimit"
+             class="collapse property-definition-div" aria-labelledby="headingbackpromoteScanLimit"
+             data-parent="#accordionbackpromoteScanLimit">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#backpromoteScanLimit" onclick="anchorLink('backpromoteScanLimit')">backpromoteScanLimit</a></div><h4>Backpromote history scan limit</h4><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 100</span><br/>
+<span class="description"><p>Number of merged Pull Requests of the parent branch that sf hardis:work:backpromote reads, newest first, to find the last backpromote of a sandbox in the Backpromotes Pull Request comments. When no row is found within this limit, nothing is pre-selected and the user picks the start Pull Request (or extends the scan with --scan-limit).</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="backpromoteScanLimit_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">100</span>
+</pre></div>
+</div><div id="backpromoteScanLimit_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">250</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionbranchPrefixChoices">
     <div class="card">
         <div class="card-header" id="headingbranchPrefixChoices">
@@ -2434,12 +2474,120 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#commandsPreDeploy_items_type" onclick="anchorLink('commandsPreDeploy_items_type')">type</a></div><h4>Type</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
-<span class="description"><p>Type of the action</p>
-</span><div class="enum-value" id="commandsPreDeploy_items_type_enum">
+    <a href="#commandsPreDeploy_items_type" onclick="anchorLink('commandsPreDeploy_items_type')">type</a></div><h4>Type</h4><br/>
+<span class="description"><p>Type of the action: a built-in type, or the id of a custom function declared in customFunctions</p>
+</span><div class="any-of-value" id="commandsPreDeploy_items_type_anyOf"><h2 class="handle">
+  <label>Any of</label>
+</h2><ul class="nav nav-tabs" id="tabscommandsPreDeploy_items_type_anyOf_anyOf" role="tablist"><li class="nav-item">
+            <a class="nav-link active anyOf-option"
+               id="commandsPreDeploy_items_type_anyOf_i0" data-toggle="tab" href="#tab-pane_commandsPreDeploy_items_type_anyOf_i0" role="tab"
+               onclick="setAnchor('#commandsPreDeploy_items_type_anyOf_i0')"
+            >Option 1</a>
+        </li><li class="nav-item">
+            <a class="nav-link anyOf-option"
+               id="commandsPreDeploy_items_type_anyOf_i1" data-toggle="tab" href="#tab-pane_commandsPreDeploy_items_type_anyOf_i1" role="tab"
+               onclick="setAnchor('#commandsPreDeploy_items_type_anyOf_i1')"
+            >Option 2</a>
+        </li></ul>
+<div class="tab-content card"><div class="tab-pane fade card-body active show"
+             id="tab-pane_commandsPreDeploy_items_type_anyOf_i0" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_type" onclick="anchorLink('commandsPreDeploy_items_type')">type</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_type_anyOf" onclick="anchorLink('commandsPreDeploy_items_type_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_type_anyOf_i0" onclick="anchorLink('commandsPreDeploy_items_type_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="commandsPreDeploy_items_type_anyOf_i0_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li><li class="list-group-item enum-item">"remove-packagexml-items"</li></ul>
             </div>
+        
+
+        
+        
+
+        
+        </div><div class="tab-pane fade card-body "
+             id="tab-pane_commandsPreDeploy_items_type_anyOf_i1" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_type" onclick="anchorLink('commandsPreDeploy_items_type')">type</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_type_anyOf" onclick="anchorLink('commandsPreDeploy_items_type_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_type_anyOf_i1" onclick="anchorLink('commandsPreDeploy_items_type_anyOf_i1')">item 1</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Id of a custom function declared in the customFunctions property of config/.sfdx-hardis.yml</p>
+</span>
+        
+
+        
+        
+
+        
+        </div></div></div>
         
 
         
@@ -2458,6 +2606,8 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 </div><div id="commandsPreDeploy_items_type_ex5" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;manual&quot;</span>
 </pre></div>
 </div><div id="commandsPreDeploy_items_type_ex6" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;remove-packagexml-items&quot;</span>
+</pre></div>
+</div><div id="commandsPreDeploy_items_type_ex7" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;notifySlack&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -3803,12 +3953,120 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#commandsPostDeploy_items_type" onclick="anchorLink('commandsPostDeploy_items_type')">type</a></div><h4>Type</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
-<span class="description"><p>Type of the action</p>
-</span><div class="enum-value" id="commandsPostDeploy_items_type_enum">
+    <a href="#commandsPostDeploy_items_type" onclick="anchorLink('commandsPostDeploy_items_type')">type</a></div><h4>Type</h4><br/>
+<span class="description"><p>Type of the action: a built-in type, or the id of a custom function declared in customFunctions</p>
+</span><div class="any-of-value" id="commandsPostDeploy_items_type_anyOf"><h2 class="handle">
+  <label>Any of</label>
+</h2><ul class="nav nav-tabs" id="tabscommandsPostDeploy_items_type_anyOf_anyOf" role="tablist"><li class="nav-item">
+            <a class="nav-link active anyOf-option"
+               id="commandsPostDeploy_items_type_anyOf_i0" data-toggle="tab" href="#tab-pane_commandsPostDeploy_items_type_anyOf_i0" role="tab"
+               onclick="setAnchor('#commandsPostDeploy_items_type_anyOf_i0')"
+            >Option 1</a>
+        </li><li class="nav-item">
+            <a class="nav-link anyOf-option"
+               id="commandsPostDeploy_items_type_anyOf_i1" data-toggle="tab" href="#tab-pane_commandsPostDeploy_items_type_anyOf_i1" role="tab"
+               onclick="setAnchor('#commandsPostDeploy_items_type_anyOf_i1')"
+            >Option 2</a>
+        </li></ul>
+<div class="tab-content card"><div class="tab-pane fade card-body active show"
+             id="tab-pane_commandsPostDeploy_items_type_anyOf_i0" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_type" onclick="anchorLink('commandsPostDeploy_items_type')">type</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_type_anyOf" onclick="anchorLink('commandsPostDeploy_items_type_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_type_anyOf_i0" onclick="anchorLink('commandsPostDeploy_items_type_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="commandsPostDeploy_items_type_anyOf_i0_enum">
             <h4>Must be one of:</h4>
             <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li></ul>
             </div>
+        
+
+        
+        
+
+        
+        </div><div class="tab-pane fade card-body "
+             id="tab-pane_commandsPostDeploy_items_type_anyOf_i1" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_type" onclick="anchorLink('commandsPostDeploy_items_type')">type</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_type_anyOf" onclick="anchorLink('commandsPostDeploy_items_type_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_type_anyOf_i1" onclick="anchorLink('commandsPostDeploy_items_type_anyOf_i1')">item 1</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Id of a custom function declared in the customFunctions property of config/.sfdx-hardis.yml</p>
+</span>
+        
+
+        
+        
+
+        
+        </div></div></div>
         
 
         
@@ -3827,6 +4085,8 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 </div><div id="commandsPostDeploy_items_type_ex5" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;publish-community&quot;</span>
 </pre></div>
 </div><div id="commandsPostDeploy_items_type_ex6" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;manual&quot;</span>
+</pre></div>
+</div><div id="commandsPostDeploy_items_type_ex7" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;notifySlack&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -5886,6 +6146,1894 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordioncustomFunctions">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions"
+                        aria-expanded="" aria-controls="customFunctions" onclick="setAnchor('#customFunctions')"><span class="property-name">customFunctions</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions"
+             data-parent="#accordioncustomFunctions">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a></div><h4>Custom functions</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<span class="description"><p>Scripts (node, python or bash) usable as deployment action types. The id of a function is a valid value for the type property of a deployment action. Defined at project level only.</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="customFunctions_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Custom function definition</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordioncustomFunctions_items_id">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_id">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_id"
+                        aria-expanded="" aria-controls="customFunctions_items_id" onclick="setAnchor('#customFunctions_items_id')"><span class="property-name">id</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_id"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_id"
+             data-parent="#accordioncustomFunctions_items_id">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_id" onclick="anchorLink('customFunctions_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Function id. This is the value to use as the type of a deployment action, so it must not collide with a built-in action type</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_label">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_label">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_label"
+                        aria-expanded="" aria-controls="customFunctions_items_label" onclick="setAnchor('#customFunctions_items_label')"><span class="property-name">label</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_label"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_label"
+             data-parent="#accordioncustomFunctions_items_label">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_label" onclick="anchorLink('customFunctions_items_label')">label</a></div><h4>Label</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Label of the function (what does it do ?)</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_description">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_description">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_description"
+                        aria-expanded="" aria-controls="customFunctions_items_description" onclick="setAnchor('#customFunctions_items_description')"><span class="property-name">description</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_description"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_description"
+             data-parent="#accordioncustomFunctions_items_description">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_description" onclick="anchorLink('customFunctions_items_description')">description</a></div><h4>Description</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Longer description displayed in the deployment action editor</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_runtime">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_runtime">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_runtime"
+                        aria-expanded="" aria-controls="customFunctions_items_runtime" onclick="setAnchor('#customFunctions_items_runtime')"><span class="property-name">runtime</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_runtime"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_runtime"
+             data-parent="#accordioncustomFunctions_items_runtime">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_runtime" onclick="anchorLink('customFunctions_items_runtime')">runtime</a></div><h4>Runtime</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>Interpreter used to run the script. node is the interpreter running sfdx-hardis, python tries python3 then python, bash is taken from PATH</p>
+</span><div class="enum-value" id="customFunctions_items_runtime_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"node"</li><li class="list-group-item enum-item">"python"</li><li class="list-group-item enum-item">"bash"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_script">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_script">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_script"
+                        aria-expanded="" aria-controls="customFunctions_items_script" onclick="setAnchor('#customFunctions_items_script')"><span class="property-name">script</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_script"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_script"
+             data-parent="#accordioncustomFunctions_items_script">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_script" onclick="anchorLink('customFunctions_items_script')">script</a></div><h4>Script</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Path to the script file, relative to the repository root</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="customFunctions_items_script_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;scripts/functions/notify-slack.js&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_timeout">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_timeout">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_timeout"
+                        aria-expanded="" aria-controls="customFunctions_items_timeout" onclick="setAnchor('#customFunctions_items_timeout')"><span class="property-name">timeout</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_timeout"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_timeout"
+             data-parent="#accordioncustomFunctions_items_timeout">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_timeout" onclick="anchorLink('customFunctions_items_timeout')">timeout</a></div><h4>Timeout</h4><span class="badge badge-dark value-type">Type: number</span> <span class="badge badge-success default-value">Default: 600</span><br/>
+<span class="description"><p>Maximum duration of a run, in seconds. The script is killed and the action fails past it</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_when">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_when">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_when"
+                        aria-expanded="" aria-controls="customFunctions_items_when" onclick="setAnchor('#customFunctions_items_when')"><span class="property-name">when</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_when"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_when"
+             data-parent="#accordioncustomFunctions_items_when">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_when" onclick="anchorLink('customFunctions_items_when')">when</a></div><h4>When</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>Restrict the function to one deployment phase. Unset means it can be used in both</p>
+</span><div class="enum-value" id="customFunctions_items_when_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"pre-deploy"</li><li class="list-group-item enum-item">"post-deploy"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_allowedContexts">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_allowedContexts">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_allowedContexts"
+                        aria-expanded="" aria-controls="customFunctions_items_allowedContexts" onclick="setAnchor('#customFunctions_items_allowedContexts')"><span class="property-name">allowedContexts</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_allowedContexts"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_allowedContexts"
+             data-parent="#accordioncustomFunctions_items_allowedContexts">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_allowedContexts" onclick="anchorLink('customFunctions_items_allowedContexts')">allowedContexts</a></div><h4>Allowed contexts</h4><span class="badge badge-dark value-type">Type: array of enum (of string)</span><br/>
+<span class="description"><p>Restrict the execution contexts an action using this function may declare. Unset means all of them</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="customFunctions_items_allowedContexts_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_allowedContexts" onclick="anchorLink('customFunctions_items_allowedContexts')">allowedContexts</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_allowedContexts_items" onclick="anchorLink('customFunctions_items_allowedContexts_items')">allowedContexts items</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="customFunctions_items_allowedContexts_items_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"all"</li><li class="list-group-item enum-item">"check-deployment-only"</li><li class="list-group-item enum-item">"process-deployment-only"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_defaults">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_defaults">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_defaults"
+                        aria-expanded="" aria-controls="customFunctions_items_defaults" onclick="setAnchor('#customFunctions_items_defaults')"><span class="property-name">defaults</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_defaults"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_defaults"
+             data-parent="#accordioncustomFunctions_items_defaults">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a></div><h4>Defaults</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Default action fields applied when an action of this type is created. They can be overridden per action</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordioncustomFunctions_items_defaults_context">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_defaults_context">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_defaults_context"
+                        aria-expanded="" aria-controls="customFunctions_items_defaults_context" onclick="setAnchor('#customFunctions_items_defaults_context')"><span class="property-name">context</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_defaults_context"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_defaults_context"
+             data-parent="#accordioncustomFunctions_items_defaults_context">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_context" onclick="anchorLink('customFunctions_items_defaults_context')">context</a></div><h4>Context</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>Default execution context of an action using this function</p>
+</span><div class="enum-value" id="customFunctions_items_defaults_context_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"all"</li><li class="list-group-item enum-item">"check-deployment-only"</li><li class="list-group-item enum-item">"process-deployment-only"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_defaults_allowFailure">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_defaults_allowFailure">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_defaults_allowFailure"
+                        aria-expanded="" aria-controls="customFunctions_items_defaults_allowFailure" onclick="setAnchor('#customFunctions_items_defaults_allowFailure')"><span class="property-name">allowFailure</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_defaults_allowFailure"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_defaults_allowFailure"
+             data-parent="#accordioncustomFunctions_items_defaults_allowFailure">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_allowFailure" onclick="anchorLink('customFunctions_items_defaults_allowFailure')">allowFailure</a></div><h4>Allow failure</h4><span class="badge badge-dark value-type">Type: boolean</span><br/>
+<span class="description"><p>Default allowFailure of an action using this function</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_defaults_runOnlyOnceByOrg">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_defaults_runOnlyOnceByOrg">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_defaults_runOnlyOnceByOrg"
+                        aria-expanded="" aria-controls="customFunctions_items_defaults_runOnlyOnceByOrg" onclick="setAnchor('#customFunctions_items_defaults_runOnlyOnceByOrg')"><span class="property-name">runOnlyOnceByOrg</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_defaults_runOnlyOnceByOrg"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_defaults_runOnlyOnceByOrg"
+             data-parent="#accordioncustomFunctions_items_defaults_runOnlyOnceByOrg">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_runOnlyOnceByOrg" onclick="anchorLink('customFunctions_items_defaults_runOnlyOnceByOrg')">runOnlyOnceByOrg</a></div><h4>Run only once by org</h4><span class="badge badge-dark value-type">Type: boolean</span><br/>
+<span class="description"><p>Default runOnlyOnceByOrg of an action using this function</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_defaults_includeTargetBranches">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_defaults_includeTargetBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_defaults_includeTargetBranches"
+                        aria-expanded="" aria-controls="customFunctions_items_defaults_includeTargetBranches" onclick="setAnchor('#customFunctions_items_defaults_includeTargetBranches')"><span class="property-name">includeTargetBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_defaults_includeTargetBranches"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_defaults_includeTargetBranches"
+             data-parent="#accordioncustomFunctions_items_defaults_includeTargetBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_includeTargetBranches" onclick="anchorLink('customFunctions_items_defaults_includeTargetBranches')">includeTargetBranches</a></div><h4>Include target branches</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Default includeTargetBranches of an action using this function</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="customFunctions_items_defaults_includeTargetBranches_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_includeTargetBranches" onclick="anchorLink('customFunctions_items_defaults_includeTargetBranches')">includeTargetBranches</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_includeTargetBranches_items" onclick="anchorLink('customFunctions_items_defaults_includeTargetBranches_items')">includeTargetBranches items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_defaults_excludeTargetBranches">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_defaults_excludeTargetBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_defaults_excludeTargetBranches"
+                        aria-expanded="" aria-controls="customFunctions_items_defaults_excludeTargetBranches" onclick="setAnchor('#customFunctions_items_defaults_excludeTargetBranches')"><span class="property-name">excludeTargetBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_defaults_excludeTargetBranches"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_defaults_excludeTargetBranches"
+             data-parent="#accordioncustomFunctions_items_defaults_excludeTargetBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_excludeTargetBranches" onclick="anchorLink('customFunctions_items_defaults_excludeTargetBranches')">excludeTargetBranches</a></div><h4>Exclude target branches</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Default excludeTargetBranches of an action using this function</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="customFunctions_items_defaults_excludeTargetBranches_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults" onclick="anchorLink('customFunctions_items_defaults')">defaults</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_excludeTargetBranches" onclick="anchorLink('customFunctions_items_defaults_excludeTargetBranches')">excludeTargetBranches</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_defaults_excludeTargetBranches_items" onclick="anchorLink('customFunctions_items_defaults_excludeTargetBranches_items')">excludeTargetBranches items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_inputs">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs" onclick="setAnchor('#customFunctions_items_inputs')"><span class="property-name">inputs</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs"
+             data-parent="#accordioncustomFunctions_items_inputs">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a></div><h4>Inputs</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<span class="description"><p>Parameters an action using this function provides. Each one reaches the script as SFDX<em>HARDIS</em>IN_&lt;NAME&gt;</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="customFunctions_items_inputs_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+ <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordioncustomFunctions_items_inputs_items_name">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs_items_name">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs_items_name"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs_items_name" onclick="setAnchor('#customFunctions_items_inputs_items_name')"><span class="property-name">name</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs_items_name"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs_items_name"
+             data-parent="#accordioncustomFunctions_items_inputs_items_name">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_name" onclick="anchorLink('customFunctions_items_inputs_items_name')">name</a></div><h4>Name</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Input name. Passed to the script as the SFDX<em>HARDIS</em>IN_&lt;NAME&gt; environment variable (uppercased)</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_inputs_items_label">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs_items_label">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs_items_label"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs_items_label" onclick="setAnchor('#customFunctions_items_inputs_items_label')"><span class="property-name">label</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs_items_label"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs_items_label"
+             data-parent="#accordioncustomFunctions_items_inputs_items_label">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_label" onclick="anchorLink('customFunctions_items_inputs_items_label')">label</a></div><h4>Label</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Label displayed in the deployment action editor</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_inputs_items_description">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs_items_description">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs_items_description"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs_items_description" onclick="setAnchor('#customFunctions_items_inputs_items_description')"><span class="property-name">description</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs_items_description"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs_items_description"
+             data-parent="#accordioncustomFunctions_items_inputs_items_description">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_description" onclick="anchorLink('customFunctions_items_inputs_items_description')">description</a></div><h4>Description</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Help text displayed under the field</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_inputs_items_type">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs_items_type">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs_items_type"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs_items_type" onclick="setAnchor('#customFunctions_items_inputs_items_type')"><span class="property-name">type</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs_items_type"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs_items_type"
+             data-parent="#accordioncustomFunctions_items_inputs_items_type">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_type" onclick="anchorLink('customFunctions_items_inputs_items_type')">type</a></div><h4>Type</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "string"</span><br/>
+<span class="description"><p>Input type. A secret input stores the NAME of a CI/CD variable, never its value: sfdx-hardis reads the variable from the environment when the action runs, and masks it in logs and comments</p>
+</span><div class="enum-value" id="customFunctions_items_inputs_items_type_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"string"</li><li class="list-group-item enum-item">"number"</li><li class="list-group-item enum-item">"boolean"</li><li class="list-group-item enum-item">"select"</li><li class="list-group-item enum-item">"multiline"</li><li class="list-group-item enum-item">"secret"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_inputs_items_required">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs_items_required">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs_items_required"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs_items_required" onclick="setAnchor('#customFunctions_items_inputs_items_required')"><span class="property-name">required</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs_items_required"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs_items_required"
+             data-parent="#accordioncustomFunctions_items_inputs_items_required">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_required" onclick="anchorLink('customFunctions_items_inputs_items_required')">required</a></div><h4>Required</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>When true, an action using this function must provide a value</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_inputs_items_default">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs_items_default">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs_items_default"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs_items_default" onclick="setAnchor('#customFunctions_items_inputs_items_default')"><span class="property-name">default</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs_items_default"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs_items_default"
+             data-parent="#accordioncustomFunctions_items_inputs_items_default">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_default" onclick="anchorLink('customFunctions_items_inputs_items_default')">default</a></div><h4>Default value</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Value used when an action does not provide one</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_inputs_items_options">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_inputs_items_options">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_inputs_items_options"
+                        aria-expanded="" aria-controls="customFunctions_items_inputs_items_options" onclick="setAnchor('#customFunctions_items_inputs_items_options')"><span class="property-name">options</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_inputs_items_options"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_inputs_items_options"
+             data-parent="#accordioncustomFunctions_items_inputs_items_options">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_options" onclick="anchorLink('customFunctions_items_inputs_items_options')">options</a></div><h4>Options</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Allowed values, for inputs of type select</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="customFunctions_items_inputs_items_options_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs" onclick="anchorLink('customFunctions_items_inputs')">inputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items" onclick="anchorLink('customFunctions_items_inputs_items')">inputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_options" onclick="anchorLink('customFunctions_items_inputs_items_options')">options</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_inputs_items_options_items" onclick="anchorLink('customFunctions_items_inputs_items_options_items')">options items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_outputs">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_outputs">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_outputs"
+                        aria-expanded="" aria-controls="customFunctions_items_outputs" onclick="setAnchor('#customFunctions_items_outputs')"><span class="property-name">outputs</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_outputs"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_outputs"
+             data-parent="#accordioncustomFunctions_items_outputs">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs" onclick="anchorLink('customFunctions_items_outputs')">outputs</a></div><h4>Outputs</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<span class="description"><p>Values the script returns as a JSON object on the last line of its stdout. They are displayed in reports and can be consumed by later actions</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="customFunctions_items_outputs_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs" onclick="anchorLink('customFunctions_items_outputs')">outputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items" onclick="anchorLink('customFunctions_items_outputs_items')">outputs items</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+ <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordioncustomFunctions_items_outputs_items_name">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_outputs_items_name">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_outputs_items_name"
+                        aria-expanded="" aria-controls="customFunctions_items_outputs_items_name" onclick="setAnchor('#customFunctions_items_outputs_items_name')"><span class="property-name">name</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_outputs_items_name"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_outputs_items_name"
+             data-parent="#accordioncustomFunctions_items_outputs_items_name">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs" onclick="anchorLink('customFunctions_items_outputs')">outputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items" onclick="anchorLink('customFunctions_items_outputs_items')">outputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items_name" onclick="anchorLink('customFunctions_items_outputs_items_name')">name</a></div><h4>Name</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Output name. The script must return it in the JSON object of its last stdout line, and later actions read it with ${{ actions.&lt;actionId&gt;.outputs.&lt;name&gt; }}</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_outputs_items_label">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_outputs_items_label">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_outputs_items_label"
+                        aria-expanded="" aria-controls="customFunctions_items_outputs_items_label" onclick="setAnchor('#customFunctions_items_outputs_items_label')"><span class="property-name">label</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_outputs_items_label"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_outputs_items_label"
+             data-parent="#accordioncustomFunctions_items_outputs_items_label">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs" onclick="anchorLink('customFunctions_items_outputs')">outputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items" onclick="anchorLink('customFunctions_items_outputs_items')">outputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items_label" onclick="anchorLink('customFunctions_items_outputs_items_label')">label</a></div><h4>Label</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Label displayed in reports</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_outputs_items_description">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_outputs_items_description">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_outputs_items_description"
+                        aria-expanded="" aria-controls="customFunctions_items_outputs_items_description" onclick="setAnchor('#customFunctions_items_outputs_items_description')"><span class="property-name">description</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_outputs_items_description"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_outputs_items_description"
+             data-parent="#accordioncustomFunctions_items_outputs_items_description">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs" onclick="anchorLink('customFunctions_items_outputs')">outputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items" onclick="anchorLink('customFunctions_items_outputs_items')">outputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items_description" onclick="anchorLink('customFunctions_items_outputs_items_description')">description</a></div><h4>Description</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>What the output contains</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncustomFunctions_items_outputs_items_type">
+    <div class="card">
+        <div class="card-header" id="headingcustomFunctions_items_outputs_items_type">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#customFunctions_items_outputs_items_type"
+                        aria-expanded="" aria-controls="customFunctions_items_outputs_items_type" onclick="setAnchor('#customFunctions_items_outputs_items_type')"><span class="property-name">type</span></button>
+            </h2>
+        </div>
+
+        <div id="customFunctions_items_outputs_items_type"
+             class="collapse property-definition-div" aria-labelledby="headingcustomFunctions_items_outputs_items_type"
+             data-parent="#accordioncustomFunctions_items_outputs_items_type">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions" onclick="anchorLink('customFunctions')">customFunctions</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items" onclick="anchorLink('customFunctions_items')">customFunctions items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs" onclick="anchorLink('customFunctions_items_outputs')">outputs</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items" onclick="anchorLink('customFunctions_items_outputs_items')">outputs items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#customFunctions_items_outputs_items_type" onclick="anchorLink('customFunctions_items_outputs_items_type')">type</a></div><h4>Type</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Free-form type hint</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#customFunctions_ex1" aria-controls="customFunctions_ex1"></button><div id="customFunctions_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;notifySlack&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Notify Slack channel&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;runtime&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;node&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;script&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;scripts/functions/notify-slack.js&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;when&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;post-deploy&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;inputs&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="s2">&quot;name&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;channel&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Channel&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;required&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="s2">&quot;name&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;severity&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;select&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;options&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                    </span><span class="s2">&quot;info&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="s2">&quot;critical&quot;</span>
+<span class="w">                </span><span class="p">],</span>
+<span class="w">                </span><span class="s2">&quot;default&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;info&quot;</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="s2">&quot;name&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;webhookToken&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;secret&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;required&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="s2">&quot;outputs&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="s2">&quot;name&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;messageId&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordioncustomOrgColors">
     <div class="card">
         <div class="card-header" id="headingcustomOrgColors">
@@ -7213,6 +9361,198 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordiondeploymentBranch">
+    <div class="card">
+        <div class="card-header" id="headingdeploymentBranch">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#deploymentBranch"
+                        aria-expanded="" aria-controls="deploymentBranch" onclick="setAnchor('#deploymentBranch')"><span class="property-name">deploymentBranch</span></button>
+            </h2>
+        </div>
+
+        <div id="deploymentBranch"
+             class="collapse property-definition-div" aria-labelledby="headingdeploymentBranch"
+             data-parent="#accordiondeploymentBranch">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#deploymentBranch" onclick="anchorLink('deploymentBranch')">deploymentBranch</a></div><h4>Deployment branch</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>In a monitoring repository, the branch of the deployment repository (deploymentRepository) that deploys to the monitored org. Optional: without it, coding agents find the branch whose config/branches/.sfdx-hardis.&lt;branch&gt;.yml has the same instanceUrl as the monitored org.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="deploymentBranch_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;main&quot;</span>
+</pre></div>
+</div><div id="deploymentBranch_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;preprod&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiondeploymentRepository">
+    <div class="card">
+        <div class="card-header" id="headingdeploymentRepository">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#deploymentRepository"
+                        aria-expanded="" aria-controls="deploymentRepository" onclick="setAnchor('#deploymentRepository')"><span class="property-name">deploymentRepository</span></button>
+            </h2>
+        </div>
+
+        <div id="deploymentRepository"
+             class="collapse property-definition-div" aria-labelledby="headingdeploymentRepository"
+             data-parent="#accordiondeploymentRepository">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#deploymentRepository" onclick="anchorLink('deploymentRepository')">deploymentRepository</a></div><h4>Deployment repository</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>In a monitoring repository, the address of the sfdx-hardis CI/CD repository that deploys to the monitored org, the mirror of monitoringRepository. The AGENTS.md file written by the monitoring backup tells coding agents to search it, and the pipelines of both repositories, and the Org Monitoring panel of VS Code offers to open it.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="deploymentRepository_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://github.com/my-company/my-project&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongrafanaLokiDatasourceUid">
+    <div class="card">
+        <div class="card-header" id="headinggrafanaLokiDatasourceUid">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#grafanaLokiDatasourceUid"
+                        aria-expanded="" aria-controls="grafanaLokiDatasourceUid" onclick="setAnchor('#grafanaLokiDatasourceUid')"><span class="property-name">grafanaLokiDatasourceUid</span></button>
+            </h2>
+        </div>
+
+        <div id="grafanaLokiDatasourceUid"
+             class="collapse property-definition-div" aria-labelledby="headinggrafanaLokiDatasourceUid"
+             data-parent="#accordiongrafanaLokiDatasourceUid">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#grafanaLokiDatasourceUid" onclick="anchorLink('grafanaLokiDatasourceUid')">grafanaLokiDatasourceUid</a></div><h4>Grafana Loki datasource uid</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Uid of the Loki datasource of the Grafana instance (grafanaUrl) that receives the sfdx-hardis logs. Optional: coding agents and hardis:org:configure:grafana-dashboards detect it when it is not set. Found in Connections -> Data sources, in the URL of the datasource page.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="grafanaLokiDatasourceUid_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;grafanacloud-logs&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongrafanaPrometheusDatasourceUid">
+    <div class="card">
+        <div class="card-header" id="headinggrafanaPrometheusDatasourceUid">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#grafanaPrometheusDatasourceUid"
+                        aria-expanded="" aria-controls="grafanaPrometheusDatasourceUid" onclick="setAnchor('#grafanaPrometheusDatasourceUid')"><span class="property-name">grafanaPrometheusDatasourceUid</span></button>
+            </h2>
+        </div>
+
+        <div id="grafanaPrometheusDatasourceUid"
+             class="collapse property-definition-div" aria-labelledby="headinggrafanaPrometheusDatasourceUid"
+             data-parent="#accordiongrafanaPrometheusDatasourceUid">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#grafanaPrometheusDatasourceUid" onclick="anchorLink('grafanaPrometheusDatasourceUid')">grafanaPrometheusDatasourceUid</a></div><h4>Grafana Prometheus datasource uid</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Uid of the Prometheus datasource of the Grafana instance (grafanaUrl) that receives the sfdx-hardis metrics. Optional: coding agents and hardis:org:configure:grafana-dashboards detect it when it is not set. Found in Connections -> Data sources, in the URL of the datasource page.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="grafanaPrometheusDatasourceUid_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;grafanacloud-prom&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongrafanaUrl">
+    <div class="card">
+        <div class="card-header" id="headinggrafanaUrl">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#grafanaUrl"
+                        aria-expanded="" aria-controls="grafanaUrl" onclick="setAnchor('#grafanaUrl')"><span class="property-name">grafanaUrl</span></button>
+            </h2>
+        </div>
+
+        <div id="grafanaUrl"
+             class="collapse property-definition-div" aria-labelledby="headinggrafanaUrl"
+             data-parent="#accordiongrafanaUrl">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#grafanaUrl" onclick="anchorLink('grafanaUrl')">grafanaUrl</a></div><h4>Grafana URL</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>URL of the Grafana instance that receives the sfdx-hardis monitoring logs and metrics (NOTIF<em>API</em>URL, NOTIF<em>API</em>METRICS<em>URL). The AGENTS.md file of a monitoring repository tells coding agents to query it, and hardis:org:configure:grafana-dashboards uses it when --grafana-url and GRAFANA</em>API<em>URL are not set. Never put the token here: it goes in the GRAFANA</em>API_TOKEN environment variable, or in a .env file that git ignores.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="grafanaUrl_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://mycompany.grafana.net&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordiondevelopmentBranch">
     <div class="card">
         <div class="card-header" id="headingdevelopmentBranch">
@@ -8019,6 +10359,322 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionallowedPromotionSteps">
+    <div class="card">
+        <div class="card-header" id="headingallowedPromotionSteps">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#allowedPromotionSteps"
+                        aria-expanded="" aria-controls="allowedPromotionSteps" onclick="setAnchor('#allowedPromotionSteps')"><span class="property-name">allowedPromotionSteps</span></button>
+            </h2>
+        </div>
+
+        <div id="allowedPromotionSteps"
+             class="collapse property-definition-div" aria-labelledby="headingallowedPromotionSteps"
+             data-parent="#accordionallowedPromotionSteps">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a></div><h4>Allowed promotion steps (Beta)</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<div class="description collapse" id="collapseDescription_allowedPromotionSteps">
+            <p>Beta feature. Required as soon as enablePromotionBranches is true.<br />
+Source and target branches a release manager is allowed to assemble a promotion between (ex: only from uat to preprod).<br />
+Every other step is left out of the prompts of sf hardis:project:promotion:create and of the DevOps Pipeline, and naming one anyway fails the command.<br />
+Leave an entry without a target to allow every merge target of that source branch.<br />
+While the list is missing, sf hardis:project:promotion:create stops and asks for it: no promotion can be assembled before the project says between which branches.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_allowedPromotionSteps"
+               aria-expanded="false" aria-controls="collapseDescriptionallowedPromotionSteps"
+            ></a>
+        </div>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="allowedPromotionSteps_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items" onclick="anchorLink('allowedPromotionSteps_items')">Allowed promotion step</a></div><h4>Allowed promotion step</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>One authorized promotion step, from a major branch to another one</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionallowedPromotionSteps_items_source">
+    <div class="card">
+        <div class="card-header" id="headingallowedPromotionSteps_items_source">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#allowedPromotionSteps_items_source"
+                        aria-expanded="" aria-controls="allowedPromotionSteps_items_source" onclick="setAnchor('#allowedPromotionSteps_items_source')"><span class="property-name">source</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="allowedPromotionSteps_items_source"
+             class="collapse property-definition-div" aria-labelledby="headingallowedPromotionSteps_items_source"
+             data-parent="#accordionallowedPromotionSteps_items_source">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items" onclick="anchorLink('allowedPromotionSteps_items')">Allowed promotion step</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items_source" onclick="anchorLink('allowedPromotionSteps_items_source')">source</a></div><h4>Source branch</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Major branch holding the approved User Stories (ex: uat)</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="allowedPromotionSteps_items_source_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;uat&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionallowedPromotionSteps_items_target">
+    <div class="card">
+        <div class="card-header" id="headingallowedPromotionSteps_items_target">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#allowedPromotionSteps_items_target"
+                        aria-expanded="" aria-controls="allowedPromotionSteps_items_target" onclick="setAnchor('#allowedPromotionSteps_items_target')"><span class="property-name">target</span></button>
+            </h2>
+        </div>
+
+        <div id="allowedPromotionSteps_items_target"
+             class="collapse property-definition-div" aria-labelledby="headingallowedPromotionSteps_items_target"
+             data-parent="#accordionallowedPromotionSteps_items_target">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps" onclick="anchorLink('allowedPromotionSteps')">allowedPromotionSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items" onclick="anchorLink('allowedPromotionSteps_items')">Allowed promotion step</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#allowedPromotionSteps_items_target" onclick="anchorLink('allowedPromotionSteps_items_target')">target</a></div><h4>Target branch</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Major branch the promotion goes to (ex: preprod). Leave empty to allow every merge target of the source branch</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="allowedPromotionSteps_items_target_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;preprod&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#allowedPromotionSteps_ex1" aria-controls="allowedPromotionSteps_ex1"></button><div id="allowedPromotionSteps_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;uat&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;preprod&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;source&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;preprod&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;target&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;main&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionenablePromotionBranches">
+    <div class="card">
+        <div class="card-header" id="headingenablePromotionBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#enablePromotionBranches"
+                        aria-expanded="" aria-controls="enablePromotionBranches" onclick="setAnchor('#enablePromotionBranches')"><span class="property-name">enablePromotionBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="enablePromotionBranches"
+             class="collapse property-definition-div" aria-labelledby="headingenablePromotionBranches"
+             data-parent="#accordionenablePromotionBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#enablePromotionBranches" onclick="anchorLink('enablePromotionBranches')">enablePromotionBranches</a></div><h4>Enable promotion branches (Beta)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<div class="description collapse" id="collapseDescription_enablePromotionBranches">
+            <p>Beta feature. Enable promotion branches: a branch named promotion/&lt;source branch>/&lt;target branch>/&lt;YYYY-MM-DD&gt;-&lt;HHMM&gt; (ex: promotion/uat/preprod/2026-09-06-1430) assembled by cherry-picking approved User Stories from a major branch, whose Pull Request declares the carried Pull Requests in a YAML block of its description (promotionPullRequests: [482, 487]). sfdx-hardis then runs their deployment actions, collects their Apex test classes and inherits their custom behaviors. When false (default), promotion branches are ordinary feature branches.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_enablePromotionBranches"
+               aria-expanded="false" aria-controls="collapseDescriptionenablePromotionBranches"
+            ></a>
+        </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="enablePromotionBranches_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div><div id="enablePromotionBranches_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionpromotionConflictMarkersIgnoredFiles">
+    <div class="card">
+        <div class="card-header" id="headingpromotionConflictMarkersIgnoredFiles">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#promotionConflictMarkersIgnoredFiles"
+                        aria-expanded="" aria-controls="promotionConflictMarkersIgnoredFiles" onclick="setAnchor('#promotionConflictMarkersIgnoredFiles')"><span class="property-name">promotionConflictMarkersIgnoredFiles</span></button>
+            </h2>
+        </div>
+
+        <div id="promotionConflictMarkersIgnoredFiles"
+             class="collapse property-definition-div" aria-labelledby="headingpromotionConflictMarkersIgnoredFiles"
+             data-parent="#accordionpromotionConflictMarkersIgnoredFiles">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promotionConflictMarkersIgnoredFiles" onclick="anchorLink('promotionConflictMarkersIgnoredFiles')">promotionConflictMarkersIgnoredFiles</a></div><h4>Files allowed to hold conflict markers (Beta)</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<div class="description collapse" id="collapseDescription_promotionConflictMarkersIgnoredFiles">
+            <p>Beta feature. The deployment check of a promotion Pull Request fails while any tracked file of the branch still holds git conflict markers (lines starting with &lt;&lt;&lt;&lt;&lt;&lt;&lt; or &gt;&gt;&gt;&gt;&gt;&gt;&gt;).<br />
+List here, as git glob patterns relative to the repository root, the files that hold such lines on purpose (ex: documentation about merge conflicts, merge driver fixtures), so they do not block every promotion.<br />
+'<em>' does not cross a '/', use '</em>*' for any depth.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_promotionConflictMarkersIgnoredFiles"
+               aria-expanded="false" aria-controls="collapseDescriptionpromotionConflictMarkersIgnoredFiles"
+            ></a>
+        </div>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="promotionConflictMarkersIgnoredFiles_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promotionConflictMarkersIgnoredFiles" onclick="anchorLink('promotionConflictMarkersIgnoredFiles')">promotionConflictMarkersIgnoredFiles</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#promotionConflictMarkersIgnoredFiles_items" onclick="anchorLink('promotionConflictMarkersIgnoredFiles_items')">promotionConflictMarkersIgnoredFiles items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="promotionConflictMarkersIgnoredFiles_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;labs/**/*.md&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;docs/merge-conflicts.md&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionenableDeploymentApexTestClasses">
     <div class="card">
         <div class="card-header" id="headingenableDeploymentApexTestClasses">
@@ -8193,7 +10849,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
             />
         </svg>
     <a href="#genericTicketingProviderUrlBuilder" onclick="anchorLink('genericTicketingProviderUrlBuilder')">genericTicketingProviderUrlBuilder</a></div><h4>Generic Ticketing Provider URL Builder</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>URL pattern to build ticket URLs from ticket IDs. Use {ticketId} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{ticketId}</p>
+<span class="description"><p>URL pattern to build ticket URLs from ticket IDs. Use {REF} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{REF}</p>
 </span>
         
 
@@ -8202,7 +10858,45 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 
         <br/>
 <div class="badge badge-secondary">Example:</div>
-<br/><div id="genericTicketingProviderUrlBuilder_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://tickets.mycompany.com/ticket/{ticketId}&quot;</span>
+<br/><div id="genericTicketingProviderUrlBuilder_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://tickets.mycompany.com/ticket/{REF}&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordiongenericTicketingProviderDetailsUrlBuilder">
+    <div class="card">
+        <div class="card-header" id="headinggenericTicketingProviderDetailsUrlBuilder">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#genericTicketingProviderDetailsUrlBuilder"
+                        aria-expanded="" aria-controls="genericTicketingProviderDetailsUrlBuilder" onclick="setAnchor('#genericTicketingProviderDetailsUrlBuilder')"><span class="property-name">genericTicketingProviderDetailsUrlBuilder</span></button>
+            </h2>
+        </div>
+
+        <div id="genericTicketingProviderDetailsUrlBuilder"
+             class="collapse property-definition-div" aria-labelledby="headinggenericTicketingProviderDetailsUrlBuilder"
+             data-parent="#accordiongenericTicketingProviderDetailsUrlBuilder">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#genericTicketingProviderDetailsUrlBuilder" onclick="anchorLink('genericTicketingProviderDetailsUrlBuilder')">genericTicketingProviderDetailsUrlBuilder</a></div><h4>Generic Ticketing Provider Details URL Builder</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Optional. URL pattern of a JSON document describing a ticket, with {REF} as placeholder for the ticket ID. The JSON gives the ticket title in subject (or title, or summary) and optionally its status in status. When set, Pull Request comments, release notes and notifications show the title and the status next to each ticket link. Send a token with the GENERIC<em>TICKETING</em>PROVIDER_TOKEN variable when the URL requires one.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="genericTicketingProviderDetailsUrlBuilder_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://tickets.mycompany.com/api/ticket/{REF}.json&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -12324,7 +15018,7 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
             />
         </svg>
     <a href="#monitoringDisable" onclick="anchorLink('monitoringDisable')">monitoringDisable</a></div><h4>Disabled monitoring commands</h4><span class="badge badge-dark value-type">Type: array</span><br/>
-<span class="description"><p>List of commands to skip during monitoring jobs</p>
+<span class="description"><p>List of commands to skip during monitoring jobs. The MONITORING<em>DISABLE env variable (comma-separated keys, for example AUDIT</em>TRAIL,LICENSES) has priority over it.</p>
 </span>
         
 
@@ -12596,6 +15290,44 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionmonitoringRepository">
+    <div class="card">
+        <div class="card-header" id="headingmonitoringRepository">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#monitoringRepository"
+                        aria-expanded="" aria-controls="monitoringRepository" onclick="setAnchor('#monitoringRepository')"><span class="property-name">monitoringRepository</span></button>
+            </h2>
+        </div>
+
+        <div id="monitoringRepository"
+             class="collapse property-definition-div" aria-labelledby="headingmonitoringRepository"
+             data-parent="#accordionmonitoringRepository">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#monitoringRepository" onclick="anchorLink('monitoringRepository')">monitoringRepository</a></div><h4>Monitoring repository</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>In the CI/CD repository, the address of the separate repository that monitors the production org. The Org Monitoring Workbench of VS Code offers to open it, so that the next release manager finds it from the project. Its mirror in the monitoring repository is deploymentRepository.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="monitoringRepository_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;https://github.com/my-company/my-project-monitoring&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionmonitoringUnsecureConnectedAppsIgnore">
     <div class="card">
         <div class="card-header" id="headingmonitoringUnsecureConnectedAppsIgnore">
@@ -12725,9 +15457,17 @@ User entries are merged by 'key' onto the built-in defaults: provide only the fi
             />
         </svg>
     <a href="#newTaskNameRegex" onclick="anchorLink('newTaskNameRegex')">newTaskNameRegex</a></div><h4>User Story name validation regex</h4><span class="badge badge-dark value-type">Type: string</span> <span class="badge badge-success default-value">Default: ""</span><br/>
-<span class="description"><p>If you define a regular expression, it will be used to validate the name of new User Stories.<br />
-For example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'</p>
-</span>
+<div class="description collapse" id="collapseDescription_newTaskNameRegex">
+            <p>If you define a regular expression, it will be used to validate the name of new User Stories.<br />
+For example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*'<br />
+The regex is tested against the User Story name as typed by the user, so it can require spaces. Once the name is validated, spaces and special characters are replaced by '-' to build the git branch name.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_newTaskNameRegex"
+               aria-expanded="false" aria-controls="collapseDescriptionnewTaskNameRegex"
+            ></a>
+        </div>
         
 
         
@@ -14476,6 +17216,42 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionofferSandboxInit">
+    <div class="card">
+        <div class="card-header" id="headingofferSandboxInit">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#offerSandboxInit"
+                        aria-expanded="" aria-controls="offerSandboxInit" onclick="setAnchor('#offerSandboxInit')"><span class="property-name">offerSandboxInit</span></button>
+            </h2>
+        </div>
+
+        <div id="offerSandboxInit"
+             class="collapse property-definition-div" aria-labelledby="headingofferSandboxInit"
+             data-parent="#accordionofferSandboxInit">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#offerSandboxInit" onclick="anchorLink('offerSandboxInit')">offerSandboxInit</a></div><h4>Offer to initialize the sandbox on New User Story</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set to true to have New User Story (hardis:work:new) offer to initialize the selected dev sandbox: install the installed packages, assign initPermissionSets, run scratchOrgInitApexScripts and load scripts/data/ScratchInit.<br />
+It never deploys metadata: bring what the team merged into a sandbox with a backpromote.<br />
+Ignored when sharedDevSandboxes is true.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionsharedDevSandboxes">
     <div class="card">
         <div class="card-header" id="headingsharedDevSandboxes">
@@ -14499,7 +17275,7 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </svg>
     <a href="#sharedDevSandboxes" onclick="anchorLink('sharedDevSandboxes')">sharedDevSandboxes</a></div><h4>Contributors can share Dev Sandboxes</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>Set to true if contributors can share dev sandboxes<br />
-If active, contributors will never be asked to refresh their sandbox metadata, to avoid to overwrite by accident their colleagues work :)</p>
+If active, contributors are never offered to initialize their sandbox on New User Story, to avoid overwriting their colleagues work by accident</p>
 </span>
         
 

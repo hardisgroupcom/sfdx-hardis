@@ -66,6 +66,18 @@ Use \`--agent\` to disable all prompts. Typical usage:
 - The \`--path\` flag (or \`--project-name\`) is required in agent mode (no interactive workspace selection).
 - The \`--target-org\` flag is used directly (no interactive org selection prompt).
 - The workspace content is still displayed, but its confirmation prompt is skipped.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 1.2 - Create your Dev Hub, scratch orgs and CI/CD pipeline](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/)
+- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [

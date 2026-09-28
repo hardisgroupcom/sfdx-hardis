@@ -20,3 +20,52 @@ scratchOrgInitApexScripts:
 dataPackages:
   - dataPath: scripts/data/ScratchInit
     importInScratchOrgs: true
+
+# Custom functions exercised by the "custom function actions" scenario of deploySmart.nut.ts.
+# They live here rather than in a branch config on purpose: a function id is a deployment action
+# type, so the catalog is project scoped and must be identical on every branch.
+customFunctions:
+  - id: nutNodeFunction
+    label: NUT node function
+    runtime: node
+    script: scripts/functions/nut-node.js
+    inputs:
+      - name: channel
+        type: string
+        required: true
+      - name: retries
+        type: number
+        default: 2
+      - name: token
+        type: secret
+        required: true
+    outputs:
+      - name: nodeMessageId
+      - name: nodeStatus
+  - id: nutBashFunction
+    label: NUT bash function
+    runtime: bash
+    script: scripts/functions/nut-bash.sh
+    inputs:
+      - name: environment
+        type: string
+    outputs:
+      - name: bashReport
+      - name: bashStatus
+  - id: nutPythonFunction
+    label: NUT python function
+    runtime: python
+    script: scripts/functions/nut-python.py
+    inputs:
+      - name: severity
+        type: select
+        options:
+          - info
+          - warning
+        default: info
+      - name: fromNode
+        type: string
+      - name: fromBash
+        type: string
+    outputs:
+      - name: pythonSummary

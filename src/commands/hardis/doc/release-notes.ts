@@ -94,6 +94,18 @@ In agent mode:
 - \`--target-branch\` defaults to the current git branch.
 - When \`--mode post\` and \`--target-branch\` are provided without \`--merge-commit\`, the latest merge commit on the target branch is used automatically.
 - When \`--mode prepare\` and \`--source-branch\` is provided without \`--target-branch\`, the target branch is inferred from the source branch mergeTargets configuration.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
@@ -141,6 +153,10 @@ In agent mode:
     outputfile: Flags.string({
       char: "f",
       description: messages.getMessage("outputFile"),
+    }),
+    "include-promotions": Flags.boolean({
+      default: false,
+      description: "Also list the Pull Requests that move other Pull Requests: merges between two major branches, and promotion branches when they are enabled. Left out by default, since what the release delivers are the User Stories they carry",
     }),
     pdf: Flags.boolean({
       default: true,
@@ -197,7 +213,7 @@ In agent mode:
 
     // 2. Collect pull requests
     uxLog("action", this, c.cyan(t("releaseNotesCollectingPrs")));
-    const pullRequests = await collectPullRequests(scope, this);
+    const pullRequests = await collectPullRequests(scope, this, { includePromotions: flags["include-promotions"] === true });
     uxLog("action", this, c.cyan(t("releaseNotesPrsCollected", { count: String(pullRequests.length) })));
     // Note: PR table with ticket cross-references is displayed after ticket collection
 
@@ -254,7 +270,7 @@ In agent mode:
 
     // 5. Collect deployment actions
     uxLog("action", this, c.cyan(t("releaseNotesCollectingActions")));
-    const deploymentActions = await collectDeploymentActions(pullRequests, this);
+    const deploymentActions = await collectDeploymentActions(pullRequests, this, scope.targetBranch);
     if (deploymentActions.length > 0) {
       uxLogTable(this, deploymentActions.map((a) => ({
         Action: a.actionLabel,
@@ -312,6 +328,7 @@ In agent mode:
       const pdfResult = await generatePdfFileFromMarkdown(pdfSourceFile, {
         landscape: flags.portrait !== true,
         extraCss: "td:first-child, th:first-child { white-space: nowrap; }",
+        silent: true,
       });
       if (pdfResult) {
         const defaultPdfFile = mdOutputFile.replace(/\.md$/i, ".pdf");
@@ -325,6 +342,7 @@ In agent mode:
           pdfFile = typeof pdfResult === "string" ? pdfResult : undefined;
         }
         if (pdfFile) {
+          uxLog("success", this, c.green(t("pdfFileGeneratedFromDocumentation", { markdownFile: mdOutputFile, outputPdfFile: c.bold(pdfFile) })));
           WebSocketClient.sendReportFileMessage(pdfFile, `${t("releaseNotesReportTitle")} (PDF)`, "report");
         }
       }

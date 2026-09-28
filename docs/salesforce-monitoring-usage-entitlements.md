@@ -1,6 +1,6 @@
 ---
 title: Usage-based entitlements (Salesforce monitoring)
-description: Track Salesforce consumption meters and get warned before an allowance is overshot
+description: With sfdx-hardis, track Salesforce consumption meters and get warned before an allowance is overshot
 ---
 <!-- markdownlint-disable MD013 -->
 

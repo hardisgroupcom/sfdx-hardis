@@ -32,12 +32,12 @@ import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitU
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parsePackageXmlFile, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { executePrePostCommands } from './prePostCommandUtils.js';
+import { executePrePostCommands, resetActionOutputsRegistry } from './prePostCommandUtils.js';
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
@@ -375,8 +375,10 @@ export async function smartDeploy(
   }
 ): Promise<any> {
   elapseStart('all deployments');
-  // Start from a clean slate so the post-deployment notification only reports this run's actions
+  // Start from a clean slate so the post-deployment notification only reports this run's actions,
+  // and so custom function outputs never leak from a previous deployment of the same process
   resetExecutedDeploymentActions();
+  resetActionOutputsRegistry();
   const deployStartTime = Date.now();
   let quickDeploy = false;
   const deploymentMetrics: DeploymentMetrics = buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime });
@@ -1058,7 +1060,7 @@ async function buildDeploymentPackageXmls(
     uxLog("other", this, t('emptyPackageXmlNothingToDeploy'));
     return [];
   }
-  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
+  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFile });
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDir = await createTempDir();
@@ -1218,6 +1220,16 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     uxLog("action", this, c.cyan(t('handlingPackageNoOverwriteXmlMetadataThat')));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
+      // Listing the target org takes minutes on a large org: skip it when no type of the
+      // deployment package is protected, as nothing could be removed from the package anyway
+      if (options.packageXmlFile) {
+        const protectedTypes = Object.keys(await parsePackageXmlFile(packageNoOverwrite));
+        const packageTypes = Object.keys(await parsePackageXmlFile(options.packageXmlFile));
+        if (!packageTypes.some((type) => protectedTypes.includes(type))) {
+          uxLog("log", this, c.grey('[NoOverwrite] ' + t('noOverwriteNoProtectedTypeInPackage')));
+          return null;
+        }
+      }
       const tmpDir = await createTempDir();
       // Build target org package.xml
       uxLog("action", this, c.cyan('[NoOverwrite] ' + t('listingTargetOrgContentForNoOverwrite')));
@@ -1805,13 +1817,20 @@ export async function extractOrgCoverageFromLog(stdout) {
 function getCoverageFromJsonFile(jsonFile) {
   if (fs.existsSync(jsonFile)) {
     const coverageInfo = JSON.parse(fs.readFileSync(jsonFile, 'utf-8'));
-    const orgCoverage = coverageInfo?.total?.lines?.pct ?? null;
+    const rawCoverage = coverageInfo?.total?.lines?.pct ?? null;
+    // json-summary writes the string "Unknown" when there was nothing to measure, which is the
+    // normal answer for a deployment that ran no Apex test. Calling toFixed on it threw, and the
+    // catch below reported a plain situation as an error the reader had to make sense of.
+    const orgCoverage = typeof rawCoverage === 'number' ? rawCoverage : Number(rawCoverage);
+    if (rawCoverage === null || rawCoverage === '' || !Number.isFinite(orgCoverage)) {
+      return null;
+    }
     try {
-      if (orgCoverage && Number(orgCoverage.toFixed(2)) > 0.0) {
+      if (orgCoverage > 0.0) {
         return orgCoverage.toFixed(2);
       }
     } catch (e) {
-      uxLog("warning", this, c.yellow(t('warningUnableToConvertIntoString', { orgCoverage })));
+      uxLog("warning", this, c.yellow(t('warningUnableToConvertIntoString', { orgCoverage: rawCoverage })));
       uxLog("error", this, c.grey((e as Error).message));
     }
   }

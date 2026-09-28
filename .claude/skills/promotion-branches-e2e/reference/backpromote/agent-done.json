@@ -1,0 +1,16 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "branchExistsOnOrigin": true,
+  "pendingMergesContain": [
+    "E2E_S1.resource"
+  ],
+  "result": {
+    "deployed": 1,
+    "pushed": true,
+    "noExclusion": true,
+    "commentedPullRequests": [
+      "{{S7}}"
+    ]
+  }
+}

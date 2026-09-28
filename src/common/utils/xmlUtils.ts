@@ -136,7 +136,13 @@ export function buildXmlString(xmlObject: any, indent?: string): string {
 }
 
 export async function writeXmlFile(xmlFile: string, xmlObject: any) {
-  const updatedFileContent = buildXmlString(xmlObject);
+  let updatedFileContent = buildXmlString(xmlObject);
+  // Keep the final line break the file had (Salesforce writes one), so that cleaning a file
+  // does not show up in git as a change of its last line
+  const hadFinalNewline = fs.existsSync(xmlFile) && /\r?\n$/.test(await fs.readFile(xmlFile, 'utf8'));
+  if (hadFinalNewline && !updatedFileContent.endsWith('\n')) {
+    updatedFileContent += '\n';
+  }
   await fs.ensureDir(path.dirname(xmlFile));
   await fs.writeFile(xmlFile, updatedFileContent);
 }

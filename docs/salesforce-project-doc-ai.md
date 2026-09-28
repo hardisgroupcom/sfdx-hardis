@@ -1,6 +1,6 @@
 ---
 title: Enhance with AI your Salesforce Project Documentation
-description: Learn how to enhance your Salesforce documentation with AI
+description: With sfdx-hardis, learn how to enhance your Salesforce documentation with AI
 ---
 <!-- markdownlint-disable MD013 -->
 

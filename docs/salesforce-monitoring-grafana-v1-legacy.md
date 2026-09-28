@@ -10,7 +10,7 @@ description: Import instructions for the legacy v1 sfdx-hardis Grafana dashboard
 
 The v1 set uses its own Grafana folder, UIDs and JSON files, so it can coexist with v2 during a transition.
 
-Prerequisite: the [Grafana / API integration setup](salesforce-ci-cd-setup-integration-api.md) (Loki + Prometheus endpoints configured on the monitoring repository).
+Prerequisite: the [Grafana / API integration setup](salesforce-devops-setup-integration-api.md) (Loki + Prometheus endpoints configured on the monitoring repository).
 
 ## Download legacy v1 dashboards
 

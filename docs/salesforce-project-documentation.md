@@ -1,6 +1,6 @@
 ---
 title: Your AI-enhanced Salesforce Project Documentation
-description: Learn how to generate Salesforce project documentation, including Flows Visual Differences in History
+description: With sfdx-hardis, learn how to generate Salesforce project documentation, including Flows Visual Differences in History
 ---
 
 <!-- markdownlint-disable MD013 -->

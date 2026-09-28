@@ -17,7 +17,13 @@ const mochaGlobals = {
 
 export default [
   {
-    ignores: ['**/*.cjs/'],
+    ignores: [
+      '**/*.cjs/',
+      // Custom function fixtures: payloads a deployment action runs in a separate node,
+      // python or bash process, not sources of this project. Linting them as project code
+      // reports node globals as undefined.
+      'test/fixtures/**/scripts/functions/**',
+    ],
   },
   js.configs.recommended,
   ...tsPlugin.configs['flat/recommended'],
