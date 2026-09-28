@@ -12,6 +12,8 @@ import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { withOrgApiCache } from '../cache/orgApiCache.js';
+import { glob, escape as globEscape } from 'glob';
+import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS, getSfdxProjectPackageDirectories } from './projectUtils.js';
 import { listMetadataTypes } from '../metadata-utils/metadataList.js';
 
 const SALESFORCE_ID_RE = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
@@ -35,6 +37,7 @@ export interface MetadataDepsFlags {
   id?: string;
   componentType?: string;
   sourceFile?: string;
+  skipReport?: boolean;
   bulk?: boolean;
   agent?: boolean;
 }
@@ -54,6 +57,11 @@ export interface MetadataDependencyRow {
   targetId: string;
   targetName: string;
   targetType: string;
+  // Filled by enrichUsedByRows: Metadata API name (empty when the type cannot be listed),
+  // Setup path of the component, and its source file in the project (empty when absent)
+  usedByApiName: string;
+  usedBySetupPath: string;
+  usedByLocalFile: string;
 }
 
 export interface MetadataDepsReport {
@@ -191,6 +199,9 @@ export function mapUsedByRows(records: Array<Record<string, unknown>>): Metadata
     targetId: stringValue(record, 'RefMetadataComponentId'),
     targetName: stringValue(record, 'RefMetadataComponentName'),
     targetType: stringValue(record, 'RefMetadataComponentType'),
+    usedByApiName: '',
+    usedBySetupPath: '',
+    usedByLocalFile: '',
   }));
 }
 
@@ -237,8 +248,41 @@ export async function lookupListedComponent(
 ): Promise<{ id: string; fromCache: boolean } | null> {
   const inFolder = listMetadataTypes().some((metadataType) => metadataType.xmlName === type && metadataType.inFolder);
   const folder = inFolder && name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : undefined;
-  // Only names and Ids are cached. null means the type cannot be listed.
-  const listComponents = async (): Promise<Array<{ fullName: string; id: string }> | null> => {
+  const decode = (value: string): string => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  };
+  const findMatch = (components: ListedComponent[] | null) =>
+    (components ?? []).find((component) => component.fullName === name || decode(component.fullName) === name);
+
+  let listed = await listMetadataComponents(connection, type, folder, { refresh: options.refresh });
+  let match = findMatch(listed.value);
+  if (!match && listed.fromCache) {
+    // The component may have been deployed after the list was cached
+    listed = await listMetadataComponents(connection, type, folder, { refresh: true });
+    match = findMatch(listed.value);
+  }
+  return match ? { id: match.id, fromCache: listed.fromCache } : null;
+}
+
+interface ListedComponent {
+  fullName: string;
+  id: string;
+}
+
+// listMetadata of a type (in a folder for Report, Dashboard...), cached per org: only names and Ids are kept.
+// value is null when the type cannot be listed. Never cached for Flow: activating another version in Setup
+// changes the Id.
+async function listMetadataComponents(
+  connection: Connection,
+  type: string,
+  folder?: string,
+  options: { refresh?: boolean } = {}
+): Promise<{ value: ListedComponent[] | null; fromCache: boolean }> {
+  const listComponents = async (): Promise<ListedComponent[] | null> => {
     try {
       const listed = await connection.metadata.list([folder ? { type, folder } : { type }], getApiVersion(connection));
       const components: any[] = Array.isArray(listed) ? listed : listed ? [listed] : [];
@@ -250,30 +294,85 @@ export async function lookupListedComponent(
       return null;
     }
   };
-  const decode = (value: string): string => {
-    try {
-      return decodeURIComponent(value);
-    } catch {
-      return value;
-    }
-  };
-  const findMatch = (components: Array<{ fullName: string; id: string }> | null) =>
-    (components ?? []).find((component) => component.fullName === name || decode(component.fullName) === name);
-
-  // Never cached for Flow: activating another version in Setup changes the Id
   if (type === 'Flow') {
-    const match = findMatch(await listComponents());
-    return match ? { id: match.id, fromCache: false } : null;
+    return { value: await listComponents(), fromCache: false };
   }
   const cacheKey = `listMetadata:${type}${folder ? `:${folder}` : ''}`;
-  let listed = await withOrgApiCache(connection, cacheKey, listComponents, { refresh: options.refresh });
-  let match = findMatch(listed.value);
-  if (!match && listed.fromCache) {
-    // The component may have been deployed after the list was cached
-    listed = await withOrgApiCache(connection, cacheKey, listComponents, { refresh: true });
-    match = findMatch(listed.value);
+  return await withOrgApiCache(connection, cacheKey, listComponents, { refresh: options.refresh });
+}
+
+// Setup page of a component: Flow Builder for a Flow, the list page for the bundles without a detail page,
+// and /<Id> for the others, which Salesforce redirects to the Setup detail page of the component
+export function buildSetupPath(type: string, id: string): string {
+  if (type === 'Flow') {
+    return `/builder_platform_interaction/flowBuilder.app?flowId=${id}`;
   }
-  return match ? { id: match.id, fromCache: listed.fromCache } : null;
+  if (type === 'LightningComponentBundle') {
+    return '/lightning/setup/LightningComponentBundles/home';
+  }
+  if (type === 'AuraDefinitionBundle') {
+    return '/lightning/setup/LightningComponents/home';
+  }
+  return id ? `/${id}` : '';
+}
+
+// Bundles (LWC, Aura) have no file suffix: find the folder of the bundle, then its main file
+const BUNDLE_MAIN_FILE_EXTENSIONS = ['.js', '.cmp', '.app', '.evt', '.intf'];
+async function findBundleMainFile(type: string, name: string): Promise<string> {
+  const directoryName = listMetadataTypes().find(
+    (metadataType) => metadataType.xmlName === type && !metadataType.suffix
+  )?.directoryName;
+  if (!directoryName) {
+    return '';
+  }
+  for (const packageDirectory of await getSfdxProjectPackageDirectories()) {
+    const files = await glob(`**/${directoryName}/${globEscape(name)}/*`, {
+      cwd: packageDirectory.fullPath,
+      ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+    });
+    if (files.length > 0) {
+      const mainFile =
+        BUNDLE_MAIN_FILE_EXTENSIONS.map((extension) =>
+          files.find((file) => path.basename(file) === `${name}${extension}`)
+        ).find(Boolean) ?? files.sort()[0];
+      return path.join(packageDirectory.path, mainFile).replace(/\\/g, '/');
+    }
+  }
+  return '';
+}
+
+// Adds to each dependent what a UI needs to act on it: its Metadata API name (MetadataComponentName is a
+// label or a DeveloperName, such as "Account Layout" or "Status"), its Setup page and its local source file.
+// One cached listing per type; types that cannot be listed (CronTrigger...) keep an empty API name.
+export async function enrichUsedByRows(
+  connection: Connection,
+  rows: MetadataDependencyRow[]
+): Promise<MetadataDependencyRow[]> {
+  const id15 = (id: string) => id.slice(0, 15);
+  for (const type of [...new Set(rows.map((row) => row.usedByType))]) {
+    const typeRows = rows.filter((row) => row.usedByType === type);
+    const listed = (await listMetadataComponents(connection, type)).value ?? [];
+    const nameById = new Map(listed.filter((component) => component.id).map((c) => [id15(c.id), c.fullName]));
+    for (const row of typeRows) {
+      row.usedByApiName = nameById.get(id15(row.usedById)) ?? '';
+      row.usedBySetupPath = buildSetupPath(type, row.usedById);
+    }
+    const apiNames = typeRows.map((row) => row.usedByApiName).filter((name) => name !== '');
+    if (apiNames.length === 0) {
+      continue;
+    }
+    try {
+      const localFiles = await MetadataUtils.findMetaFilesFromTypeAndNames(type, [...new Set(apiNames)]);
+      for (const row of typeRows) {
+        row.usedByLocalFile =
+          (row.usedByApiName && (localFiles.get(row.usedByApiName) || (await findBundleMainFile(type, row.usedByApiName)))) ||
+          '';
+      }
+    } catch {
+      // No sfdx project here: no local files
+    }
+  }
+  return rows;
 }
 
 // EntityDefinition of an object API name, cached: object Ids do not change
@@ -555,7 +654,7 @@ export async function writeMetadataDepsReports(
   const summaryCsv = path.join(reportDir, `${stem}-summary.csv`);
   const xlsxBase = path.join(reportDir, `${stem}.csv`);
   const xlsxFile = path.join(reportDir, 'xls', `${stem}.xlsx`);
-  const fields = ['usedById', 'usedByName', 'usedByType', 'targetId', 'targetName', 'targetType'];
+  const fields = ['usedById', 'usedByApiName', 'usedByName', 'usedByType', 'targetId', 'targetName', 'targetType'];
   const summary = [
     { Field: 'Component', Value: selection.name },
     { Field: 'Type', Value: selection.type },
@@ -621,6 +720,7 @@ export async function runMetadataDeps(
       rows = await queryUsedBy(connection, selection, queryOptions);
     }
   }
+  await enrichUsedByRows(connection, rows);
   if (selection.type === UNKNOWN_TYPE && rows.length > 0) {
     selection.type = rows[0].targetType || UNKNOWN_TYPE;
   }
@@ -634,13 +734,16 @@ export async function runMetadataDeps(
     const columns = [t('docMdColType'), t('docMdColName')];
     const tableRows = [...rows]
       .sort((a, b) => a.usedByType.localeCompare(b.usedByType) || a.usedByName.localeCompare(b.usedByName))
-      .map((row) => ({ [columns[0]]: row.usedByType, [columns[1]]: row.usedByName }));
+      .map((row) => ({ [columns[0]]: row.usedByType, [columns[1]]: row.usedByApiName || row.usedByName }));
     // No uxLogTableWithReport: the used-by CSV written below holds every row and is sent to VS Code.
     // The table comes first, so a report failure never hides the result.
     uxLogTable(commandThis, tableRows, columns);
   }
-  uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
-  const report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
+  let report: MetadataDepsReport | Record<string, never> = {};
+  if (!flags.skipReport) {
+    uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
+    report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
+  }
   const outputString = t('metadataDepsGenerated', { name: selection.name, count: rows.length });
   uxLog('success', commandThis, c.green(outputString));
   return {

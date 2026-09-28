@@ -23,6 +23,9 @@ Select a common metadata type and API name interactively, pass \`--type\` and \`
 - **Direct Id:** Pass \`--id\` to skip lookup. Without \`--type\`, dependencies are not filtered on the selected component type.
 - **Dependent type filter:** Pass \`--component-type Flow\` (for example) to keep only one type of dependent component.
 - **Large graphs:** Pass \`--bulk\` to run a Tooling API Bulk API 2.0 query job, including Report dependencies and graphs that can exceed 2,000 rows. Developer Edition orgs reject Bulk queries on this object.
+- **VS Code panel:** In VS Code, the Metadata Dependencies panel shows the result, opens the files and the Setup pages of the dependents, drills down and retrieves them. It runs this command with \`--json --skip-report\`.
+
+![Metadata Dependencies panel](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/metadata-dependencies.png)
 - **Reports:** Writes a Used by CSV and an Excel workbook with Summary and Used by sheets under \`hardis-report/metadata-deps/<api-name>-<type>/\`.
 
 \`MetadataComponentDependency\` is a beta Salesforce object. Its coverage depends on the org and Salesforce release. Profiles, Permission Sets, List Views, approval processes, sharing rules and some relationship metadata may be absent from the graph.
@@ -45,6 +48,7 @@ In agent mode, pass either \`--source-file\`, \`--id\`, or both \`--type\` and \
 - The \`listMetadata\` and \`EntityDefinition\` results are cached for 30 days per org Id under \`~/.sfdx/sfdx-hardis-cache/orgs/<orgId>/\` (\`SFDX_HARDIS_ORG_API_CACHE_TTL_DAYS\` changes the duration, \`NO_CACHE\` disables it, \`sf hardis:cache:clear\` empties it). Only the name to Id mapping is cached, never the dependencies: a dependency created in Setup a second ago is found. The mapping is checked again when it could be outdated: a name missing from a cached list is listed again (a component created since), a cached Id with no dependency is listed again (a component deleted then created again with the same name), and Flows are never cached (activating another version changes the Id).
 - A standard object is listed without an Id: it is looked up through \`EntityDefinition\`, whose \`DurableId\` is the object API name, and queried as \`StandardEntity\`.
 - When \`listMetadata\` finds nothing (a Tooling-only type, or a name that is not an API name such as a custom object without its \`__c\` suffix), the command queries the Tooling object of the type by \`Name\` or \`DeveloperName\`.
+- Each dependent row of the \`--json\` output also carries \`usedByApiName\` (its Metadata API name, from the same cached listing matched on the Id, empty for types that cannot be listed), \`usedBySetupPath\` (\`/<Id>\`, Flow Builder for a Flow, the list page for LWC and Aura bundles) and \`usedByLocalFile\` (its source file in the project, empty when absent). \`--skip-report\` skips the CSV and Excel files.
 - \`--bulk\` creates a query job on \`/services/data/vXX.X/tooling/jobs/query\`, polls it, and reads the CSV results page by page.
 - \`--source-file\` resolves the file with the \`@salesforce/source-deploy-retrieve\` metadata resolver, then runs the same lookup as \`--type\` and \`--name\`. It cannot be combined with \`--id\`, \`--type\` or \`--name\`.
 - Salesforce does not allow \`RefMetadataComponentType = 'StandardEntity'\`; for this type the command filters by Id only.
@@ -76,6 +80,10 @@ In agent mode, pass either \`--source-file\`, \`--id\`, or both \`--type\` and \
     'source-file': Flags.string({
       description: 'Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name',
       exclusive: ['id', 'type', 'name'],
+    }),
+    'skip-report': Flags.boolean({
+      default: false,
+      description: 'Do not write the CSV and Excel reports (used by the VS Code panel, which shows the result itself)',
     }),
     'component-type': Flags.string({
       description: 'Only return dependent components of this Tooling metadata type',
@@ -109,6 +117,7 @@ In agent mode, pass either \`--source-file\`, \`--id\`, or both \`--type\` and \
         name: flags.name,
         id: flags.id,
         sourceFile: flags['source-file'],
+        skipReport: flags['skip-report'] === true,
         componentType: flags['component-type'],
         bulk: flags.bulk === true,
         agent: flags.agent === true,

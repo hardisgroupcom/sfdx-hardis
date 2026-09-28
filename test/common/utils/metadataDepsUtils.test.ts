@@ -6,8 +6,10 @@ import { clearOrgApiCache } from '../../../src/common/cache/orgApiCache.js';
 import {
   buildCustomFieldLookupSoql,
   buildLookupSoql,
+  buildSetupPath,
   buildUsedBySoql,
   customFieldDeveloperName,
+  enrichUsedByRows,
   isMetadataType,
   isStandardObjectName,
   lookupListedComponent,
@@ -177,6 +179,68 @@ describe('metadataDepsUtils', () => {
     });
   });
 
+  describe('dependent rows for the VS Code panel', () => {
+    const row = (usedById: string, usedByType: string, usedByName: string) => ({
+      usedById,
+      usedByName,
+      usedByType,
+      targetId: '01Ixx0000000001AAA',
+      targetName: 'Installation',
+      targetType: 'CustomObject',
+      usedByApiName: '',
+      usedBySetupPath: '',
+      usedByLocalFile: '',
+    });
+
+    it('builds the Setup path of a component', () => {
+      expect(buildSetupPath('ApexClass', '01p000000000001AAA')).to.equal('/01p000000000001AAA');
+      expect(buildSetupPath('Flow', '301000000000001AAA')).to.equal(
+        '/builder_platform_interaction/flowBuilder.app?flowId=301000000000001AAA'
+      );
+      expect(buildSetupPath('LightningComponentBundle', '0Rb000000000001AAA')).to.equal(
+        '/lightning/setup/LightningComponentBundles/home'
+      );
+      expect(buildSetupPath('AuraDefinitionBundle', '0Ab000000000001AAA')).to.equal(
+        '/lightning/setup/LightningComponents/home'
+      );
+    });
+
+    it('adds the Metadata API name matched on the Id, with one listing per type', async () => {
+      const queries: any[] = [];
+      const listings: Record<string, unknown> = {
+        Layout: [{ fullName: 'Account-Account Layout', id: '00h000000000001AAA' }],
+        CustomField: [{ fullName: 'Installation__c.Crew_Workload__c', id: '00N000000000001AAA' }],
+      };
+      const connection = {
+        getApiVersion: () => '65.0',
+        metadata: {
+          list: async (query: any[]) => {
+            queries.push(query);
+            const listing = listings[query[0].type];
+            if (!listing) {
+              throw new Error('INVALID_TYPE');
+            }
+            return listing;
+          },
+        },
+      } as any;
+      const rows = await enrichUsedByRows(connection, [
+        row('00h000000000001AAA', 'Layout', 'Account Layout'),
+        row('00N000000000001', 'CustomField', 'Crew_Workload'),
+        row('00N000000000002AAA', 'CustomField', 'Other'),
+        row('08e000000000001AAA', 'CronTrigger', '08e000000000001AAA'),
+      ]);
+      expect(rows.map((r) => r.usedByApiName)).to.deep.equal([
+        'Account-Account Layout',
+        'Installation__c.Crew_Workload__c',
+        '',
+        '',
+      ]);
+      expect(rows[0].usedBySetupPath).to.equal('/00h000000000001AAA');
+      expect(queries.map((query) => query[0].type)).to.deep.equal(['Layout', 'CustomField', 'CronTrigger']);
+    });
+  });
+
   describe('standard objects', () => {
     it('treats a name without __ as a standard object', () => {
       expect(isStandardObjectName('Account')).to.equal(true);
@@ -246,6 +310,9 @@ describe('metadataDepsUtils', () => {
           targetId: '01pA',
           targetName: 'Target',
           targetType: 'ApexClass',
+          usedByApiName: '',
+          usedBySetupPath: '',
+          usedByLocalFile: '',
         },
       ]);
     });
