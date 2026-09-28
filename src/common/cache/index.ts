@@ -1,7 +1,6 @@
 import fs from '../utils/fsUtils.js';
 import * as os from 'os';
 import * as path from 'path';
-import { clearOrgApiCache } from './orgApiCache.js';
 
 const cacheFileName = path.join(os.homedir(), '.sfdx', '.sfdx-hardis-cache.json');
 let MEMORY_CACHE: any = null;
@@ -53,7 +52,6 @@ export const clearCache = async (key: string | null = null): Promise<void> => {
     delete MEMORY_CACHE[key];
   } else {
     MEMORY_CACHE = {};
-    await clearOrgApiCache();
   }
   await storeCache();
 };

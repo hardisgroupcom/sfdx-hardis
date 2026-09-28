@@ -5,6 +5,7 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { clearCache } from '../../../common/cache/index.js';
+import { clearOrgApiCache } from '../../../common/cache/orgApiCache.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -75,6 +76,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
   public async run(): Promise<AnyJson> {
     await clearCache();
+    await clearOrgApiCache();
     uxLog("action", this, c.cyan(t('sfdxHardisCacheCleared')));
     return {
       message: t('sfdxHardisCacheCleared'),

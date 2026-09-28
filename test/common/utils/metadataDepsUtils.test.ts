@@ -16,11 +16,13 @@ import {
   isMetadataType,
   isStandardObjectName,
   lookupListedComponent,
+  lookupMetadataComponents,
   isSalesforceId,
   mapDependencies,
   parseCustomFieldName,
   parseCustomObjectName,
   queryAllDependencyRecords,
+  queryDependencies,
   queryFolderedNames,
   sanitizeFsName,
   soqlString,
@@ -143,6 +145,28 @@ describe('metadataDepsUtils', () => {
       afterEach(async () => {
         process.env = { ...previousEnv };
         await fs.remove(root);
+      });
+
+      it('does not cache a standard object that is not found: it can be enabled later', async () => {
+        const entities: Array<Record<string, string>> = [];
+        let entityQueries = 0;
+        const connection = {
+          ...cachedConnection([], []),
+          instanceUrl: 'https://acme.my.salesforce.com',
+          request: async () => {
+            entityQueries++;
+            return { records: entities, done: true };
+          },
+        } as any;
+        expect(await lookupMetadataComponents(connection, 'CustomObject', 'Quote')).to.deep.equal([]);
+        // Quotes enabled in Setup
+        entities.push({ DurableId: 'Quote', QualifiedApiName: 'Quote' });
+        const found = await lookupMetadataComponents(connection, 'CustomObject', 'Quote');
+        expect(found.map((item) => item.id)).to.deep.equal(['Quote']);
+        const queriesWhenFound = entityQueries;
+        // Found once: served from the cache from now on
+        await lookupMetadataComponents(connection, 'CustomObject', 'Quote');
+        expect(entityQueries).to.equal(queriesWhenFound);
       });
 
       it('serves a second lookup from the cache, and lists again when the name is missing', async () => {
@@ -666,6 +690,21 @@ describe('metadataDepsUtils', () => {
       const records = await queryAllDependencyRecords(conn, selection, splitOptions('uses'));
       expect(idsOf(records, 'RefMetadataComponentId')).to.deep.equal(idsOf(rows, 'RefMetadataComponentId'));
       expect(queries.some((query) => query.includes("= 'StandardEntity'"))).to.equal(false);
+    });
+
+    it('keeps only the standard objects for --component-type StandardEntity, without a filter Salesforce rejects', async () => {
+      expect(buildDependenciesSoql('01pSELECTED000000A', 'ApexClass', 'StandardEntity', 'uses')).not.to.contain(
+        'RefMetadataComponentType ='
+      );
+      const rows = makeRows('uses', { CustomField: ['00N', 3] });
+      rows.push({ ...rows[0], RefMetadataComponentId: 'Account', RefMetadataComponentName: 'Account', RefMetadataComponentType: 'StandardEntity' });
+      const { conn } = fakeConnection(rows);
+      const result = await queryDependencies(conn, selection, {
+        direction: 'uses',
+        componentType: 'StandardEntity',
+        commandThis: null,
+      });
+      expect(result.dependencies.map((dependency) => dependency.id)).to.deep.equal(['Account']);
     });
 
     it('lists the types found, then the other types, then each Id prefix one character longer and the exact Id', () => {

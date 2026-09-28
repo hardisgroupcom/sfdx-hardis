@@ -232,7 +232,8 @@ export function buildDependenciesSoql(
     clauses.push(`${sides.selected}Type = ${soqlString(type)}`);
   }
   const otherType = componentType || part.type;
-  if (otherType) {
+  // Salesforce rejects a filter on StandardEntity: queryDependencies keeps the standard objects itself
+  if (otherType && otherType !== STANDARD_ENTITY_TYPE) {
     clauses.push(`${sides.other}Type = ${soqlString(otherType)}`);
   }
   if (part.excludedTypes && part.excludedTypes.length > 0) {
@@ -752,7 +753,8 @@ export function formatFlowVersions(versions?: FlowVersion[]): string {
     .join('; ');
 }
 
-// EntityDefinition of an object API name, cached: object Ids do not change
+// EntityDefinition of an object API name, cached: object Ids do not change. An object not found is not
+// cached: it can be deployed, or enabled like Quotes, at any time
 async function queryEntityDefinitions(
   connection: Connection,
   qualifiedApiName: string
@@ -766,7 +768,7 @@ async function queryEntityDefinitions(
       DurableId: String(record.DurableId),
       QualifiedApiName: String(record.QualifiedApiName),
     }));
-  });
+  }, { shouldCache: (records) => records.length > 0 });
   return result.value;
 }
 
@@ -849,8 +851,13 @@ export async function queryDependencies(
   selection: MetadataComponentSelection,
   options: { componentType?: string; direction: DependencyDirection; commandThis: any }
 ): Promise<{ dependencies: MetadataDependency[]; selectedType: string }> {
-  const records = await queryAllDependencyRecords(connection, selection, options);
-  const selectedType = records.length > 0 ? String(records[0][`${directionSides(options.direction).selected}Type`] ?? '') : '';
+  const sides = directionSides(options.direction);
+  let records = await queryAllDependencyRecords(connection, selection, options);
+  const selectedType = records.length > 0 ? String(records[0][`${sides.selected}Type`] ?? '') : '';
+  if (options.componentType === STANDARD_ENTITY_TYPE) {
+    // The query could not filter on StandardEntity: the other types are removed here
+    records = records.filter((record) => record[`${sides.other}Type`] === STANDARD_ENTITY_TYPE);
+  }
   return { dependencies: mapDependencies(records, options.direction), selectedType };
 }
 
