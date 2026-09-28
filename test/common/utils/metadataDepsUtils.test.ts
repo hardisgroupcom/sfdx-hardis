@@ -20,10 +20,13 @@ import {
   mapDependencies,
   parseCustomFieldName,
   parseCustomObjectName,
+  queryAllDependencyRecords,
   queryFolderedNames,
   sanitizeFsName,
   soqlString,
+  splitDependencyQueryPart,
   stripCustomSuffix,
+  TOOLING_ROW_CAP,
 } from '../../../src/common/utils/metadataDepsUtils.js';
 
 describe('metadataDepsUtils', () => {
@@ -486,6 +489,203 @@ describe('metadataDepsUtils', () => {
       expect(mapDependencies([record], 'uses')).to.deep.equal([
         { id: '01pA', name: 'Target', type: 'ApexClass', ...empty },
       ]);
+    });
+  });
+
+  describe('dependency rows past the row cap', () => {
+    // Deterministic mixed-case Ids, like real ones: LIKE is case-sensitive on this object
+    const ID_CHARACTERS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    let seed = 7;
+    const nextCharacter = (): string => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return ID_CHARACTERS[seed % ID_CHARACTERS.length];
+    };
+    const makeId = (keyPrefix: string): string => keyPrefix + Array.from({ length: 15 }, nextCharacter).join('');
+    const makeRows = (side: 'used-by' | 'uses', counts: Record<string, [string, number]>) => {
+      const rows: Array<Record<string, string>> = [];
+      for (const [type, [keyPrefix, count]] of Object.entries(counts)) {
+        for (let i = 0; i < count; i++) {
+          const otherId = makeId(keyPrefix);
+          const other = { Id: otherId, Name: `${type}_${i}`, Type: type };
+          const selected = { Id: '01pSELECTED000000A', Name: 'Selected', Type: 'ApexClass' };
+          const [using, used] = side === 'used-by' ? [other, selected] : [selected, other];
+          rows.push({
+            MetadataComponentId: using.Id,
+            MetadataComponentName: using.Name,
+            MetadataComponentType: using.Type,
+            RefMetadataComponentId: used.Id,
+            RefMetadataComponentName: used.Name,
+            RefMetadataComponentType: used.Type,
+          });
+        }
+      }
+      return rows;
+    };
+
+    // Answers the WHERE clauses the split uses (=, NOT IN, LIKE), and never more than the row cap
+    const fakeConnection = (rows: Array<Record<string, string>>) => {
+      const queries: string[] = [];
+      const matches = (row: Record<string, string>, clause: string): boolean => {
+        let m = clause.match(/^(\w+) = '(.*)'$/);
+        if (m) {
+          if (m[1].endsWith('Type') && m[2] === 'StandardEntity') {
+            throw new Error('INVALID_TYPE_FOR_OPERATION');
+          }
+          return row[m[1]] === m[2];
+        }
+        m = clause.match(/^(\w+) NOT IN \((.*)\)$/);
+        if (m) {
+          const values = m[2].split(', ').map((value) => value.slice(1, -1));
+          return !values.includes(row[m[1]]);
+        }
+        m = clause.match(/^\((.*)\)$/);
+        if (m) {
+          return m[1].split(' OR ').some((alternative) => matches(row, alternative));
+        }
+        m = clause.match(/^(\w+) LIKE '(.*)%'$/);
+        if (m) {
+          return row[m[1]].startsWith(m[2]);
+        }
+        m = clause.match(/^(\w+) IN \((.*)\)$/);
+        if (m) {
+          return m[2].split(', ').map((value) => value.slice(1, -1)).includes(row[m[1]]);
+        }
+        throw new Error(`Unsupported clause ${clause}`);
+      };
+      const conn: any = {
+        instanceUrl: 'https://acme.my.salesforce.com',
+        getApiVersion: () => '62.0',
+        request: async ({ url }: { url: string }) => {
+          const soql = decodeURIComponent(url.split('?q=')[1]);
+          queries.push(soql);
+          const clauses = soql.split(' WHERE ')[1].split(' AND ');
+          const found = rows.filter((row) => clauses.every((clause) => matches(row, clause)));
+          // Like Salesforce: a capped answer is an arbitrary subset
+          return { records: found.reverse().slice(0, TOOLING_ROW_CAP), done: true };
+        },
+      };
+      return { conn, queries };
+    };
+    const selection = { id: '01pSELECTED000000A', name: 'Selected', type: 'ApexClass' };
+    const idsOf = (records: Array<Record<string, unknown>>, field: string) =>
+      records.map((record) => String(record[field])).sort();
+
+    // Developer Edition orgs reject Bulk queries on this object: the rows are read with smaller queries
+    const bulkRejected = async (): Promise<never> => {
+      throw new Error('INVALIDENTITY: Bulk API is not supported for this entity');
+    };
+    const splitOptions = (direction: 'used-by' | 'uses', componentType?: string) => ({
+      direction,
+      componentType,
+      commandThis: null,
+      bulkQuery: bulkRejected,
+    });
+
+    it('keeps the single REST query when the answer is under the cap, without any Bulk job', async () => {
+      const rows = makeRows('used-by', { Flow: ['301', 30] });
+      const { conn, queries } = fakeConnection(rows);
+      let bulkJobs = 0;
+      const records = await queryAllDependencyRecords(conn, selection, {
+        direction: 'used-by',
+        commandThis: null,
+        bulkQuery: async () => {
+          bulkJobs++;
+          return { records: [] };
+        },
+      });
+      expect(records).to.have.length(30);
+      expect(queries).to.have.length(1);
+      expect(bulkJobs).to.equal(0);
+    });
+
+    it('reads the rows past the cap with the Bulk API, merged with the REST rows it can miss', async () => {
+      const rows = makeRows('used-by', { ApexClass: ['01p', 2500], Flow: ['301', 700] });
+      const { conn, queries } = fakeConnection(rows);
+      // Like on some orgs: the Bulk API answer misses the Flow rows
+      const bulkRows = rows.filter((row) => row.MetadataComponentType !== 'Flow');
+      const records = await queryAllDependencyRecords(conn, selection, {
+        direction: 'used-by',
+        commandThis: null,
+        bulkQuery: async () => ({ records: bulkRows }),
+      });
+      const restFlowIds = rows
+        .slice()
+        .reverse()
+        .slice(0, TOOLING_ROW_CAP)
+        .filter((row) => row.MetadataComponentType === 'Flow')
+        .map((row) => row.MetadataComponentId);
+      const ids = records.map((record) => String(record.MetadataComponentId));
+      expect(queries).to.have.length(1);
+      expect(records).to.have.length(2500 + restFlowIds.length);
+      expect(restFlowIds.every((id) => ids.includes(id))).to.equal(true);
+    });
+
+    it('splits by type, then by Id prefix, when the Bulk API fails', async () => {
+      const rows = makeRows('used-by', { ApexClass: ['01p', 2500], Flow: ['301', 1500], Layout: ['00h', 10] });
+      const { conn, queries } = fakeConnection(rows);
+      const records = await queryAllDependencyRecords(conn, selection, splitOptions('used-by'));
+      expect(idsOf(records, 'MetadataComponentId')).to.deep.equal(idsOf(rows, 'MetadataComponentId'));
+      expect(queries.some((query) => query.includes("MetadataComponentType = 'Flow'"))).to.equal(true);
+      expect(queries.some((query) => query.includes('MetadataComponentType NOT IN ('))).to.equal(true);
+      expect(queries.some((query) => query.includes("MetadataComponentId LIKE '01p"))).to.equal(true);
+      expect(queries.some((query) => query.includes(' OR '))).to.equal(false);
+    });
+
+    it('splits by Id prefix only when the component type is fixed', async () => {
+      const rows = makeRows('used-by', { ApexClass: ['01p', 4200] });
+      const { conn, queries } = fakeConnection(rows);
+      const records = await queryAllDependencyRecords(conn, selection, splitOptions('used-by', 'ApexClass'));
+      expect(records).to.have.length(4200);
+      expect(queries.some((query) => query.includes('NOT IN'))).to.equal(false);
+    });
+
+    it('splits on the used side in uses mode', async () => {
+      const rows = makeRows('uses', { CustomField: ['00N', 2300] });
+      const { conn, queries } = fakeConnection(rows);
+      const records = await queryAllDependencyRecords(conn, selection, splitOptions('uses'));
+      expect(idsOf(records, 'RefMetadataComponentId')).to.deep.equal(idsOf(rows, 'RefMetadataComponentId'));
+      expect(queries.some((query) => query.includes("RefMetadataComponentId LIKE '00N"))).to.equal(true);
+    });
+
+    it('never filters on StandardEntity: standard objects are split by name in the other types part', async () => {
+      const rows = makeRows('uses', { CustomField: ['00N', 1500] });
+      const names = ['Account', 'Contact', 'Opportunity', 'Case', 'Lead'];
+      for (let i = 0; i < 2600; i++) {
+        rows.push({
+          MetadataComponentId: '01pSELECTED000000A',
+          MetadataComponentName: 'Selected',
+          MetadataComponentType: 'ApexClass',
+          RefMetadataComponentId: `${names[i % names.length]}${i}`,
+          RefMetadataComponentName: `${names[i % names.length]}${i}`,
+          RefMetadataComponentType: 'StandardEntity',
+        });
+      }
+      // A name that is the prefix of others ("Account" and "Account1..."): found by the exact Id part
+      rows.push({ ...rows[rows.length - 1], RefMetadataComponentId: 'Account', RefMetadataComponentName: 'Account' });
+      const { conn, queries } = fakeConnection(rows);
+      const records = await queryAllDependencyRecords(conn, selection, splitOptions('uses'));
+      expect(idsOf(records, 'RefMetadataComponentId')).to.deep.equal(idsOf(rows, 'RefMetadataComponentId'));
+      expect(queries.some((query) => query.includes("= 'StandardEntity'"))).to.equal(false);
+    });
+
+    it('lists the types found, then the other types, then each Id prefix one character longer and the exact Id', () => {
+      const records = [
+        { MetadataComponentId: '301A1', MetadataComponentType: 'Flow' },
+        { MetadataComponentId: '01pB2', MetadataComponentType: 'ApexClass' },
+      ];
+      expect(splitDependencyQueryPart({}, records, 'MetadataComponentType', false)).to.deep.equal([
+        { type: 'Flow' },
+        { type: 'ApexClass' },
+        { excludedTypes: ['Flow', 'ApexClass'] },
+      ]);
+      expect(
+        splitDependencyQueryPart({ excludedTypes: ['Flow'] }, [{ MetadataComponentType: 'Layout' }], 'MetadataComponentType', false)
+      ).to.deep.equal([{ type: 'Layout' }, { excludedTypes: ['Flow', 'Layout'] }]);
+      const byPrefix = splitDependencyQueryPart({ type: 'Flow', idPrefix: '301' }, records, 'MetadataComponentType', false);
+      expect(byPrefix).to.have.length(63);
+      expect(byPrefix[0]).to.deep.equal({ type: 'Flow', idPrefix: '3010' });
+      expect(byPrefix[62]).to.deep.equal({ type: 'Flow', exactId: '301' });
+      expect(splitDependencyQueryPart({ exactId: '301' }, records, 'MetadataComponentType', true)).to.deep.equal([]);
     });
   });
 

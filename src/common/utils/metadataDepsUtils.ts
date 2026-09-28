@@ -9,6 +9,7 @@ import { t } from './i18n.js';
 import { isCI, uxLog, uxLogTable } from './index.js';
 import { prompts } from './prompts.js';
 import { bulkQueryTooling, soqlQuery, soqlQueryTooling } from './apiUtils.js';
+import { mapInAdaptiveBatches } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { withOrgApiCache } from '../cache/orgApiCache.js';
@@ -21,7 +22,16 @@ const SALESFORCE_ID_RE = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
 const METADATA_TYPE_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
 const OTHER_TYPE_VALUE = '__other__';
 const UNKNOWN_TYPE = 'Unknown';
-const TOOLING_ROW_CAP = 2000;
+// Salesforce returns at most this number of MetadataComponentDependency rows to one query
+export const TOOLING_ROW_CAP = 2000;
+// Characters of an Id prefix split: LIKE is case-sensitive on this object, so all 62 are needed
+const ID_PREFIX_CHARACTERS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
+// Salesforce rejects a filter on this type: standard objects stay in the "other types" part
+const STANDARD_ENTITY_TYPE = 'StandardEntity';
+// Longest prefix split: an Id has 18 characters, a standard object name (its Id here) up to 40
+const MAX_ID_PREFIX_LENGTH = 80;
+// Parallel queries of a split, smaller after a throttling
+const SPLIT_QUERY_BATCH_SIZES = [10, 5, 2, 1] as const;
 const CUSTOM_OBJECT_SUFFIX_RE = /__(c|mdt|e|b|x|kav|share|history|feed)$/i;
 const DEPENDENCY_FIELDS =
   'MetadataComponentId, MetadataComponentName, MetadataComponentType, ' +
@@ -43,7 +53,6 @@ export interface MetadataDepsFlags {
   sourceFile?: string;
   direction?: DependencyDirection;
   skipReport?: boolean;
-  bulk?: boolean;
   agent?: boolean;
 }
 
@@ -198,21 +207,154 @@ function directionSides(direction: DependencyDirection): { selected: string; oth
     : { selected: 'RefMetadataComponent', other: 'MetadataComponent' };
 }
 
+// One part of a dependency query split to stay under the row cap, filtered on the other side
+export interface DependencyQueryPart {
+  // Only this type of component
+  type?: string;
+  // None of these types (the types not listed yet)
+  excludedTypes?: string[];
+  // Only the components whose Id starts with this prefix (case-sensitive)
+  idPrefix?: string;
+  // Only this component: a standard object Id is its name, which a longer prefix does not match
+  exactId?: string;
+}
+
 export function buildDependenciesSoql(
   id: string,
   type?: string,
   componentType?: string,
-  direction: DependencyDirection = 'used-by'
+  direction: DependencyDirection = 'used-by',
+  part: DependencyQueryPart = {}
 ): string {
   const sides = directionSides(direction);
   const clauses = [`${sides.selected}Id = ${soqlString(id)}`];
   if (type && type !== 'StandardEntity' && type !== UNKNOWN_TYPE) {
     clauses.push(`${sides.selected}Type = ${soqlString(type)}`);
   }
-  if (componentType) {
-    clauses.push(`${sides.other}Type = ${soqlString(componentType)}`);
+  const otherType = componentType || part.type;
+  if (otherType) {
+    clauses.push(`${sides.other}Type = ${soqlString(otherType)}`);
+  }
+  if (part.excludedTypes && part.excludedTypes.length > 0) {
+    clauses.push(`${sides.other}Type NOT IN (${part.excludedTypes.map(soqlString).join(', ')})`);
+  }
+  if (part.idPrefix) {
+    clauses.push(`${sides.other}Id LIKE ${soqlString(`${part.idPrefix}%`)}`);
+  }
+  if (part.exactId) {
+    clauses.push(`${sides.other}Id = ${soqlString(part.exactId)}`);
   }
   return `SELECT ${DEPENDENCY_FIELDS} FROM MetadataComponentDependency WHERE ${clauses.join(' AND ')}`;
+}
+
+// The smaller queries that together return the rows of a part that reached the row cap:
+// - first one per type found, plus one for the types not found (StandardEntity can not be filtered on:
+//   standard objects stay in that last part)
+// - then one per Id prefix one character longer, plus the prefix itself as an exact Id. One LIKE per
+//   query: Salesforce does not apply an OR of many LIKE filters on this object reliably
+export function splitDependencyQueryPart(
+  part: DependencyQueryPart,
+  records: Array<Record<string, unknown>>,
+  typeField: string,
+  typeFixed: boolean
+): DependencyQueryPart[] {
+  if (part.exactId) {
+    return [];
+  }
+  if (!typeFixed && !part.type && part.idPrefix === undefined) {
+    const excluded = part.excludedTypes || [];
+    const types = [...new Set(records.map((record) => String(record[typeField] ?? '')))].filter(
+      (type) => type !== '' && type !== STANDARD_ENTITY_TYPE && !excluded.includes(type)
+    );
+    if (types.length > 0) {
+      return [...types.map((type) => ({ type })), { excludedTypes: [...excluded, ...types] }];
+    }
+  }
+  const prefix = part.idPrefix || '';
+  if (prefix.length >= MAX_ID_PREFIX_LENGTH) {
+    return [];
+  }
+  const parts: DependencyQueryPart[] = ID_PREFIX_CHARACTERS.map((character) => ({
+    ...part,
+    idPrefix: `${prefix}${character}`,
+  }));
+  if (prefix !== '') {
+    parts.push({ ...part, idPrefix: undefined, exactId: prefix });
+  }
+  return parts.map((item) => Object.fromEntries(Object.entries(item).filter(([, value]) => value !== undefined)));
+}
+
+type DependencyRecord = Record<string, unknown>;
+
+// Every row of a dependency query. MetadataComponentDependency returns at most 2,000 rows to a query and
+// supports neither queryMore, OFFSET nor range filters on Ids. At the cap, a Bulk API job reads the
+// rows, merged with the ones already read (the Bulk API can miss some, Flow rows for example). When the
+// Bulk API fails (Developer Edition orgs reject it), the query is split into smaller ones (see
+// splitDependencyQueryPart) until each is under the cap.
+export async function queryAllDependencyRecords(
+  connection: Connection,
+  selection: MetadataComponentSelection,
+  options: {
+    componentType?: string;
+    direction: DependencyDirection;
+    commandThis: any;
+    // Replaceable in tests
+    bulkQuery?: (query: string, connection: Connection) => Promise<{ records?: DependencyRecord[] }>;
+  }
+): Promise<DependencyRecord[]> {
+  const other = directionSides(options.direction).other;
+  const buildQuery = (part: DependencyQueryPart) =>
+    buildDependenciesSoql(selection.id, selection.type, options.componentType, options.direction, part);
+  const records: DependencyRecord[] = (await soqlQueryTooling(buildQuery({}), connection)).records ?? [];
+  if (records.length < TOOLING_ROW_CAP) {
+    return records;
+  }
+  const unique = (rows: DependencyRecord[]): DependencyRecord[] => {
+    const byKey = new Map<string, DependencyRecord>();
+    for (const row of rows) {
+      byKey.set(`${row[`${other}Id`]}|${row[`${other}Type`]}`, row);
+    }
+    return [...byKey.values()];
+  };
+  const bulkQuery = options.bulkQuery || bulkQueryTooling;
+  try {
+    const bulkRecords = (await bulkQuery(buildQuery({}), connection)).records ?? [];
+    const merged = unique([...records, ...bulkRecords]);
+    uxLog('log', options.commandThis, c.grey(t('metadataDepsReadWithBulk', { cap: TOOLING_ROW_CAP, rows: merged.length })));
+    return merged;
+  } catch (error: any) {
+    uxLog(
+      'log',
+      options.commandThis,
+      c.grey(t('metadataDepsBulkFallback', { message: error?.message || String(error) }))
+    );
+  }
+  let queryCount = 1;
+  const readPart = async (part: DependencyQueryPart, known?: DependencyRecord[]): Promise<DependencyRecord[]> => {
+    let rows: DependencyRecord[];
+    if (known) {
+      rows = known;
+    } else {
+      queryCount++;
+      rows = (await soqlQueryTooling(buildQuery(part), connection)).records ?? [];
+    }
+    if (rows.length < TOOLING_ROW_CAP) {
+      return rows;
+    }
+    const parts = splitDependencyQueryPart(part, rows, `${other}Type`, !!options.componentType);
+    if (parts.length === 0) {
+      return rows;
+    }
+    const partRows = await mapInAdaptiveBatches(parts, (item) => readPart(item), { sizes: SPLIT_QUERY_BATCH_SIZES });
+    return partRows.flatMap((item) => item ?? []);
+  };
+  const merged = unique(await readPart({}, records));
+  uxLog(
+    'log',
+    options.commandThis,
+    c.grey(t('metadataDepsReadInParts', { cap: TOOLING_ROW_CAP, count: queryCount, rows: merged.length }))
+  );
+  return merged;
 }
 
 // The other component of each row, whatever the direction
@@ -705,19 +847,9 @@ async function lookupToolingComponents(
 export async function queryDependencies(
   connection: Connection,
   selection: MetadataComponentSelection,
-  options: { componentType?: string; bulk?: boolean; direction: DependencyDirection; commandThis: any }
+  options: { componentType?: string; direction: DependencyDirection; commandThis: any }
 ): Promise<{ dependencies: MetadataDependency[]; selectedType: string }> {
-  const query = buildDependenciesSoql(selection.id, selection.type, options.componentType, options.direction);
-  const records = options.bulk
-    ? (await bulkQueryTooling(query, connection)).records ?? []
-    : (await soqlQueryTooling(query, connection)).records ?? [];
-  if (!options.bulk && records.length >= TOOLING_ROW_CAP) {
-    uxLog(
-      'warning',
-      options.commandThis,
-      c.yellow(t('metadataDepsRowCapWarning', { count: TOOLING_ROW_CAP }))
-    );
-  }
+  const records = await queryAllDependencyRecords(connection, selection, options);
   const selectedType = records.length > 0 ? String(records[0][`${directionSides(options.direction).selected}Type`] ?? '') : '';
   return { dependencies: mapDependencies(records, options.direction), selectedType };
 }
@@ -971,7 +1103,7 @@ export async function runMetadataDeps(
     commandThis,
     c.cyan(t(uses ? 'metadataDepsQueryingUses' : 'metadataDepsQueryingUsedBy', { name: selection.name, org: targetOrg }))
   );
-  const queryOptions = { componentType, bulk: flags.bulk, direction, commandThis };
+  const queryOptions = { componentType, direction, commandThis };
   let queried = await queryDependencies(connection, selection, queryOptions);
   if (queried.dependencies.length === 0 && selection.idFromCache && !uses) {
     // A cached Id can belong to a component deleted then created again with the same name. Only checked
