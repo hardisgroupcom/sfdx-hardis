@@ -13,7 +13,7 @@ Select a common metadata type and API name interactively, pass `--type` and `--n
 - **Metadata-aware lookup:** Uses `Name` or `DeveloperName` according to the metadata type. Custom fields accept `Object.Field__c` and are resolved without filtering on the unsupported `FullName` field.
 - **Org, not local files:** Dependencies are read from the target org. Even with `--source-file`, the file only tells which component to look up: changes not deployed yet are not taken into account.
 - **Local file:** Pass `--source-file` with the path of a metadata source file (an Apex class, a Flow, a field, any file of a LWC or Aura bundle...) to find what uses it. The VS Code extension uses it from the right-click menu of metadata files.
-- **Standard objects:** `--type CustomObject --name Account` looks up standard objects too.
+- **Standard objects:** `--type CustomObject --name Account` looks up standard objects too. Standard fields are not in the Salesforce dependency data, only custom fields are.
 - **Direct Id:** Pass `--id` to skip lookup, especially for Tooling types that cannot be resolved by name. Without `--type`, dependencies are not filtered on the selected component type.
 - **Dependent type filter:** Pass `--component-type Flow` (for example) to keep only one type of dependent component.
 - **Large graphs:** Pass `--bulk` to run a Tooling API Bulk API 2.0 query job, including Report dependencies and graphs that can exceed 2,000 rows. Developer Edition orgs reject Bulk queries on this object.
@@ -40,8 +40,8 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 - CustomObject lookup strips the suffix (`__c`, `__mdt`, `__e`...) and filters on `NamespacePrefix` for namespaced objects.
 - `--bulk` creates a query job on `/services/data/vXX.X/tooling/jobs/query`, polls it, and reads the CSV results page by page.
 - Custom field lookup splits `Object.Field__c`, resolves the object through `EntityDefinition`, and filters `CustomField` by `DeveloperName` plus `TableEnumOrId` / `EntityDefinitionId`.
-- `--source-file` resolves the file with the `@salesforce/source-deploy-retrieve` metadata resolver, then runs the same lookup as `--type` and `--name`. It cannot be combined with `--id`, `--type` or `--name`.
-- A `CustomObject` name without `__` is a standard object: it is resolved through `EntityDefinition`, whose `DurableId` is the object API name, and queried as `StandardEntity`.
+- `--source-file` resolves the file with the `@salesforce/source-deploy-retrieve` metadata resolver, then runs the same lookup as `--type` and `--name`. Types that cannot be looked up by name (Report, Layout, record types and other object child types...) need `--id`. It cannot be combined with `--id`, `--type` or `--name`.
+- When no custom object matches a `CustomObject` name without `__` (Account, Opportunity...), it is looked up as a standard object through `EntityDefinition`, whose `DurableId` is the object API name, and queried as `StandardEntity`.
 - Salesforce does not allow `RefMetadataComponentType = 'StandardEntity'`; for this type the command filters by Id only.
 </details>
 

@@ -207,21 +207,38 @@ export async function lookupMetadataComponents(
   type: string,
   name: string
 ): Promise<MetadataComponentSelection[]> {
-  if (type === 'CustomObject' && isStandardObjectName(name)) {
-    // Standard objects are not CustomObject records: their DurableId in EntityDefinition is their API name
-    const entityResult = await soqlQueryTooling(
-      `SELECT DurableId, QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = ${soqlString(name.trim())}`,
-      connection
-    );
-    return (entityResult.records ?? []).map((record: Record<string, unknown>) => ({
-      id: String(record.DurableId),
-      name: String(record.QualifiedApiName),
-      type: 'StandardEntity',
-    }));
+  const matches = await lookupToolingComponents(connection, type, name);
+  if (matches.length === 0 && type === 'CustomObject' && isStandardObjectName(name)) {
+    return await lookupStandardObject(connection, name);
   }
+  return matches;
+}
+
+// Standard objects are not CustomObject records: their DurableId in EntityDefinition is their API name
+async function lookupStandardObject(connection: Connection, name: string): Promise<MetadataComponentSelection[]> {
+  const entityResult = await soqlQueryTooling(
+    `SELECT DurableId, QualifiedApiName FROM EntityDefinition WHERE QualifiedApiName = ${soqlString(name.trim())}`,
+    connection
+  );
+  return (entityResult.records ?? []).map((record: Record<string, unknown>) => ({
+    id: String(record.DurableId),
+    name: String(record.QualifiedApiName),
+    type: 'StandardEntity',
+  }));
+}
+
+async function lookupToolingComponents(
+  connection: Connection,
+  type: string,
+  name: string
+): Promise<MetadataComponentSelection[]> {
   let query: string;
   let objectApi: string | undefined;
   if (type === 'CustomField') {
+    if (!name.trim().endsWith('__c')) {
+      // Salesforce dependency data only holds custom fields
+      throw new SfError(t('metadataDepsStandardFieldNotTracked', { name }));
+    }
     const parsed = parseCustomFieldName(name);
     objectApi = parsed.table;
     const entityKeys: string[] = [];
@@ -269,8 +286,9 @@ export async function lookupMetadataComponents(
       return { id: String(record.Id ?? ''), name: resolvedName, type };
     });
   } catch (error) {
-    if (String((error as Error).message).includes("No such column 'Name'")) {
-      throw new SfError(t('metadataDepsLookupNameColumnMissing', { type }));
+    // Tooling types without a Name column, or not queryable at all (Report, CustomMetadata...)
+    if (/No such column|not supported|INVALID_TYPE|INVALID_FIELD/i.test(String((error as Error).message))) {
+      throw new SfError(t('metadataDepsLookupByNameUnsupported', { type }));
     }
     throw error;
   }
@@ -281,9 +299,6 @@ export async function queryUsedBy(
   selection: MetadataComponentSelection,
   options: { componentType?: string; bulk?: boolean; commandThis: any }
 ): Promise<MetadataDependencyRow[]> {
-  if (selection.type === 'StandardEntity') {
-    uxLog('warning', options.commandThis, c.yellow(t('metadataDepsStandardEntityFilterSkipped')));
-  }
   const query = buildUsedBySoql(selection.id, selection.type, options.componentType);
   const records = options.bulk
     ? (await bulkQueryTooling(query, connection)).records ?? []
@@ -389,9 +404,6 @@ export async function resolveMetadataComponent(
 
   const sourceFile = flags.sourceFile?.trim();
   if (sourceFile) {
-    if (id || type || name) {
-      throw new SfError(t('metadataDepsSourceFileExclusive'));
-    }
     if (!fs.existsSync(sourceFile)) {
       throw new SfError(t('metadataDepsSourceFileMissing', { file: sourceFile }));
     }
@@ -424,8 +436,7 @@ export async function resolveMetadataComponent(
   uxLog('action', commandThis, c.cyan(t('metadataDepsResolvingComponent', { type, name })));
   const matches = await lookupMetadataComponents(connection, type!, name!);
   if (matches.length === 0) {
-    uxLog('warning', commandThis, c.yellow(t('metadataDepsNotFound', { type, name })));
-    return null;
+    throw new SfError(t('metadataDepsNotFound', { type, name }));
   }
   if (matches.length === 1) {
     // Keep the API name the user gave (Account.Status__c) rather than the Tooling DeveloperName (Account.Status)
@@ -536,8 +547,6 @@ export async function runMetadataDeps(
   if (selection.type === UNKNOWN_TYPE && rows.length > 0) {
     selection.type = rows[0].targetType || UNKNOWN_TYPE;
   }
-  uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
-  const report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
   if (rows.length === 0) {
     uxLog('warning', commandThis, c.yellow(t('metadataDepsEmptyUsedBy')));
   } else {
@@ -549,9 +558,12 @@ export async function runMetadataDeps(
     const tableRows = [...rows]
       .sort((a, b) => a.usedByType.localeCompare(b.usedByType) || a.usedByName.localeCompare(b.usedByName))
       .map((row) => ({ [columns[0]]: row.usedByType, [columns[1]]: row.usedByName }));
-    // No uxLogTableWithReport: the used-by CSV written above holds every row and is sent to VS Code
+    // No uxLogTableWithReport: the used-by CSV written below holds every row and is sent to VS Code.
+    // The table comes first, so a report failure never hides the result.
     uxLogTable(commandThis, tableRows, columns);
   }
+  uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
+  const report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
   const outputString = t('metadataDepsGenerated', { name: selection.name, count: rows.length });
   uxLog('success', commandThis, c.green(outputString));
   return {
