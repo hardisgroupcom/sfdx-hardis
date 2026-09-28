@@ -2214,6 +2214,7 @@
   "metadataDepsEnterNameDesc": "Ejemplo: {{hint}}",
   "metadataDepsEnterType": "MetadataComponentType (por ejemplo CustomTab)",
   "metadataDepsEnterTypeDesc": "Cadena de tipo Tooling exacta",
+  "metadataDepsFound": "Se han encontrado {{count}} componente(s) que usan {{name}}",
   "metadataDepsGenerated": "Informe de used-by escrito para {{name}} ({{count}} fila(s))",
   "metadataDepsInvalidId": "Salesforce Id no válido (15 o 18 caracteres alfanuméricos)",
   "metadataDepsInvalidType": "Identificador de tipo de metadatos no válido",

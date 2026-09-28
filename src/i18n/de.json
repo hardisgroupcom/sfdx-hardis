@@ -2213,6 +2213,7 @@
   "metadataDepsEnterNameDesc": "Beispiel: {{hint}}",
   "metadataDepsEnterType": "MetadataComponentType (zum Beispiel CustomTab)",
   "metadataDepsEnterTypeDesc": "Exakter Tooling-Typ-String",
+  "metadataDepsFound": "{{count}} Komponente(n) gefunden, die {{name}} verwenden",
   "metadataDepsGenerated": "Used-by-Bericht für {{name}} geschrieben ({{count}} Zeile(n))",
   "metadataDepsInvalidId": "Ungültige Salesforce Id (15 oder 18 alphanumerische Zeichen)",
   "metadataDepsInvalidType": "Ungültiger Metadatentyp-Bezeichner",

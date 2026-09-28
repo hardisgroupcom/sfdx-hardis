@@ -2212,6 +2212,7 @@
   "metadataDepsEnterNameDesc": "例: {{hint}}",
   "metadataDepsEnterType": "MetadataComponentType (例: CustomTab)",
   "metadataDepsEnterTypeDesc": "正確なToolingタイプ文字列",
+  "metadataDepsFound": "{{name}} を使用しているコンポーネントが {{count}} 件見つかりました",
   "metadataDepsGenerated": "{{name}} のused-byレポートが書き込まれました ({{count}} 行)",
   "metadataDepsInvalidId": "無効なSalesforce Id (15文字または18文字の英数字)",
   "metadataDepsInvalidType": "無効なメタデータタイプ識別子",

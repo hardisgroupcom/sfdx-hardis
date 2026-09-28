@@ -74,14 +74,15 @@ export interface OrgApiCacheResult<T> {
 
 /**
  * Returns the cached result of fetchValue for this org and key, or calls it and caches the result.
- * Pass refresh: true to ignore the cached value (for example when it looks outdated).
+ * Pass refresh: true to ignore the cached value (for example when it looks outdated), and shouldCache
+ * to keep a value out of the cache (for example a failed call, which must be tried again next time).
  * No cache when NO_CACHE is set or when the org Id is unknown.
  */
 export async function withOrgApiCache<T>(
   conn: Connection,
   key: string,
   fetchValue: () => Promise<T>,
-  options: { refresh?: boolean } = {}
+  options: { refresh?: boolean; shouldCache?: (value: T) => boolean } = {}
 ): Promise<OrgApiCacheResult<T>> {
   const orgId = getOrgId(conn);
   if (!orgId || process.env.NO_CACHE) {
@@ -104,6 +105,9 @@ export async function withOrgApiCache<T>(
     }
   }
   const value = await fetchValue();
+  if (options.shouldCache && !options.shouldCache(value)) {
+    return { value, fromCache: false };
+  }
   const entry = { cachedAt: Date.now(), value };
   MEMORY_CACHE.set(file, entry);
   try {

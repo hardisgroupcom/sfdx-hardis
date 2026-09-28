@@ -55,6 +55,18 @@ describe('orgApiCache', () => {
     expect(fs.existsSync(path.join(root, '00D1'))).to.equal(true);
   });
 
+  it('does not cache a value refused by shouldCache, such as a failed call', async () => {
+    let calls = 0;
+    const failing = async () => {
+      calls++;
+      return null;
+    };
+    const options = { shouldCache: (value: unknown) => value !== null };
+    await withOrgApiCache(connectionOf('00D1'), 'failed', failing, options);
+    expect((await withOrgApiCache(connectionOf('00D1'), 'failed', failing, options)).fromCache).to.equal(false);
+    expect(calls).to.equal(2);
+  });
+
   it('scopes the cache on the org Id', async () => {
     await withOrgApiCache(connectionOf('00D1'), 'key', async () => 'org1');
     expect((await withOrgApiCache(connectionOf('00D2'), 'key', async () => 'org2')).value).to.equal('org2');

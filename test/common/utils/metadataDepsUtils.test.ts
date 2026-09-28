@@ -10,6 +10,7 @@ import {
   buildUsedBySoql,
   customFieldDeveloperName,
   enrichUsedByRows,
+  findLocalFiles,
   isMetadataType,
   isStandardObjectName,
   lookupListedComponent,
@@ -237,7 +238,78 @@ describe('metadataDepsUtils', () => {
         '',
       ]);
       expect(rows[0].usedBySetupPath).to.equal('/00h000000000001AAA');
-      expect(queries.map((query) => query[0].type)).to.deep.equal(['Layout', 'CustomField', 'CronTrigger']);
+      expect(queries.map((query) => query[0].type)).to.have.members(['Layout', 'CustomField', 'CronTrigger']);
+    });
+
+    it('lists a type again when a dependent is missing from the cached listing', async () => {
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), 'metadata-deps-enrich-'));
+      const previousDir = process.env.SFDX_HARDIS_ORG_API_CACHE_DIR;
+      process.env.SFDX_HARDIS_ORG_API_CACHE_DIR = root;
+      await clearOrgApiCache();
+      try {
+        const listing = [{ fullName: 'OldClass', id: '01p000000000001AAA' }];
+        let calls = 0;
+        const connection = {
+          getApiVersion: () => '65.0',
+          getAuthInfoFields: () => ({ orgId: '00DENRICH' }),
+          metadata: {
+            list: async () => {
+              calls++;
+              return listing;
+            },
+          },
+        } as any;
+        await enrichUsedByRows(connection, [row('01p000000000001AAA', 'ApexClass', 'OldClass')]);
+        // Created after the listing was cached
+        listing.push({ fullName: 'NewClass', id: '01p000000000002AAA' });
+        const rows = await enrichUsedByRows(connection, [row('01p000000000002AAA', 'ApexClass', 'NewClass')]);
+        expect(rows[0].usedByApiName).to.equal('NewClass');
+        expect(calls).to.equal(2);
+      } finally {
+        process.env.SFDX_HARDIS_ORG_API_CACHE_DIR = previousDir;
+        await clearOrgApiCache();
+        await fs.remove(root);
+      }
+    });
+
+    it('finds the local files of plain names, object children and bundles', async () => {
+      const root = await fs.mkdtemp(path.join(os.tmpdir(), 'metadata-deps-files-'));
+      const previousCwd = process.cwd();
+      const base = 'force-app/main/default';
+      const files = [
+        `${base}/classes/MyClass.cls`,
+        `${base}/classes/MyClass.cls-meta.xml`,
+        `${base}/objects/Account/fields/Total__c.field-meta.xml`,
+        `${base}/objects/Account/validationRules/Amount_Positive.validationRule-meta.xml`,
+        `${base}/lwc/myLwc/myLwc.html`,
+        `${base}/lwc/myLwc/myLwc.js`,
+        `${base}/lwc/myLwc/myLwc.js-meta.xml`,
+      ];
+      await fs.outputFile(
+        path.join(root, 'sfdx-project.json'),
+        JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }] })
+      );
+      for (const file of files) {
+        await fs.outputFile(path.join(root, file), '<x/>');
+      }
+      try {
+        process.chdir(root);
+        const classes = await findLocalFiles('ApexClass', ['MyClass', 'Missing']);
+        expect(classes.get('MyClass')).to.match(/classes\/MyClass\.cls/);
+        expect(classes.has('Missing')).to.equal(false);
+        expect((await findLocalFiles('CustomField', ['Account.Total__c'])).get('Account.Total__c')).to.equal(
+          'force-app/main/default/objects/Account/fields/Total__c.field-meta.xml'
+        );
+        expect(
+          (await findLocalFiles('ValidationRule', ['Account.Amount_Positive'])).get('Account.Amount_Positive')
+        ).to.equal('force-app/main/default/objects/Account/validationRules/Amount_Positive.validationRule-meta.xml');
+        expect((await findLocalFiles('LightningComponentBundle', ['myLwc'])).get('myLwc')).to.equal(
+          'force-app/main/default/lwc/myLwc/myLwc.js'
+        );
+      } finally {
+        process.chdir(previousCwd);
+        await fs.remove(root);
+      }
     });
   });
 

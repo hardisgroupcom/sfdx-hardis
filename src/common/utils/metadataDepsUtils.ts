@@ -12,7 +12,7 @@ import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { withOrgApiCache } from '../cache/orgApiCache.js';
-import { glob, escape as globEscape } from 'glob';
+import { glob } from 'glob';
 import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS, getSfdxProjectPackageDirectories } from './projectUtils.js';
 import { listMetadataTypes } from '../metadata-utils/metadataList.js';
 
@@ -260,7 +260,7 @@ export async function lookupListedComponent(
 
   let listed = await listMetadataComponents(connection, type, folder, { refresh: options.refresh });
   let match = findMatch(listed.value);
-  if (!match && listed.fromCache) {
+  if (!match && listed.fromCache && listed.value !== null) {
     // The component may have been deployed after the list was cached
     listed = await listMetadataComponents(connection, type, folder, { refresh: true });
     match = findMatch(listed.value);
@@ -298,7 +298,11 @@ async function listMetadataComponents(
     return { value: await listComponents(), fromCache: false };
   }
   const cacheKey = `listMetadata:${type}${folder ? `:${folder}` : ''}`;
-  return await withOrgApiCache(connection, cacheKey, listComponents, { refresh: options.refresh });
+  // A failed listing is not cached: the type may be listable next time (network error, expired session...)
+  return await withOrgApiCache(connection, cacheKey, listComponents, {
+    refresh: options.refresh,
+    shouldCache: (value) => value !== null,
+  });
 }
 
 // Setup page of a component: Flow Builder for a Flow, the list page for the bundles without a detail page,
@@ -316,62 +320,120 @@ export function buildSetupPath(type: string, id: string): string {
   return id ? `/${id}` : '';
 }
 
-// Bundles (LWC, Aura) have no file suffix: find the folder of the bundle, then its main file
+// Main file of a bundle (LWC, Aura), the one a user expects to open
 const BUNDLE_MAIN_FILE_EXTENSIONS = ['.js', '.cmp', '.app', '.evt', '.intf'];
-async function findBundleMainFile(type: string, name: string): Promise<string> {
-  const directoryName = listMetadataTypes().find(
-    (metadataType) => metadataType.xmlName === type && !metadataType.suffix
-  )?.directoryName;
-  if (!directoryName) {
-    return '';
+
+function pickBundleMainFile(bundleName: string, files: string[]): string {
+  return (
+    BUNDLE_MAIN_FILE_EXTENSIONS.map((extension) =>
+      files.find((file) => path.basename(file) === `${bundleName}${extension}`)
+    ).find(Boolean) ?? [...files].sort()[0]
+  );
+}
+
+// Local source file of each API name of a type, relative to the project root:
+// - a file named after the whole API name (ApexClass, Flow, Layout, CustomMetadata record...)
+// - an object child (CustomField Account.Total__c is objects/Account/fields/Total__c.field-meta.xml)
+// - a bundle without file suffix (LWC, Aura): its folder, then its main file
+// One glob per package directory and per kind of lookup, whatever the number of names.
+export async function findLocalFiles(type: string, apiNames: string[]): Promise<Map<string, string>> {
+  const found = new Map<string, string>();
+  const names = [...new Set(apiNames.filter((name) => name !== ''))];
+  if (names.length === 0) {
+    return found;
   }
-  for (const packageDirectory of await getSfdxProjectPackageDirectories()) {
-    const files = await glob(`**/${directoryName}/${globEscape(name)}/*`, {
-      cwd: packageDirectory.fullPath,
-      ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
-    });
-    if (files.length > 0) {
-      const mainFile =
-        BUNDLE_MAIN_FILE_EXTENSIONS.map((extension) =>
-          files.find((file) => path.basename(file) === `${name}${extension}`)
-        ).find(Boolean) ?? files.sort()[0];
-      return path.join(packageDirectory.path, mainFile).replace(/\\/g, '/');
+  const metadataType = listMetadataTypes().find((entry) => entry.xmlName === type);
+  const packageDirectories = await getSfdxProjectPackageDirectories();
+  const byFullName = await MetadataUtils.findMetaFilesFromTypeAndNames(type, names, packageDirectories);
+  for (const [name, file] of byFullName) {
+    if (file) {
+      found.set(name, file);
     }
   }
-  return '';
+  const missing = names.filter((name) => !found.has(name));
+  if (missing.length === 0 || !metadataType?.directoryName) {
+    return found;
+  }
+  const directoryName = metadataType.directoryName;
+  for (const packageDirectory of packageDirectories) {
+    const pending = missing.filter((name) => !found.has(name));
+    if (pending.length === 0) {
+      break;
+    }
+    const toProjectPath = (file: string) => path.join(packageDirectory.path, file).replace(/\\/g, '/');
+    if (metadataType.suffix && pending.some((name) => name.includes('.'))) {
+      const childFiles = await glob(`**/${directoryName}/*.${metadataType.suffix}-meta.xml`, {
+        cwd: packageDirectory.fullPath,
+        ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+      });
+      for (const file of childFiles) {
+        const parts = file.replace(/\\/g, '/').split('/');
+        const parentName = parts[parts.length - 3];
+        const childName = path.basename(file).slice(0, -`.${metadataType.suffix}-meta.xml`.length);
+        const apiName = `${parentName}.${childName}`;
+        if (pending.includes(apiName) && !found.has(apiName)) {
+          found.set(apiName, toProjectPath(file));
+        }
+      }
+    } else if (!metadataType.suffix) {
+      const bundleFiles = await glob(`**/${directoryName}/*/*`, {
+        cwd: packageDirectory.fullPath,
+        ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+      });
+      const filesByBundle = new Map<string, string[]>();
+      for (const file of bundleFiles) {
+        const bundleName = path.basename(path.dirname(file));
+        if (pending.includes(bundleName)) {
+          filesByBundle.set(bundleName, [...(filesByBundle.get(bundleName) ?? []), file]);
+        }
+      }
+      for (const [bundleName, files] of filesByBundle) {
+        found.set(bundleName, toProjectPath(pickBundleMainFile(bundleName, files)));
+      }
+    }
+  }
+  return found;
 }
 
 // Adds to each dependent what a UI needs to act on it: its Metadata API name (MetadataComponentName is a
 // label or a DeveloperName, such as "Account Layout" or "Status"), its Setup page and its local source file.
-// One cached listing per type; types that cannot be listed (CronTrigger...) keep an empty API name.
+// The types are listed in parallel, one cached listing per type. A dependent missing from a cached listing
+// (created since) makes its type listed again. Types that cannot be listed (CronTrigger...) keep an empty
+// API name.
 export async function enrichUsedByRows(
   connection: Connection,
   rows: MetadataDependencyRow[]
 ): Promise<MetadataDependencyRow[]> {
   const id15 = (id: string) => id.slice(0, 15);
-  for (const type of [...new Set(rows.map((row) => row.usedByType))]) {
-    const typeRows = rows.filter((row) => row.usedByType === type);
-    const listed = (await listMetadataComponents(connection, type)).value ?? [];
-    const nameById = new Map(listed.filter((component) => component.id).map((c) => [id15(c.id), c.fullName]));
-    for (const row of typeRows) {
-      row.usedByApiName = nameById.get(id15(row.usedById)) ?? '';
-      row.usedBySetupPath = buildSetupPath(type, row.usedById);
-    }
-    const apiNames = typeRows.map((row) => row.usedByApiName).filter((name) => name !== '');
-    if (apiNames.length === 0) {
-      continue;
-    }
-    try {
-      const localFiles = await MetadataUtils.findMetaFilesFromTypeAndNames(type, [...new Set(apiNames)]);
-      for (const row of typeRows) {
-        row.usedByLocalFile =
-          (row.usedByApiName && (localFiles.get(row.usedByApiName) || (await findBundleMainFile(type, row.usedByApiName)))) ||
-          '';
+  const types = [...new Set(rows.map((row) => row.usedByType))];
+  await Promise.all(
+    types.map(async (type) => {
+      const typeRows = rows.filter((row) => row.usedByType === type);
+      const nameByIdOf = (listed: ListedComponent[] | null) =>
+        new Map((listed ?? []).filter((component) => component.id).map((c) => [id15(c.id), c.fullName]));
+      let listed = await listMetadataComponents(connection, type);
+      let nameById = nameByIdOf(listed.value);
+      if (listed.fromCache && typeRows.some((row) => !nameById.has(id15(row.usedById)))) {
+        listed = await listMetadataComponents(connection, type, undefined, { refresh: true });
+        nameById = nameByIdOf(listed.value);
       }
-    } catch {
-      // No sfdx project here: no local files
-    }
-  }
+      for (const row of typeRows) {
+        row.usedByApiName = nameById.get(id15(row.usedById)) ?? '';
+        row.usedBySetupPath = buildSetupPath(type, row.usedById);
+      }
+      try {
+        const localFiles = await findLocalFiles(
+          type,
+          typeRows.map((row) => row.usedByApiName)
+        );
+        for (const row of typeRows) {
+          row.usedByLocalFile = (row.usedByApiName && localFiles.get(row.usedByApiName)) || '';
+        }
+      } catch {
+        // No sfdx project here: no local files
+      }
+    })
+  );
   return rows;
 }
 
@@ -726,7 +788,7 @@ export async function runMetadataDeps(
   }
   if (rows.length === 0) {
     uxLog('warning', commandThis, c.yellow(t('metadataDepsEmptyUsedBy')));
-  } else {
+  } else if (!flags.skipReport) {
     // Readable columns only, kept expanded in VS Code: the Ids and the target are in the CSV and Excel reports
     uxLog('action', commandThis, c.cyan(t('metadataDepsUsedByTable', { name: selection.name, count: rows.length })), {
       alwaysVisible: true,
@@ -744,7 +806,9 @@ export async function runMetadataDeps(
     uxLog('action', commandThis, c.cyan(t('metadataDepsWritingReport')));
     report = await writeMetadataDepsReports(selection, rows, targetOrg, commandThis);
   }
-  const outputString = t('metadataDepsGenerated', { name: selection.name, count: rows.length });
+  const outputString = flags.skipReport
+    ? t('metadataDepsFound', { name: selection.name, count: rows.length })
+    : t('metadataDepsGenerated', { name: selection.name, count: rows.length });
   uxLog('success', commandThis, c.green(outputString));
   return {
     outputString,

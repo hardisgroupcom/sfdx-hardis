@@ -187,8 +187,10 @@ export async function bulkQueryTooling(soqlQuery: string, conn: Connection): Pro
   const query = startQueryLog('bulk');
   uxLog("log", this, c.grey('[BulkApiV2 Tooling] ' + c.italic(queryLabel)), { query });
   const pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
-  const pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
+  // Tooling jobs on MetadataComponentDependency can run for minutes on large orgs
+  const pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 600000; // 10 min
   const jobsPath = `/services/data/v${conn.getApiVersion()}/tooling/jobs/query`;
+  let jobId = '';
   spinnerQ = createSpinner({ text: `[BulkApiV2 Tooling] Bulk Query: ${queryLabel}` }).start();
   try {
     let jobInfo: any = await conn.request({
@@ -197,7 +199,7 @@ export async function bulkQueryTooling(soqlQuery: string, conn: Connection): Pro
       body: JSON.stringify({ operation: 'query', query: soqlQuery }),
       headers: { 'Content-Type': 'application/json' },
     });
-    const jobId = jobInfo.id;
+    jobId = jobInfo.id;
     const startTime = Date.now();
     while (jobInfo.state !== 'JobComplete') {
       if (['Failed', 'Aborted'].includes(jobInfo.state)) {
@@ -214,9 +216,16 @@ export async function bulkQueryTooling(soqlQuery: string, conn: Connection): Pro
     let locator = '';
     do {
       const locatorParam = locator ? `?locator=${encodeURIComponent(locator)}` : '';
-      const response = await fetch(`${conn.instanceUrl}${jobsPath}/${jobId}/results${locatorParam}`, {
-        headers: { Authorization: `Bearer ${conn.accessToken}`, Accept: 'text/csv' },
-      });
+      const fetchPage = () =>
+        fetch(`${conn.instanceUrl}${jobsPath}/${jobId}/results${locatorParam}`, {
+          headers: { Authorization: `Bearer ${conn.accessToken}`, Accept: 'text/csv' },
+        });
+      let response = await fetchPage();
+      if (response.status === 401) {
+        // Expired session: a request through the connection refreshes the access token, then try again
+        await conn.request({ method: 'GET', url: `${jobsPath}/${jobId}` });
+        response = await fetchPage();
+      }
       if (!response.ok) {
         throw new Error(t('toolingBulkQueryJobFailed', { state: response.status, message: await response.text() }));
       }
@@ -232,6 +241,19 @@ export async function bulkQueryTooling(soqlQuery: string, conn: Connection): Pro
     }
     return { records };
   } catch (e: any) {
+    // Do not leave the job running in the org
+    if (jobId) {
+      try {
+        await conn.request({
+          method: 'PATCH',
+          url: `${jobsPath}/${jobId}`,
+          body: JSON.stringify({ state: 'Aborted' }),
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        // Already complete, failed or aborted
+      }
+    }
     spinnerQ.fail(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`);
     if (WebSocketClient.isAliveWithLwcUI()) {
       uxLog("log", this, c.grey(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`), { query: { ...query, status: 'error' } });

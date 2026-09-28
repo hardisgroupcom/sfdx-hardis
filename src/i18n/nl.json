@@ -2214,6 +2214,7 @@
   "metadataDepsEnterNameDesc": "Voorbeeld: {{hint}}",
   "metadataDepsEnterType": "MetadataComponentType (bijvoorbeeld CustomTab)",
   "metadataDepsEnterTypeDesc": "Exacte Tooling-typestring",
+  "metadataDepsFound": "{{count}} component(en) gevonden die {{name}} gebruiken",
   "metadataDepsGenerated": "Used-by-rapport geschreven voor {{name}} ({{count}} rij(en))",
   "metadataDepsInvalidId": "Ongeldige Salesforce Id (15 of 18 alfanumerieke tekens)",
   "metadataDepsInvalidType": "Ongeldige metadatatype-id",

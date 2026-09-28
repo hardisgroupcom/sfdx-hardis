@@ -83,7 +83,7 @@ In agent mode, pass either \`--source-file\`, \`--id\`, or both \`--type\` and \
     }),
     'skip-report': Flags.boolean({
       default: false,
-      description: 'Do not write the CSV and Excel reports (used by the VS Code panel, which shows the result itself)',
+      description: 'Do not write the CSV and Excel reports nor print the result table: the caller shows the --json result itself (the VS Code panel)',
     }),
     'component-type': Flags.string({
       description: 'Only return dependent components of this Tooling metadata type',

@@ -60,7 +60,7 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 |id|option|Salesforce Id of the selected component (15 or 18 characters); skips name lookup||||
 |json|boolean|Format output as json.||||
 |name|option|API name of the selected component (for example MyClass or Account.Status__c)||||
-|skip-report|boolean|Do not write the CSV and Excel reports (used by the VS Code panel, which shows the result itself)||||
+|skip-report|boolean|Do not write the CSV and Excel reports nor print the result table: the caller shows the --json result itself (the VS Code panel)||||
 |skipauth|boolean|Skip authentication check when a default username is required||||
 |source-file|option|Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name||||
 |target-org<br/>-o|option|undefined|veurtio+demo.73193ee31bf8@agentforce.com|||
