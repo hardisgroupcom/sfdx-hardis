@@ -1,4 +1,8 @@
 import { expect } from 'chai';
+import * as os from 'os';
+import * as path from 'path';
+import fs from '../../../src/common/utils/fsUtils.js';
+import { clearOrgApiCache } from '../../../src/common/cache/orgApiCache.js';
 import {
   buildCustomFieldLookupSoql,
   buildLookupSoql,
@@ -87,6 +91,7 @@ describe('metadataDepsUtils', () => {
       ]);
       expect(await lookupListedComponent(connection, 'CustomField', 'Account.Status__c')).to.deep.equal({
         id: '00N000000000002',
+        fromCache: false,
       });
     });
 
@@ -94,9 +99,11 @@ describe('metadataDepsUtils', () => {
       const connection = fakeConnection({ fullName: 'Account-Account %28Sales%29 Layout', id: '00h000000000001' });
       expect(await lookupListedComponent(connection, 'Layout', 'Account-Account (Sales) Layout')).to.deep.equal({
         id: '00h000000000001',
+        fromCache: false,
       });
       expect(await lookupListedComponent(connection, 'Layout', 'Account-Account %28Sales%29 Layout')).to.deep.equal({
         id: '00h000000000001',
+        fromCache: false,
       });
     });
 
@@ -105,13 +112,65 @@ describe('metadataDepsUtils', () => {
       const connection = fakeConnection([{ fullName: 'Sales/MyReport', id: '00O000000000001' }], queries);
       expect(await lookupListedComponent(connection, 'Report', 'Sales/MyReport')).to.deep.equal({
         id: '00O000000000001',
+        fromCache: false,
       });
       expect(queries[0]).to.deep.equal([{ type: 'Report', folder: 'Sales' }]);
+    });
+
+    describe('with the org API cache', () => {
+      const previousEnv = { ...process.env };
+      let root: string;
+      // Same fake connection, on an org with an Id so that the cache applies
+      const cachedConnection = (components: unknown[], queries: unknown[]) =>
+        ({ ...fakeConnection(components, queries), getAuthInfoFields: () => ({ orgId: '00DCACHE' }) }) as any;
+
+      beforeEach(async () => {
+        root = await fs.mkdtemp(path.join(os.tmpdir(), 'metadata-deps-cache-'));
+        process.env.SFDX_HARDIS_ORG_API_CACHE_DIR = root;
+        delete process.env.NO_CACHE;
+        await clearOrgApiCache();
+      });
+
+      afterEach(async () => {
+        process.env = { ...previousEnv };
+        await fs.remove(root);
+      });
+
+      it('serves a second lookup from the cache, and lists again when the name is missing', async () => {
+        const queries: unknown[] = [];
+        const components = [{ fullName: 'MyClass', id: '01p000000000001' }];
+        const connection = cachedConnection(components, queries);
+        expect(await lookupListedComponent(connection, 'ApexClass', 'MyClass')).to.deep.equal({
+          id: '01p000000000001',
+          fromCache: false,
+        });
+        expect(await lookupListedComponent(connection, 'ApexClass', 'MyClass')).to.deep.equal({
+          id: '01p000000000001',
+          fromCache: true,
+        });
+        expect(queries).to.have.length(1);
+        // Deployed after the list was cached
+        components.push({ fullName: 'NewClass', id: '01p000000000002' });
+        expect(await lookupListedComponent(connection, 'ApexClass', 'NewClass')).to.deep.equal({
+          id: '01p000000000002',
+          fromCache: false,
+        });
+        expect(queries).to.have.length(2);
+      });
+
+      it('never caches Flow, whose Id changes when another version is activated', async () => {
+        const queries: unknown[] = [];
+        const connection = cachedConnection([{ fullName: 'MyFlow', id: '301000000000001' }], queries);
+        await lookupListedComponent(connection, 'Flow', 'MyFlow');
+        expect((await lookupListedComponent(connection, 'Flow', 'MyFlow'))?.fromCache).to.equal(false);
+        expect(queries).to.have.length(2);
+      });
     });
 
     it('returns an empty Id for a standard object, and null when nothing matches or the type cannot be listed', async () => {
       expect(await lookupListedComponent(fakeConnection([{ fullName: 'Account', id: '' }]), 'CustomObject', 'Account')).to.deep.equal({
         id: '',
+        fromCache: false,
       });
       expect(await lookupListedComponent(fakeConnection([]), 'ApexClass', 'Missing')).to.equal(null);
       expect(await lookupListedComponent(fakeConnection(new Error('INVALID_TYPE')), 'StandardEntity', 'Account')).to.equal(null);

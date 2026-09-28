@@ -43,6 +43,8 @@ export interface MetadataComponentSelection {
   id: string;
   name: string;
   type: string;
+  // The Id comes from the org API cache: it is checked again when no dependency is found
+  idFromCache?: boolean;
 }
 
 export interface MetadataDependencyRow {
@@ -211,7 +213,7 @@ export async function lookupMetadataComponents(
 ): Promise<MetadataComponentSelection[]> {
   const listed = await lookupListedComponent(connection, type, name);
   if (listed && listed.id) {
-    return [{ id: listed.id, name, type }];
+    return [{ id: listed.id, name, type, idFromCache: listed.fromCache }];
   }
   // Standard objects are listed without an Id
   if (type === 'CustomObject' && (listed || isStandardObjectName(name))) {
@@ -230,8 +232,9 @@ export async function lookupMetadataComponents(
 export async function lookupListedComponent(
   connection: Connection,
   type: string,
-  name: string
-): Promise<{ id: string } | null> {
+  name: string,
+  options: { refresh?: boolean } = {}
+): Promise<{ id: string; fromCache: boolean } | null> {
   const inFolder = listMetadataTypes().some((metadataType) => metadataType.xmlName === type && metadataType.inFolder);
   const folder = inFolder && name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : undefined;
   // Only names and Ids are cached. null means the type cannot be listed.
@@ -257,14 +260,20 @@ export async function lookupListedComponent(
   const findMatch = (components: Array<{ fullName: string; id: string }> | null) =>
     (components ?? []).find((component) => component.fullName === name || decode(component.fullName) === name);
 
-  const cacheKey = `listMetadata:${type}${folder ? `:${folder}` : ''}`;
-  const cached = await withOrgApiCache(connection, cacheKey, listComponents);
-  let match = findMatch(cached.value);
-  if (!match && cached.fromCache) {
-    // The component may have been deployed after the list was cached
-    match = findMatch((await withOrgApiCache(connection, cacheKey, listComponents, { refresh: true })).value);
+  // Never cached for Flow: activating another version in Setup changes the Id
+  if (type === 'Flow') {
+    const match = findMatch(await listComponents());
+    return match ? { id: match.id, fromCache: false } : null;
   }
-  return match ? { id: match.id } : null;
+  const cacheKey = `listMetadata:${type}${folder ? `:${folder}` : ''}`;
+  let listed = await withOrgApiCache(connection, cacheKey, listComponents, { refresh: options.refresh });
+  let match = findMatch(listed.value);
+  if (!match && listed.fromCache) {
+    // The component may have been deployed after the list was cached
+    listed = await withOrgApiCache(connection, cacheKey, listComponents, { refresh: true });
+    match = findMatch(listed.value);
+  }
+  return match ? { id: match.id, fromCache: listed.fromCache } : null;
 }
 
 // EntityDefinition of an object API name, cached: object Ids do not change
@@ -602,11 +611,16 @@ export async function runMetadataDeps(
     return { outputString: t('metadataDepsCancelled'), cancelled: true };
   }
   uxLog('action', commandThis, c.cyan(t('metadataDepsQueryingUsedBy', { name: selection.name, org: targetOrg })));
-  const rows = await queryUsedBy(connection, selection, {
-    componentType,
-    bulk: flags.bulk,
-    commandThis,
-  });
+  const queryOptions = { componentType, bulk: flags.bulk, commandThis };
+  let rows = await queryUsedBy(connection, selection, queryOptions);
+  if (rows.length === 0 && selection.idFromCache) {
+    // A cached Id can belong to a component deleted then created again with the same name
+    const fresh = await lookupListedComponent(connection, selection.type, selection.name, { refresh: true });
+    if (fresh?.id && fresh.id !== selection.id) {
+      selection.id = fresh.id;
+      rows = await queryUsedBy(connection, selection, queryOptions);
+    }
+  }
   if (selection.type === UNKNOWN_TYPE && rows.length > 0) {
     selection.type = rows[0].targetType || UNKNOWN_TYPE;
   }
@@ -631,7 +645,7 @@ export async function runMetadataDeps(
   uxLog('success', commandThis, c.green(outputString));
   return {
     outputString,
-    component: { ...selection, org: targetOrg },
+    component: { id: selection.id, name: selection.name, type: selection.type, org: targetOrg },
     usedBy: rows,
     ...report,
   };
