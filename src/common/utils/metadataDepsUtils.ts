@@ -2,7 +2,7 @@ import path from 'path';
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import Papa from 'papaparse';
-import { getReportDirectory } from '../../config/index.js';
+import { getApiVersion, getReportDirectory } from '../../config/index.js';
 import fs from './fsUtils.js';
 import { createXlsxFromCsvFiles } from './filesUtils.js';
 import { t } from './i18n.js';
@@ -11,6 +11,7 @@ import { prompts } from './prompts.js';
 import { bulkQueryTooling, soqlQueryTooling } from './apiUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
+import { listMetadataTypes } from '../metadata-utils/metadataList.js';
 
 const SALESFORCE_ID_RE = /^[a-zA-Z0-9]{15}([a-zA-Z0-9]{3})?$/;
 const METADATA_TYPE_RE = /^[A-Za-z][A-Za-z0-9_]*$/;
@@ -207,11 +208,49 @@ export async function lookupMetadataComponents(
   type: string,
   name: string
 ): Promise<MetadataComponentSelection[]> {
-  const matches = await lookupToolingComponents(connection, type, name);
-  if (matches.length === 0 && type === 'CustomObject' && isStandardObjectName(name)) {
-    return await lookupStandardObject(connection, name);
+  const listed = await lookupListedComponent(connection, type, name);
+  if (listed && listed.id) {
+    return [{ id: listed.id, name, type }];
   }
-  return matches;
+  // Standard objects are listed without an Id
+  if (type === 'CustomObject' && (listed || isStandardObjectName(name))) {
+    const standardObjects = await lookupStandardObject(connection, name);
+    if (standardObjects.length > 0) {
+      return standardObjects;
+    }
+  }
+  // Tooling-only types, and names that are not API names (a custom object without its __c suffix...)
+  return await lookupToolingComponents(connection, type, name);
+}
+
+// The Metadata API lists the components of any type with the Id that MetadataComponentDependency uses,
+// under the API name of the source files (Account.Status__c, Folder/MyReport, Account-Account Layout...).
+// Returns null when the type cannot be listed or no component has this name.
+export async function lookupListedComponent(
+  connection: Connection,
+  type: string,
+  name: string
+): Promise<{ id: string } | null> {
+  const inFolder = listMetadataTypes().some((metadataType) => metadataType.xmlName === type && metadataType.inFolder);
+  const folder = inFolder && name.includes('/') ? name.slice(0, name.lastIndexOf('/')) : undefined;
+  let listed: any;
+  try {
+    listed = await connection.metadata.list([folder ? { type, folder } : { type }], getApiVersion(connection));
+  } catch {
+    return null;
+  }
+  const components: any[] = Array.isArray(listed) ? listed : listed ? [listed] : [];
+  const decode = (value: string): string => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return value;
+    }
+  };
+  const match = components.find(
+    (component) => component?.fullName === name || decode(String(component?.fullName ?? '')) === name
+  );
+  return match ? { id: String(match.id ?? '') } : null;
 }
 
 // Standard objects are not CustomObject records: their DurableId in EntityDefinition is their API name

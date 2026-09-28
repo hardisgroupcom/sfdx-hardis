@@ -16,11 +16,11 @@ export default class HardisDocMetadataDeps extends SfCommand<any> {
 
 Select a common metadata type and API name interactively, pass \`--type\` and \`--name\`, or pass a local source file with \`--source-file\`. The command resolves the component to a Salesforce Id, queries Tooling API \`MetadataComponentDependency\`, and reports the inbound (used-by) dependencies.
 
-- **Metadata-aware lookup:** Uses \`Name\` or \`DeveloperName\` according to the metadata type. Custom fields accept \`Object.Field__c\` and are resolved without filtering on the unsupported \`FullName\` field.
+- **Any metadata type:** The component is found by its API name, the one of its source file (\`Account.Status__c\`, \`MyFolder/MyReport\`, \`Account-Account Layout\`, \`Account.MyValidationRule\`...), whatever its type.
 - **Org, not local files:** Dependencies are read from the target org. Even with \`--source-file\`, the file only tells which component to look up: changes not deployed yet are not taken into account.
-- **Local file:** Pass \`--source-file\` with the path of a metadata source file (an Apex class, a Flow, a field, any file of a LWC or Aura bundle...) to find what uses it. The VS Code extension uses it from the right-click menu of metadata files.
+- **Local file:** Pass \`--source-file\` with the path of a metadata source file (an Apex class, a Flow, a field, a layout, any file of a LWC or Aura bundle...) to find what uses it. The VS Code extension uses it from the right-click menu of metadata files.
 - **Standard objects:** \`--type CustomObject --name Account\` looks up standard objects too. Standard fields are not in the Salesforce dependency data, only custom fields are.
-- **Direct Id:** Pass \`--id\` to skip lookup, especially for Tooling types that cannot be resolved by name. Without \`--type\`, dependencies are not filtered on the selected component type.
+- **Direct Id:** Pass \`--id\` to skip lookup. Without \`--type\`, dependencies are not filtered on the selected component type.
 - **Dependent type filter:** Pass \`--component-type Flow\` (for example) to keep only one type of dependent component.
 - **Large graphs:** Pass \`--bulk\` to run a Tooling API Bulk API 2.0 query job, including Report dependencies and graphs that can exceed 2,000 rows. Developer Edition orgs reject Bulk queries on this object.
 - **Reports:** Writes a Used by CSV and an Excel workbook with Summary and Used by sheets under \`hardis-report/metadata-deps/<api-name>-<type>/\`.
@@ -41,13 +41,11 @@ In agent mode, pass either \`--source-file\`, \`--id\`, or both \`--type\` and \
 <summary>Technical explanations</summary>
 
 - The selected component is the \`RefMetadataComponent*\` side of \`MetadataComponentDependency\`; each \`MetadataComponent*\` row is a component that uses it.
-- Aura, LWC, FlexiPage, CustomObject and CustomPermission lookup uses \`DeveloperName\`. Apex and Visualforce lookup uses \`Name\`.
-- Flow lookup queries \`FlowDefinition\` by \`DeveloperName\` and uses the active Flow version, or the latest one when no version is active.
-- CustomObject lookup strips the suffix (\`__c\`, \`__mdt\`, \`__e\`...) and filters on \`NamespacePrefix\` for namespaced objects.
+- The Id comes from the Metadata API \`listMetadata\` call for the type (in the folder of the name for Report, Dashboard, Document and EmailTemplate): the component whose \`fullName\` is the given name, URL-encoded or not. It is the Id \`MetadataComponentDependency\` uses, including the active version of a Flow.
+- A standard object is listed without an Id: it is looked up through \`EntityDefinition\`, whose \`DurableId\` is the object API name, and queried as \`StandardEntity\`.
+- When \`listMetadata\` finds nothing (a Tooling-only type, or a name that is not an API name such as a custom object without its \`__c\` suffix), the command queries the Tooling object of the type by \`Name\` or \`DeveloperName\`.
 - \`--bulk\` creates a query job on \`/services/data/vXX.X/tooling/jobs/query\`, polls it, and reads the CSV results page by page.
-- Custom field lookup splits \`Object.Field__c\`, resolves the object through \`EntityDefinition\`, and filters \`CustomField\` by \`DeveloperName\` plus \`TableEnumOrId\` / \`EntityDefinitionId\`.
-- \`--source-file\` resolves the file with the \`@salesforce/source-deploy-retrieve\` metadata resolver, then runs the same lookup as \`--type\` and \`--name\`. Types that cannot be looked up by name (Report, Layout, record types and other object child types...) need \`--id\`. It cannot be combined with \`--id\`, \`--type\` or \`--name\`.
-- When no custom object matches a \`CustomObject\` name without \`__\` (Account, Opportunity...), it is looked up as a standard object through \`EntityDefinition\`, whose \`DurableId\` is the object API name, and queried as \`StandardEntity\`.
+- \`--source-file\` resolves the file with the \`@salesforce/source-deploy-retrieve\` metadata resolver, then runs the same lookup as \`--type\` and \`--name\`. It cannot be combined with \`--id\`, \`--type\` or \`--name\`.
 - Salesforce does not allow \`RefMetadataComponentType = 'StandardEntity'\`; for this type the command filters by Id only.
 </details>
 `;

@@ -6,6 +6,7 @@ import {
   customFieldDeveloperName,
   isMetadataType,
   isStandardObjectName,
+  lookupListedComponent,
   isSalesforceId,
   mapUsedByRows,
   parseCustomFieldName,
@@ -60,6 +61,60 @@ describe('metadataDepsUtils', () => {
 
     it('escapes SOQL backslashes and quotes', () => {
       expect(soqlString("A\\B'C")).to.equal("'A\\\\B\\'C'");
+    });
+  });
+
+  describe('Metadata API lookup', () => {
+    // Fake connection: records the listMetadata queries and returns the given components
+    const fakeConnection = (components: unknown, queries: unknown[] = []) =>
+      ({
+        getApiVersion: () => '65.0',
+        metadata: {
+          list: async (query: unknown) => {
+            queries.push(query);
+            if (components instanceof Error) {
+              throw components;
+            }
+            return components;
+          },
+        },
+      }) as any;
+
+    it('returns the Id of the component with this API name', async () => {
+      const connection = fakeConnection([
+        { fullName: 'Account.Other__c', id: '00N000000000001' },
+        { fullName: 'Account.Status__c', id: '00N000000000002' },
+      ]);
+      expect(await lookupListedComponent(connection, 'CustomField', 'Account.Status__c')).to.deep.equal({
+        id: '00N000000000002',
+      });
+    });
+
+    it('matches URL-encoded names such as layouts', async () => {
+      const connection = fakeConnection({ fullName: 'Account-Account %28Sales%29 Layout', id: '00h000000000001' });
+      expect(await lookupListedComponent(connection, 'Layout', 'Account-Account (Sales) Layout')).to.deep.equal({
+        id: '00h000000000001',
+      });
+      expect(await lookupListedComponent(connection, 'Layout', 'Account-Account %28Sales%29 Layout')).to.deep.equal({
+        id: '00h000000000001',
+      });
+    });
+
+    it('lists folder types in the folder of the name', async () => {
+      const queries: unknown[] = [];
+      const connection = fakeConnection([{ fullName: 'Sales/MyReport', id: '00O000000000001' }], queries);
+      expect(await lookupListedComponent(connection, 'Report', 'Sales/MyReport')).to.deep.equal({
+        id: '00O000000000001',
+      });
+      expect(queries[0]).to.deep.equal([{ type: 'Report', folder: 'Sales' }]);
+    });
+
+    it('returns an empty Id for a standard object, and null when nothing matches or the type cannot be listed', async () => {
+      expect(await lookupListedComponent(fakeConnection([{ fullName: 'Account', id: '' }]), 'CustomObject', 'Account')).to.deep.equal({
+        id: '',
+      });
+      expect(await lookupListedComponent(fakeConnection([]), 'ApexClass', 'Missing')).to.equal(null);
+      expect(await lookupListedComponent(fakeConnection(new Error('INVALID_TYPE')), 'StandardEntity', 'Account')).to.equal(null);
     });
   });
 
