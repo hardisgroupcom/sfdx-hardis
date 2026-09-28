@@ -564,29 +564,29 @@ The PR comment includes:
 | `packageNoOverwritePath`                    | string   | Custom path to [package-no-overwrite.xml](salesforce-devops-config-overwrite.md)                                                                               |
 | `testCoverageNotBlocking`                   | boolean  | Allow deployment even with insufficient [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) |
 | `skipCodeCoverage`                          | boolean  | Skip [code coverage](https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm) reporting                          |
-| `useRestDeploy`                             | boolean  | Set to `false` to deploy with the SOAP Metadata API instead of the [Metadata REST API](hardis/project/deploy/smart.md#metadata-rest-api) (default: `true`)      |
+| `useRestDeploy`                             | boolean  | Set to `false` to deploy with the SOAP Metadata API instead of the [Metadata REST API](hardis/project/deploy/smart.md#metadata-rest-api) (default: `true`)     |
 
 ### Environment Variables
 
 See also the [full environment variables reference](all-env-variables.md).
 
-| Variable                               | Description                                                                                     |
-|:---------------------------------------|:------------------------------------------------------------------------------------------------|
-| `USE_DELTA_DEPLOYMENT`                 | Enable [delta deployment](salesforce-devops-config-delta-deployment.md)                         |
-| `ALWAYS_ENABLE_DELTA_DEPLOYMENT`       | Force [delta](salesforce-devops-config-delta-deployment.md) even between major branches         |
-| `DISABLE_DELTA_DEPLOYMENT`             | Explicitly disable [delta](salesforce-devops-config-delta-deployment.md)                        |
-| `USE_DELTA_DEPLOYMENT_AFTER_MERGE`     | Allow [delta](salesforce-devops-config-delta-deployment.md) for merge jobs (not just checks)    |
-| `USE_SMART_DEPLOYMENT_TESTS`           | Enable [smart test skipping](#delta-processing)                                                 |
-| `NOT_IMPACTING_METADATA_TYPES`         | Override the list of [non-impacting types](#delta-processing) (comma-separated)                 |
-| `SFDX_HARDIS_QUICK_DEPLOY`             | Set to `false` to disable [Quick Deploy](#quick-deploy)                                         |
-| `SFDX_HARDIS_DEPLOY_CHECK_ID`          | Force the [Quick Deploy](#quick-deploy) job id instead of reading it from Pull Request comments |
-| `SFDX_HARDIS_USE_REST_DEPLOY`          | Set to `false` to deploy with SOAP instead of the [Metadata REST API](hardis/project/deploy/smart.md#metadata-rest-api)       |
-| `SFDX_DEPLOY_WAIT_MINUTES`             | Deployment wait timeout (default: 120)                                                          |
-| `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` | Install [packages](salesforce-devops-work-on-user-story-install-packages.md) in check-only mode |
-| `SKIP_PACKAGE_DEPLOY_ONCE`             | Skip [package-no-overwrite.xml](salesforce-devops-config-overwrite.md) processing               |
-| `FORCE_TARGET_BRANCH`                  | Override target branch for delta scope                                                          |
-| `SFDX_HARDIS_DEPLOY_BEFORE_MERGE`      | Use current PR instead of merged PR for notifications                                           |
-| `SFDX_DISABLE_FLOW_DIFF`               | Disable [Flow Visual Git Diff](hardis/project/generate/flow-git-diff.md) in PR comments         |
+| Variable                               | Description                                                                                                             |
+|:---------------------------------------|:------------------------------------------------------------------------------------------------------------------------|
+| `USE_DELTA_DEPLOYMENT`                 | Enable [delta deployment](salesforce-devops-config-delta-deployment.md)                                                 |
+| `ALWAYS_ENABLE_DELTA_DEPLOYMENT`       | Force [delta](salesforce-devops-config-delta-deployment.md) even between major branches                                 |
+| `DISABLE_DELTA_DEPLOYMENT`             | Explicitly disable [delta](salesforce-devops-config-delta-deployment.md)                                                |
+| `USE_DELTA_DEPLOYMENT_AFTER_MERGE`     | Allow [delta](salesforce-devops-config-delta-deployment.md) for merge jobs (not just checks)                            |
+| `USE_SMART_DEPLOYMENT_TESTS`           | Enable [smart test skipping](#delta-processing)                                                                         |
+| `NOT_IMPACTING_METADATA_TYPES`         | Override the list of [non-impacting types](#delta-processing) (comma-separated)                                         |
+| `SFDX_HARDIS_QUICK_DEPLOY`             | Set to `false` to disable [Quick Deploy](#quick-deploy)                                                                 |
+| `SFDX_HARDIS_DEPLOY_CHECK_ID`          | Force the [Quick Deploy](#quick-deploy) job id instead of reading it from Pull Request comments                         |
+| `SFDX_HARDIS_USE_REST_DEPLOY`          | Set to `false` to deploy with SOAP instead of the [Metadata REST API](hardis/project/deploy/smart.md#metadata-rest-api) |
+| `SFDX_DEPLOY_WAIT_MINUTES`             | Deployment wait timeout (default: 120)                                                                                  |
+| `INSTALL_PACKAGES_DURING_CHECK_DEPLOY` | Install [packages](salesforce-devops-work-on-user-story-install-packages.md) in check-only mode                         |
+| `SKIP_PACKAGE_DEPLOY_ONCE`             | Skip [package-no-overwrite.xml](salesforce-devops-config-overwrite.md) processing                                       |
+| `FORCE_TARGET_BRANCH`                  | Override target branch for delta scope                                                                                  |
+| `SFDX_HARDIS_DEPLOY_BEFORE_MERGE`      | Use current PR instead of merged PR for notifications                                                                   |
+| `SFDX_DISABLE_FLOW_DIFF`               | Disable [Flow Visual Git Diff](hardis/project/generate/flow-git-diff.md) in PR comments                                 |
 
 
 ### PR Description Keywords

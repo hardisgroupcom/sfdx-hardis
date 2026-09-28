@@ -1,6 +1,7 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import AdmZip from 'adm-zip';
+import { MetadataResolver } from '@salesforce/source-deploy-retrieve';
 import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import sortArray from '../utils/sortArray.js';
@@ -428,6 +429,18 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const files = [...changedFiles, ...updatedFiles]
     const filesSorted = files.sort((a, b) => (a.path > b.path ? 1 : -1));
     return filesSorted;
+  }
+
+  // Resolve a local source file to its metadata component (a file of a LWC or Aura bundle resolves to the
+  // bundle, a field file to "Object.Field__c"). Returns null when the file is not Salesforce metadata.
+  public static resolveMetadataFromFile(filePath: string): { type: string; name: string } | null {
+    try {
+      // Ignore .forceignore: a file listed in .forceignore is still a component of the org
+      const component = new MetadataResolver(undefined, undefined, false).getComponentsFromPath(path.resolve(filePath))[0];
+      return component ? { type: component.type.name, name: component.fullName } : null;
+    } catch {
+      return null;
+    }
   }
 
   public static getMetadataPrettyNames(metadataFilePaths: string[], bold = false): Map<string, string> {

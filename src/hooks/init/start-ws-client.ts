@@ -6,6 +6,7 @@ const DISABLE_WEBSOCKET_COMMANDS = new Set([
   'hardis:cache:clear',
   'hardis:config:get',
   'hardis:config:monitoring-defaults',
+  'hardis:org:list:metadata',
 ]);
 
 // Commands a VS Code panel runs itself in the background, with --json, to feed its own UI.

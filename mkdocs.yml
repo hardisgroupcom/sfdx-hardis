@@ -365,6 +365,7 @@ nav:
           - files import: hardis/org/files/import.md
           - fix listviewmine: hardis/org/fix/listviewmine.md
           - generate packagexmlfull: hardis/org/generate/packagexmlfull.md
+          - list metadata: hardis/org/list/metadata.md
           - monitor all: hardis/org/monitor/all.md
           - monitor backup: hardis/org/monitor/backup.md
           - monitor errors: hardis/org/monitor/errors.md
