@@ -47,9 +47,10 @@ teardown that kills the process tree can reach the editor you are working in. Th
 session you are working in.
 
 From an agent on Windows, a console of its own is `Start-Process cmd.exe -ArgumentList
-'/c','<a .cmd that sets the two variables, cds into ../vscode-sfdx-hardis and runs yarn
-test:ui:labs into a log>'` in PowerShell, then wait on the log for `EXIT=`. From Git Bash,
-`cmd //c start ...` hangs the calling shell instead (2026-09-29).
+'/c','<driver.cmd>'` in PowerShell. The `.cmd` sets the two variables, `cd /d` into
+`../vscode-sfdx-hardis`, runs `call yarn test:ui:labs > <log> 2>&1` (without `call`, control never
+comes back from `yarn.cmd`), then `echo EXIT=%ERRORLEVEL% >> <log>`; wait on the log for `EXIT=`.
+From Git Bash, `cmd //c start ...` hangs the calling shell instead (2026-09-29).
 
 The answers come from `labs/_assets/lab-drivers.json` **in the course repository**, in the same rule
 shape fidelity 2 uses, so a lab's answers are written once and replayed at either fidelity. A lab
@@ -225,7 +226,8 @@ Traps that cost earlier runs time:
   tracking already counts as synced, so after a **Deploy This Source to Org** of `force-app` (Lab
   2.7) it no longer lists the two profiles the Metadata Retriever shows. The Retriever queries
   `SourceMember` itself: `sf data query --use-tooling-api -q "SELECT MemberType, MemberName FROM
-  SourceMember"` is the list a learner sees, deleted components included.
+  SourceMember WHERE MemberType NOT IN ('AuraDefinition')"` is the list a learner sees with no filter
+  set, deleted components included (`showMetadataRetriever.ts` adds the type filter and `LIMIT 2000`).
 - **`hardis:project:action:create --agent` is not the dialog** (2026-09-29). It defaults `--context`
   to `process-deployment-only`; the Deployment Actions editor defaults a new action to `all`. Pass
   `--context all` for Lab 2.4's manual step, or the check comment has no **Pending manual actions**
@@ -233,10 +235,10 @@ Traps that cost earlier runs time:
 - **CI logs carry ANSI codes inside words.** `Type RemoteSiteSetting: 1 item(s) skipped` is logged
   as `Type \e[1mRemoteSiteSetting\e[22m: ...`, so a grep for the plain sentence finds nothing and the
   line looks missing. Strip the codes first: `sed 's/\x1b\[[0-9;]*m//g'`.
-- **A scratch org can keep a deleted object's name** (2026-09-29). `helios-dev`, torn down before the
-  purge fix, still resolves `Handover_Item__c` in `ObjectPermissions` DML to the deleted object
-  (*Invalid object: 01I...*), while metadata deploys and Setup use the new one. Grant through the
-  Setup page, or erase the old object under Deleted Objects.
+- **A deleted object that was never erased can keep its API name** (2026-09-29). `ObjectPermissions`
+  DML then resolves the name to the deleted object and fails on *Invalid object: 01I...*, while
+  metadata deploys and Setup use the new one. When a recreated object gives that error, look under
+  Deleted Objects: erase the old one, or grant through the Setup page.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those

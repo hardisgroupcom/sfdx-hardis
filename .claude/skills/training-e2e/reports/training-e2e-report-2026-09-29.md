@@ -1,22 +1,23 @@
 # Training end to end run, 2026-09-29 (night)
 
-Eighth run of the `training-e2e` skill: **all three levels, 26 labs done and Lab 1.1 read**, from a
+Ninth run of the `training-e2e` skill: **all three levels, 26 labs done and Lab 1.1 read**, from a
 fork deleted by the user and recreated for the run, with **every CI job on `sfdx-hardis-ubuntu:beta`**,
 the monitoring workflow of Lab 3.8 included, at the user's request: the next release is not out yet
 and the question was whether the course works on it. It does. Every lab ended on its own
-`Check my work` green: **Level 1 6 of 6, Level 2 9 of 9, Level 3 11 of 11**, and the Lab 3.6 and
+`Check my work` green: **Level 1 6 of 6 performed (1.1 is read only), Level 2 9 of 9, Level 3 11 of 11**, and the Lab 3.6 and
 3.11 promotions into production were clean.
 
 No badge was claimed: the three were awarded earlier, and a claim writes a duplicate record to the
 shared repository.
 
-The run produced **9 findings fixed** in course PR (see the end), **1 harness finding**, and a set of
+The run produced **8 findings fixed** in course PR #59 (listed under Findings), **1 harness finding**, and a set of
 observations. None of them blocked a learner. Worth reading first:
 
 - **P1 (fixed)**: a badge claim pushes with `GITHUB_TOKEN`, which starts no workflow, so the reset
   branches never get the badge commits. `start-branches.mjs --check` then reports all three
   branches **stale** for nothing, and every learner's retrofit (Labs 3.7 and 3.10) brings the badge
-  files of `main` into a Pull Request that should change one file or none. `claim.yml` now
+  files of `main` into a Pull Request that should change one file or none (**P1b**, seen in Labs
+  3.7 and 3.10). `claim.yml` now
   dispatches **Publish the reset branches**, the way it already dispatched the site build.
 - **F3 (fixed)**: Lab 1.6 said 34 sent / 5 changed; three runs in a row got **36 / 7**. The two
   comment pictures were recaptured from this run's Pull Request and the text follows them.
@@ -30,7 +31,7 @@ observations. None of them blocked a learner. Worth reading first:
 
 | Thing              | Version                                                                                                            |
 |--------------------|--------------------------------------------------------------------------------------------------------------------|
-| sfdx-hardis        | `main` at `7dd874ba6`, linked working copy (8.11.1 + #2170, #2221)                                                 |
+| sfdx-hardis        | `main` at `7dd874ba6`, linked working copy (8.11.1 + later merges: #2170, #2221, #2246, `org:list:metadata`)       |
 | vscode-sfdx-hardis | `main` at `7518ad7c`, built `yarn compile && yarn dev` for the lab driver                                          |
 | Course             | `main` at `bdd973a`, then branch `fix/training-e2e-2026-09-29`                                                     |
 | CI images          | pipeline and monitoring jobs on `sfdx-hardis-ubuntu:beta` = `8.11.2-beta202609282141.0` (npm 21:41Z, image 22:03Z) |
@@ -69,35 +70,35 @@ Fidelity: **1** lab driver (real VS Code panel, real CLI), **2** headless panel 
 `auth.mjs`, `mon.mjs`), **3** direct `sf` / `git` / `gh` / API, **browser** the real Setup or GitHub
 page over CDP. Pass A read, B do, C look at the images.
 
-| Lab  | Fidelity                                                                       | A  | B  | C       | Findings   |
-|------|--------------------------------------------------------------------------------|----|----|---------|------------|
-| 1.1  | read only                                                                      | ok | -  | ok      | O3 again   |
-| 1.2  | 1 (`init`), browser (Actions banner)                                           | ok | ok | ok      | P1         |
-| 1.3  | 1                                                                              | ok | ok | ok      | O-fixtures |
-| 1.4  | browser (field wizard, **permission set grants**), 3 (record values)           | ok | ok | ok      |            |
-| 1.5  | 3 (retrieve, commit), 1 (Save/Publish)                                         | ok | ok | ok      | O1 again   |
-| 1.6  | 3 (`gh pr create`, `prflow.sh`)                                                | ok | ok | ok      | F3, F4     |
-| 1.7  | 2, browser (field, grant), 3 (list view as metadata)                           | ok | ok | ok      |            |
-| 2.1  | 3 (simulate), 2 (`backpromote --plan` then `--auto`, the panel's call)         | ok | ok | ok      | F5         |
-| 2.2  | browser (field, **Visible for System Administrator only**), 3 (flow as XML), 2 | ok | ok | ok      | O          |
-| 2.3  | browser (Required and its dialog), 2, 3 (`action:create`, the editor's call)   | ok | ok | ok      | O          |
-| 2.4  | 3 (object, grants), **Create my lab records**, 2 (export), 3 (actions)         | ok | ok | ok      | F6, O-CLI  |
-| 2.5  | 3 (Apex edits, deploy), 2 (Apex tests card), 2                                 | ok | ok | ok      |            |
-| 2.6  | 3 (profile FLS), browser (permission set), 2                                   | ok | ok | ok      |            |
-| 2.7  | 3 (flows as XML, merge resolution), browser (grant), 2, simulate               | ok | ok | ok      | F7         |
-| 2.8  | 3 (layout, select-all retrieve), 2 (`resetselection`)                          | ok | ok | ok      | H1         |
-| 2.9  | 3 (object, flow, records), browser (grants), 2, simulate                       | ok | ok | sampled |            |
-| 3.1  | 3 (branch, protection, config), 2 (`auth.mjs` x4)                              | ok | ok | ok      |            |
-| 3.2  | simulate, 3 (line review comment), squash                                      | ok | ok | ok      | F8         |
-| 3.3  | log read, simulate, 3 (review comment)                                         | ok | ok | sampled |            |
-| 3.4  | simulate x2, 3 (comment)                                                       | ok | ok | sampled |            |
-| 3.5  | 3 (UAT hand edit, no-overwrite entry, ticks), **publish**, 2 (notes)           | ok | ok | sampled | F9         |
-| 3.6  | 3, browser (Deliverability x2), 2 (DORA)                                       | ok | ok | sampled | O6 again   |
-| 3.7  | simulate, 3, 2 (retrofit)                                                      | ok | ok | sampled | P1b        |
-| 3.8  | 2 (`mon.mjs`), 3 (Run workflow), **beta image**                                | ok | ok | ok      | F29 again  |
-| 3.9  | 2 (`project2markdown --with-history`), 3 (paragraphs)                          | ok | ok | sampled |            |
-| 3.10 | simulate x5, 2 (`promotion:create`), 3 (resolution by hand), retrofit          | ok | ok | ok      | P1b        |
-| 3.11 | simulate, 3, 2 (notes, DORA)                                                   | ok | ok | -       |            |
+| Lab  | Fidelity                                                                       | A  | B  | C       | Findings  |
+|------|--------------------------------------------------------------------------------|----|----|---------|-----------|
+| 1.1  | read only                                                                      | ok | -  | ok      | O3 again  |
+| 1.2  | 1 (`init`), browser (Actions banner)                                           | ok | ok | ok      | P1        |
+| 1.3  | 1                                                                              | ok | ok | ok      | O-repo    |
+| 1.4  | browser (field wizard, **permission set grants**), 3 (record values)           | ok | ok | ok      |           |
+| 1.5  | 3 (retrieve, commit), 1 (Save/Publish)                                         | ok | ok | ok      | O1, O-a   |
+| 1.6  | 3 (`gh pr create`, `prflow.sh`)                                                | ok | ok | ok      | F3, F4    |
+| 1.7  | 2, browser (field, grant), 3 (list view as metadata)                           | ok | ok | ok      |           |
+| 2.1  | 3 (simulate), 2 (`backpromote --plan` then `--auto`, the panel's call)         | ok | ok | ok      | F5        |
+| 2.2  | browser (field, **Visible for System Administrator only**), 3 (flow as XML), 2 | ok | ok | ok      | O-2.2     |
+| 2.3  | browser (Required and its dialog), 2, 3 (`action:create`, the editor's call)   | ok | ok | ok      | O-2.3     |
+| 2.4  | 3 (object, grants), **Create my lab records**, 2 (export), 3 (actions)         | ok | ok | ok      | F6, O-CLI |
+| 2.5  | 3 (Apex edits, deploy), 2 (Apex tests card), 2                                 | ok | ok | ok      |           |
+| 2.6  | 3 (profile FLS), browser (permission set), 2                                   | ok | ok | ok      |           |
+| 2.7  | 3 (flows as XML, merge resolution), browser (grant), 2, simulate               | ok | ok | ok      | F7        |
+| 2.8  | 3 (layout, select-all retrieve), 2 (`resetselection`)                          | ok | ok | ok      | H1        |
+| 2.9  | 3 (object, flow, records), browser (grants), 2, simulate                       | ok | ok | sampled |           |
+| 3.1  | 3 (branch, protection, config), 2 (`auth.mjs` x4)                              | ok | ok | ok      |           |
+| 3.2  | simulate, 3 (line review comment), squash                                      | ok | ok | ok      | F8        |
+| 3.3  | log read, simulate, 3 (review comment)                                         | ok | ok | sampled |           |
+| 3.4  | simulate x2, 3 (comment)                                                       | ok | ok | sampled |           |
+| 3.5  | 3 (UAT hand edit, no-overwrite entry, ticks), **publish**, 2 (notes)           | ok | ok | sampled | F9        |
+| 3.6  | 3, browser (Deliverability x2), 2 (DORA)                                       | ok | ok | sampled | O6 again  |
+| 3.7  | simulate, 3, 2 (retrofit)                                                      | ok | ok | sampled | P1b       |
+| 3.8  | 2 (`mon.mjs`), 3 (Run workflow), **beta image**                                | ok | ok | ok      | F29 again |
+| 3.9  | 2 (`project2markdown --with-history`), 3 (paragraphs)                          | ok | ok | sampled |           |
+| 3.10 | simulate x5, 2 (`promotion:create`), 3 (resolution by hand), retrofit          | ok | ok | ok      | P1b       |
+| 3.11 | simulate, 3, 2 (notes, DORA)                                                   | ok | ok | -       |           |
 
 New this run: Lab 1.4, 1.7, 2.6 and 2.7 granted permission sets **through the Setup Object Settings
 page** instead of `FieldPermissions` DML, so the Metadata Retriever lists them the way it does for a
@@ -171,11 +172,11 @@ retrofit with **0 changed files**, `git merge-tree integration preprod` clean, a
 - **O3** (again): Lab 1.1 and 1.2 pictures show extension v8.6.1.
 - **O6** (again): the DORA report of `helios-prod` counts every walk since mid-September (8.3 then
   8.6 deployments a week). A learner's is fresh.
-- Lab 1.3 and 1.6 fixtures (`work-new-completed`, `work-save-completed`) name `hardisgroupcom` as the
+- **O-repo**: Lab 1.3 and 1.6 fixtures (`work-new-completed`, `work-save-completed`) name `hardisgroupcom` as the
   repository where a learner after `init` sees their own fork.
-- Lab 2.2 step 5's Metadata Retriever picture is the generic Level 1 list with an empty name box,
+- **O-2.2**: Lab 2.2 step 5's Metadata Retriever picture is the generic Level 1 list with an empty name box,
   where the step types `Crew_Warning_Sent__c`.
-- Lab 2.3's edit dialog picture sits over a mock list of nine actions; a learner has none yet.
+- **O-2.3**: Lab 2.3's edit dialog picture sits over a mock list of nine actions; a learner has none yet.
 - `hardis:work:backpromote` writes the `@salesforce/cli` version (2.151.6) in the `version` field of
   its Backpromotes comment data, and names a scratch org by its lowercased org id.
 - 13 French labs still read *behind* in `check-translations` for the O7 reason of the last run
@@ -207,6 +208,7 @@ retrofit with **0 changed files**, `git merge-tree integration preprod` clean, a
 - Lab 1.1 was read and its pictures checked, not performed.
 - No badge was claimed, so the audit and the new dispatch of `claim.yml` did not run. The dispatch
   uses the same `gh workflow run` call and permission as the site build next to it.
-- Pass C was sampled in Labs 2.9, 3.3 to 3.7, 3.9 and 3.11, not exhaustive.
+- Pass C was sampled in Labs 2.9, 3.3 to 3.7 and 3.9, not exhaustive, and Lab 3.11's pictures were
+  not opened.
 - The behaviour of Lab 2.7's merged flow (flat roof minimum before the cap) was checked by the lab's
   own check and the deployed XML, not by saving records in `helios-integration`.
