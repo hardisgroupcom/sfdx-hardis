@@ -17,11 +17,13 @@ import {
   severityMeetsThreshold,
 } from "./notificationConfig.js";
 import {
+  AnonymizationChannel,
   AnonymizationLevel,
   anonymizeNotifMessage,
   consumeAnonymizationNotice,
   getAnonymizationLevel,
   getChannelAnonymizationLevel,
+  isTextScrubbingSkipped,
 } from "../utils/anonymizeUtils.js";
 
 export abstract class NotifProvider {
@@ -80,12 +82,15 @@ export abstract class NotifProvider {
         uxLog("warning", this, c.yellow(t('anonymizationLegacyEnvVarDeprecated')));
       }
     }
-    const anonymizedViews = new Map<AnonymizationLevel, NotifMessage>();
-    const getViewForLevel = (level: AnonymizationLevel): NotifMessage => {
-      if (!anonymizedViews.has(level)) {
-        anonymizedViews.set(level, anonymizeNotifMessage(notifMessage, level));
+    const anonymizedViews = new Map<string, NotifMessage>();
+    const getViewForLevel = (level: AnonymizationLevel, channel: AnonymizationChannel | null = null): NotifMessage => {
+      // Views only differ by channel when the message keeps user names readable in its text
+      const viewChannel = isTextScrubbingSkipped(notifMessage, level, channel) ? channel : null;
+      const viewKey = `${level}|${viewChannel || ""}`;
+      if (!anonymizedViews.has(viewKey)) {
+        anonymizedViews.set(viewKey, anonymizeNotifMessage(notifMessage, level, viewChannel));
       }
-      return anonymizedViews.get(level) as NotifMessage;
+      return anonymizedViews.get(viewKey) as NotifMessage;
     };
     for (const notifProvider of notifProviders) {
       uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
@@ -133,7 +138,7 @@ export abstract class NotifProvider {
         // from receiving the notification, nor make the calling command fail.
         try {
           const channelAnonymizationLevel = await getChannelAnonymizationLevel(channel);
-          await notifProvider.postNotification(getViewForLevel(channelAnonymizationLevel));
+          await notifProvider.postNotification(getViewForLevel(channelAnonymizationLevel, channel));
         } catch (e) {
           failedChannels.push(notifProvider.getLabel());
           uxLog(

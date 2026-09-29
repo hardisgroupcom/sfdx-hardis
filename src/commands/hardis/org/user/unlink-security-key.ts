@@ -41,7 +41,7 @@ Key functionalities:
 - **Per-user result:** Each username receives one of the following statuses: \`unlinked\`, \`notLinked\`, \`notFound\`, \`inactive\`, or \`error\`.
 - **Locale-independent detection:** Disconnect links are located by the brand / spec tokens (\`U2F\`, \`WebAuthn\`, \`Salesforce Authenticator\`, \`One-Time Password Authenticator\`, \`TOTP\`) that Salesforce does not translate, plus known French section labels and removal-action words (\`Supprimer\`, \`Déconnecter\`), so English and French orgs work out of the box. For other languages, extend the matching set with \`--text-markers\`.
 - **Reporting:** A console table summarises the run, and CSV / XLSX reports are generated for audit trails, including a \`TriggeredBy\` column naming who ran the command.
-- **Notifications:** Sends a notification (Slack, Microsoft Teams, email, API/Grafana) summarising which users had MFA methods unlinked, so security admins are alerted. Routing thresholds follow the \`SECURITY_KEY_UNLINK\` notification type configuration.
+- **Notifications:** Sends a notification (Slack, Microsoft Teams, email, API/Grafana) summarising which users had MFA methods unlinked, so security admins are alerted. Routing thresholds follow the \`SECURITY_KEY_UNLINK\` notification type configuration. At anonymization level \`standard\`, the Slack, Teams and email text shows the unlinked usernames, while the log elements and the API channel keep pseudonyms.
 - **Triggering user:** The notification ends with a line naming the person behind the run and whether it came from a CI pipeline or a manual run. Set \`SFDX_HARDIS_TRIGGERED_BY\` to override the detected value.
 
 ### Agent Mode
@@ -330,6 +330,9 @@ Reference: [Salesforce Help - Remove a user's security key](https://help.salesfo
       severity: notifSeverity,
       attachedFiles: xlsxFile ? [xlsxFile] : [],
       logElements: tableRows,
+      // Readers are the security admins who chose these users: show usernames in the Slack /
+      // Teams / email text, while logElements and the API channel keep the pseudonyms
+      keepUsersReadableInText: true,
       data: { metric: summary.unlinked, _triggeredBy: triggeringUser.label },
       metrics: {
         SecurityKeyUnlinkUnlinked: summary.unlinked,
