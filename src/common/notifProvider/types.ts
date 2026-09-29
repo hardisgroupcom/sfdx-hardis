@@ -564,4 +564,9 @@ export interface NotifMessage {
   metrics: any;
   data: any;
   alwaysSend?: boolean;
+  // When true, at anonymization level "standard" the human channels (messaging, email) receive
+  // the text and attachments without user pseudonyms. logElements, data and the API channel
+  // stay anonymized, and level "strict" scrubs everything. Use it only when the readers of the
+  // message are the administrators who chose the users named in it (e.g. SECURITY_KEY_UNLINK).
+  keepUsersReadableInText?: boolean;
 }
