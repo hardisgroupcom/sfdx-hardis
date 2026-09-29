@@ -46,6 +46,11 @@ teardown that kills the process tree can reach the editor you are working in. Th
 2026-09-21. Never start the lab driver as a killable background task, and never from the VS Code
 session you are working in.
 
+From an agent on Windows, a console of its own is `Start-Process cmd.exe -ArgumentList
+'/c','<a .cmd that sets the two variables, cds into ../vscode-sfdx-hardis and runs yarn
+test:ui:labs into a log>'` in PowerShell, then wait on the log for `EXIT=`. From Git Bash,
+`cmd //c start ...` hangs the calling shell instead (2026-09-29).
+
 The answers come from `labs/_assets/lab-drivers.json` **in the course repository**, in the same rule
 shape fidelity 2 uses, so a lab's answers are written once and replayed at either fidelity. A lab
 carrying a `skip` there is one the driver cannot walk, and its reason is what the report prints as
@@ -212,7 +217,26 @@ Traps that cost earlier runs time:
 - **A Setup step done through the API is invisible to source tracking.** Granting a field through
   `FieldPermissions` DML does not put the permission set into Recent Changes the way the Setup
   screen does, so the Metadata Retriever list of that lab no longer matches the picture. Say so in
-  the report when a lab is done that way.
+  the report when a lab is done that way. The Setup screen is scriptable instead (2026-09-29): the
+  classic Object Settings edit page `/<permissionSetId>/e?s=EntityPermissions&o=<objectDurableId>`
+  holds the object checkboxes and one row per field (`tr` with the field label, first checkbox
+  Read, second Edit, then `input[value=Save]`). It works for a new object too.
+- **`sf project retrieve preview` is not Recent Changes** (2026-09-29). It hides what local source
+  tracking already counts as synced, so after a **Deploy This Source to Org** of `force-app` (Lab
+  2.7) it no longer lists the two profiles the Metadata Retriever shows. The Retriever queries
+  `SourceMember` itself: `sf data query --use-tooling-api -q "SELECT MemberType, MemberName FROM
+  SourceMember"` is the list a learner sees, deleted components included.
+- **`hardis:project:action:create --agent` is not the dialog** (2026-09-29). It defaults `--context`
+  to `process-deployment-only`; the Deployment Actions editor defaults a new action to `all`. Pass
+  `--context all` for Lab 2.4's manual step, or the check comment has no **Pending manual actions**
+  box to show and tick.
+- **CI logs carry ANSI codes inside words.** `Type RemoteSiteSetting: 1 item(s) skipped` is logged
+  as `Type \e[1mRemoteSiteSetting\e[22m: ...`, so a grep for the plain sentence finds nothing and the
+  line looks missing. Strip the codes first: `sed 's/\x1b\[[0-9;]*m//g'`.
+- **A scratch org can keep a deleted object's name** (2026-09-29). `helios-dev`, torn down before the
+  purge fix, still resolves `Handover_Item__c` in `ObjectPermissions` DML to the deleted object
+  (*Invalid object: 01I...*), while metadata deploys and Setup use the new one. Grant through the
+  Setup page, or erase the old object under Deleted Objects.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
