@@ -1,0 +1,122 @@
+{
+  "vscode-guide/welcome.png": {
+    "spec": "814079c434b42146",
+    "out": "f687bca142b86914"
+  },
+  "vscode-guide/welcome-language-menu.png": {
+    "spec": "a09c9856c45f1d25",
+    "out": "7f27e912ee4be99f"
+  },
+  "vscode-guide/devops-pipeline.png": {
+    "spec": "fe1a7e04c23dfd11",
+    "out": "51ec1eb8c7425a37"
+  },
+  "vscode-guide/pipeline-settings-menu.png": {
+    "spec": "1d4cac4ad4999287",
+    "out": "2b805ae97eb70b0b"
+  },
+  "vscode-guide/pipeline-packages-menu.png": {
+    "spec": "bcbba4aa3296b97a",
+    "out": "1c5dbd2ab1b24f4b"
+  },
+  "vscode-guide/pipeline-workflow-cards.png": {
+    "spec": "dfac2a562eccc5da",
+    "out": "6d55ea70be47201f"
+  },
+  "vscode-guide/pipeline-pr-actions-list.png": {
+    "spec": "f7d72825e9c18ac9",
+    "out": "8482a7b2da5119d8"
+  },
+  "vscode-guide/pipeline-branch-modal-actions.png": {
+    "spec": "32afdc23c596529d",
+    "out": "caac400f44f9ccb8"
+  },
+  "vscode-guide/org-monitoring.png": {
+    "spec": "6a78e31354b0e958",
+    "out": "4b029b346f278cc7"
+  },
+  "vscode-guide/org-monitoring-packages-menu.png": {
+    "spec": "61b1d9c383bde889",
+    "out": "80006b0f9e03ef61"
+  },
+  "vscode-guide/command-runner-question.png": {
+    "spec": "fdb359faaed037f6",
+    "out": "149ab34c795b82a8"
+  },
+  "vscode-guide/command-runner-multiselect.png": {
+    "spec": "c67acb954e34db9b",
+    "out": "b8a902d5465f4cf2"
+  },
+  "vscode-guide/command-runner-completed.png": {
+    "spec": "bb53c2cc54d068eb",
+    "out": "cdc3d83cac051595"
+  },
+  "vscode-guide/orgs-manager.png#find": {
+    "spec": "e3fb8fe0a2900aa3",
+    "out": "6038ef5299eeb4f1"
+  },
+  "vscode-guide/orgs-manager.png#cleanup": {
+    "spec": "d94a2c9b49b8fa1f",
+    "out": "b18acf16027fbdcd"
+  },
+  "vscode-guide/metadata-retriever.png": {
+    "spec": "5e93ab775e5172f2",
+    "out": "80aee7c6831b5356"
+  },
+  "vscode-guide/metadata-retriever-row-menu.png": {
+    "spec": "235e4c2f1beacc22",
+    "out": "c92cd864839231a9"
+  },
+  "vscode-guide/metadata-retriever-presets.png": {
+    "spec": "cf6986df540bf0c5",
+    "out": "8a11e6ec0dffdac2"
+  },
+  "vscode-guide/metadata-dependencies.png": {
+    "spec": "eae7fb2b716f01d1",
+    "out": "9ca03b8cba34c1ee"
+  },
+  "vscode-guide/metadata-dependencies-uses.png": {
+    "spec": "5e69fe57d40824aa",
+    "out": "034480d667bd5720"
+  },
+  "vscode-guide/metadata-dependencies-row-menu.png": {
+    "spec": "b5ddbd76df81a720",
+    "out": "45b2ac250a7f0c80"
+  },
+  "vscode-guide/data-workbench.png": {
+    "spec": "153b6db6c188fa73",
+    "out": "8a063f6a2e2cf887"
+  },
+  "vscode-guide/data-workbench-create.png": {
+    "spec": "84fb17d10358cd11",
+    "out": "2def89740ff7c1fc"
+  },
+  "vscode-guide/data-workbench-object-editor.png": {
+    "spec": "b4424e89af47f979",
+    "out": "8df1d8b0ee1958d8"
+  },
+  "vscode-guide/data-workbench-global-settings.png": {
+    "spec": "0c98aad9a891bf84",
+    "out": "b41c9cb23765c462"
+  },
+  "vscode-guide/files-workbench.png": {
+    "spec": "099153078ec0c8f9",
+    "out": "39ad0a87d554e709"
+  },
+  "vscode-guide/files-workbench-create.png": {
+    "spec": "7a9762e9f9c7a255",
+    "out": "371f17990285c774"
+  },
+  "vscode-guide/files-workbench-edit.png": {
+    "spec": "fa473c3fb2580581",
+    "out": "f48943f4e0527717"
+  },
+  "vscode-guide/extension-config.png": {
+    "spec": "90e8041b66f2a3ea",
+    "out": "a3b200497610c96c"
+  },
+  "vscode-guide/orgs-manager-row-menu.png": {
+    "spec": "3768b911eb3d9b8c",
+    "out": "7e34fc0ef6c488d2"
+  }
+}

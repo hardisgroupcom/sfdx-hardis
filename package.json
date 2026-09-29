@@ -190,6 +190,7 @@
     "clean": "sf-clean",
     "clean-all": "sf-clean all",
     "compile": "wireit",
+    "doc:annotate": "node scripts/annotate-doc-images.mjs",
     "docs": "sf-docs",
     "format": "wireit",
     "link-check": "wireit",
@@ -204,7 +205,8 @@
     "test:only": "wireit",
     "update:docker-pulls": "node scripts/update-docker-pulls.mjs",
     "version": "oclif readme",
-    "check:deps": "wireit"
+    "check:deps": "wireit",
+    "check:doc-pills": "node scripts/annotate-doc-images.mjs --check && node scripts/check-doc-pills.mjs"
   },
   "publishConfig": {
     "access": "public"
