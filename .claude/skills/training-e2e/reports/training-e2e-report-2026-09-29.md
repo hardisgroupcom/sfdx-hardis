@@ -28,30 +28,30 @@ observations. None of them blocked a learner. Worth reading first:
 
 ## Versions under test
 
-| Thing              | Version                                                                                                           |
-|--------------------|-------------------------------------------------------------------------------------------------------------------|
-| sfdx-hardis        | `main` at `7dd874ba6`, linked working copy (8.11.1 + #2170, #2221)                                               |
-| vscode-sfdx-hardis | `main` at `7518ad7c`, built `yarn compile && yarn dev` for the lab driver                                        |
-| Course             | `main` at `bdd973a`, then branch `fix/training-e2e-2026-09-29`                                                    |
+| Thing              | Version                                                                                                            |
+|--------------------|--------------------------------------------------------------------------------------------------------------------|
+| sfdx-hardis        | `main` at `7dd874ba6`, linked working copy (8.11.1 + #2170, #2221)                                                 |
+| vscode-sfdx-hardis | `main` at `7518ad7c`, built `yarn compile && yarn dev` for the lab driver                                          |
+| Course             | `main` at `bdd973a`, then branch `fix/training-e2e-2026-09-29`                                                     |
 | CI images          | pipeline and monitoring jobs on `sfdx-hardis-ubuntu:beta` = `8.11.2-beta202609282141.0` (npm 21:41Z, image 22:03Z) |
-| Salesforce CLI     | @salesforce/cli 2.151.6, node 24.11.1                                                                            |
-| Published site     | `main` at `bdd973a`, the same as the course clone: what a learner reads is what was walked                       |
+| Salesforce CLI     | @salesforce/cli 2.151.6, node 24.11.1                                                                              |
+| Published site     | `main` at `bdd973a`, the same as the course clone: what a learner reads is what was walked                         |
 
 The beta's `gitHead` is `7dd874ba6`, the `main` the local CLI runs, so the jobs and the linked CLI
 ran the same code.
 
 ## Environment
 
-| Item             | State                                                                                                                  |
-|------------------|------------------------------------------------------------------------------------------------------------------------|
+| Item             | State                                                                                                                   |
+|------------------|-------------------------------------------------------------------------------------------------------------------------|
 | Fork             | `nvuillam/sfdx-hardis-training`, recreated with `gh repo fork` (init's own call), Actions banner clicked over CDP first |
 | Beta override    | one fork-only `E2E ONLY` commit on `main` and `training/start-level-1..3`, pushed after the banner click (trap D1)      |
 | Scratch orgs     | `helios-dev`, `-integration`, `-uat` of 2026-09-24, **torn down** then kept by `init` and re-seeded                     |
-| `helios-prod`    | Developer Edition, Dev Hub, French-speaking user; torn down, re-seeded by **Set up one of my training orgs**           |
-| `helios-preprod` | Developer Edition, French-speaking user; same                                                                          |
+| `helios-prod`    | Developer Edition, Dev Hub, French-speaking user; torn down, re-seeded by **Set up one of my training orgs**            |
+| `helios-preprod` | Developer Edition, French-speaking user; same                                                                           |
 | Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring`, new and private, with its own `E2E ONLY` beta commit on `main`              |
-| Learner clone    | `C:/git/training-run`, cloned from the shared repository                                                               |
-| Browser on CDP   | a dedicated Chrome profile on 9222, started by the run and already signed in to GitHub                                 |
+| Learner clone    | `C:/git/training-run`, cloned from the shared repository                                                                |
+| Browser on CDP   | a dedicated Chrome profile on 9222, started by the run and already signed in to GitHub                                  |
 
 All five teardowns ran clean (the fixes of 2026-09-26 hold).
 
@@ -69,35 +69,35 @@ Fidelity: **1** lab driver (real VS Code panel, real CLI), **2** headless panel 
 `auth.mjs`, `mon.mjs`), **3** direct `sf` / `git` / `gh` / API, **browser** the real Setup or GitHub
 page over CDP. Pass A read, B do, C look at the images.
 
-| Lab  | Fidelity                                                                           | A  | B  | C       | Findings    |
-|------|------------------------------------------------------------------------------------|----|----|---------|-------------|
-| 1.1  | read only                                                                          | ok | -  | ok      | O3 again    |
-| 1.2  | 1 (`init`), browser (Actions banner)                                               | ok | ok | ok      | P1          |
-| 1.3  | 1                                                                                  | ok | ok | ok      | O-fixtures  |
-| 1.4  | browser (field wizard, **permission set grants**), 3 (record values)               | ok | ok | ok      |             |
-| 1.5  | 3 (retrieve, commit), 1 (Save/Publish)                                             | ok | ok | ok      | O1 again    |
-| 1.6  | 3 (`gh pr create`, `prflow.sh`)                                                    | ok | ok | ok      | F3, F4      |
-| 1.7  | 2, browser (field, grant), 3 (list view as metadata)                               | ok | ok | ok      |             |
-| 2.1  | 3 (simulate), 2 (`backpromote --plan` then `--auto`, the panel's call)             | ok | ok | ok      | F5          |
-| 2.2  | browser (field, **Visible for System Administrator only**), 3 (flow as XML), 2     | ok | ok | ok      | O           |
-| 2.3  | browser (Required and its dialog), 2, 3 (`action:create`, the editor's call)       | ok | ok | ok      | O           |
-| 2.4  | 3 (object, grants), **Create my lab records**, 2 (export), 3 (actions)             | ok | ok | ok      | F6, O-CLI   |
-| 2.5  | 3 (Apex edits, deploy), 2 (Apex tests card), 2                                     | ok | ok | ok      |             |
-| 2.6  | 3 (profile FLS), browser (permission set), 2                                       | ok | ok | ok      |             |
-| 2.7  | 3 (flows as XML, merge resolution), browser (grant), 2, simulate                   | ok | ok | ok      | F7          |
-| 2.8  | 3 (layout, select-all retrieve), 2 (`resetselection`)                              | ok | ok | ok      | H1          |
-| 2.9  | 3 (object, flow, records), browser (grants), 2, simulate                           | ok | ok | sampled |             |
-| 3.1  | 3 (branch, protection, config), 2 (`auth.mjs` x4)                                  | ok | ok | ok      |             |
-| 3.2  | simulate, 3 (line review comment), squash                                          | ok | ok | ok      | F8          |
-| 3.3  | log read, simulate, 3 (review comment)                                             | ok | ok | sampled |             |
-| 3.4  | simulate x2, 3 (comment)                                                           | ok | ok | sampled |             |
-| 3.5  | 3 (UAT hand edit, no-overwrite entry, ticks), **publish**, 2 (notes)               | ok | ok | sampled | F9          |
-| 3.6  | 3, browser (Deliverability x2), 2 (DORA)                                           | ok | ok | sampled | O6 again    |
-| 3.7  | simulate, 3, 2 (retrofit)                                                          | ok | ok | sampled | P1b         |
-| 3.8  | 2 (`mon.mjs`), 3 (Run workflow), **beta image**                                    | ok | ok | ok      | F29 again   |
-| 3.9  | 2 (`project2markdown --with-history`), 3 (paragraphs)                              | ok | ok | sampled |             |
-| 3.10 | simulate x5, 2 (`promotion:create`), 3 (resolution by hand), retrofit              | ok | ok | ok      | P1b         |
-| 3.11 | simulate, 3, 2 (notes, DORA)                                                       | ok | ok | -       |             |
+| Lab  | Fidelity                                                                       | A  | B  | C       | Findings   |
+|------|--------------------------------------------------------------------------------|----|----|---------|------------|
+| 1.1  | read only                                                                      | ok | -  | ok      | O3 again   |
+| 1.2  | 1 (`init`), browser (Actions banner)                                           | ok | ok | ok      | P1         |
+| 1.3  | 1                                                                              | ok | ok | ok      | O-fixtures |
+| 1.4  | browser (field wizard, **permission set grants**), 3 (record values)           | ok | ok | ok      |            |
+| 1.5  | 3 (retrieve, commit), 1 (Save/Publish)                                         | ok | ok | ok      | O1 again   |
+| 1.6  | 3 (`gh pr create`, `prflow.sh`)                                                | ok | ok | ok      | F3, F4     |
+| 1.7  | 2, browser (field, grant), 3 (list view as metadata)                           | ok | ok | ok      |            |
+| 2.1  | 3 (simulate), 2 (`backpromote --plan` then `--auto`, the panel's call)         | ok | ok | ok      | F5         |
+| 2.2  | browser (field, **Visible for System Administrator only**), 3 (flow as XML), 2 | ok | ok | ok      | O          |
+| 2.3  | browser (Required and its dialog), 2, 3 (`action:create`, the editor's call)   | ok | ok | ok      | O          |
+| 2.4  | 3 (object, grants), **Create my lab records**, 2 (export), 3 (actions)         | ok | ok | ok      | F6, O-CLI  |
+| 2.5  | 3 (Apex edits, deploy), 2 (Apex tests card), 2                                 | ok | ok | ok      |            |
+| 2.6  | 3 (profile FLS), browser (permission set), 2                                   | ok | ok | ok      |            |
+| 2.7  | 3 (flows as XML, merge resolution), browser (grant), 2, simulate               | ok | ok | ok      | F7         |
+| 2.8  | 3 (layout, select-all retrieve), 2 (`resetselection`)                          | ok | ok | ok      | H1         |
+| 2.9  | 3 (object, flow, records), browser (grants), 2, simulate                       | ok | ok | sampled |            |
+| 3.1  | 3 (branch, protection, config), 2 (`auth.mjs` x4)                              | ok | ok | ok      |            |
+| 3.2  | simulate, 3 (line review comment), squash                                      | ok | ok | ok      | F8         |
+| 3.3  | log read, simulate, 3 (review comment)                                         | ok | ok | sampled |            |
+| 3.4  | simulate x2, 3 (comment)                                                       | ok | ok | sampled |            |
+| 3.5  | 3 (UAT hand edit, no-overwrite entry, ticks), **publish**, 2 (notes)           | ok | ok | sampled | F9         |
+| 3.6  | 3, browser (Deliverability x2), 2 (DORA)                                       | ok | ok | sampled | O6 again   |
+| 3.7  | simulate, 3, 2 (retrofit)                                                      | ok | ok | sampled | P1b        |
+| 3.8  | 2 (`mon.mjs`), 3 (Run workflow), **beta image**                                | ok | ok | ok      | F29 again  |
+| 3.9  | 2 (`project2markdown --with-history`), 3 (paragraphs)                          | ok | ok | sampled |            |
+| 3.10 | simulate x5, 2 (`promotion:create`), 3 (resolution by hand), retrofit          | ok | ok | ok      | P1b        |
+| 3.11 | simulate, 3, 2 (notes, DORA)                                                   | ok | ok | -       |            |
 
 New this run: Lab 1.4, 1.7, 2.6 and 2.7 granted permission sets **through the Setup Object Settings
 page** instead of `FieldPermissions` DML, so the Metadata Retriever lists them the way it does for a
