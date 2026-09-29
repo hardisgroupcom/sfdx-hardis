@@ -11,16 +11,18 @@
  * with the same palette and the same spec format, so a pill looks the same in
  * the course and in the product documentation.
  *
- * Sources stay untouched: the screenshot harness of vscode-sfdx-hardis
- * (yarn screenshots + scripts/build-doc-images.py) owns docs/assets/images and
- * overwrites it whenever the captures are taken again. The annotated copies are
+ * Sources stay untouched: the screenshot scripts of vscode-sfdx-hardis
+ * (yarn screenshots + scripts/build-doc-images.py) write docs/assets/images and
+ * overwrite it whenever the captures are taken again. The annotated copies are
  * written under docs/assets/images/annotated/, which is what the pages reference.
  *
  * The pill positions live in docs/assets/annotations.json, in percentages of the
  * image, so re-taking a screenshot at another resolution does not move them.
  *
  * Rendering needs a local Chrome, which CI does not have, so the annotated
- * images are committed and --check proves they match the spec. Set
+ * images are committed and --check proves they match the spec: each stamp of
+ * .stamps.json holds the hash of the source, the spec entry and the drawing
+ * code, and the hash of the image drawn from them. Set
  * PUPPETEER_EXECUTABLE_PATH when Chrome is not installed in its default place.
  */
 import fs from "fs";
@@ -90,13 +92,27 @@ export function loadSpec() {
   return Object.entries(raw.images || {});
 }
 
+function sha1(...parts) {
+  const hash = crypto.createHash("sha1");
+  parts.forEach((part) => hash.update(part));
+  return hash.digest("hex").slice(0, 16);
+}
+
+// Changing how pills are drawn (buildHtml) makes every stamp stale, like
+// changing a source screenshot or its spec entry does
 function specHash(source, entry) {
-  return crypto
-    .createHash("sha1")
-    .update(fs.readFileSync(source))
-    .update(JSON.stringify(entry))
-    .digest("hex")
-    .slice(0, 16);
+  return sha1(fs.readFileSync(source), JSON.stringify(entry), buildHtml.toString());
+}
+
+// A stamp is current when it was drawn from this spec and the committed image
+// is the one it wrote: a hand-edited or replaced annotated image is stale too
+function isCurrent(item, stamp) {
+  return (
+    Boolean(stamp) &&
+    stamp.spec === item.hash &&
+    fs.existsSync(item.out) &&
+    stamp.out === sha1(fs.readFileSync(item.out))
+  );
 }
 
 function buildHtml(dataUri, size, marks, scale) {
@@ -163,8 +179,16 @@ async function main() {
       problems.push(`${key}: no such screenshot in docs/assets/images`);
       continue;
     }
+    // Past the palette, pill 11 would be drawn red like pill 1 while its (11)
+    // in the text has no colour at all
+    for (const pill of entry.pills || []) {
+      const n = Number(pill.n);
+      if (!Number.isInteger(n) || n < 1 || n > PILL_PALETTE.length) {
+        problems.push(`${key}: pill ${pill.n} is outside 1-${PILL_PALETTE.length}`);
+      }
+    }
     const item = workItem(key, entry);
-    if (!(fs.existsSync(item.out) && stamps[key] === item.hash)) {
+    if (!isCurrent(item, stamps[key])) {
       todo.push(item);
     }
   }
@@ -191,39 +215,45 @@ async function main() {
     return;
   }
 
-  const browser = await launchBrowser();
-  const page = await browser.newPage();
-
-  for (const item of work) {
-    const size = pngSize(item.source);
-    const dataUri = `data:image/png;base64,${fs.readFileSync(item.source).toString("base64")}`;
-    // A very large viewport is slow, so wide screenshots are drawn at a scale
-    // that keeps them workable
-    const scale = Math.min(1, 1600 / size.width);
-    const vw = Math.ceil(size.width * scale);
-    const vh = Math.ceil(size.height * scale);
-    await page.setViewport({ width: vw, height: vh });
-    await page.setContent(buildHtml(dataUri, size, item.entry.pills || [], scale), { waitUntil: "load" });
-    fs.mkdirSync(path.dirname(item.out), { recursive: true });
-    await page.screenshot({ path: item.out, clip: { x: 0, y: 0, width: vw, height: vh } });
-    stamps[item.rel] = item.hash;
-    console.log(`${item.rel} (${(item.entry.pills || []).length} pill(s))`);
-  }
-
-  await page.close();
-  await browser.close();
-
-  // Stamps of keys removed from the spec go too, so the file never grows stale
+  // Stamps of keys removed from the spec go, so the file never grows stale
   const known = new Set(entries.map(([key]) => key));
   const kept = Object.fromEntries(Object.entries(stamps).filter(([key]) => known.has(key)));
-  fs.mkdirSync(OUT_ROOT, { recursive: true });
-  fs.writeFileSync(STAMPS, `${JSON.stringify(kept, null, 2)}\n`);
+  const saveStamps = () => {
+    fs.mkdirSync(OUT_ROOT, { recursive: true });
+    fs.writeFileSync(STAMPS, `${JSON.stringify(kept, null, 2)}\n`);
+  };
+
+  const browser = await launchBrowser();
+  try {
+    const page = await browser.newPage();
+    for (const item of work) {
+      const size = pngSize(item.source);
+      const dataUri = `data:image/png;base64,${fs.readFileSync(item.source).toString("base64")}`;
+      // A very large viewport is slow, so wide screenshots are drawn at a scale
+      // that keeps them workable
+      const scale = Math.min(1, 1600 / size.width);
+      const vw = Math.ceil(size.width * scale);
+      const vh = Math.ceil(size.height * scale);
+      await page.setViewport({ width: vw, height: vh });
+      await page.setContent(buildHtml(dataUri, size, item.entry.pills || [], scale), { waitUntil: "load" });
+      fs.mkdirSync(path.dirname(item.out), { recursive: true });
+      await page.screenshot({ path: item.out, clip: { x: 0, y: 0, width: vw, height: vh } });
+      // Saved after every image: a failure halfway keeps the work already done
+      kept[item.rel] = { spec: item.hash, out: sha1(fs.readFileSync(item.out)) };
+      saveStamps();
+      console.log(`${item.rel} (${(item.entry.pills || []).length} pill(s))`);
+    }
+  } finally {
+    await browser.close();
+  }
+  saveStamps();
   console.log(`\n${work.length} screenshot(s) annotated into docs/assets/images/annotated/.`);
 }
 
 // Only when this file is the command being run: check-doc-pills.mjs imports the
 // palette from here, and importing a module must not draw every pill.
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Node resolves symlinks and junctions in import.meta.url, not in argv[1].
+if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href) {
   main().catch((error) => {
     console.error(error.message || error);
     process.exit(1);

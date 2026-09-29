@@ -28,9 +28,9 @@ The Orgs Manager lists every Salesforce org your computer is connected to, tells
 
 ## Work on one org
 
-![Row menu of the Orgs Manager](assets/images/annotated/vscode-guide/orgs-manager--row.png)
+![Row menu of the Orgs Manager](assets/images/annotated/vscode-guide/orgs-manager-row-menu.png)
 
-Click the arrow **(1)** at the end of a row. Its menu holds the actions that apply to this org:
+Click the arrow at the end of a row. Its menu **(1)** holds the actions that apply to this org (a Dev Hub, a sandbox and a scratch org each show their own):
 
 | Action | What it does |
 |---|---|

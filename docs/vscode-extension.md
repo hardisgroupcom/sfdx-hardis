@@ -14,7 +14,7 @@ If you prefer clicks to flags, install the extension and skip the terminal: see 
 
 ## User guides
 
-Each workbench of the extension has its own guide: what it is for, how to open it, a step by step walk through its screens with numbered markers, and what you can customize. The **?** button in the header of each panel opens its guide.
+Each workbench of the extension has its own guide: what it is for, how to open it, a step by step walk through its screens with numbered markers, and what you can customize. The **?** button in the header of each workbench below opens its guide. In the command execution panel, the **Command documentation** button opens the page of the command that runs.
 
 | Workbench | What you do with it |
 |---|---|

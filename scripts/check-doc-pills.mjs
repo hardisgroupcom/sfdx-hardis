@@ -11,7 +11,8 @@
  * drift apart silently, because nothing fails when a guide says "(3)" over an
  * image with two pills, or when a pill nobody mentions is left on an image.
  *
- * Scope: the VS Code guides, docs/vscode-extension*.md. For every PNG they show:
+ * Scope: the VS Code guides, docs/vscode-extension*.md. For every screenshot
+ * they show (PNG, JPEG or WebP, as Markdown or <img>):
  *   - it must be the annotated copy (docs/assets/images/annotated/...)
  *   - the pill numbers declared for it in docs/assets/annotations.json must be
  *     exactly the **(n)** references of its step (a heading down to the next)
@@ -50,7 +51,19 @@ let checked = 0;
 
 for (const file of pages) {
   const rel = path.relative(ROOT, file).replace(/\\/g, "/");
-  const lines = fs.readFileSync(file, "utf8").split("\n");
+  // Fenced code blocks are blanked, keeping line numbers: a "## " or a **(2)**
+  // inside a YAML or Markdown sample is not a step or a pill reference
+  let fenced = false;
+  const lines = fs
+    .readFileSync(file, "utf8")
+    .split("\n")
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        fenced = !fenced;
+        return "";
+      }
+      return fenced ? "" : line;
+    });
 
   // Cut the page into steps: a heading and everything under it, up to the next
   // heading. A step is what a reader has in front of them at one moment, and it
@@ -70,8 +83,15 @@ for (const file of pages) {
 
     const images = [];
     block.forEach((line, offset) => {
-      for (const match of line.matchAll(/!\[[^\]]*\]\(([^)\s]+\.png)[^)]*\)/g)) {
-        images.push({ target: match[1], line: from + offset + 1 });
+      // Markdown and HTML images of any still format: a raw .jpg must fail as
+      // surely as a raw .png. Animated GIFs are the panel recordings, not steps.
+      const still = /\.(png|jpe?g|webp)$/i;
+      const targets = [
+        ...[...line.matchAll(/!\[[^\]]*\]\(([^)\s]+)[^)]*\)/g)].map((m) => m[1]),
+        ...[...line.matchAll(/<img\b[^>]*\bsrc=["']([^"']+)["']/gi)].map((m) => m[1]),
+      ];
+      for (const target of targets.filter((t) => still.test(t))) {
+        images.push({ target, line: from + offset + 1 });
       }
     });
     const cited = new Set([...block.join("\n").matchAll(/\*\*\((\d+)\)\*\*/g)].map((m) => Number(m[1])));

@@ -5,7 +5,7 @@
 document$.subscribe(function () {
     var bolds = document.querySelectorAll("article strong")
     bolds.forEach(function (bold) {
-        var match = /^\((\d{1,2})\)$/.exec(bold.textContent.trim())
+        var match = /^\((10|[1-9])\)$/.exec(bold.textContent.trim())
         if (match) {
             bold.classList.add("pill-ref", "pill-ref-" + Number(match[1]))
         }
