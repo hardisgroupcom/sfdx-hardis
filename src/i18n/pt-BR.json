@@ -1,6 +1,11 @@
 {
   "aDetailedDescriptionForExportConfig": "Uma descrição detalhada explicando o que esta configuração de exportação faz",
   "aHumanReadableLabelForExportConfig": "Um rótulo legível que identificará esta configuração de exportação",
+  "apexTestRunStartedWaiting": "Execução de testes Apex {{testRunId}} iniciada, aguardando até {{waitMinutes}} minutos para a conclusão...",
+  "apexTestRunStatus": "Status da execução de testes Apex {{testRunId}}: {{status}}",
+  "apexTestRunTimeout": "A execução de testes Apex {{testRunId}} não foi concluída em {{waitMinutes}} minutos. Aumente SFDX_TEST_WAIT_MINUTES para aguardar mais tempo.",
+  "apexTestsNetworkErrorRetrying": "Erro de rede ao se comunicar com a org, tentando novamente ({{attempt}}/{{maxAttempts}}): {{message}}",
+  "apexTestsNetworkErrorUnableToGetResults": "Não foi possível obter os resultados dos testes Apex devido a erros de rede: os testes ainda podem ter sido executados na org (execução: {{testRunId}})",
   "aSalesforceOrgLabel": "uma org Salesforce",
   "aboutToReuseScratchOrgAreYouSure": "Você está prestes a reutilizar a scratch org {{alias}}. Tem certeza de que é isso que deseja fazer?",
   "accessApplicationAlreadyHasThePolicy": "O Aplicativo de Acesso {{accessApp}} já possui a política {{accessPolicy}}.",
