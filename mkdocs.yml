@@ -71,6 +71,7 @@ markdown_extensions:
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
+  - javascripts/pill-refs.js
 extra_css:
   - stylesheets/extra.css
 extra:
@@ -99,7 +100,18 @@ nav:
   - Home: index.md
   - What's new in v8: sfdx-hardis-v8.md
   - Installation: installation.md
-  - VS Code Extension: vscode-extension.md
+  - VS Code Extension:
+      - Overview: vscode-extension.md
+      - Welcome panel: vscode-extension-welcome.md
+      - DevOps Pipeline: vscode-extension-devops-pipeline.md
+      - Org Monitoring: vscode-extension-org-monitoring.md
+      - Command execution: vscode-extension-command-runner.md
+      - Orgs Manager: vscode-extension-orgs-manager.md
+      - Metadata Retriever: vscode-extension-metadata-retriever.md
+      - Metadata Dependencies: vscode-extension-metadata-dependencies.md
+      - Data Workbench: vscode-extension-data-workbench.md
+      - Files Workbench: vscode-extension-files-workbench.md
+      - Customize: vscode-extension-customize.md
   - Configuration: sfdx-hardis-config-file.md
   - Salesforce CI/CD:
       - Overview: salesforce-devops-home.md

@@ -190,3 +190,21 @@
 [data-md-color-scheme="slate"] .md-typeset a:hover {
   color: #9B6BFF;
 }
+
+/* Numbered pill references of the VS Code guides: a bold (n) in the text is painted
+   in the colour of pill n on its screenshot (javascripts/pill-refs.js adds the classes).
+   Same palette as scripts/annotate-doc-images.mjs, which scripts/check-doc-pills.mjs verifies. */
+.md-typeset strong.pill-ref { font-weight: 700; white-space: nowrap; }
+.pill-ref-1 { color: #e5322d; }
+.pill-ref-2 { color: #0b72d9; }
+.pill-ref-3 { color: #e08800; }
+.pill-ref-4 { color: #128a4a; }
+.pill-ref-5 { color: #8a37c9; }
+.pill-ref-6 { color: #c2185b; }
+.pill-ref-7 { color: #00838f; }
+.pill-ref-8 { color: #5d4037; }
+.pill-ref-9 { color: #3949ab; }
+.pill-ref-10 { color: #455a64; }
+[data-md-color-scheme="slate"] .pill-ref {
+  filter: brightness(1.7) saturate(0.85);
+}
