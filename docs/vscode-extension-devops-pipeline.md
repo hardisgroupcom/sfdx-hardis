@@ -21,10 +21,10 @@ For the concepts behind it (major branches, merges, delta deployments), read [Sa
 
 ![DevOps Pipeline view, annotated](assets/images/annotated/vscode-guide/devops-pipeline.png)
 
-- **(1)** is a feature branch, with the number of its Pull Request. Feature branches only show when **(4)** is on. When too many target the same branch, they are grouped in a **+N more** box.
+- **(1)** is a feature branch, with the number of its Pull Request. When too many target the same branch, they are grouped in a **+N more** box.
 - **(2)** is a major branch. The badge on its corner counts the Pull Requests open against it. Click it to see its Pull Requests, tickets and deployment actions.
 - **(3)** is the org a major branch deploys to. The dotted line carries the result of the last deployment: a check mark when it passed.
-- **(4)** shows or hides the feature branches.
+- **(4)** shows or hides the feature branches. They are shown by default.
 - **(5)** opens the pipeline settings menu, **(6)** the package files menu, **(7)** reloads branches, Pull Requests and deployments, and **(8)** opens this guide.
 - **(9)** is the legend of the lines and statuses.
 - **(10)** switches between the contribution cards and the list of open Pull Requests.
@@ -90,7 +90,7 @@ See [Configure overwrite management](salesforce-devops-config-overwrite.md) for 
 
 | What | Where |
 |---|---|
-| Show feature branches by default | The **Show feature branches** toggle, or the `vsCodeSfdxHardis.pipelineDisplayFeatureBranches` setting |
+| Hide feature branches | The **Show feature branches** toggle, or the `vsCodeSfdxHardis.pipelineDisplayFeatureBranches` setting (default `true`) |
 | Group feature branches after N | `vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold` (default `3`) |
 | Branches, orgs, deployment options | **Pipeline Settings**, stored in `.sfdx-hardis.yml` |
 | Promotion branches | `enablePromotionBranches`, see [Promotion branches](salesforce-devops-promotion-branches.md) |
