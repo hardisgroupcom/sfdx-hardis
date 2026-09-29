@@ -41,8 +41,6 @@ Two anonymization levels are available:
 - **standard** (default in CI): masks end-user identity. `Username`, `Email`, `FirstName`, `LastName` and user display names become `user_<hash>`, Salesforce user record Ids (`005...` values, `USER_ID`, `AssigneeId`) become `id_<hash>`, client IPs and their resolved hostnames become `ip_<hash>`. Technical actor fields stay readable: `CreatedBy`, `LastModifiedBy` and `DelegateUser` in audit trail entries, `DeployedBy` in deployment history, `TriggeredBy` in security key unlink reports. They identify administrators performing setup actions, which is exactly what an audit trail is for.
 - **strict**: standard, plus the technical actor fields above.
 
-One exception at level **standard**: the Slack, Microsoft Teams and email text of the security key unlink notification shows the usernames of the users whose MFA methods were unlinked, because its readers are the administrators who chose those users. Its log elements and the API channel (Grafana / Loki) keep the pseudonyms, and level **strict** masks the usernames in the text too.
-
 What is NOT anonymized at any level: Salesforce record Ids other than user Ids (deployment Ids, org Ids, permission set Ids...), profile and license names, dates (`LastLoginDate` is needed for inactive-user reports and is not a personal identifier), and metric values.
 
 Key points:
