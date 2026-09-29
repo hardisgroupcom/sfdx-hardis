@@ -2,9 +2,11 @@
 
 ## [beta] (main)
 
+## [8.12.0] 2026-09-26
+
+- [hardis:doc:metadata-deps](https://sfdx-hardis.cloudity.com/hardis/doc/metadata-deps/): Identify which metadata items use a Salesforce component, or what it uses, and export a dependency report.
 - New [VS Code user guides](https://sfdx-hardis.cloudity.com/vscode-extension/): one step by step page per workbench of the extension, with numbered screenshots and what you can customize.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#metadata-rest-api) deploys with the Metadata REST API by default, which is faster and accepts larger packages than SOAP. Set `useRestDeploy: false` or `SFDX_HARDIS_USE_REST_DEPLOY=false` to deploy with SOAP. Your sf configuration is not modified.
-- [hardis:doc:metadata-deps](https://sfdx-hardis.cloudity.com/hardis/doc/metadata-deps/): Identify which metadata items use a Salesforce component, or what it uses, and export a dependency report.
 - New [hardis:org:list:metadata](https://sfdx-hardis.cloudity.com/hardis/org/list/metadata/): List the metadata components of a type in an org, for scripts, agents and the VS Code extension.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no metadata type of the deployment package is in package-no-overwrite.xml, which saves minutes on large orgs.
 - [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): the Slack, Teams and email notification shows the usernames of the users whose MFA methods were unlinked, instead of pseudonyms.
