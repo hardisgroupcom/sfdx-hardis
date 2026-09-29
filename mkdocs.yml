@@ -100,6 +100,7 @@ nav:
   - Home: index.md
   - What's new in v8: sfdx-hardis-v8.md
   - Installation: installation.md
+  - Configuration: sfdx-hardis-config-file.md
   - VS Code Extension:
       - Overview: vscode-extension.md
       - Welcome panel: vscode-extension-welcome.md
@@ -112,7 +113,6 @@ nav:
       - Data Workbench: vscode-extension-data-workbench.md
       - Files Workbench: vscode-extension-files-workbench.md
       - Customize: vscode-extension-customize.md
-  - Configuration: sfdx-hardis-config-file.md
   - Salesforce CI/CD:
       - Overview: salesforce-devops-home.md
       - Contributor Guide:
