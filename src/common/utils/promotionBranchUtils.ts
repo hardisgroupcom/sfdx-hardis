@@ -375,6 +375,74 @@ export function isPromotionPullRequestForItsTarget(
 }
 
 /**
+ * Whether a Pull Request is a promotion of one given pipeline step: named for it, and going where
+ * its name says. Says nothing about its state, an open promotion of the step answers true.
+ */
+export function isPromotionOfStep(
+  pr: Pick<CommonPullRequestInfo, 'sourceBranch' | 'targetBranch'> | null | undefined,
+  sourceBranch: string,
+  targetBranch: string,
+): boolean {
+  const parts = parsePromotionBranchName(pr?.sourceBranch || '');
+  if (
+    !parts ||
+    parts.sourceBranch.toLowerCase() !== (sourceBranch || '').toLowerCase() ||
+    parts.targetBranch.toLowerCase() !== (targetBranch || '').toLowerCase()
+  ) {
+    return false;
+  }
+  // A promotion retargeted by hand proves nothing about the branch its name announces
+  const actualTarget = (pr?.targetBranch || '').toLowerCase();
+  return actualTarget === '' || actualTarget === parts.targetBranch.toLowerCase();
+}
+
+/**
+ * Oldest creation date of a set of Pull Requests, used to bound provider queries: a promotion
+ * carrying one of them cannot be older. Null when no date can be read, in which case the query
+ * stays unbounded rather than silently miss a promotion.
+ */
+export function oldestPullRequestDate(pullRequests: CommonPullRequestInfo[]): Date | null {
+  const times = pullRequests
+    .map((pr) => new Date(pr.createdDate || pr.mergedDate || ''))
+    .filter((date) => !isNaN(date.getTime()))
+    .map((date) => date.getTime());
+  return times.length > 0 ? new Date(Math.min(...times)) : null;
+}
+
+/**
+ * Take out of the window of a source branch the User Stories a merged promotion already carried to
+ * the next branch: without a direct merge between the two branches the window never resets, so
+ * they would be listed as waiting forever. A promotion Pull Request of the window (one that brought
+ * stories into the source branch) leaves with them once every story it declares is gone: listing
+ * it alone would attach to it the tickets of stories that are no longer waiting.
+ */
+export function dropPromotedAwayPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+  promotedIds: Set<number>,
+  config: PromotionBranchConfig,
+): { kept: CommonPullRequestInfo[]; dropped: CommonPullRequestInfo[] } {
+  if (!config.enabled || promotedIds.size === 0) {
+    return { kept: pullRequests, dropped: [] };
+  }
+  const kept: CommonPullRequestInfo[] = [];
+  const dropped: CommonPullRequestInfo[] = [];
+  for (const pr of pullRequests) {
+    const declared = isPromotionPullRequest(pr, config)
+      ? (parsePromotionPullRequestIds(pr.description) || []).filter((id) => id !== pr.idNumber)
+      : null;
+    const leftTheBranch = declared === null
+      ? promotedIds.has(pr.idNumber)
+      : declared.length > 0 && declared.every((id) => promotedIds.has(id));
+    if (leftTheBranch) {
+      dropped.push(pr);
+    } else {
+      kept.push(pr);
+    }
+  }
+  return { kept, dropped };
+}
+
+/**
  * Log the cases where the feature is nearly, but not, applicable. Silent when nothing looks like
  * a promotion branch, so ordinary jobs keep their exact output.
  */

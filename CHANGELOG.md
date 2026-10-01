@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): [release notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) of what is waiting in a branch no longer list the User Stories a merged promotion already carried to the next branch.
+
 ## [8.12.0] 2026-09-26
 
 - [hardis:doc:metadata-deps](https://sfdx-hardis.cloudity.com/hardis/doc/metadata-deps/): Identify which metadata items use a Salesforce component, or what it uses, and export a dependency report.

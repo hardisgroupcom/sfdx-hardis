@@ -241,6 +241,18 @@ Break one of these and the feature is wrong, whatever the tests say.
     extension mirror: the DevOps Pipeline, the release notes and the promotion candidates ignore them,
     and no CI job runs on them. The backpromote history lives in the "Backpromotes" Pull Request
     comment, which is not the CI/CD "Deployment Actions" comment: neither side reads the other's.
+30. **A merged promotion empties the source window, and it is found by asking the provider.** The
+    window of a branch is "merged since the last direct merge into the next branch", and a project
+    that promotes through promotion branches may never do that merge again: the window only grows.
+    A story declared by a **merged** promotion of that very step leaves it (`isPromotionOfStep`
+    on the merged listing here, `isMergedPromotionOfStep` in the extension). The promotions are
+    read with a dedicated query on the target branch (`collectPromotedPullRequests` here,
+    `listMergedPromotionPullRequests` in the extension), which the windows cannot replace: the
+    promotion drops out of the target window at the next go-live while its stories stay in the
+    source window. The extension adds what it finds to the promotions its windows already hold. An **open** promotion removes nothing
+    from the DevOps Pipeline or the release notes, since its stories have not reached the target.
+    `promotion:create` is the one place where an open promotion counts, so the same story is not
+    assembled twice. A query that failed is reported and removes nothing.
 
 ## sfdx-hardis (CLI)
 

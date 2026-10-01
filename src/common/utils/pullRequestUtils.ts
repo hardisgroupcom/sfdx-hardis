@@ -19,6 +19,7 @@ import {
   isPromotionPullRequest,
   isPromotionPullRequestForItsTarget,
   mergeInheritedCustomBehaviors,
+  oldestPullRequestDate,
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
   warnAboutPromotionPullRequestMisuse,
@@ -188,17 +189,6 @@ async function completeWindowWithPromotions(
     })}`));
   }
   return expanded;
-}
-
-/**
- * Oldest creation date of a set of Pull Requests, used to bound provider queries.
- */
-function oldestPullRequestDate(pullRequests: CommonPullRequestInfo[]): Date | null {
-  const times = pullRequests
-    .map((pr) => new Date(pr.createdDate || pr.mergedDate || ''))
-    .filter((date) => !isNaN(date.getTime()))
-    .map((date) => date.getTime());
-  return times.length > 0 ? new Date(Math.min(...times)) : null;
 }
 
 /**

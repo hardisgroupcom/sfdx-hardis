@@ -394,7 +394,7 @@ Two things to do, both borrowed from the [hotfix](salesforce-devops-hotfixes.md)
 - **Retrofit right away.** Once `preprod` (or production) contains the promotion branch, [retrofit](salesforce-devops-retrofit.md) it into `integration` with a `retrofit/` branch, exactly as after a hotfix. The cherry-picked commits then meet their originals at the next `integration -> uat` promotion instead of at the next go-live.
 - **Freeze `uat -> preprod` while a promotion branch sits in `preprod`** and has not reached production yet, otherwise unapproved stories ride along. This is the RUN/BUILD rule of the hotfix process.
 
-In the DevOps Pipeline, a promoted story leaves the window of the branch it came from and is listed in the branch it reached, so **a Pull Request number appears in a single place in the diagram**, both in the counter on the node and in the list opened by clicking it.
+In the DevOps Pipeline, a promoted story leaves the window of the branch it came from and is listed in the branch it reached, so **a Pull Request number appears in a single place in the diagram**, both in the counter on the node and in the list opened by clicking it. This holds for as long as you keep promoting through promotion branches: a story leaves `uat` when the promotion carrying it is merged, even if `uat` is never merged into `preprod` again, and even after `preprod` went to production. Until the promotion is merged, its stories are still counted in `uat`.
 
 <details markdown="1">
 <summary>How it works behind the hood</summary>
@@ -402,6 +402,8 @@ In the DevOps Pipeline, a promoted story leaves the window of the branch it came
 A promotion carries **commits**, not Pull Request numbers. On a pipeline where User Stories are merged into `integration` and `integration` is then merged into `uat`, every first-parent commit of `uat` is one of those syncs: they are opened up into the User Story merges they brought in, so each story is a candidate of its own and can be carried alone. What stays grouped is a single commit that really brought several Pull Requests in at once (a squashed sync, an octopus merge, a back-merge from the target branch): promoting one of them carries the others too. The command names them before cherry-picking anything, and declares them all in the Pull Request.
 
 The lists and counters of the DevOps Pipeline leave out the Pull Requests that **move** other Pull Requests: a merge between two major branches, and a promotion Pull Request. Everything that carries its own change stays listed, whatever the branch is named (`feature/`, `fix/`, `retrofit/`, `hotfix/`...). The "Show merge and promotion Pull Requests" toggle at the top of the branch window brings the others back. The rule for major-to-major merges applies to **every** project, promotion branches or not, since such a merge is plumbing in any pipeline; a `promotion/` branch is only treated as a vehicle when the feature is enabled, exactly as the deployment jobs treat it.
+
+To know which stories left a branch, the DevOps Pipeline and the release notes ask the git provider for the merged promotion Pull Requests of the step (`promotion/uat/preprod/...` merged into `preprod`) and read their `promotionPullRequests` block. That block is the only link between a promotion and its stories, which is one more reason never to edit it by hand.
 
 The deployment jobs still see the stories in the `uat` promotion window: their original merge commits have not reached `preprod`, so their metadata is redeployed as a no-op and their already performed actions are skipped. That is a deployment concern, not a listing one.
 
@@ -414,6 +416,8 @@ ___
 ## Release notes
 
 The release notes list the User Stories a promotion Pull Request carries, not the promotion Pull Request itself: the tickets, the metadata changes, the deployment actions and the contributor counts are those of the stories. A promotion whose declared Pull Requests could not be resolved is kept in the notes, so a change never disappears from them. The same rule applies to the merges between two major branches, which are left out whether or not the project uses promotion branches.
+
+The notes of what is waiting in a branch (for example `uat` before its promotion to `preprod`) leave out the User Stories a merged promotion already carried to the next branch. The stories of a promotion that is still open stay in them.
 
 <details markdown="1">
 <summary>How it works behind the hood</summary>

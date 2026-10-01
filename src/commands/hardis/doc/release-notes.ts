@@ -77,6 +77,8 @@ Per-item Pull Request and commit attribution is computed with \`git log --name-o
 Deployment actions are loaded from PR comments (via the \`<!-- sfdx-hardis deployment-actions-state -->\` marker) or from \`scripts/actions/.sfdx-hardis.{PR_ID}.yml\` files.
 
 Inter-major-branch PRs (e.g., integration to preprod) are excluded since they represent promotions, not user stories.
+
+With [promotion branches](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/) enabled, the branch-based scope also leaves out the Pull Requests that a merged promotion Pull Request of the same step (\`promotion/<source>/<target>/...\`) already carried to the target branch. They are read with \`GitProvider.listPullRequests()\` on the target branch. A promotion that is still open leaves its Pull Requests in the notes.
 </details>
 
 ### Agent Mode

@@ -26,6 +26,7 @@ import {
   PromotionBranchConfig,
   PromotionStep,
   isPromotionBranchName,
+  isPromotionOfStep,
   isPromotionPullRequest,
   parsePromotionBranchName,
   parsePromotionPullRequestIds,
@@ -476,10 +477,6 @@ export function oldestCandidateDate(candidates: PromotionCandidate[]): Date | nu
 }
 
 /**
- * Pull Request numbers already carried to the target branch by another promotion branch of the
- * same source, through a promotion Pull Request that is merged or still open.
- */
-/**
  * The identity of a Pull Request as the already-promoted check compares it: providers fill idStr
  * and idNumber differently, so both are accepted.
  */
@@ -505,44 +502,43 @@ export function countsAsAlreadyPromoted(
   targetBranch: string,
   supersededKeys: Set<string>
 ): boolean {
-  const parts = parsePromotionBranchName(pullRequest.sourceBranch);
-  if (
-    !parts ||
-    parts.sourceBranch.toLowerCase() !== sourceBranch.toLowerCase() ||
-    parts.targetBranch.toLowerCase() !== targetBranch.toLowerCase()
-  ) {
+  if (!isPromotionOfStep(pullRequest, sourceBranch, targetBranch)) {
     return false;
   }
   return !pullRequestKeys(pullRequest).some((key) => supersededKeys.has(key));
 }
 
-export async function listAlreadyPromotedPullRequests(
+export type PromotionStatus = 'merged' | 'open';
+
+/**
+ * The Pull Requests the promotions of one step declare, read from the git provider itself rather
+ * than from a window of Pull Requests: a promotion drops out of the window of its target branch as
+ * soon as that branch is promoted further, while the stories it carried stay in the window of the
+ * source branch for as long as nobody merges the two branches directly.
+ * A status the provider could not list is returned in `failures`, never treated as "nothing
+ * promoted": the caller decides how to say it.
+ */
+export async function collectPromotedPullRequests(
+  gitProvider: { listPullRequests: (filters: any) => Promise<CommonPullRequestInfo[] | null> },
   sourceBranch: string,
   targetBranch: string,
-  minDate: Date | null = null,
-  commandThis: any = null,
-  supersededPromotions: CommonPullRequestInfo[] = [],
-): Promise<Map<number, AlreadyPromotedBy>> {
-  const alreadyPromoted = new Map<number, AlreadyPromotedBy>();
-  // The promotions this run replaces are on their way out: what they carry is not promoted, it is
-  // what the new promotion is being assembled from. Counting them would refuse every story of the
-  // promotion the user just agreed to supersede.
-  const supersededKeys = new Set(supersededPromotions.flatMap((pullRequest) => pullRequestKeys(pullRequest)));
-  // Never prompt for a provider here: this runs inside a listing step, and getInstance(true) would
-  // block an --agent run on an interactive question
-  const gitProvider = await GitProvider.getInstance();
-  if (!gitProvider) {
-    // This map is the only duplicate protection of the command: an empty one must not look like a
-    // clean pipeline
-    uxLog('warning', commandThis, c.yellow(t('promotionCreateAlreadyPromotedCheckImpossible')));
-    return alreadyPromoted;
-  }
-  for (const status of ['merged', 'open']) {
-    let pullRequests: CommonPullRequestInfo[] = [];
+  options: { statuses?: PromotionStatus[]; minDate?: Date | null; supersededPromotions?: CommonPullRequestInfo[] } = {},
+): Promise<{ promoted: Map<number, AlreadyPromotedBy>; failures: Array<{ status: PromotionStatus; message: string }> }> {
+  const promoted = new Map<number, AlreadyPromotedBy>();
+  const failures: Array<{ status: PromotionStatus; message: string }> = [];
+  const supersededKeys = new Set((options.supersededPromotions || []).flatMap((pullRequest) => pullRequestKeys(pullRequest)));
+  for (const status of options.statuses || (['merged', 'open'] as PromotionStatus[])) {
+    let pullRequests: CommonPullRequestInfo[] | null;
     try {
-      pullRequests = (await gitProvider.listPullRequests({ status, targetBranch, ...(minDate ? { minDate } : {}) })) || [];
+      pullRequests = await gitProvider.listPullRequests({ status, targetBranch, ...(options.minDate ? { minDate: options.minDate } : {}) });
     } catch (e) {
-      uxLog('warning', commandThis, c.yellow(t('promotionCreateAlreadyPromotedCheckFailed', { status, message: (e as Error).message })));
+      failures.push({ status, message: (e as Error)?.message || String(e) });
+      continue;
+    }
+    // Most providers catch their own errors and answer null: that is a failed listing, not an
+    // empty one
+    if (!pullRequests) {
+      failures.push({ status, message: '' });
       continue;
     }
     for (const pullRequest of pullRequests) {
@@ -550,18 +546,54 @@ export async function listAlreadyPromotedPullRequests(
         continue;
       }
       for (const id of parsePromotionPullRequestIds(pullRequest.description) || []) {
-        if (!alreadyPromoted.has(id)) {
-          alreadyPromoted.set(id, {
+        if (!promoted.has(id)) {
+          promoted.set(id, {
             idStr: pullRequest.idStr,
             sourceBranch: pullRequest.sourceBranch,
             webUrl: pullRequest.webUrl,
-            merged: !!pullRequest.mergedDate,
+            // GitLab can list a merged merge request without its merge date
+            merged: status === 'merged' || !!pullRequest.mergedDate,
           });
         }
       }
     }
   }
-  return alreadyPromoted;
+  return { promoted, failures };
+}
+
+/**
+ * Pull Request numbers already carried to the target branch by another promotion branch of the
+ * same source, through a promotion Pull Request that is merged or still open.
+ */
+export async function listAlreadyPromotedPullRequests(
+  sourceBranch: string,
+  targetBranch: string,
+  minDate: Date | null = null,
+  commandThis: any = null,
+  supersededPromotions: CommonPullRequestInfo[] = [],
+): Promise<Map<number, AlreadyPromotedBy>> {
+  // Never prompt for a provider here: this runs inside a listing step, and getInstance(true) would
+  // block an --agent run on an interactive question
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    // This map is the only duplicate protection of the command: an empty one must not look like a
+    // clean pipeline
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateAlreadyPromotedCheckImpossible')));
+    return new Map<number, AlreadyPromotedBy>();
+  }
+  // The promotions this run replaces are on their way out: what they carry is not promoted, it is
+  // what the new promotion is being assembled from. Counting them would refuse every story of the
+  // promotion the user just agreed to supersede.
+  // An open promotion counts here, unlike in the DevOps Pipeline and the release notes: offering
+  // its stories again would assemble a second promotion carrying the same work.
+  const { promoted, failures } = await collectPromotedPullRequests(gitProvider, sourceBranch, targetBranch, {
+    minDate,
+    supersededPromotions,
+  });
+  for (const failure of failures) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateAlreadyPromotedCheckFailed', { status: failure.status, message: failure.message || t('gitProviderDidNotAnswer') })));
+  }
+  return promoted;
 }
 
 export function markAlreadyPromotedCandidates(

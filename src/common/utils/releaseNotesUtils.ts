@@ -16,10 +16,13 @@ import {
 } from "./deploymentActionsStateUtils.js";
 import { readActions } from "./actionUtils.js";
 import { isDeploymentActionsDisabled } from "./prePostCommandUtils.js";
+import { collectPromotedPullRequests } from "./promotionCreateUtils.js";
 import {
+  dropPromotedAwayPullRequests,
   expandPromotionPullRequests,
   getPromotionBranchConfig,
   isPromotionPullRequest,
+  oldestPullRequestDate,
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
 } from "./promotionBranchUtils.js";
@@ -640,8 +643,49 @@ export async function collectPullRequests(
   const promotionConfig = getPromotionBranchConfig(await getConfig("branch"));
   pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
   pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig, options);
+  // After the vehicle rule, which judges a promotion against every story it carries
+  if (lookup === "branches" && promotionConfig.enabled && scope.sourceBranch) {
+    pullRequests = await dropPullRequestsPromotedAway(pullRequests, scope.sourceBranch, scope.targetBranch, gitProvider, promotionConfig, commandRef);
+  }
 
   return pullRequests;
+}
+
+/**
+ * What is waiting in a source branch is everything merged into it since it was last merged into
+ * the target branch. A project that promotes through promotion branches may never do that merge
+ * again, so the window only grows: the User Stories a merged promotion of this step already
+ * carried to the target branch are taken out. A promotion still open takes nothing out, its
+ * stories have not reached the target branch.
+ */
+async function dropPullRequestsPromotedAway(
+  pullRequests: CommonPullRequestInfo[],
+  sourceBranch: string,
+  targetBranch: string,
+  gitProvider: any,
+  promotionConfig: PromotionBranchConfig,
+  commandRef: any,
+): Promise<CommonPullRequestInfo[]> {
+  if (pullRequests.length === 0) {
+    return pullRequests;
+  }
+  const { promoted, failures } = await collectPromotedPullRequests(gitProvider, sourceBranch, targetBranch, {
+    statuses: ["merged"],
+    // A promotion carrying a story of the window cannot be older than the oldest story of the window
+    minDate: oldestPullRequestDate(pullRequests),
+  });
+  for (const failure of failures) {
+    uxLog("warning", commandRef, c.yellow(t("releaseNotesPromotedAwayCheckFailed", { targetBranch, message: failure.message || t("gitProviderDidNotAnswer") })));
+  }
+  const { kept, dropped } = dropPromotedAwayPullRequests(pullRequests, new Set(promoted.keys()), promotionConfig);
+  if (dropped.length > 0) {
+    uxLog("log", commandRef, c.grey(t("releaseNotesPromotedAwayPullRequests", {
+      count: dropped.length,
+      targetBranch,
+      details: dropped.map((pr) => `#${pr.idStr}${promoted.has(pr.idNumber) ? ` -> ${promoted.get(pr.idNumber)?.sourceBranch}` : ""}`).join(", "),
+    })));
+  }
+  return kept;
 }
 
 /**

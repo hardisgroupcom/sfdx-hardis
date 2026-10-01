@@ -13,6 +13,7 @@ import {
   buildPromotionPullRequestBody,
   buildPromotionPullRequestTitle,
   computePromotionBranchName,
+  collectPromotedPullRequests,
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
   dropOfferedTwice,
@@ -674,6 +675,87 @@ describe('countsAsAlreadyPromoted()', () => {
     const pullRequest = { ...promotion(0, 'promotion/integration/uat/2026-09-06-1'), idNumber: 0, idStr: 'gid://493' };
     expect(countsAsAlreadyPromoted(pullRequest, 'integration', 'uat', new Set(['gid://493']))).to.equal(false);
     expect(countsAsAlreadyPromoted(pullRequest, 'integration', 'uat', new Set())).to.equal(true);
+  });
+
+  it('a promotion retargeted by hand proves nothing about the branch its name announces', () => {
+    const retargeted = { ...promotion(5, 'promotion/integration/uat/2026-09-06-1'), targetBranch: 'main' };
+    expect(countsAsAlreadyPromoted(retargeted, 'integration', 'uat', new Set())).to.equal(false);
+  });
+});
+
+describe('collectPromotedPullRequests()', () => {
+  const DECLARATION = '```yaml\npromotionPullRequests: [482, 487]\n```';
+  function promotion(idNumber: number, description: string, mergedDate?: string) {
+    return {
+      idNumber,
+      idStr: String(idNumber),
+      sourceBranch: `promotion/uat/preprod/2026-09-06-140${idNumber % 10}`,
+      targetBranch: 'preprod',
+      title: `Promotion ${idNumber}`,
+      description,
+      authorName: 'dev',
+      webUrl: `https://git.example.com/pr/${idNumber}`,
+      customBehaviors: {},
+      providerInfo: {},
+      ...(mergedDate ? { mergedDate } : {}),
+    };
+  }
+  const merged = promotion(900, DECLARATION, '2026-09-07T10:00:00Z');
+  const open = promotion(901, '```yaml\npromotionPullRequests: [491]\n```');
+  function provider(failing: string[] = []) {
+    const calls: any[] = [];
+    return {
+      calls,
+      listPullRequests: async (filters: any) => {
+        calls.push(filters);
+        if (failing.includes(filters.status)) {
+          throw new Error('rate limited');
+        }
+        return filters.status === 'merged' ? [merged] : [open];
+      },
+    };
+  }
+
+  it('reads merged and open promotions by default, which is what promotion:create needs', async () => {
+    const { promoted, failures } = await collectPromotedPullRequests(provider(), 'uat', 'preprod');
+    expect([...promoted.keys()]).to.deep.equal([482, 487, 491]);
+    expect(promoted.get(482)?.merged).to.equal(true);
+    expect(promoted.get(491)?.merged).to.equal(false);
+    expect(failures).to.deep.equal([]);
+  });
+
+  it('with merged only, the stories of an open promotion are still waiting in the source branch', async () => {
+    const gitProvider = provider();
+    const minDate = new Date('2026-09-01T00:00:00Z');
+    const { promoted } = await collectPromotedPullRequests(gitProvider, 'uat', 'preprod', { statuses: ['merged'], minDate });
+    expect([...promoted.keys()]).to.deep.equal([482, 487]);
+    expect(gitProvider.calls).to.deep.equal([{ status: 'merged', targetBranch: 'preprod', minDate }]);
+  });
+
+  it('trusts the status it asked for: GitLab can list a merged merge request without its merge date', async () => {
+    const undated = { ...merged, mergedDate: undefined };
+    const gitProvider = { listPullRequests: async () => [undated] };
+    const { promoted } = await collectPromotedPullRequests(gitProvider, 'uat', 'preprod', { statuses: ['merged'] });
+    expect(promoted.get(482)?.merged).to.equal(true);
+  });
+
+  it('takes a null answer for what it is, a listing that failed', async () => {
+    // GitHub, GitLab and Bitbucket catch their own errors and answer null
+    const gitProvider = { listPullRequests: async () => null };
+    const { promoted, failures } = await collectPromotedPullRequests(gitProvider, 'uat', 'preprod', { statuses: ['merged'] });
+    expect(promoted.size).to.equal(0);
+    expect(failures).to.deep.equal([{ status: 'merged', message: '' }]);
+  });
+
+  it('ignores the promotions of another step', async () => {
+    const { promoted } = await collectPromotedPullRequests(provider(), 'integration', 'preprod');
+    expect(promoted.size).to.equal(0);
+  });
+
+  it('reports a status it could not list instead of answering that nothing was promoted', async () => {
+    const { promoted, failures } = await collectPromotedPullRequests(provider(['merged']), 'uat', 'preprod', { statuses: ['merged'] });
+    expect(promoted.size).to.equal(0);
+    expect(failures).to.deep.equal([{ status: 'merged', message: 'rate limited' }]);
   });
 });
 

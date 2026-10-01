@@ -22,7 +22,9 @@ import {
   hasPromotionPrefixOnly,
   isPromotionStepAllowed,
   parsePromotionSteps,
+  dropPromotedAwayPullRequests,
   isPromotionBranchName,
+  isPromotionOfStep,
   isPromotionPullRequest,
   isPromotionPullRequestForItsTarget,
   mergeInheritedCustomBehaviors,
@@ -304,6 +306,48 @@ describe('isPromotionPullRequestForItsTarget()', () => {
     // Case is not significant, and an unknown target is not a mismatch
     expect(isPromotionPullRequestForItsTarget(pr({ sourceBranch: PROMOTION_BRANCH, targetBranch: 'PREPROD', description: DECLARATION }), ENABLED)).to.equal(true);
     expect(isPromotionPullRequestForItsTarget(pr({ sourceBranch: PROMOTION_BRANCH, targetBranch: '', description: DECLARATION }), ENABLED)).to.equal(true);
+  });
+});
+
+describe('isPromotionOfStep() / dropPromotedAwayPullRequests()', () => {
+  const promotion = pr({ idNumber: 900, sourceBranch: 'promotion/uat/preprod/2026-09-06-1430', targetBranch: 'preprod', description: DECLARATION });
+
+  it('recognizes a promotion of the step, whatever the case and whatever its state', () => {
+    expect(isPromotionOfStep(promotion, 'uat', 'preprod')).to.equal(true);
+    expect(isPromotionOfStep({ sourceBranch: 'promotion/UAT/Preprod/2026-09-06-1', targetBranch: 'preprod' }, 'uat', 'preprod')).to.equal(true);
+    // The target is not always known, and that is not a mismatch
+    expect(isPromotionOfStep({ sourceBranch: promotion.sourceBranch, targetBranch: '' }, 'uat', 'preprod')).to.equal(true);
+  });
+
+  it('another step, a retargeted promotion or an ordinary branch prove nothing', () => {
+    expect(isPromotionOfStep(promotion, 'integration', 'uat')).to.equal(false);
+    expect(isPromotionOfStep(promotion, 'uat', 'main')).to.equal(false);
+    expect(isPromotionOfStep({ sourceBranch: promotion.sourceBranch, targetBranch: 'main' }, 'uat', 'preprod')).to.equal(false);
+    expect(isPromotionOfStep({ sourceBranch: 'feature/story', targetBranch: 'preprod' }, 'uat', 'preprod')).to.equal(false);
+    expect(isPromotionOfStep(null, 'uat', 'preprod')).to.equal(false);
+  });
+
+  it('takes the carried stories out of the window and keeps the others', () => {
+    const window = [pr({ idNumber: 482 }), pr({ idNumber: 483 }), pr({ idNumber: 487 })];
+    const { kept, dropped } = dropPromotedAwayPullRequests(window, new Set([482, 487]), ENABLED);
+    expect(kept.map((entry) => entry.idNumber)).to.deep.equal([483]);
+    expect(dropped.map((entry) => entry.idNumber)).to.deep.equal([482, 487]);
+  });
+
+  it('a promotion that brought stories into the branch leaves once all of them are gone, not before', () => {
+    // With --include-promotions the vehicle is still in the list: alone, it would keep showing
+    // the tickets of stories that are no longer waiting
+    const vehicle = pr({ idNumber: 700, sourceBranch: 'promotion/integration/uat/2026-09-01-0900', description: DECLARATION });
+    expect(dropPromotedAwayPullRequests([vehicle], new Set([482, 487]), ENABLED).dropped).to.deep.equal([vehicle]);
+    expect(dropPromotedAwayPullRequests([vehicle], new Set([482]), ENABLED).kept).to.deep.equal([vehicle]);
+    // Its own number in the set means nothing: a vehicle is judged on what it carries
+    expect(dropPromotedAwayPullRequests([vehicle], new Set([700]), ENABLED).kept).to.deep.equal([vehicle]);
+  });
+
+  it('changes nothing when the feature is off or nothing was promoted', () => {
+    const window = [pr({ idNumber: 482 })];
+    expect(dropPromotedAwayPullRequests(window, new Set([482]), DISABLED)).to.deep.equal({ kept: window, dropped: [] });
+    expect(dropPromotedAwayPullRequests(window, new Set(), ENABLED)).to.deep.equal({ kept: window, dropped: [] });
   });
 });
 
