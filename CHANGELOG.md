@@ -2,8 +2,10 @@
 
 ## [beta] (main)
 
-- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): [release notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) of what is waiting in a branch no longer list the User Stories a merged promotion already carried to the next branch, and the notes of a later direct merge flag them as already delivered.
-- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) (Beta) rebuilds `manifest/package.xml` and `manifest/destructiveChanges.xml` from the content of the promotion branch, so those two files no longer conflict story after story.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta):
+  - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the notes of what is waiting in a branch leave out the User Stories and metadata a merged promotion already carried to the next branch, and the notes of a later direct merge flag them as already delivered.
+  - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) rebuilds `manifest/package.xml` and `manifest/destructiveChanges.xml` from the content of the promotion branch, so those two files no longer conflict story after story.
+  - Finding the promotions already merged is faster on Azure DevOps and Bitbucket, and a Pull Request list cut by a page limit now says so.
 
 ## [8.12.0] 2026-09-26
 
