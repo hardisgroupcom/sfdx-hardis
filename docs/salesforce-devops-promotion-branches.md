@@ -419,6 +419,8 @@ The release notes list the User Stories a promotion Pull Request carries, not th
 
 The notes of what is waiting in a branch (for example `uat` before its promotion to `preprod`) leave out the User Stories a merged promotion already carried to the next branch. The stories of a promotion that is still open stay in them.
 
+When a source branch is later merged directly into the next one, that merge brings the original commits of the stories a promotion had already delivered. The notes of that merge list them, flagged **already delivered by promotion #N**, so nobody reads them as new in the org.
+
 <details markdown="1">
 <summary>How it works behind the hood</summary>
 

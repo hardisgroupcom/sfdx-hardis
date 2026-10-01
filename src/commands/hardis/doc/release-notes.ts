@@ -78,7 +78,7 @@ Deployment actions are loaded from PR comments (via the \`<!-- sfdx-hardis deplo
 
 Inter-major-branch PRs (e.g., integration to preprod) are excluded since they represent promotions, not user stories.
 
-With [promotion branches](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/) enabled, the branch-based scope also leaves out the Pull Requests that a merged promotion Pull Request of the same step (\`promotion/<source>/<target>/...\`) already carried to the target branch. They are read with \`GitProvider.listPullRequests()\` on the target branch. A promotion that is still open leaves its Pull Requests in the notes.
+With [promotion branches](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/) enabled, the branch-based scope also leaves out the Pull Requests that a merged promotion Pull Request of the same step (\`promotion/<source>/<target>/...\`) already carried to the target branch. They are read with \`GitProvider.listPullRequests()\` on the target branch. A promotion that is still open leaves its Pull Requests in the notes. In post mode, the Pull Requests of a merge that an earlier merged promotion had already delivered to the target branch stay listed, flagged "already delivered by promotion" in the Markdown table and in the **Already Delivered By** column of the XLSX.
 </details>
 
 ### Agent Mode

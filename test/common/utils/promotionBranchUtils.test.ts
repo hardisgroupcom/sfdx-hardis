@@ -18,6 +18,8 @@ import {
   allowedPromotionTargetBranches,
   formatPromotionSteps,
   getCarriedBy,
+  getPreviouslyPromotedBy,
+  markPreviouslyPromoted,
   getPromotionBranchConfig,
   hasPromotionPrefixOnly,
   isPromotionStepAllowed,
@@ -348,6 +350,38 @@ describe('isPromotionOfStep() / dropPromotedAwayPullRequests()', () => {
     const window = [pr({ idNumber: 482 })];
     expect(dropPromotedAwayPullRequests(window, new Set([482]), DISABLED)).to.deep.equal({ kept: window, dropped: [] });
     expect(dropPromotedAwayPullRequests(window, new Set(), ENABLED)).to.deep.equal({ kept: window, dropped: [] });
+  });
+});
+
+describe('markPreviouslyPromoted()', () => {
+  const earlier = pr({ idNumber: 900, sourceBranch: 'promotion/uat/preprod/2026-09-06-1430', targetBranch: 'preprod', description: DECLARATION });
+
+  it('flags the stories of a direct merge that a promotion had already delivered', () => {
+    const goLive = [pr({ idNumber: 482 }), pr({ idNumber: 483 }), pr({ idNumber: 487 })];
+    const flagged = markPreviouslyPromoted(goLive, [earlier], 'preprod', ENABLED);
+    expect(flagged.map((entry) => entry.idNumber)).to.deep.equal([482, 487]);
+    expect(getPreviouslyPromotedBy(goLive[0])).to.deep.equal({
+      idStr: '900',
+      idNumber: 900,
+      sourceBranch: 'promotion/uat/preprod/2026-09-06-1430',
+      webUrl: earlier.webUrl,
+    });
+    expect(getPreviouslyPromotedBy(goLive[1])).to.equal(null);
+  });
+
+  it('flags nothing when the promotion is the release itself', () => {
+    // The promotion is in the list: it delivers its stories now, not before
+    const goLive = [earlier, pr({ idNumber: 482 }), pr({ idNumber: 487 })];
+    expect(markPreviouslyPromoted(goLive, [earlier], 'preprod', ENABLED)).to.deep.equal([]);
+  });
+
+  it('ignores a promotion into another branch, a retargeted one, and the feature off', () => {
+    const goLive = () => [pr({ idNumber: 482 })];
+    const intoUat = pr({ idNumber: 901, sourceBranch: 'promotion/integration/uat/2026-09-01-0900', targetBranch: 'uat', description: DECLARATION });
+    const retargeted = { ...earlier, targetBranch: 'main' };
+    expect(markPreviouslyPromoted(goLive(), [intoUat], 'preprod', ENABLED)).to.deep.equal([]);
+    expect(markPreviouslyPromoted(goLive(), [retargeted], 'preprod', ENABLED)).to.deep.equal([]);
+    expect(markPreviouslyPromoted(goLive(), [earlier], 'preprod', DISABLED)).to.deep.equal([]);
   });
 });
 

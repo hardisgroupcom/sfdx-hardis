@@ -729,7 +729,9 @@ describe('collectPromotedPullRequests()', () => {
     const minDate = new Date('2026-09-01T00:00:00Z');
     const { promoted } = await collectPromotedPullRequests(gitProvider, 'uat', 'preprod', { statuses: ['merged'], minDate });
     expect([...promoted.keys()]).to.deep.equal([482, 487]);
-    expect(gitProvider.calls).to.deep.equal([{ status: 'merged', targetBranch: 'preprod', minDate }]);
+    // One query, narrowed to the promotion branches of the step so the provider does not complete
+    // every Pull Request of the target branch
+    expect(gitProvider.calls).to.deep.equal([{ status: 'merged', targetBranch: 'preprod', sourceBranchPrefix: 'promotion/uat/preprod/', minDate }]);
   });
 
   it('trusts the status it asked for: GitLab can list a merged merge request without its merge date', async () => {

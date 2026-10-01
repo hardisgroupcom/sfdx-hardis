@@ -20,9 +20,12 @@ import { collectPromotedPullRequests } from "./promotionCreateUtils.js";
 import {
   dropPromotedAwayPullRequests,
   expandPromotionPullRequests,
+  getPreviouslyPromotedBy,
   getPromotionBranchConfig,
   isPromotionPullRequest,
+  markPreviouslyPromoted,
   oldestPullRequestDate,
+  PROMOTION_BRANCH_PREFIX,
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
 } from "./promotionBranchUtils.js";
@@ -642,6 +645,11 @@ export async function collectPullRequests(
   // cherry-picked commits never match by SHA, list the stories it declares as well
   const promotionConfig = getPromotionBranchConfig(await getConfig("branch"));
   pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
+  // Before the vehicle rule: a promotion still in the list is what tells its stories are delivered
+  // by this release, not by an earlier one
+  if (lookup === "goLive" && promotionConfig.enabled) {
+    await flagPullRequestsPromotedBefore(pullRequests, scope.targetBranch, gitProvider, promotionConfig, commandRef);
+  }
   pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig, options);
   // After the vehicle rule, which judges a promotion against every story it carries
   if (lookup === "branches" && promotionConfig.enabled && scope.sourceBranch) {
@@ -649,6 +657,48 @@ export async function collectPullRequests(
   }
 
   return pullRequests;
+}
+
+/**
+ * A merge between two major branches brings the original commits of every story merged since the
+ * last one, including the stories a promotion branch had already delivered to the target branch.
+ * They belong to the notes of that merge, flagged so nobody reads them as new in the org.
+ */
+async function flagPullRequestsPromotedBefore(
+  pullRequests: CommonPullRequestInfo[],
+  targetBranch: string,
+  gitProvider: any,
+  promotionConfig: PromotionBranchConfig,
+  commandRef: any,
+): Promise<void> {
+  if (pullRequests.length === 0) {
+    return;
+  }
+  let mergedPromotions: CommonPullRequestInfo[] | null = null;
+  let message = "";
+  try {
+    const minDate = oldestPullRequestDate(pullRequests);
+    mergedPromotions = await gitProvider.listPullRequests({
+      status: "merged",
+      targetBranch,
+      sourceBranchPrefix: `${PROMOTION_BRANCH_PREFIX}/`,
+      ...(minDate ? { minDate } : {}),
+    });
+  } catch (e) {
+    message = (e as Error)?.message || String(e);
+  }
+  if (!mergedPromotions) {
+    uxLog("warning", commandRef, c.yellow(t("releaseNotesPreviouslyPromotedCheckFailed", { targetBranch, message: message || t("gitProviderDidNotAnswer") })));
+    return;
+  }
+  const flagged = markPreviouslyPromoted(pullRequests, mergedPromotions, targetBranch, promotionConfig);
+  if (flagged.length > 0) {
+    uxLog("log", commandRef, c.grey(t("releaseNotesPreviouslyPromotedPullRequests", {
+      count: flagged.length,
+      targetBranch,
+      details: flagged.map((pr) => `#${pr.idStr} -> ${getPreviouslyPromotedBy(pr)?.sourceBranch}`).join(", "),
+    })));
+  }
 }
 
 /**
@@ -1315,7 +1365,12 @@ export async function buildReleaseNotesMarkdown(data: ReleaseNotesData, releaseD
     const sortedPrs = [...data.pullRequests].sort((a, b) => a.idNumber - b.idNumber);
     for (const pr of sortedPrs) {
       const idCell = pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`;
-      const title = (pr.title || "").replace(/\|/g, "\\|");
+      const previousPromotion = getPreviouslyPromotedBy(pr);
+      const previousPromotionRef = previousPromotion
+        ? (previousPromotion.webUrl ? `[#${previousPromotion.idStr}](${previousPromotion.webUrl})` : `#${previousPromotion.idStr}`)
+        : "";
+      const title = (pr.title || "").replace(/\|/g, "\\|")
+        + (previousPromotion ? ` *(${t("releaseNotesPreviouslyPromoted", { promotion: previousPromotionRef })})*` : "");
       const author = pr.authorName || "";
       const mergedDate = pr.mergedDate ? pr.mergedDate.split("T")[0] : "";
       const relatedTickets = (data.prToTickets.get(pr.idStr) || []).map((id) => {
@@ -1524,6 +1579,7 @@ export async function buildReleaseNotesXlsx(
         "Merged Date": pr.mergedDate ? pr.mergedDate.split("T")[0] : "",
         URL: pr.webUrl || "",
         Tickets: (data.prToTickets.get(pr.idStr) || []).join(", "),
+        "Already Delivered By": getPreviouslyPromotedBy(pr) ? `#${getPreviouslyPromotedBy(pr)?.idStr} (${getPreviouslyPromotedBy(pr)?.sourceBranch})` : "",
       }));
       const prsCsv = path.join(tmpDir, "Pull Requests.csv");
       await fs.writeFile(prsCsv, Papa.unparse(prRows), "utf8");

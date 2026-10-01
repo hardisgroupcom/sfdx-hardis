@@ -530,7 +530,14 @@ export async function collectPromotedPullRequests(
   for (const status of options.statuses || (['merged', 'open'] as PromotionStatus[])) {
     let pullRequests: CommonPullRequestInfo[] | null;
     try {
-      pullRequests = await gitProvider.listPullRequests({ status, targetBranch, ...(options.minDate ? { minDate: options.minDate } : {}) });
+      pullRequests = await gitProvider.listPullRequests({
+        status,
+        targetBranch,
+        // Only the promotions of this step are read: the providers filter on it before any per
+        // Pull Request call
+        sourceBranchPrefix: `${PROMOTION_BRANCH_PREFIX}/${sourceBranch}/${targetBranch}/`,
+        ...(options.minDate ? { minDate: options.minDate } : {}),
+      });
     } catch (e) {
       failures.push({ status, message: (e as Error)?.message || String(e) });
       continue;

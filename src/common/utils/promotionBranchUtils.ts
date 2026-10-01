@@ -397,6 +397,62 @@ export function isPromotionOfStep(
 }
 
 /**
+ * In the notes of a merge between two major branches, flag the User Stories a merged promotion
+ * had already delivered to the target branch: their original commits arrive with the merge, so
+ * they are part of it, but the reader must know they were deployed before. A promotion that is
+ * itself in the list is what delivers its stories now, not before, and flags nothing.
+ * Returns the flagged Pull Requests.
+ */
+export function markPreviouslyPromoted(
+  pullRequests: CommonPullRequestInfo[],
+  mergedPromotions: CommonPullRequestInfo[],
+  targetBranch: string,
+  config: PromotionBranchConfig,
+): CommonPullRequestInfo[] {
+  if (!config.enabled) {
+    return [];
+  }
+  const listed = new Set(pullRequests.map((pr) => pr.idNumber));
+  const promotionByStory = new Map<number, CommonPullRequestInfo>();
+  for (const promotion of mergedPromotions) {
+    const parts = parsePromotionBranchName(promotion.sourceBranch);
+    if (
+      !parts ||
+      listed.has(promotion.idNumber) ||
+      !isPromotionPullRequest(promotion, config) ||
+      !isPromotionOfStep(promotion, parts.sourceBranch, targetBranch)
+    ) {
+      continue;
+    }
+    for (const id of parsePromotionPullRequestIds(promotion.description) || []) {
+      if (!promotionByStory.has(id)) {
+        promotionByStory.set(id, promotion);
+      }
+    }
+  }
+  const flagged: CommonPullRequestInfo[] = [];
+  for (const pr of pullRequests) {
+    const promotion = promotionByStory.get(pr.idNumber);
+    if (!promotion || isPromotionPullRequest(pr, config)) {
+      continue;
+    }
+    pr.providerInfo = pr.providerInfo || {};
+    pr.providerInfo.sfdxHardisPreviouslyPromotedBy = {
+      idStr: promotion.idStr,
+      idNumber: promotion.idNumber,
+      sourceBranch: promotion.sourceBranch,
+      webUrl: promotion.webUrl,
+    };
+    flagged.push(pr);
+  }
+  return flagged;
+}
+
+export function getPreviouslyPromotedBy(pr: CommonPullRequestInfo): { idStr: string; idNumber: number; sourceBranch: string; webUrl: string } | null {
+  return pr?.providerInfo?.sfdxHardisPreviouslyPromotedBy || null;
+}
+
+/**
  * Oldest creation date of a set of Pull Requests, used to bound provider queries: a promotion
  * carrying one of them cannot be older. Null when no date can be read, in which case the query
  * stays unbounded rather than silently miss a promotion.

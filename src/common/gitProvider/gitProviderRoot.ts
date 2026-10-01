@@ -133,11 +133,24 @@ export abstract class GitProviderRoot {
     return null;
   }
 
+  /**
+   * Whether a source branch passes the sourceBranchPrefix filter of listPullRequests (no filter:
+   * everything passes). Branch names are compared without case, like the promotion classifiers.
+   */
+  protected matchesSourceBranchPrefix(sourceBranch: string | undefined | null, prefix: string | undefined): boolean {
+    return !prefix || (sourceBranch || '').toLowerCase().startsWith(prefix.toLowerCase());
+  }
+
+  // sourceBranchPrefix keeps the Pull Requests whose source branch starts with it (ex:
+  // "promotion/uat/preprod/"). It is applied as early as each provider allows, before any per Pull
+  // Request call, so a caller looking for a handful of promotions does not pay for every Pull
+  // Request of the target branch.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async listPullRequests(filters: {
     status?: string,
     targetBranch?: string,
-    minDate?: Date
+    minDate?: Date,
+    sourceBranchPrefix?: string
   } = {}): Promise<CommonPullRequestInfo[] | null> {
     uxLog("other", this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
     return null;

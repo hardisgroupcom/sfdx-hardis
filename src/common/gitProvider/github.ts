@@ -489,7 +489,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async listPullRequests(
-    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    filters: { status?: string; targetBranch?: string; minDate?: Date; sourceBranchPrefix?: string } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     if (!this.api || !this.repoOwner || !this.repoName) {
       return null;
@@ -519,6 +519,7 @@ ${getBannerMarkdownAndLink()}
           if (filters.status === "merged" && !pr.merged_at) continue;
           // Filter by minDate on creation
           if (filters.minDate && new Date(pr.created_at) < filters.minDate) continue;
+          if (!this.matchesSourceBranchPrefix(pr.head?.ref, filters.sourceBranchPrefix)) continue;
 
           allPrs.push(this.completePullRequestInfo(pr));
         }
@@ -528,6 +529,11 @@ ${getBannerMarkdownAndLink()}
         if (filters.minDate && new Date(lastPr.updated_at) < filters.minDate) break;
         if (prs.length < 100) break;
         page++;
+      }
+      // The safety limit was reached with Pull Requests left to read: say so, the callers decide
+      // from this list which User Stories were already promoted
+      if (page > maxPages) {
+        uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderPullRequestListTruncated', { pages: maxPages })));
       }
     } catch (e: any) {
       uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('githubErrorListingPullRequests', { message: e?.message || e })));

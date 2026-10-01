@@ -365,7 +365,8 @@ ${this.getPipelineVariablesConfig()}
     status?: string,
     pullRequestStatus?: "open" | "merged" | "abandoned",
     targetBranch?: string,
-    minDate?: Date
+    minDate?: Date,
+    sourceBranchPrefix?: string
   } = {}): Promise<CommonPullRequestInfo[] | null> {
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
@@ -406,8 +407,25 @@ ${this.getPipelineVariablesConfig()}
     uxLog("action", this, c.cyan(t('callingAzureApiToListPullRequests')));
     uxLog("log", this, c.grey(t('constraint', { JSON: JSON.stringify(queryConstraint, null, 2) })));
 
-    // List pull requests
-    const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
+    // List pull requests, page by page: without $top the API answers a single page, with nothing
+    // saying the list was cut
+    const pageSize = 200;
+    const maxPages = 50;
+    const listedPullRequests: GitPullRequest[] = [];
+    let page = 0;
+    for (; page < maxPages; page++) {
+      const batch = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject, undefined, page * pageSize, pageSize);
+      listedPullRequests.push(...(batch || []));
+      if (!batch || batch.length < pageSize) {
+        break;
+      }
+    }
+    if (page === maxPages) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPullRequestListTruncated', { pages: maxPages })));
+    }
+    // Before the loop below, which costs one or two calls per Pull Request
+    const pullRequests = listedPullRequests.filter((pullRequest) =>
+      this.matchesSourceBranchPrefix((pullRequest.sourceRefName || '').replace(/^refs\/heads\//, ''), filters.sourceBranchPrefix));
     // Complete results with PR comments (stored in providerInfo)
     const results: CommonPullRequestInfo[] = [];
     for (const pullRequest of pullRequests) {

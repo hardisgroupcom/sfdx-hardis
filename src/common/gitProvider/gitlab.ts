@@ -494,7 +494,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async listPullRequests(
-    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    filters: { status?: string; targetBranch?: string; minDate?: Date; sourceBranchPrefix?: string } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     if (!this.gitlabApi) {
       return null;
@@ -522,9 +522,12 @@ ${getBannerMarkdownAndLink()}
         params.updatedAfter = filters.minDate.toISOString();
       }
 
+      // No maxPages: gitbeaker walks every page, so this listing is never cut
       const mergeRequests = await this.gitlabApi.MergeRequests.all(params);
 
-      return (mergeRequests as any[]).map((mr: any) => this.completePullRequestInfo(mr));
+      return (mergeRequests as any[])
+        .filter((mr: any) => this.matchesSourceBranchPrefix(mr.source_branch || mr.sourceBranch, filters.sourceBranchPrefix))
+        .map((mr: any) => this.completePullRequestInfo(mr));
     } catch (e: any) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMergeRequests', { message: e?.message || e })));
       return null;

@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): [release notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) of what is waiting in a branch no longer list the User Stories a merged promotion already carried to the next branch.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): [release notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/) of what is waiting in a branch no longer list the User Stories a merged promotion already carried to the next branch, and the notes of a later direct merge flag them as already delivered.
 
 ## [8.12.0] 2026-09-26
 

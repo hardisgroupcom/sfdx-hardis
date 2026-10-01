@@ -447,7 +447,7 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   public async listPullRequests(
-    filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date } = {},
+    filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date; sourceBranchPrefix?: string } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
@@ -480,6 +480,15 @@ export class BitbucketProvider extends GitProviderRoot {
       if (filters.targetBranch) {
         queryParts.push(`destination.branch.name = "${filters.targetBranch}"`);
       }
+      // The date and the source branch go into the query too: applied afterwards, they cost every
+      // page of the Pull Requests ever merged into the branch to keep a handful of them.
+      // "~" is a contains, the exact prefix is checked on the answer below.
+      if (filters.minDate) {
+        queryParts.push(`created_on >= "${filters.minDate.toISOString()}"`);
+      }
+      if (filters.sourceBranchPrefix) {
+        queryParts.push(`source.branch.name ~ "${filters.sourceBranchPrefix}"`);
+      }
       if (queryParts.length > 0) {
         params.q = queryParts.join(" AND ");
       }
@@ -508,6 +517,7 @@ export class BitbucketProvider extends GitProviderRoot {
           return createdOn && createdOn >= filters.minDate!;
         });
       }
+      prs = prs.filter((pr: any) => this.matchesSourceBranchPrefix(pr?.source?.branch?.name, filters.sourceBranchPrefix));
 
       return prs.map((pr: any) => this.completePullRequestInfo(pr));
     } catch (e: any) {
@@ -550,6 +560,10 @@ export class BitbucketProvider extends GitProviderRoot {
         break;
       }
       page++;
+    }
+    // The limit was reached with pages left to read: say so rather than hand over a cut list
+    if (page > maxPages) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('gitProviderPullRequestListTruncated', { pages: maxPages })));
     }
     return all;
   }

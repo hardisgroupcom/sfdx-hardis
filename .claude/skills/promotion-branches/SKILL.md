@@ -72,8 +72,13 @@ Break one of these and the feature is wrong, whatever the tests say.
    (release notes).
 5. **Nothing is silently dropped.** A declared Pull Request that cannot be read is reported, not
    skipped in silence; a promotion whose stories could not be resolved stays in the release notes.
-6. **Expansion is multi level.** A `preprod -> main` promotion can carry a `uat -> preprod`
-   promotion, which carries stories. Both levels must resolve.
+6. **A promotion carries User Story Pull Requests only, never another promotion.** A promotion
+   branch cannot be vehicled into another one: the `promotionPullRequests` block of a
+   `preprod -> main` promotion names the stories, not the `uat -> preprod` promotion that brought
+   them into `preprod`. `promotion:create` guarantees it by opening every promotion it meets
+   (invariant 13), so nothing has to be designed for a promotion that declares a promotion. The
+   readers (`expandPromotionPullRequests`, its extension mirror) still follow a nested number when
+   they meet one, as a guard against a block written by hand, and no rule may depend on it.
 7. **Conflict markers never reach an org, and the reviewer is told why.**
    `assertNoPromotionConflictMarkers` greps every tracked file, not only the package directories,
    except the git glob patterns of `promotionConflictMarkersIgnoredFiles` (files that hold markers
@@ -252,7 +257,17 @@ Break one of these and the feature is wrong, whatever the tests say.
     source window. The extension adds what it finds to the promotions its windows already hold. An **open** promotion removes nothing
     from the DevOps Pipeline or the release notes, since its stories have not reached the target.
     `promotion:create` is the one place where an open promotion counts, so the same story is not
-    assembled twice. A query that failed is reported and removes nothing.
+    assembled twice. A query that failed is reported and removes nothing, and a listing cut by a
+    page limit says so (`gitProviderPullRequestListTruncated` here, a log line in the extension).
+    The query is narrowed to the promotion branches of the step (`sourceBranchPrefix` of
+    `listPullRequests`) before any per Pull Request call: on Azure DevOps each listed Pull Request
+    costs its threads, on Bitbucket an unbounded query walks the whole merged history.
+    **A merged promotion stays merged**: promotions are not reverted, so no code looks for one.
+31. **A direct merge after a promotion lists the promoted stories, flagged.** Merging `uat` into
+    `preprod` brings the original commits of the stories a promotion had already delivered there.
+    The post mode release notes of that merge keep them and mark them "already delivered by
+    promotion #N" (`markPreviouslyPromoted`, Markdown table and XLSX column). A promotion that is
+    itself part of the release flags nothing: it delivers its stories now.
 
 ## sfdx-hardis (CLI)
 
