@@ -16,6 +16,7 @@ import {
   collectTickets,
   collectMetadataChanges,
   collectMetadataAttribution,
+  dropMetadataPromotedAway,
   collectDeploymentActions,
   collectContributors,
   generateReleaseSummary,
@@ -78,7 +79,7 @@ Deployment actions are loaded from PR comments (via the \`<!-- sfdx-hardis deplo
 
 Inter-major-branch PRs (e.g., integration to preprod) are excluded since they represent promotions, not user stories.
 
-With [promotion branches](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/) enabled, the branch-based scope also leaves out the Pull Requests that a merged promotion Pull Request of the same step (\`promotion/<source>/<target>/...\`) already carried to the target branch. They are read with \`GitProvider.listPullRequests()\` on the target branch. A promotion that is still open leaves its Pull Requests in the notes. In post mode, the Pull Requests of a merge that an earlier merged promotion had already delivered to the target branch stay listed, flagged "already delivered by promotion" in the Markdown table and in the **Already Delivered By** column of the XLSX.
+With [promotion branches](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/) enabled, the branch-based scope also leaves out the Pull Requests that a merged promotion Pull Request of the same step (\`promotion/<source>/<target>/...\`) already carried to the target branch. They are read with \`GitProvider.listPullRequests()\` on the target branch. The metadata components that only those Pull Requests changed leave the metadata section, \`package.xml\` and \`destructiveChanges.xml\` of the report too: the git diff starts at the merge base of the two branches, which a cherry-picked promotion never moves. A promotion that is still open leaves its Pull Requests in the notes. In post mode, the Pull Requests of a merge that an earlier merged promotion had already delivered to the target branch stay listed, flagged "already delivered by promotion" in the Markdown table and in the **Already Delivered By** column of the XLSX.
 </details>
 
 ### Agent Mode
@@ -215,7 +216,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 
     // 2. Collect pull requests
     uxLog("action", this, c.cyan(t("releaseNotesCollectingPrs")));
-    const pullRequests = await collectPullRequests(scope, this, { includePromotions: flags["include-promotions"] === true });
+    // Filled with the Pull Requests a merged promotion already carried to the target branch
+    const promotedAway: any[] = [];
+    const pullRequests = await collectPullRequests(scope, this, { includePromotions: flags["include-promotions"] === true, promotedAway });
     uxLog("action", this, c.cyan(t("releaseNotesPrsCollected", { count: String(pullRequests.length) })));
     // Note: PR table with ticket cross-references is displayed after ticket collection
 
@@ -259,6 +262,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     uxLog("action", this, c.cyan(t("releaseNotesCollectingMetadata")));
     const metadataChanges = await collectMetadataChanges(scope, this, releaseNotesDir);
     metadataChanges.attribution = await collectMetadataAttribution(scope, metadataChanges, pullRequests, this);
+    await dropMetadataPromotedAway(metadataChanges, promotedAway, this, releaseNotesDir);
     if (metadataChanges.addedCount > 0 || metadataChanges.deletedCount > 0) {
       const metadataRows: any[] = [];
       for (const [mdType, members] of Object.entries(metadataChanges.added)) {

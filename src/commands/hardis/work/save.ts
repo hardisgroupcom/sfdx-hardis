@@ -7,7 +7,6 @@ import fs from '../../../common/utils/fsUtils.js';
 import { open } from '../../../common/utils/openUtils.js';
 import * as path from 'path';
 import {
-  createTempDir,
   execCommand,
   getCurrentGitBranch,
   getGitRepoUrl,
@@ -20,18 +19,15 @@ import {
 import { uxLogTableWithReport } from '../../../common/utils/filesUtils.js';
 import { exportData } from '../../../common/utils/dataUtils.js';
 import { forceSourcePull } from '../../../common/utils/deployUtils.js';
-import { buildAvailableTargetBranches, buildConventionalCommitMessage, callSfdxGitDelta, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { buildAvailableTargetBranches, buildConventionalCommitMessage, getGitDeltaScope, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { MANIFEST_DESTRUCTIVE_CHANGES_XML, MANIFEST_PACKAGE_XML, updateManifestWithGitDelta } from '../../../common/utils/manifestDeltaUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import {
-  appendPackageXmlFilesContent,
-  parsePackageXmlFile,
   parseXmlFile,
-  removePackageXmlFilesContent,
-  writePackageXmlFile,
   writeXmlFile,
 } from '../../../common/utils/xmlUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { CONSTANTS, getApiVersion, getConfig, isExpertMode, setConfig } from '../../../config/index.js';
+import { CONSTANTS, getConfig, isExpertMode, setConfig } from '../../../config/index.js';
 import CleanReferences from '../project/clean/references.js';
 import CleanXml from '../project/clean/xml.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
@@ -503,52 +499,12 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     }
   }
 
-  /**
-   * A standard profile (Admin, Standard User...) cannot be deleted in any org. Deleting its file from
-   * the repository means "stop versioning it", so it is taken out of the destructive delta: left
-   * there, it failed every deployment with "cannot delete profile".
-   */
-  private async keepStandardProfilesOutOfDestructiveChanges(diffDestructivePackageXml: string, fromCommit: string) {
-    if (!fs.existsSync(diffDestructivePackageXml)) {
-      return;
-    }
-    const destructive = await parsePackageXmlFile(diffDestructivePackageXml);
-    const profiles: string[] = destructive['Profile'] || [];
-    if (profiles.length === 0) {
-      return;
-    }
-    const filesAtBase = (await git().raw(['ls-tree', '-r', '--name-only', fromCommit])).split('\n');
-    const standard: string[] = [];
-    for (const profile of profiles) {
-      const file = filesAtBase.find((f) => f.endsWith(`/profiles/${profile}.profile-meta.xml`));
-      if (!file) {
-        continue;
-      }
-      const content = await git().show([`${fromCommit}:${file}`]).catch(() => '');
-      if (/<custom>\s*false\s*<\/custom>/.test(content)) {
-        standard.push(profile);
-      }
-    }
-    if (standard.length === 0) {
-      return;
-    }
-    const remaining = profiles.filter((profile) => !standard.includes(profile));
-    if (remaining.length > 0) {
-      destructive['Profile'] = remaining;
-    } else {
-      delete destructive['Profile'];
-    }
-    await writePackageXmlFile(diffDestructivePackageXml, destructive);
-    uxLog("action", this, c.cyan(t('standardProfilesNotDeleted', { profiles: standard.join(', ') })));
-  }
-
   private async upgradePackageXmlFilesWithDelta() {
     uxLog("action", this, c.cyan(t('updatingManifestPackageXmlAndManifestDestructivechanges')));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
 
     // Build package.xml delta between most recent commit and developpement
-    const localPackageXml = path.join('manifest', 'package.xml');
     const toCommitMessage = gitDeltaScope.toCommit ? gitDeltaScope.toCommit.message : '';
     uxLog(
       "log",
@@ -557,62 +513,19 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         t('calculatingPackageXmlDiff', { targetBranch: c.green(this.targetBranch), currentBranch: c.green(this.currentBranch), commitMessage: c.green(toCommitMessage) })
       )
     );
-    const tmpDir = await createTempDir();
-    const packageXmlResult = await callSfdxGitDelta(
+    const manifestDelta = await updateManifestWithGitDelta(
       gitDeltaScope.fromCommit,
       gitDeltaScope.toCommit ? gitDeltaScope.toCommit.hash : gitDeltaScope.fromCommit,
-      tmpDir
+      this,
     );
-    if (packageXmlResult.status === 0) {
-      // Upgrade local destructivePackage.xml
-      const localDestructiveChangesXml = path.join('manifest', 'destructiveChanges.xml');
-      if (!fs.existsSync(localDestructiveChangesXml)) {
-        // Create default destructiveChanges.xml if not defined
-        const blankDestructiveChanges = `<?xml version="1.0" encoding="UTF-8"?>
-<Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <version>${getApiVersion()}</version>
-</Package>
-`;
-        await fs.writeFile(localDestructiveChangesXml, blankDestructiveChanges);
-      }
-      const diffDestructivePackageXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
-      await this.keepStandardProfilesOutOfDestructiveChanges(diffDestructivePackageXml, gitDeltaScope.fromCommit);
-      const destructivePackageXmlDiffStr = await fs.readFile(diffDestructivePackageXml, 'utf8');
-      uxLog(
-        "log",
-        this,
-        c.grey(c.bold(t('deltaDestructiveChangesXmlDiffToBeMerged', { file: c.green(localDestructiveChangesXml) }) + '\n')) +
-        c.red(destructivePackageXmlDiffStr)
-      );
-      await appendPackageXmlFilesContent(
-        [localDestructiveChangesXml, diffDestructivePackageXml],
-        localDestructiveChangesXml
-      );
-      if ((await gitHasLocalUpdates()) && !this.noGit) {
-        await git().add(localDestructiveChangesXml);
-      }
-
-      // Upgrade local package.xml
-      const diffPackageXml = path.join(tmpDir, 'package', 'package.xml');
+    if (manifestDelta.success) {
       // Collect the Flows of the delta, so the Flow positions cleaning does not scan the whole project
-      const diffPackageXmlContent = await parsePackageXmlFile(diffPackageXml);
-      this.deltaFlowNames = diffPackageXmlContent.Flow || [];
-      const packageXmlDiffStr = await fs.readFile(diffPackageXml, 'utf8');
-      uxLog(
-        "log",
-        this,
-        c.grey(c.bold(t('deltaPackageXmlDiffToBeMerged', { file: c.green(localPackageXml) }) + '\n')) +
-        c.green(packageXmlDiffStr)
-      );
-      await appendPackageXmlFilesContent([localPackageXml, diffPackageXml], localPackageXml);
-      await removePackageXmlFilesContent(localPackageXml, localDestructiveChangesXml, {
-        outputXmlFile: localPackageXml,
-      });
+      this.deltaFlowNames = manifestDelta.deltaFlowNames;
       if ((await gitHasLocalUpdates()) && !this.noGit) {
-        await git().add(localPackageXml);
+        await git().add([MANIFEST_DESTRUCTIVE_CHANGES_XML, MANIFEST_PACKAGE_XML]);
       }
     } else {
-      uxLog("log", this, `[error] ${c.grey(JSON.stringify(packageXmlResult))}`);
+      uxLog("log", this, `[error] ${c.grey(JSON.stringify(manifestDelta.gitDeltaResult))}`);
       uxLog(
         "error",
         this,

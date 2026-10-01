@@ -14,6 +14,7 @@ import {
   buildPromotionPullRequestTitle,
   computePromotionBranchName,
   collectPromotedPullRequests,
+  conflictsAfterManifestRegeneration,
   countsAsAlreadyPromoted,
   declaredPullRequestNumbers,
   dropOfferedTwice,
@@ -38,6 +39,7 @@ import {
   toStories,
   userChangesOutsideReports,
 } from '../../../src/common/utils/promotionCreateUtils.js';
+import { isManifestDeltaFile } from '../../../src/common/utils/manifestDeltaUtils.js';
 
 function group(hash: string, prs: Array<{ id: number; title: string }>, message = 'Merge pull request'): BackpromotePrGroup {
   return {
@@ -758,6 +760,50 @@ describe('collectPromotedPullRequests()', () => {
     const { promoted, failures } = await collectPromotedPullRequests(provider(['merged']), 'uat', 'preprod', { statuses: ['merged'] });
     expect(promoted.size).to.equal(0);
     expect(failures).to.deep.equal([{ status: 'merged', message: 'rate limited' }]);
+  });
+});
+
+describe('conflictsAfterManifestRegeneration()', () => {
+  const story = (label: string) => ({ label } as any);
+  const outcome = {
+    conflicted: [
+      { candidate: story('mixed'), files: ['manifest/package.xml', 'force-app/main/default/classes/A.cls'] },
+      { candidate: story('sources only'), files: ['force-app/main/default/classes/B.cls'] },
+    ],
+    manifestOnlyConflicts: [{ candidate: story('manifest only'), files: ['manifest/package.xml', 'manifest/destructiveChanges.xml'] }],
+  };
+
+  it('the regenerated manifest files are no longer conflicts', () => {
+    expect(conflictsAfterManifestRegeneration(outcome, true)).to.deep.equal([
+      { candidate: story('mixed'), files: ['force-app/main/default/classes/A.cls'] },
+      { candidate: story('sources only'), files: ['force-app/main/default/classes/B.cls'] },
+    ]);
+  });
+
+  it('a story whose only conflict was in the manifest files is clean once they are regenerated', () => {
+    const manifestOnly = { conflicted: [{ candidate: story('committed by hand'), files: ['manifest\\package.xml'] }], manifestOnlyConflicts: [] };
+    expect(conflictsAfterManifestRegeneration(manifestOnly, true)).to.deep.equal([]);
+  });
+
+  it('when the regeneration failed, the markers are still there and every conflict is reported', () => {
+    expect(conflictsAfterManifestRegeneration(outcome, false).map((entry) => entry.candidate.label)).to.deep.equal(['mixed', 'sources only', 'manifest only']);
+    expect(conflictsAfterManifestRegeneration(outcome, false)[0].files).to.deep.equal(['manifest/package.xml', 'force-app/main/default/classes/A.cls']);
+  });
+});
+
+describe('isManifestDeltaFile()', () => {
+  it('recognizes the two manifest files, whatever the path separator', () => {
+    expect(isManifestDeltaFile('manifest/package.xml')).to.equal(true);
+    expect(isManifestDeltaFile('manifest/destructiveChanges.xml')).to.equal(true);
+    expect(isManifestDeltaFile('manifest\\package.xml')).to.equal(true);
+    expect(isManifestDeltaFile('./manifest/package.xml')).to.equal(true);
+  });
+
+  it('leaves every other manifest alone', () => {
+    expect(isManifestDeltaFile('manifest/package-no-overwrite.xml')).to.equal(false);
+    expect(isManifestDeltaFile('manifest/packageDeployOnce.xml')).to.equal(false);
+    expect(isManifestDeltaFile('force-app/manifest/package.xml')).to.equal(false);
+    expect(isManifestDeltaFile('')).to.equal(false);
   });
 });
 

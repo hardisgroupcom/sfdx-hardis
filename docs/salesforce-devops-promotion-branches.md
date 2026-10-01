@@ -268,6 +268,8 @@ The four answers in full:
 
 The [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) plugin solves many XML conflicts by itself, so install it and you will see far fewer of them.
 
+`manifest/package.xml` and `manifest/destructiveChanges.xml` never ask you anything. Every story adds its lines to them, so they would conflict story after story: once the branch is assembled, both files are rebuilt from the version of the target branch plus what the promotion really brings, the way **Save / Publish User Story** does it for a User Story. A last commit, `chore(sfdx-hardis): update package content`, carries them.
+
 A story whose change is already in the target branch (brought by a hotfix, a retrofit or an earlier promotion) has nothing to cherry-pick: it is left out and listed apart in the Pull Request description, without asking anything.
 
 <details markdown="1">
@@ -417,7 +419,7 @@ ___
 
 The release notes list the User Stories a promotion Pull Request carries, not the promotion Pull Request itself: the tickets, the metadata changes, the deployment actions and the contributor counts are those of the stories. A promotion whose declared Pull Requests could not be resolved is kept in the notes, so a change never disappears from them. The same rule applies to the merges between two major branches, which are left out whether or not the project uses promotion branches.
 
-The notes of what is waiting in a branch (for example `uat` before its promotion to `preprod`) leave out the User Stories a merged promotion already carried to the next branch. The stories of a promotion that is still open stay in them.
+The notes of what is waiting in a branch (for example `uat` before its promotion to `preprod`) leave out the User Stories a merged promotion already carried to the next branch. The stories of a promotion that is still open stay in them. The metadata components only those stories changed leave the metadata section and the `package.xml` of the notes as well.
 
 When a source branch is later merged directly into the next one, that merge brings the original commits of the stories a promotion had already delivered. The notes of that merge list them, flagged **already delivered by promotion #N**, so nobody reads them as new in the org.
 

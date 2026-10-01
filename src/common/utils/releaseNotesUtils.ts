@@ -9,7 +9,7 @@ import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
 import { Ticket, TicketProvider } from "../ticketProvider/index.js";
 import { listMajorOrgs, isProduction } from "./orgConfigUtils.js";
 import { getGitDeltaScope, callSfdxGitDelta } from "./gitUtils.js";
-import { parsePackageXmlFile } from "./xmlUtils.js";
+import { parsePackageXmlFile, writePackageXmlFile } from "./xmlUtils.js";
 import {
   DeploymentActionStateEntry,
   loadDeploymentActionsState,
@@ -542,7 +542,9 @@ export function pullRequestsLookup(scope: ReleaseNotesScope): "dates" | "branche
 export async function collectPullRequests(
   scope: ReleaseNotesScope,
   commandRef: any,
-  options: { includePromotions?: boolean } = {},
+  // promotedAway is filled with the Pull Requests left out because a merged promotion already
+  // carried them to the target branch, so the metadata section can leave their components out too
+  options: { includePromotions?: boolean; promotedAway?: CommonPullRequestInfo[] } = {},
 ): Promise<CommonPullRequestInfo[]> {
   const gitProvider = await GitProvider.getInstance();
   if (!gitProvider) {
@@ -653,7 +655,7 @@ export async function collectPullRequests(
   pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig, options);
   // After the vehicle rule, which judges a promotion against every story it carries
   if (lookup === "branches" && promotionConfig.enabled && scope.sourceBranch) {
-    pullRequests = await dropPullRequestsPromotedAway(pullRequests, scope.sourceBranch, scope.targetBranch, gitProvider, promotionConfig, commandRef);
+    pullRequests = await dropPullRequestsPromotedAway(pullRequests, scope.sourceBranch, scope.targetBranch, gitProvider, promotionConfig, commandRef, options.promotedAway);
   }
 
   return pullRequests;
@@ -715,6 +717,7 @@ async function dropPullRequestsPromotedAway(
   gitProvider: any,
   promotionConfig: PromotionBranchConfig,
   commandRef: any,
+  promotedAway: CommonPullRequestInfo[] = [],
 ): Promise<CommonPullRequestInfo[]> {
   if (pullRequests.length === 0) {
     return pullRequests;
@@ -728,6 +731,7 @@ async function dropPullRequestsPromotedAway(
     uxLog("warning", commandRef, c.yellow(t("releaseNotesPromotedAwayCheckFailed", { targetBranch, message: failure.message || t("gitProviderDidNotAnswer") })));
   }
   const { kept, dropped } = dropPromotedAwayPullRequests(pullRequests, new Set(promoted.keys()), promotionConfig);
+  promotedAway.push(...dropped);
   if (dropped.length > 0) {
     uxLog("log", commandRef, c.grey(t("releaseNotesPromotedAwayPullRequests", {
       count: dropped.length,
@@ -1082,6 +1086,85 @@ export async function collectMetadataAttribution(
     uxLog("warning", commandRef, c.yellow(t("releaseNotesMetadataAttributionFailed", { message: e.message })));
   }
   return attribution;
+}
+
+/**
+ * Take out of the metadata changes the components that only the given commits touched.
+ *
+ * The metadata delta of what is waiting in a branch is a git diff from its merge base with the
+ * target branch, and a promotion carries cherry-picked commits: merging it never moves that merge
+ * base, so the components of the stories it delivered stay in the diff. A component is left out
+ * when every commit that touched it belongs to such a story. One commit from anything else (a
+ * story still waiting, a commit with no Pull Request) keeps it: it may hold a change the target
+ * branch does not have.
+ * Returns the "type::member" keys that were removed.
+ */
+export function dropMetadataOfCommits(metadataChanges: MetadataChangeMap, commitShas: Set<string>): string[] {
+  const removed: string[] = [];
+  if (!metadataChanges.attribution || commitShas.size === 0) {
+    return removed;
+  }
+  for (const [memberKey, entry] of metadataChanges.attribution) {
+    if (entry.pullRequests.length === 0 && entry.commits.length > 0 && entry.commits.every((commit) => commitShas.has(commit.sha))) {
+      removed.push(memberKey);
+    }
+  }
+  for (const memberKey of removed) {
+    const separator = memberKey.indexOf("::");
+    const mdType = memberKey.substring(0, separator);
+    const member = memberKey.substring(separator + 2);
+    for (const changeMap of [metadataChanges.added, metadataChanges.deleted]) {
+      if (!changeMap[mdType]) {
+        continue;
+      }
+      changeMap[mdType] = changeMap[mdType].filter((name) => name !== member);
+      if (changeMap[mdType].length === 0) {
+        delete changeMap[mdType];
+      }
+    }
+    metadataChanges.attribution.delete(memberKey);
+  }
+  metadataChanges.addedCount = Object.values(metadataChanges.added).reduce((count, members) => count + members.length, 0);
+  metadataChanges.deletedCount = Object.values(metadataChanges.deleted).reduce((count, members) => count + members.length, 0);
+  return removed;
+}
+
+/**
+ * Leave out of the metadata section the components only changed by the Pull Requests a merged
+ * promotion already carried to the target branch, and rewrite the package.xml and
+ * destructiveChanges.xml of the report accordingly. Runs after collectMetadataAttribution.
+ */
+export async function dropMetadataPromotedAway(
+  metadataChanges: MetadataChangeMap,
+  promotedAway: CommonPullRequestInfo[],
+  commandRef: any,
+  outputDir?: string,
+): Promise<void> {
+  if (promotedAway.length === 0 || !metadataChanges.attribution) {
+    return;
+  }
+  try {
+    const promotedCommitShas = new Set((await mapCommitsToPullRequests(promotedAway)).keys());
+    const removed = dropMetadataOfCommits(metadataChanges, promotedCommitShas);
+    if (removed.length === 0) {
+      return;
+    }
+    const shown = removed.slice(0, 20).map((memberKey) => memberKey.replace("::", ": "));
+    uxLog("log", commandRef, c.grey(t("releaseNotesPromotedAwayMetadata", {
+      count: removed.length,
+      details: shown.join(", ") + (removed.length > shown.length ? ` (+${removed.length - shown.length})` : ""),
+    })));
+    if (outputDir) {
+      for (const [fileName, changeMap] of [["package.xml", metadataChanges.added], ["destructiveChanges.xml", metadataChanges.deleted]] as const) {
+        const reportFile = path.join(outputDir, fileName);
+        if (await fs.pathExists(reportFile)) {
+          await writePackageXmlFile(reportFile, changeMap);
+        }
+      }
+    }
+  } catch (e: any) {
+    uxLog("warning", commandRef, c.yellow(t("releaseNotesMetadataAttributionFailed", { message: e.message })));
+  }
 }
 
 export async function collectDeploymentActions(

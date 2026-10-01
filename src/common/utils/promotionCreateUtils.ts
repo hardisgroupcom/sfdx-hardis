@@ -11,7 +11,8 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
 import { generateReportPath, uxLogTableWithReport } from './filesUtils.js';
-import { getPullRequestData, setPullRequestData } from './gitUtils.js';
+import { buildConventionalCommitMessage, getPullRequestData, setPullRequestData } from './gitUtils.js';
+import { isManifestDeltaFile, MANIFEST_DESTRUCTIVE_CHANGES_XML, MANIFEST_PACKAGE_XML, updateManifestWithGitDelta } from './manifestDeltaUtils.js';
 import { CONSTANTS, getConfig, getReportDirectory } from '../../config/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import {
@@ -1109,6 +1110,10 @@ export interface CherryPickOutcome {
   alreadyThere: PromotionCandidate[];
   // Committed with their conflict markers, to be solved on the branch before the merge
   conflicted: Array<{ candidate: PromotionCandidate; files: string[] }>;
+  // Conflicts that only concerned manifest/package.xml and manifest/destructiveChanges.xml: nobody
+  // was asked, since both files are regenerated once the branch is assembled. They only become
+  // real conflicts if that regeneration fails.
+  manifestOnlyConflicts: Array<{ candidate: PromotionCandidate; files: string[] }>;
 }
 
 /**
@@ -1125,7 +1130,7 @@ export async function cherryPickCandidates(
   agentMode: boolean,
   commandThis: any,
 ): Promise<CherryPickOutcome> {
-  const outcome: CherryPickOutcome = { picked: [], skipped: [], alreadyThere: [], conflicted: [] };
+  const outcome: CherryPickOutcome = { picked: [], skipped: [], alreadyThere: [], conflicted: [], manifestOnlyConflicts: [] };
   // What to do with a conflict without asking again: the --on-conflict flag, or the "and all the
   // following ones" answer of the prompt. A promotion window usually conflicts on the same files
   // story after story, and answering ten times in a row is answering once.
@@ -1157,6 +1162,20 @@ export async function cherryPickCandidates(
       const reason = [res.stderr, res.stdout].map((part) => (part || '').trim()).filter((part) => part).join('\n');
       await abortPromotion(branchName, previousBranch, commandThis);
       throw new SfError(t('promotionCreateCherryPickRefused', { label: candidate.label, reason: reason || '-' }));
+    }
+    // Every story adds its lines to the two manifest files, so they conflict story after story.
+    // They are regenerated from the content of the branch once it is assembled: a conflict that
+    // concerns nothing else is not a question to ask.
+    if (conflictFiles.every((file) => isManifestDeltaFile(file))) {
+      uxLog('log', commandThis, c.grey(t('promotionCreateManifestConflictAutoSolved', { label: candidate.label, files: conflictFiles.join(', ') })));
+      if (await commitWithConflictMarkers(commandThis)) {
+        outcome.picked.push(candidate);
+        outcome.manifestOnlyConflicts.push({ candidate, files: conflictFiles });
+      } else {
+        uxLog('warning', commandThis, c.yellow(t('promotionCreateCherryPickEmpty', { label: candidate.label })));
+        outcome.alreadyThere.push(candidate);
+      }
+      continue;
     }
     uxLog('warning', commandThis, c.yellow(t('promotionCreateConflict', { label: candidate.label, files: conflictFiles.join('\n') || '-' })));
     let choice: PromotionConflictChoice;
@@ -1203,6 +1222,72 @@ export async function cherryPickCandidates(
     throw new SfError(t('promotionCreateAborted'));
   }
   return outcome;
+}
+
+/**
+ * Rebuild manifest/package.xml and manifest/destructiveChanges.xml of a promotion branch: the
+ * version of the branch it was cut from, plus the git delta of what the cherry-picks brought.
+ *
+ * Cherry-picking carries each story's own edits of the two files, which conflict story after
+ * story and can name components of stories that were left behind. The delta of the branch says
+ * exactly what the promotion deploys, the way hardis:work:save does it for a User Story.
+ *
+ * Returns false when the delta could not be computed: the files are then left as the cherry-picks
+ * wrote them, conflict markers included, and the caller reports them as conflicts.
+ */
+export async function regeneratePromotionManifest(baseCommit: string, commandThis: any): Promise<boolean> {
+  uxLog('action', commandThis, c.cyan(t('promotionCreateRegeneratingManifest')));
+  const manifestFiles = [MANIFEST_PACKAGE_XML, MANIFEST_DESTRUCTIVE_CHANGES_XML];
+  try {
+    const headCommit = (await git().revparse(['HEAD'])).trim();
+    const result = await updateManifestWithGitDelta(baseCommit, headCommit, commandThis, {
+      beforeMerge: async () => {
+        // Back to the files of the base branch: what the cherry-picks wrote in them is replaced
+        for (const file of manifestFiles) {
+          const gitPath = file.replace(/\\/g, '/');
+          const inBase = await runCommandSafe(`git cat-file -e ${baseCommit}:${gitPath}`, commandThis, { output: false });
+          if (inBase.status === 0) {
+            await execCommand(`git checkout ${baseCommit} -- ${gitPath}`, commandThis, { fail: true, output: false });
+          } else if (fs.existsSync(file)) {
+            await fs.remove(file);
+          }
+        }
+      },
+    });
+    if (!result.success) {
+      uxLog('warning', commandThis, c.yellow(t('promotionCreateManifestNotRegenerated', { message: JSON.stringify(result.gitDeltaResult) })));
+      return false;
+    }
+  } catch (e) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateManifestNotRegenerated', { message: (e as Error)?.message || String(e) })));
+    return false;
+  }
+  await execCommand(`git add -A -- ${manifestFiles.map((file) => file.replace(/\\/g, '/')).join(' ')}`, commandThis, { fail: true, output: false });
+  const staged = await runCommandSafe('git diff --cached --quiet HEAD', commandThis, { output: false });
+  if (staged.status !== 0) {
+    const commitMessage = buildConventionalCommitMessage({ subject: 'update package content' });
+    uxLog('action', commandThis, c.cyan(t('addingNewCommitPackageXmlUpdates', { commitMessage })));
+    await git({ output: true }).commit(commitMessage);
+  }
+  return true;
+}
+
+/**
+ * The conflicts to report once the manifest files have been dealt with. Regenerated: they are no
+ * longer conflicts, so they leave every list, and a story whose only conflict was there is clean.
+ * Not regenerated: the markers are still in the files, and the conflicts nobody was asked about
+ * are reported like the others.
+ */
+export function conflictsAfterManifestRegeneration(
+  outcome: Pick<CherryPickOutcome, 'conflicted' | 'manifestOnlyConflicts'>,
+  regenerated: boolean,
+): Array<{ candidate: PromotionCandidate; files: string[] }> {
+  if (!regenerated) {
+    return [...outcome.conflicted, ...outcome.manifestOnlyConflicts];
+  }
+  return outcome.conflicted
+    .map((entry) => ({ candidate: entry.candidate, files: entry.files.filter((file) => !isManifestDeltaFile(file)) }))
+    .filter((entry) => entry.files.length > 0);
 }
 
 async function promptConflictChoice(candidate: PromotionCandidate, commandThis: any): Promise<PromotionConflictAnswer> {

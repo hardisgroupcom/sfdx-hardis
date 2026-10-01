@@ -268,6 +268,21 @@ Break one of these and the feature is wrong, whatever the tests say.
     The post mode release notes of that merge keep them and mark them "already delivered by
     promotion #N" (`markPreviouslyPromoted`, Markdown table and XLSX column). A promotion that is
     itself part of the release flags nothing: it delivers its stories now.
+32. **The manifest of a promotion is computed, never cherry-picked.** `regeneratePromotionManifest`
+    puts `manifest/package.xml` and `manifest/destructiveChanges.xml` back to the version of the
+    commit the branch was cut from, then merges the sfdx-git-delta of the branch into them, with
+    the function `hardis:work:save` uses (`updateManifestWithGitDelta` in `manifestDeltaUtils.ts`).
+    What each cherry-pick wrote in the two files is thrown away: it conflicted story after story
+    and could name components of stories left behind. Consequences that must hold: a conflict that
+    only concerns those two files is never asked about (`manifestOnlyConflicts`), they leave the
+    conflict list of the Pull Request once regenerated (`conflictsAfterManifestRegeneration`), and
+    when sfdx-git-delta fails the files are left exactly as the cherry-picks wrote them and every
+    conflict is reported, since the delta runs **before** the files are reset.
+33. **The metadata of the notes follows the Pull Request list.** The delta of what is waiting in a
+    branch starts at the merge base with the target branch, which a cherry-picked promotion never
+    moves. `dropMetadataPromotedAway` removes the components that only the commits of promoted
+    away stories touched, from the counts, the attribution and the copied `package.xml` /
+    `destructiveChanges.xml`. A single commit from anything else keeps the component.
 
 ## sfdx-hardis (CLI)
 

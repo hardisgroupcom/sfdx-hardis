@@ -3,7 +3,7 @@ import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { getCurrentGitBranch, isCI, uxLog } from '../../../../common/utils/index.js';
+import { getCurrentGitBranch, git, isCI, uxLog } from '../../../../common/utils/index.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionBranchUtils.js';
@@ -21,6 +21,8 @@ import {
   logPartiallyPromotedCandidates,
   logPromotionCandidatesTable,
   cherryPickCandidates,
+  conflictsAfterManifestRegeneration,
+  regeneratePromotionManifest,
   collectStoryTicketIds,
   createPromotionBranch,
   listPromotionCandidates,
@@ -60,6 +62,7 @@ This is the only supported way to create a [promotion branch (Beta)](${CONSTANTS
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`). A Pull Request another promotion branch already carries to the same target is left out, unless \`--include-already-promoted\` is passed;
 - creates the branch from the target branch, named \`promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>\` (UTC, ex: \`promotion/uat/preprod/2026-09-06-1430\`), with \`-2\`, \`-3\`... added only when that name is already taken;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with \`-x\` so each commit keeps a pointer to its origin;
+- rebuilds \`manifest/package.xml\` and \`manifest/destructiveChanges.xml\` from the version of the target branch plus the git delta of the promotion branch, in a last commit, so a conflict in those two files is never asked about;
 - pushes the branch and creates the Pull Request to the target branch, with a description declaring the carried Pull Requests (\`${PROMOTION_PULL_REQUESTS_KEY}\`), their titles, authors, source branches and tickets.
 
 The deployment jobs then treat the declared Pull Requests as the scope of the promotion Pull Request: their deployment actions run, their Apex test classes are collected, their custom behaviors are inherited.
@@ -234,13 +237,16 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
 
     const branchName = await nextPromotionBranchName(sourceBranch, targetBranch, this);
     await createPromotionBranch(branchName, targetBranch, this);
+    // What the branch was cut from: the manifest files are rebuilt from it once the stories are in
+    const baseCommit = (await git().revparse(['HEAD'])).trim();
     const onConflict = (flags['on-conflict'] as PromotionConflictChoice | undefined) || null;
     let picked: PromotionCandidate[] = [];
     let skipped: PromotionCandidate[] = [];
     let alreadyThere: PromotionCandidate[] = [];
     let conflicted: Array<{ candidate: PromotionCandidate; files: string[] }> = [];
+    let manifestOnlyConflicts: Array<{ candidate: PromotionCandidate; files: string[] }> = [];
     try {
-      ({ picked, skipped, alreadyThere, conflicted } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this));
+      ({ picked, skipped, alreadyThere, conflicted, manifestOnlyConflicts } = await cherryPickCandidates(selected, branchName, previousBranch, onConflict, agentMode, this));
     } catch (e) {
       // cherryPickCandidates undoes what it started for the outcomes it knows about, but an
       // unexpected error (or the "exit this script" choice of the prompt) would otherwise leave the
@@ -260,6 +266,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       }
       throw new SfError(t('promotionCreateNothingPicked'));
     }
+
+    // manifest/package.xml and manifest/destructiveChanges.xml: the version of the target branch
+    // plus the delta of the promotion branch, instead of what each cherry-pick wrote in them
+    const manifestRegenerated = await regeneratePromotionManifest(baseCommit, this);
+    conflicted = conflictsAfterManifestRegeneration({ conflicted, manifestOnlyConflicts }, manifestRegenerated);
 
     const stories = toStories(picked, conflicted);
     const skippedStories = toStories(skipped);
