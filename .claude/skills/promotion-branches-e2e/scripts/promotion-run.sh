@@ -82,6 +82,9 @@ deploymentApexTestClasses:
 
 FLOW_DELETE_INTERVIEWS
 MD
+cat >"$BODIES/s7.md" <<'MD'
+Story S7 second hotfix, run stream, straight into preprod. Promoted to main on its own, so the first go-live promotion is in no window any more.
+MD
 
 open_story() {
   local branch="$1" target="$2" resource="$3" title="$4" body="$5" kind="$6" number
@@ -98,8 +101,9 @@ S3=$(open_story feature/E2E-103-gamma integration E2E_S3 "E2E-103 S3 gamma" "$BO
 S4=$(open_story feature/E2E-201-delta uat E2E_S4 "E2E-201 S4 delta" "$BODIES/s4.md" pre-command+post-manual) || exit 1
 S5=$(open_story feature/E2E-202-epsilon uat E2E_S5 "E2E-202 S5 epsilon" "$BODIES/s5.md" post-command) || exit 1
 S6=$(open_story feature/E2E-301-hotfix preprod E2E_S6 "E2E-301 S6 hotfix" "$BODIES/s6.md" pre-command+post-manual) || exit 1
-for v in S1 S2 S3 S4 S5 S6; do remember "$v" "${!v}"; done
-echo "S1=$S1 S2=$S2 S3=$S3 S4=$S4 S5=$S5 S6=$S6"
+S7=$(open_story feature/E2E-302-hotfix-two preprod E2E_S7 "E2E-302 S7 hotfix two" "$BODIES/s7.md" post-command) || exit 1
+for v in S1 S2 S3 S4 S5 S6 S7; do remember "$v" "${!v}"; done
+echo "S1=$S1 S2=$S2 S3=$S3 S4=$S4 S5=$S5 S6=$S6 S7=$S7"
 
 # ------------------------------------------------------------------ assertion helpers
 record() { echo "$1 | $2 | $3" | tee -a "$RESULTS"; }
@@ -329,6 +333,27 @@ else
   record 22 FAIL "--include-promotions content: $(rn_numbers "$LOGS/release-notes-all.md")"
 fi
 
+echo "=== second go-live: S7 alone, promoted preprod -> main ==="
+# After this, P4 is in no window: main shows the latest go-live only (P5), and preprod was never
+# merged into main directly. The stories P4 carried must stay out of preprod and uat all the same:
+# the pipeline reads the merged promotions of each step from the provider, not from the windows
+# (sfdx-hardis#2260, where 292 stories were counted in uat for 129 pending).
+job p_check "$S7" preprod "check-pr$S7-hotfix"
+p_merge "$S7" >/dev/null || record "merge-$S7" FAIL "merge of #$S7"
+job p_deploy preprod "deploy-preprod-pr$S7"
+job p_promote preprod "$S7" promotion-preprod-main-two
+P5=$(promo_number promotion-preprod-main-two)
+remember P5 "$P5"
+assert_log 22b promotion-preprod-main-two 0 "P5 #$P5 carries #$S7 only, what P4 shipped is skipped as already promoted" \
+  "^#$S7 +\|" "assembled with 1 User Story\(ies\)" "already carried by another promotion branch"
+job p_check "$P5" main check-promotion-main-two
+p_merge "$P5" >/dev/null || record "merge-$P5" FAIL "merge of #$P5"
+job p_deploy main deploy-main-promotion-two
+expect pipeline-after-second-golive "{ \"label\": \"after the second go-live, P4 in no window\",
+  \"windows\": { \"integration\": [$S2], \"uat\": [$S1, $S5], \"preprod\": [], \"main\": [$S7] },
+  \"arrows\": { \"preprod>main\": null } }"
+pipeline pipeline-after-second-golive
+
 echo "=== retrofit main into integration ==="
 git checkout -q -f integration && git pull -q origin integration
 git checkout -q -B retrofit/from-main
@@ -345,7 +370,7 @@ p_merge "$R" >/dev/null || record "merge-$R" FAIL "merge of #$R"
 job p_deploy integration deploy-integration-retrofit
 assert_log 23b deploy-integration-retrofit 0 "already performed actions skipped" \
   "Promotion Pull Request $P4 adds [0-9]+ carried Pull Request\(s\) to the scope" "already deployed through promotion branch\(es\)" "Skipping E2E pre-deploy of PR $S4 \(from PR #$S4\): already run in integration"
-expect pipeline-after-retrofit "{ \"label\": \"after the retrofit\", \"windows\": { \"main\": [$S3, $S4, $S6] } }"
+expect pipeline-after-retrofit "{ \"label\": \"after the retrofit\", \"windows\": { \"main\": [$S7] } }"
 pipeline pipeline-after-retrofit
 
 echo

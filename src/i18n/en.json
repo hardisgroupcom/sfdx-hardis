@@ -3122,6 +3122,7 @@
   "releaseNotesActionsLoadFailed": "Could not load deployment actions: {{message}}",
   "releaseNotesAddedMetadata": "Added / Modified",
   "releaseNotesAiSummaryFailed": "Could not generate AI summary",
+  "releaseNotesAlreadyPromotedLeftOut": "{{count}} Pull Request(s) already delivered to {{branch}} through promotion branch(es) left out of the notes: {{details}}",
   "releaseNotesAssignee": "Assignee",
   "releaseNotesAuthor": "Author",
   "releaseNotesCollectingActions": "Loading deployment actions...",

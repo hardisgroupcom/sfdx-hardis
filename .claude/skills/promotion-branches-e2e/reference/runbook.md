@@ -159,6 +159,10 @@ travels with the cherry-picked commit, which is one of the things being tested.
 | S4    | `feature/E2E-201-delta`   | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
 | S5    | `feature/E2E-202-epsilon` | uat         | post command              | -                   | -                        |
 | S6    | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
+| S7    | `feature/E2E-302-hotfix-two` | preprod  | post command              | -                   | -                        |
+
+S7 exists for the second go-live of section 4: promoted to `main` on its own, it makes the first
+go-live promotion (P4) leave every window, which is the situation of issue #2260.
 
 `scripts/stories.sh` creates the branches and the action files: `story_branch <branch> <target>
 <resource>` then, once the Pull Request exists, `story_actions <branch> <number> <kind>`. Opening
@@ -259,6 +263,18 @@ pipeline_check "pipeline-after-golive" "$EXPECT/after-golive.json"
 e2e_release_notes "release-notes"
 e2e_release_notes "release-notes-all" --include-promotions
 
+# Second go-live: S7 merged into preprod, then P5 = preprod -> main carrying S7 only. P4 is now in
+# no window (main shows the latest go-live, preprod was never merged into main directly), and the
+# stories it carried must stay out of preprod and uat all the same (issue #2260)
+e2e_check 7 preprod "check-pr7-hotfix"
+gh pr merge 7 --repo "$REPO" --merge --delete-branch=false
+e2e_deploy preprod "deploy-preprod-pr7"
+e2e_promote preprod 7 "promotion-preprod-main-two"   # S3, S4 and S6 are skipped as already promoted
+e2e_check <P5> main "check-promotion-main-two"
+gh pr merge <P5> --repo "$REPO" --merge --delete-branch=false
+e2e_deploy main "deploy-main-promotion-two"
+pipeline_check "pipeline-after-second-golive" "$EXPECT/after-second-golive.json"
+
 # Retrofit main into the BUILD stream
 git checkout -q integration && git pull -q origin integration
 git checkout -q -b retrofit/from-main
@@ -322,6 +338,7 @@ diagram parses.
 | `pipeline-after-p1`     | after the merge and the deployment               | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                                                                      |
 | `pipeline-before-p3`    | before promoting a story that arrived through P1 | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set                                                 |
 | `pipeline-after-golive` | after the `preprod -> main` promotion is merged  | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                                                                |
+| `pipeline-after-second-golive` | after a second `preprod -> main` promotion carrying S7 only | P4 is in no window any more, and S3, S4, S6 still come back in neither `preprod` nor `uat`: `uat` lists S1 and S5, `main` lists S7. The merged promotions of each step are read from the provider, not from the windows (issue #2260) |
 
 The extension needs its provider token, which it reads from a secret named after the remote host:
 dots replaced by underscores, uppercased, plus `_TOKEN`. On `gitlab.hardis-group.com` that is

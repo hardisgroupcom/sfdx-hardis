@@ -3118,6 +3118,7 @@
   "releaseNotesActionsLoadFailed": "Impossible de charger les actions de deploiement : {{message}}",
   "releaseNotesAddedMetadata": "Ajoutes / Modifies",
   "releaseNotesAiSummaryFailed": "Impossible de generer le resume IA",
+  "releaseNotesAlreadyPromotedLeftOut": "{{count}} Pull Request(s) déjà livrée(s) dans {{branch}} via une ou des branches de promotion exclue(s) des notes : {{details}}",
   "releaseNotesAssignee": "Responsable",
   "releaseNotesAuthor": "Auteur",
   "releaseNotesCollectingActions": "Chargement des actions de deploiement...",

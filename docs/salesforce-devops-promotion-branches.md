@@ -396,6 +396,8 @@ Two things to do, both borrowed from the [hotfix](salesforce-devops-hotfixes.md)
 
 In the DevOps Pipeline, a promoted story leaves the window of the branch it came from and is listed in the branch it reached, so **a Pull Request number appears in a single place in the diagram**, both in the counter on the node and in the list opened by clicking it.
 
+The window of a branch runs since its last direct merge into the next branch, and a project using promotion branches may never merge `uat` into `preprod` directly again. What a story has already reached is therefore not read from the windows but from the merged promotion Pull Requests of each step (`promotion/uat/preprod/...` into `preprod`), wherever they are: the `uat` counter stays right after `preprod` goes live, and matches what `sf hardis:project:promotion:create` offers.
+
 <details markdown="1">
 <summary>How it works behind the hood</summary>
 
@@ -414,6 +416,8 @@ ___
 ## Release notes
 
 The release notes list the User Stories a promotion Pull Request carries, not the promotion Pull Request itself: the tickets, the metadata changes, the deployment actions and the contributor counts are those of the stories. A promotion whose declared Pull Requests could not be resolved is kept in the notes, so a change never disappears from them. The same rule applies to the merges between two major branches, which are left out whether or not the project uses promotion branches.
+
+The upcoming promotion notes of a branch (`--source-branch uat --target-branch preprod`) leave out the stories a merged promotion branch already carried to the target branch, and name them in the log.
 
 <details markdown="1">
 <summary>How it works behind the hood</summary>

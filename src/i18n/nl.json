@@ -3118,6 +3118,7 @@
   "releaseNotesActionsLoadFailed": "Kan implementatie-acties niet laden: {{message}}",
   "releaseNotesAddedMetadata": "Toegevoegd / Gewijzigd",
   "releaseNotesAiSummaryFailed": "Kan AI-samenvatting niet genereren",
+  "releaseNotesAlreadyPromotedLeftOut": "{{count}} Pull Request(s) die al via promotion branch(es) in {{branch}} zijn geleverd, weggelaten uit de notes: {{details}}",
   "releaseNotesAssignee": "Toegewezen aan",
   "releaseNotesAuthor": "Auteur",
   "releaseNotesCollectingActions": "Implementatie-acties laden...",

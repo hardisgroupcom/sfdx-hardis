@@ -241,6 +241,18 @@ Break one of these and the feature is wrong, whatever the tests say.
     extension mirror: the DevOps Pipeline, the release notes and the promotion candidates ignore them,
     and no CI job runs on them. The backpromote history lives in the "Backpromotes" Pull Request
     comment, which is not the CI/CD "Deployment Actions" comment: neither side reads the other's.
+30. **What a story already reached is read from the merged promotions of the step, not from the
+    windows.** The window of a branch runs since its last direct merge into the next branch, and a
+    project using promotions may never merge `uat` into `preprod` directly again, so a promotion
+    merged into `preprod` leaves the `preprod` window at the next go-live while the stories it
+    carried stay in the `uat` window for months (issue #2260: 292 counted, 129 pending). In the
+    extension, `listMergedPromotionsOfSteps` (`orgConfigUtils.ts`) asks the provider
+    (`listMergedPullRequestsIntoBranch`) for the merged promotions of every `branch -> merge
+    target` step, bounded by the oldest Pull Request of the source window, and feeds them into the
+    index next to the ones the windows hold; `enforceSinglePlacePerPullRequest` stays as the
+    fallback for a provider that answers nothing. In the CLI, the branch mode of
+    `hardis:doc:release-notes` subtracts the same stories (`dropAlreadyPromotedPullRequests`),
+    while `deploy:smart` keeps them in scope on purpose (no-op redeploy, actions skipped).
 
 ## sfdx-hardis (CLI)
 
@@ -301,6 +313,8 @@ not leak in.
 |------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `src/utils/pipeline/promotionBranchUtils.ts`         | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`. |
 | `src/commands/showPipeline.ts`                       | Fetches the declared Pull Requests (in parallel), builds the windows.                                                                                                                         |
+| `src/utils/orgConfigUtils.ts`                        | `completeMajorOrgsWithPromotionBranches`: expands the windows, reads the merged promotions of each step from the provider (`listMergedPromotionsOfSteps`), annotates, enforces the invariant. |
+| `src/utils/gitProviders/*.ts`                        | `listMergedPullRequestsIntoBranch(target, updatedAfter)` on the four providers and the mock, sharing the per-branch fetch of the window listings.                                            |
 | `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                    |
 | `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, User Stories not promoted away), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                  |
 | `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the vehicles toggle, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                     |

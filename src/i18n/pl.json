@@ -3118,6 +3118,7 @@
   "releaseNotesActionsLoadFailed": "Nie udalo sie zaladowac akcji wdrozenia: {{message}}",
   "releaseNotesAddedMetadata": "Dodane / Zmodyfikowane",
   "releaseNotesAiSummaryFailed": "Nie udalo sie wygenerowac podsumowania AI",
+  "releaseNotesAlreadyPromotedLeftOut": "{{count}} Pull Request(ów) dostarczonych już do {{branch}} przez branch(e) promocji pominięto w notatkach: {{details}}",
   "releaseNotesAssignee": "Przypisany do",
   "releaseNotesAuthor": "Autor",
   "releaseNotesCollectingActions": "Ladowanie akcji wdrozenia...",
