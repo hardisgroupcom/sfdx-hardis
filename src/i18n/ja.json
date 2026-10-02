@@ -3370,6 +3370,7 @@
   "scheduleBatchAlreadyScheduled": "ジョブ '{{jobName}}' は同じcron式 '{{cronExpression}}' で既にスケジュールされています。スキップします。",
   "scheduleBatchCheckingExisting": "既存のスケジュールジョブ '{{jobName}}' を確認しています...",
   "scheduleBatchClassNotFound": "Apexクラス '{{className}}' が組織内に見つかりませんでした。",
+  "scheduleBatchClassNotGlobal": "Apexクラス '{{className}}' は管理パッケージに属しており global ではないため、パッケージの外部からスケジュールできません。",
   "scheduleBatchClassNotSchedulable": "Apexクラス '{{className}}' はSchedulableインターフェースを実装していません。",
   "scheduleBatchConflict": "スケジュールジョブ '{{jobName}}' は異なるcron式で既に存在しています（既存: '{{existingCron}}'、要求: '{{newCron}}'）。先に既存のジョブを中止してください。",
   "scheduleBatchConstructorNotVisible": "Apexクラス '{{className}}' にpublicな引数なしコンストラクタがありません。カスタムスクリプトでスケジュールするには 'apex' アクションタイプを使用してください。",

@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/): a Schedule Batch action can now schedule a class of an installed package, a global class of a managed package being written `ns.ClassName`.
+
 ## [8.12.1] 2026-10-02
 
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): the upcoming promotion notes of a branch no longer list the User Stories a merged promotion branch already carried to the target branch. In the VS Code extension, the DevOps Pipeline reads the merged promotions of each step from the git provider, so a promoted story stays out of the branch it left after the next branch goes live.

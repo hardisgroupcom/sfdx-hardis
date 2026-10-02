@@ -963,7 +963,7 @@
               },
               "className": {
                 "$id": "#/properties/commandsPreDeploy/items/properties/parameters/className",
-                "description": "Apex batch class name to schedule for 'schedule-batch' actions",
+                "description": "Apex batch class name to schedule for 'schedule-batch' actions. A global class of a managed package is written with its namespace: ns.ClassName",
                 "type": "string"
               },
               "cronExpression": {
@@ -1223,7 +1223,7 @@
               },
               "className": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/className",
-                "description": "Apex batch class name to schedule for 'schedule-batch' actions",
+                "description": "Apex batch class name to schedule for 'schedule-batch' actions. A global class of a managed package is written with its namespace: ns.ClassName",
                 "type": "string"
               },
               "cronExpression": {

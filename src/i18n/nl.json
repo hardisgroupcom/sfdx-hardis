@@ -3373,6 +3373,7 @@
   "scheduleBatchAlreadyScheduled": "Taak '{{jobName}}' is al gepland met dezelfde cron-expressie '{{cronExpression}}'. Overslaan.",
   "scheduleBatchCheckingExisting": "Controleren op bestaande geplande taak '{{jobName}}'...",
   "scheduleBatchClassNotFound": "Apex-klasse '{{className}}' niet gevonden in de org.",
+  "scheduleBatchClassNotGlobal": "Apex-klasse '{{className}}' hoort bij een beheerd pakket en is niet global, en kan dus niet van buiten het pakket worden ingepland.",
   "scheduleBatchClassNotSchedulable": "Apex-klasse '{{className}}' implementeert de Schedulable-interface niet.",
   "scheduleBatchConflict": "Er bestaat al een geplande taak '{{jobName}}' met een andere cron-expressie (bestaand: '{{existingCron}}', gevraagd: '{{newCron}}'). Beëindig eerst de bestaande taak.",
   "scheduleBatchConstructorNotVisible": "Apex-klasse '{{className}}' heeft geen publieke constructor zonder argumenten. Gebruik in plaats daarvan het actietype 'apex' om het te plannen met een aangepast script.",

@@ -3340,6 +3340,7 @@
   "scheduleBatchAlreadyScheduled": "O job '{{jobName}}' já está agendado com a mesma expressão cron '{{cronExpression}}'. Ignorando.",
   "scheduleBatchCheckingExisting": "Verificando job agendado existente '{{jobName}}'...",
   "scheduleBatchClassNotFound": "A classe Apex '{{className}}' não foi encontrada na org.",
+  "scheduleBatchClassNotGlobal": "A classe Apex '{{className}}' pertence a um pacote gerenciado e não é global, portanto não pode ser agendada de fora do pacote.",
   "scheduleBatchClassNotSchedulable": "A classe Apex '{{className}}' não implementa a interface Schedulable.",
   "scheduleBatchConflict": "Um job agendado '{{jobName}}' já existe com uma expressão cron diferente (existente: '{{existingCron}}', solicitado: '{{newCron}}'). Por favor, cancele o job existente primeiro.",
   "scheduleBatchConstructorNotVisible": "A classe Apex '{{className}}' não possui um construtor público sem argumentos. Use um tipo de ação 'apex' em vez disso para agendá-la com um script personalizado.",

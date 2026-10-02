@@ -3373,6 +3373,7 @@
   "scheduleBatchAlreadyScheduled": "Zadanie '{{jobName}}' jest już zaplanowane z tym samym wyrażeniem cron '{{cronExpression}}'. Pomijanie.",
   "scheduleBatchCheckingExisting": "Sprawdzanie istniejącego zaplanowanego zadania '{{jobName}}'...",
   "scheduleBatchClassNotFound": "Klasa Apex '{{className}}' nie została znaleziona w org.",
+  "scheduleBatchClassNotGlobal": "Klasa Apex '{{className}}' należy do pakietu zarządzanego i nie jest global, więc nie można jej zaplanować spoza pakietu.",
   "scheduleBatchClassNotSchedulable": "Klasa Apex '{{className}}' nie implementuje interfejsu Schedulable.",
   "scheduleBatchConflict": "Zaplanowane zadanie '{{jobName}}' już istnieje z innym wyrażeniem cron (istniejące: '{{existingCron}}', żądane: '{{newCron}}'). Najpierw przerwij istniejące zadanie.",
   "scheduleBatchConstructorNotVisible": "Klasa Apex '{{className}}' nie ma publicznego konstruktora bez argumentów. Użyj zamiast tego typu akcji 'apex', aby zaplanować ją za pomocą niestandardowego skryptu.",
