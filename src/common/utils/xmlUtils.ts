@@ -499,6 +499,31 @@ export async function listDuplicateFolderMetadataApiNames(
   return duplicates;
 }
 
+// Lists the members of a deployment package.xml that package-no-overwrite.xml could protect, whatever the
+// target org content. It matches like the 'no-overwrite-remove' filtering, which only removes items matching
+// a subset of package-no-overwrite.xml: when nothing is returned, listing the target org would protect nothing.
+export async function listPackageXmlItemsMatchingNoOverwrite(
+  packageXmlFile: string,
+  packageNoOverwriteFile: string
+): Promise<{ type: string; member: string }[]> {
+  const packageContent = await parsePackageXmlFile(packageXmlFile);
+  const noOverwriteContent = await parsePackageXmlFile(packageNoOverwriteFile);
+  const matchingItems: { type: string; member: string }[] = [];
+  for (const type of Object.keys(packageContent)) {
+    const patterns: string[] = noOverwriteContent[type] || [];
+    if (patterns.length === 0) {
+      continue;
+    }
+    const apiNameOnly = ORG_UNIQUE_FOLDER_METADATA_TYPES.includes(type);
+    for (const member of packageContent[type]) {
+      if (patterns.some((pattern) => memberMatchesPattern(member, pattern, apiNameOnly))) {
+        matchingItems.push({ type: type, member: member });
+      }
+    }
+  }
+  return matchingItems;
+}
+
 // Returns true when member matches pattern, supporting * as a glob wildcard (e.g. "*__dlm", "Account*").
 // When apiNameOnly is set, an exact pattern also matches a member holding the same API name in another folder.
 function memberMatchesPattern(member: string, pattern: string, apiNameOnly = false): boolean {
