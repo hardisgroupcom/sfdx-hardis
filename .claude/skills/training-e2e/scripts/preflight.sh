@@ -91,7 +91,7 @@ fi
 
 echo
 echo "course site"
-say "live site" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://hardisgroupcom.github.io/sfdx-hardis-training/ | grep -q 200 && echo OK || echo WARN)" "https://hardisgroupcom.github.io/sfdx-hardis-training/"
+say "live site" "$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 https://sfdx-hardis-training.github.io/ | grep -q 200 && echo OK || echo WARN)" "https://sfdx-hardis-training.github.io/"
 say "course branch" OK "$(git -C "$COURSE" branch --show-current 2>/dev/null) @ $(git -C "$COURSE" log --oneline -1 2>/dev/null)"
 # A site that answers 200 can still be days behind main: pages.yml refuses to
 # publish when a --check of the derived files fails, and nothing else says so.

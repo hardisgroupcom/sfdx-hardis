@@ -99,11 +99,11 @@ In agent mode:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
 
-- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
-- [Lab 3.11 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
 
 <!-- training-links:end -->
 `;

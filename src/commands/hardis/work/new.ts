@@ -116,14 +116,14 @@ The command's logic orchestrates various underlying processes:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
 
-- [Lab 1.3 - Start a User Story on its own Git branch](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
-- [Lab 1.7 - Capstone: deliver a User Story on your own](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
-- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
-- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
-- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 1.3 - Start a User Story on its own Git branch](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
+- [Lab 1.7 - Capstone: deliver a User Story on your own](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
 
 <!-- training-links:end -->
 `;

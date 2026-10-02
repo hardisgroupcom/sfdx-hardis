@@ -550,10 +550,10 @@ When disabled:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own, in these labs:
 
-- [Lab 2.3 - Fix broken records with an Apex deployment action](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
-- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
-- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 2.3 - Fix broken records with an Apex deployment action](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
+- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
 
 <!-- training-links:end -->

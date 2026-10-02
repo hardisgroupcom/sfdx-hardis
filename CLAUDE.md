@@ -52,7 +52,7 @@ Most users run sfdx-hardis through the VS Code extension [vscode-sfdx-hardis](ht
 
 ## Training (sfdx-hardis-training)
 
-The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/) course walks learners through this product, click by click, with screenshots taken from the real extension. A change here can break a lab silently: the text still reads fine and the click no longer does what it says.
+The [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course walks learners through this product, click by click, with screenshots taken from the real extension. A change here can break a lab silently: the text still reads fine and the click no longer does what it says.
 
 - `training-impact` skill: load it for any change touching a command name or flag, a prompt, `--json` output, a config key, a report file, a doc page URL, an LWC panel, or any behavior a lab walks through. It reads `training-manifest.json` from the sibling clone and names the affected labs.
 - `training-update` skill: load it once `training-impact` says there is an impact. It performs the edits in the sibling training repository, including regenerating the Helios screenshots.

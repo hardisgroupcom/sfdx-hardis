@@ -400,20 +400,20 @@ In agent mode:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
 
-- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
-- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
-- [Lab 2.3 - Fix broken records with an Apex deployment action](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
-- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
-- [Lab 3.2 - Review and merge a contributor Pull Request](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
-- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
-- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
-- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
-- [Lab 3.6 - Release to production and read your DORA metrics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
-- [Lab 3.7 - Production is broken: hotfix and retrofit](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
-- [Lab 3.11 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.3 - Fix broken records with an Apex deployment action](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
+- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
+- [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
 
 <!-- training-links:end -->
 `;

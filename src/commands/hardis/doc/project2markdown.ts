@@ -182,9 +182,9 @@ ${this.htmlInstructions}
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
 
-- [Lab 3.9 - Generate the Salesforce project documentation](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-9-generate-the-project-documentation/)
+- [Lab 3.9 - Generate the Salesforce project documentation](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-9-generate-the-project-documentation/)
 
 <!-- training-links:end -->
 `;

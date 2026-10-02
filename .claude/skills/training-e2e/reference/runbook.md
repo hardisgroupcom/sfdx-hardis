@@ -3,7 +3,7 @@
 Read this in full before starting. It holds the decisions that make a run meaningful and the traps
 that cost previous runs hours.
 
-The course is at <https://hardisgroupcom.github.io/sfdx-hardis-training/>: three levels, 27 labs,
+The course is at <https://sfdx-hardis-training.github.io/>: three levels, 27 labs,
 7 + 9 + 11. A full walk of the three is a long session. Level 1 alone is worth running whenever the
 contributor loop changed.
 

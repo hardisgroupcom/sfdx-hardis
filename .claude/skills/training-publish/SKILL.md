@@ -43,9 +43,29 @@ Trailhead-native surface open to us.
 | Level 2 Trailmix         | `Salesforce DevOps with sfdx-hardis - Contributor Advanced`                                                         |
 | Level 3 Trailmix         | `Salesforce DevOps with sfdx-hardis - Release Manager`                                                              |
 | Expected URL shape       | `https://trailhead.salesforce.com/users/nvuillamy/trailmixes/salesforce-devops-with-sfdx-hardis-contributor-basics` |
-| Training site            | `https://hardisgroupcom.github.io/sfdx-hardis-training/`                                                            |
+| Training site            | `https://sfdx-hardis-training.github.io/`                                                                           |
 | Lab URL shape            | `<site>/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/`                                          |
 | Badge URL shape          | `<site>/badges/<github-handle>/`                                                                                    |
+
+**The training site URL is temporary.** The course moved from
+`https://hardisgroupcom.github.io/sfdx-hardis-training/` to `https://sfdx-hardis-training.github.io/`
+on 2026-10-02, and it will move again (a custom domain is planned). When it does, replace it in
+every source of the three repositories, in one Pull Request per repository:
+
+```bash
+# from each of sfdx-hardis, ../vscode-sfdx-hardis and ../sfdx-hardis-training
+git grep -lI 'sfdx-hardis-training.github.io' -- . ':!CHANGELOG.md'
+```
+
+- Here the URL sits in `README.md`, `docs/`, the command descriptions under `src/commands/`
+  (and the pages `yarn build:doc` generates from them), `CLAUDE.md` and the `training-*` skills.
+  Update this table and this note in the same change.
+- Released `CHANGELOG.md` sections keep the URL they were written with.
+- In the training repository the URL is written once, as `course.site` in `training-universe.json`.
+  The old project site keeps redirecting (`LEGACY_SITE_URL` in `scripts/lib/urls.mjs`): the forks
+  learners already made still call it, so that constant and the URLs of `config/.sfdx-hardis.yml`
+  follow the training repository's own rules, not a blind search and replace.
+- The path after the host does not change: only the base URL does.
 
 Two cautions, both permanent:
 

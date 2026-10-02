@@ -71,9 +71,9 @@ prompts
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
 
-- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
 
 <!-- training-links:end -->
 `;
