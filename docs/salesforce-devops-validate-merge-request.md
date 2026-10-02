@@ -105,8 +105,8 @@ The deployment result is posted as a Pull Request comment and sent to the config
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 3.2 - Review and merge a contributor Pull Request](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
+- [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
 
 <!-- training-links:end -->

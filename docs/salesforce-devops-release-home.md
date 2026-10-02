@@ -11,7 +11,7 @@ DevOps practices work best when one or two team members take the role of **relea
 <!-- training-callout:start -->
 
 !!! tip "Learn by doing"
-    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 7 h. [Start Level 3](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/)
+    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 7 h. [Start Level 3](https://sfdx-hardis-training.github.io/en/level-3-release-manager/)
 
 <!-- training-callout:end -->
 
@@ -62,8 +62,8 @@ To understand what the CI jobs do during a validation or a deployment, read [Sma
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 3.11 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
 
 <!-- training-links:end -->

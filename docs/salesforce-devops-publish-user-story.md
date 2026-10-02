@@ -108,9 +108,9 @@ Once the Pull Request is created, validation jobs run automatically and post the
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own, in these labs:
 
-- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
-- [Lab 2.8 - Recover from committing the wrong metadata](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+- [Lab 1.5 - Retrieve, commit and publish your Salesforce changes](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-5-retrieve-commit-and-publish-your-changes/)
+- [Lab 2.8 - Recover from committing the wrong metadata](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
 
 <!-- training-links:end -->

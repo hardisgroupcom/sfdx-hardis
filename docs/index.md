@@ -261,11 +261,11 @@ sf hardis:<COMMAND> <OPTIONS>
 
 ## Learn by doing
 
-[Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+[Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
 
-- [Level 1 - Contributor basics](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
-- [Level 2 - Contributor advanced](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
-- [Level 3 - Release Manager](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/): 10 labs, the pipeline up to production, releases, hotfixes, monitoring
+- [Level 1 - Contributor basics](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://sfdx-hardis-training.github.io/en/level-3-release-manager/): 10 labs, the pipeline up to production, releases, hotfixes, monitoring
 
 <!-- training-links:end -->
 
@@ -661,6 +661,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Mehdi](https://github.com/Mehdi-Cloudity), for the [bypass generation command](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) and its application to Flows, Validation Rules and Triggers
 - [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
 - [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
+- [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.github.io/)
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 

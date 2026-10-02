@@ -71,7 +71,7 @@ It must contain a **{REF}** segment, which is replaced by the ticket identifier,
 
 Example: `https://tickets.mycompany.com/api/ticket/{REF}.json`
 
-A static site can serve these files next to its pages. The [sfdx-hardis training](https://hardisgroupcom.github.io/sfdx-hardis-training/) does that: its backlog publishes `BACKLOG/US-021/` for people and `BACKLOG/US-021.json` for sfdx-hardis.
+A static site can serve these files next to its pages. The [sfdx-hardis training](https://sfdx-hardis-training.github.io/) does that: its backlog publishes `BACKLOG/US-021/` for people and `BACKLOG/US-021.json` for sfdx-hardis.
 
 When a ticket cannot be read, it stays a bare link and the Pull Request comment says why.
 
@@ -121,8 +121,8 @@ This integration uses the following variables, which must be available from the 
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
 
 <!-- training-links:end -->
