@@ -336,8 +336,8 @@ Required in agent mode:
     if (flags['job-name']) action.parameters = { ...action.parameters, jobName: flags['job-name'] };
     if (action.type === 'run-batch') {
       action.parameters = applyRunBatchFlags(action.parameters, flags);
-      // An action switched to run-batch takes its only context, unless one is passed and then validated
-      if (flags.type && !flags.context) action.context = RUN_BATCH_CONTEXT;
+      // A run-batch action takes its only context, unless one is passed and then validated
+      if (!flags.context) action.context = RUN_BATCH_CONTEXT;
     } else if (hasRunBatchFlags(flags)) {
       throw new SfError(t('actionRunBatchFlagsOnOtherType', { type: action.type }));
     }

@@ -70,6 +70,8 @@ describe('listRunBatchParameterErrors', () => {
     expect(listRunBatchParameterErrors({ type: 'run-batch', parameters, context: 'process-deployment-only' })).to.deep.equal([]);
     expect(listRunBatchParameterErrors({ type: 'run-batch', parameters, context: 'all' })).to.have.lengthOf(1);
     expect(listRunBatchParameterErrors({ type: 'run-batch', parameters, context: 'check-deployment-only' })).to.have.lengthOf(1);
+    // At run time the execution loop imposes the context, so it is not an error of the action
+    expect(listRunBatchParameterErrors({ type: 'run-batch', parameters, context: 'all' }, false)).to.deep.equal([]);
   });
 });
 
@@ -197,12 +199,13 @@ describe('decideExistingBatchJob', () => {
     }
   });
 
-  it('reuses a job completed without error in the last hour', () => {
+  it('reuses a job completed without error in the last 3 hours', () => {
     expect(decideExistingBatchJob(completed(10), wait, now)).to.equal('reuse');
+    expect(decideExistingBatchJob(completed(179), wait, now)).to.equal('reuse');
   });
 
-  it('launches again when the last job is older than an hour', () => {
-    expect(decideExistingBatchJob(completed(61), wait, now)).to.equal('launch');
+  it('launches again when the last job is older than 3 hours', () => {
+    expect(decideExistingBatchJob(completed(181), wait, now)).to.equal('launch');
   });
 
   it('launches again after a recent job with batches in error, unless the action accepts them', () => {

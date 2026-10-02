@@ -25,8 +25,13 @@ export const RUN_BATCH_JOB_ID_MARKER = 'SFDX_HARDIS_BATCH_JOB_ID=';
 const RUN_BATCH_POLL_INTERVAL_MS = 10000;
 // A wait can last an hour: one query that fails must not fail an action whose batch is still running
 const RUN_BATCH_MAX_POLL_FAILURES = 3;
+// A job waiting in the flex queue changes nothing for a long time: a CI runner without output is killed
+const RUN_BATCH_HEARTBEAT_MS = 5 * 60 * 1000;
+// The job of a batch that was just enqueued can take a few seconds to be readable
+const RUN_BATCH_JOB_LOOKUP_ATTEMPTS = 3;
+const RUN_BATCH_JOB_LOOKUP_DELAY_MS = 5000;
 // A deployment retried after a wait timeout must not process the same records twice
-export const RUN_BATCH_RECENT_JOB_MINUTES = 60;
+export const RUN_BATCH_RECENT_JOB_MINUTES = 180;
 const RUN_BATCH_FLAGS = ['run-mode', 'batch-size', 'wait-timeout', 'success-even-if-batch-errors'];
 
 export interface RunBatchOptions {
@@ -83,7 +88,7 @@ export function normalizeRunBatchParameters(parameters: Record<string, any>): Re
 }
 
 /** Errors of a run-batch action definition, as translated messages (empty when valid). */
-export function listRunBatchParameterErrors(action: Partial<PrePostCommand>): string[] {
+export function listRunBatchParameterErrors(action: Partial<PrePostCommand>, checkContext = true): string[] {
   const errors: string[] = [];
   const parameters = action.parameters || {};
   if (!parameters.className) {
@@ -105,7 +110,7 @@ export function listRunBatchParameterErrors(action: Partial<PrePostCommand>): st
     }
   }
   // Running a batch changes the data of the org, so it never happens during a deployment check
-  if (action.context && action.context !== RUN_BATCH_CONTEXT) {
+  if (checkContext && action.context && action.context !== RUN_BATCH_CONTEXT) {
     errors.push(t('actionValidationRunBatchContext', { context: action.context }));
   }
   return errors;
@@ -183,12 +188,9 @@ export class RunBatchAction extends ActionsProvider {
   }
 
   public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
-    const className = (cmd.parameters?.className as string) || '';
-    if (!className) {
-      uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchNoClassName', { id: cmd.id, label: cmd.label })}`));
-      return { statusCode: 'failed', skippedReason: 'No className parameter provided' };
-    }
-    const errors = listRunBatchParameterErrors(cmd);
+    // The execution loop runs a run-batch action as a deployment-only one whatever its context says,
+    // so a context written by hand is not a reason to fail the action in every job
+    const errors = listRunBatchParameterErrors(cmd, false);
     if (errors.length > 0) {
       uxLog('error', this, c.red(`[DeploymentActions] ${errors.join('\n')}`));
       return { statusCode: 'failed', skippedReason: errors.join('\n') };
@@ -275,9 +277,12 @@ export class RunBatchAction extends ActionsProvider {
 
     // 4. Find the job: in the debug log, else the batch job of that class created since the launch
     let jobId = extractBatchJobId(buildActionOutput(res));
-    if (!jobId) {
+    for (let attempt = 1; !jobId && attempt <= RUN_BATCH_JOB_LOOKUP_ATTEMPTS; attempt++) {
       const latestJobId = (await this.findLatestJob(apexClass.Id, conn))?.Id || null;
       jobId = latestJobId !== previousJobId ? latestJobId : null;
+      if (!jobId && attempt < RUN_BATCH_JOB_LOOKUP_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, RUN_BATCH_JOB_LOOKUP_DELAY_MS));
+      }
     }
     if (!jobId) {
       if (options.runMode === 'no-wait') {
@@ -311,6 +316,7 @@ export class RunBatchAction extends ActionsProvider {
     const deadline = Date.now() + options.waitTimeoutMinutes * 60 * 1000;
     const jobQuery = `SELECT Id, Status, NumberOfErrors, JobItemsProcessed, TotalJobItems, ExtendedStatus FROM AsyncApexJob WHERE Id = '${jobId}'`;
     let lastProgress = '';
+    let lastLogAt = 0;
     let pollFailures = 0;
     for (; ;) {
       let job: any = null;
@@ -348,10 +354,11 @@ export class RunBatchAction extends ActionsProvider {
         if (outcome === 'failed') {
           return this.fail(t('runBatchFailed', { className, ...numbers }));
         }
-        // Still running: one line each time the numbers move, not one per poll
+        // Still running: one line each time the numbers move, and at least one every few minutes
         const progress = `${numbers.status}|${numbers.processed}|${numbers.total}|${numbers.errors}`;
-        if (progress !== lastProgress) {
+        if (progress !== lastProgress || Date.now() - lastLogAt >= RUN_BATCH_HEARTBEAT_MS) {
           lastProgress = progress;
+          lastLogAt = Date.now();
           uxLog('log', this, c.grey(`[DeploymentActions] ${t('runBatchWaiting', { className, jobId, ...numbers })}`));
         }
       }

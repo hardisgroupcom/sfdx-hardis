@@ -393,7 +393,7 @@ With `runMode: wait`, the deployment job follows the batch until it ends:
 
 With `runMode: no-wait`, the batch is launched and the deployment goes on. Before the deployment, that means the batch may still be running while the metadata deploys.
 
-The action never runs the same batch twice at once. When a job of the class is still running in the org, no other one is launched: in wait mode the action follows that job, in no-wait mode it succeeds right away. When a job of the class completed less than 60 minutes ago with a result the action accepts, it stands for this run. That covers a deployment retried after a wait timeout.
+The action never runs the same batch twice at once. When a job of the class is still running in the org, no other one is launched: in wait mode the action follows that job, in no-wait mode it succeeds right away. When a job of the class completed less than 3 hours ago with a result the action accepts, it stands for this run. That covers a deployment retried after a wait timeout.
 
 A long wait holds the CI/CD job: keep `waitTimeoutMinutes` below the timeout of your runner.
 
