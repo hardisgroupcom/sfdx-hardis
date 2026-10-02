@@ -337,13 +337,15 @@ Publishes the specified Experience Cloud (community) site using `sf community pu
 
 #### Schedule an Apex batch
 
-Schedules an Apex batch job in the target org, with a cron expression you can build with a click ("every day at 3 AM"...). The class picker proposes the schedulable classes of the org.
+Schedules an Apex batch job in the target org, with a cron expression you can build with a click ("every day at 3 AM"...). The class picker proposes the schedulable classes of the org and of the project, and the global schedulable classes of the installed packages.
 
 ![Schedule batch deployment action](assets/images/screenshot-deployment-action-schedule-batch.jpg)
 
 <details markdown="1"><summary>Technical: schedule-batch action (YAML)</summary>
 
 Schedules an Apex batch class using `System.schedule()`. The action verifies that the specified Apex class exists in the org, implements the `Schedulable` interface, and has a public no-arg constructor. If the class does not meet these requirements, the action fails with a recommendation to use an [`apex`](#run-an-apex-script) action instead.
+
+The class can come from an installed package. A class of an unlocked package without namespace is named like any other. A class of a managed package is written with its namespace, `ns.ClassName`, and must be `global`: a managed package hides every other class, and nothing outside the package can schedule them.
 
 If a scheduled job with the same name and cron expression already exists, the action is skipped (idempotent). If a job with the same name but a **different** cron expression exists, the action fails so you can resolve the conflict manually.
 
