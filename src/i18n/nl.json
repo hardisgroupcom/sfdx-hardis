@@ -3373,6 +3373,7 @@
   "scanningProjectForConnectedApps": "Project scannen op Connected Apps...",
   "scheduleBatchAlreadyScheduled": "Taak '{{jobName}}' is al gepland met dezelfde cron-expressie '{{cronExpression}}'. Overslaan.",
   "scheduleBatchCheckingExisting": "Controleren op bestaande geplande taak '{{jobName}}'...",
+  "scheduleBatchClassNeedsNamespace": "Apex-klasse '{{className}}' bestaat alleen in een pakket van de org. Schrijf deze met de namespace: '{{qualifiedName}}'.",
   "scheduleBatchClassNotFound": "Apex-klasse '{{className}}' niet gevonden in de org.",
   "scheduleBatchClassNotGlobal": "Apex-klasse '{{className}}' hoort bij een beheerd pakket en is niet global, en kan dus niet van buiten het pakket worden ingepland.",
   "scheduleBatchClassNotSchedulable": "Apex-klasse '{{className}}' implementeert de Schedulable-interface niet.",

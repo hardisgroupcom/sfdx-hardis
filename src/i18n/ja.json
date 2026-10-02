@@ -3370,6 +3370,7 @@
   "scanningProjectForConnectedApps": "プロジェクト内の接続アプリケーションをスキャンしています...",
   "scheduleBatchAlreadyScheduled": "ジョブ '{{jobName}}' は同じcron式 '{{cronExpression}}' で既にスケジュールされています。スキップします。",
   "scheduleBatchCheckingExisting": "既存のスケジュールジョブ '{{jobName}}' を確認しています...",
+  "scheduleBatchClassNeedsNamespace": "Apexクラス '{{className}}' は組織内のパッケージにのみ存在します。名前空間を付けて指定してください: '{{qualifiedName}}'。",
   "scheduleBatchClassNotFound": "Apexクラス '{{className}}' が組織内に見つかりませんでした。",
   "scheduleBatchClassNotGlobal": "Apexクラス '{{className}}' は管理パッケージに属しており global ではないため、パッケージの外部からスケジュールできません。",
   "scheduleBatchClassNotSchedulable": "Apexクラス '{{className}}' はSchedulableインターフェースを実装していません。",

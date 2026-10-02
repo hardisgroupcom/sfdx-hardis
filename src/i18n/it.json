@@ -3373,6 +3373,7 @@
   "scanningProjectForConnectedApps": "Scansione del progetto per Connected Apps...",
   "scheduleBatchAlreadyScheduled": "Il job '{{jobName}}' è già pianificato con la stessa espressione cron '{{cronExpression}}'. Saltato.",
   "scheduleBatchCheckingExisting": "Verifica del job pianificato esistente '{{jobName}}'...",
+  "scheduleBatchClassNeedsNamespace": "La classe Apex '{{className}}' esiste solo in un pacchetto dell'org. Scrivila con il suo namespace: '{{qualifiedName}}'.",
   "scheduleBatchClassNotFound": "Classe Apex '{{className}}' non trovata nell'org.",
   "scheduleBatchClassNotGlobal": "La classe Apex '{{className}}' appartiene a un pacchetto gestito e non è global, quindi non può essere pianificata dall'esterno del suo pacchetto.",
   "scheduleBatchClassNotSchedulable": "La classe Apex '{{className}}' non implementa l'interfaccia Schedulable.",

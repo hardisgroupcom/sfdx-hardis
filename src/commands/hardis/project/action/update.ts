@@ -105,7 +105,7 @@ Required in agent mode:
       description: 'New manual instructions text (for manual type)',
     }),
     'class-name': Flags.string({
-      description: 'New Apex batch class name (for schedule-batch type)',
+      description: 'New Apex batch class name (for schedule-batch type). Write a global class of a managed package with its namespace: ns.ClassName',
     }),
     'cron-expression': Flags.string({
       description: 'New cron expression (for schedule-batch type)',

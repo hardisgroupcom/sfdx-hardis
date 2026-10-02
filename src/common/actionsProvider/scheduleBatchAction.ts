@@ -55,7 +55,8 @@ export class ScheduleBatchAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
 
-    const className = (cmd.parameters?.className as string) || '';
+    // Trimmed once, so the lookup, the job name and the Apex all read the same name
+    const className = ((cmd.parameters?.className as string) || '').trim();
     const cronExpression = (cmd.parameters?.cronExpression as string) || '';
     const jobName = (cmd.parameters?.jobName as string) || `${className}_Schedule`;
     const targetOrgFlag = this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '';
@@ -66,9 +67,17 @@ export class ScheduleBatchAction extends ActionsProvider {
     uxLog('log', this, c.grey(`[DeploymentActions] ${t('scheduleBatchVerifyingClass', { className })}`));
     // The class can belong to an installed package: ns.ClassName for a managed one
     const { namespace, name: classBareName } = parseApexClassName(className);
-    const classQuery = `SELECT Id, Name, NamespacePrefix, ManageableState, Body FROM ApexClass WHERE Name = '${classBareName.replace(/'/g, "\\'")}'`;
+    const namespaceFilter = namespace ? ` AND NamespacePrefix = '${namespace.replace(/'/g, "\\'")}'` : '';
+    const classQuery = `SELECT Id, Name, NamespacePrefix, ManageableState, Body FROM ApexClass WHERE Name = '${classBareName.replace(/'/g, "\\'")}'${namespaceFilter}`;
     const classResult = await soqlQueryTooling(classQuery, conn);
-    const apexClass = pickApexClassToSchedule(classResult.records || [], namespace);
+    const classRecords = classResult.records || [];
+    const apexClass = pickApexClassToSchedule(classRecords, namespace);
+    if (!apexClass && classRecords.length > 0) {
+      // The name only exists with a namespace: say how to write it rather than "not found"
+      const qualifiedName = `${classRecords[0].NamespacePrefix}.${classRecords[0].Name}`;
+      uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchClassNeedsNamespace', { className, qualifiedName })}`));
+      return { statusCode: 'failed', output: t('scheduleBatchClassNeedsNamespace', { className, qualifiedName }) };
+    }
     if (!apexClass) {
       uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchClassNotFound', { className })}`));
       return { statusCode: 'failed', output: t('scheduleBatchClassNotFound', { className }) };
@@ -85,9 +94,10 @@ export class ScheduleBatchAction extends ActionsProvider {
     }
 
     // Check that the class has a public no-arg constructor
-    const noArgCtorPattern = new RegExp(`(private|protected)\\s+${classBareName}\\s*\\(\\s*\\)`, 'i');
-    const paramCtorPattern = new RegExp(`(public|private|protected|global)\\s+${classBareName}\\s*\\([^)]+\\)`, 'i');
-    const hasExplicitNoArgCtor = new RegExp(`(public|global)\\s+${classBareName}\\s*\\(\\s*\\)`, 'i').test(apexClass.Body);
+    const classNamePattern = classBareName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const noArgCtorPattern = new RegExp(`(private|protected)\\s+${classNamePattern}\\s*\\(\\s*\\)`, 'i');
+    const paramCtorPattern = new RegExp(`(public|private|protected|global)\\s+${classNamePattern}\\s*\\([^)]+\\)`, 'i');
+    const hasExplicitNoArgCtor = new RegExp(`(public|global)\\s+${classNamePattern}\\s*\\(\\s*\\)`, 'i').test(apexClass.Body);
     if (noArgCtorPattern.test(apexClass.Body) || (paramCtorPattern.test(apexClass.Body) && !hasExplicitNoArgCtor)) {
       uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchConstructorNotVisible', { className })}`));
       return { statusCode: 'failed', output: t('scheduleBatchConstructorNotVisible', { className }) };

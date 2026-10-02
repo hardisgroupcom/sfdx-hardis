@@ -3377,6 +3377,7 @@
   "scanningProjectForConnectedApps": "Scanning project for Connected Apps...",
   "scheduleBatchAlreadyScheduled": "Job '{{jobName}}' is already scheduled with the same cron expression '{{cronExpression}}'. Skipping.",
   "scheduleBatchCheckingExisting": "Checking for existing scheduled job '{{jobName}}'...",
+  "scheduleBatchClassNeedsNamespace": "Apex class '{{className}}' only exists in a package of the org. Write it with its namespace: '{{qualifiedName}}'.",
   "scheduleBatchClassNotFound": "Apex class '{{className}}' not found in the org.",
   "scheduleBatchClassNotGlobal": "Apex class '{{className}}' belongs to a managed package and is not global, so it cannot be scheduled from outside its package.",
   "scheduleBatchClassNotSchedulable": "Apex class '{{className}}' does not implement the Schedulable interface.",
