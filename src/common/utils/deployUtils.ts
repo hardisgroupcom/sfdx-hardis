@@ -32,7 +32,7 @@ import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitU
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parsePackageXmlFile, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, listPackageXmlItemsMatchingNoOverwrite, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
@@ -1060,7 +1060,18 @@ async function buildDeploymentPackageXmls(
     uxLog("other", this, t('emptyPackageXmlNothingToDeploy'));
     return [];
   }
-  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFile });
+  const config = await getConfig('user');
+  const skipSplitPackages = (process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES || 'true') !== 'false';
+  // The split packages of the deployment plan are filtered by package-no-overwrite.xml too
+  const packageXmlFilesToProtect = [packageXmlFile];
+  if (config.deploymentPlan && !check && skipSplitPackages === false) {
+    for (const deploymentItem of config.deploymentPlan.packages || []) {
+      if (deploymentItem.packageXmlFile) {
+        packageXmlFilesToProtect.push(path.resolve(deploymentItem.packageXmlFile));
+      }
+    }
+  }
+  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFiles: packageXmlFilesToProtect });
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDir = await createTempDir();
@@ -1071,13 +1082,11 @@ async function buildDeploymentPackageXmls(
     packageXmlFile: mainPackageXmlCopyFileName,
     order: 0,
   };
-  const config = await getConfig('user');
   // Build list of package.xml according to plan
   if (config.deploymentPlan && !check) {
     const deploymentItems = [mainPackageXmlItem];
 
     // Work on deploymentPlan packages before deploying them
-    const skipSplitPackages = (process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES || 'true') !== 'false';
     if (skipSplitPackages === true) {
       uxLog(
         "warning",
@@ -1220,15 +1229,18 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     uxLog("action", this, c.cyan(t('handlingPackageNoOverwriteXmlMetadataThat')));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
-      // Listing the target org takes minutes on a large org: skip it when no type of the
-      // deployment package is protected, as nothing could be removed from the package anyway
-      if (options.packageXmlFile) {
-        const protectedTypes = Object.keys(await parsePackageXmlFile(packageNoOverwrite));
-        const packageTypes = Object.keys(await parsePackageXmlFile(options.packageXmlFile));
-        if (!packageTypes.some((type) => protectedTypes.includes(type))) {
-          uxLog("log", this, c.grey('[NoOverwrite] ' + t('noOverwriteNoProtectedTypeInPackage')));
+      // Listing the target org takes minutes on a large org: skip it when no item of the
+      // deployment packages matches package-no-overwrite.xml, as nothing could be removed from them anyway
+      if (options.packageXmlFiles?.length > 0) {
+        let nbMatchingItems = 0;
+        for (const packageXmlFile of options.packageXmlFiles) {
+          nbMatchingItems += (await listPackageXmlItemsMatchingNoOverwrite(packageXmlFile, packageNoOverwrite)).length;
+        }
+        if (nbMatchingItems === 0) {
+          uxLog("log", this, c.grey('[NoOverwrite] ' + t('noOverwriteNoProtectedItemInPackage')));
           return null;
         }
+        uxLog("log", this, c.grey('[NoOverwrite] ' + t('noOverwriteItemsMatchingInPackage', { count: nbMatchingItems })));
       }
       const tmpDir = await createTempDir();
       // Build target org package.xml

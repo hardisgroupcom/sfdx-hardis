@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no item of the deployment package matches package-no-overwrite.xml, even when their metadata types match. A delta deployment touching `CustomObject: Lead` while package-no-overwrite.xml protects `CustomObject: Account` now saves those minutes. The split packages of a deployment plan are checked too.
+
 ## [8.12.1] 2026-10-02
 
 - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): the upcoming promotion notes of a branch no longer list the User Stories a merged promotion branch already carried to the target branch. In the VS Code extension, the DevOps Pipeline reads the merged promotions of each step from the git provider, so a promoted story stays out of the branch it left after the next branch goes live.
