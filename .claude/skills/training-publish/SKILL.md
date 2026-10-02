@@ -61,10 +61,13 @@ git grep -lI 'sfdx-hardis-training.github.io' -- . ':!CHANGELOG.md'
   (and the pages `yarn build:doc` generates from them), `CLAUDE.md` and the `training-*` skills.
   Update this table and this note in the same change.
 - Released `CHANGELOG.md` sections keep the URL they were written with.
-- In the training repository the URL is written once, as `course.site` in `training-universe.json`.
-  The old project site keeps redirecting (`LEGACY_SITE_URL` in `scripts/lib/urls.mjs`): the forks
-  learners already made still call it, so that constant and the URLs of `config/.sfdx-hardis.yml`
-  follow the training repository's own rules, not a blind search and replace.
+- In the training repository the URL is written as `course.site` in `training-universe.json` and
+  in `course-site.yml` (a check compares the two), and by hand in `config/.sfdx-hardis.yml`: the
+  ticketing URL builders and the Training menu links. Replace all three.
+- `LEGACY_SITE_URL` in `scripts/lib/urls.mjs` is the first address of the course and never changes:
+  the forks learners made before the move still call it, and it redirects.
+- `test/fixtures/training-project/.sfdx-hardis.yml` of the extension is a copy of the training
+  `config/.sfdx-hardis.yml`: the two must stay identical.
 - The path after the host does not change: only the base URL does.
 
 Two cautions, both permanent:
