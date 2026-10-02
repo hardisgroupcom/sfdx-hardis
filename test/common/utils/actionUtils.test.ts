@@ -176,6 +176,22 @@ describe('actionUtils', () => {
       expect(errors).to.deep.equal([]);
     });
 
+    it('returns an error when run-batch has no className', async () => {
+      const errors = await validateActionParameters({ type: 'run-batch', parameters: {} });
+      expect(errors).to.have.lengthOf(1);
+    });
+
+    it('returns no errors for a valid run-batch action, pre-deploy or post-deploy', async () => {
+      const action = { type: 'run-batch', parameters: { className: 'MyBatch', runMode: 'wait', batchSize: 50 }, context: 'process-deployment-only' } as const;
+      expect(await validateActionParameters(action, 'pre-deploy')).to.deep.equal([]);
+      expect(await validateActionParameters(action, 'post-deploy')).to.deep.equal([]);
+    });
+
+    it('returns an error when run-batch is not in the process-deployment-only context', async () => {
+      const errors = await validateActionParameters({ type: 'run-batch', parameters: { className: 'MyBatch' }, context: 'all' });
+      expect(errors).to.have.lengthOf(1);
+    });
+
     it('returns error when packageXmlItems is missing for remove-packagexml-items type', async () => {
       const errors = await validateActionParameters({ type: 'remove-packagexml-items', parameters: {} });
       expect(errors).to.have.lengthOf(1);

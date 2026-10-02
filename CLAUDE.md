@@ -73,6 +73,12 @@ One Pull Request per repository, cross-linked. Order: CLI, then the extension, t
 - Use git bash for Windows formatting when building commands.
 - **NEVER** use em-dashes (—) in anything you generate. (replace them with simple hyphens)
 
+## Method Order
+
+- Order the methods of a class, and the functions of a module, by visibility first: public (exported), then protected, then private (not exported).
+- Inside each visibility group, follow the order they are called: a caller comes before what it calls, and steps of a flow appear in the order they run.
+- This applies to new code and to methods you add to an existing file. Do not reorder a whole existing file in an unrelated change.
+
 ## No AI Attribution
 
 Applies to Claude and every sub-agent, for all git and collaboration artifacts.

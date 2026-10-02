@@ -7,6 +7,7 @@ import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvid
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { CustomFunctionDefinition } from '../../../../common/utils/customFunctionUtils.js';
+import { applyRunBatchFlags, normalizeRunBatchParameters } from '../../../../common/actionsProvider/runBatchAction.js';
 
 /**
  * Base class for hardis:project:action:* commands.
@@ -43,6 +44,46 @@ export abstract class ActionCommandBase extends SfCommand<any> {
       ]);
 
     return { scope, when };
+  }
+
+  /**
+   * Collect the run-batch parameters other than the class name: flags in agent/CI mode,
+   * prompts seeded with the current values otherwise.
+   */
+  protected async collectRunBatchParameters(
+    flags: any,
+    headless: boolean,
+    current: PrePostCommand['parameters'] = {}
+  ): Promise<Record<string, any>> {
+    if (headless) {
+      return applyRunBatchFlags({ runMode: 'wait' }, flags);
+    }
+    const collected: Record<string, any> = applyRunBatchFlags({ ...current }, flags);
+    delete collected.className;
+    if (!flags['run-mode']) {
+      collected.runMode = await this.promptSelect(t('selectRunBatchMode'), [
+        { title: t('runBatchModeWait'), value: 'wait' },
+        { title: t('runBatchModeNoWait'), value: 'no-wait' },
+      ], collected.runMode || 'wait');
+    }
+    if (flags['batch-size'] === undefined) {
+      collected.batchSize = await this.promptText(t('enterBatchSize'), collected.batchSize ? String(collected.batchSize) : '');
+    }
+    if (collected.runMode !== 'no-wait') {
+      if (flags['wait-timeout'] === undefined) {
+        collected.waitTimeoutMinutes = await this.promptText(
+          t('enterWaitTimeoutMinutes'),
+          collected.waitTimeoutMinutes ? String(collected.waitTimeoutMinutes) : ''
+        );
+      }
+      if (flags['success-even-if-batch-errors'] === undefined) {
+        collected.successEvenIfBatchErrors = await this.promptConfirm(
+          t('actionPromptSuccessEvenIfBatchErrors'),
+          collected.successEvenIfBatchErrors === true
+        );
+      }
+    }
+    return normalizeRunBatchParameters(collected);
   }
 
   protected async promptSelect(message: string, choices: any[], initial?: string): Promise<any> {

@@ -236,7 +236,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     let skipAction = false;
 
     // Skip if we are in another context than the requested one
-    const cmdContext = cmd.context || "all";
+    // A run-batch action changes the data of the org: it is a deployment-only action, whatever its context holds
+    const cmdContext = cmd.type === "run-batch" ? "process-deployment-only" : cmd.context || "all";
     if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
       uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: validation-only action (context check-deployment-only), and this is the deployment job`));
       cmd.result = {

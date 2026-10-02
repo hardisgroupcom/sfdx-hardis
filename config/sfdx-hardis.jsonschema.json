@@ -897,6 +897,7 @@
                   "data",
                   "apex",
                   "schedule-batch",
+                  "run-batch",
                   "publish-community",
                   "manual",
                   "remove-packagexml-items"
@@ -906,6 +907,7 @@
                   "Data Import",
                   "Apex Script",
                   "Schedule Batch",
+                  "Run Batch",
                   "Publish Community",
                   "Manual Action",
                   "Remove package.xml Items"
@@ -963,7 +965,7 @@
               },
               "className": {
                 "$id": "#/properties/commandsPreDeploy/items/properties/parameters/className",
-                "description": "Apex batch class name to schedule for 'schedule-batch' actions. A global class of a managed package is written with its namespace: ns.ClassName",
+                "description": "Apex class name for 'schedule-batch' actions (a Schedulable class) and 'run-batch' actions (a Database.Batchable class). A global class of a managed package is written with its namespace: ns.ClassName",
                 "type": "string"
               },
               "cronExpression": {
@@ -978,6 +980,41 @@
                 "$id": "#/properties/commandsPreDeploy/items/properties/parameters/jobName",
                 "description": "Scheduled job name for 'schedule-batch' actions. Defaults to <className>_Schedule",
                 "type": "string"
+              },
+              "runMode": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/runMode",
+                "description": "For 'run-batch' actions: wait for the batch to succeed, or launch it without waiting for its result",
+                "type": "string",
+                "enum": [
+                  "wait",
+                  "no-wait"
+                ],
+                "enumNames": [
+                  "Wait for success",
+                  "Launch without waiting for results"
+                ],
+                "default": "wait"
+              },
+              "batchSize": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/batchSize",
+                "description": "Batch size passed to Database.executeBatch for 'run-batch' actions",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2000,
+                "default": 200
+              },
+              "waitTimeoutMinutes": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/waitTimeoutMinutes",
+                "description": "For 'run-batch' actions in wait mode: minutes after which the action fails if the batch is not over. The batch keeps running in the org",
+                "type": "integer",
+                "minimum": 1,
+                "default": 60
+              },
+              "successEvenIfBatchErrors": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/successEvenIfBatchErrors",
+                "description": "For 'run-batch' actions in wait mode: keep the action successful when the batch completes with batches in error. A failed or aborted batch and a timeout still fail the action",
+                "type": "boolean",
+                "default": false
               },
               "packageXmlItems": {
                 "$id": "#/properties/commandsPreDeploy/items/properties/parameters/packageXmlItems",
@@ -1148,6 +1185,7 @@
               "data",
               "apex",
               "schedule-batch",
+              "run-batch",
               "publish-community",
               "manual",
               "notifySlack"
@@ -1159,6 +1197,7 @@
                   "data",
                   "apex",
                   "schedule-batch",
+                  "run-batch",
                   "publish-community",
                   "manual"
                 ],
@@ -1167,6 +1206,7 @@
                   "Data Import",
                   "Apex Script",
                   "Schedule Batch",
+                  "Run Batch",
                   "Publish Community",
                   "Manual Action"
                 ]
@@ -1223,7 +1263,7 @@
               },
               "className": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/className",
-                "description": "Apex batch class name to schedule for 'schedule-batch' actions. A global class of a managed package is written with its namespace: ns.ClassName",
+                "description": "Apex class name for 'schedule-batch' actions (a Schedulable class) and 'run-batch' actions (a Database.Batchable class). A global class of a managed package is written with its namespace: ns.ClassName",
                 "type": "string"
               },
               "cronExpression": {
@@ -1238,6 +1278,41 @@
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/jobName",
                 "description": "Scheduled job name for 'schedule-batch' actions. Defaults to <className>_Schedule",
                 "type": "string"
+              },
+              "runMode": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/runMode",
+                "description": "For 'run-batch' actions: wait for the batch to succeed, or launch it without waiting for its result",
+                "type": "string",
+                "enum": [
+                  "wait",
+                  "no-wait"
+                ],
+                "enumNames": [
+                  "Wait for success",
+                  "Launch without waiting for results"
+                ],
+                "default": "wait"
+              },
+              "batchSize": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/batchSize",
+                "description": "Batch size passed to Database.executeBatch for 'run-batch' actions",
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2000,
+                "default": 200
+              },
+              "waitTimeoutMinutes": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/waitTimeoutMinutes",
+                "description": "For 'run-batch' actions in wait mode: minutes after which the action fails if the batch is not over. The batch keeps running in the org",
+                "type": "integer",
+                "minimum": 1,
+                "default": 60
+              },
+              "successEvenIfBatchErrors": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/successEvenIfBatchErrors",
+                "description": "For 'run-batch' actions in wait mode: keep the action successful when the batch completes with batches in error. A failed or aborted batch and a timeout still fail the action",
+                "type": "boolean",
+                "default": false
               }
             },
             "additionalProperties": true

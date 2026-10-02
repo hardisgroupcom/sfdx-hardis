@@ -86,6 +86,7 @@ const BUILT_IN_ACTION_TYPES = [
   'publish-community',
   'manual',
   'schedule-batch',
+  'run-batch',
   'remove-packagexml-items',
 ];
 

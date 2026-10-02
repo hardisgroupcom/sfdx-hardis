@@ -6,30 +6,16 @@ import { t } from '../utils/i18n.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import path from 'path';
+import {
+  HIDDEN_APEX_BODY,
+  buildApexClassQuery,
+  hasNoVisibleNoArgConstructor,
+  parseApexClassName,
+  pickApexClassToSchedule,
+} from './apexClassActionUtils.js';
 
-// What the Tooling API returns as the body of a managed class that is not global
-export const HIDDEN_APEX_BODY = '(hidden)';
-
-/** Splits `ns.ClassName` into its namespace and its name. A class of the project has no namespace. */
-export function parseApexClassName(className: string): { namespace: string; name: string } {
-  const trimmed = className.trim();
-  const dot = trimmed.indexOf('.');
-  return dot > 0
-    ? { namespace: trimmed.slice(0, dot), name: trimmed.slice(dot + 1) }
-    : { namespace: '', name: trimmed };
-}
-
-/**
- * Picks the class to schedule among the classes of the org bearing that name.
- * With a namespace, the class of that package. Without one, a class of the org itself,
- * or of a package without namespace: a namespaced package class is never picked by its bare name.
- */
-export function pickApexClassToSchedule(records: any[], namespace: string): any | null {
-  if (namespace) {
-    return records.find((r) => (r.NamespacePrefix || '').toLowerCase() === namespace.toLowerCase()) || null;
-  }
-  return records.find((r) => r.ManageableState === 'unmanaged') || records.find((r) => !r.NamespacePrefix) || null;
-}
+// Moved to apexClassActionUtils.ts, which run-batch shares
+export { HIDDEN_APEX_BODY, parseApexClassName, pickApexClassToSchedule };
 
 export class ScheduleBatchAction extends ActionsProvider {
   public getLabel(): string {
@@ -67,8 +53,7 @@ export class ScheduleBatchAction extends ActionsProvider {
     uxLog('log', this, c.grey(`[DeploymentActions] ${t('scheduleBatchVerifyingClass', { className })}`));
     // The class can belong to an installed package: ns.ClassName for a managed one
     const { namespace, name: classBareName } = parseApexClassName(className);
-    const namespaceFilter = namespace ? ` AND NamespacePrefix = '${namespace.replace(/'/g, "\\'")}'` : '';
-    const classQuery = `SELECT Id, Name, NamespacePrefix, ManageableState, Body FROM ApexClass WHERE Name = '${classBareName.replace(/'/g, "\\'")}'${namespaceFilter}`;
+    const classQuery = buildApexClassQuery(classBareName, namespace);
     const classResult = await soqlQueryTooling(classQuery, conn);
     const classRecords = classResult.records || [];
     const apexClass = pickApexClassToSchedule(classRecords, namespace);
@@ -94,11 +79,7 @@ export class ScheduleBatchAction extends ActionsProvider {
     }
 
     // Check that the class has a public no-arg constructor
-    const classNamePattern = classBareName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const noArgCtorPattern = new RegExp(`(private|protected)\\s+${classNamePattern}\\s*\\(\\s*\\)`, 'i');
-    const paramCtorPattern = new RegExp(`(public|private|protected|global)\\s+${classNamePattern}\\s*\\([^)]+\\)`, 'i');
-    const hasExplicitNoArgCtor = new RegExp(`(public|global)\\s+${classNamePattern}\\s*\\(\\s*\\)`, 'i').test(apexClass.Body);
-    if (noArgCtorPattern.test(apexClass.Body) || (paramCtorPattern.test(apexClass.Body) && !hasExplicitNoArgCtor)) {
+    if (hasNoVisibleNoArgConstructor(apexClass.Body, classBareName)) {
       uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchConstructorNotVisible', { className })}`));
       return { statusCode: 'failed', output: t('scheduleBatchConstructorNotVisible', { className }) };
     }
