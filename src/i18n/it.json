@@ -3118,6 +3118,7 @@
   "releaseNotesActionsLoadFailed": "Impossibile caricare le azioni di distribuzione: {{message}}",
   "releaseNotesAddedMetadata": "Aggiunti / Modificati",
   "releaseNotesAiSummaryFailed": "Impossibile generare il riepilogo IA",
+  "releaseNotesAlreadyPromotedLeftOut": "{{count}} Pull Request già consegnate in {{branch}} tramite branch di promozione escluse dalle note: {{details}}",
   "releaseNotesAssignee": "Assegnatario",
   "releaseNotesAuthor": "Autore",
   "releaseNotesCollectingActions": "Caricamento azioni di distribuzione...",

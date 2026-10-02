@@ -221,13 +221,17 @@ g3() {
   assert_log 39 edge-retargeted 0 "retargeted: warning, scope alone, the declared stories run nothing against production" \
     "is named for target preprod but its Pull Request targets main" "Pull Request scope: 1 Pull Request\(s\) \(#$RT\)" "!Running action E2E pre-deploy of PR $S1 " "!Running action E2E post-deploy of PR $S5 "
 
+  # Since #2236 a promotion needs the git provider connection: with no token and no gh CLI the
+  # command stops before it creates anything, instead of pushing a branch and handing over a link.
+  # The "creation refused by a connected provider" path (the link to the creation form) needs a
+  # provider that answers and then refuses, which this harness cannot provoke on GitHub.
+  local before_refused
+  before_refused=$(git ls-remote --heads origin "promotion/*" | wc -l)
   job 3 p_promote_no_provider uat "$S1" edge-pr-creation-refused
-  local refused_branch
-  refused_branch=$(promo_branch edge-pr-creation-refused)
-  assert_log 35 edge-pr-creation-refused 0 "creation refused: branch pushed, the reason, a one-click link" \
-    "The Pull Request could not be created automatically \(" "is pushed" "Create it in one click"
-  git ls-remote --exit-code --heads origin "$refused_branch" >/dev/null 2>&1
-  ok_if 35b $? "the branch $refused_branch is on origin"
+  assert_log 35 edge-pr-creation-refused 1 "no provider connection: the command stops before creating anything" \
+    "Promotion branches need the git provider connection" "!Promotion branch \S+ assembled"
+  [ "$(git ls-remote --heads origin "promotion/*" | wc -l)" = "$before_refused" ]
+  ok_if 35b $? "no promotion branch was pushed"
 
   job 3 p_promote uat "$S1" edge-supersede-first
   P7=$(promo_number edge-supersede-first)

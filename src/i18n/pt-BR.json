@@ -3085,6 +3085,7 @@
   "releaseNotesActionsLoadFailed": "Nao foi possivel carregar as acoes de deploy: {{message}}",
   "releaseNotesAddedMetadata": "Adicionados / Modificados",
   "releaseNotesAiSummaryFailed": "Nao foi possivel gerar o resumo de IA",
+  "releaseNotesAlreadyPromotedLeftOut": "{{count}} Pull Request(s) já entregue(s) em {{branch}} por branch(es) de promoção deixada(s) fora das notas: {{details}}",
   "releaseNotesAssignee": "Responsavel",
   "releaseNotesAuthor": "Autor",
   "releaseNotesCollectingActions": "Carregando acoes de deploy...",

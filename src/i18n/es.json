@@ -3118,6 +3118,7 @@
   "releaseNotesActionsLoadFailed": "No se pudieron cargar las acciones de despliegue: {{message}}",
   "releaseNotesAddedMetadata": "Anadidos / Modificados",
   "releaseNotesAiSummaryFailed": "No se pudo generar el resumen de IA",
+  "releaseNotesAlreadyPromotedLeftOut": "{{count}} Pull Request(s) ya entregadas en {{branch}} mediante rama(s) de promoción excluidas de las notas: {{details}}",
   "releaseNotesAssignee": "Asignado",
   "releaseNotesAuthor": "Autor",
   "releaseNotesCollectingActions": "Cargando acciones de despliegue...",

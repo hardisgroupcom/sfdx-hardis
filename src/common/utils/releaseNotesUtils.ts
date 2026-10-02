@@ -17,12 +17,15 @@ import {
 import { readActions } from "./actionUtils.js";
 import { isDeploymentActionsDisabled } from "./prePostCommandUtils.js";
 import {
+  buildPromotionIndex,
   expandPromotionPullRequests,
+  findPromotionsCarryingIndexed,
   getPromotionBranchConfig,
   isPromotionPullRequest,
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
 } from "./promotionBranchUtils.js";
+import { listDownstreamPromotionPullRequests, oldestPullRequestDate } from "./pullRequestUtils.js";
 import { getConfig } from "../../config/index.js";
 import { ActionWhen } from "../actionsProvider/actionsProvider.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -641,7 +644,57 @@ export async function collectPullRequests(
   pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
   pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig, options);
 
+  // The window of a branch runs since its last direct merge into the next one, which a project
+  // using promotion branches may never do again: a story a merged promotion already carried to the
+  // target branch is still in it, and would be announced as upcoming months after it shipped.
+  if (lookup === "branches" && promotionConfig.enabled) {
+    const downstreamPromotions = await listDownstreamPromotionPullRequests(
+      gitProvider,
+      scope.targetBranch,
+      majorOrgs,
+      promotionConfig,
+      oldestPullRequestDate(pullRequests),
+    );
+    pullRequests = dropAlreadyPromotedPullRequests(pullRequests, downstreamPromotions, promotionConfig, scope.targetBranch, commandRef);
+  }
+
   return pullRequests;
+}
+
+/**
+ * Leaves out the User Stories a merged promotion Pull Request already carried to the target branch
+ * (or further): their change is there, the upcoming promotion of the branch does not bring it. The
+ * stories are named in the log, never dropped in silence. The promotions themselves are never
+ * touched: a promotion still open carries nothing yet, and buildPromotionIndex ignores it.
+ */
+export function dropAlreadyPromotedPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+  downstreamPromotions: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+  targetBranch: string,
+  commandRef: any = null,
+): CommonPullRequestInfo[] {
+  if (!config.enabled || downstreamPromotions.length === 0) {
+    return pullRequests;
+  }
+  const index = buildPromotionIndex(downstreamPromotions, config);
+  const leftOut: string[] = [];
+  const kept = pullRequests.filter((pr) => {
+    const promotions = findPromotionsCarryingIndexed(pr.idNumber, index).filter((promotion) => promotion.idNumber !== pr.idNumber);
+    if (promotions.length === 0) {
+      return true;
+    }
+    leftOut.push(`${pr.idStr} (${promotions.map((promotion) => promotion.sourceBranch).join(", ")})`);
+    return false;
+  });
+  if (leftOut.length > 0) {
+    uxLog("log", commandRef, c.grey(`[PromotionBranch] ${t("releaseNotesAlreadyPromotedLeftOut", {
+      count: leftOut.length,
+      branch: targetBranch,
+      details: leftOut.join("; "),
+    })}`));
+  }
+  return kept;
 }
 
 /**

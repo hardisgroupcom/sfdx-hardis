@@ -151,14 +151,18 @@ Each story adds **its own static resource** (never a shared file, so unrelated s
 conflict), plus a `scripts/actions/.sfdx-hardis.<PR>.yml` holding its deployment actions. That file
 travels with the cherry-picked commit, which is one of the things being tested.
 
-| Story | Branch                    | Target      | Actions                   | Test classes        | Custom behavior          |
-|-------|---------------------------|-------------|---------------------------|---------------------|--------------------------|
-| S1    | `feature/E2E-101-alpha`   | integration | pre command + post manual | `PromoE2EAlphaTest` | -                        |
-| S2    | `feature/E2E-102-beta`    | integration | post command              | -                   | `NO_DELTA`               |
-| S3    | `feature/E2E-103-gamma`   | integration | pre command               | `PromoE2EBetaTest`  | `PURGE_FLOW_VERSIONS`    |
-| S4    | `feature/E2E-201-delta`   | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
-| S5    | `feature/E2E-202-epsilon` | uat         | post command              | -                   | -                        |
-| S6    | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
+| Story | Branch                       | Target      | Actions                   | Test classes        | Custom behavior          |
+|-------|------------------------------|-------------|---------------------------|---------------------|--------------------------|
+| S1    | `feature/E2E-101-alpha`      | integration | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S2    | `feature/E2E-102-beta`       | integration | post command              | -                   | `NO_DELTA`               |
+| S3    | `feature/E2E-103-gamma`      | integration | pre command               | `PromoE2EBetaTest`  | `PURGE_FLOW_VERSIONS`    |
+| S4    | `feature/E2E-201-delta`      | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S5    | `feature/E2E-202-epsilon`    | uat         | post command              | -                   | -                        |
+| S6    | `feature/E2E-301-hotfix`     | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
+| S7    | `feature/E2E-302-hotfix-two` | preprod     | post command              | -                   | -                        |
+
+S7 exists for the second go-live of section 4: promoted to `main` on its own, it makes the first
+go-live promotion (P4) leave every window, which is the situation of issue #2260.
 
 `scripts/stories.sh` creates the branches and the action files: `story_branch <branch> <target>
 <resource>` then, once the Pull Request exists, `story_actions <branch> <number> <kind>`. Opening
@@ -259,6 +263,18 @@ pipeline_check "pipeline-after-golive" "$EXPECT/after-golive.json"
 e2e_release_notes "release-notes"
 e2e_release_notes "release-notes-all" --include-promotions
 
+# Second go-live: S7 merged into preprod, then P5 = preprod -> main carrying S7 only. P4 is now in
+# no window (main shows the latest go-live, preprod was never merged into main directly), and the
+# stories it carried must stay out of preprod and uat all the same (issue #2260)
+e2e_check 7 preprod "check-pr7-hotfix"
+gh pr merge 7 --repo "$REPO" --merge --delete-branch=false
+e2e_deploy preprod "deploy-preprod-pr7"
+e2e_promote preprod 7 "promotion-preprod-main-two"   # S3, S4 and S6 are skipped as already promoted
+e2e_check <P5> main "check-promotion-main-two"
+gh pr merge <P5> --repo "$REPO" --merge --delete-branch=false
+e2e_deploy main "deploy-main-promotion-two"
+pipeline_check "pipeline-after-second-golive" "$EXPECT/after-second-golive.json"
+
 # Retrofit main into the BUILD stream
 git checkout -q integration && git pull -q origin integration
 git checkout -q -b retrofit/from-main
@@ -315,13 +331,14 @@ Three things are asserted at every checkpoint, expectations or not: a Pull Reque
 in one branch and one only, every counter bubble equals the length of the list under it, and the
 diagram parses.
 
-| Checkpoint              | When                                             | What it proves                                                                                                                                                                                  |
-|-------------------------|--------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `pipeline-before-p1`    | after the BUILD stream is merged, before P1      | the stories wait in the branch they were merged into, the downstream branches are empty, and no promotion is drawn on any arrow                                                                 |
-| `pipeline-p1-open`      | after `promotion:create`, before the merge       | the open promotion is drawn **on the `integration -> uat` arrow**, gets no branch node of its own, and takes nothing out of `integration` yet: a promotion only moves a story once it is merged |
-| `pipeline-after-p1`     | after the merge and the deployment               | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                                                                      |
-| `pipeline-before-p3`    | before promoting a story that arrived through P1 | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set                                                 |
-| `pipeline-after-golive` | after the `preprod -> main` promotion is merged  | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                                                                |
+| Checkpoint                     | When                                                        | What it proves                                                                                                                                                                                                                        |
+|--------------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pipeline-before-p1`           | after the BUILD stream is merged, before P1                 | the stories wait in the branch they were merged into, the downstream branches are empty, and no promotion is drawn on any arrow                                                                                                       |
+| `pipeline-p1-open`             | after `promotion:create`, before the merge                  | the open promotion is drawn **on the `integration -> uat` arrow**, gets no branch node of its own, and takes nothing out of `integration` yet: a promotion only moves a story once it is merged                                       |
+| `pipeline-after-p1`            | after the merge and the deployment                          | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                                                                                                            |
+| `pipeline-before-p3`           | before promoting a story that arrived through P1            | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set                                                                                       |
+| `pipeline-after-golive`        | after the `preprod -> main` promotion is merged             | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                                                                                                      |
+| `pipeline-after-second-golive` | after a second `preprod -> main` promotion carrying S7 only | P4 is in no window any more, and S3, S4, S6 still come back in neither `preprod` nor `uat`: `uat` lists S1 and S5, `main` lists S7. The merged promotions of each step are read from the provider, not from the windows (issue #2260) |
 
 The extension needs its provider token, which it reads from a secret named after the remote host:
 dots replaced by underscores, uppercased, plus `_TOKEN`. On `gitlab.hardis-group.com` that is
@@ -402,7 +419,8 @@ pending manual checkbox per org branch.
 | Conflict, kept                         | same with `--on-conflict commit-with-markers`                                                                                                                                 | Pull Request created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description                                                                                                                                                                                                                                                                                         |
 | Conflict, kept for all                 | two conflicting stories in the same promotion, no `--on-conflict`, answer "commit this and every following conflict" at the first one                                         | the second conflict is not asked about: the log holds `Applying the conflict handling chosen earlier: commit-with-markers` and both stories are committed with their markers                                                                                                                                                                                                                              |
 | Conflict prompt commit message         | read `hardis-report/promotion-conflicts-prompt-*.md` of the run above                                                                                                         | the prompt asks for a commit message whose body carries one line per conflicting file, naming the story, what the target side had, what the story added and what was kept                                                                                                                                                                                                                                 |
-| Pull Request creation refused          | unset the provider token (or point it at a project the branch is not in) and run `promotion:create`                                                                           | the branch is still pushed, the warning names **the reason the provider gave** (not "no token"), and a link to the provider's own "new Pull Request" form is printed with the source branch, the target branch, the title and the description already filled in (the branches and the title only when the description is too long for a URL)                                                              |
+| No provider connection                 | unset the provider token, take the GitHub CLI off `PATH`, and run `promotion:create`                                                                                          | since #2236 the command stops with exit 1 and "Promotion branches need the git provider connection", before any branch is created or pushed. The scripted case 35 asserts this                                                                                                                                                                                                                            |
+| Pull Request creation refused          | a connected provider that refuses the creation (point the token at a project the branch is not in). Not scripted: the GitHub harness cannot provoke it                        | the branch is still pushed, the warning names **the reason the provider gave** (not "no token"), and a link to the provider's own "new Pull Request" form is printed with the source branch, the target branch, the title and the description already filled in (the branches and the title only when the description is too long for a URL)                                                              |
 | Deployment from a promotion branch     | run `deploy:smart` (no `--check`) with the promotion branch checked out, as a push pipeline of that branch would                                                              | the command stops with an error naming the branch and the CI setting to fix (`DEPLOY_BRANCHES` on GitLab). With `--check` it runs normally, and so does a deployment of the target branch after the merge                                                                                                                                                                                                 |
 | Marker guard                           | validate that Pull Request                                                                                                                                                    | job fails: `still contains git conflict markers in N file(s): ...`, **and the validation comment of the Pull Request says so**: failure banner, branch, count and the list of files to fix. A red job with no comment is a defect                                                                                                                                                                         |
 | Marker guard, solved                   | solve as the prompt says, push, validate again                                                                                                                                | job passes                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -486,7 +504,7 @@ call, asserted with `backpromote_check` against `reference/backpromote/<file>`.
 | B0 No token                             | `--plan` and `--auto` with no provider variable                                                                                                                        | `no-token.json`: `blocked` on the `gitProvider` check; the run exits 1 with the same message, before listing anything                                                                                                                                                                                                                                                                        |
 | B1 Org of a major branch                | `targetUsername: <DEVUSER>` added to `config/branches/.sfdx-hardis.uat.yml` (not committed), `--plan`                                                                  | `refused-major-org.json`: `blocked`, check `targetOrg` names `uat`                                                                                                                                                                                                                                                                                                                           |
 | B1c Parent branch not allowed           | `--plan --parent-branch feature/E2E-105-apex`                                                                                                                          | `refused-parent.json`: `blocked`, check `parentBranch` says "not an allowed parent branch" (only `developmentBranch` and `availableTargetBranches`)                                                                                                                                                                                                                                          |
-| B2 Production org                       | `--plan --target-org "$ORG"`                                                                                                                                           | `refused-production.json`: `blocked`, "production"                                                                                                                                                                                                                                                                                                                                           |
+| B2 Developer Edition org                | `--plan --target-org "$ORG"`                                                                                                                                           | `developer-edition.json`: `ok`, org type `developer`. Since #2239 a Developer Edition org is a dev environment and is accepted. `refused-production.json` (`blocked`, "production") still describes a real production org, which this harness does not have: not covered                                                                                                                     |
 | B3 First plan                           | `--plan`, then `--plan --from-pull-request $S1 --run-id <runId>` with `SFDX_HARDIS_PROGRESS_FILE`                                                                      | `plan-first.json`: `ok`, org type `scratch`, `scan.found` false, nothing selected, no window, `S1` `S2` `S3` not backpromoted. `plan-from-s1.json`: window from `S1`, the three resources, the four actions not run yet, every file `missingInOrg`. The progress file holds `history`, `delta`, `retrieve`. The checkout is untouched and clean                                              |
 | B4 Run from S1                          | `--auto --from-pull-request $S1 --run-id <runId>`                                                                                                                      | `run-1.json`: `ok`, 3 deployed, `e2e-pre-S1`, `e2e-post-S2`, `e2e-pre-S3` run, `e2e-manual-S1` pending, nothing excluded, comments on `S1` `S2` `S3`, checkout on `backpromote/integration/devorg1` (original `feature/E2E-401-dev`), branch not pushed (no merge). The org holds `E2E_S1..S3`. C1: each Pull Request has one Backpromotes comment with one complete row and its action rows |
 | B5 Up to date, manual action            | `--plan`, then `--confirm-action e2e-manual-$S1`                                                                                                                       | `plan-up-to-date.json`: `nothingToDo`, `scan.found` true, the three rows set. `confirm.json`: mode `confirm`. C2: the action row of `e2e-manual-S1` is `success` (one row)                                                                                                                                                                                                                   |
@@ -612,6 +630,20 @@ Read the numbers with these in mind:
   orgs of the previous run: deleting one does not give a signup back, and the run of section 6bis
   then has no org to deploy to. The Cloudity developer Dev Hub is on `America/Los_Angeles`, so the
   counter resets at 07:00 or 08:00 UTC.
+- **The Dev Hub also caps the ACTIVE scratch orgs, at 3, and the CI of sfdx-hardis uses the same
+  Dev Hub.** Every `tests-org` run of a sfdx-hardis Pull Request leaves a one-day
+  `CI-hardis-nut-shared-*` scratch org behind. Two of them plus the first developer org make the
+  second `sf org create scratch` answer `LIMIT_EXCEEDED ... active scratch org limit`, with
+  `DailyScratchOrgs` still at 6 (2026-10-02). `sf limits api display` shows `ActiveScratchOrgs`
+  remaining; `SELECT Id, SignupUsername, OrgName FROM ActiveScratchOrg` on the Dev Hub names them,
+  and `sf data delete record --sobject ActiveScratchOrg --record-id <id>` frees the slot of a CI org
+  whose run is over. Check it before `backpromote-setup.sh`: the setup merges its stories before it
+  creates the orgs, so a failure there costs a repository.
+- **A workstation short on memory fails jobs in ways that look like product defects.** Each job
+  starts several node processes; with under 1 GB free a deployment action as plain as `echo` fails
+  with `Command failed` and no output (2026-10-02, the retrofit validation), and the harness may
+  stop the whole script. Read the free memory before a run, and treat a spawn failure with no
+  output as the machine first.
 - **Section 6bis needs its own repository when section 4 also runs.** `backpromote-setup.sh` creates
   `feature/E2E-101-alpha`, `feature/E2E-102-beta` and `feature/E2E-103-gamma` itself, which are the
   branch names of the User Stories of section 3: run the two halves against two throwaway

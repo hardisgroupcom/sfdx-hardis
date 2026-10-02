@@ -114,7 +114,7 @@ async function fetchDeclaredPullRequests(gitProvider: any, promotionPr: CommonPu
  * Promotion Pull Requests merged into a branch or any branch downstream of it (following
  * mergeTargets). Used to tell which stories of a window were already shipped through one.
  */
-async function listDownstreamPromotionPullRequests(
+export async function listDownstreamPromotionPullRequests(
   gitProvider: any,
   fromBranch: string,
   majorOrgs: any[],
@@ -193,7 +193,7 @@ async function completeWindowWithPromotions(
 /**
  * Oldest creation date of a set of Pull Requests, used to bound provider queries.
  */
-function oldestPullRequestDate(pullRequests: CommonPullRequestInfo[]): Date | null {
+export function oldestPullRequestDate(pullRequests: CommonPullRequestInfo[]): Date | null {
   const times = pullRequests
     .map((pr) => new Date(pr.createdDate || pr.mergedDate || ''))
     .filter((date) => !isNaN(date.getTime()))

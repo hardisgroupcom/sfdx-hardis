@@ -150,9 +150,11 @@ e2e_backpromote_json bp-refused-parent --plan --parent-branch feature/E2E-105-ap
 check_plan B1c-plan bp-refused-parent "$BPX/refused-parent.json"
 
 echo
-echo "=== B2 production org ==="
+# A Developer Edition org is somebody's dev environment since #2239: it is accepted, with org type
+# "developer". A real production org (refused-production.json) is not available to this harness.
+echo "=== B2 Developer Edition org: accepted as a dev environment ==="
 e2e_backpromote_json bp-refused-prod --plan --parent-branch integration --target-org "$ORG"
-check_plan B2-plan bp-refused-prod "$BPX/refused-production.json"
+check_plan B2-plan bp-refused-prod "$BPX/developer-edition.json"
 
 echo
 echo "=== B3 first plan: no history, then the window from S1 ==="
