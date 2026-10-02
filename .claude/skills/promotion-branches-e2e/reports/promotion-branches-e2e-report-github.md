@@ -25,15 +25,15 @@ ___
 
 ## Counts
 
-| Section                                                                              | Checks                           | OK                         | FAIL |
-|--------------------------------------------------------------------------------------|----------------------------------|----------------------------|------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline  | 42                               | 41                         | 1    |
-| 6: edge cases, groups g1 to g5                                                       | 44                               | 42                         | 2    |
-| 6: edge group g6, full merge of uat into preprod, plus a pipeline check              | 4                                | 4                          | 0    |
-| 5bis: Pull Request comment audit                                                     | 676 checks over 35 Pull Requests | all                        | 0    |
-| 7bis: single place in the diagram                                                    | 1                                | 1                          | 0    |
-| 6bis: backpromote B0 to B16, C1 to C4, on `-20`                                      | 63                               | 62                         | 1    |
-| 7ter: flag-off A/B against `origin/main` (`045f727aa`), second pair                  | 5 files compared                 | `TOTAL DIFFERING LINES: 0` | 0    |
+| Section                                                                             | Checks                           | OK                         | FAIL |
+|-------------------------------------------------------------------------------------|----------------------------------|----------------------------|------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                               | 41                         | 1    |
+| 6: edge cases, groups g1 to g5                                                      | 44                               | 42                         | 2    |
+| 6: edge group g6, full merge of uat into preprod, plus a pipeline check             | 4                                | 4                          | 0    |
+| 5bis: Pull Request comment audit                                                    | 676 checks over 35 Pull Requests | all                        | 0    |
+| 7bis: single place in the diagram                                                   | 1                                | 1                          | 0    |
+| 6bis: backpromote B0 to B16, C1 to C4, on `-20`                                     | 63                               | 62                         | 1    |
+| 7ter: flag-off A/B against `origin/main` (`045f727aa`), second pair                 | 5 files compared                 | `TOTAL DIFFERING LINES: 0` | 0    |
 
 The four failures are not product defects. One came from the workstation running out of memory,
 three from expectations the product had moved past. Each is explained below. The counts are the
