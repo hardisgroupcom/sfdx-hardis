@@ -393,3 +393,34 @@ CVE-2026-85063
 # Same assessment as the GHSA-5p4m-2wfm-xmqj entry above: DoS only, and apexdocs parses YAML the release manager owns (its own config file and the project sources), never untrusted remote input. Remove once @cparra/apexdocs bumps its js-yaml pin. Added 2026-09-09.
 CVE-2026-84375
 GHSA-2883-xcg3-v3hh
+
+# https://avd.aquasec.com/nvd/cve-2026-102990 (GHSA-c475-qrg2-pj4r)
+# basic-ftp: parsing a crafted Unix directory listing burns CPU without bound (DoS, HIGH). Only fixed in 6.2.1, there is no 5.x backport.
+# sfdx-hardis own tree is patched: yarn.lock now resolves basic-ftp to 6.2.1. The 5.3.1 copies left in both images belong to the npm-shrinkwrapped @salesforce/cli, to the sfdx-git-delta plugin and to the Salesforce CLI plugins folder, where get-uri still declares "basic-ftp": "^5.3.1" (true of its latest release 8.0.1), so no install can pick 6.x and our yarn resolutions do not apply there.
+# basic-ftp is only reached through proxy-agent -> pac-proxy-agent -> get-uri, when a proxy auto-config file is served from an ftp:// URL. Neither sfdx-hardis nor the Salesforce CLI lists an FTP directory, and the worst case is a stalled one-shot CI job. Remove once get-uri moves to basic-ftp 6. Added 2026-10-02.
+CVE-2026-102990
+
+# https://avd.aquasec.com/nvd/cve-2026-102276 + cve-2026-102278 (GHSA-6j4f-fj2g-mc7p, GHSA-qhr7-859c-m2p7)
+# brace-expansion: crafted brace patterns exhaust the stack (CVE-2026-102276) and nested patterns recurse without limit (CVE-2026-102278), both crash the process (DoS, HIGH). Fixed in 1.1.20, 2.1.6, 3.0.8 and 5.0.11.
+# sfdx-hardis own tree is patched: yarn.lock now resolves 1.1.21, 2.1.7 and 5.0.12. The copies left in both images (2.1.1, 2.1.4, 5.0.6, 5.0.7, 5.0.9) come from the npm-shrinkwrapped @salesforce/cli, from the npm bundled with the Node runtime and inside the Salesforce CLI, and from the sfdx-git-delta plugin, none of which our yarn resolutions can reach.
+# DoS only, and the brace patterns handed to glob/minimatch are our own or come from release-manager-defined config, never from untrusted input. Remove once @salesforce/cli, npm and sfdx-git-delta ship the fixed versions. Added 2026-10-02.
+CVE-2026-102276
+CVE-2026-102278
+
+# https://avd.aquasec.com/nvd/cve-2026-84292
+# fast-uri: the port component is serialized without validation, so a non-numeric port can inject authority delimiters and point the rebuilt URI at another host (HIGH). Fixed in 3.1.7.
+# sfdx-hardis own tree is patched: yarn.lock resolves fast-uri to 3.1.8. The copies left in both images are the vendored ones: 3.1.5 inside the npm-shrinkwrapped @salesforce/cli and 3.1.2 inside the sfdx-git-delta plugin.
+# Same assessment as the earlier fast-uri entries above: it only applies to code that builds a URI from parts with an untrusted port, and fast-uri is only used here by ajv to resolve JSON schema $ref values over schemas we ship ourselves. Added 2026-10-02.
+CVE-2026-84292
+
+# https://avd.aquasec.com/nvd/cve-2026-19534
+# undici: the WebSocket client throws an uncaught TypeError when a server answers the handshake with a subprotocol the client never asked for, which ends the Node process (DoS, HIGH). Fixed in 6.28.1, 7.29.1 and 8.10.2.
+# sfdx-hardis own tree is patched: yarn.lock resolves undici to 8.10.2. The copies left in both images (6.27.0, 6.28.0, 7.29.0, 8.9.0) sit in the npm bundled with the Node runtime and inside the npm-shrinkwrapped @salesforce/cli (its own undici, its bundled npm and @jsforce/jsforce-node).
+# It needs the undici WebSocket client to connect to a hostile server. npm and jsforce-node only use undici for HTTP requests, and the worst case is a crashed one-shot CI job. Remove once @salesforce/cli and npm ship the fixed versions. Added 2026-10-02.
+CVE-2026-19534
+
+# https://avd.aquasec.com/nvd/cve-2026-84961
+# undici: BalancedPool deep-clones its options through JSON, which drops function-valued TLS options such as a custom checkServerIdentity, so a certificate that callback would reject is accepted when it still passes the default Node checks (HIGH). Fixed in 7.29.1 and 8.10.2.
+# sfdx-hardis own tree is patched: yarn.lock resolves undici to 8.10.2. The 7.29.0 and 8.9.0 copies left in both images belong to the npm-shrinkwrapped @salesforce/cli and its @jsforce/jsforce-node.
+# Only applies to code that hands a function-valued connect or tls option to BalancedPool. Client, Pool and Agent are not affected, default hostname and chain validation stays in place, and neither sfdx-hardis nor @jsforce/jsforce-node instantiates BalancedPool. Remove once @salesforce/cli ships undici 7.29.1 / 8.10.2. Added 2026-10-02.
+CVE-2026-84961
