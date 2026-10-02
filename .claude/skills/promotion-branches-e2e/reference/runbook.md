@@ -151,15 +151,15 @@ Each story adds **its own static resource** (never a shared file, so unrelated s
 conflict), plus a `scripts/actions/.sfdx-hardis.<PR>.yml` holding its deployment actions. That file
 travels with the cherry-picked commit, which is one of the things being tested.
 
-| Story | Branch                    | Target      | Actions                   | Test classes        | Custom behavior          |
-|-------|---------------------------|-------------|---------------------------|---------------------|--------------------------|
-| S1    | `feature/E2E-101-alpha`   | integration | pre command + post manual | `PromoE2EAlphaTest` | -                        |
-| S2    | `feature/E2E-102-beta`    | integration | post command              | -                   | `NO_DELTA`               |
-| S3    | `feature/E2E-103-gamma`   | integration | pre command               | `PromoE2EBetaTest`  | `PURGE_FLOW_VERSIONS`    |
-| S4    | `feature/E2E-201-delta`   | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
-| S5    | `feature/E2E-202-epsilon` | uat         | post command              | -                   | -                        |
-| S6    | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
-| S7    | `feature/E2E-302-hotfix-two` | preprod  | post command              | -                   | -                        |
+| Story | Branch                       | Target      | Actions                   | Test classes        | Custom behavior          |
+|-------|------------------------------|-------------|---------------------------|---------------------|--------------------------|
+| S1    | `feature/E2E-101-alpha`      | integration | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S2    | `feature/E2E-102-beta`       | integration | post command              | -                   | `NO_DELTA`               |
+| S3    | `feature/E2E-103-gamma`      | integration | pre command               | `PromoE2EBetaTest`  | `PURGE_FLOW_VERSIONS`    |
+| S4    | `feature/E2E-201-delta`      | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S5    | `feature/E2E-202-epsilon`    | uat         | post command              | -                   | -                        |
+| S6    | `feature/E2E-301-hotfix`     | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
+| S7    | `feature/E2E-302-hotfix-two` | preprod     | post command              | -                   | -                        |
 
 S7 exists for the second go-live of section 4: promoted to `main` on its own, it makes the first
 go-live promotion (P4) leave every window, which is the situation of issue #2260.
@@ -331,13 +331,13 @@ Three things are asserted at every checkpoint, expectations or not: a Pull Reque
 in one branch and one only, every counter bubble equals the length of the list under it, and the
 diagram parses.
 
-| Checkpoint              | When                                             | What it proves                                                                                                                                                                                  |
-|-------------------------|--------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `pipeline-before-p1`    | after the BUILD stream is merged, before P1      | the stories wait in the branch they were merged into, the downstream branches are empty, and no promotion is drawn on any arrow                                                                 |
-| `pipeline-p1-open`      | after `promotion:create`, before the merge       | the open promotion is drawn **on the `integration -> uat` arrow**, gets no branch node of its own, and takes nothing out of `integration` yet: a promotion only moves a story once it is merged |
-| `pipeline-after-p1`     | after the merge and the deployment               | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                                                                      |
-| `pipeline-before-p3`    | before promoting a story that arrived through P1 | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set                                                 |
-| `pipeline-after-golive` | after the `preprod -> main` promotion is merged  | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                                                                |
+| Checkpoint                     | When                                                        | What it proves                                                                                                                                                                                                                        |
+|--------------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pipeline-before-p1`           | after the BUILD stream is merged, before P1                 | the stories wait in the branch they were merged into, the downstream branches are empty, and no promotion is drawn on any arrow                                                                                                       |
+| `pipeline-p1-open`             | after `promotion:create`, before the merge                  | the open promotion is drawn **on the `integration -> uat` arrow**, gets no branch node of its own, and takes nothing out of `integration` yet: a promotion only moves a story once it is merged                                       |
+| `pipeline-after-p1`            | after the merge and the deployment                          | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                                                                                                            |
+| `pipeline-before-p3`           | before promoting a story that arrived through P1            | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set                                                                                       |
+| `pipeline-after-golive`        | after the `preprod -> main` promotion is merged             | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                                                                                                      |
 | `pipeline-after-second-golive` | after a second `preprod -> main` promotion carrying S7 only | P4 is in no window any more, and S3, S4, S6 still come back in neither `preprod` nor `uat`: `uat` lists S1 and S5, `main` lists S7. The merged promotions of each step are read from the provider, not from the windows (issue #2260) |
 
 The extension needs its provider token, which it reads from a secret named after the remote host:
