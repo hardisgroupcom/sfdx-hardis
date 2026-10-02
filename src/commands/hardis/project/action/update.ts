@@ -20,7 +20,7 @@ import {
 } from '../../../../common/utils/actionUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
-import { RUN_BATCH_CONTEXT, applyRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
+import { RUN_BATCH_CONTEXT, applyRunBatchFlags, hasRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
 import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 
@@ -338,6 +338,8 @@ Required in agent mode:
       action.parameters = applyRunBatchFlags(action.parameters, flags);
       // An action switched to run-batch takes its only context, unless one is passed and then validated
       if (flags.type && !flags.context) action.context = RUN_BATCH_CONTEXT;
+    } else if (hasRunBatchFlags(flags)) {
+      throw new SfError(t('actionRunBatchFlagsOnOtherType', { type: action.type }));
     }
     if (flags['packagexml-items']) {
       action.parameters = {

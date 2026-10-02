@@ -43,6 +43,7 @@ A `run-batch` action runs a `Database.Batchable` Apex class once, before or afte
 - `runMode: wait` (default) follows the job until it ends. The action fails when the job fails, is aborted, has batches in error, or is not over after `waitTimeoutMinutes` (60 by default).
 - `successEvenIfBatchErrors: true` keeps the action successful when the job completes with batches in error.
 - `runMode: no-wait` launches the batch and goes on with the deployment.
+- No batch is launched when a job of the class is still running, or completed less than 60 minutes ago with a result the action accepts: that job stands for this run.
 
 A run-batch action only runs in the `process-deployment-only` context, never during a deployment check.
 

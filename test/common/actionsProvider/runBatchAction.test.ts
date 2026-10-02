@@ -2,8 +2,10 @@ import { expect } from 'chai';
 import {
   applyRunBatchFlags,
   buildRunBatchApex,
+  decideExistingBatchJob,
   evaluateBatchJob,
   extractBatchJobId,
+  hasRunBatchFlags,
   isBatchableApexBody,
   listRunBatchParameterErrors,
   normalizeRunBatchParameters,
@@ -53,6 +55,16 @@ describe('listRunBatchParameterErrors', () => {
     expect(errors).to.have.lengthOf(1);
   });
 
+  it('rejects a wait timeout that is not a whole number of minutes', () => {
+    for (const waitTimeoutMinutes of [0.5, 0, 'soon']) {
+      const errors = listRunBatchParameterErrors({
+        type: 'run-batch',
+        parameters: { className: 'CrewCapacityBatch', waitTimeoutMinutes: waitTimeoutMinutes as any },
+      });
+      expect(errors, String(waitTimeoutMinutes)).to.have.lengthOf(1);
+    }
+  });
+
   it('only accepts the process-deployment-only context', () => {
     const parameters = { className: 'CrewCapacityBatch' };
     expect(listRunBatchParameterErrors({ type: 'run-batch', parameters, context: 'process-deployment-only' })).to.deep.equal([]);
@@ -91,6 +103,17 @@ describe('applyRunBatchFlags', () => {
       className: 'CrewCapacityBatch',
       runMode: 'wait',
     });
+  });
+});
+
+describe('hasRunBatchFlags', () => {
+  it('is true as soon as one run-batch flag is passed, even a negated one', () => {
+    expect(hasRunBatchFlags({ 'batch-size': 50 })).to.equal(true);
+    expect(hasRunBatchFlags({ 'success-even-if-batch-errors': false })).to.equal(true);
+  });
+
+  it('is false for the flags shared with other types', () => {
+    expect(hasRunBatchFlags({ 'class-name': 'CrewCapacityBatch', label: 'Recalculate' })).to.equal(false);
   });
 });
 
@@ -149,6 +172,51 @@ describe('evaluateBatchJob', () => {
   it('always fails on a failed or aborted job', () => {
     expect(evaluateBatchJob({ Status: 'Failed', NumberOfErrors: 0 }, true)).to.equal('failed');
     expect(evaluateBatchJob({ Status: 'Aborted', NumberOfErrors: 0 }, true)).to.equal('failed');
+  });
+});
+
+describe('decideExistingBatchJob', () => {
+  const now = Date.parse('2026-10-02T12:00:00.000Z');
+  const wait = { runMode: 'wait' as const, batchSize: 200, waitTimeoutMinutes: 60, successEvenIfBatchErrors: false };
+  const noWait = { ...wait, runMode: 'no-wait' as const };
+  const completed = (minutesAgo: number, NumberOfErrors = 0) => ({
+    Id: '7071x00000ABCdeAAH',
+    Status: 'Completed',
+    NumberOfErrors,
+    CompletedDate: new Date(now - minutesAgo * 60 * 1000).toISOString(),
+  });
+
+  it('launches when the class has no job', () => {
+    expect(decideExistingBatchJob(null, wait, now)).to.equal('launch');
+  });
+
+  it('follows a job that is still running', () => {
+    for (const Status of ['Holding', 'Queued', 'Preparing', 'Processing']) {
+      expect(decideExistingBatchJob({ Status }, wait, now), Status).to.equal('follow');
+      expect(decideExistingBatchJob({ Status }, noWait, now), Status).to.equal('follow');
+    }
+  });
+
+  it('reuses a job completed without error in the last hour', () => {
+    expect(decideExistingBatchJob(completed(10), wait, now)).to.equal('reuse');
+  });
+
+  it('launches again when the last job is older than an hour', () => {
+    expect(decideExistingBatchJob(completed(61), wait, now)).to.equal('launch');
+  });
+
+  it('launches again after a recent job with batches in error, unless the action accepts them', () => {
+    expect(decideExistingBatchJob(completed(10, 2), wait, now)).to.equal('launch');
+    expect(decideExistingBatchJob(completed(10, 2), { ...wait, successEvenIfBatchErrors: true }, now)).to.equal('reuse');
+    expect(decideExistingBatchJob(completed(10, 2), noWait, now)).to.equal('reuse');
+  });
+
+  it('launches again after a failed or aborted job', () => {
+    for (const Status of ['Failed', 'Aborted']) {
+      const job = { ...completed(10), Status };
+      expect(decideExistingBatchJob(job, wait, now), Status).to.equal('launch');
+      expect(decideExistingBatchJob(job, noWait, now), Status).to.equal('launch');
+    }
   });
 });
 

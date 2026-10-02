@@ -24,6 +24,7 @@ import {
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
 import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
+import { hasRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -71,6 +72,7 @@ A \`run-batch\` action runs a \`Database.Batchable\` Apex class once, before or 
 - \`runMode: wait\` (default) follows the job until it ends. The action fails when the job fails, is aborted, has batches in error, or is not over after \`waitTimeoutMinutes\` (60 by default).
 - \`successEvenIfBatchErrors: true\` keeps the action successful when the job completes with batches in error.
 - \`runMode: no-wait\` launches the batch and goes on with the deployment.
+- No batch is launched when a job of the class is still running, or completed less than 60 minutes ago with a result the action accepts: that job stands for this run.
 
 A run-batch action only runs in the \`process-deployment-only\` context, never during a deployment check.
 
@@ -231,6 +233,10 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     const type: PrePostCommand['type'] = agentMode || isCI
       ? this.requireFlag(flags.type, 'type') as PrePostCommand['type']
       : flags.type || await this.promptType(when);
+
+    if (type !== 'run-batch' && hasRunBatchFlags(flags)) {
+      throw new SfError(t('actionRunBatchFlagsOnOtherType', { type }));
+    }
 
     // Collect label
     const label: string = agentMode || isCI

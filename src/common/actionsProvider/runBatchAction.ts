@@ -23,6 +23,11 @@ export const RUN_BATCH_DEFAULT_WAIT_TIMEOUT_MINUTES = 60;
 // Written by the anonymous Apex in the debug log, so the job can be followed
 export const RUN_BATCH_JOB_ID_MARKER = 'SFDX_HARDIS_BATCH_JOB_ID=';
 const RUN_BATCH_POLL_INTERVAL_MS = 10000;
+// A wait can last an hour: one query that fails must not fail an action whose batch is still running
+const RUN_BATCH_MAX_POLL_FAILURES = 3;
+// A deployment retried after a wait timeout must not process the same records twice
+export const RUN_BATCH_RECENT_JOB_MINUTES = 60;
+const RUN_BATCH_FLAGS = ['run-mode', 'batch-size', 'wait-timeout', 'success-even-if-batch-errors'];
 
 export interface RunBatchOptions {
   runMode: RunBatchMode;
@@ -34,6 +39,9 @@ export interface RunBatchOptions {
 /** What the state of an AsyncApexJob means for the action waiting for it. */
 export type RunBatchJobOutcome = 'running' | 'success' | 'successWithErrors' | 'completedWithErrors' | 'failed';
 
+/** What to do with the latest job of the class found in the org before launching the batch. */
+export type RunBatchExistingJobDecision = 'launch' | 'follow' | 'reuse';
+
 /** Applies the run-batch flags of action:create and action:update on top of the current parameters. */
 export function applyRunBatchFlags(parameters: PrePostCommand['parameters'], flags: any): Record<string, any> {
   const updated: Record<string, any> = { ...(parameters || {}) };
@@ -42,6 +50,11 @@ export function applyRunBatchFlags(parameters: PrePostCommand['parameters'], fla
   if (flags['wait-timeout'] !== undefined) updated.waitTimeoutMinutes = flags['wait-timeout'];
   if (flags['success-even-if-batch-errors'] !== undefined) updated.successEvenIfBatchErrors = flags['success-even-if-batch-errors'];
   return normalizeRunBatchParameters(updated);
+}
+
+/** True when a run-batch flag of action:create or action:update is passed. */
+export function hasRunBatchFlags(flags: any): boolean {
+  return RUN_BATCH_FLAGS.some((flag) => flags?.[flag] !== undefined);
 }
 
 /**
@@ -87,7 +100,7 @@ export function listRunBatchParameterErrors(action: Partial<PrePostCommand>): st
   }
   if (!isMissing(parameters.waitTimeoutMinutes)) {
     const waitTimeoutMinutes = Number(parameters.waitTimeoutMinutes);
-    if (!Number.isFinite(waitTimeoutMinutes) || waitTimeoutMinutes <= 0) {
+    if (!Number.isInteger(waitTimeoutMinutes) || waitTimeoutMinutes < 1) {
       errors.push(t('actionValidationRunBatchInvalidWaitTimeout', { waitTimeoutMinutes: parameters.waitTimeoutMinutes }));
     }
   }
@@ -113,6 +126,30 @@ export function resolveRunBatchOptions(parameters: PrePostCommand['parameters'])
 /** True when the class body declares the Database.Batchable interface. */
 export function isBatchableApexBody(body: string): boolean {
   return /Database\s*\.\s*Batchable/i.test(body || '');
+}
+
+/**
+ * Decides whether the latest batch job of the class makes a new launch useless.
+ * - follow: it is still running, so it is this job the action deals with.
+ * - reuse: it completed recently with a result the action accepts, so it stands for this run.
+ * - launch: there is none, it is old, or it failed, was aborted or had errors the action refuses.
+ */
+export function decideExistingBatchJob(job: any, options: RunBatchOptions, now: number = Date.now()): RunBatchExistingJobDecision {
+  if (!job?.Status) {
+    return 'launch';
+  }
+  const outcome = evaluateBatchJob(job, options.successEvenIfBatchErrors);
+  if (outcome === 'running') {
+    return 'follow';
+  }
+  const completedAt = job.CompletedDate ? new Date(job.CompletedDate).getTime() : NaN;
+  const isRecent = Number.isFinite(completedAt) && now - completedAt <= RUN_BATCH_RECENT_JOB_MINUTES * 60 * 1000;
+  if (job.Status !== 'Completed' || !isRecent) {
+    return 'launch';
+  }
+  // Without waiting, the result of the batch is not looked at: a recent run is enough
+  const isAccepted = options.runMode === 'no-wait' || outcome === 'success' || outcome === 'successWithErrors';
+  return isAccepted ? 'reuse' : 'launch';
 }
 
 /** Anonymous Apex launching the batch and writing its job id in the debug log. */
@@ -199,10 +236,26 @@ export class RunBatchAction extends ActionsProvider {
       return this.fail(t('runBatchConstructorNotVisible', { className }));
     }
 
-    // 2. Launch the batch with anonymous Apex
+    // 2. Do not launch a batch that is still running, or that has just completed
+    const latestJob = await this.findLatestJob(apexClass.Id, conn);
+    const existingJobDecision = decideExistingBatchJob(latestJob, options);
+    if (existingJobDecision === 'reuse') {
+      const message = t('runBatchRecentlyCompleted', { className, jobId: latestJob.Id, minutes: RUN_BATCH_RECENT_JOB_MINUTES });
+      uxLog('log', this, c.green(`[DeploymentActions] ${message}`));
+      return { statusCode: 'success', output: message };
+    }
+    if (existingJobDecision === 'follow') {
+      const message = t('runBatchAlreadyRunning', { className, jobId: latestJob.Id });
+      uxLog('log', this, c.grey(`[DeploymentActions] ${message}`));
+      return options.runMode === 'no-wait'
+        ? { statusCode: 'success', output: message }
+        : this.waitForJob(latestJob.Id, className, options, conn);
+    }
+
+    // 3. Launch the batch with anonymous Apex
     uxLog('log', this, c.grey(`[DeploymentActions] ${t('runBatchLaunching', { className, batchSize: options.batchSize })}`));
-    // A few minutes of margin: the clock of this machine and the clock of the org can differ
-    const launchedAfter = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    // Known before the launch, so the job found afterwards cannot be an older run of the class
+    const previousJobId = latestJob?.Id || null;
     const tmpDir = await createTempDir();
     const apexFile = path.join(tmpDir, 'run-batch.apex');
     await fs.writeFile(apexFile, buildRunBatchApex(className, options.batchSize));
@@ -220,8 +273,12 @@ export class RunBatchAction extends ActionsProvider {
       return { statusCode: 'failed', output: buildActionOutput(res) };
     }
 
-    // 3. Find the job: in the debug log, else the latest batch job of that class
-    const jobId = extractBatchJobId(buildActionOutput(res)) || (await this.findLatestJobId(apexClass.Id, launchedAfter, conn));
+    // 4. Find the job: in the debug log, else the batch job of that class created since the launch
+    let jobId = extractBatchJobId(buildActionOutput(res));
+    if (!jobId) {
+      const latestJobId = (await this.findLatestJob(apexClass.Id, conn))?.Id || null;
+      jobId = latestJobId !== previousJobId ? latestJobId : null;
+    }
     if (!jobId) {
       if (options.runMode === 'no-wait') {
         // The Apex ran without error, so the batch is enqueued: nothing more is expected from it
@@ -235,7 +292,7 @@ export class RunBatchAction extends ActionsProvider {
       return { statusCode: 'success', output: t('runBatchLaunched', { className, jobId }) };
     }
 
-    // 4. Wait for the job to end
+    // 5. Wait for the job to end
     return this.waitForJob(jobId, className, options, conn);
   }
 
@@ -244,47 +301,59 @@ export class RunBatchAction extends ActionsProvider {
     return { statusCode: 'failed', output: message };
   }
 
-  private async findLatestJobId(apexClassId: string, launchedAfter: string, conn: Connection): Promise<string | null> {
-    const jobQuery = `SELECT Id FROM AsyncApexJob WHERE ApexClassId = '${apexClassId}' AND JobType = 'BatchApex' AND CreatedDate >= ${launchedAfter} ORDER BY CreatedDate DESC LIMIT 1`;
+  private async findLatestJob(apexClassId: string, conn: Connection): Promise<any | null> {
+    const jobQuery = `SELECT Id, Status, NumberOfErrors, CompletedDate FROM AsyncApexJob WHERE ApexClassId = '${apexClassId}' AND JobType = 'BatchApex' ORDER BY CreatedDate DESC LIMIT 1`;
     const jobResult = await soqlQuery(jobQuery, conn);
-    return jobResult.records?.[0]?.Id || null;
+    return jobResult.records?.[0] || null;
   }
 
   private async waitForJob(jobId: string, className: string, options: RunBatchOptions, conn: Connection): Promise<ActionResult> {
     const deadline = Date.now() + options.waitTimeoutMinutes * 60 * 1000;
     const jobQuery = `SELECT Id, Status, NumberOfErrors, JobItemsProcessed, TotalJobItems, ExtendedStatus FROM AsyncApexJob WHERE Id = '${jobId}'`;
     let lastProgress = '';
+    let pollFailures = 0;
     for (; ;) {
-      const job = (await soqlQuery(jobQuery, conn)).records?.[0] || {};
-      const numbers = {
-        status: job.Status || '',
-        processed: job.JobItemsProcessed || 0,
-        total: job.TotalJobItems || 0,
-        errors: job.NumberOfErrors || 0,
-        extendedStatus: job.ExtendedStatus || '',
-      };
-      const outcome = evaluateBatchJob(job, options.successEvenIfBatchErrors);
-      if (outcome === 'success') {
-        const message = t('runBatchSuccess', { className, ...numbers });
-        uxLog('log', this, c.green(`[DeploymentActions] ${message}`));
-        return { statusCode: 'success', output: message };
+      let job: any = null;
+      try {
+        job = (await soqlQuery(jobQuery, conn)).records?.[0] || {};
+        pollFailures = 0;
+      } catch (e) {
+        pollFailures++;
+        if (pollFailures >= RUN_BATCH_MAX_POLL_FAILURES) {
+          throw e;
+        }
       }
-      if (outcome === 'successWithErrors') {
-        const message = t('runBatchCompletedWithErrorsIgnored', { className, ...numbers });
-        uxLog('warning', this, c.yellow(`[DeploymentActions] ${message}`));
-        return { statusCode: 'success', output: message };
-      }
-      if (outcome === 'completedWithErrors') {
-        return this.fail(t('runBatchCompletedWithErrors', { className, ...numbers }));
-      }
-      if (outcome === 'failed') {
-        return this.fail(t('runBatchFailed', { className, ...numbers }));
-      }
-      // Still running: one line each time the numbers move, not one per poll
-      const progress = `${numbers.status}|${numbers.processed}|${numbers.total}|${numbers.errors}`;
-      if (progress !== lastProgress) {
-        lastProgress = progress;
-        uxLog('log', this, c.grey(`[DeploymentActions] ${t('runBatchWaiting', { className, jobId, ...numbers })}`));
+      if (job) {
+        const numbers = {
+          status: job.Status || '',
+          processed: job.JobItemsProcessed || 0,
+          total: job.TotalJobItems || 0,
+          errors: job.NumberOfErrors || 0,
+          extendedStatus: job.ExtendedStatus || '',
+        };
+        const outcome = evaluateBatchJob(job, options.successEvenIfBatchErrors);
+        if (outcome === 'success') {
+          const message = t('runBatchSuccess', { className, ...numbers });
+          uxLog('log', this, c.green(`[DeploymentActions] ${message}`));
+          return { statusCode: 'success', output: message };
+        }
+        if (outcome === 'successWithErrors') {
+          const message = t('runBatchCompletedWithErrorsIgnored', { className, ...numbers });
+          uxLog('warning', this, c.yellow(`[DeploymentActions] ${message}`));
+          return { statusCode: 'success', output: message };
+        }
+        if (outcome === 'completedWithErrors') {
+          return this.fail(t('runBatchCompletedWithErrors', { className, ...numbers }));
+        }
+        if (outcome === 'failed') {
+          return this.fail(t('runBatchFailed', { className, ...numbers }));
+        }
+        // Still running: one line each time the numbers move, not one per poll
+        const progress = `${numbers.status}|${numbers.processed}|${numbers.total}|${numbers.errors}`;
+        if (progress !== lastProgress) {
+          lastProgress = progress;
+          uxLog('log', this, c.grey(`[DeploymentActions] ${t('runBatchWaiting', { className, jobId, ...numbers })}`));
+        }
       }
       if (Date.now() >= deadline) {
         return this.fail(t('runBatchTimeout', { className, jobId, minutes: options.waitTimeoutMinutes }));
