@@ -409,6 +409,7 @@ Six action types are available:
 | `publish-community` | `--community-name`                  |
 | `manual`            | `--instructions`                    |
 | `schedule-batch`    | `--class-name`, `--cron-expression` |
+| `run-batch`         | `--class-name`                      |
 
 ---
 
@@ -477,6 +478,7 @@ When `--pr-id` is omitted for `pr` scope, actions are saved to a **draft file** 
 | `publish-community` | `--community-name`                  |
 | `manual`            | `--instructions`                    |
 | `schedule-batch`    | `--class-name`, `--cron-expression` |
+| `run-batch`         | `--class-name`                      |
 
 #### Optional flags
 
@@ -622,11 +624,12 @@ sf hardis:project:action:list --agent --scope <project|branch|pr> --when <pre-de
 ```bash
 sf hardis:project:action:create --agent \
   --scope <project|branch|pr> --when <pre-deploy|post-deploy> \
-  --type <command|apex|data|publish-community|manual|schedule-batch> \
+  --type <command|apex|data|publish-community|manual|schedule-batch|run-batch> \
   --label "<label>" \
   [--command "<cmd>"] [--apex-script <path>] [--sfdmu-project <name>] \
   [--community-name <name>] [--instructions "<text>"] \
   [--class-name <ClassName>] [--cron-expression "<expr>"] \
+  [--run-mode wait|no-wait] [--batch-size <n>] [--wait-timeout <minutes>] [--success-even-if-batch-errors] \
   [--pr-id <id>] [--context all|check-deployment-only|process-deployment-only]
 ```
 

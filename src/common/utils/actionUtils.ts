@@ -254,6 +254,9 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
     if (!action.parameters?.cronExpression) {
       errors.push(t('actionValidationNoCronExpression'));
     }
+  } else if (type === 'run-batch') {
+    const { listRunBatchParameterErrors } = await import('../actionsProvider/runBatchAction.js');
+    errors.push(...listRunBatchParameterErrors(action));
   } else if (type === 'remove-packagexml-items') {
     const { findInvalidPackageXmlItems, normalizePackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
     const items = normalizePackageXmlItems(action.parameters?.packageXmlItems);
@@ -573,7 +576,7 @@ export async function getPrIdFromUserConfig(): Promise<string | null> {
   }
 }
 
-export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'];
+export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'run-batch', 'remove-packagexml-items'];
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];

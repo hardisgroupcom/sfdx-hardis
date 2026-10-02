@@ -20,6 +20,7 @@ import {
 } from '../../../../common/utils/actionUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
+import { RUN_BATCH_CONTEXT, applyRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
 import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 
@@ -56,6 +57,7 @@ Required in agent mode:
 
 - Reads the action list from the YAML config file, finds the action by ID, applies updates, validates, and writes back.
 - Changing \`--type\` clears old type-specific parameters and requires new ones.
+- A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
 </details>
 `;
 
@@ -84,7 +86,7 @@ Required in agent mode:
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
     type: Flags.string({
-      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, remove-packagexml-items) or the id of a project custom function',
+      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'New label for the action',
@@ -105,13 +107,27 @@ Required in agent mode:
       description: 'New manual instructions text (for manual type)',
     }),
     'class-name': Flags.string({
-      description: 'New Apex batch class name (for schedule-batch type). Write a global class of a managed package with its namespace: ns.ClassName',
+      description: 'New Apex batch class name (for schedule-batch and run-batch types). Write a global class of a managed package with its namespace: ns.ClassName',
     }),
     'cron-expression': Flags.string({
       description: 'New cron expression (for schedule-batch type)',
     }),
     'job-name': Flags.string({
       description: 'New job name for schedule-batch',
+    }),
+    'run-mode': Flags.string({
+      options: ['wait', 'no-wait'],
+      description: 'For run-batch type: wait for the batch to succeed, or launch it without waiting for its result (default: wait)',
+    }),
+    'batch-size': Flags.integer({
+      description: 'Batch size for run-batch type (optional, 1 to 2000, defaults to 200)',
+    }),
+    'wait-timeout': Flags.integer({
+      description: 'Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)',
+    }),
+    'success-even-if-batch-errors': Flags.boolean({
+      description: 'For run-batch type in wait mode: keep the action successful when the batch completes with errors',
+      allowNo: true,
     }),
     'packagexml-items': Flags.string({
       description: 'New semicolon-separated list of package.xml items to remove, each in format TypeName:Member1,Member2 (for remove-packagexml-items type)',
@@ -255,6 +271,14 @@ Required in agent mode:
       if (ce) action.parameters = { ...action.parameters, cronExpression: ce };
       const jn = await this.promptText(t('enterJobName'), action.parameters?.jobName || '');
       if (jn) action.parameters = { ...action.parameters, jobName: jn };
+    } else if (action.type === 'run-batch') {
+      const cn = await this.promptText(t('enterClassName'), action.parameters?.className || '');
+      if (cn) action.parameters = { ...action.parameters, className: cn };
+      // Asked again as a whole, so leaving the wait mode drops the wait-only parameters
+      action.parameters = {
+        className: action.parameters?.className,
+        ...(await this.collectRunBatchParameters({}, false, action.parameters)),
+      };
     } else if (action.type === 'remove-packagexml-items') {
       const itemsRaw = await this.promptText(t('enterPackageXmlItems'), normalizePackageXmlItems(action.parameters?.packageXmlItems).join(';'));
       if (itemsRaw) {
@@ -271,8 +295,13 @@ Required in agent mode:
       action.parameters = await this.promptCustomFunctionInputs(definition, action.parameters || {});
     }
 
-    const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
-    if (newContext) action.context = newContext;
+    if (action.type === 'run-batch') {
+      // run-batch only runs in one context: there is nothing to ask
+      action.context = RUN_BATCH_CONTEXT;
+    } else {
+      const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
+      if (newContext) action.context = newContext;
+    }
 
     // Both keys are assigned, so switching the restriction mode clears the previous list
     const branchFilter = await this.promptTargetBranchFilter(action);
@@ -305,6 +334,11 @@ Required in agent mode:
     if (flags['class-name']) action.parameters = { ...action.parameters, className: flags['class-name'] };
     if (flags['cron-expression']) action.parameters = { ...action.parameters, cronExpression: flags['cron-expression'] };
     if (flags['job-name']) action.parameters = { ...action.parameters, jobName: flags['job-name'] };
+    if (action.type === 'run-batch') {
+      action.parameters = applyRunBatchFlags(action.parameters, flags);
+      // An action switched to run-batch takes its only context, unless one is passed and then validated
+      if (flags.type && !flags.context) action.context = RUN_BATCH_CONTEXT;
+    }
     if (flags['packagexml-items']) {
       action.parameters = {
         ...action.parameters,

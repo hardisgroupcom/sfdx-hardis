@@ -17,6 +17,7 @@ export type BuiltInActionType =
   | 'publish-community'
   | 'manual'
   | 'schedule-batch'
+  | 'run-batch'
   | 'remove-packagexml-items';
 
 export interface PrePostCommand {
@@ -32,9 +33,13 @@ export interface PrePostCommand {
     sfdmuProject?: string;   // for 'data' actions
     communityName?: string;  // for 'publish-community' actions
     instructions?: string;   // for 'manual' actions
-    className?: string;      // for 'schedule-batch' actions
+    className?: string;      // for 'schedule-batch' and 'run-batch' actions
     cronExpression?: string;  // for 'schedule-batch' actions
     jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
+    runMode?: 'wait' | 'no-wait'; // for 'run-batch' actions (optional, defaults to wait)
+    batchSize?: number;      // for 'run-batch' actions (optional, defaults to 200)
+    waitTimeoutMinutes?: number; // for 'run-batch' actions in wait mode (optional, defaults to 60)
+    successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     [key: string]: any;
   };
@@ -125,6 +130,10 @@ export abstract class ActionsProvider {
     else if (type === 'schedule-batch') {
       const ScheduleBatchAction = await import('./scheduleBatchAction.js');
       actionInstance = new ScheduleBatchAction.ScheduleBatchAction();
+    }
+    else if (type === 'run-batch') {
+      const RunBatchAction = await import('./runBatchAction.js');
+      actionInstance = new RunBatchAction.RunBatchAction();
     }
     else if (type === 'remove-packagexml-items') {
       const RemovePackageXmlItemsAction = await import('./removePackageXmlItemsAction.js');

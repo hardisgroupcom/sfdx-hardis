@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#run-an-apex-batch): new Run Batch action, to run an Apex batch once before or after a deployment and optionally wait for its result.
 - Documentation and command help now link to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/): a Schedule Batch action can now schedule a class of an installed package, a global class of a managed package being written `ns.ClassName`.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no item of the deployment package matches package-no-overwrite.xml, even when their metadata types match. A delta deployment touching `CustomObject: Lead` while package-no-overwrite.xml protects `CustomObject: Account` now saves those minutes. The split packages of a deployment plan are checked too.

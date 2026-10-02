@@ -202,6 +202,22 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(body).to.contain('| Job name | MyBatch_Schedule |');
     });
 
+    it('lists the run-batch parameters as rows', () => {
+      const defs = new Map<string, ActionDef>([['action-1', actionDef({
+        type: 'run-batch',
+        command: '',
+        parameters: { className: 'MyBatch', runMode: 'wait', batchSize: 50, waitTimeoutMinutes: 30, successEvenIfBatchErrors: true },
+      })]]);
+      const body = buildDeploymentActionsCommentBody([entry({})], defs, 42);
+
+      expect(body).to.contain('| Class name | `MyBatch` |');
+      expect(body).to.contain('| Run mode | wait |');
+      expect(body).to.contain('| Batch size | 50 |');
+      expect(body).to.contain('| Wait timeout (minutes) | 30 |');
+      expect(body).to.contain('| Success even if batch errors | true |');
+      expect(body).to.not.contain('| runMode |');
+    });
+
     // A pipe would end the cell. Inside inline code the HTML entity is not decoded, so the
     // backslash escape is used there; plain text keeps the entity like the matrix labels.
     it('escapes pipes in property values without breaking the table', () => {

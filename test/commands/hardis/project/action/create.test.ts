@@ -86,6 +86,29 @@ describe('hardis:project:action:create - unit logic', () => {
     expect(result[0].parameters?.jobName).to.equal('NightlyBatch_Schedule');
   });
 
+  it('creates a run-batch action with all parameters', async () => {
+    const action = buildAction({
+      id: randomUUID(),
+      label: 'Recalculate crew capacity',
+      type: 'run-batch',
+      parameters: { className: 'CrewCapacityBatch', runMode: 'wait', batchSize: 50, waitTimeoutMinutes: 30, successEvenIfBatchErrors: true },
+    });
+
+    const actions = await readActions('project', 'pre-deploy');
+    actions.push(action);
+    await writeActions('project', 'pre-deploy', actions);
+
+    const result = await readActions('project', 'pre-deploy');
+    const created = result.find((item) => item.type === 'run-batch');
+    expect(created?.parameters).to.deep.equal({
+      className: 'CrewCapacityBatch',
+      runMode: 'wait',
+      batchSize: 50,
+      waitTimeoutMinutes: 30,
+      successEvenIfBatchErrors: true,
+    });
+  });
+
   it('persists a target branch restriction to the config file', async () => {
     const action = buildAction({
       id: randomUUID(),

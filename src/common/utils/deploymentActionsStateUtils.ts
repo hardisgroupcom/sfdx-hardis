@@ -761,12 +761,18 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
     if (def.parameters?.className) rows.push(['Class name', `\`${def.parameters.className}\``]);
     if (def.parameters?.cronExpression) rows.push(['Cron expression', `\`${def.parameters.cronExpression}\``]);
     if (def.parameters?.jobName) rows.push(['Job name', def.parameters.jobName]);
+  } else if (def.type === 'run-batch') {
+    if (def.parameters?.className) rows.push(['Class name', `\`${def.parameters.className}\``]);
+    rows.push(['Run mode', def.parameters?.runMode === 'no-wait' ? 'no-wait' : 'wait']);
+    if (def.parameters?.batchSize) rows.push(['Batch size', String(def.parameters.batchSize)]);
+    if (def.parameters?.waitTimeoutMinutes) rows.push(['Wait timeout (minutes)', String(def.parameters.waitTimeoutMinutes)]);
+    if (def.parameters?.successEvenIfBatchErrors === true) rows.push(['Success even if batch errors', 'true']);
   } else if (def.type === 'remove-packagexml-items' && Array.isArray(def.parameters?.packageXmlItems)) {
     rows.push(['Package.xml items to remove', def.parameters.packageXmlItems.map((item: string) => `\`${item}\``).join(', ')]);
   }
 
   if (def.parameters) {
-    const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName', 'packageXmlItems']);
+    const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName', 'packageXmlItems', 'runMode', 'batchSize', 'waitTimeoutMinutes', 'successEvenIfBatchErrors']);
     for (const [k, v] of Object.entries(def.parameters)) {
       if (!knownParams.has(k)) {
         rows.push([k, String(v)]);

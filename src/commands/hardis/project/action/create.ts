@@ -36,7 +36,7 @@ export default class ActionCreate extends ActionCommandBase {
 
 **Creates a new deployment action in the project configuration.**
 
-Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, or package.xml items removal) and store them at project, branch, or pull request scope.
+Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, immediate batch run, or package.xml items removal) and store them at project, branch, or pull request scope.
 
 New actions are appended to the end of the action list. Use \`hardis:project:action:reorder\` to change position.
 
@@ -64,6 +64,16 @@ commandsPostDeploy:
 
 When an action does not apply to the branch being deployed, it is reported as skipped in the Pull Request comment, with the reason.
 
+### Run a batch
+
+A \`run-batch\` action runs a \`Database.Batchable\` Apex class once, before or after the metadata deployment. A pre-deploy batch needs its class to be in the target org already.
+
+- \`runMode: wait\` (default) follows the job until it ends. The action fails when the job fails, is aborted, has batches in error, or is not over after \`waitTimeoutMinutes\` (60 by default).
+- \`successEvenIfBatchErrors: true\` keeps the action successful when the job completes with batches in error.
+- \`runMode: no-wait\` launches the batch and goes on with the deployment.
+
+A run-batch action only runs in the \`process-deployment-only\` context, never during a deployment check.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -75,7 +85,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--packagexml-items\` for remove-packagexml-items
+- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items
 
 In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
@@ -96,6 +106,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     '$ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type command --label "Disable triggers" --command "sf apex run --file scripts/disable-triggers.apex"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type data --label "Import test data" --sfdmu-project TestData',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
   ];
 
@@ -109,7 +120,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, remove-packagexml-items) or the id of a project custom function',
+      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'Human-readable label for the action',
@@ -136,13 +147,26 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'Manual instructions text (for manual type)',
     }),
     'class-name': Flags.string({
-      description: 'Apex batch class name (for schedule-batch type). Write a global class of a managed package with its namespace: ns.ClassName',
+      description: 'Apex batch class name (for schedule-batch and run-batch types). Write a global class of a managed package with its namespace: ns.ClassName',
     }),
     'cron-expression': Flags.string({
       description: 'Cron expression (for schedule-batch type)',
     }),
     'job-name': Flags.string({
       description: 'Job name for schedule-batch (optional, defaults to <className>_Schedule)',
+    }),
+    'run-mode': Flags.string({
+      options: ['wait', 'no-wait'],
+      description: 'For run-batch type: wait for the batch to succeed, or launch it without waiting for its result (default: wait)',
+    }),
+    'batch-size': Flags.integer({
+      description: 'Batch size for run-batch type (optional, 1 to 2000, defaults to 200)',
+    }),
+    'wait-timeout': Flags.integer({
+      description: 'Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)',
+    }),
+    'success-even-if-batch-errors': Flags.boolean({
+      description: 'For run-batch type in wait mode: keep the action successful when the batch completes with errors',
     }),
     'packagexml-items': Flags.string({
       description: 'Semicolon-separated list of package.xml items to remove before deployment, each in format TypeName:Member1,Member2 (for remove-packagexml-items type). Example: "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
@@ -252,6 +276,11 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
           parameters.jobName = jobName;
         }
       }
+    } else if (type === 'run-batch') {
+      parameters.className = agentMode || isCI
+        ? this.requireFlag(flags['class-name'], 'class-name')
+        : flags['class-name'] || await this.promptText(t('enterClassName'), '');
+      Object.assign(parameters, await this.collectRunBatchParameters(flags, agentMode || isCI));
     } else if (type === 'remove-packagexml-items') {
       if (when !== 'pre-deploy') {
         throw new SfError(t('actionValidationPackageXmlItemsPreDeployOnly'));
@@ -288,7 +317,8 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     // remove-packagexml-items must also run during deployment checks, so it defaults to all contexts
     const defaultContext = functionDefaults?.context
       || (type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only');
-    const context = (flags.context || (!agentMode && !isCI ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
+    // run-batch only runs in one context: there is nothing to ask
+    const context = (flags.context || (!agentMode && !isCI && type !== 'run-batch' ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
     let allowFailure = flags['allow-failure'] === true ? true : functionDefaults?.allowFailure === true;
