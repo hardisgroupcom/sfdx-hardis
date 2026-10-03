@@ -621,11 +621,19 @@ function sameInstance(url1?: string, url2?: string): boolean {
 }
 
 /**
+ * An authorization worth trying. isExpired is true, false or "unknown": most sandbox and production
+ * authorizations say "unknown" (no expiry recorded), and a truthy check dropped every one of them.
+ */
+export function isUsableAuthorization(auth: { error?: string; isExpired?: boolean | string }): boolean {
+  return !auth.error && auth.isExpired !== true;
+}
+
+/**
  * An org of a major branch already authenticated on this computer, if any: its username first,
  * then any user of its instance
  */
 async function findAuthenticatedConnection(majorOrg: any): Promise<Connection | null> {
-  const authorizations = (await AuthInfo.listAllAuthorizations()).filter((auth) => !auth.error && !auth.isExpired);
+  const authorizations = (await AuthInfo.listAllAuthorizations()).filter(isUsableAuthorization);
   const sameUser = authorizations.find((auth) => sameUsername(auth.username, majorOrg.targetUsername));
   if (sameUser) {
     const org = await Org.create({ aliasOrUsername: sameUser.username });

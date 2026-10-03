@@ -20,6 +20,7 @@ import {
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
 import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext } from '../../../src/common/utils/prePostCommandUtils.js';
 import { validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
+import { isUsableAuthorization } from '../../../src/common/utils/deploymentActionRunUtils.js';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 
 function entry(overrides: Partial<DeploymentActionStateEntry>): DeploymentActionStateEntry {
@@ -274,5 +275,17 @@ describe('Actions tried in a developer org', () => {
     upsertLocalActionState('draft', entry({ status: 'success', orgBranch: 'features/US-1' }));
     expect(getDevOrgSkipReason(action({}), 0, 'draft', 'features/US-1', true)).to.be.a('string');
     expect(getDevOrgSkipReason(action({ runOnlyOnceByOrg: false }), 0, 'draft', 'features/US-1', true)).to.equal(null);
+  });
+});
+
+describe('isUsableAuthorization()', () => {
+  it('keeps an authorization whose expiry is unknown, as most sandboxes report it', () => {
+    expect(isUsableAuthorization({ isExpired: 'unknown' })).to.equal(true);
+    expect(isUsableAuthorization({ isExpired: false })).to.equal(true);
+  });
+
+  it('drops an expired or broken authorization', () => {
+    expect(isUsableAuthorization({ isExpired: true })).to.equal(false);
+    expect(isUsableAuthorization({ isExpired: false, error: 'bad token' })).to.equal(false);
   });
 });
