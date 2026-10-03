@@ -103,6 +103,7 @@ Each action is an object with the following required and optional properties.
 | `excludeTargetBranches` | array   |    No     | Run the action on every target branch except these ones. See [Choose the target orgs](#choose-the-target-orgs).                                                                                  |
 | `allowFailure`          | boolean |    No     | If true and the action fails, the deployment continues and the action is reported as a warning (⚠️) instead of a failure. It runs again on the next deployment, like a failed action.            |
 | `runOnlyOnceByOrg`      | boolean |    No     | Default: `true`. If true, the action runs only once per target org. Execution state is tracked in a dedicated "Deployment Actions" PR comment (see below), no Salesforce custom object required. |
+| `movedFrom`             | integer |    No     | Number of the Pull Request the action was moved from, to fix its definition after it failed. See [Recover a failed action](#recover-a-failed-action).                                            |
 
 </details>
 
@@ -113,7 +114,7 @@ For each action you choose two simple things, visible in the editor:
 - **When**: before or after the metadata deployment.
 - **Execution Contexts**: run it during **validation jobs** (the simulated deployment when the Pull Request is checked), during **deployment jobs** (the real deployment after the merge), or both.
 
-By default, an action **runs only once per org**: once it has been performed in `uat`, it will not run there again, but it will still run in `preprod` and production when your work gets promoted. Failed actions are automatically retried at the next deployment. Manual steps wait until someone confirms them (see below).
+By default, an action **runs only once per org**: once it has been performed in `uat`, it will not run there again, but it will still run in `preprod` and production when your work gets promoted. A failed action runs again at the next deployment that carries its Pull Request: in practice, the promotion to the next org. To fix it in the org where it failed, see [Recover a failed action](#recover-a-failed-action). Manual steps wait until someone confirms them (see below).
 
 > Post-deployment actions are never run when the metadata deployment failed. They are proposed again during the next successful deployment.
 
@@ -158,7 +159,7 @@ The resolved scope is visible in two places:
 - In job logs, as a single line: `Pull Request scope: 5 Pull Request(s) (#4491, #4494, ...)`. Each Running/Skipping line then shows the Pull Request that defines the action.
 - In the check and deployment Pull Request comments, which state which Pull Requests the deployment actions and Apex test classes were collected from, with links.
 
-> If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request. Re-run the failed deployment job, or open a new Pull Request carrying the actions of the previous one.
+> If the deployment job of a feature branch fails, its actions are not picked up by the next merged Pull Request. When the metadata deployment itself failed, re-run the failed deployment job. When only an action failed, see [Recover a failed action](#recover-a-failed-action).
 
 </details>
 
@@ -533,6 +534,7 @@ This works on GitHub, GitLab, Azure DevOps and Bitbucket.
 **Comment structure**: one shared comment per PR, across all CI workflows:
 
 - A **Pending manual actions** checklist: one checkbox per manual action still waiting to be performed in an org.
+- A **Failed actions** checklist: one checkbox per action that failed, or was stopped by a failure, in an org. Ticking it records the action as closed by hand.
 - A **Status by org branch** matrix: one row per action, one column per org branch.
 - A collapsible **Action Details** section with the action properties (type, context, command or script...) and truncated output per org.
 
@@ -548,20 +550,22 @@ Example of the status matrix:
 | Publish Experience site     | post-deploy | ❌ 2024-06-02<br/>[12501](...)  |               ⬜               |
 | Check external callback URL | post-deploy | 👋 2024-06-01<br/>[12345](...) |               ⬜               |
 
-*Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⬜ not run in this org branch yet*
+*Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⏸️ not run, a previous action failed · ↪️ moved to another Pull Request · ⬜ not run in this org branch yet*
 ```
 
 Columns are ordered from dev to production (integration → uat → preprod → prod), rows follow the deployment order (pre-deploy actions first, then post-deploy). Each cell shows the status icon, the execution date and a link to the CI job that performed the action. A *Last updated* date is displayed under the matrix. The action `id` is embedded in each row as an HTML comment for machine parsing.
 
 **Status icons:**
 
-| Icon | Status    | Meaning                                                          |
-|------|-----------|------------------------------------------------------------------|
-| ✅    | `success` | Executed successfully (or confirmed as done via its checkbox)    |
-| ❌    | `failed`  | Executed but failed, will be retried next run                    |
-| 👋   | `manual`  | Manual step - waiting for a human to perform it and tick the box |
-| ⚪    | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`)                |
-| ⬜    | -         | Not run in this org branch yet                                   |
+| Icon | Status    | Meaning                                                            |
+|------|-----------|--------------------------------------------------------------------|
+| ✅    | `success` | Executed successfully (or confirmed as done via its checkbox)      |
+| ❌    | `failed`  | Executed but failed, will be retried next run                      |
+| 👋   | `manual`  | Manual step - waiting for a human to perform it and tick the box   |
+| ⚪    | `skipped` | Skipped (e.g. already run via `runOnlyOnceByOrg`)                  |
+| ⏸️   | `not-run` | Not run because a previous action failed, will be retried next run |
+| ↪️   | `moved`   | Moved to a fix Pull Request (`movedFrom`), runs from there         |
+| ⬜    | -         | Not run in this org branch yet                                     |
 
 > Comments written with the previous format (one row per action and org branch pair) are still parsed, and are migrated to the matrix format on their next update.
 
@@ -569,7 +573,7 @@ Columns are ordered from dev to production (integration → uat → preprod → 
 
 Manual action checklists appear in three kinds of Pull Request comments: check results, deployment results, and the Deployment Actions comment. Every checklist item carries a hidden marker identifying the action and the org branch.
 
-When someone ticks one of these checkboxes (in any of the three comments), the next check or deployment job:
+When someone ticks one of these checkboxes (in any of the three comments), or the checkbox of a failed action, the next check or deployment job:
 
 - records the action as done for that org branch in the Deployment Actions comment,
 - skips it in later deployments to that org (same behavior as a successful `runOnlyOnceByOrg` action),
@@ -578,6 +582,35 @@ When someone ticks one of these checkboxes (in any of the three comments), the n
 This requires the same git provider token as `runOnlyOnceByOrg` state tracking.
 
 </details>
+
+### Recover a failed action
+
+A post-deployment action runs after the metadata deployment, once the Pull Request is merged. When it fails, the metadata is already in the org, the job is red, and the actions after it were not run. The "Deployment Actions" comment of the Pull Request lists them under **Failed actions**: ❌ for the action that failed, ⏸️ for the ones its failure stopped.
+
+You do not need to re-run the whole deployment job. Pick the way that fits the cause:
+
+| The cause                                                                       | What to do                                                                                                          |
+|---------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Something was missing in the org (a record, a permission, a setting), now fixed | **Retry** the action: it runs again in the org, alone, then you choose whether to run the actions it stopped        |
+| The action definition is wrong (script path, class name, parameter)             | **Move it to a fix Pull Request**, correct it there, merge: it runs from the fix Pull Request                       |
+| Someone already did it by hand                                                  | **Mark it as done**: it is recorded as done, with who closed it and when, and later deployments to that org skip it |
+
+**From VS Code**: open the DevOps Pipeline, click the major branch (or the Pull Request), then the **Deployment Actions** tab. Its status column shows each action in each org, and a failed or stopped action offers **Retry**, **Mark as done** and **Move to my Pull Request**.
+
+**From the terminal**:
+
+- Retry: [sf hardis:project:action:run](hardis/project/action/run.md). Without flags, it proposes the recent Pull Requests with failed actions in the org, then their actions. Once the action succeeds, it offers to run only the next stopped action, or all of them.
+- Mark as done: [sf hardis:project:action:set-status](hardis/project/action/set-status.md), or tick the checkbox of the action in the **Failed actions** list of the Pull Request comment (recorded by the next sfdx-hardis job).
+- Move to a fix Pull Request, from your fix branch: `sf hardis:project:action:update --scope pr --pr-id <failed PR> --when post-deploy --action-id <id> --move-to-pr current`. The action keeps its id, leaves the file of the original Pull Request and gets `movedFrom: <failed PR>`. Correct it, then open and merge the fix Pull Request as usual.
+
+Things to know:
+
+- Anyone authenticated to the org can retry an action, production included. The Pull Request comment says who did it: *Run locally by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC*.
+- An action with a `customUsername` runs as that user. When your computer is not authenticated with it, you are asked to log in with it.
+- The action definition is read from your current branch. When the org is a major org and you are on another branch, you are warned and asked to confirm.
+- A pre-deployment action cannot be retried: when it fails, nothing was deployed, re-run the deployment job.
+- Once an action moved to a fix Pull Request has run, the original Pull Request shows it as ↪️ moved, with a link. When both Pull Requests are promoted together, the action runs once.
+- A git provider token is required to record the result, as for `runOnlyOnceByOrg`.
 
 ### Disable deployment actions
 
@@ -608,5 +641,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 - [Lab 2.3 - Fix broken records with an Apex deployment action](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
 - [Lab 2.4 - Ship reference data and a batch with deployment actions](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
 - [Lab 2.9 - Capstone: deliver a User Story that has it all](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
 
 <!-- training-links:end -->

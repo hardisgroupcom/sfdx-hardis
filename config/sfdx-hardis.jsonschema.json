@@ -1119,6 +1119,17 @@
             "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the External Client App used by deployment user.",
             "title": "Custom Username",
             "type": "string"
+          },
+          "movedFrom": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/movedFrom",
+            "description": "Number of the Pull Request this action was moved from, to fix its definition after its deployment failed. The action keeps the same id: the copy of the original Pull Request no longer runs, and its row in the Deployment Actions comment of the original Pull Request shows it as moved.",
+            "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action",
+            "examples": [
+              123
+            ],
+            "minimum": 1,
+            "title": "Moved from Pull Request",
+            "type": "integer"
           }
         },
         "required": [
@@ -1407,6 +1418,17 @@
             "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the External Client App used by deployment user.",
             "title": "Custom Username",
             "type": "string"
+          },
+          "movedFrom": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/movedFrom",
+            "description": "Number of the Pull Request this action was moved from, to fix its definition after its deployment failed. The action keeps the same id: the copy of the original Pull Request no longer runs, and its row in the Deployment Actions comment of the original Pull Request shows it as moved.",
+            "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action",
+            "examples": [
+              123
+            ],
+            "minimum": 1,
+            "title": "Moved from Pull Request",
+            "type": "integer"
           }
         },
         "required": [

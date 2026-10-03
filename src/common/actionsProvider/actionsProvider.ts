@@ -54,6 +54,9 @@ export interface PrePostCommand {
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
+  // Pull Request this action was moved from, to fix a definition after its deployment failed.
+  // The action keeps the same id: the copy of the original Pull Request no longer runs.
+  movedFrom?: number;
   // If command comes from a PR, we attach PR info
   pullRequest?: CommonPullRequestInfo;
   result?: ActionResult;

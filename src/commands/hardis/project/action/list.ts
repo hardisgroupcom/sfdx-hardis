@@ -1,5 +1,5 @@
 import { Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
@@ -10,6 +10,8 @@ import {
   resolvePrId,
 } from '../../../../common/utils/actionUtils.js';
 import { ActionCommandBase } from './base.js';
+import { getStateEntriesForPr, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
+import { requireGitProviderForActionState } from '../../../../common/utils/deploymentActionRunUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -24,12 +26,15 @@ export default class ActionList extends ActionCommandBase {
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
+With \`--with-status\` and \`--pr-ids\`, it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. A git provider token is required.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
 
 \`\`\`sh
 sf hardis:project:action:list --agent --scope branch --when pre-deploy
+sf hardis:project:action:list --agent --with-status --pr-ids 123,124 --json
 \`\`\`
 
 Required in agent mode:
@@ -65,6 +70,13 @@ Required in agent mode:
     'pr-id': Flags.string({
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
+    'with-status': Flags.boolean({
+      default: false,
+      description: 'Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments',
+    }),
+    'pr-ids': Flags.string({
+      description: 'Comma-separated list of Pull Request numbers (with --with-status)',
+    }),
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -84,6 +96,10 @@ Required in agent mode:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ActionList);
     const agentMode = flags.agent === true;
+
+    if (flags['with-status']) {
+      return await this.listStatuses(flags['pr-ids'] || '');
+    }
 
     const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
 
@@ -116,6 +132,37 @@ Required in agent mode:
     });
 
     return { outputString: `Found ${actions.length} actions`, actions: actions as any };
+  }
+
+  /**
+   * Status of the actions of some Pull Requests in each org branch, from their Deployment Actions
+   * comments, for the VS Code Deployment Actions tab.
+   */
+  private async listStatuses(prIdsFlag: string): Promise<AnyJson> {
+    const prNumbers = [...new Set(prIdsFlag.split(',').map((id) => parseInt(id.replace('#', '').trim(), 10)).filter((n) => Number.isInteger(n) && n > 0))];
+    if (prNumbers.length === 0) {
+      throw new SfError(t('missingRequiredFlag', { flag: 'pr-ids' }));
+    }
+    await requireGitProviderForActionState();
+    uxLog("action", this, c.cyan(t('actionListStatusHeader', { count: prNumbers.length })));
+    await loadDeploymentActionsState(prNumbers);
+    const statuses: Record<string, any[]> = {};
+    for (const prNumber of prNumbers) {
+      statuses[String(prNumber)] = getStateEntriesForPr(prNumber).map((e) => ({
+        actionId: e.actionId,
+        actionLabel: e.actionLabel,
+        orgBranch: e.orgBranch,
+        when: e.when,
+        status: e.status,
+        date: e.date,
+        jobUrl: e.jobUrl,
+        note: e.note || '',
+        movedTo: e.movedTo || null,
+        blockedBy: e.blockedBy || null,
+        stoppedActions: e.stoppedActions || [],
+      }));
+    }
+    return { outputString: `Status of the actions of ${prNumbers.length} Pull Request(s)`, statuses };
   }
 
 }

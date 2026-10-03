@@ -12,6 +12,14 @@ Allows modifying any field of an existing action, including changing its type (w
 
 The target branch restriction (`includeTargetBranches` / `excludeTargetBranches`) can also be changed here. The two lists are mutually exclusive: setting one clears the other. Pass an empty value to a flag to remove the restriction and run the action on every target branch again.
 
+### Fix an action that failed after its deployment
+
+When an action of a merged Pull Request fails because its definition is wrong, move it to a fix Pull Request with `--move-to-pr`: the action keeps its id, leaves the file of its original Pull Request, and is added to the file of the fix Pull Request (`current`, `draft` or a number) with `movedFrom` set to the original Pull Request number. Correct it there, then merge the fix Pull Request: the action runs from it, and the original Pull Request shows it as moved. An action declared in the description of the original Pull Request cannot be removed from it after the merge: it is copied, and its original version no longer runs.
+
+`--moved-from` sets or changes `movedFrom` by hand (`0` removes it).
+
+See [Recover a failed action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action).
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
@@ -30,8 +38,19 @@ Required in agent mode:
 
 - Reads the action list from the YAML config file, finds the action by ID, applies updates, validates, and writes back.
 - Changing `--type` clears old type-specific parameters and requires new ones.
+- `--move-to-pr` requires `--scope pr` and the number of the original Pull Request in `--pr-id`. When the action is not in its YAML file, it is read from the description of the Pull Request through the git provider API.
 - A `run-batch` action is updated with `--class-name`, `--run-mode`, `--batch-size`, `--wait-timeout` and `--success-even-if-batch-errors`. It only runs in the `process-deployment-only` context.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+
+<!-- training-links:end -->
 
 
 ## Parameters
@@ -59,6 +78,8 @@ Required in agent mode:
 | job-name                     | option  | New job name for schedule-batch                                                                                                                                                 |         |          |                                                           |
 | json                         | boolean | Format output as json.                                                                                                                                                          |         |          |                                                           |
 | label                        | option  | New label for the action                                                                                                                                                        |         |          |                                                           |
+| move-to-pr                   | option  | Move the action from the Pull Request of --pr-id to this Pull Request (a number, current or draft), keeping its id and setting movedFrom                                        |         |          |                                                           |
+| moved-from                   | option  | Number of the Pull Request the action was moved from (0 removes it)                                                                                                             |         |          |                                                           |
 | new-when                     | option  | Move the action to the other deployment phase. --when still says where to find it                                                                                               |         |          |                pre-deploy<br/>post-deploy                 |
 | packagexml-items             | option  | New semicolon-separated list of package.xml items to remove, each in format TypeName:Member1,Member2 (for remove-packagexml-items type)                                         |         |          |                                                           |
 | pr-id                        | option  | Pull request ID (for pr scope, defaults to draft)                                                                                                                               |         |          |                                                           |
@@ -84,6 +105,10 @@ $ sf hardis:project:action:update --agent --scope branch --when pre-deploy --act
 
 ```shell
 $ sf hardis:project:action:update --agent --scope project --when post-deploy --action-id abc-123 --include-target-branches "uat,preprod"
+```
+
+```shell
+$ sf hardis:project:action:update --agent --scope pr --pr-id 123 --when post-deploy --action-id abc-123 --move-to-pr current
 ```
 
 

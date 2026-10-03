@@ -279,6 +279,47 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
 }
 
 /**
+ * Validate the movedFrom property of an action: the number of the Pull Request it was moved from.
+ * Only an action of a Pull Request can be moved, and never from its own Pull Request.
+ * Returns an array of error messages (empty if valid).
+ */
+export function validateMovedFrom(action: Partial<PrePostCommand>, scope: ActionScope, prId?: string): string[] {
+  if (action.movedFrom === undefined || action.movedFrom === null) {
+    return [];
+  }
+  if (!Number.isInteger(action.movedFrom) || action.movedFrom < 1) {
+    return [t('actionValidationMovedFromInvalid', { value: String(action.movedFrom) })];
+  }
+  if (scope !== 'pr') {
+    return [t('actionValidationMovedFromPrScopeOnly')];
+  }
+  if (prId && prId === String(action.movedFrom)) {
+    return [t('actionValidationMovedFromSamePr', { pr: prId })];
+  }
+  return [];
+}
+
+/**
+ * Actions declared in the YAML block of a Pull Request description, for the given phase.
+ * Each one carries its Pull Request, like the actions collected by a deployment job.
+ */
+export async function readPullRequestDescriptionActions(prNumber: number, when: ActionWhen): Promise<PrePostCommand[]> {
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    return [];
+  }
+  const pr = await gitProvider.getPullRequestById(prNumber);
+  if (!pr) {
+    return [];
+  }
+  const { getYamlFromPrDescription } = await import('./pullRequestUtils.js');
+  const config: any = getYamlFromPrDescription(pr) || {};
+  const property = when === 'pre-deploy' ? 'commandsPreDeploy' : 'commandsPostDeploy';
+  const actions: PrePostCommand[] = Array.isArray(config[property]) ? config[property] : [];
+  return actions.map((action) => ({ ...action, when, pullRequest: pr }));
+}
+
+/**
  * Validate an action whose type is not built-in: it must be the id of a project custom function,
  * and it must respect the contract that function declares (required inputs, allowed values,
  * phase and context restrictions).

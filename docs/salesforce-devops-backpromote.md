@@ -254,6 +254,6 @@ A refreshed sandbox keeps its name but gets a new org id. Its old rows are histo
 
 The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 2.1 - Backpromote: catch your org up with the team](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+- [Lab 2.1 - Backpromote: catch your dev org up with the team](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
 
 <!-- training-links:end -->
