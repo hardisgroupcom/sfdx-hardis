@@ -356,7 +356,7 @@ export async function ensureCustomUsernameAuth(def: PrePostCommand, target: Acti
   }
   // An alias of its own, derived from the username: authOrg uses its first argument as the alias of
   // the login and to look for SFDX_AUTH_URL_<alias> or JWT settings, so the org branch name would
-  // repoint an alias of the user (integration...) to the custom user, or log in as the CI user
+  // point an alias of the user (integration...) to the custom user, or log in as the CI user
   await authOrg(buildCustomUserAlias(user.Username), { forceUsername: user.Username, instanceUrl: target.instanceUrl, setDefault: false });
   if (!(await isUsernameConnected(user.Username))) {
     const actual = globalThis.justConnectedOrg?.username || '?';
