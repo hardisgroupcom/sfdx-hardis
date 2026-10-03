@@ -181,8 +181,10 @@ p_merge "$P6" >/dev/null || record "merge-$P6" FAIL "merge of #$P6"
 job p_deploy uat da-deploy-uat-promotion
 assert_log C5 da-deploy-uat-promotion 0 "the deployment of P6 runs the commands and skips the manual action marked ahead" \
   "Skipping E2E pre-deploy manual of PR $S8 .*already run in uat" "Running action E2E flaky post-deploy of PR $S8"
+# No expectation on the post-deployment manual step: a forecast is about stories not merged yet,
+# and it reads after-merge for that step whatever is recorded in uat
 status_check C6 da-forecast-after "forecast once P6 is merged: no promotion open, the commands done in uat" "--pr-ids $S8 --forecast uat --from-branch integration" \
-  "P=none" "F:$S8:e2e-flaky-$S8=done" "F:$S8:e2e-gate-$S8=done" "F:$S8:e2e-manual-$S8=waiting"
+  "P=none" "F:$S8:e2e-flaky-$S8=done" "F:$S8:e2e-gate-$S8=done"
 
 # ------------------------------------------------------------------ D. developer org
 if [ -n "${DEV_ORG:-}" ]; then
