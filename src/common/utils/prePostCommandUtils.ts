@@ -274,6 +274,9 @@ export interface SingleActionRunContext {
   // Written in the state entry when the action runs outside of a deployment job
   // (sf hardis:project:action:run): who ran it, and from where.
   note?: string;
+  // The run is recorded outside of the Pull Request comment (a developer org without a Pull Request
+  // yet): the caller checks runOnlyOnceByOrg against that record itself.
+  skipRunOnlyOnceCheck?: boolean;
 }
 
 /**
@@ -365,7 +368,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
   }
   if (!skipAction) {
     // true by default, except for action types that must run at every deployment
-    const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false;
+    const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false && ctx.skipRunOnlyOnceCheck !== true;
     if (runOnlyOnceByOrg) {
       const gitProviderInst = await GitProvider.getInstance();
       if (!gitProviderInst) {

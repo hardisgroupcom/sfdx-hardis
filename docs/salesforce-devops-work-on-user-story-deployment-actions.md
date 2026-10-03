@@ -583,6 +583,18 @@ This requires the same git provider token as `runOnlyOnceByOrg` state tracking.
 
 </details>
 
+### Try your actions in your own org
+
+Before the merge, run the actions of your Pull Request in your own org, a developer sandbox or a scratch org, to check they do what you expect.
+
+**From VS Code**: open your Pull Request with the **My Pull Request** card, then its **Deployment Actions** tab. **Run all in my org** runs them all, pre-deployment actions first, and **Run in my org** in the menu of a row runs one. They run in your default org: when it is the org of a major branch, nothing runs.
+
+**From the terminal**: [sf hardis:project:action:run](hardis/project/action/run.md) `--all` (or `--action-id`), in a developer org.
+
+- Validation-only actions and package.xml item removals are skipped: they only make sense in a deployment. A `runOnlyOnceByOrg` action already done in your org is skipped too.
+- The result of each action shows under its label: *In your org: Done*. With a Pull Request, it is also recorded in its "Deployment Actions" comment, in a column named after your branch.
+- Without a Pull Request yet, the results stay on your computer, in `config/user/deployment-actions/draft.json`, which git ignores.
+
 ### Recover a failed action
 
 A post-deployment action runs after the metadata deployment, once the Pull Request is merged. When it fails, the metadata is already in the org, the job is red, and the actions after it were not run. The "Deployment Actions" comment of the Pull Request lists them under **Failed actions**: ❌ for the action that failed, ⏸️ for the ones its failure stopped.

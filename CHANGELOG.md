@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [Recover a failed deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action) without redeploying: retry it with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/), close it with [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/), or move it to a fix Pull Request.
+- [Try the deployment actions of your Pull Request](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#try-your-actions-in-your-own-org) in your own developer org before the merge, with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/).
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#run-an-apex-batch): new Run Batch action, to run an Apex batch once before or after a deployment and optionally wait for its result.
 - Documentation and command help now link to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/): a Schedule Batch action can now schedule a class of an installed package, a global class of a managed package being written `ns.ClassName`.

@@ -11,7 +11,7 @@ import { listMajorOrgs } from './orgConfigUtils.js';
 import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { gitUserName } from './backpromoteGitUtils.js';
-import { ActionWhen, buildActionTargetBranchCandidates, readActions, readPullRequestDescriptionActions } from './actionUtils.js';
+import { ActionWhen, buildActionTargetBranchCandidates, readActions, readPullRequestDescriptionActions, resolvePrId } from './actionUtils.js';
 import {
   DeploymentActionRef,
   DeploymentActionStateEntry,
@@ -25,7 +25,8 @@ import {
   syncManualActionCheckboxes,
   upsertActionInState,
 } from './deploymentActionsStateUtils.js';
-import { getEffectiveActionContext, replayActionOutputs, runSingleDeploymentAction } from './prePostCommandUtils.js';
+import { getEffectiveActionContext, getReportedActionStatus, replayActionOutputs, runSingleDeploymentAction } from './prePostCommandUtils.js';
+import { findLocalActionState, upsertLocalActionState } from './deploymentActionsLocalState.js';
 import { buildPipelineContext } from './pipelineContextUtils.js';
 
 /** Number of local Pull Request action files scanned to propose the failed actions */
@@ -320,7 +321,12 @@ export async function ensureCustomUsernameAuth(def: PrePostCommand, target: Acti
  * Run one action outside of a deployment job, in the target org, and record its outcome in the
  * Deployment Actions comment of its Pull Request, with who ran it.
  */
-export async function runActionOutsideDeployment(def: PrePostCommand, prNumber: number, target: ActionRunTarget): Promise<ActionRunResult> {
+export async function runActionOutsideDeployment(
+  def: PrePostCommand,
+  prNumber: number,
+  target: ActionRunTarget,
+  options: { localPrId?: string } = {}
+): Promise<ActionRunResult> {
   // An action moved from another Pull Request: that one's state says whether it already ran here,
   // and receives the 'moved' entry
   const movedFrom = Number(def.movedFrom);
@@ -339,7 +345,7 @@ export async function runActionOutsideDeployment(def: PrePostCommand, prNumber: 
   }
   const majorBranchNames = (await listMajorOrgs()).map((org: any) => org.branchName);
   const executionOrder = getActionStateEntry(prNumber, def.id, target.orgBranch)?.executionOrder ?? 0;
-  uxLog("action", this, c.cyan(t('actionRunRunningLocally', { label: def.label, pr: prNumber, orgBranch: target.orgBranch })));
+  uxLog("action", this, c.cyan(t('actionRunRunningLocally', { label: def.label, pr: prNumber > 0 ? prNumber : 'draft', orgBranch: target.orgBranch })));
   await runSingleDeploymentAction(def, {
     checkOnly: false,
     deployWhen: def.when || 'post-deploy',
@@ -347,10 +353,30 @@ export async function runActionOutsideDeployment(def: PrePostCommand, prNumber: 
     currentPrNumber: prNumber,
     executionOrder,
     targetBranchCandidates: buildActionTargetBranchCandidates(target.orgBranch, majorBranchNames),
-    hasGitProvider: true,
+    hasGitProvider: !options.localPrId,
     pipelineContext: await buildPipelineContext({ checkOnly: false, when: def.when || 'post-deploy', targetBranch: target.orgBranch }),
     note: buildRunLocallyNote(gitUserName() || null, target.username, isCI),
+    skipRunOnlyOnceCheck: !!options.localPrId,
   });
+  // No Pull Request comment to hold the result: keep it in the local file of the Pull Request
+  if (options.localPrId && def.result?.statusCode && def.result.statusCode !== 'not-run') {
+    const file = upsertLocalActionState(options.localPrId, {
+      actionId: def.id,
+      actionLabel: def.label,
+      orgBranch: target.orgBranch,
+      when: def.when || 'post-deploy',
+      executionOrder,
+      status: getReportedActionStatus(def),
+      jobId: 'local',
+      jobUrl: '',
+      date: new Date().toISOString(),
+      // The end of the output, where the outcome is: an Apex debug log can be thousands of lines
+      output: (def.result.output || def.result.skippedReason || '').slice(-2000),
+      outputs: def.result.outputsForDisplay,
+      note: buildRunLocallyNote(gitUserName() || null, target.username, isCI),
+    });
+    uxLog("log", this, c.grey(t('actionRunLocalStateSaved', { file })));
+  }
   return {
     prNumber,
     actionId: def.id,
@@ -456,6 +482,100 @@ export async function closeActionByHand(prNumber: number, actionId: string, orgB
     uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
   }
   return closedEntry;
+}
+
+/**
+ * The Pull Request whose actions run in a developer org: --pr (a number, or draft), else the
+ * Pull Request of the current branch, else the draft file of the branch.
+ * Returns the number (0 for the draft) and the id of its actions file.
+ */
+export async function resolveDevOrgPullRequest(prFlag: string | undefined, headless: boolean): Promise<{ prNumber: number; prId: string }> {
+  if (prFlag === 'draft') {
+    return { prNumber: 0, prId: 'draft' };
+  }
+  if (prFlag) {
+    const prNumber = parsePrNumber(prFlag);
+    return { prNumber, prId: String(prNumber) };
+  }
+  const resolved = await resolvePrId(this, 'current', headless);
+  const prNumber = resolved ? parseInt(resolved, 10) : 0;
+  return Number.isInteger(prNumber) && prNumber > 0 ? { prNumber, prId: String(prNumber) } : { prNumber: 0, prId: 'draft' };
+}
+
+/**
+ * Every action of a Pull Request, in the order a deployment runs them: pre-deploy, then
+ * post-deploy, each in the order of the actions file (then of the description, for a merged one).
+ */
+export async function listPullRequestActions(prNumber: number, prId: string): Promise<PrePostCommand[]> {
+  const actions: PrePostCommand[] = [];
+  for (const when of ['pre-deploy', 'post-deploy'] as ActionWhen[]) {
+    const fromFile = await readActions('pr', when, undefined, prId === 'draft' ? undefined : prId);
+    actions.push(...fromFile.map((action) => ({ ...action, when })));
+    if (prNumber > 0) {
+      const fromDescription = await readPullRequestDescriptionActions(prNumber, when).catch(() => []);
+      for (const action of fromDescription) {
+        if (!actions.some((existing) => existing.id === action.id)) {
+          delete action.pullRequest;
+          actions.push(action);
+        }
+      }
+    }
+  }
+  return actions;
+}
+
+/**
+ * Actions to run in a developer org: --all, --action-id, or a choice among the actions of the
+ * Pull Request.
+ */
+export async function selectDevOrgActions(actions: PrePostCommand[], actionIdFlag: string | undefined, all: boolean, headless: boolean): Promise<PrePostCommand[]> {
+  if (actions.length === 0) {
+    throw new SfError(t('actionRunNoActionInPullRequest'));
+  }
+  if (all) {
+    return actions;
+  }
+  let actionId = actionIdFlag;
+  if (!actionId) {
+    if (headless) {
+      throw new SfError(t('missingRequiredFlag', { flag: 'action-id or --all' }));
+    }
+    actionId = await promptSelect(t('actionRunSelectAction'), [
+      { title: t('actionRunAllActionsChoice', { count: actions.length }), value: '__all__' },
+      ...actions.map((action) => ({ title: `${action.label} (${action.when})`, value: action.id })),
+    ]);
+    if (actionId === '__all__') {
+      return actions;
+    }
+  }
+  const action = actions.find((candidate) => candidate.id === actionId);
+  if (!action) {
+    throw new SfError(t('actionRunDefinitionNotFound', { actionId, pr: '?' }));
+  }
+  return [action];
+}
+
+/**
+ * Why an action is not run in a developer org, or null when it is: a validation-only action and a
+ * package.xml change have no meaning outside of a deployment, and a runOnlyOnceByOrg action already
+ * done in this org is not run twice.
+ */
+export function getDevOrgSkipReason(def: PrePostCommand, prNumber: number, prId: string, orgBranch: string, localState: boolean): string | null {
+  if (getEffectiveActionContext(def) === 'check-deployment-only') {
+    return t('actionRunDevOrgSkipCheckOnly');
+  }
+  if (def.type === 'remove-packagexml-items') {
+    return t('actionRunDevOrgSkipPackageXml');
+  }
+  if (def.runOnlyOnceByOrg !== false) {
+    const done = localState
+      ? findLocalActionState(prId, def.id, orgBranch)
+      : getActionStateEntry(prNumber, def.id, orgBranch);
+    if (done?.status === 'success') {
+      return t('actionRunDevOrgSkipAlreadyDone', { date: (done.date || '').substring(0, 10) });
+    }
+  }
+  return null;
 }
 
 function buildTarget(conn: Connection, orgBranch: string, isMajorOrg: boolean): ActionRunTarget {

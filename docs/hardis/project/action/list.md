@@ -10,7 +10,7 @@
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
-With `--with-status` and `--pr-ids`, it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. A git provider token is required.
+With `--with-status` and `--pr-ids` (Pull Request numbers, or `draft`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. The results of actions tried in a developer org without a Pull Request comment, kept in `config/user/deployment-actions/`, are included. Without a git provider token, only those are returned.
 
 ### Agent Mode
 
@@ -43,7 +43,7 @@ Required in agent mode:
 | flags-dir    | option  | undefined                                                                                                    |         |          |                            |
 | json         | boolean | Format output as json.                                                                                       |         |          |                            |
 | pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                                                            |         |          |                            |
-| pr-ids       | option  | Comma-separated list of Pull Request numbers (with --with-status)                                            |         |          |                            |
+| pr-ids       | option  | Comma-separated list of Pull Request numbers, or draft (with --with-status)                                  |         |          |                            |
 | scope        | option  | Configuration scope: project, branch, or pr                                                                  |         |          | project<br/>branch<br/>pr  |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |                            |
 | when         | option  | When to run the action: pre-deploy or post-deploy                                                            |         |          | pre-deploy<br/>post-deploy |

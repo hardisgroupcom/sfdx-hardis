@@ -19,6 +19,15 @@ When a post-deployment action fails after the merge of a Pull Request, the metad
 
 Anyone authenticated to the org can retry an action, production included. A git provider token is required, to record the result in the Pull Request.
 
+### Try the actions of your Pull Request in your own org
+
+When the org is not a major org (a developer sandbox or a scratch org), the command runs the actions of a Pull Request there, to test them before the merge: one action, or all of them with `--all`, pre-deployment actions first, in the order of the actions file. It stops at the first failure, as a deployment does.
+
+- `--pr` takes the Pull Request number, or `draft` for the actions file of a branch with no Pull Request yet. Without it, the Pull Request of the current branch is used, or the draft file.
+- Validation-only actions and package.xml item removals are skipped: they only make sense during a deployment. A `runOnlyOnceByOrg` action already done in this org is skipped too.
+- The results go to the "Deployment Actions" comment of the Pull Request, in a column named after your branch. Without a Pull Request (draft) or without a git provider token, they are kept in `config/user/deployment-actions/<Pull Request or draft>.json`, a folder sfdx-hardis projects keep out of git.
+- `--all` is refused on a major org: a merge runs them there. `--dev-org` refuses any run on a major org, which the VS Code **Run in my org** button passes, so a default org that happens to be a major one is never touched.
+
 To close an action that was done by hand, use [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/). To fix a wrong definition, move the action to a fix Pull Request with `sf hardis:project:action:update --move-to-pr`.
 
 See [Recover a failed action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action).
@@ -29,6 +38,7 @@ Supports non-interactive execution with `--agent`:
 
 ```sh
 sf hardis:project:action:run --agent --pr 123 --action-id abc-123 --org-branch integration --next all
+sf hardis:project:action:run --agent --pr draft --all --target-org my-dev-sandbox
 ```
 
 Required in agent mode:
@@ -62,20 +72,22 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                                                 |                 Default                  | Required |       Options        |
-|:----------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------|:----------------------------------------:|:--------:|:--------------------:|
-| action-id             | option  | Id of the action to run                                                                                                     |                                          |          |                      |
-| agent                 | boolean | Run in non-interactive mode for agents and automation                                                                       |                                          |          |                      |
-| allow-branch-mismatch | boolean | Run even when the current git branch is not the branch of the org (the definition is read from the current branch)          |                                          |          |                      |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                             |                                          |          |                      |
-| flags-dir             | option  | undefined                                                                                                                   |                                          |          |                      |
-| json                  | boolean | Format output as json.                                                                                                      |                                          |          |                      |
-| next                  | option  | Once the action succeeded, run none, the next one, or all the actions its failure stopped                                   |                                          |          | none<br/>one<br/>all |
-| org-branch            | option  | Major branch of the org to run the action in (ex: integration). Uses an org of that instance authenticated on this computer |                                          |          |                      |
-| pr                    | option  | Number of the Pull Request the action comes from                                                                            |                                          |          |                      |
-| skipauth              | boolean | Skip authentication check when a default username is required                                                               |                                          |          |                      |
-| target-org<br/>-o     | option  | undefined                                                                                                                   | veurtio+demo.73193ee31bf8@agentforce.com |          |                      |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                   |                                          |          |                      |
+| Name                  |  Type   | Description                                                                                                                           |                 Default                  | Required |       Options        |
+|:----------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------:|:--------:|:--------------------:|
+| action-id             | option  | Id of the action to run                                                                                                               |                                          |          |                      |
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                                                 |                                          |          |                      |
+| all                   | boolean | In a developer org, run all the actions of the Pull Request, pre-deployment first                                                     |                                          |          |                      |
+| allow-branch-mismatch | boolean | Run even when the current git branch is not the branch of the org (the definition is read from the current branch)                    |                                          |          |                      |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                       |                                          |          |                      |
+| dev-org               | boolean | Refuse to run when the org is a major org: the run is meant for a developer org only                                                  |                                          |          |                      |
+| flags-dir             | option  | undefined                                                                                                                             |                                          |          |                      |
+| json                  | boolean | Format output as json.                                                                                                                |                                          |          |                      |
+| next                  | option  | Once the action succeeded, run none, the next one, or all the actions its failure stopped                                             |                                          |          | none<br/>one<br/>all |
+| org-branch            | option  | Major branch of the org to run the action in (ex: integration). Uses an org of that instance authenticated on this computer           |                                          |          |                      |
+| pr                    | option  | Number of the Pull Request the action comes from, or draft for the actions file of a branch without Pull Request (developer org only) |                                          |          |                      |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                                         |                                          |          |                      |
+| target-org<br/>-o     | option  | undefined                                                                                                                             | veurtio+demo.73193ee31bf8@agentforce.com |          |                      |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                             |                                          |          |                      |
 
 ## Examples
 
@@ -89,6 +101,10 @@ $ sf hardis:project:action:run --pr 123 --action-id abc-123 --org-branch integra
 
 ```shell
 $ sf hardis:project:action:run --agent --pr 123 --action-id abc-123 --org-branch integration --next all
+```
+
+```shell
+$ sf hardis:project:action:run --pr draft --all
 ```
 
 

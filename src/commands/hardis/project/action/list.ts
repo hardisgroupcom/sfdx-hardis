@@ -11,7 +11,8 @@ import {
 } from '../../../../common/utils/actionUtils.js';
 import { ActionCommandBase } from './base.js';
 import { getStateEntriesForPr, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
-import { requireGitProviderForActionState } from '../../../../common/utils/deploymentActionRunUtils.js';
+import { readLocalActionStates } from '../../../../common/utils/deploymentActionsLocalState.js';
+import { GitProvider } from '../../../../common/gitProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -26,7 +27,7 @@ export default class ActionList extends ActionCommandBase {
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
-With \`--with-status\` and \`--pr-ids\`, it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. A git provider token is required.
+With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
 
 ### Agent Mode
 
@@ -75,7 +76,7 @@ Required in agent mode:
       description: 'Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments',
     }),
     'pr-ids': Flags.string({
-      description: 'Comma-separated list of Pull Request numbers (with --with-status)',
+      description: 'Comma-separated list of Pull Request numbers, or draft (with --with-status)',
     }),
     agent: Flags.boolean({
       default: false,
@@ -139,16 +140,25 @@ Required in agent mode:
    * comments, for the VS Code Deployment Actions tab.
    */
   private async listStatuses(prIdsFlag: string): Promise<AnyJson> {
-    const prNumbers = [...new Set(prIdsFlag.split(',').map((id) => parseInt(id.replace('#', '').trim(), 10)).filter((n) => Number.isInteger(n) && n > 0))];
-    if (prNumbers.length === 0) {
+    const prIds = [...new Set(prIdsFlag.split(',').map((id) => id.replace('#', '').trim()).filter((id) => id === 'draft' || /^\d+$/.test(id)))];
+    if (prIds.length === 0) {
       throw new SfError(t('missingRequiredFlag', { flag: 'pr-ids' }));
     }
-    await requireGitProviderForActionState();
-    uxLog("action", this, c.cyan(t('actionListStatusHeader', { count: prNumbers.length })));
-    await loadDeploymentActionsState(prNumbers);
+    uxLog("action", this, c.cyan(t('actionListStatusHeader', { count: prIds.length })));
+    // The Pull Request comments when a git provider is available, the local results of the actions
+    // tried in a developer org in any case (a draft only has those)
+    const prNumbers = prIds.filter((id) => id !== 'draft').map((id) => parseInt(id, 10));
+    const gitProvider = prNumbers.length > 0 ? await GitProvider.getInstance() : null;
+    if (gitProvider) {
+      await loadDeploymentActionsState(prNumbers);
+    }
     const statuses: Record<string, any[]> = {};
-    for (const prNumber of prNumbers) {
-      statuses[String(prNumber)] = getStateEntriesForPr(prNumber).map((e) => ({
+    for (const prId of prIds) {
+      const fromComment = prId !== 'draft' && gitProvider ? getStateEntriesForPr(parseInt(prId, 10)) : [];
+      const fromLocal = readLocalActionStates(prId).filter(
+        (local) => !fromComment.some((e) => e.actionId === local.actionId && e.orgBranch === local.orgBranch)
+      );
+      statuses[prId] = [...fromComment, ...fromLocal].map((e) => ({
         actionId: e.actionId,
         actionLabel: e.actionLabel,
         orgBranch: e.orgBranch,
@@ -160,10 +170,12 @@ Required in agent mode:
         movedTo: e.movedTo || null,
         blockedBy: e.blockedBy || null,
         stoppedActions: e.stoppedActions || [],
+        local: fromLocal.includes(e),
       }));
     }
-    return { outputString: `Status of the actions of ${prNumbers.length} Pull Request(s)`, statuses };
+    return { outputString: `Status of the actions of ${prIds.length} Pull Request(s)`, statuses };
   }
+
 
 }
 

@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import { expect } from 'chai';
 import {
   buildClosedByCheckboxNote,
@@ -221,5 +224,40 @@ describe('getEffectiveActionContext()', () => {
     expect(getEffectiveActionContext(action({ type: 'run-batch', context: 'all' }))).to.equal('process-deployment-only');
     expect(getEffectiveActionContext(action({ context: 'check-deployment-only' }))).to.equal('check-deployment-only');
     expect(getEffectiveActionContext(action({ context: undefined as any }))).to.equal('all');
+  });
+});
+
+describe('Actions tried in a developer org', () => {
+  let cwd: string;
+  let tmp: string;
+  beforeEach(() => {
+    cwd = process.cwd();
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hardis-local-state-'));
+    process.chdir(tmp);
+  });
+  afterEach(() => {
+    process.chdir(cwd);
+    fs.rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('keeps the results of a draft in config/user, one entry per action and org branch', async () => {
+    const { upsertLocalActionState, readLocalActionStates, findLocalActionState, getLocalActionStateFile } = await import('../../../src/common/utils/deploymentActionsLocalState.js');
+    upsertLocalActionState('draft', entry({ status: 'failed', orgBranch: 'features/US-1' }));
+    upsertLocalActionState('draft', entry({ status: 'success', orgBranch: 'features/US-1' }));
+    expect(getLocalActionStateFile('draft')).to.equal(path.join('config', 'user', 'deployment-actions', 'draft.json'));
+    expect(readLocalActionStates('draft')).to.have.length(1);
+    expect(findLocalActionState('draft', 'action-1', 'features/US-1')!.status).to.equal('success');
+    expect(readLocalActionStates('42')).to.deep.equal([]);
+  });
+
+  it('skips the actions that only make sense in a deployment, and the ones already done in the org', async () => {
+    const { getDevOrgSkipReason } = await import('../../../src/common/utils/deploymentActionRunUtils.js');
+    const { upsertLocalActionState } = await import('../../../src/common/utils/deploymentActionsLocalState.js');
+    expect(getDevOrgSkipReason(action({ context: 'check-deployment-only' }), 0, 'draft', 'features/US-1', true)).to.be.a('string');
+    expect(getDevOrgSkipReason(action({ type: 'remove-packagexml-items' }), 0, 'draft', 'features/US-1', true)).to.be.a('string');
+    expect(getDevOrgSkipReason(action({}), 0, 'draft', 'features/US-1', true)).to.equal(null);
+    upsertLocalActionState('draft', entry({ status: 'success', orgBranch: 'features/US-1' }));
+    expect(getDevOrgSkipReason(action({}), 0, 'draft', 'features/US-1', true)).to.be.a('string');
+    expect(getDevOrgSkipReason(action({ runOnlyOnceByOrg: false }), 0, 'draft', 'features/US-1', true)).to.equal(null);
   });
 });

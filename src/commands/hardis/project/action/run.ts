@@ -1,5 +1,5 @@
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
@@ -8,7 +8,12 @@ import { t } from '../../../../common/utils/i18n.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import {
   ActionRunResult,
+  ActionRunTarget,
   NextActionsMode,
+  getDevOrgSkipReason,
+  listPullRequestActions,
+  resolveDevOrgPullRequest,
+  selectDevOrgActions,
   checkRetryAllowed,
   chooseNextActionsMode,
   confirmDefinitionBranch,
@@ -22,7 +27,8 @@ import {
   selectRecoverableAction,
   selectSourcePullRequest,
 } from '../../../../common/utils/deploymentActionRunUtils.js';
-import { DeploymentActionRef } from '../../../../common/utils/deploymentActionsStateUtils.js';
+import { DeploymentActionRef, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
+import { GitProvider } from '../../../../common/gitProvider/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -46,6 +52,15 @@ When a post-deployment action fails after the merge of a Pull Request, the metad
 
 Anyone authenticated to the org can retry an action, production included. A git provider token is required, to record the result in the Pull Request.
 
+### Try the actions of your Pull Request in your own org
+
+When the org is not a major org (a developer sandbox or a scratch org), the command runs the actions of a Pull Request there, to test them before the merge: one action, or all of them with \`--all\`, pre-deployment actions first, in the order of the actions file. It stops at the first failure, as a deployment does.
+
+- \`--pr\` takes the Pull Request number, or \`draft\` for the actions file of a branch with no Pull Request yet. Without it, the Pull Request of the current branch is used, or the draft file.
+- Validation-only actions and package.xml item removals are skipped: they only make sense during a deployment. A \`runOnlyOnceByOrg\` action already done in this org is skipped too.
+- The results go to the "Deployment Actions" comment of the Pull Request, in a column named after your branch. Without a Pull Request (draft) or without a git provider token, they are kept in \`config/user/deployment-actions/<Pull Request or draft>.json\`, a folder sfdx-hardis projects keep out of git.
+- \`--all\` is refused on a major org: a merge runs them there. \`--dev-org\` refuses any run on a major org, which the VS Code **Run in my org** button passes, so a default org that happens to be a major one is never touched.
+
 To close an action that was done by hand, use [hardis:project:action:set-status](${CONSTANTS.DOC_URL_ROOT}/hardis/project/action/set-status/). To fix a wrong definition, move the action to a fix Pull Request with \`sf hardis:project:action:update --move-to-pr\`.
 
 See [Recover a failed action](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action).
@@ -56,6 +71,7 @@ Supports non-interactive execution with \`--agent\`:
 
 \`\`\`sh
 sf hardis:project:action:run --agent --pr 123 --action-id abc-123 --org-branch integration --next all
+sf hardis:project:action:run --agent --pr draft --all --target-org my-dev-sandbox
 \`\`\`
 
 Required in agent mode:
@@ -91,12 +107,21 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     '$ sf hardis:project:action:run',
     '$ sf hardis:project:action:run --pr 123 --action-id abc-123 --org-branch integration',
     '$ sf hardis:project:action:run --agent --pr 123 --action-id abc-123 --org-branch integration --next all',
+    '$ sf hardis:project:action:run --pr draft --all',
   ];
 
   public static flags: any = {
     'target-org': optionalOrgFlagWithDeprecations,
     pr: Flags.string({
-      description: 'Number of the Pull Request the action comes from',
+      description: 'Number of the Pull Request the action comes from, or draft for the actions file of a branch without Pull Request (developer org only)',
+    }),
+    all: Flags.boolean({
+      default: false,
+      description: 'In a developer org, run all the actions of the Pull Request, pre-deployment first',
+    }),
+    'dev-org': Flags.boolean({
+      default: false,
+      description: 'Refuse to run when the org is a major org: the run is meant for a developer org only',
     }),
     'action-id': Flags.string({
       description: 'Id of the action to run',
@@ -135,9 +160,18 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     const { flags } = await this.parse(ActionRun);
     const headless = flags.agent === true || isCI;
 
-    await requireGitProviderForActionState();
     const target = await resolveActionRunTarget(flags['target-org'], flags['org-branch']);
     uxLog("action", this, c.cyan(t('actionRunTargetOrg', { orgBranch: target.orgBranch, username: target.username })));
+    if (!target.isMajorOrg) {
+      return await this.runInDevOrg(flags, target, headless);
+    }
+    if (flags['dev-org']) {
+      throw new SfError(t('actionRunNotDevOrg', { orgBranch: target.orgBranch, username: target.username }));
+    }
+    if (flags.all) {
+      throw new SfError(t('actionRunAllMajorOrg', { orgBranch: target.orgBranch }));
+    }
+    await requireGitProviderForActionState();
     await confirmDefinitionBranch(target, flags['allow-branch-mismatch'] === true, headless);
 
     const prNumber = await selectSourcePullRequest(flags.pr, target.orgBranch, headless);
@@ -165,6 +199,58 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       uxLog("success", this, c.green(t('actionRunSucceeded', { count: results.length, orgBranch: target.orgBranch })));
     }
     return { outputString: `${results.length} action(s) run`, orgBranch: target.orgBranch, isMajorOrg: target.isMajorOrg, results: results as any };
+  }
+
+  /**
+   * Try the actions of a Pull Request in a developer org: one, or all of them in the order a
+   * deployment runs them, stopping at the first failure. The results go to the Pull Request
+   * comment when there is one and a git provider token, to a local file otherwise.
+   */
+  private async runInDevOrg(flags: any, target: ActionRunTarget, headless: boolean): Promise<AnyJson> {
+    const { prNumber, prId } = await resolveDevOrgPullRequest(flags.pr, headless);
+    const gitProvider = prNumber > 0 ? await GitProvider.getInstance() : null;
+    const localState = !gitProvider;
+    if (gitProvider) {
+      await loadDeploymentActionsState([prNumber]);
+    }
+    const actions = await listPullRequestActions(prNumber, prId);
+    const selected = await selectDevOrgActions(actions, flags['action-id'], flags.all === true, headless);
+    uxLog("action", this, c.cyan(t('actionRunDevOrgStart', { count: selected.length, pr: prNumber > 0 ? `#${prNumber}` : 'draft', orgBranch: target.orgBranch })));
+
+    const results: ActionRunResult[] = [];
+    for (const [index, def] of selected.entries()) {
+      const skipReason = getDevOrgSkipReason(def, prNumber, prId, target.orgBranch, localState);
+      if (skipReason) {
+        uxLog("action", this, c.grey(t('actionRunDevOrgSkipped', { label: def.label, reason: skipReason })));
+        results.push({ prNumber, actionId: def.id, label: def.label, orgBranch: target.orgBranch, status: 'skipped', output: skipReason, blocking: false });
+        continue;
+      }
+      await ensureCustomUsernameAuth(def, target, headless);
+      const result = await runActionOutsideDeployment(def, prNumber, target, localState ? { localPrId: prId } : {});
+      results.push(result);
+      if (result.blocking) {
+        const notRun = selected.slice(index + 1);
+        if (notRun.length > 0) {
+          uxLog("warning", this, c.yellow(t('actionRunDevOrgStopped', { count: notRun.length, label: def.label })));
+        }
+        for (const other of notRun) {
+          results.push({ prNumber, actionId: other.id, label: other.label, orgBranch: target.orgBranch, status: 'not-run', blocking: false });
+        }
+        break;
+      }
+    }
+
+    uxLog("action", this, c.cyan(t('actionRunSummary', { orgBranch: target.orgBranch })));
+    uxLogTable(this, results.map((r) => ({ Action: r.label, Status: r.status })));
+    WebSocketClient.sendRefreshPipelineMessage();
+    const blocking = results.find((result) => result.blocking);
+    if (blocking) {
+      process.exitCode = 1;
+      uxLog("error", this, c.red(t('actionRunFailed', { label: blocking.label, output: blocking.output || '' })));
+    } else {
+      uxLog("success", this, c.green(t('actionRunDevOrgDone', { count: results.filter((r) => r.status !== 'skipped').length, orgBranch: target.orgBranch })));
+    }
+    return { outputString: `${results.length} action(s) processed`, orgBranch: target.orgBranch, isMajorOrg: false, pr: prId, localState, results: results as any };
   }
 
   /**
