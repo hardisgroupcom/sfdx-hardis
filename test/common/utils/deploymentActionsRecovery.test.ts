@@ -414,6 +414,7 @@ describe('forecastAction()', () => {
     expect(forecast({}).forecast).to.equal('done');
     delete (globalThis as any)._deploymentActionsMultiPrState;
     expect(forecast({ type: 'manual', when: 'pre-deploy' } as any)).to.include({ forecast: 'waiting', reason: 'manual-before-merge' });
+    expect(forecast({ type: 'manual' } as any)).to.include({ forecast: 'after-merge', reason: 'manual-after-merge' });
     seed('failed');
     expect(forecast({}).forecast).to.equal('failed');
   });

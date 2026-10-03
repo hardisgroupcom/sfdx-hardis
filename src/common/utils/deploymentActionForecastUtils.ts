@@ -19,6 +19,7 @@ import {
 
 export type ActionForecastCode =
   | 'waiting'
+  | 'after-merge'
   | 'done'
   | 'runs-at-validation'
   | 'runs-at-deployment'
@@ -125,7 +126,9 @@ export function forecastAction(
     return make('done', 'done-in-branch');
   }
   if (def.type === 'manual') {
-    return make('waiting', def.when === 'pre-deploy' ? 'manual-before-merge' : 'manual-after-merge');
+    // The forecast is about a promotion not merged yet: a post-deployment step cannot be done before
+    // the metadata it completes is deployed, so it waits for the merge, not for someone
+    return def.when === 'pre-deploy' ? make('waiting', 'manual-before-merge') : make('after-merge', 'manual-after-merge');
   }
   if (entry?.status === 'failed') {
     return make('failed', 'failed-in-branch');

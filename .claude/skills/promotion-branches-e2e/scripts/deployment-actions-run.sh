@@ -172,7 +172,7 @@ printf 'export P6="%s"\n' "$P6" >>"$LOGS/promo-vars.sh"
 assert_log C2 da-promotion-integration-uat 0 "P6 #$P6 carries #$S8 only" "assembled with 1 User Story\(ies\): #$S8"
 status_check C3 da-forecast-open "forecast of the promotion to uat, P6 open" "--pr-ids $S8,$S2 --forecast uat --from-branch integration" \
   "P=$P6" "C:$S8=yes" "C:$S2=no" "F:$S8:e2e-gate-$S8=done" "F:$S8:e2e-flaky-$S8=runs-at-deployment/deploy-only" \
-  "F:$S8:e2e-manual-$S8=waiting/manual-after-merge" "F:$S2:e2e-post-$S2=not-in-promotion"
+  "F:$S8:e2e-manual-$S8=after-merge/manual-after-merge" "F:$S2:e2e-post-$S2=not-in-promotion"
 p_wait_merge_ref "$P6" >/dev/null 2>&1
 job p_check "$P6" uat da-check-promotion-uat
 assert_log C4 da-check-promotion-uat 0 "the validation of P6 skips the manual action marked ahead, and is not stopped" \
