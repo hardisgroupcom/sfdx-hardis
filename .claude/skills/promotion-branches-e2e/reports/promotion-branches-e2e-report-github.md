@@ -55,7 +55,10 @@ ___
    sfdx-hardis container, where git refuses the checkout ("detected dubious ownership"): sfdx-hardis
    cannot read which Pull Requests are deployed and skips their actions, green. The training fork
    carried the workaround; the shipped `check-deploy.yml` and `process-deploy.yml` did not. Both now
-   declare `safe.directory` (`fb3d4d998`). Found by section 6quinquies, the first run through CI.
+   declare `safe.directory` (`fb3d4d998`), and a job whose workflow lacks it stops with the line to
+   add instead of skipping the actions (`be9fd1dea`, the check lives in the git provider classes,
+   each naming its own workspace variable). Found by section 6quinquies, the first run through CI;
+   the stop proven on real GitHub Actions (new check W8).
 3. **`action:run --org-branch <major> --target-org <org>` refused when the branch config declares no
    org**, with "No org of ? (branch preprod) is authenticated". It now takes the org passed, and asks
    for `--target-org` with a clear message when none is passed (`e31cb616d`, three unit tests).
@@ -96,16 +99,17 @@ ___
 
 ## Real CI workflows (section 6quinquies, `-26`)
 
-| Check | Result                                                                                        |
-|-------|-----------------------------------------------------------------------------------------------|
-| W0    | the jobs run `sfdx-hardis (link) /tmp/sfdx-hardis`                                            |
-| W1    | the validation stops on the pending pre-deployment manual action; the comment shows why       |
-| W2    | the checkbox ticked through the API, Re-run all jobs: recorded as done, green                 |
-| W3    | a GitHub draft with no "draft" in its title is only warned (the provider's draft flag)        |
-| W4    | the deployment job fails on the flaky command and stops the next ones; statuses read back     |
-| W5    | the promotion to uat stops until the manual action is done in uat; forecast "after the merge" |
-| W6    | `set-status --org-branch uat`, the re-run passes, the forecast says done                      |
-| W7    | the promotion deploys the commands with the fix that travelled with it                        |
+| Check | Result                                                                                                                                       |
+|-------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| W0    | the jobs run `sfdx-hardis (link) /tmp/sfdx-hardis`                                                                                           |
+| W1    | the validation stops on the pending pre-deployment manual action; the comment shows why                                                      |
+| W2    | the checkbox ticked through the API, Re-run all jobs: recorded as done, green                                                                |
+| W3    | a GitHub draft with no "draft" in its title is only warned (the provider's draft flag)                                                       |
+| W4    | the deployment job fails on the flaky command and stops the next ones; statuses read back                                                    |
+| W5    | the promotion to uat stops until the manual action is done in uat; forecast "after the merge"                                                |
+| W6    | `set-status --org-branch uat`, the re-run passes, the forecast says done                                                                     |
+| W7    | the promotion deploys the commands with the fix that travelled with it                                                                       |
+| W8    | a workflow without the `safe.directory` line: the job stops and names the line to add (run once by hand on `-26`, added to the script after) |
 
 ___
 

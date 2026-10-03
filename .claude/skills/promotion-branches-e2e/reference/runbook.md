@@ -696,6 +696,7 @@ base project is never deployed by CI.
 | W5    | C3 brings the file the flaky command needs. The promotion integration -> uat (C1, C3) stops in validation until the manual action is done in uat; the forecast says waiting before the merge, after the merge for the post-deployment manual step, runs at deployment for the command |
 | W6    | `set-status --org-branch uat` (what **Mark as done in uat** runs), the validation re-run skips it and passes, the forecast says done                                                                                                                                                  |
 | W7    | The deployment of the promotion runs the commands with the fix that travelled with it; the post-deployment manual step waits in uat                                                                                                                                                   |
+| W8    | A workflow without the `safe.directory` line (a project that copied the templates before it): git refuses the checkout, the job stops and names the line to add                                                                                                                       |
 
 Traps:
 

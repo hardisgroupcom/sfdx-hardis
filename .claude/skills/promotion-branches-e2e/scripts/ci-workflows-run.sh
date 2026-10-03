@@ -16,6 +16,7 @@
 #       the forecast says after the merge for the post-deployment manual step
 #   W6  marked as done with set-status (the Mark as done button), the validation re-run passes
 #   W7  the deployment of the promotion runs the commands (the fix travelled with it)
+#   W8  a workflow without the safe.directory line: the job stops and names the line to add
 #
 # Prints one line per assertion and writes $LOGS/results-section6quinquies.txt.
 set -uo pipefail
@@ -260,6 +261,30 @@ assert_log W7 ci-deploy-uat-promotion 0 "the deployment of the promotion runs th
   "Skipping E2E pre-deploy manual of PR $C1 .*already run in uat" "Running action E2E flaky post-deploy of PR $C1" "!failed, stopping execution"
 status_check W7b ci-status-c1-uat "statuses in uat after the promotion" "--pr-ids $C1" \
   "S:$C1:e2e-flaky-$C1:uat=success" "S:$C1:e2e-after-flaky-$C1:uat=success" "S:$C1:e2e-manual-$C1:uat=manual"
+
+# ------------------------------------------------------------------ W8: a workflow without safe.directory
+# For a pull_request event GitHub runs the workflow of the Pull Request: this one removes the line, as
+# a project that copied the templates before it existed has it
+git checkout -q -f integration && git pull -q origin integration
+git checkout -q -B feature/E2E-504-no-safe-dir
+sed -i '/safe.directory/d' .github/workflows/check-deploy.yml .github/workflows/process-deploy.yml
+story_resource=force-app/main/default/staticresources/E2E_C4
+printf 'workflow without safe.directory\n' >"$story_resource.resource"
+cat >"$story_resource.resource-meta.xml" <<'META'
+<?xml version="1.0" encoding="UTF-8"?>
+<StaticResource xmlns="http://soap.sforce.com/2006/04/metadata">
+    <cacheControl>Public</cacheControl>
+    <contentType>text/plain</contentType>
+</StaticResource>
+META
+git add .github/workflows "$story_resource.resource" "$story_resource.resource-meta.xml"
+git commit -qm "test: workflows without safe.directory" && git push -q -u origin feature/E2E-504-no-safe-dir
+printf 'Workflows without the safe.directory line: the job must stop and name the line to add.\n' >"$BODIES/c4.md"
+C4=$(p_open feature/E2E-504-no-safe-dir integration "E2E-504 C4 no safe.directory" "$BODIES/c4.md") || exit 1
+wait_workflow check-deploy.yml "$(head_sha feature/E2E-504-no-safe-dir)" ci-check-no-safe-dir
+assert_log W8 ci-check-no-safe-dir 1 "git refuses the checkout: the job stops and names the line to add" \
+  "Git refuses this repository \(detected dubious ownership\)" 'git config --global --add safe.directory "\$GITHUB_WORKSPACE"'
+p_close "$C4" >/dev/null 2>&1
 
 echo
 echo "=== section 6quinquies summary ==="
