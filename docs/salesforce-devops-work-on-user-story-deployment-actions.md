@@ -587,9 +587,9 @@ This requires the same git provider token as `runOnlyOnceByOrg` state tracking.
 
 Before the merge, run the actions of your Pull Request in your own org, a developer sandbox or a scratch org, to check they do what you expect.
 
-**From VS Code**: open your Pull Request with the **My Pull Request** card, then its **Deployment Actions** tab. **Run all in my org** runs them all, pre-deployment actions first, and **Run in my org** in the menu of a row runs one. They run in your default org: when it is the org of a major branch, nothing runs.
+**From VS Code**: open your Pull Request with the **My Pull Request** card, then its **Deployment Actions** tab. Each action has a **Run in my org** button, which reads **Rerun** once a try in your org failed. It runs in your default org: when that is the org of a major branch, nothing runs.
 
-**From the terminal**: [sf hardis:project:action:run](hardis/project/action/run.md) `--all` (or `--action-id`), in a developer org.
+**From the terminal**: [sf hardis:project:action:run](hardis/project/action/run.md) with `--action-id`, or `--all` to run them all, pre-deployment actions first, in a developer org.
 
 - Validation-only actions and package.xml item removals are skipped: they only make sense in a deployment. A `runOnlyOnceByOrg` action already done in your org is skipped too.
 - The result of each action shows under its label: *In your org: Done*. With a Pull Request, it is also recorded in its "Deployment Actions" comment, in a column named after your branch.
