@@ -88,7 +88,10 @@ wait_run_id() {
 rerun_workflow() {
   local label="$1" from="$2" id
   id=$(cat "$LOGS/$from.run")
-  gh run rerun "$id" -R "$REPO" >/dev/null 2>&1 || { echo 9 >"$LOGS/$label.code"; return 1; }
+  gh run rerun "$id" -R "$REPO" >/dev/null 2>&1 || {
+    echo 9 >"$LOGS/$label.code"
+    return 1
+  }
   sleep 15
   wait_run_id "$id" "$label"
 }
@@ -134,21 +137,31 @@ merge_sha() { gh pr view "$1" -R "$REPO" --json mergeCommit --jq .mergeCommit.oi
 
 # ------------------------------------------------------------------ the repository
 step "build the repository, workflows linking sfdx-hardis $SFDX_HARDIS_BRANCH"
-WORK="$WORK" API="${API:-67.0}" bash "$SCRIPTS_DIR/build-repo.sh" >"$LOGS/build.log" 2>&1 || { echo "build failed"; exit 1; }
+WORK="$WORK" API="${API:-67.0}" bash "$SCRIPTS_DIR/build-repo.sh" >"$LOGS/build.log" 2>&1 || {
+  echo "build failed"
+  exit 1
+}
 cd "$WORK" || exit 1
 # The login of a CI job needs the org of each branch in its config: the simulators pass --target-org
 env -u NODE_OPTIONS sf org display --target-org "$ORG" --verbose --json >"$LOGS/org-display.json" 2>/dev/null
 org_field() { node -e "console.log(JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).result[process.argv[2]]||'')" "$(cygpath -m "$LOGS/org-display.json" 2>/dev/null || echo "$LOGS/org-display.json")" "$1"; }
 # Not the sfdxAuthUrl of `sf org display --verbose`: recent CLIs redact it there
 AUTH_URL=$(env -u NODE_OPTIONS sf org auth show-sfdx-auth-url --target-org "$ORG" --json 2>/dev/null | node -e "console.log(JSON.parse(require('fs').readFileSync(0)).result?.sfdxAuthUrl||'')")
-case "$AUTH_URL" in force://*) ;; *) echo "no sfdx auth URL for $ORG"; exit 1 ;; esac
+case "$AUTH_URL" in force://*) ;; *)
+  echo "no sfdx auth URL for $ORG"
+  exit 1
+  ;;
+esac
 for f in config/branches/.sfdx-hardis.*.yml; do
   printf 'targetUsername: %s\ninstanceUrl: %s\n' "$(org_field username)" "$(org_field instanceUrl)" >>"$f"
 done
 node "$SCRIPTS_DIR/ci-workflows-prepare.cjs" "$SFDX_HARDIS_ROOT" "$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" "$SFDX_HARDIS_BRANCH" >>"$LOGS/build.log" || exit 1
 git add -A && git commit -qm "chore: base project" >/dev/null
 # Actions off while the major branches are pushed: no deployment of the base project
-gh repo create "$REPO" --private >>"$LOGS/build.log" 2>&1 || { echo "repo create failed"; exit 1; }
+gh repo create "$REPO" --private >>"$LOGS/build.log" 2>&1 || {
+  echo "repo create failed"
+  exit 1
+}
 gh api -X PUT "repos/$REPO/actions/permissions" -F enabled=false >/dev/null
 git remote add origin "https://github.com/$REPO.git"
 git push -q -u origin main
@@ -218,7 +231,10 @@ wait_workflow process-deploy.yml "$(merge_sha "$C3")" ci-deploy-integration-c3
 assert_log W4c ci-deploy-integration-c3 0 "the fix story deploys" "!failed, stopping execution"
 
 # ------------------------------------------------------------------ W5 W6 W7: the promotion
-job_promote() { p_promote "$@"; echo $? >"$LOGS/$3.code"; }
+job_promote() {
+  p_promote "$@"
+  echo $? >"$LOGS/$3.code"
+}
 job_promote integration "$C1,$C3" ci-promotion-integration-uat
 P1=$(grep -aoE "Promotion Pull Request created: \S+" "$LOGS/ci-promotion-integration-uat.log" | grep -oE "[0-9]+$" | tail -1)
 printf 'export CP1="%s"\n' "$P1" >>"$LOGS/ci-vars.sh"
