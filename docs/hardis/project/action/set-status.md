@@ -54,20 +54,20 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   |                 Default                  | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:----------------------------------------:|:--------:|:-------:|
-| action-id         | option  | Id of the action                                              |                                          |          |         |
-| agent             | boolean | Run in non-interactive mode for agents and automation         |                                          |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |                                          |          |         |
-| flags-dir         | option  | undefined                                                     |                                          |          |         |
-| json              | boolean | Format output as json.                                        |                                          |          |         |
-| note              | option  | Text added to the note recorded with the status               |                                          |          |         |
-| org-branch        | option  | Org branch the action was done in (ex: integration)           |                                          |          |         |
-| pr                | option  | Number of the Pull Request the action comes from              |                                          |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |                                          |          |         |
-| status            | option  | New status of the action                                      |                 success                  |          | success |
-| target-org<br/>-o | option  | undefined                                                     |                                          |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                          |          |         |
+| Name              |  Type   | Description                                                   | Default | Required | Options |
+|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| action-id         | option  | Id of the action                                              |         |          |         |
+| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir         | option  | undefined                                                     |         |          |         |
+| json              | boolean | Format output as json.                                        |         |          |         |
+| note              | option  | Text added to the note recorded with the status               |         |          |         |
+| org-branch        | option  | Org branch the action was done in (ex: integration)           |         |          |         |
+| pr                | option  | Number of the Pull Request the action comes from              |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
+| status            | option  | New status of the action                                      | success |          | success |
+| target-org<br/>-o | option  | undefined                                                     |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 
