@@ -49,7 +49,7 @@ The cards follow the order of the work:
 Some changes need a step that metadata alone cannot do: load reference data, run an Apex script, assign a permission set. Open your Pull Request with the **My Pull Request** card, then its **Deployment Actions** tab.
 
 1. Click **(1)** to add an action, pick its type and when it runs (before or after the deployment).
-2. The list **(2)** shows the actions of the Pull Request, numbered in the order they run. Click a label to see or edit it, or open the menu at the end of its row to delete it.
+2. The list **(2)** shows the actions of the Pull Request, numbered in the order they run. Click a label to see or edit it, **Run in my org** to try the action in your developer org before the merge (**Rerun** after a failed try), or open the menu at the end of its row to delete it. See [Try your actions in your own org](salesforce-devops-work-on-user-story-deployment-actions.md#try-your-actions-in-your-own-org).
 3. **(3)** opens the Pull Request on your git provider.
 
 The actions run automatically when the Pull Request is deployed. See [Deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md) for every action type.
