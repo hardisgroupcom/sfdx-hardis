@@ -35,7 +35,7 @@ Some questions accept several values:
 ![A completed command](assets/images/annotated/vscode-guide/command-runner-completed.png)
 
 - **(1)** gives the final status: **Completed**, or **Failed** with the error in the timeline.
-- **(2)** runs the same command again, with the same arguments.
+- **(2)** runs the same command again in this tab, with the same arguments.
 - **(3)** closes the tab by itself the next time this command succeeds.
 - **(4)** shows the advanced details: the sub-commands and the full logs of each step.
 - **(5)** each answer you gave stays in the timeline. Click a line to expand what it did.
