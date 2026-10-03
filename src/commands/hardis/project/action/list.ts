@@ -1,5 +1,5 @@
 import { Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
@@ -10,6 +10,12 @@ import {
   resolvePrId,
 } from '../../../../common/utils/actionUtils.js';
 import { ActionCommandBase } from './base.js';
+import { getStateEntriesForPr, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
+import { readLocalActionStates } from '../../../../common/utils/deploymentActionsLocalState.js';
+import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
+import { findOpenPromotionPullRequest, forecastAction } from '../../../../common/utils/deploymentActionForecastUtils.js';
+import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -24,12 +30,17 @@ export default class ActionList extends ActionCommandBase {
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
+With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. With \`--forecast <branch>\` (and \`--from-branch <branch>\`), it also returns what the next promotion will do with each action in that branch: waiting for someone before the merge, a manual step to do once the promotion is deployed, done already, run by the validation job, run by the deployment job, failed there, not for that branch (branch filter, validation only), or not carried by the open promotion Pull Request, which it also returns. The VS Code Deployment Actions tab shows it in its "Next promotion" mode.
+
+With \`--with-backpromotes\`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
 
 \`\`\`sh
 sf hardis:project:action:list --agent --scope branch --when pre-deploy
+sf hardis:project:action:list --agent --with-status --pr-ids 123,124 --json
 \`\`\`
 
 Required in agent mode:
@@ -65,6 +76,23 @@ Required in agent mode:
     'pr-id': Flags.string({
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
+    'with-status': Flags.boolean({
+      default: false,
+      description: 'Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments',
+    }),
+    forecast: Flags.string({
+      description: 'With --with-status, also return what the next promotion to this major branch will do with each action (ex: preprod)',
+    }),
+    'from-branch': Flags.string({
+      description: 'With --forecast, the branch the promotion comes from (ex: uat): finds the open promotion Pull Request and the Pull Requests it carries',
+    }),
+    'with-backpromotes': Flags.boolean({
+      default: false,
+      description: 'With --with-status, also return the rows of the Backpromotes comments of --pr-ids: the actions run in each developer org',
+    }),
+    'pr-ids': Flags.string({
+      description: 'Comma-separated list of Pull Request numbers, or draft (with --with-status)',
+    }),
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -84,6 +112,10 @@ Required in agent mode:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ActionList);
     const agentMode = flags.agent === true;
+
+    if (flags['with-status']) {
+      return await this.listStatuses(flags['pr-ids'] || '', flags['with-backpromotes'] === true, flags.forecast, flags['from-branch']);
+    }
 
     const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
 
@@ -118,5 +150,88 @@ Required in agent mode:
     return { outputString: `Found ${actions.length} actions`, actions: actions as any };
   }
 
+  /**
+   * Status of the actions of some Pull Requests in each org branch, from their Deployment Actions
+   * comments, for the VS Code Deployment Actions tab.
+   */
+  private async listStatuses(prIdsFlag: string, withBackpromotes: boolean, forecastBranch?: string, fromBranch?: string): Promise<AnyJson> {
+    const prIds = [...new Set(prIdsFlag.split(',').map((id) => id.replace('#', '').trim()).filter((id) => id === 'draft' || /^\d+$/.test(id)))];
+    if (prIds.length === 0) {
+      throw new SfError(t('missingRequiredFlag', { flag: 'pr-ids' }));
+    }
+    uxLog("action", this, c.cyan(t('actionListStatusHeader', { count: prIds.length })));
+    // The Pull Request comments when a git provider is available, the local results of the actions
+    // tried in a developer org in any case (a draft only has those)
+    const prNumbers = prIds.filter((id) => id !== 'draft').map((id) => parseInt(id, 10));
+    const gitProvider = prNumbers.length > 0 ? await GitProvider.getInstance() : null;
+    if (gitProvider) {
+      await loadDeploymentActionsState(prNumbers);
+    }
+    const statuses: Record<string, any[]> = {};
+    for (const prId of prIds) {
+      const fromComment = prId !== 'draft' && gitProvider ? getStateEntriesForPr(parseInt(prId, 10)) : [];
+      const fromLocal = readLocalActionStates(prId).filter(
+        (local) => !fromComment.some((e) => e.actionId === local.actionId && e.orgBranch === local.orgBranch)
+      );
+      statuses[prId] = [...fromComment, ...fromLocal].map((e) => ({
+        actionId: e.actionId,
+        actionLabel: e.actionLabel,
+        orgBranch: e.orgBranch,
+        when: e.when,
+        status: e.status,
+        date: e.date,
+        jobUrl: e.jobUrl,
+        note: e.note || '',
+        movedTo: e.movedTo || null,
+        blockedBy: e.blockedBy || null,
+        stoppedActions: e.stoppedActions || [],
+        local: fromLocal.includes(e),
+      }));
+    }
+    // The actions run in developer orgs, from the Backpromotes comments (one more read per Pull Request)
+    const backpromotes: Record<string, any[]> = {};
+    if (withBackpromotes && gitProvider) {
+      const store = new BackpromoteCommentStore(null, this);
+      for (const prNumber of prNumbers) {
+        try {
+          backpromotes[String(prNumber)] = (await store.read(prNumber)).actionRows;
+        } catch (e) {
+          uxLog("warning", this, c.yellow(t('backpromoteCommentWriteFailed', { pr: prNumber, message: (e as Error).message })));
+          backpromotes[String(prNumber)] = [];
+        }
+      }
+    }
+    const forecast = forecastBranch && gitProvider ? await this.buildForecast(prNumbers, forecastBranch, fromBranch) : null;
+    // gitProvider false: the comments could not be read, only the local results are there, and a UI
+    // must not present "no status" as "not run yet"
+    return {
+      outputString: `Status of the actions of ${prIds.length} Pull Request(s)`,
+      statuses,
+      gitProvider: prNumbers.length === 0 || !!gitProvider,
+      ...(withBackpromotes ? { backpromotes } : {}),
+      ...(forecast ? { forecast } : {}),
+    };
+  }
+
+
+
+  /**
+   * What the next promotion to forecastBranch will do with the actions of these Pull Requests, read
+   * from their actions files (what the VS Code tab lists). The states must have been loaded.
+   */
+  private async buildForecast(prNumbers: number[], forecastBranch: string, fromBranch?: string): Promise<AnyJson> {
+    const majorBranchNames = (await listMajorOrgs()).map((org: any) => org.branchName);
+    const promotionPullRequest = fromBranch ? await findOpenPromotionPullRequest(fromBranch, forecastBranch) : null;
+    const actions: Record<string, any[]> = {};
+    for (const prNumber of prNumbers) {
+      const carried = !promotionPullRequest || promotionPullRequest.carriedPrIds === null || promotionPullRequest.carriedPrIds.includes(prNumber);
+      const defs = [
+        ...(await readActions('pr', 'pre-deploy', undefined, String(prNumber))).map((def) => ({ ...def, when: 'pre-deploy' as const })),
+        ...(await readActions('pr', 'post-deploy', undefined, String(prNumber))).map((def) => ({ ...def, when: 'post-deploy' as const })),
+      ];
+      actions[String(prNumber)] = defs.map((def) => forecastAction(def, prNumber, forecastBranch, majorBranchNames, carried));
+    }
+    return { branch: forecastBranch, fromBranch: fromBranch || null, promotionPullRequest: promotionPullRequest as any, actions };
+  }
 }
 

@@ -218,6 +218,10 @@ export class GitlabProvider extends GitProviderRoot {
     return "sfdx-hardis Gitlab connector";
   }
 
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$CI_PROJECT_DIR"';
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "merge request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (gitlab)`);
@@ -765,6 +769,8 @@ ${getBannerMarkdownAndLink()}
       createdDate: prData?.created_at || undefined,
       mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || prData?.mergeCommitSha || undefined,
+      // draft since GitLab 13.2, work_in_progress before
+      isDraft: prData?.draft === true || prData?.work_in_progress === true,
       providerInfo: prData,
       customBehaviors: {}
     }

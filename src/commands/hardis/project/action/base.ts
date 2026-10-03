@@ -1,4 +1,5 @@
 import { SfCommand } from '@salesforce/sf-plugins-core';
+import { promptActionConfirm, promptActionSelect, promptActionText } from '../../../../common/utils/actionPromptUtils.js';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import { isCI } from '../../../../common/utils/index.js';
@@ -87,27 +88,11 @@ export abstract class ActionCommandBase extends SfCommand<any> {
   }
 
   protected async promptSelect(message: string, choices: any[], initial?: string): Promise<any> {
-    const initialIndex = initial != null ? choices.findIndex(c2 => c2.value === initial) : 0;
-    const response = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(message),
-      choices,
-      initial: initialIndex >= 0 ? initialIndex : 0,
-      description: message,
-    });
-    return response.value;
+    return promptActionSelect(message, choices, initial);
   }
 
   protected async promptText(message: string, initial: string): Promise<string> {
-    const response = await prompts({
-      type: 'text',
-      name: 'value',
-      message: c.cyanBright(message),
-      initial,
-      description: message,
-    });
-    return response.value || '';
+    return promptActionText(message, initial);
   }
 
   /**
@@ -170,15 +155,7 @@ export abstract class ActionCommandBase extends SfCommand<any> {
   }
 
   protected async promptConfirm(message: string, initial = false): Promise<boolean> {
-    const response = await prompts({
-      type: 'confirm',
-      name: 'value',
-      message: c.cyanBright(message),
-      default: initial,
-      initial,
-      description: message,
-    });
-    return response.value === true;
+    return promptActionConfirm(message, initial);
   }
 
   /**

@@ -621,6 +621,99 @@ Read the numbers with these in mind:
   after it.
 - Never time two runs at once: they share the CPU, the scratch orgs and the target org.
 
+## 6quater. Deployment actions: gate, recovery, mark as done, forecast
+
+`scripts/deployment-actions-run.sh` runs after `promotion-run.sh` (and `promotion-edge.sh` when you
+run it), on the same repository. It adds two stories, then asserts every job log and, through
+`scripts/check-action-status.cjs`, the JSON of `sf hardis:project:action:list --with-status`:
+
+| Story | Branch                     | Target      | Actions (`story_actions` kind)                                                                                                          |
+|-------|----------------------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| S8    | `feature/E2E-401-recovery` | integration | `recovery`: pre-deploy manual, post-deploy command failing until `e2e-recovery-ok.txt` exists, the command after it, post-deploy manual |
+| S9    | `feature/E2E-402-draft`    | integration | `pre-manual`: a pre-deploy manual action, on a Pull Request with "draft" in its title                                                   |
+
+```bash
+export PROVIDER=github ORG REPO WORK LOGS DEV API      # plus GL_* and PROJECT_* on GitLab
+export DEV_ORG=<scratch org username>                   # optional: group D
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh   # results-section6quater.txt
+```
+
+| Group | Checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| A     | The validation of S8 **stops** (exit 1) right after its pre-deployment actions, before the deployment check, naming the manual action and the `set-status` command; `set-status --org-branch integration` marks it with a "Manual action marked as done by" note; the validation run again skips it and passes; S9 (draft in the title) only warns                                                                                                                                            |
+| B     | The deployment of S8 fails on the flaky action and records it `failed`, the two after it `not-run`; `action:run --next all` retries it and runs the stopped ones (note "Run locally by"); `set-status` closes the post manual step; in agent mode a retry in `preprod`, where nothing failed, is refused                                                                                                                                                                                      |
+| C     | `set-status --org-branch uat` marks the pre manual action done **ahead** ("before any deployment to uat"); with P6 (integration -> uat, S8 alone) open, `--forecast uat --from-branch integration` names P6, carries S8 and not S2, and forecasts done / runs at deployment / after the merge (post-deployment manual) / not in this promotion; the validation and the deployment of P6 skip the action marked ahead; after the merge the forecast has no promotion and the commands are done |
+| D     | With `DEV_ORG`: `action:run --all --dev-org` in a developer org records `dev-sandboxes` and the Backpromotes rows of S8; a second run skips what is "already done in this org"; `--dev-org` refuses the org of a major branch                                                                                                                                                                                                                                                                 |
+
+Traps:
+
+- **The flaky command reads a file of the working copy**, `e2e-recovery-ok.txt`, untracked on
+  purpose: `git checkout -f` keeps it, so every job after the retry finds it. Delete it to replay B.
+  The script lists it in `.git/info/exclude`: untracked and not excluded, it makes
+  `promotion:create` refuse the working copy as not clean (C2).
+- **The flaky command is one file per story** (`scripts/e2e/flaky-<pr>.cjs`): a shared file is
+  committed by the first story only, and a promotion carrying a later one deploys a command whose
+  script never reached the branch.
+- **The section declares the org of each major branch** (`targetUsername`, `instanceUrl`, one
+  commit on integration), like a real project: without it `--dev-org` cannot tell a major org (D4),
+  and `action:run --org-branch` has nothing to check `--target-org` against.
+- **`DA_RUN=<n>` replays the section on the same repository** with story branches of their own:
+  `DA_RUN=2 bash deployment-actions-run.sh`.
+- **B6 passes `--allow-branch-mismatch`**: in agent mode a retry in preprod from the integration
+  checkout is refused for the branch first, before the check B6 is about.
+- **`p_cli` runs a command the way a person does**, with the provider token and no `CI`: the notes
+  then say "Run locally by", and `--agent` is what keeps the commands from prompting.
+- The Mark as done buttons, Run in another org and the Next promotion switch of the VS Code panel
+  run these same commands (`set-status`, `action:run --select-org`, `action:list --forecast`), but
+  the prompts of `--select-org` are not scripted: only the agent paths are.
+
+## 6quinquies. The same features through real GitHub Actions workflows
+
+Every other section runs the CI jobs with the simulators of section 1. This one runs them in GitHub
+Actions, with the workflows a project gets from `defaults/ci/.github/workflows`, in a repository of
+its own:
+
+```bash
+export ORG REPO WORK LOGS DEV API          # REPO, WORK and LOGS new: never the ones of section 4
+export SFDX_HARDIS_BRANCH=<branch>         # pushed to hardisgroupcom/sfdx-hardis; default: current
+bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh   # results-section6quinquies.txt
+```
+
+`scripts/ci-workflows-prepare.cjs` changes two things in `check-deploy.yml` and `process-deploy.yml`:
+a step before the sfdx-hardis one clones the branch, builds it and runs `sf plugins link`, so the
+jobs run the code under test and not the release of the Docker image; and the four
+`SFDX_AUTH_URL_<BRANCH>` secrets, set from `sf org display --verbose` of `ORG`, log in without the
+JWT connected app a real project uses. Actions stay off while the major branches are pushed, so the
+base project is never deployed by CI.
+
+| Check | What                                                                                                                                                                                                                                                                                  |
+|-------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| W0    | The job runs sfdx-hardis linked from the branch (`sf plugins` lists it as `(link)`)                                                                                                                                                                                                   |
+| W1    | The validation of C1 (`recovery` actions) stops on its pre-deployment manual action; the Pull Request comment says why and shows its checkbox                                                                                                                                         |
+| W2    | The checkbox ticked in the comment through the API, **Re-run all jobs**: the job records the action as done and passes                                                                                                                                                                |
+| W3    | C2, opened as a GitHub **draft** with no "draft" in its title, is only warned: the draft flag comes from the provider                                                                                                                                                                 |
+| W4    | The deployment job after the merge: the flaky command fails and stops the next ones, the manual action done is skipped; statuses read back with `action:list`                                                                                                                         |
+| W5    | C3 brings the file the flaky command needs. The promotion integration -> uat (C1, C3) stops in validation until the manual action is done in uat; the forecast says waiting before the merge, after the merge for the post-deployment manual step, runs at deployment for the command |
+| W6    | `set-status --org-branch uat` (what **Mark as done in uat** runs), the validation re-run skips it and passes, the forecast says done                                                                                                                                                  |
+| W7    | The deployment of the promotion runs the commands with the fix that travelled with it; the post-deployment manual step waits in uat                                                                                                                                                   |
+| W8    | A workflow without the `safe.directory` line (a project that copied the templates before it): git refuses the checkout, the job stops and names the line to add                                                                                                                       |
+
+Traps:
+
+- The login of a CI job reads the org of its branch from `config/branches/.sfdx-hardis.<branch>.yml`:
+  without `targetUsername` (and `instanceUrl`) it stops with "You may have to define
+  targetUsername", which the simulators never show because they pass `--target-org`. The script
+  appends both to the four branch configs.
+- The auth URL comes from `sf org auth show-sfdx-auth-url`: `sf org display --verbose` now prints
+  a redacted placeholder in its place, and secrets set from it make every login fall through to
+  JWT. The script refuses a value that does not start with `force://`.
+- A rerun keeps its run id: `gh run rerun` then wait on the same id, and `gh run view --log` reads
+  the latest attempt.
+- A `pull_request` run is listed under the head commit of the Pull Request, a `push` run under the
+  merge commit: `gh run list --commit` finds both.
+- The link step takes three to four minutes per job (install and `tsc`): the section is about
+  25 runs long, so count about an hour.
+
 ## 7. Traps met while writing this
 
 - **The Dev Hub has a daily scratch org signup limit, and it resets at midnight in the org's own

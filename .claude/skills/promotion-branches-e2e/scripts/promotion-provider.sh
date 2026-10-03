@@ -12,6 +12,7 @@
 #   p_body <number>                        prints the description
 #   p_set_body <number> <body file>        replaces the description
 #   p_token                                the provider token
+#   p_cli <args...>                        an sfdx-hardis command run like a person does: provider token, no CI
 
 _P_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 case "${PROVIDER:?set PROVIDER to github or gitlab}" in
@@ -23,6 +24,7 @@ github)
   p_promote() { e2e_promote "$@"; }
   p_release_notes() { e2e_release_notes "$@"; }
   p_token() { gh auth token; }
+  p_cli() { env -u NODE_OPTIONS -u CI GITHUB_TOKEN="$(gh auth token)" GITHUB_REPOSITORY="$REPO" GITHUB_REPOSITORY_OWNER="${REPO%%/*}" GITHUB_SERVER_URL="https://github.com" node "$DEV" "$@"; }
   p_open() {
     local url
     for _ in $(seq 1 10); do
@@ -131,6 +133,7 @@ gitlab)
   p_promote() { gl_promote "$@"; }
   p_release_notes() { gl_release_notes "$@"; }
   p_token() { echo "$GL_TOKEN"; }
+  p_cli() { env -u NODE_OPTIONS -u CI CI_SFDX_HARDIS_GITLAB_TOKEN="$GL_TOKEN" CI_SERVER_URL="$GL_HOST" CI_PROJECT_ID="$PROJECT_ID" CI_PROJECT_PATH="$PROJECT_PATH" CI_PROJECT_URL="$GL_HOST/$PROJECT_PATH" node "$DEV" "$@"; }
   p_open() {
     local iid body
     body="$(cygpath -m "$4" 2>/dev/null || echo "$4")"

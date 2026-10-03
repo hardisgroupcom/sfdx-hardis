@@ -1,25 +1,28 @@
-# Promotion branches and backpromote: end to end test on GitHub
+# Promotion branches, deployment actions and backpromote: end to end test on GitHub
 
-**Date:** 2026-10-02 (supersedes the run of 2026-09-13)
-**Why this run:** issue #2260. The DevOps Pipeline counted a story carried by a merged promotion in
-the branch it left once the branch it reached had gone live, and the upcoming promotion notes
-listed it. Fixed in sfdx-hardis #2262 and vscode-sfdx-hardis #538.
+**Date:** 2026-10-03 (supersedes the run of 2026-10-02)
+**Why this run:** the deployment action features of sfdx-hardis #2268 and vscode-sfdx-hardis #542:
+the manual action gate of validations, `action:run` and `action:set-status` (also ahead and in
+another org), the forecast of the next promotion, the developer org runs. This run is also the first
+one through **real GitHub Actions workflows** (new section 6quinquies).
 
 **Repositories under test (private, created empty for this run):**
 
-- promotion branches: `nvuillam/sfdx-hardis-promo-e2e-18`
-- backpromote (Beta): `nvuillam/sfdx-hardis-promo-e2e-20` (`-19` was abandoned: its setup merged
-  the stories, then could not create the second scratch org, see "What the run found")
+- promotion branches, sections 4, 6, 6quater, 7bis, 7ter: `nvuillam/sfdx-hardis-promo-e2e-27`
+- real CI workflows, section 6quinquies: `nvuillam/sfdx-hardis-promo-e2e-26`
+- backpromote (Beta), section 6bis: `nvuillam/sfdx-hardis-promo-e2e-29`
+- dead setups, see "What the run found": `-21` (stopped on request), `-22` (compromised by a memory
+  stop and a network outage), `-23`, `-24`, `-25` (CI section setup traps), `-28` (DNS failure)
 
 **Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, Dev Hub). Scratch
-orgs `promo-e2e-dev` and `promo-e2e-dev2`, created by this run (the previous ones had expired).
-**sfdx-hardis:** `fix/promotion-already-promoted-pipeline-and-notes`, `fbd675222`, through
-`bin/dev.js`.
-**vscode-sfdx-hardis:** `fix/promotion-count-after-go-live`, `d978c2a1`, compiled with `yarn compile`.
+orgs `promo-e2e-dev` (also `DEV_ORG` of 6quater group D) and `promo-e2e-dev2`.
+**sfdx-hardis:** `feat/recover-failed-actions`, up to `e31cb616d`, through `bin/dev.js` locally and
+linked with `sf plugins link` in the CI workflows.
+**vscode-sfdx-hardis:** `feat/recover-failed-actions`, `86b18d4e`, compiled with `yarn compile`.
 
-Every job is a real `deploy:smart`, `promotion:create`, `promotion:list-candidates`,
-`doc:release-notes` or `work:backpromote` against the org, run locally with the GitHub Actions
-variables set. GitHub only: GitLab, Azure DevOps and Bitbucket were not run.
+Every simulated job is a real `deploy:smart`, `promotion:create`, `action:run`, `action:set-status`,
+`action:list` or `work:backpromote` against the org, run locally with the GitHub Actions variables
+set. Section 6quinquies runs the jobs in GitHub Actions themselves. GitHub only.
 
 ___
 
@@ -27,99 +30,103 @@ ___
 
 | Section                                                                             | Checks                           | OK                         | FAIL |
 |-------------------------------------------------------------------------------------|----------------------------------|----------------------------|------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                               | 41                         | 1    |
-| 6: edge cases, groups g1 to g5                                                      | 44                               | 42                         | 2    |
-| 6: edge group g6, full merge of uat into preprod, plus a pipeline check             | 4                                | 4                          | 0    |
-| 5bis: Pull Request comment audit                                                    | 676 checks over 35 Pull Requests | all                        | 0    |
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                               | 42                         | 0    |
+| 6: edge cases, groups g1 to g6                                                      | 47                               | 46                         | 1    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org (third pass)     | 21                               | 21                         | 0    |
+| 6quinquies: the same features through real GitHub Actions workflows                 | 15                               | 15                         | 0    |
 | 7bis: single place in the diagram                                                   | 1                                | 1                          | 0    |
-| 6bis: backpromote B0 to B16, C1 to C4, on `-20`                                     | 63                               | 62                         | 1    |
-| 7ter: flag-off A/B against `origin/main` (`045f727aa`), second pair                 | 5 files compared                 | `TOTAL DIFFERING LINES: 0` | 0    |
+| 6bis: backpromote B0 to B17, C1 to C4                                               | 63                               | 59                         | 4    |
+| 7ter: flag-off A/B against `origin/main` (`a236259ef`)                              | 5 files compared, passes 2 and 3 | `TOTAL DIFFERING LINES: 0` | 0    |
 
-The four failures are not product defects. One came from the workstation running out of memory,
-three from expectations the product had moved past. Each is explained below. The counts are the
-first pass: the corrected assertions were checked against the saved logs, not by a second run.
-
-___
-
-## The scenario of issue #2260
-
-Seven stories. S7 is new in this run: a second hotfix merged into `preprod` and promoted to `main`
-on its own, so that the first go-live promotion (P4) is in no window any more. That is the state of
-the reporter's repository.
-
-| Checkpoint                     | integration | uat        | preprod    | main       |
-|--------------------------------|-------------|------------|------------|------------|
-| `pipeline-before-p1`           | #1, #2, #3  | -          | -          | -          |
-| `pipeline-after-p1`            | #2          | #1, #3     | -          | -          |
-| `pipeline-before-p3`           | #2          | #1, #3, #5 | #4         | -          |
-| `pipeline-after-p3`            | #2          | #1, #5     | #3, #4     | -          |
-| `pipeline-p4-open`             | #2          | #1, #5     | #3, #4, #6 | -          |
-| `pipeline-after-golive`        | #2          | #1, #5     | -          | #3, #4, #6 |
-| `pipeline-after-second-golive` | #2          | #1, #5     | -          | #7         |
-| `pipeline-after-retrofit`      | #2, #13     | #1, #5     | -          | #7         |
-
-`pipeline-after-second-golive` is the proof: P4 (#11) has left the `main` window, which shows the
-latest go-live only, and `preprod` was never merged into `main` directly. #3, #4 and #6 come back in
-neither `preprod` nor `uat`. `promotion:create` from `preprod` offered #7 and left out what P4 had
-shipped, so the view and the command agree.
-
-Edge group g6 then merges `uat` into `preprod` directly: the job names the stories already promoted,
-`list-candidates` answers that nothing is left waiting, and the pipeline shows `uat` and
-`integration` empty with everything listed in `preprod`.
-
-Release notes of the go-live list #3, #4 and #6, not the vehicle #11; `--include-promotions` adds
-#11 next to them.
+None of the remaining failures is a product defect: 52a is a race in the test script (fixed), the
+four backpromote ones are network and resource failures of the workstation, replayed below.
 
 ___
 
 ## What the run found
 
-1. **`check-retrofit` exited 1 (assertion 23a).** The deployment action `echo "E2E post-deploy of
-   PR 7"` failed with `Command failed` and no output. The workstation was out of memory at that
-   moment (the harness stopped the script seconds later), and the same action ran in every other
-   job. The scope assertions of that job are in its log: P4 expanded into #4, #3, #6, and each story
-   named as already deployed through its promotion. Not re-run: the retrofit Pull Request was
-   merged by then. Runbook trap added.
-2. **Edge case 35, "Pull Request creation refused" (two assertions).** With no provider token and no
-   `gh` CLI the command now stops with "Promotion branches need the git provider connection" before
-   it creates anything, since #2236. The case still expected a pushed branch and a creation link.
-   The script now asserts the refusal and that no promotion branch was pushed; the runbook keeps the
-   "refused by a connected provider" case as a separate row, not scripted.
-3. **Backpromote B2, "production org".** A Developer Edition org is accepted as a dev environment
-   since #2239 (org type `developer`). The step expected `blocked`. New expectation
-   `reference/backpromote/developer-edition.json`, checked against the saved plan: all checks pass.
-4. **The Dev Hub caps the active scratch orgs at 3, and the CI of sfdx-hardis uses the same Dev
-   Hub.** Two `CI-hardis-nut-shared-*` orgs left by Pull Request runs plus the first developer org
-   made the second `sf org create scratch` fail with `LIMIT_EXCEEDED`, after `backpromote-setup.sh`
-   had merged its stories, which cost repository `-19`. One CI org of a finished run was deleted
-   (`ActiveScratchOrg`), and the section ran on `-20`. Runbook trap added.
+### Product defects, fixed in this run
 
-No product defect was found.
+1. **The forecast of the next promotion said "Waiting for you" for post-deployment manual actions**
+   (reported from the real repository). A post-deployment step cannot be done before the metadata it
+   completes is deployed. New forecast code `after-merge`, shown "After the merge" with no Mark as
+   done button and not counted as to do. Proven on real CI (W5b, W6c) and by 6quater C3.
+2. **The GitHub workflow templates did not run deployment actions at all.** The jobs run in the
+   sfdx-hardis container, where git refuses the checkout ("detected dubious ownership"): sfdx-hardis
+   cannot read which Pull Requests are deployed and skips their actions, green. The training fork
+   carried the workaround; the shipped `check-deploy.yml` and `process-deploy.yml` did not. Both now
+   declare `safe.directory` (`fb3d4d998`), and a job whose workflow lacks it stops with the line to
+   add instead of skipping the actions (`be9fd1dea`, the check lives in the git provider classes,
+   each naming its own workspace variable). Found by section 6quinquies, the first run through CI;
+   the stop proven on real GitHub Actions (new check W8).
+3. **`action:run --org-branch <major> --target-org <org>` refused when the branch config declares no
+   org**, with "No org of ? (branch preprod) is authenticated". It now takes the org passed, and asks
+   for `--target-org` with a clear message when none is passed (`e31cb616d`, three unit tests).
+
+### Test script defects, fixed
+
+- g6 validated the full merge Pull Request before GitHub wrote `refs/pull/<n>/merge` (52a): it now
+  waits for the merge ref like the other groups. 52a could not be replayed after the fact: the
+  validation reads the scope from the provider, which had moved on. 52b and 52c passed.
+- 6quater, pass 1 and 2 on `-27`: `e2e-recovery-ok.txt` made `promotion:create` refuse the working
+  copy (now in `.git/info/exclude`); a shared `flaky.cjs` never reached uat with a later story (now
+  one per story); the repository declared no org per branch, so `--dev-org` could not refuse a major
+  org (now declared, like a real project); B6 needed `--allow-branch-mismatch` to reach the refusal it
+  tests. `DA_RUN=<n>` replays the section on the same repository. Pass 3: 21/21.
+- 6quinquies setup: CI login needs `targetUsername` in the branch configs, and `sf org display
+  --verbose` now redacts `sfdxAuthUrl` (the script uses `sf org auth show-sfdx-auth-url`).
+
+### Environment
+
+- The workstation ran short of memory several times. Claude Code reported the background runs as
+  stopped, but the processes went on. At those moments a bare `echo` action failed, git could not
+  start its DNS thread, and the GitHub API answered `fetch failed`. `-22` was abandoned for that
+  reason, and its 23a and 23b passed on `-27`. An edit of the `-22` working copy while its run was
+  still alive caused 23b there: never touch the working copy of a running section.
+- When the GitHub API is down, `deploy:smart` deploys the metadata without the deployment actions of
+  the Pull Requests, then fails on the next API call. Not changed here; worth a look.
+
+### Backpromote failures, replayed
+
+| Step        | First run                                      | Replay                                                                             |
+|-------------|------------------------------------------------|------------------------------------------------------------------------------------|
+| B3-plan-s1  | `sgd` "not a valid sha" during the memory stop | plan built, version 3, progress written; only "already run" differs (B4 ran since) |
+| B3-progress | no `retrieve` line                             | OK, 14 progress lines                                                              |
+| B5-confirm  | `fetch failed`                                 | OK                                                                                 |
+| C2-comments | the confirm never ran                          | the original org row is done; a second row belongs to the refreshed sandbox of B16 |
+
+___
+
+## Real CI workflows (section 6quinquies, `-26`)
+
+| Check | Result                                                                                                                                       |
+|-------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| W0    | the jobs run `sfdx-hardis (link) /tmp/sfdx-hardis`                                                                                           |
+| W1    | the validation stops on the pending pre-deployment manual action; the comment shows why                                                      |
+| W2    | the checkbox ticked through the API, Re-run all jobs: recorded as done, green                                                                |
+| W3    | a GitHub draft with no "draft" in its title is only warned (the provider's draft flag)                                                       |
+| W4    | the deployment job fails on the flaky command and stops the next ones; statuses read back                                                    |
+| W5    | the promotion to uat stops until the manual action is done in uat; forecast "after the merge"                                                |
+| W6    | `set-status --org-branch uat`, the re-run passes, the forecast says done                                                                     |
+| W7    | the promotion deploys the commands with the fix that travelled with it                                                                       |
+| W8    | a workflow without the `safe.directory` line: the job stops and names the line to add (run once by hand on `-26`, added to the script after) |
 
 ___
 
 ## What this run did not cover
 
-- **GitLab, Azure DevOps and Bitbucket.** The fix adds `listMergedPullRequestsIntoBranch` to the
-  four providers of the extension; only the GitHub one ran live. The reporter of #2260 is on
-  Bitbucket, whose only test token is still scoped to a repository that no longer exists.
-- **The four failed assertions were not run a second time.** They were read against the saved logs
-  after the corrections.
-- **A real production org refused by backpromote** (`refused-production.json`): the harness only
-  has Developer Edition orgs, which are accepted.
-- **Pull Request creation refused by a connected provider**, with the link to the creation form.
-- **The upcoming promotion notes in branch mode** (`--source-branch uat --target-branch preprod`),
-  the CLI change of #2262: covered by unit tests only. The release notes this run generates are the
-  post mode of a go-live.
+- **GitLab, Azure DevOps and Bitbucket**, for the simulators and for real CI. The draft flag of
+  GitLab, Azure DevOps and Bitbucket is unit tested only.
+- **52a** (see above), and the backpromote steps only replayed after the fact.
+- **The VS Code panel is not clicked**: Mark as done, Run in another org and the Next promotion
+  switch run the commands asserted here; the panel itself was checked on the data of the real
+  repository with the read-only harness and by its unit tests.
+- **The interactive prompts** of `action:run --select-org` and `action:set-status --select-org`.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
-- The pipeline webview is exercised through its own data provider, its compiled helpers and its
-  unit tests, not by clicking: the mermaid is asserted as text, never rendered.
-- The Backpromote panel is not clicked, and the terminal prompts of step B17 were not answered.
-- No timing report: the run used `bin/dev.js` on a workstation short on memory, so its durations
-  mean nothing.
+- No timing report: the workstation was short on memory, durations mean nothing.
 
 ## Suites
 
-- sfdx-hardis: promotion and release notes suites, 143 passing.
-- vscode-sfdx-hardis: 576 passing.
+- sfdx-hardis: full unit suite 2383 passing, 0 failing.
+- vscode-sfdx-hardis: 601 passing.

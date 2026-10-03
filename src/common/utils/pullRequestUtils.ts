@@ -302,7 +302,7 @@ export function mergePrDescriptionYamlBlocks(merged: any, parsedYaml: any): any 
   return result;
 }
 
-function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
+export function getYamlFromPrDescription(pr: CommonPullRequestInfo): object | null {
   // Every ```yaml block, not only the first: a promotion Pull Request description opens with the
   // promotionPullRequests block, and anything the release manager adds after it (deployment
   // actions, Apex test classes) would otherwise be read by nobody.

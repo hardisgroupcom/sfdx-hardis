@@ -151,6 +151,10 @@ export class BitbucketProvider extends GitProviderRoot {
     return 'sfdx-hardis Bitbucket connector';
   }
 
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$BITBUCKET_CLONE_DIR"';
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "pull request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (bitbucket)`);
@@ -889,6 +893,7 @@ ${getBannerMarkdownAndLink()}
       // Bitbucket has no dedicated merge date: updated_on of a MERGED PR is its merge time
       mergedDate: prData?.state === 'MERGED' ? ((prData as any)?.updated_on || undefined) : undefined,
       mergeCommitSha: (prData as any)?.merge_commit?.hash || undefined,
+      isDraft: (prData as any)?.draft === true,
       providerInfo: prData,
       customBehaviors: {}
     };

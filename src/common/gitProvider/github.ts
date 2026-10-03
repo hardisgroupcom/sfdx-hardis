@@ -159,6 +159,10 @@ export class GithubProvider extends GitProviderRoot {
     return "sfdx-hardis GitHub connector";
   }
 
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$GITHUB_WORKSPACE"';
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "pull request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (github)`);
@@ -698,6 +702,7 @@ ${getBannerMarkdownAndLink()}
       createdDate: prData?.created_at || undefined,
       mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || undefined,
+      isDraft: prData?.draft === true,
       providerInfo: prData,
       customBehaviors: {}
     }

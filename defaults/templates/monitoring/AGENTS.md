@@ -165,6 +165,7 @@ Steps run before (`commandsPreDeploy`) or after (`commandsPostDeploy`) a deploym
 - For one Pull Request: in `scripts/actions/.sfdx-hardis.<Pull Request number>.yml` (`scripts/actions/.sfdx-hardis.draft.yml` before the Pull Request exists). They run when that Pull Request is deployed, and again at each later step of the pipeline.
 - Types: `command`, `apex` (anonymous Apex script), `data` (SFDMU import), `publish-community`, `schedule-batch`, `run-batch` (runs an Apex batch once, and can wait for its result), `remove-packagexml-items`, and `manual` (a step a person performs, ticked off in the Pull Request comment when `manualActionsMode: sfdxHardis`; otherwise manual steps are in the file of `manualActionsFileUrl`).
 - `context` says whether it runs during the check, the deployment or both; `runOnlyOnceByOrg` skips it in an org where it already ran.
+- The "Deployment Actions" comment of each Pull Request records, per org, whether an action ran, failed, was stopped by a failure or was moved to a fix Pull Request (`movedFrom`). A failed action can be run again outside of a deployment job (`sf hardis:project:action:run`) or closed by hand (`sf hardis:project:action:set-status`): the note of its row says who did it and when, so an action can have run in the org at a date with no deployment.
 
 So "why is this record, schedule or setting like this in the org?" can have its answer in an action, not in the metadata.
 

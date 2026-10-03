@@ -8,16 +8,20 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
+  ActionScope,
   ActionWhen,
   applyBranchFilterFlagsToAction,
   findActionById,
   listAvailableActionTypes,
   logActionSummary,
   readActions,
+  readPullRequestDescriptionActions,
   resolvePrId,
   validateActionParameters,
+  validateMovedFrom,
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
+import { CONSTANTS } from '../../../../config/index.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
 import { RUN_BATCH_CONTEXT, applyRunBatchFlags, hasRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
@@ -39,6 +43,14 @@ Allows modifying any field of an existing action, including changing its type (w
 
 The target branch restriction (\`includeTargetBranches\` / \`excludeTargetBranches\`) can also be changed here. The two lists are mutually exclusive: setting one clears the other. Pass an empty value to a flag to remove the restriction and run the action on every target branch again.
 
+### Fix an action that failed after its deployment
+
+When an action of a merged Pull Request fails because its definition is wrong, move it to a fix Pull Request with \`--move-to-pr\`: the action keeps its id, leaves the file of its original Pull Request, and is added to the file of the fix Pull Request (\`current\`, \`draft\` or a number) with \`movedFrom\` set to the original Pull Request number. Correct it there, then merge the fix Pull Request: the action runs from it, and the original Pull Request shows it as moved. An action declared in the description of the original Pull Request cannot be removed from it after the merge: it is copied, and its original version no longer runs.
+
+\`--moved-from\` sets or changes \`movedFrom\` by hand (\`0\` removes it).
+
+See [Recover a failed action](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action).
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -57,14 +69,26 @@ Required in agent mode:
 
 - Reads the action list from the YAML config file, finds the action by ID, applies updates, validates, and writes back.
 - Changing \`--type\` clears old type-specific parameters and requires new ones.
+- \`--move-to-pr\` requires \`--scope pr\` and the number of the original Pull Request in \`--pr-id\`. When the action is not in its YAML file, it is read from the description of the Pull Request through the git provider API.
 - A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
     '$ sf hardis:project:action:update',
     '$ sf hardis:project:action:update --agent --scope branch --when pre-deploy --action-id abc-123 --label "New label" --context process-deployment-only',
     '$ sf hardis:project:action:update --agent --scope project --when post-deploy --action-id abc-123 --include-target-branches "uat,preprod"',
+    '$ sf hardis:project:action:update --agent --scope pr --pr-id 123 --when post-deploy --action-id abc-123 --move-to-pr current',
   ];
 
   public static flags: any = {
@@ -161,6 +185,12 @@ Required in agent mode:
     'custom-username': Flags.string({
       description: 'Run action with a specific Salesforce username',
     }),
+    'moved-from': Flags.integer({
+      description: 'Number of the Pull Request the action was moved from (0 removes it)',
+    }),
+    'move-to-pr': Flags.string({
+      description: 'Move the action from the Pull Request of --pr-id to this Pull Request (a number, current or draft), keeping its id and setting movedFrom',
+    }),
     agent: Flags.boolean({
       default: false,
       description: 'Run in non-interactive mode for agents and automation',
@@ -186,6 +216,10 @@ Required in agent mode:
     // Resolve PR ID if scope is pr
     const resolvedPrId = scope === 'pr' ? await resolvePrId(this, flags['pr-id'], agentMode) : flags['pr-id'];
 
+    if (flags['move-to-pr']) {
+      return await this.moveToPullRequest(flags, agentMode, scope, when, resolvedPrId);
+    }
+
     // Read actions
     const actions = await readActions(scope, when, flags.branch, resolvedPrId);
     if (actions.length === 0) {
@@ -202,6 +236,9 @@ Required in agent mode:
     } else {
       await this.applyFlagUpdates(action, flags);
     }
+    if (flags['moved-from'] !== undefined) {
+      action.movedFrom = flags['moved-from'] > 0 ? flags['moved-from'] : undefined;
+    }
 
     // The action may be moved to the other phase: it is then removed from the list it was read
     // from and appended to the other one, instead of ending up in both.
@@ -209,7 +246,10 @@ Required in agent mode:
     const isPhaseMove = targetWhen !== when;
 
     // Validate against the phase the action ends up in, which --new-when may have changed
-    const validationErrors = await validateActionParameters(action, targetWhen);
+    const validationErrors = [
+      ...(await validateActionParameters(action, targetWhen)),
+      ...validateMovedFrom(action, scope, resolvedPrId),
+    ];
     if (validationErrors.length > 0) {
       throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
     }
@@ -236,6 +276,59 @@ Required in agent mode:
     WebSocketClient.sendRefreshPipelineMessage();
 
     return { outputString: 'Action updated', action: action as any, configFile, movedTo: isPhaseMove ? targetWhen : undefined };
+  }
+
+  /**
+   * Move an action of a merged Pull Request to a fix Pull Request, keeping its id and recording
+   * where it comes from, so the corrected definition runs from the fix Pull Request only.
+   */
+  private async moveToPullRequest(flags: any, agentMode: boolean, scope: ActionScope, when: ActionWhen, sourcePrId?: string): Promise<AnyJson> {
+    const sourcePrNumber = Number(sourcePrId);
+    if (scope !== 'pr' || !Number.isInteger(sourcePrNumber) || sourcePrNumber < 1) {
+      throw new SfError(t('actionMoveToPrNeedsSourcePr'));
+    }
+    const targetPrId = await resolvePrId(this, flags['move-to-pr'] === 'draft' ? undefined : flags['move-to-pr'], agentMode);
+    if (targetPrId === sourcePrId) {
+      throw new SfError(t('actionValidationMovedFromSamePr', { pr: sourcePrId }));
+    }
+    const sourceActions = await readActions('pr', when, undefined, sourcePrId);
+    // An action declared in the Pull Request description is not in the YAML file
+    const descriptionActions = await readPullRequestDescriptionActions(sourcePrNumber, when);
+    const candidates = [...sourceActions, ...descriptionActions.filter((d) => !sourceActions.some((a) => a.id === d.id))];
+    if (candidates.length === 0) {
+      throw new SfError(t('noActionsFound', { when, scope }));
+    }
+    const actionId = await this.resolveActionId(flags, agentMode, candidates, t('selectActionToUpdate'));
+    const { action } = findActionById(candidates, actionId);
+    const fromFile = sourceActions.some((a) => a.id === actionId);
+
+    // Remove it from the original file, then add it to the fix Pull Request file
+    const movedAction: PrePostCommand = { ...action, movedFrom: sourcePrNumber };
+    delete movedAction.pullRequest;
+    delete movedAction.when;
+    await this.applyFlagUpdates(movedAction, flags);
+    const validationErrors = [
+      ...(await validateActionParameters(movedAction, when)),
+      ...validateMovedFrom(movedAction, 'pr', targetPrId),
+    ];
+    if (validationErrors.length > 0) {
+      throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
+    }
+    uxLog("action", this, c.cyan(t('savingDeploymentActions')));
+    if (fromFile) {
+      await writeActions('pr', when, sourceActions.filter((a) => a.id !== actionId), undefined, sourcePrId);
+    } else {
+      uxLog("warning", this, c.yellow(t('actionMovedFromDescription', { label: action.label, pr: sourcePrId })));
+    }
+    const targetActions = (await readActions('pr', when, undefined, targetPrId)).filter((a) => a.id !== actionId);
+    targetActions.push(movedAction);
+    const configFile = await writeActions('pr', when, targetActions, undefined, targetPrId);
+
+    uxLog("success", this, c.green(t('actionMovedToPr', { label: action.label, oldPr: sourcePrId, target: targetPrId ? `#${targetPrId}` : 'draft' })));
+    logActionSummary(this, movedAction);
+    uxLog("log", this, c.grey(t('actionSavedToFile', { file: configFile })));
+    WebSocketClient.sendRefreshPipelineMessage();
+    return { outputString: 'Action moved', action: movedAction as any, configFile, movedFrom: sourcePrNumber, movedToPr: targetPrId || 'draft' };
   }
 
   private async interactiveUpdate(action: PrePostCommand, _flags: any): Promise<void> {

@@ -1448,6 +1448,8 @@ function getStatusIcon(status: string): string {
     case "manual": return "\ud83d\udc4b";
     case "skipped": return "\u26aa";
     case "pending": return "\u23f3";
+    case "not-run": return "\u23f8\ufe0f";
+    case "moved": return "\u21aa\ufe0f";
     default: return "\u2753";
   }
 }

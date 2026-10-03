@@ -38,7 +38,7 @@ From your first User Story to a merged Pull Request. 7 labs, about 2 h.
 
 Deployment errors, deployment actions, code quality and merge conflicts. 9 labs, about 4 h, after Level 1.
 
-- [Lab 2.1 - Backpromote: catch your org up with the team](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
+- [Lab 2.1 - Backpromote: catch your dev org up with the team](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-1-backpromote-your-teammates-work/)
 - [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
 - [Lab 2.3 - Fix broken records with an Apex deployment action](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
 - [Lab 2.4 - Ship reference data and a batch with deployment actions](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
@@ -50,7 +50,7 @@ Deployment errors, deployment actions, code quality and merge conflicts. 9 labs,
 
 #### [Level 3 - Release Manager](https://sfdx-hardis-training.github.io/en/level-3-release-manager/)
 
-The pipeline up to production: releases, hotfixes, monitoring. 11 labs, about 7 h, after Level 2.
+The pipeline up to production: releases, hotfixes, monitoring. 11 labs, about 7 h 20, after Level 2.
 
 - [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
 - [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)

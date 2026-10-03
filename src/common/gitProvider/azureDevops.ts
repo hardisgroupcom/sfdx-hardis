@@ -180,6 +180,10 @@ export class AzureDevopsProvider extends GitProviderRoot {
     return "sfdx-hardis Azure Devops connector";
   }
 
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$(Build.SourcesDirectory)"';
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "pull request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (azure)`);
@@ -959,6 +963,7 @@ ${getBannerMarkdownAndLink()}
       // Azure has no dedicated merge date: closedDate of a completed PR is its merge time
       mergedDate: prData?.closedDate ? new Date(prData.closedDate).toISOString() : undefined,
       mergeCommitSha: prData?.lastMergeCommit?.commitId || undefined,
+      isDraft: prData?.isDraft === true,
       providerInfo: prData,
       customBehaviors: {}
     };

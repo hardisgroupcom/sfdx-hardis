@@ -11,7 +11,7 @@ This guide takes you from an empty Git repository to a working CI/CD pipeline, w
 <!-- training-callout:start -->
 
 !!! tip "Learn by doing"
-    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 7 h. [Start Level 3](https://sfdx-hardis-training.github.io/en/level-3-release-manager/)
+    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 7 h 20. [Start Level 3](https://sfdx-hardis-training.github.io/en/level-3-release-manager/)
 
 <!-- training-callout:end -->
 

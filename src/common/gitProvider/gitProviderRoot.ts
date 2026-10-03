@@ -270,6 +270,12 @@ export abstract class GitProviderRoot {
     uxLog("log", this, "2) Set provider token variable: GitHub=GITHUB_TOKEN, GitLab=CI_SFDX_HARDIS_GITLAB_TOKEN, Azure=SYSTEM_ACCESSTOKEN/CI_SFDX_HARDIS_AZURE_TOKEN, Bitbucket=CI_SFDX_HARDIS_BITBUCKET_TOKEN.");
     uxLog("log", this, "3) How to get value: create a CI service token/PAT with repository write + pull request/merge request permissions, then store it as a masked secret variable.");
   }
+  // The line that declares the checkout safe for git, with the workspace variable of this provider's
+  // CI jobs, so it can be pasted in the workflow as it is
+  public getSafeDirectoryCommand(): string {
+    return `git config --global --add safe.directory "${process.cwd()}"`;
+  }
+
   /* jscpd:ignore-start */
   // Do not make crash the whole process in case there is an issue with integration
   public async tryPostPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
