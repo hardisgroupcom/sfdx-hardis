@@ -20,7 +20,7 @@ import {
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
 import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext } from '../../../src/common/utils/prePostCommandUtils.js';
 import { validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
-import { isUsableAuthorization } from '../../../src/common/utils/deploymentActionRunUtils.js';
+import { buildActionRunOrgChoices, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername } from '../../../src/common/utils/deploymentActionRunUtils.js';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 
 function entry(overrides: Partial<DeploymentActionStateEntry>): DeploymentActionStateEntry {
@@ -287,5 +287,75 @@ describe('isUsableAuthorization()', () => {
   it('drops an expired or broken authorization', () => {
     expect(isUsableAuthorization({ isExpired: true })).to.equal(false);
     expect(isUsableAuthorization({ isExpired: false, error: 'bad token' })).to.equal(false);
+  });
+});
+
+describe('Run in another org', () => {
+  it('lists the orgs of the major branches first, in pipeline order, named after their branch', () => {
+    const choices = buildActionRunOrgChoices(
+      [
+        { username: 'zoe@acme.com.dev1', instanceUrl: 'https://acme--dev1.sandbox.my.salesforce.com', aliases: ['dev1'] },
+        { username: 'ci@acme.com.uat', instanceUrl: 'https://acme--uat.sandbox.my.salesforce.com' },
+        { username: 'jane@acme.com.integ', instanceUrl: 'https://acme--integ.sandbox.my.salesforce.com' },
+      ],
+      [
+        { branchName: 'integration', targetUsername: 'ci@acme.com.integ', instanceUrl: 'https://acme--integ.sandbox.my.salesforce.com' },
+        { branchName: 'uat', targetUsername: 'ci@acme.com.uat', instanceUrl: 'https://acme--uat.sandbox.my.salesforce.com' },
+      ]
+    );
+    expect(choices.map((choice) => choice.value)).to.deep.equal(['jane@acme.com.integ', 'ci@acme.com.uat', 'zoe@acme.com.dev1']);
+    expect(choices[0].title).to.contain('integration');
+    expect(choices[2].title).to.equal('zoe@acme.com.dev1 (dev1)');
+  });
+
+  it('writes the Backpromotes row a backpromote of that sandbox would write', () => {
+    const date = new Date('2026-10-03T14:05:00.000Z');
+    const row = buildDevOrgBackpromoteRow(
+      action({ when: 'post-deploy' } as any),
+      { instanceUrl: 'https://acme--devjane.sandbox.my.salesforce.com', username: 'jane@acme.com.devjane' },
+      '00D000000000001AAA',
+      'success',
+      'Jane Doe',
+      date
+    );
+    expect(row).to.deep.equal({
+      actionId: 'action-1',
+      label: 'Assign the crew leads',
+      phase: 'post',
+      sandboxName: 'devjane',
+      orgId: '00D000000000001AAA',
+      date: date.toISOString(),
+      status: 'success',
+      user: 'Jane Doe',
+    });
+    const target = { instanceUrl: 'https://acme--devjane.sandbox.my.salesforce.com', username: 'jane@acme.com.devjane' };
+    expect(buildDevOrgBackpromoteRow(action({}), target, 'x', 'warning', 'Jane')!.status).to.equal('failed');
+    expect(buildDevOrgBackpromoteRow(action({}), target, 'x', 'manual', 'Jane')!.status).to.equal('pending');
+    expect(buildDevOrgBackpromoteRow(action({}), target, 'x', 'skipped', 'Jane')).to.equal(null);
+  });
+
+  it('decides "already done here" from the Backpromotes row of this org when there is one', () => {
+    const done = { actionId: 'action-1', label: 'x', phase: 'post', sandboxName: 'devjane', orgId: '00D', date: '2026-10-01T00:00:00.000Z', status: 'success', user: 'Jane' } as const;
+    expect(getDevOrgSkipReason(action({}), 12, '12', 'dev-sandboxes', false, done)).to.be.a('string');
+    expect(getDevOrgSkipReason(action({}), 12, '12', 'dev-sandboxes', false, { ...done, status: 'failed' })).to.equal(null);
+    // Another developer org ran it: nothing recorded for this one, so it runs
+    expect(getDevOrgSkipReason(action({}), 12, '12', 'dev-sandboxes', false, null)).to.equal(null);
+    expect(getDevOrgSkipReason(action({ runOnlyOnceByOrg: false } as any), 12, '12', 'dev-sandboxes', false, done)).to.equal(null);
+  });
+});
+
+describe('pickBranchOrgUsername()', () => {
+  const uat = { targetUsername: 'ci@acme.com.uat', instanceUrl: 'https://acme--uat.sandbox.my.salesforce.com' };
+  it('names the user of the org of the branch, not the default org', () => {
+    const auths = [
+      { username: 'jane@acme.com.devjane', instanceUrl: 'https://acme--devjane.sandbox.my.salesforce.com' },
+      { username: 'ci@acme.com.uat', instanceUrl: 'https://acme--uat.sandbox.my.salesforce.com' },
+    ];
+    expect(pickBranchOrgUsername(auths, uat)).to.equal('ci@acme.com.uat');
+  });
+
+  it('falls back to another user of the same instance, then to nobody', () => {
+    expect(pickBranchOrgUsername([{ username: 'jane@acme.com.uat', instanceUrl: 'https://acme--uat.sandbox.my.salesforce.com/' }], uat)).to.equal('jane@acme.com.uat');
+    expect(pickBranchOrgUsername([{ username: 'jane@acme.com.devjane', instanceUrl: 'https://acme--devjane.sandbox.my.salesforce.com' }], uat)).to.equal(null);
   });
 });

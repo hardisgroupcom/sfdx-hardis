@@ -11,6 +11,9 @@ import { listMajorOrgs } from './orgConfigUtils.js';
 import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { gitUserName } from './backpromoteGitUtils.js';
+import { BackpromoteActionRow, BackpromoteCommentStore, upsertActionRow } from './backpromoteCommentUtils.js';
+import { deriveSandboxName } from './backpromoteRules.js';
+import * as os from 'os';
 import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, readActions, readPullRequestDescriptionActions, resolvePrId } from './actionUtils.js';
 import {
   DeploymentActionRef,
@@ -122,7 +125,17 @@ export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBran
 export async function resolveOrgBranchForStatus(targetOrg: Org | undefined, orgBranchFlag: string | undefined): Promise<{ orgBranch: string; sfUsername: string | null }> {
   const sfUsername = targetOrg?.getUsername() || null;
   if (orgBranchFlag) {
-    return { orgBranch: orgBranchFlag, sfUsername };
+    // The note names the Salesforce user of the org of that branch, never the default org of the
+    // computer (often a developer sandbox, unrelated to the action closed)
+    const majorOrg = (await listMajorOrgs()).find((org: any) => org.branchName === orgBranchFlag);
+    if (!majorOrg) {
+      return { orgBranch: orgBranchFlag, sfUsername };
+    }
+    if (targetOrg && isOrgOfMajorBranch(targetOrg.getConnection(), majorOrg)) {
+      return { orgBranch: orgBranchFlag, sfUsername };
+    }
+    const authorizations = (await AuthInfo.listAllAuthorizations()).filter(isUsableAuthorization);
+    return { orgBranch: orgBranchFlag, sfUsername: pickBranchOrgUsername(authorizations, majorOrg) };
   }
   if (!targetOrg) {
     throw new SfError(t('missingRequiredFlag', { flag: 'org-branch' }));
@@ -580,7 +593,7 @@ export async function selectDevOrgActions(actions: PrePostCommand[], actionIdFla
  * package.xml change have no meaning outside of a deployment, and a runOnlyOnceByOrg action already
  * done in this org is not run twice.
  */
-export function getDevOrgSkipReason(def: PrePostCommand, prNumber: number, prId: string, orgBranch: string, localState: boolean): string | null {
+export function getDevOrgSkipReason(def: PrePostCommand, prNumber: number, prId: string, orgBranch: string, localState: boolean, backpromoteRow?: BackpromoteActionRow | null): string | null {
   if (getEffectiveActionContext(def) === 'check-deployment-only') {
     return t('actionRunDevOrgSkipCheckOnly');
   }
@@ -588,6 +601,15 @@ export function getDevOrgSkipReason(def: PrePostCommand, prNumber: number, prId:
     return t('actionRunDevOrgSkipPackageXml');
   }
   if (def.runOnlyOnceByOrg !== false) {
+    // With a Pull Request, the Backpromotes comment knows what ran in THIS org (sandbox name and org
+    // id), where the dev-sandboxes column of the Deployment Actions comment is shared by every
+    // developer org. Without one, the local results are all there is.
+    if (backpromoteRow !== undefined) {
+      if (backpromoteRow?.status === 'success') {
+        return t('actionRunDevOrgSkipAlreadyDone', { date: (backpromoteRow.date || '').substring(0, 10) });
+      }
+      return null;
+    }
     const done = localState
       ? findLocalActionState(prId, def.id, orgBranch)
       : getActionStateEntry(prNumber, def.id, orgBranch);
@@ -596,6 +618,117 @@ export function getDevOrgSkipReason(def: PrePostCommand, prNumber: number, prId:
     }
   }
   return null;
+}
+
+/**
+ * Any org authenticated on this computer, for "Run in another org": the orgs of the major branches
+ * of the pipeline first, named after their branch, then every other org.
+ */
+export async function promptActionRunOrg(): Promise<Org> {
+  const majorOrgs = await listMajorOrgs();
+  const authorizations = (await AuthInfo.listAllAuthorizations()).filter(isUsableAuthorization);
+  const choices = buildActionRunOrgChoices(authorizations, majorOrgs);
+  if (choices.length === 0) {
+    throw new SfError(t('actionRunNoAuthenticatedOrgAtAll'));
+  }
+  const username = await promptSelect(t('actionRunSelectAnyOrg'), choices);
+  const org = await Org.create({ aliasOrUsername: username });
+  return org;
+}
+
+/** The choices of promptActionRunOrg, major orgs first in the order of the pipeline */
+export function buildActionRunOrgChoices(
+  authorizations: { username: string; instanceUrl?: string; aliases?: string[] | null }[],
+  majorOrgs: { branchName: string; targetUsername?: string; instanceUrl?: string }[]
+): { title: string; value: string }[] {
+  const ranked = authorizations.map((auth) => {
+    const majorIndex = majorOrgs.findIndex((org) => sameUsername(auth.username, org.targetUsername) || sameInstance(auth.instanceUrl, org.instanceUrl));
+    return { auth, majorIndex };
+  });
+  ranked.sort((a, b) => {
+    const rankA = a.majorIndex < 0 ? Number.MAX_SAFE_INTEGER : a.majorIndex;
+    const rankB = b.majorIndex < 0 ? Number.MAX_SAFE_INTEGER : b.majorIndex;
+    return rankA - rankB || a.auth.username.localeCompare(b.auth.username);
+  });
+  return ranked.map(({ auth, majorIndex }) => {
+    const aliases = auth.aliases && auth.aliases.length > 0 ? ` (${auth.aliases.join(', ')})` : '';
+    return {
+      title: majorIndex >= 0
+        ? t('actionRunOrgChoiceMajor', { branch: majorOrgs[majorIndex].branchName, username: auth.username })
+        : `${auth.username}${aliases}`,
+      value: auth.username,
+    };
+  });
+}
+
+/**
+ * The row of a run in a developer org for the "Backpromotes" comment of its Pull Request: the same
+ * row a backpromote writes, so that a later backpromote of that sandbox knows the action already ran
+ * there. null for an outcome that says nothing about the org (skipped, not run).
+ */
+export function buildDevOrgBackpromoteRow(
+  def: PrePostCommand,
+  target: Pick<ActionRunTarget, 'instanceUrl' | 'username'>,
+  orgId: string,
+  status: string,
+  user: string,
+  date: Date = new Date()
+): BackpromoteActionRow | null {
+  const rowStatus: BackpromoteActionRow['status'] | null =
+    status === 'success' ? 'success' : status === 'manual' ? 'pending' : status === 'failed' || status === 'warning' ? 'failed' : null;
+  if (!rowStatus) {
+    return null;
+  }
+  return {
+    actionId: def.id,
+    label: def.label,
+    phase: def.when === 'pre-deploy' ? 'pre' : 'post',
+    sandboxName: deriveSandboxName({ instanceUrl: target.instanceUrl, username: target.username, orgId }),
+    orgId,
+    date: date.toISOString(),
+    status: rowStatus,
+    user,
+  };
+}
+
+/** The org id of a target, as the Backpromotes comment keys its rows */
+export function getActionRunTargetOrgId(target: ActionRunTarget): string {
+  return String(target.conn.getAuthInfoFields()?.orgId || '');
+}
+
+/** Read the Backpromotes comment rows of a Pull Request for one org, by action id */
+export async function readBackpromoteRowsForOrg(store: BackpromoteCommentStore, prNumber: number, target: ActionRunTarget): Promise<Map<string, BackpromoteActionRow>> {
+  const orgId = getActionRunTargetOrgId(target);
+  const sandboxName = deriveSandboxName({ instanceUrl: target.instanceUrl, username: target.username, orgId });
+  const rows = new Map<string, BackpromoteActionRow>();
+  try {
+    const state = await store.read(prNumber, { fresh: true });
+    for (const row of state.actionRows) {
+      if (row.sandboxName === sandboxName && row.orgId === orgId) {
+        rows.set(row.actionId, row);
+      }
+    }
+  } catch (e) {
+    uxLog("warning", this, c.yellow(t('backpromoteCommentWriteFailed', { pr: prNumber, message: (e as Error).message })));
+  }
+  return rows;
+}
+
+/** Write the outcome of a run in a developer org to the Backpromotes comment of its Pull Request */
+export async function recordDevOrgRunInBackpromotes(store: BackpromoteCommentStore, def: PrePostCommand, prNumber: number, target: ActionRunTarget, status: string): Promise<void> {
+  if (prNumber <= 0) {
+    return;
+  }
+  const row = buildDevOrgBackpromoteRow(def, target, getActionRunTargetOrgId(target), status, gitUserName() || os.userInfo().username);
+  if (!row) {
+    return;
+  }
+  try {
+    await store.update(prNumber, (state) => upsertActionRow(state, row));
+    uxLog("log", this, c.grey(t('actionRunBackpromoteRecorded', { pr: prNumber, sandboxName: row.sandboxName })));
+  } catch (e) {
+    uxLog("warning", this, c.yellow(t('backpromoteCommentWriteFailed', { pr: prNumber, message: (e as Error).message })));
+  }
 }
 
 function buildTarget(conn: Connection, orgBranch: string, isMajorOrg: boolean): ActionRunTarget {
@@ -618,6 +751,22 @@ function sameUsername(username1?: string, username2?: string): boolean {
 function sameInstance(url1?: string, url2?: string): boolean {
   const normalize = (url?: string) => (url || '').trim().toLowerCase().replace(/\/+$/, '');
   return normalize(url1) !== '' && normalize(url1) === normalize(url2);
+}
+
+/**
+ * The user of the org of a major branch authenticated on this computer, for a note: its
+ * targetUsername first, then a user of its instance, null when none is (no question asked, the
+ * note just names nobody on the Salesforce side).
+ */
+export function pickBranchOrgUsername(
+  authorizations: { username: string; instanceUrl?: string }[],
+  majorOrg: { targetUsername?: string; instanceUrl?: string }
+): string | null {
+  const sameUser = authorizations.find((auth) => sameUsername(auth.username, majorOrg.targetUsername));
+  if (sameUser) {
+    return sameUser.username;
+  }
+  return authorizations.find((auth) => sameInstance(auth.instanceUrl, majorOrg.instanceUrl))?.username || null;
 }
 
 /**

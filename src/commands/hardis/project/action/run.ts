@@ -12,6 +12,9 @@ import {
   ActionRunTarget,
   NextActionsMode,
   getDevOrgSkipReason,
+  promptActionRunOrg,
+  readBackpromoteRowsForOrg,
+  recordDevOrgRunInBackpromotes,
   listPullRequestActions,
   resolveDevOrgPullRequest,
   selectDevOrgActions,
@@ -30,6 +33,7 @@ import {
 } from '../../../../common/utils/deploymentActionRunUtils.js';
 import { DeploymentActionRef, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -52,6 +56,8 @@ When a post-deployment action fails after the merge of a Pull Request, the metad
 - An action that only runs during validation jobs, or that removes items from the deployment package.xml, cannot be run. A pre-deployment action can, after a confirmation, since the metadata it ran before is already in the org: in agent or CI mode it is refused, re-run the deployment job instead.
 - An action never run in the org, or skipped there, is run after a confirmation, and refused in agent or CI mode.
 
+With \`--select-org\`, the command lists every org authenticated on this computer, the orgs of the major branches of the pipeline first, and runs the action in the chosen one: as a retry in a major org, as a try in a developer org. The VS Code Deployment Actions tab uses it for **Run in another org**.
+
 Anyone authenticated to the org can retry an action, production included. A git provider token is required, to record the result in the Pull Request.
 
 ### Try the actions of your Pull Request in your own org
@@ -60,7 +66,7 @@ When the org is not a major org (a developer sandbox or a scratch org), the comm
 
 - \`--pr\` takes the Pull Request number, or \`draft\` for the actions file of a branch with no Pull Request yet. Without it, the Pull Request of the current branch is used, or the draft file.
 - Validation-only actions and package.xml item removals are skipped: they only make sense during a deployment. A \`runOnlyOnceByOrg\` action already done in this org is skipped too.
-- The results go to the "Deployment Actions" comment of the Pull Request, in the \`dev-sandboxes\` column shared by every developer org. They never count as done in a major org, never write "moved", and never turn the comment red. Without a Pull Request (draft) or without a git provider token, they are kept in \`config/user/deployment-actions/<Pull Request or draft>.json\`, a folder sfdx-hardis projects keep out of git.
+- The results go to the "Deployment Actions" comment of the Pull Request, in the \`dev-sandboxes\` column shared by every developer org, and to its "Backpromotes" comment, in a row for this sandbox and org id: a later backpromote of that sandbox knows the action already ran there, and so does the next run here. They never count as done in a major org, never write "moved", and never turn the comment red. Without a Pull Request (draft) or without a git provider token, they are kept in \`config/user/deployment-actions/<Pull Request or draft>.json\`, a folder sfdx-hardis projects keep out of git.
 - \`--all\` is refused on a major org: a merge runs them there. \`--dev-org\` refuses any run on a major org, which the VS Code **Run in my org** button of an action passes, so a default org that happens to be a major one is never touched.
 
 To close an action that was done by hand, use [hardis:project:action:set-status](${CONSTANTS.DOC_URL_ROOT}/hardis/project/action/set-status/). To fix a wrong definition, move the action to a fix Pull Request with \`sf hardis:project:action:update --move-to-pr\`.
@@ -128,6 +134,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     'action-id': Flags.string({
       description: 'Id of the action to run',
     }),
+    'select-org': Flags.boolean({
+      default: false,
+      description: 'Choose the org among all the orgs authenticated on this computer (major orgs of the pipeline first) instead of --target-org',
+    }),
     'org-branch': Flags.string({
       description: 'Major branch of the org to run the action in (ex: integration). Uses an org of that instance authenticated on this computer',
     }),
@@ -162,7 +172,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     const { flags } = await this.parse(ActionRun);
     const headless = flags.agent === true || isCI;
 
-    const target = await resolveActionRunTarget(flags['target-org'], flags['org-branch']);
+    let targetOrg = flags['target-org'];
+    if (flags['select-org']) {
+      if (headless) {
+        throw new SfError(t('actionRunSelectOrgHeadless'));
+      }
+      targetOrg = await promptActionRunOrg();
+    }
+    const target = await resolveActionRunTarget(targetOrg, flags['select-org'] ? undefined : flags['org-branch']);
     uxLog("action", this, c.cyan(t('actionRunTargetOrg', { orgBranch: target.orgBranch, username: target.username })));
     if (!target.isMajorOrg) {
       return await this.runInDevOrg(flags, target, headless);
@@ -172,6 +189,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
     if (flags.all) {
       throw new SfError(t('actionRunAllMajorOrg', { orgBranch: target.orgBranch }));
+    }
+    if (String(flags.pr || '').toLowerCase() === 'draft') {
+      throw new SfError(t('actionRunDraftMajorOrg', { orgBranch: target.orgBranch }));
     }
     await requireGitProviderForActionState();
     await confirmDefinitionBranch(target, flags['allow-branch-mismatch'] === true, headless);
@@ -220,11 +240,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
     const actions = await listPullRequestActions(prNumber, prId);
     const selected = await selectDevOrgActions(actions, flags['action-id'], flags.all === true, headless);
+    // What already ran in this very org, and where its outcome goes: the Backpromotes comment
+    const backpromoteStore = gitProvider ? new BackpromoteCommentStore(null, this) : null;
+    const backpromoteRows = backpromoteStore ? await readBackpromoteRowsForOrg(backpromoteStore, prNumber, target) : null;
     uxLog("action", this, c.cyan(t('actionRunDevOrgStart', { count: selected.length, pr: prNumber > 0 ? `#${prNumber}` : 'draft', orgBranch: target.orgBranch })));
 
     const results: ActionRunResult[] = [];
     for (const [index, def] of selected.entries()) {
-      const skipReason = getDevOrgSkipReason(def, prNumber, prId, target.orgBranch, localState);
+      const skipReason = getDevOrgSkipReason(def, prNumber, prId, target.orgBranch, localState, backpromoteRows ? backpromoteRows.get(def.id) || null : undefined);
       if (skipReason) {
         uxLog("action", this, c.grey(t('actionRunDevOrgSkipped', { label: def.label, reason: skipReason })));
         results.push({ prNumber, actionId: def.id, label: def.label, orgBranch: target.orgBranch, status: 'skipped', output: skipReason, blocking: false });
@@ -233,6 +256,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       await ensureCustomUsernameAuth(def, target, headless);
       const result = await runActionOutsideDeployment(def, prNumber, target, localState ? { localPrId: prId } : {});
       results.push(result);
+      if (backpromoteStore) {
+        await recordDevOrgRunInBackpromotes(backpromoteStore, def, prNumber, target, result.status);
+      }
       if (result.blocking) {
         const notRun = selected.slice(index + 1);
         if (notRun.length > 0) {
