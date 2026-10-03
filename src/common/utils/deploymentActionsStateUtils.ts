@@ -628,7 +628,7 @@ function getActionsBannerKey(entries: DeploymentActionStateEntry[]): PrCommentBa
   if (entries.some((e) => (e.status === 'failed' || e.status === 'not-run') && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH)) {
     return 'actions-error';
   }
-  if (entries.some((e) => e.status === 'manual')) {
+  if (entries.some((e) => e.status === 'manual' && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH)) {
     return 'actions-pending';
   }
   return 'actions-completed';
@@ -671,7 +671,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
 
   // Pending manual actions: a checkable to-do per action still waiting to be performed in an org.
   // Ticking a box is detected by the next check or deployment job, which records the action as done.
-  const pendingManualEntries = sorted.filter((e) => e.status === 'manual');
+  const pendingManualEntries = sorted.filter((e) => e.status === 'manual' && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH);
   if (pendingManualEntries.length > 0) {
     body += `### Pending manual actions\n\n`;
     body += `Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.\n\n`;
@@ -964,13 +964,18 @@ export function buildFailedActionCheckboxMarker(actionId: string, orgBranch: str
   return `${FAILED_ACTION_CHECKBOX_MARKER_PREFIX}id:${encodeActionId(actionId)} org:${orgBranch} pr:${prNumber || 0}${whenAttr} -->`;
 }
 
+/** "Jane Doe (jane@acme.com)": who did something by hand, as the notes of the comment name them */
+export function formatNoteAuthor(gitUser: string | null, sfUsername: string | null): string {
+  return [gitUser, sfUsername ? `(${sfUsername})` : null].filter(Boolean).join(' ') || 'unknown user';
+}
+
 /**
  * Note of a failed or stopped action closed by hand by a person, written in the Pull Request
  * comment (English, like the rest of the comment).
  * Ex: "Failed in CI, then closed by hand by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
  */
 export function buildClosedByHandNote(previousStatus: 'failed' | 'not-run' | 'manual', gitUser: string | null, sfUsername: string | null, date: Date, extraNote?: string): string {
-  const who = [gitUser, sfUsername ? `(${sfUsername})` : null].filter(Boolean).join(' ') || 'unknown user';
+  const who = formatNoteAuthor(gitUser, sfUsername);
   const origin = previousStatus === 'not-run' ? 'Not run in CI' : 'Failed in CI';
   const note = previousStatus === 'manual'
     ? `Manual action marked as done by ${who} on ${formatNoteDate(date)}.`
@@ -983,7 +988,7 @@ export function buildClosedByHandNote(previousStatus: 'failed' | 'not-run' | 'ma
  * deployment reached that org (a manual action of the next promotion, for instance), or skipped there.
  */
 export function buildMarkedDoneAheadNote(orgBranch: string, previousStatus: 'none' | 'skipped', gitUser: string | null, sfUsername: string | null, date: Date, extraNote?: string): string {
-  const who = [gitUser, sfUsername ? `(${sfUsername})` : null].filter(Boolean).join(' ') || 'unknown user';
+  const who = formatNoteAuthor(gitUser, sfUsername);
   const note = previousStatus === 'skipped'
     ? `Skipped in CI, then marked as done by ${who} on ${formatNoteDate(date)}.`
     : `Marked as done by ${who} on ${formatNoteDate(date)}, before any deployment to ${orgBranch}.`;
@@ -1003,7 +1008,7 @@ export function buildClosedByCheckboxNote(previousStatus: 'failed' | 'not-run', 
  * Note of an action retried outside of a deployment job by sf hardis:project:action:run.
  */
 export function buildRunLocallyNote(gitUser: string | null, sfUsername: string | null, inCi: boolean): string {
-  const who = [gitUser, sfUsername ? `(${sfUsername})` : null].filter(Boolean).join(' ') || 'unknown user';
+  const who = formatNoteAuthor(gitUser, sfUsername);
   return inCi
     ? `Retried by sf hardis:project:action:run as ${who} on ${formatNoteDate(new Date())}.`
     : `Run locally by ${who} on ${formatNoteDate(new Date())}.`;

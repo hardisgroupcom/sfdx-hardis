@@ -191,7 +191,14 @@ Required in agent mode:
         }
       }
     }
-    return { outputString: `Status of the actions of ${prIds.length} Pull Request(s)`, statuses, ...(withBackpromotes ? { backpromotes } : {}) };
+    // gitProvider false: the comments could not be read, only the local results are there, and a UI
+    // must not present "no status" as "not run yet"
+    return {
+      outputString: `Status of the actions of ${prIds.length} Pull Request(s)`,
+      statuses,
+      gitProvider: prNumbers.length === 0 || !!gitProvider,
+      ...(withBackpromotes ? { backpromotes } : {}),
+    };
   }
 
 

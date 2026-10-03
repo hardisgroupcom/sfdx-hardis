@@ -19,6 +19,7 @@ import {
 } from '../../../../common/utils/deploymentActionRunUtils.js';
 import { DEV_SANDBOXES_BRANCH_NAME } from '../../../../common/utils/actionUtils.js';
 import { loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
+import { syncCheckboxesBeforeWrite } from '../../../../common/utils/deploymentActionRunUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -166,6 +167,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
     const prNumber = await selectSourcePullRequest(flags.pr, '', headless);
     await loadDeploymentActionsState([prNumber]);
+    // A box ticked since the last job must be recorded before this command rewrites the comment
+    await syncCheckboxesBeforeWrite(prNumber);
     const choice = await promptMarkDoneTarget(prNumber, flags['action-id']);
     if ('org' in choice) {
       return await this.markDoneInDevOrg(prNumber, flags['action-id'], choice.org, headless);
@@ -184,6 +187,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
    * Request, for that sandbox and org id
    */
   private async markDoneInDevOrg(prNumber: number, actionIdFlag: string | undefined, org: any, headless: boolean): Promise<AnyJson> {
+    // After the prompt of --select-org, the next line must be an action log for VS Code to show it
+    uxLog("action", this, c.cyan(t('actionSetStatusDevOrgClosing', { pr: prNumber, username: org.getUsername() || '' })));
     const actions = await listPullRequestActions(prNumber, String(prNumber));
     const [def] = await selectDevOrgActions(actions, actionIdFlag, false, headless);
     const row = await closeActionInDevOrg(prNumber, def, org);

@@ -8,7 +8,7 @@ import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
-import { prompts } from './prompts.js';
+import { promptActionConfirm, promptActionSelect, promptActionText } from './actionPromptUtils.js';
 import { t } from './i18n.js';
 import { gitUserName } from './backpromoteGitUtils.js';
 import { BackpromoteActionRow, BackpromoteCommentStore, upsertActionRow } from './backpromoteCommentUtils.js';
@@ -88,11 +88,12 @@ export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBran
   if (orgBranchFlag) {
     const majorOrg = majorOrgs.find((org: any) => org.branchName === orgBranchFlag);
     if (!majorOrg) {
-      // Not a major branch: a dev org, the target org must be passed
+      // Not a major branch: a dev org, the target org must be passed. Tracked under dev-sandboxes
+      // like any developer org, never under a column of its own in the Pull Request comment
       if (!targetOrg) {
         throw new SfError(t('actionRunNoOrgForBranch', { branch: orgBranchFlag }));
       }
-      return buildTarget(targetOrg.getConnection(), orgBranchFlag, false);
+      return buildTarget(targetOrg.getConnection(), DEV_SANDBOXES_BRANCH_NAME, false);
     }
     if (targetOrg && isOrgOfMajorBranch(targetOrg.getConnection(), majorOrg)) {
       return buildTarget(targetOrg.getConnection(), orgBranchFlag, true);
@@ -167,9 +168,22 @@ export async function confirmDefinitionBranch(target: ActionRunTarget, allowMism
   if (headless) {
     throw new SfError(t('actionRunBranchMismatchHeadless', { orgBranch: target.orgBranch }));
   }
-  const confirmed = await promptConfirm(message);
+  const confirmed = await promptActionConfirm(message, true);
   if (!confirmed) {
     throw new SfError(t('actionRunCancelled'));
+  }
+}
+
+/**
+ * Record the boxes ticked in the Pull Request comments since the last job, before a command rewrites
+ * the comment from the state: rebuilt without them, they would come back unticked and be lost.
+ * The state of the Pull Request must have been loaded.
+ */
+export async function syncCheckboxesBeforeWrite(prNumber: number): Promise<void> {
+  try {
+    await syncManualActionCheckboxes([prNumber]);
+  } catch (e) {
+    uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
   }
 }
 
@@ -202,11 +216,11 @@ export async function selectSourcePullRequest(prFlag: string | number | undefine
     uxLog("action", this, c.cyan(t('actionRunNoFailedActionFound', { orgBranch, count: prNumbers.length })));
   }
   choices.push({ title: t('actionRunOtherPr'), value: 0 });
-  const selected = await promptSelect(t('actionRunSelectPr'), choices);
+  const selected = await promptActionSelect(t('actionRunSelectPr'), choices);
   if (selected !== 0) {
     return selected;
   }
-  const entered = await promptText(t('actionRunEnterPrNumber'));
+  const entered = await promptActionText(t('actionRunEnterPrNumber'));
   return parsePrNumber(entered);
 }
 
@@ -235,7 +249,7 @@ export async function selectRecoverableAction(prNumber: number, actionIdFlag: st
   if (entries.length === 0) {
     throw new SfError(t('actionRunNoFailedActionInPr', { pr: prNumber, orgBranch }));
   }
-  return promptSelect(t('actionRunSelectAction'), entries
+  return promptActionSelect(t('actionRunSelectAction'), entries
     .sort((a, b) => (a.executionOrder ?? 0) - (b.executionOrder ?? 0))
     .map((e) => ({
       title: `${e.actionLabel} (${e.status === 'not-run' ? t('actionRunStatusNotRun') : e.status === 'manual' ? t('actionRunStatusManual') : t('actionRunStatusFailed')})`,
@@ -340,7 +354,7 @@ export async function ensureCustomUsernameAuth(def: PrePostCommand, target: Acti
   if (headless) {
     throw new SfError(t('actionRunCustomUsernameNotAuthenticated', { username: user.Username, label: def.label }));
   }
-  const confirmed = await promptConfirm(t('actionRunCustomUsernameLogin', { label: def.label, username: user.Username }));
+  const confirmed = await promptActionConfirm(t('actionRunCustomUsernameLogin', { label: def.label, username: user.Username }));
   if (!confirmed) {
     throw new SfError(t('actionRunCancelled'));
   }
@@ -390,7 +404,10 @@ export async function runActionOutsideDeployment(
     hasGitProvider: !options.localPrId,
     pipelineContext: await buildPipelineContext({ checkOnly: false, when: def.when || 'post-deploy', targetBranch: target.orgBranch }),
     note: buildRunLocallyNote(gitUserName() || null, target.username, isCI),
-    skipRunOnlyOnceCheck: !!options.localPrId,
+    // In a developer org, "already done there" is decided per org before the run (Backpromotes
+    // comment, or the local file): the dev-sandboxes column is shared by every developer org, and
+    // a try in one sandbox must not skip the action in another
+    skipRunOnlyOnceCheck: !!options.localPrId || !target.isMajorOrg,
   });
   // No Pull Request comment to hold the result: keep it in the local file of the Pull Request
   if (options.localPrId && def.result?.statusCode && def.result.statusCode !== 'not-run') {
@@ -458,7 +475,7 @@ export async function chooseNextActionsMode(count: number, nextFlag: NextActions
     uxLog("action", this, c.cyan(t('actionRunStoppedActionsLeft', { count })));
     return 'none';
   }
-  return promptSelect(t('actionRunChooseNext', { count }), [
+  return promptActionSelect(t('actionRunChooseNext', { count }), [
     { title: t('actionRunNextOne'), value: 'one' },
     { title: t('actionRunNextAll'), value: 'all' },
     { title: t('actionRunNextStop'), value: 'none' },
@@ -552,7 +569,7 @@ export async function promptMarkDoneTarget(prNumber: number, actionId: string): 
   if (choices.length === 0) {
     throw new SfError(t('actionSetStatusNothingToMark', { label }));
   }
-  const selected: string = await promptSelect(t('actionSetStatusSelectTarget', { label }), choices);
+  const selected: string = await promptActionSelect(t('actionSetStatusSelectTarget', { label }), choices);
   if (selected.startsWith('branch:')) {
     return { orgBranch: selected.substring('branch:'.length) };
   }
@@ -636,7 +653,7 @@ export async function selectDevOrgActions(actions: PrePostCommand[], actionIdFla
     if (headless) {
       throw new SfError(t('missingRequiredFlag', { flag: 'action-id or --all' }));
     }
-    actionId = await promptSelect(t('actionRunSelectAction'), [
+    actionId = await promptActionSelect(t('actionRunSelectAction'), [
       { title: t('actionRunAllActionsChoice', { count: actions.length }), value: '__all__' },
       ...actions.map((action) => ({ title: `${action.label} (${action.when})`, value: action.id })),
     ]);
@@ -694,7 +711,7 @@ export async function promptActionRunOrg(): Promise<Org> {
   if (choices.length === 0) {
     throw new SfError(t('actionRunNoAuthenticatedOrgAtAll'));
   }
-  const username = await promptSelect(t('actionRunSelectAnyOrg'), choices);
+  const username = await promptActionSelect(t('actionRunSelectAnyOrg'), choices);
   const org = await Org.create({ aliasOrUsername: username });
   return org;
 }
@@ -903,7 +920,7 @@ async function findAuthenticatedConnection(majorOrg: any): Promise<Connection | 
   }
   let username = matching[0].username;
   if (matching.length > 1 && !isCI) {
-    username = await promptSelect(t('actionRunSelectOrgUser', { instanceUrl }), matching.map((auth) => ({
+    username = await promptActionSelect(t('actionRunSelectOrgUser', { instanceUrl }), matching.map((auth) => ({
       title: auth.aliases && auth.aliases.length > 0 ? `${auth.username} (${auth.aliases.join(', ')})` : auth.username,
       value: auth.username,
     })));
@@ -943,22 +960,9 @@ async function confirmOrWarn(message: string, headless: boolean): Promise<void> 
     uxLog("warning", this, c.yellow(message));
     return;
   }
-  if (!(await promptConfirm(message))) {
+  if (!(await promptActionConfirm(message, true))) {
     throw new SfError(t('actionRunCancelled'));
   }
 }
 
-async function promptConfirm(message: string): Promise<boolean> {
-  const response = await prompts({ type: 'confirm', name: 'value', message: c.cyanBright(message), description: message, initial: true });
-  return response.value === true;
-}
 
-async function promptSelect<T>(message: string, choices: { title: string; value: T }[]): Promise<T> {
-  const response = await prompts({ type: 'select', name: 'value', message: c.cyanBright(message), description: message, choices });
-  return response.value;
-}
-
-async function promptText(message: string): Promise<string> {
-  const response = await prompts({ type: 'text', name: 'value', message: c.cyanBright(message), description: message, initial: '' });
-  return response.value || '';
-}

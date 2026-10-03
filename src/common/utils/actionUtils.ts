@@ -283,13 +283,20 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
  * Only an action of a Pull Request can be moved, and never from its own Pull Request.
  * Returns an array of error messages (empty if valid).
  */
+/**
+ * A movedFrom written as a quoted number in YAML ("12") is the number 12: coerced in place
+ */
+export function normalizeMovedFrom(action: Partial<PrePostCommand>): void {
+  if (typeof action.movedFrom === 'string' && /^\d+$/.test((action.movedFrom as string).trim())) {
+    action.movedFrom = parseInt(action.movedFrom as string, 10);
+  }
+}
+
 export function validateMovedFrom(action: Partial<PrePostCommand>, scope: ActionScope, prId?: string): string[] {
   if (action.movedFrom === undefined || action.movedFrom === null) {
     return [];
   }
-  if (typeof action.movedFrom === 'string' && /^\d+$/.test((action.movedFrom as string).trim())) {
-    action.movedFrom = parseInt(action.movedFrom as string, 10);
-  }
+  normalizeMovedFrom(action);
   if (!Number.isInteger(action.movedFrom) || action.movedFrom < 1) {
     return [t('actionValidationMovedFromInvalid', { value: String(action.movedFrom) })];
   }

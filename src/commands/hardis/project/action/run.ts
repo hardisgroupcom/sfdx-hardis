@@ -13,6 +13,7 @@ import {
   NextActionsMode,
   getDevOrgSkipReason,
   promptActionRunOrg,
+  syncCheckboxesBeforeWrite,
   readBackpromoteRowsForOrg,
   recordDevOrgRunInBackpromotes,
   listPullRequestActions,
@@ -178,6 +179,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
         throw new SfError(t('actionRunSelectOrgHeadless'));
       }
       targetOrg = await promptActionRunOrg();
+      // After the prompt, the next line must be an action log for VS Code to show it
+      uxLog("action", this, c.cyan(t('actionRunOrgSelected', { username: targetOrg.getUsername() || '' })));
     }
     const target = await resolveActionRunTarget(targetOrg, flags['select-org'] ? undefined : flags['org-branch']);
     uxLog("action", this, c.cyan(t('actionRunTargetOrg', { orgBranch: target.orgBranch, username: target.username })));
@@ -237,6 +240,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     const localState = !gitProvider;
     if (gitProvider) {
       await loadDeploymentActionsState([prNumber]);
+      // A box ticked since the last job must be recorded before the runs below rewrite the comment
+      await syncCheckboxesBeforeWrite(prNumber);
     }
     const actions = await listPullRequestActions(prNumber, prId);
     const selected = await selectDevOrgActions(actions, flags['action-id'], flags.all === true, headless);

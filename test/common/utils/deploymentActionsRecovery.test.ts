@@ -20,7 +20,7 @@ import {
   type DeploymentActionStateEntry,
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
 import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext } from '../../../src/common/utils/prePostCommandUtils.js';
-import { validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
+import { normalizeMovedFrom, validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
 import { buildActionRunOrgChoices, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername } from '../../../src/common/utils/deploymentActionRunUtils.js';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 
@@ -92,6 +92,15 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
     expect(body).to.not.contain('### Failed actions');
     expect(body).to.not.contain('pr-banner-actions-error');
     expect(body).to.contain('| dev-sandboxes |');
+  });
+
+  it('never lists a manual action of a developer org as pending, nor turns the banner orange for it', () => {
+    const body = buildDeploymentActionsCommentBody([
+      entry({ status: 'success' }),
+      entry({ orgBranch: 'dev-sandboxes', status: 'manual' }),
+    ], undefined, 12);
+    expect(body).to.not.contain('### Pending manual actions');
+    expect(body).to.not.contain('pr-banner-actions-pending');
   });
 
   it('shows the note column only when an entry carries a note, and the fix Pull Request of a moved action', () => {
@@ -368,5 +377,16 @@ describe('pickBranchOrgUsername()', () => {
   it('falls back to another user of the same instance, then to nobody', () => {
     expect(pickBranchOrgUsername([{ username: 'jane@acme.com.uat', instanceUrl: 'https://acme--uat.sandbox.my.salesforce.com/' }], uat)).to.equal('jane@acme.com.uat');
     expect(pickBranchOrgUsername([{ username: 'jane@acme.com.dev-jane', instanceUrl: 'https://acme--dev-jane.sandbox.my.salesforce.com' }], uat)).to.equal(null);
+  });
+});
+
+describe('normalizeMovedFrom()', () => {
+  it('reads a quoted number as a number, and leaves anything else alone', () => {
+    const quoted = action({ movedFrom: '12' as any });
+    normalizeMovedFrom(quoted);
+    expect(quoted.movedFrom).to.equal(12);
+    const text = action({ movedFrom: 'abc' as any });
+    normalizeMovedFrom(text);
+    expect(text.movedFrom).to.equal('abc');
   });
 });
