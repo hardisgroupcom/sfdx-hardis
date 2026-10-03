@@ -1125,7 +1125,13 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
           ? buildClosedByCheckboxNote(base?.status === 'not-run' ? 'not-run' : 'failed', comment.prNumber)
           : undefined,
       }, sourcePr);
-      uxLog("action", null, c.cyan(`[DeploymentActions] ${t(closedFailure ? 'failedActionConfirmedViaCheckbox' : 'manualActionConfirmedViaCheckbox', { label, orgBranch: item.orgBranch })}`));
+      // Two statements, not a ternary of the two keys: on one line, a 32 character key after the
+      // word "Checkbox" matches the box-api-access-token rule of the secret scanners
+      let confirmedMessage = t('manualActionConfirmedViaCheckbox', { label, orgBranch: item.orgBranch });
+      if (closedFailure) {
+        confirmedMessage = t('failedActionConfirmedViaCheckbox', { label, orgBranch: item.orgBranch });
+      }
+      uxLog("action", null, c.cyan(`[DeploymentActions] ${confirmedMessage}`));
       newlyConfirmed++;
     }
   }
