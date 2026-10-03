@@ -429,3 +429,8 @@ CVE-2026-84961
 # http-cache-semantics: information disclosure via the max-stale directive (HIGH), same advisory as GHSA-ch52-4w7c-c8xp in osv-scanner.toml. No fixed release exists (4.2.0, the latest, is affected).
 # The flaw lets a client read cached responses of other users from a SHARED cache. Here it is reached through @salesforce/source-deploy-retrieve > got > cacheable-request, a private client-side cache of a single-user CLI process: no response of another user is ever stored in it. Remove once a fixed version ships. Added 2026-10-03.
 CVE-2026-93748
+
+# https://avd.aquasec.com/nvd/cve-2026-93687
+# braces: stack exhaustion when it expands an attacker-supplied deeply nested pattern (HIGH), same advisory as GHSA-vfj7-8cjw-p6xm in osv-scanner.toml. No fixed release exists (3.0.3, the latest, is affected).
+# In the images, braces 3.0.3 sits in the global node_modules and in the npm-shrinkwrapped @salesforce/cli, as a dependency of micromatch-based file globbing. It only expands glob patterns written in the project or in the tools themselves, never a pattern received from the network. Remove once a fixed version ships. Added 2026-10-03.
+CVE-2026-93687
