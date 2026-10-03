@@ -11,7 +11,7 @@ import { listMajorOrgs } from './orgConfigUtils.js';
 import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { gitUserName } from './backpromoteGitUtils.js';
-import { ActionWhen, buildActionTargetBranchCandidates, readActions, readPullRequestDescriptionActions, resolvePrId } from './actionUtils.js';
+import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, readActions, readPullRequestDescriptionActions, resolvePrId } from './actionUtils.js';
 import {
   DeploymentActionRef,
   DeploymentActionStateEntry,
@@ -104,9 +104,12 @@ export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBran
   if (majorOrg) {
     return buildTarget(conn, majorOrg.branchName, true);
   }
+  // A developer org is tracked under the virtual branch name every developer org shares, never
+  // under the checked out branch: that branch can be a major one, and a try in a sandbox must not
+  // count as done in the org of that branch
   const currentBranch = await getCurrentGitBranch() || 'unknown';
   uxLog("warning", this, c.yellow(t('actionRunDevOrgUsed', { instanceUrl: conn.instanceUrl, branch: currentBranch })));
-  return buildTarget(conn, currentBranch, false);
+  return buildTarget(conn, DEV_SANDBOXES_BRANCH_NAME, false);
 }
 
 /**
@@ -123,7 +126,7 @@ export async function resolveOrgBranchForStatus(targetOrg: Org | undefined, orgB
   }
   const conn = targetOrg.getConnection();
   const majorOrg = (await listMajorOrgs()).find((org: any) => isOrgOfMajorBranch(conn, org));
-  return { orgBranch: majorOrg?.branchName || await getCurrentGitBranch() || 'unknown', sfUsername };
+  return { orgBranch: majorOrg?.branchName || DEV_SANDBOXES_BRANCH_NAME, sfUsername };
 }
 
 /**
@@ -276,6 +279,11 @@ export async function checkRetryAllowed(def: PrePostCommand, prNumber: number, o
     refuse(t('actionRunReasonMoved', { pr: entry.movedTo || '?' }));
   }
   if (!entry || !RECOVERABLE_STATUSES.includes(entry.status)) {
+    // Nothing says this action belongs in this org yet (a Pull Request not merged there, for
+    // instance): a person may decide to run it, an automation may not
+    if (headless) {
+      refuse(t('actionRunReasonNoRecordHeadless', { orgBranch }));
+    }
     await confirmOrWarn(t('actionRunNeverRunInOrg', { label: def.label, orgBranch }), headless);
     return;
   }

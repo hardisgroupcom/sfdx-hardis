@@ -2,7 +2,8 @@ import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import { isCI, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
+import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { CONSTANTS } from '../../../../config/index.js';
@@ -58,7 +59,7 @@ When the org is not a major org (a developer sandbox or a scratch org), the comm
 
 - \`--pr\` takes the Pull Request number, or \`draft\` for the actions file of a branch with no Pull Request yet. Without it, the Pull Request of the current branch is used, or the draft file.
 - Validation-only actions and package.xml item removals are skipped: they only make sense during a deployment. A \`runOnlyOnceByOrg\` action already done in this org is skipped too.
-- The results go to the "Deployment Actions" comment of the Pull Request, in a column named after your branch. Without a Pull Request (draft) or without a git provider token, they are kept in \`config/user/deployment-actions/<Pull Request or draft>.json\`, a folder sfdx-hardis projects keep out of git.
+- The results go to the "Deployment Actions" comment of the Pull Request, in the \`dev-sandboxes\` column shared by every developer org. They never count as done in a major org, never write "moved", and never turn the comment red. Without a Pull Request (draft) or without a git provider token, they are kept in \`config/user/deployment-actions/<Pull Request or draft>.json\`, a folder sfdx-hardis projects keep out of git.
 - \`--all\` is refused on a major org: a merge runs them there. \`--dev-org\` refuses any run on a major org, which the VS Code **Run in my org** button of an action passes, so a default org that happens to be a major one is never touched.
 
 To close an action that was done by hand, use [hardis:project:action:set-status](${CONSTANTS.DOC_URL_ROOT}/hardis/project/action/set-status/). To fix a wrong definition, move the action to a fix Pull Request with \`sf hardis:project:action:update --move-to-pr\`.
@@ -188,7 +189,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
 
     uxLog("action", this, c.cyan(t('actionRunSummary', { orgBranch: target.orgBranch })));
-    uxLogTable(this, results.map((r) => ({ PR: `#${r.prNumber}`, Action: r.label, Status: r.status })));
+    await uxLogTableWithReport(this, results.map((r) => ({ PR: `#${r.prNumber}`, Action: r.label, Status: r.status })), ['PR', 'Action', 'Status'], {
+      fileNamePrefix: 'deployment-actions-run',
+      fileTitle: 'Deployment actions run',
+    });
     WebSocketClient.sendRefreshPipelineMessage();
 
     const blocking = results.find((result) => result.blocking);
@@ -241,7 +245,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
 
     uxLog("action", this, c.cyan(t('actionRunSummary', { orgBranch: target.orgBranch })));
-    uxLogTable(this, results.map((r) => ({ Action: r.label, Status: r.status })));
+    await uxLogTableWithReport(this, results.map((r) => ({ Action: r.label, Status: r.status })), ['Action', 'Status'], {
+      fileNamePrefix: 'deployment-actions-run',
+      fileTitle: 'Deployment actions run in your org',
+    });
     WebSocketClient.sendRefreshPipelineMessage();
     const blocking = results.find((result) => result.blocking);
     if (blocking) {

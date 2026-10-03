@@ -31,6 +31,10 @@ export interface DeploymentActionRef {
   actionId: string;
 }
 
+// Org branch of the tries made in a developer org (same value as DEV_SANDBOXES_BRANCH_NAME of
+// actionUtils, not imported to keep this module free of a dependency cycle)
+export const DEV_SANDBOXES_ORG_BRANCH = 'dev-sandboxes';
+
 // What the two checkbox marker prefixes start with, to list the comments holding either in one call
 const CHECKBOX_MARKER_COMMON_PREFIX = '<!-- sfdx-hardis-';
 
@@ -619,7 +623,9 @@ function getActionsBannerKey(entries: DeploymentActionStateEntry[]): PrCommentBa
   // A 'warning' entry (failed, allowed to fail) did not block the deployment: it must not turn the
   // comment red, so it is not an error here and falls through to pending / completed.
   // A stopped action is waiting for the failure that stopped it to be solved: same red banner
-  if (entries.some((e) => e.status === 'failed' || e.status === 'not-run')) {
+  // Tries in a developer org (dev-sandboxes) are information for their author, not a problem of the
+  // pipeline: they never turn the banner red
+  if (entries.some((e) => (e.status === 'failed' || e.status === 'not-run') && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH)) {
     return 'actions-error';
   }
   if (entries.some((e) => e.status === 'manual')) {
@@ -677,7 +683,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
 
   // Failed actions: a checkable item per action that failed (or was stopped by a failure) in an org.
   // Retry it with sf hardis:project:action:run, or tick the box once it has been done by hand.
-  const failedEntries = sorted.filter((e) => e.status === 'failed' || e.status === 'not-run');
+  const failedEntries = sorted.filter((e) => (e.status === 'failed' || e.status === 'not-run') && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH);
   if (failedEntries.length > 0) {
     body += `### Failed actions\n\n`;
     body += `Retry an action with \`sf hardis:project:action:run\` (or the **Retry** button of the VS Code Deployment Actions tab), move it to a fix Pull Request, or tick its box once it has been done by hand: the next sfdx-hardis job will record it as done.\n\n`;

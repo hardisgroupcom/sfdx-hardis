@@ -14,7 +14,7 @@ import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPull
 import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
-import { ActionWhen, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
+import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import {
   ActionInterpolationError,
@@ -366,6 +366,20 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     };
     skipAction = true;
   }
+  // The action was moved to a fix Pull Request, which already ran it in this org: the copy left in
+  // this Pull Request (a description cannot be edited after the merge) must not run again, even
+  // when its job is re-run without the fix Pull Request in its scope
+  if (!skipAction) {
+    const ownerPr = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
+    const movedEntry = ownerPr > 0 ? getActionStateEntry(ownerPr, cmd.id, ctx.orgBranchName) : null;
+    if (movedEntry?.status === 'moved') {
+      const reason = t('actionSkippedMovedTo', { pr: movedEntry.movedTo || '?' });
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: ${reason}`));
+      cmd.result = { statusCode: "skipped", skippedReason: reason };
+      recordActionProducedNothing(cmd, reason);
+      return;
+    }
+  }
   if (!skipAction) {
     // true by default, except for action types that must run at every deployment
     const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false && ctx.skipRunOnlyOnceCheck !== true;
@@ -451,7 +465,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     }, sourcePrNumber);
     // The action was moved from another Pull Request to fix its definition: once the copy has run in
     // this org, the original row points at it instead of staying failed forever.
-    if (cmd.movedFrom && cmd.movedFrom > 0 && cmd.movedFrom !== sourcePrNumber && cmd.result.statusCode !== 'skipped') {
+    if (cmd.movedFrom && cmd.movedFrom > 0 && cmd.movedFrom !== sourcePrNumber && cmd.result.statusCode !== 'skipped' && ctx.orgBranchName !== DEV_SANDBOXES_BRANCH_NAME) {
       upsertActionInState({
         actionId: cmd.id,
         actionLabel: cmd.label,

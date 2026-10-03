@@ -82,6 +82,16 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
     expect(body).to.contain('⏸️ not run, a previous action failed');
   });
 
+  it('never lists a failure in a developer org as a failed action, nor turns the banner red for it', () => {
+    const body = buildDeploymentActionsCommentBody([
+      entry({ status: 'success' }),
+      entry({ orgBranch: 'dev-sandboxes', status: 'failed' }),
+    ], undefined, 12);
+    expect(body).to.not.contain('### Failed actions');
+    expect(body).to.not.contain('pr-banner-actions-error');
+    expect(body).to.contain('| dev-sandboxes |');
+  });
+
   it('shows the note column only when an entry carries a note, and the fix Pull Request of a moved action', () => {
     const withoutNote = buildDeploymentActionsCommentBody([entry({ status: 'success' })], undefined, 12);
     expect(withoutNote).to.contain('| Org branch | Status | Date | Job |\n');

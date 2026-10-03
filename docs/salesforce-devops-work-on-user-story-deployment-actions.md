@@ -592,7 +592,7 @@ Before the merge, run the actions of your Pull Request in your own org, a develo
 **From the terminal**: [sf hardis:project:action:run](hardis/project/action/run.md) with `--action-id`, or `--all` to run them all, pre-deployment actions first, in a developer org.
 
 - Validation-only actions and package.xml item removals are skipped: they only make sense in a deployment. A `runOnlyOnceByOrg` action already done in your org is skipped too.
-- The result of each action shows under its label: *In your org: Done*. With a Pull Request, it is also recorded in its "Deployment Actions" comment, in a column named after your branch.
+- The result of each action shows under its label: *In your org: Done*. With a Pull Request, it is also recorded in its "Deployment Actions" comment, under `dev-sandboxes`, shared by every developer org: it never counts as done in a major org and never turns the comment red.
 - Without a Pull Request yet, the results stay on your computer, in `config/user/deployment-actions/draft.json`, which git ignores.
 
 ### Recover a failed action
@@ -617,9 +617,7 @@ You do not need to re-run the whole deployment job. Pick the way that fits the c
 
 ![Retry of a failed deployment action in VS Code](assets/images/screenshot-deployment-action-retry.jpg)
 
-**Mark as done** records the action as done, with who closed it and when.
-
-![Mark as done of a deployment action in VS Code](assets/images/screenshot-deployment-action-mark-done.jpg)
+**Mark as done** records the action as done in the background, with who closed it and when: a notification says when it is recorded, and the tab refreshes.
 
 **Move to my Pull Request** moves the action to the Pull Request of your current branch: correct it there. The action editor shows where it comes from.
 
