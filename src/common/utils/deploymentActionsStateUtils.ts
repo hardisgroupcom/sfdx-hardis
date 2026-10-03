@@ -719,7 +719,10 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
           return '⬜';
         }
         const dateStr = e.date ? ` ${e.date.substring(0, 10)}` : '';
-        const jobRef = e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
+        // A moved action names the Pull Request it runs from now: the git providers link "#42"
+        const jobRef = e.status === 'moved' && e.movedTo
+          ? `<br/>moved to #${e.movedTo}`
+          : e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
         const statusIcon = getStatusIcon(e.status);
         usedMatrixIcons.push(statusIcon);
         return `${statusIcon}${dateStr}${jobRef}${encodeOutputsMarker(e.outputs)}${encodeMetaMarker(e)}`;

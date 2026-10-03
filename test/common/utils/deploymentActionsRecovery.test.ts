@@ -89,6 +89,7 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
     expect(withNote).to.contain('| Org branch | Status | Date | Job | Note |');
     expect(withNote).to.contain('| integration | ✅ success | 2026-10-03 | local | Run locally by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC. |');
     expect(withNote).to.contain('↪️ moved to #15');
+    expect(withNote).to.contain('<br/>moved to #15');
   });
 
   it('writes no meta marker for an entry without recovery details, and ignores a broken one', () => {
