@@ -125,6 +125,14 @@ describe('Deployment Actions state - upsert rules of the recovery statuses', () 
     expect(getActionStateEntry(12, 'action-1', 'integration')!.status).to.equal('success');
   });
 
+  it('keeps the stopped actions on the entry of a retry that succeeds, so the next ones can be found', () => {
+    upsertActionInState(entry({ stoppedActions: [{ pr: 12, actionId: 'action-2' }] }), 12);
+    upsertActionInState(entry({ status: 'success', jobId: 'local', note: 'Run locally by Jane Doe' }), 12);
+    const retried = getActionStateEntry(12, 'action-1', 'integration')!;
+    expect(retried.status).to.equal('success');
+    expect(retried.stoppedActions).to.deep.equal([{ pr: 12, actionId: 'action-2' }]);
+  });
+
   it('keeps the stopped actions of a failure when the action fails again', () => {
     upsertActionInState(entry({ stoppedActions: [{ pr: 12, actionId: 'action-2' }] }), 12);
     upsertActionInState(entry({ jobId: 'local' }), 12);
@@ -182,6 +190,13 @@ describe('Moved actions', () => {
     const unrelated = action({ pullRequest: { idNumber: 11, idStr: '11' } as any });
     const copy = action({ movedFrom: 12, pullRequest: { idNumber: 15, idStr: '15' } as any });
     expect(dropActionsMovedToAnotherPullRequest([unrelated, copy])).to.deep.equal([unrelated, copy]);
+  });
+
+  it('reads a movedFrom written as a quoted number', () => {
+    const original = action({ pullRequest: { idNumber: 12, idStr: '12' } as any });
+    const copy = action({ movedFrom: '12' as any, pullRequest: { idNumber: 15, idStr: '15' } as any });
+    expect(dropActionsMovedToAnotherPullRequest([original, copy])).to.deep.equal([copy]);
+    expect(copy.movedFrom).to.equal(12);
   });
 
   it('validates movedFrom', () => {

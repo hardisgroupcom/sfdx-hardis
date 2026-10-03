@@ -269,9 +269,10 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
   if (idx >= 0 && entry.status === 'moved' && entries[idx].status === 'success') {
     return;
   }
-  // An action failing again keeps the list of the actions its first failure stopped, until a run
-  // records a new list: they are still waiting for it.
-  if (idx >= 0 && entry.status === 'failed' && !entry.stoppedActions && entries[idx].stoppedActions) {
+  // An action failing again, or retried successfully, keeps the list of the actions its first
+  // failure stopped, until a run records a new list: they are still waiting, and a retry of one of
+  // them finds the ones after it through this list.
+  if (idx >= 0 && (entry.status === 'failed' || entry.status === 'success') && !entry.stoppedActions && entries[idx].stoppedActions) {
     entry = { ...entry, stoppedActions: entries[idx].stoppedActions };
   }
   if (idx >= 0) {
@@ -657,7 +658,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   const bannerMarkdown = getPrCommentBannerMarkdown(getActionsBannerKey(sorted), '🛠️ Deployment Actions');
   const headingMarkdown = bannerMarkdown === '' ? '## 🛠️ Deployment Actions\n\n' : '';
   let body = `${DEPLOYMENT_ACTIONS_MARKER}\n${buildActionsNavBlock(previousBody)}${bannerMarkdown}${headingMarkdown}`;
-  body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually, except to tick a checkbox in the "Pending manual actions" list once you have performed the action.\n\n`;
+  body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually, except to tick a checkbox in the "Pending manual actions" or "Failed actions" list once the action has been done.\n\n`;
 
   // Pending manual actions: a checkable to-do per action still waiting to be performed in an org.
   // Ticking a box is detected by the next check or deployment job, which records the action as done.

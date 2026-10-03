@@ -282,6 +282,7 @@ export interface SingleActionRunContext {
  * The outcome is in cmd.result.
  */
 export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: SingleActionRunContext): Promise<void> {
+  normalizeMovedFrom(cmd);
   // An action defining both branch filter lists is a definition error, not a skip: report every
   // offending action of the job, and let the failure check after the loop fail the deployment.
   const branchFilterVerdict = evaluateActionBranchFilter(cmd, ctx.targetBranchCandidates);
@@ -479,6 +480,7 @@ export function getEffectiveActionContext(cmd: PrePostCommand): PrePostCommand['
  * Exported for unit tests.
  */
 export function dropActionsMovedToAnotherPullRequest(commands: PrePostCommand[]): PrePostCommand[] {
+  commands.forEach(normalizeMovedFrom);
   const moved = commands.filter((cmd) => cmd.movedFrom && cmd.movedFrom > 0);
   if (moved.length === 0) {
     return commands;
@@ -518,6 +520,15 @@ function registerActionOutcome(cmd: PrePostCommand): void {
  */
 function recordActionProducedNothing(cmd: PrePostCommand, reason?: string): void {
   actionSkipReasons.set(cmd.id, reason || cmd.result?.statusCode || 'not run');
+}
+
+/**
+ * A movedFrom written as a quoted number in YAML ("41") is still the Pull Request number
+ */
+function normalizeMovedFrom(cmd: PrePostCommand): void {
+  if (typeof cmd.movedFrom === 'string' && /^\d+$/.test((cmd.movedFrom as string).trim())) {
+    cmd.movedFrom = parseInt(cmd.movedFrom as string, 10);
+  }
 }
 
 /**

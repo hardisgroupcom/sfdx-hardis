@@ -10,7 +10,7 @@
 
 When a post-deployment action fails after the merge of a Pull Request, the metadata is already deployed: re-running the whole deployment job is not needed. This command runs only the chosen action in the org, and records the result in the "Deployment Actions" comment of its Pull Request, with who ran it.
 
-- The org branch comes from the org: the major branch whose `config/branches/.sfdx-hardis.<branch>.yml` has the same `instanceUrl`, or the current git branch for a dev org. With `--org-branch`, an org of that instance already authenticated on this computer is used.
+- The org branch comes from the org: the major branch whose `config/branches/.sfdx-hardis.<branch>.yml` has the same `targetUsername` or `instanceUrl`, or the current git branch for a dev org. With `--org-branch`, an org of that branch already authenticated on this computer is used: its `targetUsername` first, then any user of its instance.
 - The action definition is read from the current checkout. When the org is a major org and the current branch is another one, the command warns and asks for confirmation.
 - Without `--pr` and `--action-id`, it proposes the recent Pull Requests whose actions failed in the org branch, then their failed actions.
 - An action with a `customUsername` runs as that user: when this computer is not authenticated with it, the command offers to log in with it, and checks the login used the right user.

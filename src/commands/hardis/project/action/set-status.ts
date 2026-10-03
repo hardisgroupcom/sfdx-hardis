@@ -124,7 +124,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     uxLog("action", this, c.cyan(t('actionSetStatusClosing', { pr: prNumber, orgBranch })));
     const entry = await closeActionByHand(prNumber, actionId, orgBranch, sfUsername, flags.note);
     uxLog("success", this, c.green(t('actionSetStatusDone', { label: entry.actionLabel, orgBranch })));
-    uxLog("log", this, c.grey(entry.note || ''));
+    // Visible in the VS Code command runner, which hides plain log lines
+    uxLog("action", this, c.cyan(entry.note || ''));
     if ((entry.stoppedActions || []).length > 0) {
       uxLog("warning", this, c.yellow(t('actionRunStoppedActionsLeft', { count: entry.stoppedActions!.length })));
     }

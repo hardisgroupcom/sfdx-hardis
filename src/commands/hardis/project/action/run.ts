@@ -22,6 +22,7 @@ import {
   selectRecoverableAction,
   selectSourcePullRequest,
 } from '../../../../common/utils/deploymentActionRunUtils.js';
+import { DeploymentActionRef } from '../../../../common/utils/deploymentActionsStateUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,7 +37,7 @@ export default class ActionRun extends SfCommand<any> {
 
 When a post-deployment action fails after the merge of a Pull Request, the metadata is already deployed: re-running the whole deployment job is not needed. This command runs only the chosen action in the org, and records the result in the "Deployment Actions" comment of its Pull Request, with who ran it.
 
-- The org branch comes from the org: the major branch whose \`config/branches/.sfdx-hardis.<branch>.yml\` has the same \`instanceUrl\`, or the current git branch for a dev org. With \`--org-branch\`, an org of that instance already authenticated on this computer is used.
+- The org branch comes from the org: the major branch whose \`config/branches/.sfdx-hardis.<branch>.yml\` has the same \`targetUsername\` or \`instanceUrl\`, or the current git branch for a dev org. With \`--org-branch\`, an org of that branch already authenticated on this computer is used: its \`targetUsername\` first, then any user of its instance.
 - The action definition is read from the current checkout. When the org is a major org and the current branch is another one, the command warns and asks for confirmation.
 - Without \`--pr\` and \`--action-id\`, it proposes the recent Pull Requests whose actions failed in the org branch, then their failed actions.
 - An action with a \`customUsername\` runs as that user: when this computer is not authenticated with it, the command offers to log in with it, and checks the login used the right user.
@@ -145,9 +146,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     await checkRetryAllowed(def, prNumber, target.orgBranch, headless);
     await ensureCustomUsernameAuth(def, target, headless);
 
+    // Read before the run: the actions this one stopped, still waiting
+    const stopped = await listStoppedActionsAfter(prNumber, actionId, target.orgBranch);
     const results: ActionRunResult[] = [await runActionOutsideDeployment(def, prNumber, target)];
     if (results[0].status === 'success') {
-      await this.runStoppedActions(results, flags.next as NextActionsMode | undefined, target, headless);
+      await this.runStoppedActions(results, stopped, flags.next as NextActionsMode | undefined, target, headless);
     }
 
     uxLog("action", this, c.cyan(t('actionRunSummary', { orgBranch: target.orgBranch })));
@@ -168,9 +171,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
    * Run the actions the failure stopped, in order, as the user chose. Stops at the first failure,
    * which then becomes the action the remaining ones wait for.
    */
-  private async runStoppedActions(results: ActionRunResult[], nextFlag: NextActionsMode | undefined, target: any, headless: boolean): Promise<void> {
-    const first = results[0];
-    const stopped = await listStoppedActionsAfter(first.prNumber, first.actionId, target.orgBranch);
+  private async runStoppedActions(results: ActionRunResult[], stopped: DeploymentActionRef[], nextFlag: NextActionsMode | undefined, target: any, headless: boolean): Promise<void> {
     const mode = await chooseNextActionsMode(stopped.length, nextFlag, headless);
     if (mode === 'none') {
       return;

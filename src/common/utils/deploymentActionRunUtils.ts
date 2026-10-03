@@ -83,10 +83,10 @@ export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBran
       }
       return buildTarget(targetOrg.getConnection(), orgBranchFlag, false);
     }
-    if (targetOrg && sameInstance(targetOrg.getConnection().instanceUrl, majorOrg.instanceUrl)) {
+    if (targetOrg && isOrgOfMajorBranch(targetOrg.getConnection(), majorOrg)) {
       return buildTarget(targetOrg.getConnection(), orgBranchFlag, true);
     }
-    const conn = await findAuthenticatedConnection(majorOrg.instanceUrl);
+    const conn = await findAuthenticatedConnection(majorOrg);
     if (!conn) {
       throw new SfError(t('actionRunNoAuthenticatedOrg', { branch: orgBranchFlag, instanceUrl: majorOrg.instanceUrl || '?' }));
     }
@@ -96,7 +96,7 @@ export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBran
     throw new SfError(t('actionRunNoTargetOrg'));
   }
   const conn = targetOrg.getConnection();
-  const majorOrg = majorOrgs.find((org: any) => sameInstance(conn.instanceUrl, org.instanceUrl));
+  const majorOrg = majorOrgs.find((org: any) => isOrgOfMajorBranch(conn, org));
   if (majorOrg) {
     return buildTarget(conn, majorOrg.branchName, true);
   }
@@ -118,7 +118,7 @@ export async function resolveOrgBranchForStatus(targetOrg: Org | undefined, orgB
     throw new SfError(t('missingRequiredFlag', { flag: 'org-branch' }));
   }
   const conn = targetOrg.getConnection();
-  const majorOrg = (await listMajorOrgs()).find((org: any) => sameInstance(conn.instanceUrl, org.instanceUrl));
+  const majorOrg = (await listMajorOrgs()).find((org: any) => isOrgOfMajorBranch(conn, org));
   return { orgBranch: majorOrg?.branchName || await getCurrentGitBranch() || 'unknown', sfUsername };
 }
 
@@ -444,20 +444,37 @@ function buildTarget(conn: Connection, orgBranch: string, isMajorOrg: boolean): 
   return { conn, username: conn.getUsername() || '', instanceUrl: conn.instanceUrl, orgBranch, isMajorOrg };
 }
 
+/**
+ * The org of a major branch config: the same instance URL, or the same username. The instanceUrl
+ * of a branch config is often the login URL (https://test.salesforce.com for a sandbox or a
+ * scratch org), which no connection ever reports: the username then tells.
+ */
+function isOrgOfMajorBranch(conn: Connection, majorOrg: any): boolean {
+  return sameInstance(conn.instanceUrl, majorOrg.instanceUrl) || sameUsername(conn.getUsername(), majorOrg.targetUsername);
+}
+
+function sameUsername(username1?: string, username2?: string): boolean {
+  return (username1 || '').trim() !== '' && (username1 || '').trim().toLowerCase() === (username2 || '').trim().toLowerCase();
+}
+
 function sameInstance(url1?: string, url2?: string): boolean {
   const normalize = (url?: string) => (url || '').trim().toLowerCase().replace(/\/+$/, '');
   return normalize(url1) !== '' && normalize(url1) === normalize(url2);
 }
 
 /**
- * An org of the given instance already authenticated on this computer, if any
+ * An org of a major branch already authenticated on this computer, if any: its username first,
+ * then any user of its instance
  */
-async function findAuthenticatedConnection(instanceUrl?: string): Promise<Connection | null> {
-  if (!instanceUrl) {
-    return null;
+async function findAuthenticatedConnection(majorOrg: any): Promise<Connection | null> {
+  const authorizations = (await AuthInfo.listAllAuthorizations()).filter((auth) => !auth.error && !auth.isExpired);
+  const sameUser = authorizations.find((auth) => sameUsername(auth.username, majorOrg.targetUsername));
+  if (sameUser) {
+    const org = await Org.create({ aliasOrUsername: sameUser.username });
+    return org.getConnection();
   }
-  const authorizations = await AuthInfo.listAllAuthorizations();
-  const matching = authorizations.filter((auth) => !auth.error && !auth.isExpired && sameInstance(auth.instanceUrl, instanceUrl));
+  const instanceUrl = majorOrg.instanceUrl;
+  const matching = authorizations.filter((auth) => sameInstance(auth.instanceUrl, instanceUrl));
   if (matching.length === 0) {
     return null;
   }
