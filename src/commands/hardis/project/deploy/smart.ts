@@ -534,6 +534,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       process.env.CONFIG_BRANCH = flags['target-branch'].replace(/\//g, '__');
     }
 
+    // Stop now when git refuses the checkout: no Pull Request could be read, and their deployment
+    // actions would be skipped without a word
+    await GitProvider.assertGitRepositoryNotRefused();
     this.configInfo = await getConfig('branch');
     this.applyRestDeploymentOption();
     // In agent mode, force simulation/check mode - no actual deployment allowed

@@ -2040,6 +2040,7 @@
   "gitProviderSkipPrComment": "プルリクエストコメントの投稿をスキップします",
   "gitProviderUnableToGetPrInfo": "プルリクエスト情報を取得できませんでした: {{message}}",
   "gitPullNoUpstreamFallback": "ブランチ {{branchName}} に上流追跡が設定されていません。origin/{{branchName}} から pull を実行し、上流を設定しています...",
+  "gitRepositoryRefusedDubiousOwnership": "Git がこのリポジトリを拒否しています (detected dubious ownership)。ジョブが checkout の所有者とは別のユーザーで実行されているため、sfdx-hardis はデプロイされる Pull Request を読み取れず、そのデプロイアクションも実行できません。CI ジョブの sf hardis:auth:login の前にこの行を追加し、ジョブを再実行してください:\n{{command}}",
   "gitUsernameIsRequiredToContinue": "続行するには Git ユーザー名が必要です",
   "githubAddingPrComment": "GitHub にプルリクエストコメントを追加しています...",
   "githubCannotCreatePrMissingRepoInfo": "Pull Requestを作成できません: リポジトリのオーナーまたは名前が設定されていません。",

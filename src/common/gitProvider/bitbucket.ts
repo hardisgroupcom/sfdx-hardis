@@ -151,6 +151,10 @@ export class BitbucketProvider extends GitProviderRoot {
     return 'sfdx-hardis Bitbucket connector';
   }
 
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$BITBUCKET_CLONE_DIR"';
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "pull request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (bitbucket)`);

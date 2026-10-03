@@ -2042,6 +2042,7 @@
   "gitProviderSkipPrComment": "Publication du commentaire de pull request ignorée",
   "gitProviderUnableToGetPrInfo": "Impossible d'obtenir les informations de la Pull Request : {{message}}",
   "gitPullNoUpstreamFallback": "La branche {{branchName}} n'a pas de suivi de branche distante. Récupération depuis origin/{{branchName}} et configuration du suivi...",
+  "gitRepositoryRefusedDubiousOwnership": "Git refuse ce repository (detected dubious ownership) : le job tourne avec un autre utilisateur que le propriétaire du checkout, donc sfdx-hardis ne peut lire ni les Pull Requests déployées, ni lancer leurs deployment actions. Ajoutez cette ligne à votre job CI, avant sf hardis:auth:login, puis relancez le job :\n{{command}}",
   "gitUsernameIsRequiredToContinue": "Le nom d'utilisateur Git est requis pour continuer",
   "githubAddingPrComment": "Ajout d'un commentaire de Pull Request sur GitHub...",
   "githubCannotCreatePrMissingRepoInfo": "Impossible de créer la pull request : propriétaire ou nom du dépôt manquant.",

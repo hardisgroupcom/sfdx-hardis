@@ -2042,6 +2042,7 @@
   "gitProviderSkipPrComment": "Pomiń publikowanie komentarza pull request",
   "gitProviderUnableToGetPrInfo": "Nie można pobrać informacji o Pull Request: {{message}}",
   "gitPullNoUpstreamFallback": "Branch {{branchName}} nie ma sledzenia upstream. Pobieranie z origin/{{branchName}} i ustawianie upstream...",
+  "gitRepositoryRefusedDubiousOwnership": "Git odrzuca to repozytorium (detected dubious ownership): job działa jako inny użytkownik niż właściciel checkoutu, więc sfdx-hardis nie może odczytać wdrażanych Pull Requestów ani uruchomić ich akcji wdrożenia. Należy dodać tę linię do joba CI przed sf hardis:auth:login i uruchomić job ponownie:\n{{command}}",
   "gitUsernameIsRequiredToContinue": "Nazwa użytkownika Git jest wymagana do kontynuowania",
   "githubAddingPrComment": "Dodawanie komentarza Pull Request na GitHub...",
   "githubCannotCreatePrMissingRepoInfo": "Nie można utworzyć pull request: brak właściciela lub nazwy repozytorium.",

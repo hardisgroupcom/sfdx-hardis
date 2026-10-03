@@ -2041,6 +2041,7 @@
   "gitProviderSkipPrComment": "Pull Request-Kommentar überspringen",
   "gitProviderUnableToGetPrInfo": "Pull Request-Informationen konnten nicht abgerufen werden: {{message}}",
   "gitPullNoUpstreamFallback": "Branch {{branchName}} hat kein Upstream-Tracking. Pull von origin/{{branchName}} wird ausgeführt und Upstream wird gesetzt...",
+  "gitRepositoryRefusedDubiousOwnership": "Git verweigert dieses Repository (detected dubious ownership): Der Job läuft mit einem anderen Benutzer als dem Besitzer des Checkouts, daher kann sfdx-hardis weder die deployten Pull Requests lesen noch deren Deployment-Aktionen ausführen. Fügen Sie diese Zeile vor sf hardis:auth:login in Ihren CI-Job ein und starten Sie den Job erneut:\n{{command}}",
   "gitUsernameIsRequiredToContinue": "Git-Benutzername ist erforderlich, um fortzufahren",
   "githubAddingPrComment": "Pull Request-Kommentar wird auf GitHub hinzugefügt...",
   "githubCannotCreatePrMissingRepoInfo": "Pull Request kann nicht erstellt werden: Repository-Eigentümer oder -Name fehlt.",

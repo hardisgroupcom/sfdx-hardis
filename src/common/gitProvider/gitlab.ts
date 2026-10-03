@@ -218,6 +218,10 @@ export class GitlabProvider extends GitProviderRoot {
     return "sfdx-hardis Gitlab connector";
   }
 
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$CI_PROJECT_DIR"';
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "merge request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (gitlab)`);

@@ -11,6 +11,7 @@ import { prompts } from "../utils/prompts.js";
 import { removeMermaidLinks } from "../utils/mermaidUtils.js";
 import { getPullRequestData } from "../utils/gitUtils.js";
 import { t } from '../utils/i18n.js';
+import { SfError } from "@salesforce/core";
 import {
   buildPrCommentNavBlock,
   DEPLOYMENT_ACTIONS_MARKER,
@@ -26,6 +27,8 @@ import {
 } from "./prCommentNav.js";
 // Enable with NODE_DEBUG=sfdxhardis
 const debug = debuglog("sfdxhardis");
+// The answer of git about the checkout, asked once per process (assertGitRepositoryNotRefused)
+let gitRepositoryCheck: Promise<void> | null = null;
 
 export type GitProviderType = "github" | "gitlab" | "azure" | "bitbucket";
 
@@ -804,6 +807,38 @@ export abstract class GitProvider {
     }
     uxLog("log", this, "[sfdx-hardis] Unable to find a Git provider instance for auto-fix remediation guidance.");
     return;
+  }
+
+  /**
+   * Stops the job when git refuses the checkout because another user owns it ("detected dubious
+   * ownership"), which happens in CI jobs running in a container: no git read works, so the Pull
+   * Requests of the deployment, and their deployment actions, would be skipped without a word. The
+   * error names the line to add to the CI job. Git is asked once per process.
+   */
+  static async assertGitRepositoryNotRefused(): Promise<void> {
+    if (!gitRepositoryCheck) {
+      gitRepositoryCheck = GitProvider.checkGitRepositoryNotRefused();
+    }
+    return gitRepositoryCheck;
+  }
+
+  private static async checkGitRepositoryNotRefused(): Promise<void> {
+    try {
+      await git({ output: false, displayCommand: false }).revparse(['--is-inside-work-tree']);
+    } catch (e: any) {
+      if (!/detected dubious ownership/i.test(String(e?.message || e))) {
+        // Not a git repository, or git missing: the commands that need git say so themselves
+        return;
+      }
+      let gitProvider: GitProviderRoot | null = null;
+      try {
+        gitProvider = await GitProvider.getInstance();
+      } catch {
+        gitProvider = null;
+      }
+      const command = gitProvider ? gitProvider.getSafeDirectoryCommand() : `git config --global --add safe.directory "${process.cwd()}"`;
+      throw new SfError(t('gitRepositoryRefusedDubiousOwnership', { command }));
+    }
   }
 
   static isDeployBeforeMerge(): boolean {

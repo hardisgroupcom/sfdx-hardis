@@ -76,6 +76,8 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   if (property === 'commandsPreDeploy') {
     pendingPreDeployManualActions.length = 0;
   }
+  // The Pull Requests whose actions run are read from git: a checkout git refuses would skip them
+  await GitProvider.assertGitRepositoryNotRefused();
   await executeDeploymentActionsOfPhase(property, options);
   // A validation job stops right after its pre-deployment actions while one of its pre-deployment
   // manual actions is not done: no point checking a deployment that cannot be merged yet

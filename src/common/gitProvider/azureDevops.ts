@@ -180,6 +180,10 @@ export class AzureDevopsProvider extends GitProviderRoot {
     return "sfdx-hardis Azure Devops connector";
   }
 
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$(Build.SourcesDirectory)"';
+  }
+
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
     const stepLabel = step === "push" ? "git push" : "pull request creation";
     uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (azure)`);

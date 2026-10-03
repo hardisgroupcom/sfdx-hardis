@@ -2015,6 +2015,7 @@
   "gitProviderSkipPrComment": "Ignorar postagem de comentário de pull request",
   "gitProviderUnableToGetPrInfo": "Não foi possível obter informações do Pull Request: {{message}}",
   "gitPullNoUpstreamFallback": "A branch {{branchName}} não tem rastreamento upstream. Fazendo pull de origin/{{branchName}} e configurando upstream...",
+  "gitRepositoryRefusedDubiousOwnership": "O Git recusa este repositório (detected dubious ownership): o job roda com outro usuário que não o dono do checkout, então o sfdx-hardis não consegue ler quais Pull Requests são implantadas nem executar as ações de implantação delas. Adicione esta linha ao seu job de CI, antes de sf hardis:auth:login, e execute o job novamente:\n{{command}}",
   "gitUsernameIsRequiredToContinue": "O nome de usuário do Git é obrigatório para continuar",
   "githubAddingPrComment": "Adicionando Comentário de Pull Request no GitHub...",
   "githubComparingCommits": "Comparando commits entre {{base}} e {{head}}",
