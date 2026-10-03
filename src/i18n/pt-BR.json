@@ -9,6 +9,7 @@
   "actionRunAllMajorOrg": "--all só é executado em uma org de desenvolvedor: {{orgBranch}} é uma org principal, onde um merge executa as ações. Tente novamente uma ação com falha usando --action-id.",
   "actionRunBackpromoteRecorded": "Registrado no comentário Backpromotes do Pull Request #{{pr}} para {{sandboxName}}.",
   "actionRunBlockedByStillFailed": "Esta ação foi interrompida porque {{label}} falhou, e {{label}} continua com falha em {{orgBranch}}. Executar mesmo assim?",
+  "actionRunBranchDeclaresNoOrg": "A configuração da branch {{branch}} não declara nenhuma org (targetUsername, instanceUrl): informe a org onde executar a ação com --target-org.",
   "actionRunBranchMismatch": "A org está vinculada à branch {{orgBranch}}, mas você está na branch {{currentBranch}}: a definição da ação será lida de {{currentBranch}}. Continuar?",
   "actionRunBranchMismatchHeadless": "A branch git atual não é {{orgBranch}}. Faça checkout de {{orgBranch}} ou passe --allow-branch-mismatch para ler a definição da ação da branch atual.",
   "actionRunCancelled": "Cancelado: nada foi executado e nada foi registrado.",

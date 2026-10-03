@@ -435,6 +435,8 @@ g6() {
   printf 'Full merge of uat into preprod.\n' >"$BODIES/fullmerge.md"
   FM=$(p_open uat preprod "Full merge of uat into preprod" "$BODIES/fullmerge.md") || return 1
   remember FM "$FM"
+  # Opened just now: GitHub writes refs/pull/<n>/merge a few seconds later
+  p_wait_merge_ref "$FM" >/dev/null 2>&1
   job 3 p_check "$FM" preprod edge-full-merge
   assert_log 52a edge-full-merge 0 "the stories already promoted are named, the others arrive for the first time" \
     "Pull Request $S2 was already deployed through promotion branch\(es\) $(esc "$P9_BRANCH") \(#$P9\)" "E2E post-deploy of PR $S5"

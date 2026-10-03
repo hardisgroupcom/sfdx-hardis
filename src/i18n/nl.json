@@ -43,6 +43,7 @@
   "actionRunBackpromoteRecorded": "Vastgelegd in de Backpromotes-opmerking van Pull Request #{{pr}} voor {{sandboxName}}.",
   "actionRunBatchFlagsOnOtherType": "--run-mode, --batch-size, --wait-timeout en --success-even-if-batch-errors gelden alleen voor run-batch-acties, niet voor een actie van het type {{type}}.",
   "actionRunBlockedByStillFailed": "Deze actie is gestopt omdat {{label}} mislukte, en {{label}} is nog steeds mislukt in {{orgBranch}}. Toch uitvoeren?",
+  "actionRunBranchDeclaresNoOrg": "De configuratie van branch {{branch}} declareert geen org (targetUsername, instanceUrl): geef de org waarin je de actie wilt uitvoeren op met --target-org.",
   "actionRunBranchMismatch": "De org is gekoppeld aan branch {{orgBranch}}, maar je zit op branch {{currentBranch}}: de actiedefinitie wordt gelezen uit {{currentBranch}}. Doorgaan?",
   "actionRunBranchMismatchHeadless": "De huidige git-branch is niet {{orgBranch}}. Check {{orgBranch}} uit, of geef --allow-branch-mismatch mee om de actiedefinitie uit de huidige branch te lezen.",
   "actionRunCancelled": "Geannuleerd: er is niets uitgevoerd en niets vastgelegd.",

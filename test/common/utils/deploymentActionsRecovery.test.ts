@@ -22,7 +22,8 @@ import {
 import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext, isDraftPullRequest } from '../../../src/common/utils/prePostCommandUtils.js';
 import { normalizeMovedFrom, validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
 import { forecastAction } from '../../../src/common/utils/deploymentActionForecastUtils.js';
-import { buildActionRunOrgChoices, buildCustomUserAlias, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername } from '../../../src/common/utils/deploymentActionRunUtils.js';
+import { buildActionRunOrgChoices, buildCustomUserAlias, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername, resolveActionRunTarget } from '../../../src/common/utils/deploymentActionRunUtils.js';
+import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 
 function entry(overrides: Partial<DeploymentActionStateEntry>): DeploymentActionStateEntry {
@@ -446,5 +447,44 @@ describe('isDraftPullRequest()', () => {
     expect(isDraftPullRequest({ title: 'US-12 [DRAFT] Crew Leads' })).to.equal(true);
     expect(isDraftPullRequest({ title: 'US-12 Crew Leads', isDraft: false })).to.equal(false);
     expect(isDraftPullRequest(null)).to.equal(false);
+  });
+});
+
+describe('resolveActionRunTarget()', () => {
+  const previousCwd = process.cwd();
+  let tmpDir: string;
+  const org = (instanceUrl: string, username: string) => ({ getConnection: () => ({ instanceUrl, getUsername: () => username }) }) as any;
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'action-run-target-'));
+    fs.mkdirSync(path.join(tmpDir, 'config', 'branches'), { recursive: true });
+    fs.writeFileSync(path.join(tmpDir, 'config', 'branches', '.sfdx-hardis.preprod.yml'), 'mergeTargets: [main]\n');
+    fs.writeFileSync(path.join(tmpDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'targetUsername: ci@acme.com.uat\ninstanceUrl: https://acme--uat.sandbox.my.salesforce.com\n');
+    process.chdir(tmpDir);
+    clearListMajorOrgsCache();
+  });
+  afterEach(() => {
+    process.chdir(previousCwd);
+    clearListMajorOrgsCache();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('takes the org passed for a major branch whose config declares no org', async () => {
+    const target = await resolveActionRunTarget(org('https://acme.my.salesforce.com', 'me@acme.com'), 'preprod', true);
+    expect(target).to.include({ orgBranch: 'preprod', isMajorOrg: true, username: 'me@acme.com' });
+  });
+
+  it('asks for the org when the config declares none and none is passed', async () => {
+    let message = '';
+    try {
+      await resolveActionRunTarget(undefined, 'preprod', true);
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).to.contain('declares no org');
+  });
+
+  it('checks the org passed against the org the config declares', async () => {
+    const target = await resolveActionRunTarget(org('https://acme--uat.sandbox.my.salesforce.com', 'ci@acme.com.uat'), 'uat', true);
+    expect(target).to.include({ orgBranch: 'uat', isMajorOrg: true });
   });
 });

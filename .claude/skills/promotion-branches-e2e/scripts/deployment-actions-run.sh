@@ -114,8 +114,25 @@ open_story() {
 }
 echo "=== section 6quater: the stories S8 and S9 ==="
 rm -f "$WORK/e2e-recovery-ok.txt"
-S8=$(open_story feature/E2E-401-recovery integration E2E_S8 "E2E-401 S8 recovery" "$BODIES/s8.md" recovery) || exit 1
-S9=$(open_story feature/E2E-402-draft integration E2E_S9 "E2E-402 S9 draft gate" "$BODIES/s9.md" pre-manual) || exit 1
+# The file the flaky command looks for is untracked on purpose: kept out of git status, or
+# promotion:create refuses the working copy as not clean
+grep -qx "e2e-recovery-ok.txt" "$WORK/.git/info/exclude" 2>/dev/null || echo "e2e-recovery-ok.txt" >>"$WORK/.git/info/exclude"
+# The org of each major branch, declared like in a real project: action:run checks the org it is
+# given against it, and --dev-org refuses it
+git checkout -q -f integration && git pull -q origin integration
+ORG_JSON=$(env -u NODE_OPTIONS sf org display --target-org "$ORG" --json 2>/dev/null)
+ORG_USERNAME=$(echo "$ORG_JSON" | node -e "console.log(JSON.parse(require('fs').readFileSync(0)).result.username)")
+ORG_INSTANCE=$(echo "$ORG_JSON" | node -e "console.log(JSON.parse(require('fs').readFileSync(0)).result.instanceUrl)")
+for f in config/branches/.sfdx-hardis.*.yml; do
+  grep -q "^targetUsername:" "$f" || printf 'targetUsername: %s\ninstanceUrl: %s\n' "$ORG_USERNAME" "$ORG_INSTANCE" >>"$f"
+done
+if ! git diff --quiet; then
+  git add config/branches && git commit -qm "chore: declare the org of each major branch" && git push -q origin integration
+fi
+# DA_RUN names a second run of this section on the same repository (its story branches differ)
+SUFFIX="${DA_RUN:+-$DA_RUN}"
+S8=$(open_story "feature/E2E-401-recovery$SUFFIX" integration "E2E_S8${DA_RUN:-}" "E2E-401 S8 recovery$SUFFIX" "$BODIES/s8.md" recovery) || exit 1
+S9=$(open_story "feature/E2E-402-draft$SUFFIX" integration "E2E_S9${DA_RUN:-}" "E2E-402 S9 draft gate$SUFFIX" "$BODIES/s9.md" pre-manual) || exit 1
 printf 'export S8="%s"\nexport S9="%s"\n' "$S8" "$S9" >>"$LOGS/promo-vars.sh"
 echo "S8=$S8 S9=$S9"
 
@@ -158,7 +175,7 @@ status_check B4 da-status-after-retry "both commands success with a run locally 
 cli da-set-status-manual integration hardis:project:action:set-status --agent --pr "$S8" --action-id "e2e-manual-$S8" --org-branch integration --target-org "$ORG"
 status_check B5 da-status-manual-done "the post-deployment manual step closed with set-status" "--pr-ids $S8" \
   "S:$S8:e2e-manual-$S8:integration=success" "N:$S8:e2e-manual-$S8:integration~Manual action marked as done by"
-cli da-run-refused integration hardis:project:action:run --agent --pr "$S8" --action-id "e2e-after-flaky-$S8" --org-branch preprod --target-org "$ORG"
+cli da-run-refused integration hardis:project:action:run --agent --pr "$S8" --action-id "e2e-after-flaky-$S8" --org-branch preprod --target-org "$ORG" --allow-branch-mismatch
 assert_log B6 da-run-refused 1 "in agent mode, a retry where nothing failed is refused" "nothing records it in preprod"
 
 # ------------------------------------------------------------------ C. mark as done ahead, forecast

@@ -43,6 +43,7 @@
   "actionRunBackpromoteRecorded": "Recorded in the Backpromotes comment of Pull Request #{{pr}} for {{sandboxName}}.",
   "actionRunBatchFlagsOnOtherType": "--run-mode, --batch-size, --wait-timeout and --success-even-if-batch-errors only apply to run-batch actions, not to an action of type {{type}}.",
   "actionRunBlockedByStillFailed": "This action was stopped because {{label}} failed, and {{label}} is still failed in {{orgBranch}}. Run it anyway?",
+  "actionRunBranchDeclaresNoOrg": "The config of branch {{branch}} declares no org (targetUsername, instanceUrl): pass the org to run the action in with --target-org.",
   "actionRunBranchMismatch": "The org is linked to branch {{orgBranch}}, but you are on branch {{currentBranch}}: the action definition will be read from {{currentBranch}}. Continue?",
   "actionRunBranchMismatchHeadless": "The current git branch is not {{orgBranch}}. Check out {{orgBranch}}, or pass --allow-branch-mismatch to read the action definition from the current branch.",
   "actionRunCancelled": "Cancelled: nothing was run and nothing was recorded.",

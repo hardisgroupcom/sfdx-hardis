@@ -95,12 +95,18 @@ export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBran
       }
       return buildTarget(targetOrg.getConnection(), DEV_SANDBOXES_BRANCH_NAME, false);
     }
-    if (targetOrg && isOrgOfMajorBranch(targetOrg.getConnection(), majorOrg)) {
+    // A branch config that declares no org leaves nothing to check the org against: the one passed
+    // with --target-org is the org of that branch
+    const declaresOrg = !!(majorOrg.instanceUrl || majorOrg.targetUsername);
+    if (targetOrg && (!declaresOrg || isOrgOfMajorBranch(targetOrg.getConnection(), majorOrg))) {
       return buildTarget(targetOrg.getConnection(), orgBranchFlag, true);
+    }
+    if (!declaresOrg) {
+      throw new SfError(t('actionRunBranchDeclaresNoOrg', { branch: orgBranchFlag }));
     }
     const conn = await findAuthenticatedConnection(majorOrg, headless);
     if (!conn) {
-      throw new SfError(t('actionRunNoAuthenticatedOrg', { branch: orgBranchFlag, instanceUrl: majorOrg.instanceUrl || '?' }));
+      throw new SfError(t('actionRunNoAuthenticatedOrg', { branch: orgBranchFlag, instanceUrl: majorOrg.instanceUrl || majorOrg.targetUsername }));
     }
     return buildTarget(conn, orgBranchFlag, true);
   }

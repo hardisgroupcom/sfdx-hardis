@@ -649,6 +649,18 @@ Traps:
 
 - **The flaky command reads a file of the working copy**, `e2e-recovery-ok.txt`, untracked on
   purpose: `git checkout -f` keeps it, so every job after the retry finds it. Delete it to replay B.
+  The script lists it in `.git/info/exclude`: untracked and not excluded, it makes
+  `promotion:create` refuse the working copy as not clean (C2).
+- **The flaky command is one file per story** (`scripts/e2e/flaky-<pr>.cjs`): a shared file is
+  committed by the first story only, and a promotion carrying a later one deploys a command whose
+  script never reached the branch.
+- **The section declares the org of each major branch** (`targetUsername`, `instanceUrl`, one
+  commit on integration), like a real project: without it `--dev-org` cannot tell a major org (D4),
+  and `action:run --org-branch` has nothing to check `--target-org` against.
+- **`DA_RUN=<n>` replays the section on the same repository** with story branches of their own:
+  `DA_RUN=2 bash deployment-actions-run.sh`.
+- **B6 passes `--allow-branch-mismatch`**: in agent mode a retry in preprod from the integration
+  checkout is refused for the branch first, before the check B6 is about.
 - **`p_cli` runs a command the way a person does**, with the provider token and no `CI`: the notes
   then say "Run locally by", and `--agent` is what keeps the commands from prompting.
 - The Mark as done buttons, Run in another org and the Next promotion switch of the VS Code panel

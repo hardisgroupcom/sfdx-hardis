@@ -43,6 +43,7 @@
   "actionRunBackpromoteRecorded": "Pull Request #{{pr}} の Backpromotes コメントに {{sandboxName}} として記録しました。",
   "actionRunBatchFlagsOnOtherType": "--run-mode、--batch-size、--wait-timeout、--success-even-if-batch-errors は run-batch アクションにのみ適用され、タイプ {{type}} のアクションには適用されません。",
   "actionRunBlockedByStillFailed": "{{label}} が失敗したためこのアクションは停止されました。{{label}} は {{orgBranch}} でまだ失敗のままです。それでも実行しますか?",
+  "actionRunBranchDeclaresNoOrg": "branch {{branch}} の設定に org が宣言されていません (targetUsername, instanceUrl)。アクションを実行する org を --target-org で指定してください。",
   "actionRunBranchMismatch": "org はブランチ {{orgBranch}} にリンクされていますが、現在のブランチは {{currentBranch}} です。アクション定義は {{currentBranch}} から読み取られます。続行しますか?",
   "actionRunBranchMismatchHeadless": "現在の git ブランチは {{orgBranch}} ではありません。{{orgBranch}} をチェックアウトするか、--allow-branch-mismatch を指定して現在のブランチからアクション定義を読み取ってください。",
   "actionRunCancelled": "キャンセルしました。何も実行されず、何も記録されていません。",
