@@ -21,6 +21,7 @@ import {
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
 import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext } from '../../../src/common/utils/prePostCommandUtils.js';
 import { normalizeMovedFrom, validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
+import { forecastAction } from '../../../src/common/utils/deploymentActionForecastUtils.js';
 import { buildActionRunOrgChoices, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername } from '../../../src/common/utils/deploymentActionRunUtils.js';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 
@@ -388,5 +389,45 @@ describe('normalizeMovedFrom()', () => {
     const text = action({ movedFrom: 'abc' as any });
     normalizeMovedFrom(text);
     expect(text.movedFrom).to.equal('abc');
+  });
+});
+
+describe('forecastAction()', () => {
+  const majors = ['integration', 'uat', 'preprod', 'main'];
+  afterEach(() => {
+    delete (globalThis as any)._deploymentActionsMultiPrState;
+  });
+  const forecast = (def: Partial<PrePostCommand>, carried = true) =>
+    forecastAction(action({ when: 'post-deploy', ...def } as any), 12, 'preprod', majors, carried);
+  const seed = (status: DeploymentActionStateEntry['status']) => upsertActionInState(entry({ orgBranch: 'preprod', status }), 12);
+
+  it('leaves out the Pull Requests the promotion does not carry', () => {
+    expect(forecast({}, false).forecast).to.equal('not-in-promotion');
+  });
+
+  it('honours the branch filters', () => {
+    expect(forecast({ includeTargetBranches: ['integration', 'uat'] } as any).forecast).to.equal('not-for-branch');
+  });
+
+  it('says what is done, what waits for someone and what failed in the branch', () => {
+    seed('success');
+    expect(forecast({}).forecast).to.equal('done');
+    delete (globalThis as any)._deploymentActionsMultiPrState;
+    expect(forecast({ type: 'manual', when: 'pre-deploy' } as any)).to.include({ forecast: 'waiting', reason: 'manual-before-merge' });
+    seed('failed');
+    expect(forecast({}).forecast).to.equal('failed');
+  });
+
+  it('tells the validation job from the deployment job', () => {
+    expect(forecast({}).forecast).to.equal('runs-at-validation');
+    expect(forecast({ context: 'process-deployment-only' } as any)).to.include({ forecast: 'runs-at-deployment', reason: 'deploy-only' });
+    seed('skipped');
+    expect(forecast({})).to.include({ forecast: 'runs-at-deployment', reason: 'skipped-by-validation' });
+    expect(forecast({ context: 'check-deployment-only' } as any)).to.include({ forecast: 'not-for-branch', reason: 'validation-only' });
+  });
+
+  it('runs an action at every deployment when runOnlyOnceByOrg is false', () => {
+    seed('success');
+    expect(forecast({ runOnlyOnceByOrg: false } as any)).to.include({ forecast: 'runs-at-deployment', reason: 'every-deployment' });
   });
 });

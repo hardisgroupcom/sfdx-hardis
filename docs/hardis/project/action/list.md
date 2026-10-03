@@ -10,7 +10,9 @@
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
-With `--with-status` and `--pr-ids` (Pull Request numbers, or `draft`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. With `--with-backpromotes`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in `config/user/deployment-actions/`, are included. Without a git provider token, only those are returned.
+With `--with-status` and `--pr-ids` (Pull Request numbers, or `draft`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. With `--forecast <branch>` (and `--from-branch <branch>`), it also returns what the next promotion will do with each action in that branch: waiting for someone, done already, run by the validation job, run by the deployment job, failed there, not for that branch (branch filter, validation only), or not carried by the open promotion Pull Request, which it also returns. The VS Code Deployment Actions tab shows it in its "Next promotion" mode.
+
+With `--with-backpromotes`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in `config/user/deployment-actions/`, are included. Without a git provider token, only those are returned.
 
 ### Agent Mode
 
@@ -35,20 +37,22 @@ Required in agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                              | Default | Required |          Options           |
-|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                                    |         |          |                            |
-| branch            | option  | Target branch name (for branch scope, defaults to current branch)                                                        |         |          |                            |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                          |         |          |                            |
-| flags-dir         | option  | undefined                                                                                                                |         |          |                            |
-| json              | boolean | Format output as json.                                                                                                   |         |          |                            |
-| pr-id             | option  | Pull request ID (for pr scope, defaults to draft)                                                                        |         |          |                            |
-| pr-ids            | option  | Comma-separated list of Pull Request numbers, or draft (with --with-status)                                              |         |          |                            |
-| scope             | option  | Configuration scope: project, branch, or pr                                                                              |         |          | project<br/>branch<br/>pr  |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                |         |          |                            |
-| when              | option  | When to run the action: pre-deploy or post-deploy                                                                        |         |          | pre-deploy<br/>post-deploy |
-| with-backpromotes | boolean | With --with-status, also return the rows of the Backpromotes comments of --pr-ids: the actions run in each developer org |         |          |                            |
-| with-status       | boolean | Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments             |         |          |                            |
+| Name              |  Type   | Description                                                                                                                            | Default | Required |          Options           |
+|:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                  |         |          |                            |
+| branch            | option  | Target branch name (for branch scope, defaults to current branch)                                                                      |         |          |                            |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                        |         |          |                            |
+| flags-dir         | option  | undefined                                                                                                                              |         |          |                            |
+| forecast          | option  | With --with-status, also return what the next promotion to this major branch will do with each action (ex: preprod)                    |         |          |                            |
+| from-branch       | option  | With --forecast, the branch the promotion comes from (ex: uat): finds the open promotion Pull Request and the Pull Requests it carries |         |          |                            |
+| json              | boolean | Format output as json.                                                                                                                 |         |          |                            |
+| pr-id             | option  | Pull request ID (for pr scope, defaults to draft)                                                                                      |         |          |                            |
+| pr-ids            | option  | Comma-separated list of Pull Request numbers, or draft (with --with-status)                                                            |         |          |                            |
+| scope             | option  | Configuration scope: project, branch, or pr                                                                                            |         |          | project<br/>branch<br/>pr  |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                              |         |          |                            |
+| when              | option  | When to run the action: pre-deploy or post-deploy                                                                                      |         |          | pre-deploy<br/>post-deploy |
+| with-backpromotes | boolean | With --with-status, also return the rows of the Backpromotes comments of --pr-ids: the actions run in each developer org               |         |          |                            |
+| with-status       | boolean | Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments                           |         |          |                            |
 
 ## Examples
 
