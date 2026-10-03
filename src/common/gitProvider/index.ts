@@ -922,6 +922,8 @@ export declare type CommonPullRequestInfo = {
   createdDate?: string;
   mergedDate?: string;
   mergeCommitSha?: string;
+  // A draft Pull Request (not ready for review), as the git provider flags it
+  isDraft?: boolean;
   customBehaviors: {
     noDeltaDeployment?: boolean,
     purgeFlowVersions?: boolean,

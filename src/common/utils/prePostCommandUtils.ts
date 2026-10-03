@@ -5,7 +5,7 @@ import fs from './fsUtils.js';
 import * as path from 'path';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { getCurrentGitBranch, uxLog } from './index.js';
-import { GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, buildManualActionCheckboxMarker, getActionStateEntry, getStateEntriesForPr, DeploymentActionRef } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
@@ -73,6 +73,34 @@ export function isDeploymentActionsDisabled(branchConfig: any): boolean {
 }
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
+  if (property === 'commandsPreDeploy') {
+    pendingPreDeployManualActions.length = 0;
+  }
+  await executeDeploymentActionsOfPhase(property, options);
+  // A validation job stops right after its pre-deployment actions while one of its pre-deployment
+  // manual actions is not done: no point checking a deployment that cannot be merged yet
+  if (property === 'commandsPreDeploy' && options.checkOnly) {
+    await failOnPendingPreDeployManualActions();
+  }
+}
+
+/**
+ * A draft Pull Request: flagged so by its git provider (isDraft), or "draft" anywhere in its title
+ */
+export function isDraftPullRequest(pr: Pick<CommonPullRequestInfo, 'title' | 'isDraft'> | null | undefined): boolean {
+  if (!pr) {
+    return false;
+  }
+  return pr.isDraft === true || /draft/i.test(pr.title || '');
+}
+
+/**
+ * Pre-deployment manual actions of the current validation job that nobody has marked as performed
+ * in the target org branch yet, filled while the pre-deployment actions run
+ */
+const pendingPreDeployManualActions: PrePostCommand[] = [];
+
+async function executeDeploymentActionsOfPhase(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
   const actionLabel = t(property === 'commandsPreDeploy' ? 'preDeploymentActionsLabel' : 'postDeploymentActionsLabel');
   const branchConfig = await getConfig('branch');
   const deployWhen: ActionWhen = property === 'commandsPreDeploy' ? 'pre-deploy' : 'post-deploy';
@@ -240,6 +268,15 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     }
   }
   manageResultMarkdownBody(property, commands, options.checkOnly, orgBranchName);
+  // A pre-deployment manual action still waiting in the target org: it has to be performed before
+  // the merge. An action already marked as done there was skipped above (runOnlyOnceByOrg)
+  if (options.checkOnly && deployWhen === 'pre-deploy') {
+    for (const cmd of commands) {
+      if (cmd.type === 'manual' && cmd.result?.statusCode === 'manual') {
+        pendingPreDeployManualActions.push(cmd);
+      }
+    }
+  }
   // Expose the executed actions so the post-deployment notification can report them
   recordExecutedDeploymentActions(commands);
   // Check commands results
@@ -1088,4 +1125,43 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
     [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly, orgBranch)
   };
   setPullRequestData(prData);
+}
+
+/**
+ * Fail a validation job while a pre-deployment manual action is not marked as performed in the
+ * target org branch: it must be done before the merge, and a green validation would let the Pull
+ * Request be merged without it. Not on a draft Pull Request, still being worked on. Turned off with
+ * failValidationOnPendingManualActions: false.
+ */
+async function failOnPendingPreDeployManualActions(): Promise<void> {
+  if (pendingPreDeployManualActions.length === 0) {
+    return;
+  }
+  const branchConfig = await getConfig('branch');
+  if (branchConfig.failValidationOnPendingManualActions === false) {
+    uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('pendingManualActionsNotBlocking', { count: pendingPreDeployManualActions.length })}`));
+    return;
+  }
+  const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+  const orgBranch = prInfo?.targetBranch || await getCurrentGitBranch() || 'unknown';
+  if (isDraftPullRequest(prInfo)) {
+    uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('pendingManualActionsDraftPullRequest', { count: pendingPreDeployManualActions.length, orgBranch })}`));
+    return;
+  }
+  uxLog("error", this, c.red(`[DeploymentActions] ${t('pendingManualActionsBlockValidation', { count: pendingPreDeployManualActions.length, orgBranch })}`));
+  for (const cmd of pendingPreDeployManualActions) {
+    const pr = cmd.pullRequest?.idNumber || prInfo?.idNumber || 0;
+    uxLog("error", this, c.red(`- ${cmd.label} (${pr > 0 ? `#${pr}, ` : ''}id ${cmd.id})`));
+    uxLog("log", this, c.grey(`  sf hardis:project:action:set-status --pr ${pr} --action-id "${cmd.id}" --org-branch ${orgBranch} --status success`));
+  }
+  uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('pendingManualActionsHowToConfirm', { orgBranch })}`));
+  let prData = getPullRequestData();
+  prData = Object.assign(prData, {
+    title: '❌ Error: Manual actions to perform before the merge',
+    messageKey: prData.messageKey ?? 'deployment',
+    status: 'invalid',
+  });
+  setPullRequestData(prData);
+  await GitProvider.managePostPullRequestComment(true);
+  throw new SfError(t('pendingManualActionsBlockValidation', { count: pendingPreDeployManualActions.length, orgBranch }));
 }

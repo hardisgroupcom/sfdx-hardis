@@ -889,6 +889,7 @@ ${getBannerMarkdownAndLink()}
       // Bitbucket has no dedicated merge date: updated_on of a MERGED PR is its merge time
       mergedDate: prData?.state === 'MERGED' ? ((prData as any)?.updated_on || undefined) : undefined,
       mergeCommitSha: (prData as any)?.merge_commit?.hash || undefined,
+      isDraft: (prData as any)?.draft === true,
       providerInfo: prData,
       customBehaviors: {}
     };

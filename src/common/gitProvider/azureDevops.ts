@@ -959,6 +959,7 @@ ${getBannerMarkdownAndLink()}
       // Azure has no dedicated merge date: closedDate of a completed PR is its merge time
       mergedDate: prData?.closedDate ? new Date(prData.closedDate).toISOString() : undefined,
       mergeCommitSha: prData?.lastMergeCommit?.commitId || undefined,
+      isDraft: prData?.isDraft === true,
       providerInfo: prData,
       customBehaviors: {}
     };

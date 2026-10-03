@@ -10757,6 +10757,44 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionfailValidationOnPendingManualActions">
+    <div class="card">
+        <div class="card-header" id="headingfailValidationOnPendingManualActions">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#failValidationOnPendingManualActions"
+                        aria-expanded="" aria-controls="failValidationOnPendingManualActions" onclick="setAnchor('#failValidationOnPendingManualActions')"><span class="property-name">failValidationOnPendingManualActions</span></button>
+            </h2>
+        </div>
+
+        <div id="failValidationOnPendingManualActions"
+             class="collapse property-definition-div" aria-labelledby="headingfailValidationOnPendingManualActions"
+             data-parent="#accordionfailValidationOnPendingManualActions">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#failValidationOnPendingManualActions" onclick="anchorLink('failValidationOnPendingManualActions')">failValidationOnPendingManualActions</a></div><h4>Fail validation on pending manual actions</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>Stop the validation job of a Pull Request right after its pre-deployment actions while one of its pre-deployment manual actions is not marked as performed in the target org branch (ticked in the Pull Request comment, Mark as done in VS Code, or sf hardis:project:action:set-status): they must be done before the merge. A draft Pull Request (draft flag, or draft in its title) is never stopped. Set it to false to only list them, as before.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="failValidationOnPendingManualActions_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordiondocDeployToCloudflare">
     <div class="card">
         <div class="card-header" id="headingdocDeployToCloudflare">

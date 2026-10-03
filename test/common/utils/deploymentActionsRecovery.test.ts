@@ -19,7 +19,7 @@ import {
   upsertActionInState,
   type DeploymentActionStateEntry,
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
-import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext } from '../../../src/common/utils/prePostCommandUtils.js';
+import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext, isDraftPullRequest } from '../../../src/common/utils/prePostCommandUtils.js';
 import { normalizeMovedFrom, validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
 import { forecastAction } from '../../../src/common/utils/deploymentActionForecastUtils.js';
 import { buildActionRunOrgChoices, buildCustomUserAlias, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername } from '../../../src/common/utils/deploymentActionRunUtils.js';
@@ -435,5 +435,15 @@ describe('forecastAction()', () => {
 describe('buildCustomUserAlias()', () => {
   it('gives the login of a custom user an alias of its own, never an org branch name', () => {
     expect(buildCustomUserAlias('Jane.Doe@acme.com.uat')).to.equal('action-user-jane-doe-acme-com-uat');
+  });
+});
+
+describe('isDraftPullRequest()', () => {
+  it('reads the draft flag the git provider sets, and draft in the title', () => {
+    expect(isDraftPullRequest({ title: 'US-12 Crew Leads', isDraft: true })).to.equal(true);
+    expect(isDraftPullRequest({ title: 'Draft: US-12 Crew Leads', isDraft: false })).to.equal(true);
+    expect(isDraftPullRequest({ title: 'US-12 [DRAFT] Crew Leads' })).to.equal(true);
+    expect(isDraftPullRequest({ title: 'US-12 Crew Leads', isDraft: false })).to.equal(false);
+    expect(isDraftPullRequest(null)).to.equal(false);
   });
 });

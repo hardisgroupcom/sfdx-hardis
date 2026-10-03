@@ -698,6 +698,7 @@ ${getBannerMarkdownAndLink()}
       createdDate: prData?.created_at || undefined,
       mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || undefined,
+      isDraft: prData?.draft === true,
       providerInfo: prData,
       customBehaviors: {}
     }

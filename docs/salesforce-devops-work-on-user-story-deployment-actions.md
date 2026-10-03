@@ -579,6 +579,16 @@ When someone ticks one of these checkboxes (in any of the three comments), or th
 - skips it in later deployments to that org (same behavior as a successful `runOnlyOnceByOrg` action),
 - ticks the same checkbox in the other comments where the action appears, so all views stay consistent.
 
+**A pre-deployment manual action blocks the validation until it is done**
+
+A manual action that runs **before the metadata deployment** must be performed before the merge. As long as it is not marked as performed in the target org branch, the validation job of the Pull Request fails right after its pre-deployment actions, before the deployment check, with the list of the actions to perform and the three ways to mark them:
+
+- tick its box in the **Pending manual actions** list of the Pull Request comment,
+- click **Mark as done in <branch>** in the VS Code Deployment Actions tab,
+- or run `sf hardis:project:action:set-status --pr <number> --action-id <id> --org-branch <branch> --status success`.
+
+Then run the validation job again: it records the tick and goes on. A draft Pull Request (the draft flag of the git provider, or `draft` in its title) is never stopped: the job only warns, so the deployment check still runs while the work is in progress. A post-deployment manual action never blocks the validation, since it can only be done after the merge. To keep the previous behavior (listed, never blocking), set `failValidationOnPendingManualActions: false` in `config/.sfdx-hardis.yml`.
+
 This requires the same git provider token as `runOnlyOnceByOrg` state tracking.
 
 </details>

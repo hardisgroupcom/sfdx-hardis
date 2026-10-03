@@ -765,6 +765,8 @@ ${getBannerMarkdownAndLink()}
       createdDate: prData?.created_at || undefined,
       mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || prData?.mergeCommitSha || undefined,
+      // draft since GitLab 13.2, work_in_progress before
+      isDraft: prData?.draft === true || prData?.work_in_progress === true,
       providerInfo: prData,
       customBehaviors: {}
     }

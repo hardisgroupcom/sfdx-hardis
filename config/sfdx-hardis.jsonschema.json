@@ -2362,6 +2362,17 @@
       "title": "Disable deployment actions",
       "type": "boolean"
     },
+    "failValidationOnPendingManualActions": {
+      "$id": "#/properties/failValidationOnPendingManualActions",
+      "default": true,
+      "description": "Stop the validation job of a Pull Request right after its pre-deployment actions while one of its pre-deployment manual actions is not marked as performed in the target org branch (ticked in the Pull Request comment, Mark as done in VS Code, or sf hardis:project:action:set-status): they must be done before the merge. A draft Pull Request (draft flag, or draft in its title) is never stopped. Set it to false to only list them, as before.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#manual-step",
+      "examples": [
+        false
+      ],
+      "title": "Fail validation on pending manual actions",
+      "type": "boolean"
+    },
     "docDeployToCloudflare": {
       "$id": "#/properties/docDeployToCloudflare",
       "default": false,
