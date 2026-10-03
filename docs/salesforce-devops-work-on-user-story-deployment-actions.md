@@ -587,6 +587,8 @@ This requires the same git provider token as `runOnlyOnceByOrg` state tracking.
 
 A post-deployment action runs after the metadata deployment, once the Pull Request is merged. When it fails, the metadata is already in the org, the job is red, and the actions after it were not run. The "Deployment Actions" comment of the Pull Request lists them under **Failed actions**: ❌ for the action that failed, ⏸️ for the ones its failure stopped.
 
+![Deployment Actions comment with a failed action and two stopped ones](assets/images/screenshot-deployment-actions-comment-failed.jpg)
+
 You do not need to re-run the whole deployment job. Pick the way that fits the cause:
 
 | The cause                                                                       | What to do                                                                                                          |
@@ -596,6 +598,20 @@ You do not need to re-run the whole deployment job. Pick the way that fits the c
 | Someone already did it by hand                                                  | **Mark it as done**: it is recorded as done, with who closed it and when, and later deployments to that org skip it |
 
 **From VS Code**: open the DevOps Pipeline, click the major branch (or the Pull Request), then the **Deployment Actions** tab. Its status column shows each action in each org, and a failed or stopped action offers **Retry**, **Mark as done** and **Move to my Pull Request**.
+
+![Deployment Actions tab with the status of each action and the menu of a failed one](assets/images/screenshot-deployment-action-failed-tab.jpg)
+
+**Retry** runs the action in the org, then offers to run the actions its failure stopped. Here the first action succeeds, and the next one fails on a wrong class name: that one needs a fix Pull Request.
+
+![Retry of a failed deployment action in VS Code](assets/images/screenshot-deployment-action-retry.jpg)
+
+**Mark as done** records the action as done, with who closed it and when.
+
+![Mark as done of a deployment action in VS Code](assets/images/screenshot-deployment-action-mark-done.jpg)
+
+**Move to my Pull Request** moves the action to the Pull Request of your current branch: correct it there. The action editor shows where it comes from.
+
+![Deployment action editor showing the Pull Request the action was moved from](assets/images/screenshot-deployment-action-moved-from.jpg)
 
 **From the terminal**:
 
@@ -610,6 +626,8 @@ Things to know:
 - The action definition is read from your current branch. When the org is a major org and you are on another branch, you are warned and asked to confirm.
 - A pre-deployment action cannot be retried: when it fails, nothing was deployed, re-run the deployment job.
 - Once an action moved to a fix Pull Request has run, the original Pull Request shows it as ↪️ moved, with a link. When both Pull Requests are promoted together, the action runs once.
+
+![Deployment Actions comment of the original Pull Request, with the action moved to the fix Pull Request](assets/images/screenshot-deployment-actions-comment-moved.jpg)
 - A git provider token is required to record the result, as for `runOnlyOnceByOrg`.
 
 ### Disable deployment actions
