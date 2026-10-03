@@ -73,22 +73,22 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                                                           |                 Default                  | Required |       Options        |
-|:----------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------|:----------------------------------------:|:--------:|:--------------------:|
-| action-id             | option  | Id of the action to run                                                                                                               |                                          |          |                      |
-| agent                 | boolean | Run in non-interactive mode for agents and automation                                                                                 |                                          |          |                      |
-| all                   | boolean | In a developer org, run all the actions of the Pull Request, pre-deployment first                                                     |                                          |          |                      |
-| allow-branch-mismatch | boolean | Run even when the current git branch is not the branch of the org (the definition is read from the current branch)                    |                                          |          |                      |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                       |                                          |          |                      |
-| dev-org               | boolean | Refuse to run when the org is a major org: the run is meant for a developer org only                                                  |                                          |          |                      |
-| flags-dir             | option  | undefined                                                                                                                             |                                          |          |                      |
-| json                  | boolean | Format output as json.                                                                                                                |                                          |          |                      |
-| next                  | option  | Once the action succeeded, run none, the next one, or all the actions its failure stopped                                             |                                          |          | none<br/>one<br/>all |
-| org-branch            | option  | Major branch of the org to run the action in (ex: integration). Uses an org of that instance authenticated on this computer           |                                          |          |                      |
-| pr                    | option  | Number of the Pull Request the action comes from, or draft for the actions file of a branch without Pull Request (developer org only) |                                          |          |                      |
-| skipauth              | boolean | Skip authentication check when a default username is required                                                                         |                                          |          |                      |
-| target-org<br/>-o     | option  | undefined                                                                                                                             |                                          |          |                      |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                             |                                          |          |                      |
+| Name                  |  Type   | Description                                                                                                                           | Default | Required |       Options        |
+|:----------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:--------------------:|
+| action-id             | option  | Id of the action to run                                                                                                               |         |          |                      |
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                                                 |         |          |                      |
+| all                   | boolean | In a developer org, run all the actions of the Pull Request, pre-deployment first                                                     |         |          |                      |
+| allow-branch-mismatch | boolean | Run even when the current git branch is not the branch of the org (the definition is read from the current branch)                    |         |          |                      |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                       |         |          |                      |
+| dev-org               | boolean | Refuse to run when the org is a major org: the run is meant for a developer org only                                                  |         |          |                      |
+| flags-dir             | option  | undefined                                                                                                                             |         |          |                      |
+| json                  | boolean | Format output as json.                                                                                                                |         |          |                      |
+| next                  | option  | Once the action succeeded, run none, the next one, or all the actions its failure stopped                                             |         |          | none<br/>one<br/>all |
+| org-branch            | option  | Major branch of the org to run the action in (ex: integration). Uses an org of that instance authenticated on this computer           |         |          |                      |
+| pr                    | option  | Number of the Pull Request the action comes from, or draft for the actions file of a branch without Pull Request (developer org only) |         |          |                      |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                                         |         |          |                      |
+| target-org<br/>-o     | option  | undefined                                                                                                                             |         |          |                      |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                             |         |          |                      |
 
 ## Examples
 
