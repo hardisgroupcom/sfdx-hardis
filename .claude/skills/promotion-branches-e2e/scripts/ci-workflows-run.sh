@@ -283,7 +283,7 @@ printf 'Workflows without the safe.directory line: the job must stop and name th
 C4=$(p_open feature/E2E-504-no-safe-dir integration "E2E-504 C4 no safe.directory" "$BODIES/c4.md") || exit 1
 wait_workflow check-deploy.yml "$(head_sha feature/E2E-504-no-safe-dir)" ci-check-no-safe-dir
 assert_log W8 ci-check-no-safe-dir 1 "git refuses the checkout: the job stops and names the line to add" \
-  "Git refuses this repository \(detected dubious ownership\)" 'git config --global --add safe.directory "\$GITHUB_WORKSPACE"'
+  "Git refuses this repository \(detected dubious ownership\)" "git config --global --add safe.directory \"[$]GITHUB_WORKSPACE\""
 p_close "$C4" >/dev/null 2>&1
 
 echo
