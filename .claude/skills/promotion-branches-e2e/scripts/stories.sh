@@ -40,7 +40,7 @@ META
 
 # The deployment actions of a story, in the file that travels with the cherry-picked commit.
 # Usage: story_actions <branch> <pull request number> <kind>
-#   kind: pre-command+post-manual | post-command | pre-command
+#   kind: pre-command+post-manual | post-command | pre-command | recovery | pre-manual
 story_actions() {
   local branch="$1" pr="$2" kind="$3"
   cd "$WORK" || return 1
@@ -86,6 +86,50 @@ commandsPreDeploy:
     type: command
     command: echo "E2E pre-deploy of PR $pr"
     context: all
+YAML
+    ;;
+  recovery)
+    # Section 6quater: a pre-deployment manual step (stops the validation until it is marked as done),
+    # a post-deployment command failing until e2e-recovery-ok.txt exists in the working copy, the
+    # command it stops, and a post-deployment manual step
+    mkdir -p scripts/e2e
+    echo "process.exit(require('fs').existsSync('e2e-recovery-ok.txt') ? 0 : 1);" >scripts/e2e/flaky.cjs
+    git add scripts/e2e/flaky.cjs
+    cat >"$file" <<YAML
+commandsPreDeploy:
+  - id: e2e-gate-$pr
+    label: E2E pre-deploy manual of PR $pr
+    type: manual
+    parameters:
+      instructions: Nothing to do in the org, mark it as done.
+
+commandsPostDeploy:
+  - id: e2e-flaky-$pr
+    label: E2E flaky post-deploy of PR $pr
+    type: command
+    command: node scripts/e2e/flaky.cjs
+    context: process-deployment-only
+  - id: e2e-after-flaky-$pr
+    label: E2E after the flaky one of PR $pr
+    type: command
+    command: echo "E2E after the flaky one of PR $pr"
+    context: process-deployment-only
+  - id: e2e-manual-$pr
+    label: E2E manual step of PR $pr
+    type: manual
+    parameters:
+      instructions: Nothing to do in the org, mark it as done.
+    context: process-deployment-only
+YAML
+    ;;
+  pre-manual)
+    cat >"$file" <<YAML
+commandsPreDeploy:
+  - id: e2e-gate-$pr
+    label: E2E pre-deploy manual of PR $pr
+    type: manual
+    parameters:
+      instructions: Nothing to do in the org, mark it as done.
 YAML
     ;;
   *)
