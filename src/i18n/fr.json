@@ -76,6 +76,7 @@
   "actionRunNotDevOrg": "Votre org ({{username}}) est l'org de la branche majeure {{orgBranch}}. Sélectionnez une sandbox de développement ou une scratch org comme org par défaut, puis relancez la commande.",
   "actionRunOtherPr": "Une autre Pull Request",
   "actionRunPrChoice": "#{{pr}} - {{failed}} en échec, {{notRun}} non exécutée(s)",
+  "actionRunPreDeployConfirm": "{{label}} est une action de pré-déploiement : dans un déploiement elle tourne avant les métadonnées, qui sont déjà dans {{orgBranch}}. La lancer quand même maintenant ?",
   "actionRunReasonAlreadyDone": "elle est déjà faite dans {{orgBranch}} ({{date}})",
   "actionRunReasonCheckOnly": "elle ne s'exécute que pendant les jobs de validation",
   "actionRunReasonMoved": "elle a été déplacée vers la Pull Request #{{pr}}, relancez-la depuis celle-ci",

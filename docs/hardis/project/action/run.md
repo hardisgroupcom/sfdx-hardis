@@ -10,12 +10,13 @@
 
 When a post-deployment action fails after the merge of a Pull Request, the metadata is already deployed: re-running the whole deployment job is not needed. This command runs only the chosen action in the org, and records the result in the "Deployment Actions" comment of its Pull Request, with who ran it.
 
-- The org branch comes from the org: the major branch whose `config/branches/.sfdx-hardis.<branch>.yml` has the same `targetUsername` or `instanceUrl`, or the current git branch for a dev org. With `--org-branch`, an org of that branch already authenticated on this computer is used: its `targetUsername` first, then any user of its instance.
+- The org branch comes from the org: the major branch whose `config/branches/.sfdx-hardis.<branch>.yml` has the same `targetUsername` or `instanceUrl`, or `dev-sandboxes` for a developer org. With `--org-branch`, an org of that branch already authenticated on this computer is used: its `targetUsername` first, then any user of its instance.
 - The action definition is read from the current checkout. When the org is a major org and the current branch is another one, the command warns and asks for confirmation.
 - Without `--pr` and `--action-id`, it proposes the recent Pull Requests whose actions failed in the org branch, then their failed actions.
 - An action with a `customUsername` runs as that user: when this computer is not authenticated with it, the command offers to log in with it, and checks the login used the right user.
 - Once the action succeeds, it offers to run the actions its failure stopped: only the next one, or all of them.
-- A pre-deployment action, or an action that only runs during validation jobs, cannot be retried.
+- An action that only runs during validation jobs, or that removes items from the deployment package.xml, cannot be run. A pre-deployment action can, after a confirmation, since the metadata it ran before is already in the org: in agent or CI mode it is refused, re-run the deployment job instead.
+- An action never run in the org, or skipped there, is run after a confirmation, and refused in agent or CI mode.
 
 Anyone authenticated to the org can retry an action, production included. A git provider token is required, to record the result in the Pull Request.
 
@@ -86,7 +87,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 | org-branch            | option  | Major branch of the org to run the action in (ex: integration). Uses an org of that instance authenticated on this computer           |                                          |          |                      |
 | pr                    | option  | Number of the Pull Request the action comes from, or draft for the actions file of a branch without Pull Request (developer org only) |                                          |          |                      |
 | skipauth              | boolean | Skip authentication check when a default username is required                                                                         |                                          |          |                      |
-| target-org<br/>-o     | option  | undefined                                                                                                                             | veurtio+demo.73193ee31bf8@agentforce.com |          |                      |
+| target-org<br/>-o     | option  | undefined                                                                                                                             |                                          |          |                      |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                             |                                          |          |                      |
 
 ## Examples

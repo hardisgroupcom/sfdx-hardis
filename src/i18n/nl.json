@@ -76,6 +76,7 @@
   "actionRunNotDevOrg": "Je org ({{username}}) is de org van de hoofdbranch {{orgBranch}}. Selecteer een developer sandbox of een scratch org als standaard org en voer het daarna opnieuw uit.",
   "actionRunOtherPr": "Een andere Pull Request",
   "actionRunPrChoice": "#{{pr}} - {{failed}} mislukt, {{notRun}} niet uitgevoerd",
+  "actionRunPreDeployConfirm": "{{label}} is een pre-deployment-actie: bij een implementatie draait ze vóór de metadata, die al in {{orgBranch}} staat. Toch nu uitvoeren?",
   "actionRunReasonAlreadyDone": "deze is al uitgevoerd in {{orgBranch}} ({{date}})",
   "actionRunReasonCheckOnly": "deze wordt alleen uitgevoerd tijdens validatiejobs",
   "actionRunReasonMoved": "deze is verplaatst naar Pull Request #{{pr}}, probeer het opnieuw vanaf daar",

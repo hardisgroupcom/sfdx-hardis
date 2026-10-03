@@ -76,6 +76,7 @@
   "actionRunNotDevOrg": "Ihre Org ({{username}}) ist die Org des Hauptbranches {{orgBranch}}. Wählen Sie eine Developer-Sandbox oder eine Scratch Org als Standard-Org aus und führen Sie den Befehl dann erneut aus.",
   "actionRunOtherPr": "Ein anderer Pull Request",
   "actionRunPrChoice": "#{{pr}} - {{failed}} fehlgeschlagen, {{notRun}} nicht ausgeführt",
+  "actionRunPreDeployConfirm": "{{label}} ist eine Pre-Deployment-Aktion: In einem Deployment läuft sie vor den Metadaten, die bereits in {{orgBranch}} sind. Trotzdem jetzt ausführen?",
   "actionRunReasonAlreadyDone": "sie ist bereits in {{orgBranch}} erledigt ({{date}})",
   "actionRunReasonCheckOnly": "sie wird nur während Validierungsjobs ausgeführt",
   "actionRunReasonMoved": "sie wurde nach Pull Request #{{pr}} verschoben, wiederholen Sie sie von dort",

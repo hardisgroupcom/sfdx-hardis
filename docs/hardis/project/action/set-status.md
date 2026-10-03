@@ -66,7 +66,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 | pr                | option  | Number of the Pull Request the action comes from              |                                          |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |                                          |          |         |
 | status            | option  | New status of the action                                      |                 success                  |          | success |
-| target-org<br/>-o | option  | undefined                                                     | veurtio+demo.73193ee31bf8@agentforce.com |          |         |
+| target-org<br/>-o | option  | undefined                                                     |                                          |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |                                          |          |         |
 
 ## Examples

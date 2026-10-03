@@ -76,6 +76,7 @@
   "actionRunNotDevOrg": "Org ({{username}}) jest org głównego brancha {{orgBranch}}. Należy wybrać sandbox deweloperski lub Scratch Org jako domyślne org, a następnie uruchomić polecenie ponownie.",
   "actionRunOtherPr": "Inny Pull Request",
   "actionRunPrChoice": "#{{pr}} - niepowodzenia: {{failed}}, nieuruchomione: {{notRun}}",
+  "actionRunPreDeployConfirm": "{{label}} to akcja przed wdrożeniem: podczas wdrożenia jest uruchamiana przed metadanymi, które są już w {{orgBranch}}. Uruchomić ją teraz mimo to?",
   "actionRunReasonAlreadyDone": "jest już wykonana w {{orgBranch}} ({{date}})",
   "actionRunReasonCheckOnly": "jest uruchamiana tylko podczas jobów walidacji",
   "actionRunReasonMoved": "została przeniesiona do Pull Requesta #{{pr}}, należy ponowić ją stamtąd",

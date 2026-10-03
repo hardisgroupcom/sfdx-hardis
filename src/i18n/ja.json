@@ -76,6 +76,7 @@
   "actionRunNotDevOrg": "お使いの組織 ({{username}}) はメインブランチ {{orgBranch}} の組織です。開発者用サンドボックスまたはスクラッチ組織をデフォルトの組織として選択してから、もう一度実行してください。",
   "actionRunOtherPr": "別の Pull Request",
   "actionRunPrChoice": "#{{pr}} - 失敗 {{failed}} 件、未実行 {{notRun}} 件",
+  "actionRunPreDeployConfirm": "{{label}} はデプロイ前アクションです。デプロイではメタデータの前に実行されますが、メタデータはすでに {{orgBranch}} にあります。それでも今すぐ実行しますか?",
   "actionRunReasonAlreadyDone": "{{orgBranch}} で既に完了しています ({{date}})",
   "actionRunReasonCheckOnly": "検証ジョブの間にのみ実行されます",
   "actionRunReasonMoved": "Pull Request #{{pr}} に移動されたため、そちらから再試行してください",

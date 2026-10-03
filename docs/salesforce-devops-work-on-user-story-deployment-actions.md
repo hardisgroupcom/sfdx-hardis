@@ -634,7 +634,7 @@ Things to know:
 - Anyone authenticated to the org can retry an action, production included. The Pull Request comment says who did it: *Run locally by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC*.
 - An action with a `customUsername` runs as that user. When your computer is not authenticated with it, you are asked to log in with it.
 - The action definition is read from your current branch. When the org is a major org and you are on another branch, you are warned and asked to confirm.
-- A pre-deployment action cannot be retried: when it fails, nothing was deployed, re-run the deployment job.
+- A pre-deployment action can be run after a confirmation, since in a deployment it runs before the metadata, which is already in the org. When it failed and blocked the deployment, nothing was deployed: re-run the deployment job instead.
 - Once an action moved to a fix Pull Request has run, the original Pull Request shows it as ↪️ moved, with a link. When both Pull Requests are promoted together, the action runs once.
 
 ![Deployment Actions comment of the original Pull Request, with the action moved to the fix Pull Request](assets/images/screenshot-deployment-actions-comment-moved.jpg)

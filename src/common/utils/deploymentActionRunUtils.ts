@@ -270,8 +270,8 @@ export async function checkRetryAllowed(def: PrePostCommand, prNumber: number, o
   const refuse = (reason: string) => {
     throw new SfError(t('actionRunNotAllowed', { label: def.label, reason }));
   };
-  if (def.when === 'pre-deploy') {
-    refuse(t('actionRunReasonPreDeploy'));
+  if (def.type === 'remove-packagexml-items') {
+    refuse(t('actionRunDevOrgSkipPackageXml'));
   }
   if (getEffectiveActionContext(def) === 'check-deployment-only') {
     refuse(t('actionRunReasonCheckOnly'));
@@ -281,6 +281,14 @@ export async function checkRetryAllowed(def: PrePostCommand, prNumber: number, o
   }
   if (entry?.status === 'moved') {
     refuse(t('actionRunReasonMoved', { pr: entry.movedTo || '?' }));
+  }
+  // In a deployment a pre-deployment action runs before the metadata, which is already in the org
+  // now: a person may still decide it is worth running, an automation re-runs the deployment job
+  if (def.when === 'pre-deploy') {
+    if (headless) {
+      refuse(t('actionRunReasonPreDeploy'));
+    }
+    await confirmOrWarn(t('actionRunPreDeployConfirm', { label: def.label, orgBranch }), headless);
   }
   if (!entry || !RECOVERABLE_STATUSES.includes(entry.status)) {
     // Nothing says this action belongs in this org yet (a Pull Request not merged there, for
