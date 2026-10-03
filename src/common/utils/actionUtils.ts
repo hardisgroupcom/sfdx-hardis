@@ -287,6 +287,9 @@ export function validateMovedFrom(action: Partial<PrePostCommand>, scope: Action
   if (action.movedFrom === undefined || action.movedFrom === null) {
     return [];
   }
+  if (typeof action.movedFrom === 'string' && /^\d+$/.test((action.movedFrom as string).trim())) {
+    action.movedFrom = parseInt(action.movedFrom as string, 10);
+  }
   if (!Number.isInteger(action.movedFrom) || action.movedFrom < 1) {
     return [t('actionValidationMovedFromInvalid', { value: String(action.movedFrom) })];
   }

@@ -31,6 +31,9 @@ export interface DeploymentActionRef {
   actionId: string;
 }
 
+// What the two checkbox marker prefixes start with, to list the comments holding either in one call
+const CHECKBOX_MARKER_COMMON_PREFIX = '<!-- sfdx-hardis-';
+
 // Hard bound on the stopped actions remembered on a failed entry, to keep the comment size in check
 const MAX_STOPPED_ACTIONS = 50;
 
@@ -272,7 +275,7 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
   // An action failing again, or retried successfully, keeps the list of the actions its first
   // failure stopped, until a run records a new list: they are still waiting, and a retry of one of
   // them finds the ones after it through this list.
-  if (idx >= 0 && (entry.status === 'failed' || entry.status === 'success') && !entry.stoppedActions && entries[idx].stoppedActions) {
+  if (idx >= 0 && ['failed', 'success', 'moved'].includes(entry.status) && !entry.stoppedActions && entries[idx].stoppedActions) {
     entry = { ...entry, stoppedActions: entries[idx].stoppedActions };
   }
   if (idx >= 0) {
@@ -1068,19 +1071,17 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
   }
   const allComments: PullRequestCommentRef[] = [];
   for (const prNum of prsToScan) {
-    const manualComments = await GitProvider.tryListPullRequestCommentsByMarker(MANUAL_ACTION_CHECKBOX_MARKER_PREFIX, prNum);
-    const failedComments = await GitProvider.tryListPullRequestCommentsByMarker(FAILED_ACTION_CHECKBOX_MARKER_PREFIX, prNum);
-    if (manualComments === null || failedComments === null) {
+    // One listing for both kinds of checklists: the prefix the two markers share. Listing per
+    // marker would read every comment of the Pull Request twice on every job.
+    const comments = await GitProvider.tryListPullRequestCommentsByMarker(CHECKBOX_MARKER_COMMON_PREFIX, prNum);
+    if (comments === null) {
       // Transient listing error: leave the PR unmarked so a later phase or job retries it
       continue;
     }
     state.syncedCheckboxPrs.add(prNum);
-    // A comment holding both kinds of checklists is listed twice: keep it once
-    for (const comment of [...manualComments, ...failedComments]) {
-      if (!allComments.some((existing) => existing.prNumber === comment.prNumber && existing.body === comment.body)) {
-        allComments.push(comment);
-      }
-    }
+    allComments.push(...comments.filter((comment) =>
+      comment.body.includes(MANUAL_ACTION_CHECKBOX_MARKER_PREFIX) || comment.body.includes(FAILED_ACTION_CHECKBOX_MARKER_PREFIX)
+    ));
   }
   if (allComments.length === 0) {
     return;

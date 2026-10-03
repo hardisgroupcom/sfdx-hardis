@@ -149,7 +149,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     // Read before the run: the actions this one stopped, still waiting
     const stopped = await listStoppedActionsAfter(prNumber, actionId, target.orgBranch);
     const results: ActionRunResult[] = [await runActionOutsideDeployment(def, prNumber, target)];
-    if (results[0].status === 'success') {
+    if (!results[0].blocking) {
       await this.runStoppedActions(results, stopped, flags.next as NextActionsMode | undefined, target, headless);
     }
 
@@ -157,10 +157,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     uxLogTable(this, results.map((r) => ({ PR: `#${r.prNumber}`, Action: r.label, Status: r.status })));
     WebSocketClient.sendRefreshPipelineMessage();
 
-    const last = results[results.length - 1];
-    if (last.status !== 'success') {
+    const blocking = results.find((result) => result.blocking);
+    if (blocking) {
       process.exitCode = 1;
-      uxLog("error", this, c.red(t('actionRunFailed', { label: last.label, output: last.output || '' })));
+      uxLog("error", this, c.red(t('actionRunFailed', { label: blocking.label, output: blocking.output || '' })));
     } else {
       uxLog("success", this, c.green(t('actionRunSucceeded', { count: results.length, orgBranch: target.orgBranch })));
     }
@@ -182,7 +182,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       await ensureCustomUsernameAuth(def, target, headless);
       const result = await runActionOutsideDeployment(def, ref.pr, target);
       results.push(result);
-      if (result.status !== 'success' && result.status !== 'skipped') {
+      if (result.blocking) {
         await recordNewBlocker(result, stopped.slice(stopped.indexOf(ref) + 1));
         return;
       }

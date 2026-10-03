@@ -134,6 +134,12 @@ describe('Deployment Actions state - upsert rules of the recovery statuses', () 
     expect(retried.stoppedActions).to.deep.equal([{ pr: 12, actionId: 'action-2' }]);
   });
 
+  it('keeps the stopped actions when the failed action is moved to a fix Pull Request', () => {
+    upsertActionInState(entry({ stoppedActions: [{ pr: 12, actionId: 'action-2' }] }), 12);
+    upsertActionInState(entry({ status: 'moved', movedTo: 15 }), 12);
+    expect(getActionStateEntry(12, 'action-1', 'integration')!.stoppedActions).to.deep.equal([{ pr: 12, actionId: 'action-2' }]);
+  });
+
   it('keeps the stopped actions of a failure when the action fails again', () => {
     upsertActionInState(entry({ stoppedActions: [{ pr: 12, actionId: 'action-2' }] }), 12);
     upsertActionInState(entry({ jobId: 'local' }), 12);
@@ -206,6 +212,7 @@ describe('Moved actions', () => {
     expect(validateMovedFrom(action({ movedFrom: 0 }), 'pr', '15')).to.have.length(1);
     expect(validateMovedFrom(action({ movedFrom: 12 }), 'branch')).to.have.length(1);
     expect(validateMovedFrom(action({ movedFrom: 12 }), 'pr', '12')).to.have.length(1);
+    expect(validateMovedFrom(action({ movedFrom: '12' as any }), 'pr', '15')).to.deep.equal([]);
   });
 });
 

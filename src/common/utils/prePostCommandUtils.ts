@@ -220,7 +220,9 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
           stoppedCommands.push(commands[notRunIndex]);
         }
       }
-      if (hasGitProvider && !options.checkOnly) {
+      // Only post-deploy actions can be retried: a pre-deploy failure stops the whole deployment,
+      // and the next one runs them all again
+      if (hasGitProvider && !options.checkOnly && deployWhen === 'post-deploy') {
         await recordStoppedActions(cmd, stoppedCommands, {
           orgBranchName,
           currentPrNumber,
@@ -575,10 +577,20 @@ async function recordStoppedActions(
   if (stoppedRefs.length === 0) {
     return;
   }
-  const failedEntry = getActionStateEntry(failedPr, failedCmd.id, ctx.orgBranchName);
-  if (failedEntry) {
-    upsertActionInState({ ...failedEntry, stoppedActions: stoppedRefs }, failedPr);
-  }
+  // An action failing before it runs (invalid definition, unresolved reference) has no entry yet
+  const failedEntry = getActionStateEntry(failedPr, failedCmd.id, ctx.orgBranchName) || {
+    actionId: failedCmd.id,
+    actionLabel: failedCmd.label,
+    orgBranch: ctx.orgBranchName,
+    when: failedCmd.when || ctx.deployWhen,
+    executionOrder: ctx.firstExecutionOrder - 1,
+    status: 'failed' as const,
+    jobId,
+    jobUrl,
+    date: new Date().toISOString(),
+    output: failedCmd.result?.output || failedCmd.result?.skippedReason,
+  };
+  upsertActionInState({ ...failedEntry, stoppedActions: stoppedRefs }, failedPr);
   await persistDeploymentActionsState();
 }
 

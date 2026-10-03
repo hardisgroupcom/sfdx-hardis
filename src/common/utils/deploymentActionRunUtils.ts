@@ -52,6 +52,9 @@ export interface ActionRunResult {
   orgBranch: string;
   status: string;
   output?: string;
+  // A failure that stops the actions after it, as in a deployment job: not a manual action, not
+  // a failure the action allows
+  blocking: boolean;
 }
 
 /**
@@ -191,7 +194,15 @@ export async function selectSourcePullRequest(prFlag: string | number | undefine
  * failed (or were stopped) in the org branch. Loads the state of the Pull Request.
  */
 export async function selectRecoverableAction(prNumber: number, actionIdFlag: string | undefined, orgBranch: string, headless: boolean): Promise<string> {
+  uxLog("action", this, c.cyan(t('actionListStatusHeader', { count: 1 })));
   await loadDeploymentActionsState([prNumber]);
+  // A box ticked in a comment since the last job must be recorded before this command rewrites the
+  // comment: rebuilt from the state alone, it would come back unticked
+  try {
+    await syncManualActionCheckboxes([prNumber]);
+  } catch (e) {
+    uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
+  }
   if (actionIdFlag) {
     return actionIdFlag;
   }
@@ -310,6 +321,12 @@ export async function ensureCustomUsernameAuth(def: PrePostCommand, target: Acti
  * Deployment Actions comment of its Pull Request, with who ran it.
  */
 export async function runActionOutsideDeployment(def: PrePostCommand, prNumber: number, target: ActionRunTarget): Promise<ActionRunResult> {
+  // An action moved from another Pull Request: that one's state says whether it already ran here,
+  // and receives the 'moved' entry
+  const movedFrom = Number(def.movedFrom);
+  if (Number.isInteger(movedFrom) && movedFrom > 0) {
+    await loadDeploymentActionsState([movedFrom]);
+  }
   // The sf commands started by the action (sf apex run...) use the default org: point it at the
   // target org for this process only, without touching the project config of the user.
   process.env.SF_TARGET_ORG = target.username;
@@ -341,6 +358,7 @@ export async function runActionOutsideDeployment(def: PrePostCommand, prNumber: 
     orgBranch: target.orgBranch,
     status: def.result?.statusCode || 'unknown',
     output: def.result?.output || def.result?.skippedReason,
+    blocking: def.result?.statusCode === 'failed' && def.allowFailure !== true,
   };
 }
 
@@ -516,8 +534,8 @@ async function isUsernameConnected(username: string): Promise<boolean> {
 }
 
 async function confirmOrWarn(message: string, headless: boolean): Promise<void> {
-  uxLog("warning", this, c.yellow(message));
   if (headless) {
+    uxLog("warning", this, c.yellow(message));
     return;
   }
   if (!(await promptConfirm(message))) {
