@@ -35,6 +35,8 @@ not already, so you know what each assertion is protecting.
 | `scripts/promotion-edge.sh`              | Section 6 scripted in five groups (`g1` to `g5`) that build on each other, run after `promotion-run.sh`.                                                                                                                               |
 | `scripts/deployment-actions-run.sh`      | Section 6quater scripted: the manual action gate of validations, a failed action retried with `action:run`, `set-status` (also ahead in the next branch), the promotion forecast and the developer org runs. After `promotion-run.sh`. |
 | `scripts/check-action-status.cjs`        | Asserts an `action:list --with-status [--forecast] [--with-backpromotes] --json` document: statuses, notes, forecasts, the promotion carried, Backpromotes rows.                                                                       |
+| `scripts/ci-workflows-prepare.cjs`       | The GitHub Actions workflows of the CI section: the sfdx-hardis templates plus a step that links the branch under test and `SFDX_AUTH_URL_<BRANCH>` logins.                                                                            |
+| `scripts/ci-workflows-run.sh`            | Section 6quinquies: the gate, the checkbox, a real draft, the deployment, the promotion and its forecast, run by REAL GitHub Actions jobs in a repository of its own.                                                                  |
 | `scripts/timing-report.cjs`              | Performance tables of a run: `timings.tsv` (every job and backpromote call) and the backpromote progress files, median and worst per step, slowest calls.                                                                              |
 | `scripts/ab-run.sh`                      | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                                                                                                   |
 | `scripts/ab-run-gitlab.sh`               | The same on GitLab.                                                                                                                                                                                                                    |
@@ -92,6 +94,9 @@ failure cannot be an artefact of the previous run's state.
    after `promotion-run.sh`. It checks that a pre-deployment manual action stops the validation
    (not on a draft), the retry of a failed action, `set-status` here and ahead in the next branch,
    the forecast of the next promotion, and, with `DEV_ORG`, the runs in a developer org.
+5bis-ter. **Run the same features through real CI** (runbook section 6quinquies):
+   `ci-workflows-run.sh`, with its own `REPO`, `WORK` and `LOGS`. The simulators prove the CLI; this
+   proves the workflows a project really runs, with the branch linked by `sf plugins link`.
 5quater. **Run backpromote (Beta)** (runbook section 6bis): `backpromote-setup.sh` then
    `backpromote-steps.sh`, against scratch orgs created from the Dev Hub. Steps B0 to B16: no git
    provider token, refused orgs (major branch org, production), refused parent branch, the first plan
