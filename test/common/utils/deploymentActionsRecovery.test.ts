@@ -6,6 +6,7 @@ import { expect } from 'chai';
 import {
   buildClosedByCheckboxNote,
   buildClosedByHandNote,
+  buildMarkedDoneAheadNote,
   buildDeploymentActionsCommentBody,
   buildFailedActionCheckboxMarker,
   buildRunLocallyNote,
@@ -192,6 +193,16 @@ describe('Recovery notes', () => {
   it('says who marked a waiting manual action as done', () => {
     const note = buildClosedByHandNote('manual', 'Jane Doe', 'jane@acme.com', new Date('2026-10-03T14:05:00.000Z'));
     expect(note).to.equal('Manual action marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC.');
+  });
+
+  it('says an action was marked as done before any deployment reached the org, or after being skipped', () => {
+    const date = new Date('2026-10-03T14:05:00.000Z');
+    expect(buildMarkedDoneAheadNote('preprod', 'none', 'Jane Doe', 'jane@acme.com.preprod', date)).to.equal(
+      'Marked as done by Jane Doe (jane@acme.com.preprod) on 2026-10-03 14:05 UTC, before any deployment to preprod.'
+    );
+    expect(buildMarkedDoneAheadNote('uat', 'skipped', 'Jane Doe', null, date, 'Done with the data loader.')).to.equal(
+      'Skipped in CI, then marked as done by Jane Doe on 2026-10-03 14:05 UTC. Done with the data loader.'
+    );
   });
 
   it('names the Pull Request of a ticked checkbox', () => {

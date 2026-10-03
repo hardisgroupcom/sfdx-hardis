@@ -19,6 +19,7 @@ import {
   DeploymentActionRef,
   DeploymentActionStateEntry,
   buildClosedByHandNote,
+  buildMarkedDoneAheadNote,
   buildRunLocallyNote,
   getActionStateEntry,
   getJobInfoWithUrl,
@@ -492,8 +493,14 @@ export async function recordNewBlocker(failed: ActionRunResult, remaining: Deplo
  */
 export async function closeActionByHand(prNumber: number, actionId: string, orgBranch: string, sfUsername: string | null, extraNote?: string): Promise<DeploymentActionStateEntry> {
   const entry = getActionStateEntry(prNumber, actionId, orgBranch);
-  if (!entry || !CLOSABLE_STATUSES.includes(entry.status)) {
-    throw new SfError(t('actionSetStatusNotAllowed', { status: entry?.status || t('actionRunStatusNeverRun') }));
+  if (entry?.status === 'success') {
+    throw new SfError(t('actionSetStatusAlreadyDone', { label: entry.actionLabel, orgBranch }));
+  }
+  if (!entry || entry.status === 'skipped') {
+    return await markActionDoneAhead(prNumber, actionId, orgBranch, entry, sfUsername, extraNote);
+  }
+  if (!CLOSABLE_STATUSES.includes(entry.status)) {
+    throw new SfError(t('actionSetStatusNotAllowed', { status: entry.status }));
   }
   const { jobId, jobUrl } = isCI ? await getJobInfoWithUrl() : { jobId: 'local', jobUrl: '' };
   const closedEntry: DeploymentActionStateEntry = {
@@ -515,6 +522,62 @@ export async function closeActionByHand(prNumber: number, actionId: string, orgB
     uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
   }
   return closedEntry;
+}
+
+/**
+ * Where to mark an action as done, for "Mark as done in another org": the major branches where it
+ * is not done yet, in pipeline order, then the developer orgs authenticated on this computer.
+ * The state of the Pull Request must have been loaded.
+ */
+export async function promptMarkDoneTarget(prNumber: number, actionId: string): Promise<{ orgBranch: string } | { org: Org }> {
+  const majorOrgs = await listMajorOrgs();
+  const label = getStateEntriesForPr(prNumber).find((e) => e.actionId === actionId)?.actionLabel || actionId;
+  const choices: { title: string; value: string }[] = [];
+  for (const majorOrg of majorOrgs) {
+    const entry = getActionStateEntry(prNumber, actionId, majorOrg.branchName);
+    if (entry?.status === 'success' || entry?.status === 'moved') {
+      continue;
+    }
+    choices.push({
+      title: t('actionSetStatusBranchChoice', { branch: majorOrg.branchName, status: describeStatusForChoice(entry?.status) }),
+      value: `branch:${majorOrg.branchName}`,
+    });
+  }
+  const authorizations = (await AuthInfo.listAllAuthorizations()).filter(isUsableAuthorization);
+  for (const choice of buildActionRunOrgChoices(authorizations, majorOrgs)) {
+    if (!majorOrgs.some((org: any) => sameUsername(choice.value, org.targetUsername) || authorizations.some((auth) => auth.username === choice.value && sameInstance(auth.instanceUrl, org.instanceUrl)))) {
+      choices.push({ title: choice.title, value: `org:${choice.value}` });
+    }
+  }
+  if (choices.length === 0) {
+    throw new SfError(t('actionSetStatusNothingToMark', { label }));
+  }
+  const selected: string = await promptSelect(t('actionSetStatusSelectTarget', { label }), choices);
+  if (selected.startsWith('branch:')) {
+    return { orgBranch: selected.substring('branch:'.length) };
+  }
+  return { org: await Org.create({ aliasOrUsername: selected.substring('org:'.length) }) };
+}
+
+/**
+ * Record an action as done by hand in a developer org: a success row of the Backpromotes comment of
+ * its Pull Request, for that sandbox and org id, which a backpromote and a run in that org read.
+ */
+export async function closeActionInDevOrg(prNumber: number, def: PrePostCommand, org: Org): Promise<BackpromoteActionRow> {
+  const conn = org.getConnection();
+  const target = buildTarget(conn, DEV_SANDBOXES_BRANCH_NAME, false);
+  const orgId = getActionRunTargetOrgId(target);
+  const store = new BackpromoteCommentStore(null, this);
+  const existing = (await readBackpromoteRowsForOrg(store, prNumber, target)).get(def.id);
+  const row = buildDevOrgBackpromoteRow(def, target, orgId, 'success', gitUserName() || os.userInfo().username);
+  if (!row) {
+    throw new SfError(t('actionSetStatusNotAllowed', { status: 'success' }));
+  }
+  if (existing?.status === 'success') {
+    throw new SfError(t('actionSetStatusAlreadyDone', { label: def.label, orgBranch: row.sandboxName }));
+  }
+  await store.update(prNumber, (state) => upsertActionRow(state, row));
+  return row;
 }
 
 /**
@@ -728,6 +791,51 @@ export async function recordDevOrgRunInBackpromotes(store: BackpromoteCommentSto
     uxLog("log", this, c.grey(t('actionRunBackpromoteRecorded', { pr: prNumber, sandboxName: row.sandboxName })));
   } catch (e) {
     uxLog("warning", this, c.yellow(t('backpromoteCommentWriteFailed', { pr: prNumber, message: (e as Error).message })));
+  }
+}
+
+/**
+ * An action marked as done in a major branch it has no status in yet (or was skipped in): the entry
+ * is created from its definition, so the validation and deployment jobs of that branch skip it.
+ */
+async function markActionDoneAhead(prNumber: number, actionId: string, orgBranch: string, entry: DeploymentActionStateEntry | null, sfUsername: string | null, extraNote?: string): Promise<DeploymentActionStateEntry> {
+  if (!entry && !(await listMajorOrgs()).some((org: any) => org.branchName === orgBranch)) {
+    throw new SfError(t('actionSetStatusUnknownBranch', { orgBranch, actionId }));
+  }
+  const def = entry ? null : await resolveActionDefinition(prNumber, actionId, orgBranch);
+  const sibling = getStateEntriesForPr(prNumber).find((e) => e.actionId === actionId);
+  const { jobId, jobUrl } = isCI ? await getJobInfoWithUrl() : { jobId: 'local', jobUrl: '' };
+  const doneEntry: DeploymentActionStateEntry = {
+    actionId,
+    actionLabel: entry?.actionLabel || def?.label || actionId,
+    orgBranch,
+    when: (entry?.when || def?.when || 'post-deploy') as ActionWhen,
+    executionOrder: entry?.executionOrder ?? sibling?.executionOrder ?? 0,
+    status: 'success',
+    jobId,
+    jobUrl,
+    date: new Date().toISOString(),
+    output: 'Marked as done by hand with sf hardis:project:action:set-status.',
+    note: buildMarkedDoneAheadNote(orgBranch, entry ? 'skipped' : 'none', gitUserName() || null, sfUsername, new Date(), extraNote),
+  };
+  upsertActionInState(doneEntry, prNumber);
+  await persistDeploymentActionsState();
+  return doneEntry;
+}
+
+function describeStatusForChoice(status?: string): string {
+  switch (status) {
+    case 'failed':
+    case 'warning':
+      return t('actionRunStatusFailed');
+    case 'not-run':
+      return t('actionRunStatusNotRun');
+    case 'manual':
+      return t('actionRunStatusManual');
+    case 'skipped':
+      return t('actionRunStatusSkipped');
+    default:
+      return t('actionRunStatusNeverRun');
   }
 }
 

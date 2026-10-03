@@ -1,5 +1,5 @@
 import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
@@ -8,11 +8,17 @@ import { t } from '../../../../common/utils/i18n.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import {
   closeActionByHand,
+  closeActionInDevOrg,
+  listPullRequestActions,
+  promptMarkDoneTarget,
+  selectDevOrgActions,
   requireGitProviderForActionState,
   resolveOrgBranchForStatus,
   selectRecoverableAction,
   selectSourcePullRequest,
 } from '../../../../common/utils/deploymentActionRunUtils.js';
+import { DEV_SANDBOXES_BRANCH_NAME } from '../../../../common/utils/actionUtils.js';
+import { loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -28,7 +34,10 @@ export default class ActionSetStatus extends SfCommand<any> {
 When an action failed during a deployment job and was then performed by hand, this command records it as done in the "Deployment Actions" comment of its Pull Request, so later deployments to that org do not run it again.
 
 - The status becomes \`success\`, with a note such as "Failed in CI, then closed by hand by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
-- Only an action that failed, was not run because a previous action failed, or is a manual action waiting for someone, can be closed. A manual action gets the note "Manual action marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
+- An action that failed, was not run because a previous action failed, or is a manual action waiting for someone, can be closed.
+- An action with no status yet in a major branch (or skipped there) can be marked as done ahead of the deployment: before a promotion to preprod, for instance, mark the pre-deployment manual actions you already did there, and the validation and deployment jobs of preprod skip them. The note reads "Marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC, before any deployment to preprod."
+- With \`--target-org\` set to a developer org (and no \`--org-branch\`), the action is recorded as done in that org: a row of the "Backpromotes" comment of the Pull Request, for that sandbox and org id, so a backpromote or a run in that org skips it.
+- With \`--select-org\`, the command asks where the action was done: a major branch where it is not done yet, or a developer org authenticated on this computer. The VS Code Deployment Actions tab uses it for **Mark as done in another org**. A manual action gets the note "Manual action marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
 - Its checkboxes in the "Failed actions" lists of the Pull Request comments are ticked.
 - Closing an action does not run the actions its failure stopped: run them with [hardis:project:action:run](${CONSTANTS.DOC_URL_ROOT}/hardis/project/action/run/).
 - Without \`--pr\` and \`--action-id\`, it proposes the recent Pull Requests whose actions failed in the org branch, then their failed actions.
@@ -83,7 +92,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       description: 'Id of the action',
     }),
     'org-branch': Flags.string({
-      description: 'Org branch the action was done in (ex: integration)',
+      description: 'Org branch the action was done in (ex: integration). Without it, the org branch of --target-org, or that developer org itself',
+    }),
+    'select-org': Flags.boolean({
+      default: false,
+      description: 'Choose where the action was done: a major branch where it is not done yet, or a developer org authenticated on this computer',
     }),
     status: Flags.string({
       options: ['success'],
@@ -117,7 +130,15 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     const headless = flags.agent === true || isCI;
 
     await requireGitProviderForActionState();
+    if (flags['select-org']) {
+      return await this.markDoneInChosenOrg(flags, headless);
+    }
     const { orgBranch, sfUsername } = await resolveOrgBranchForStatus(flags['target-org'], flags['org-branch']);
+    // A developer org passed with --target-org: the action was done there
+    if (orgBranch === DEV_SANDBOXES_BRANCH_NAME && !flags['org-branch'] && flags['target-org']) {
+      const prNumber = await selectSourcePullRequest(flags.pr, orgBranch, headless);
+      return await this.markDoneInDevOrg(prNumber, flags['action-id'], flags['target-org'], headless);
+    }
     const prNumber = await selectSourcePullRequest(flags.pr, orgBranch, headless);
     const actionId = await selectRecoverableAction(prNumber, flags['action-id'], orgBranch, headless, true);
 
@@ -131,5 +152,43 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
     WebSocketClient.sendRefreshPipelineMessage();
     return { outputString: 'Action status set', prNumber, actionId, orgBranch, status: entry.status, note: entry.note || '' };
+  }
+
+  /**
+   * "Mark as done in another org": the major branch or the developer org is chosen in a prompt
+   */
+  private async markDoneInChosenOrg(flags: any, headless: boolean): Promise<AnyJson> {
+    if (headless) {
+      throw new SfError(t('actionSetStatusSelectOrgHeadless'));
+    }
+    if (!flags.pr || !flags['action-id']) {
+      throw new SfError(t('missingRequiredFlag', { flag: !flags.pr ? 'pr' : 'action-id' }));
+    }
+    const prNumber = await selectSourcePullRequest(flags.pr, '', headless);
+    await loadDeploymentActionsState([prNumber]);
+    const choice = await promptMarkDoneTarget(prNumber, flags['action-id']);
+    if ('org' in choice) {
+      return await this.markDoneInDevOrg(prNumber, flags['action-id'], choice.org, headless);
+    }
+    const { sfUsername } = await resolveOrgBranchForStatus(flags['target-org'], choice.orgBranch);
+    uxLog("action", this, c.cyan(t('actionSetStatusClosing', { pr: prNumber, orgBranch: choice.orgBranch })));
+    const entry = await closeActionByHand(prNumber, flags['action-id'], choice.orgBranch, sfUsername, flags.note);
+    uxLog("success", this, c.green(t('actionSetStatusDone', { label: entry.actionLabel, orgBranch: choice.orgBranch })));
+    uxLog("action", this, c.cyan(entry.note || ''));
+    WebSocketClient.sendRefreshPipelineMessage();
+    return { outputString: 'Action status set', prNumber, actionId: flags['action-id'], orgBranch: choice.orgBranch, status: entry.status, note: entry.note || '' };
+  }
+
+  /**
+   * An action done by hand in a developer org: recorded in the Backpromotes comment of its Pull
+   * Request, for that sandbox and org id
+   */
+  private async markDoneInDevOrg(prNumber: number, actionIdFlag: string | undefined, org: any, headless: boolean): Promise<AnyJson> {
+    const actions = await listPullRequestActions(prNumber, String(prNumber));
+    const [def] = await selectDevOrgActions(actions, actionIdFlag, false, headless);
+    const row = await closeActionInDevOrg(prNumber, def, org);
+    uxLog("success", this, c.green(t('actionSetStatusDevOrgDone', { label: def.label, sandboxName: row.sandboxName, pr: prNumber })));
+    WebSocketClient.sendRefreshPipelineMessage();
+    return { outputString: 'Action status set', prNumber, actionId: def.id, sandboxName: row.sandboxName, orgId: row.orgId, status: row.status };
   }
 }

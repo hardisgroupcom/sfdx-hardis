@@ -979,6 +979,18 @@ export function buildClosedByHandNote(previousStatus: 'failed' | 'not-run' | 'ma
 }
 
 /**
+ * Note of an action marked as done in an org branch where it never failed: done by hand before any
+ * deployment reached that org (a manual action of the next promotion, for instance), or skipped there.
+ */
+export function buildMarkedDoneAheadNote(orgBranch: string, previousStatus: 'none' | 'skipped', gitUser: string | null, sfUsername: string | null, date: Date, extraNote?: string): string {
+  const who = [gitUser, sfUsername ? `(${sfUsername})` : null].filter(Boolean).join(' ') || 'unknown user';
+  const note = previousStatus === 'skipped'
+    ? `Skipped in CI, then marked as done by ${who} on ${formatNoteDate(date)}.`
+    : `Marked as done by ${who} on ${formatNoteDate(date)}, before any deployment to ${orgBranch}.`;
+  return extraNote && extraNote.trim() !== '' ? `${note} ${extraNote.trim()}` : note;
+}
+
+/**
  * Note of a failed or stopped action closed by ticking its checkbox. Git providers do not tell
  * who ticked a box without extra API calls, so the note names the Pull Request instead.
  */

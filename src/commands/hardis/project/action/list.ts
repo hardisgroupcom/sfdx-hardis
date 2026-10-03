@@ -13,6 +13,7 @@ import { ActionCommandBase } from './base.js';
 import { getStateEntriesForPr, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
 import { readLocalActionStates } from '../../../../common/utils/deploymentActionsLocalState.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
+import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -27,7 +28,7 @@ export default class ActionList extends ActionCommandBase {
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
-With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
+With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. With \`--with-backpromotes\`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
 
 ### Agent Mode
 
@@ -75,6 +76,10 @@ Required in agent mode:
       default: false,
       description: 'Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments',
     }),
+    'with-backpromotes': Flags.boolean({
+      default: false,
+      description: 'With --with-status, also return the rows of the Backpromotes comments of --pr-ids: the actions run in each developer org',
+    }),
     'pr-ids': Flags.string({
       description: 'Comma-separated list of Pull Request numbers, or draft (with --with-status)',
     }),
@@ -99,7 +104,7 @@ Required in agent mode:
     const agentMode = flags.agent === true;
 
     if (flags['with-status']) {
-      return await this.listStatuses(flags['pr-ids'] || '');
+      return await this.listStatuses(flags['pr-ids'] || '', flags['with-backpromotes'] === true);
     }
 
     const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
@@ -139,7 +144,7 @@ Required in agent mode:
    * Status of the actions of some Pull Requests in each org branch, from their Deployment Actions
    * comments, for the VS Code Deployment Actions tab.
    */
-  private async listStatuses(prIdsFlag: string): Promise<AnyJson> {
+  private async listStatuses(prIdsFlag: string, withBackpromotes: boolean): Promise<AnyJson> {
     const prIds = [...new Set(prIdsFlag.split(',').map((id) => id.replace('#', '').trim()).filter((id) => id === 'draft' || /^\d+$/.test(id)))];
     if (prIds.length === 0) {
       throw new SfError(t('missingRequiredFlag', { flag: 'pr-ids' }));
@@ -173,7 +178,20 @@ Required in agent mode:
         local: fromLocal.includes(e),
       }));
     }
-    return { outputString: `Status of the actions of ${prIds.length} Pull Request(s)`, statuses };
+    // The actions run in developer orgs, from the Backpromotes comments (one more read per Pull Request)
+    const backpromotes: Record<string, any[]> = {};
+    if (withBackpromotes && gitProvider) {
+      const store = new BackpromoteCommentStore(null, this);
+      for (const prNumber of prNumbers) {
+        try {
+          backpromotes[String(prNumber)] = (await store.read(prNumber)).actionRows;
+        } catch (e) {
+          uxLog("warning", this, c.yellow(t('backpromoteCommentWriteFailed', { pr: prNumber, message: (e as Error).message })));
+          backpromotes[String(prNumber)] = [];
+        }
+      }
+    }
+    return { outputString: `Status of the actions of ${prIds.length} Pull Request(s)`, statuses, ...(withBackpromotes ? { backpromotes } : {}) };
   }
 
 
