@@ -597,7 +597,7 @@ You do not need to re-run the whole deployment job. Pick the way that fits the c
 | The action definition is wrong (script path, class name, parameter)             | **Move it to a fix Pull Request**, correct it there, merge: it runs from the fix Pull Request                       |
 | Someone already did it by hand                                                  | **Mark it as done**: it is recorded as done, with who closed it and when, and later deployments to that org skip it |
 
-**From VS Code**: open the DevOps Pipeline, click the major branch (or the Pull Request), then the **Deployment Actions** tab. Its status column shows each action in each org, and a failed or stopped action offers **Retry**, **Mark as done** and **Move to my Pull Request**.
+**From VS Code**: open the DevOps Pipeline, click the major branch (or the Pull Request), then the **Deployment Actions** tab. The actions are grouped by Pull Request, in the order they run, with their status in the org of the branch and, for a stopped one, the action that stopped it. A failed action shows **Retry** and **Mark as done** buttons, and the menu at the end of each row holds the rest, **Move to my Pull Request** included.
 
 ![Deployment Actions tab with the status of each action and the menu of a failed one](assets/images/screenshot-deployment-action-failed-tab.jpg)
 
