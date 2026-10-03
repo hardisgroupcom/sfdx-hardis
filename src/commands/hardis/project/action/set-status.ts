@@ -28,12 +28,12 @@ export default class ActionSetStatus extends SfCommand<any> {
 When an action failed during a deployment job and was then performed by hand, this command records it as done in the "Deployment Actions" comment of its Pull Request, so later deployments to that org do not run it again.
 
 - The status becomes \`success\`, with a note such as "Failed in CI, then closed by hand by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
-- Only an action that failed, or was not run because a previous action failed, can be closed.
+- Only an action that failed, was not run because a previous action failed, or is a manual action waiting for someone, can be closed. A manual action gets the note "Manual action marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
 - Its checkboxes in the "Failed actions" lists of the Pull Request comments are ticked.
 - Closing an action does not run the actions its failure stopped: run them with [hardis:project:action:run](${CONSTANTS.DOC_URL_ROOT}/hardis/project/action/run/).
 - Without \`--pr\` and \`--action-id\`, it proposes the recent Pull Requests whose actions failed in the org branch, then their failed actions.
 
-Ticking the checkbox of a failed action in a Pull Request comment does the same at the next sfdx-hardis job.
+Ticking the checkbox of a failed or manual action in a Pull Request comment does the same at the next sfdx-hardis job, without naming who ticked it.
 
 See [Recover a failed action](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action).
 
@@ -119,7 +119,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     await requireGitProviderForActionState();
     const { orgBranch, sfUsername } = await resolveOrgBranchForStatus(flags['target-org'], flags['org-branch']);
     const prNumber = await selectSourcePullRequest(flags.pr, orgBranch, headless);
-    const actionId = await selectRecoverableAction(prNumber, flags['action-id'], orgBranch, headless);
+    const actionId = await selectRecoverableAction(prNumber, flags['action-id'], orgBranch, headless, true);
 
     uxLog("action", this, c.cyan(t('actionSetStatusClosing', { pr: prNumber, orgBranch })));
     const entry = await closeActionByHand(prNumber, actionId, orgBranch, sfUsername, flags.note);

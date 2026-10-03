@@ -617,7 +617,7 @@ You do not need to re-run the whole deployment job. Pick the way that fits the c
 
 ![Retry of a failed deployment action in VS Code](assets/images/screenshot-deployment-action-retry.jpg)
 
-**Mark as done** records the action as done in the background, with who closed it and when: a notification says when it is recorded, and the tab refreshes.
+**Mark as done** records the action as done in the background, with who closed it and when: a notification says when it is recorded, and the tab refreshes. A manual action waiting in the org has the same button: it does what ticking its checkbox in the Pull Request comment does, and also names who did it. A failure the action allows (*Failed (allowed)*) blocked nothing, so its group is not listed first.
 
 **Move to my Pull Request** moves the action to the Pull Request of your current branch: correct it there. The action editor shows where it comes from.
 

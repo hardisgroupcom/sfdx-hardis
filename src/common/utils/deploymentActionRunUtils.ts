@@ -36,6 +36,9 @@ export type NextActionsMode = 'none' | 'one' | 'all';
 
 /** Statuses an action can be retried or closed by hand from */
 const RECOVERABLE_STATUSES: DeploymentActionStateEntry['status'][] = ['failed', 'not-run', 'warning'];
+// What can be closed by hand: the same, plus a manual action waiting for someone (what ticking its
+// checkbox in the Pull Request comment does, naming who did it)
+const CLOSABLE_STATUSES: DeploymentActionStateEntry['status'][] = [...RECOVERABLE_STATUSES, 'manual'];
 
 /** The org an action is retried in, and the branch it is tracked under */
 export interface ActionRunTarget {
@@ -197,7 +200,7 @@ export async function selectSourcePullRequest(prFlag: string | number | undefine
  * Action to retry or close: --action-id, or a choice among the actions of the Pull Request that
  * failed (or were stopped) in the org branch. Loads the state of the Pull Request.
  */
-export async function selectRecoverableAction(prNumber: number, actionIdFlag: string | undefined, orgBranch: string, headless: boolean): Promise<string> {
+export async function selectRecoverableAction(prNumber: number, actionIdFlag: string | undefined, orgBranch: string, headless: boolean, includeManual = false): Promise<string> {
   uxLog("action", this, c.cyan(t('actionListStatusHeader', { count: 1 })));
   await loadDeploymentActionsState([prNumber]);
   // A box ticked in a comment since the last job must be recorded before this command rewrites the
@@ -213,14 +216,15 @@ export async function selectRecoverableAction(prNumber: number, actionIdFlag: st
   if (headless) {
     throw new SfError(t('missingRequiredFlag', { flag: 'action-id' }));
   }
-  const entries = getStateEntriesForPr(prNumber).filter((e) => e.orgBranch === orgBranch && RECOVERABLE_STATUSES.includes(e.status));
+  const statuses = includeManual ? CLOSABLE_STATUSES : RECOVERABLE_STATUSES;
+  const entries = getStateEntriesForPr(prNumber).filter((e) => e.orgBranch === orgBranch && statuses.includes(e.status));
   if (entries.length === 0) {
     throw new SfError(t('actionRunNoFailedActionInPr', { pr: prNumber, orgBranch }));
   }
   return promptSelect(t('actionRunSelectAction'), entries
     .sort((a, b) => (a.executionOrder ?? 0) - (b.executionOrder ?? 0))
     .map((e) => ({
-      title: `${e.actionLabel} (${e.status === 'not-run' ? t('actionRunStatusNotRun') : t('actionRunStatusFailed')})`,
+      title: `${e.actionLabel} (${e.status === 'not-run' ? t('actionRunStatusNotRun') : e.status === 'manual' ? t('actionRunStatusManual') : t('actionRunStatusFailed')})`,
       value: e.actionId,
     })));
 }
@@ -461,13 +465,13 @@ export async function recordNewBlocker(failed: ActionRunResult, remaining: Deplo
 }
 
 /**
- * Record a failed or stopped action as done by hand in an org branch, with who did it and when,
+ * Record a failed, stopped or waiting manual action as done by hand in an org branch, with who did it and when,
  * then tick its checkboxes in the Pull Request comments.
  * The state of the Pull Request must have been loaded.
  */
 export async function closeActionByHand(prNumber: number, actionId: string, orgBranch: string, sfUsername: string | null, extraNote?: string): Promise<DeploymentActionStateEntry> {
   const entry = getActionStateEntry(prNumber, actionId, orgBranch);
-  if (!entry || !RECOVERABLE_STATUSES.includes(entry.status)) {
+  if (!entry || !CLOSABLE_STATUSES.includes(entry.status)) {
     throw new SfError(t('actionSetStatusNotAllowed', { status: entry?.status || t('actionRunStatusNeverRun') }));
   }
   const { jobId, jobUrl } = isCI ? await getJobInfoWithUrl() : { jobId: 'local', jobUrl: '' };
@@ -478,7 +482,7 @@ export async function closeActionByHand(prNumber: number, actionId: string, orgB
     jobUrl,
     date: new Date().toISOString(),
     output: 'Closed by hand with sf hardis:project:action:set-status.',
-    note: buildClosedByHandNote(entry.status === 'not-run' ? 'not-run' : 'failed', gitUserName() || null, sfUsername, new Date(), extraNote),
+    note: buildClosedByHandNote(entry.status === 'not-run' || entry.status === 'manual' ? entry.status : 'failed', gitUserName() || null, sfUsername, new Date(), extraNote),
     blockedBy: undefined,
   };
   upsertActionInState(closedEntry, prNumber);

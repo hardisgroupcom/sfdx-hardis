@@ -188,6 +188,11 @@ describe('Recovery notes', () => {
     expect(note).to.equal('Not run in CI, then closed by hand by Jane Doe on 2026-10-03 14:05 UTC. Imported with the data loader.');
   });
 
+  it('says who marked a waiting manual action as done', () => {
+    const note = buildClosedByHandNote('manual', 'Jane Doe', 'jane@acme.com', new Date('2026-10-03T14:05:00.000Z'));
+    expect(note).to.equal('Manual action marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC.');
+  });
+
   it('names the Pull Request of a ticked checkbox', () => {
     expect(buildClosedByCheckboxNote('failed', 12)).to.match(/^Failed in CI, then closed by hand via a checkbox in Pull Request #12 \(detected on \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC\)\.$/);
   });

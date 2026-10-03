@@ -969,10 +969,12 @@ export function buildFailedActionCheckboxMarker(actionId: string, orgBranch: str
  * comment (English, like the rest of the comment).
  * Ex: "Failed in CI, then closed by hand by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
  */
-export function buildClosedByHandNote(previousStatus: 'failed' | 'not-run', gitUser: string | null, sfUsername: string | null, date: Date, extraNote?: string): string {
-  const origin = previousStatus === 'not-run' ? 'Not run in CI' : 'Failed in CI';
+export function buildClosedByHandNote(previousStatus: 'failed' | 'not-run' | 'manual', gitUser: string | null, sfUsername: string | null, date: Date, extraNote?: string): string {
   const who = [gitUser, sfUsername ? `(${sfUsername})` : null].filter(Boolean).join(' ') || 'unknown user';
-  const note = `${origin}, then closed by hand by ${who} on ${formatNoteDate(date)}.`;
+  const origin = previousStatus === 'not-run' ? 'Not run in CI' : 'Failed in CI';
+  const note = previousStatus === 'manual'
+    ? `Manual action marked as done by ${who} on ${formatNoteDate(date)}.`
+    : `${origin}, then closed by hand by ${who} on ${formatNoteDate(date)}.`;
   return extraNote && extraNote.trim() !== '' ? `${note} ${extraNote.trim()}` : note;
 }
 
