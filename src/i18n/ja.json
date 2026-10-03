@@ -95,6 +95,7 @@
   "actionRunSelectOrgHeadless": "--select-org は質問をします。エージェントまたは CI モードでは、代わりに --target-org または --org-branch を指定してください。",
   "actionRunSelectOrgUser": "{{instanceUrl}} では複数のユーザーが認証されています。どれを使用しますか?",
   "actionRunSelectPr": "アクションの Pull Request を選択してください",
+  "actionRunSeveralUsersHeadless": "このコンピューターでは {{instanceUrl}} の複数のユーザーが認証されています ({{users}})。エージェントまたは CI モードでは、使用するユーザーを --target-org で指定してください。",
   "actionRunStatusFailed": "失敗",
   "actionRunStatusManual": "手動実行待ち",
   "actionRunStatusNeverRun": "未実行",

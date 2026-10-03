@@ -95,6 +95,7 @@
   "actionRunSelectOrgHeadless": "--select-org stelt een vraag: geef in agent- of CI-modus in plaats daarvan --target-org of --org-branch mee.",
   "actionRunSelectOrgUser": "Meerdere gebruikers zijn geauthenticeerd op {{instanceUrl}}: welke wil je gebruiken?",
   "actionRunSelectPr": "Selecteer de Pull Request van de actie",
+  "actionRunSeveralUsersHeadless": "Er zijn meerdere gebruikers van {{instanceUrl}} geauthenticeerd op deze computer ({{users}}): geef in agent- of CI-modus de te gebruiken gebruiker mee met --target-org.",
   "actionRunStatusFailed": "mislukt",
   "actionRunStatusManual": "wacht op handmatige uitvoering",
   "actionRunStatusNeverRun": "nooit uitgevoerd",

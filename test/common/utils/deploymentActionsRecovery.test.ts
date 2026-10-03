@@ -22,7 +22,7 @@ import {
 import { dropActionsMovedToAnotherPullRequest, getEffectiveActionContext } from '../../../src/common/utils/prePostCommandUtils.js';
 import { normalizeMovedFrom, validateMovedFrom } from '../../../src/common/utils/actionUtils.js';
 import { forecastAction } from '../../../src/common/utils/deploymentActionForecastUtils.js';
-import { buildActionRunOrgChoices, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername } from '../../../src/common/utils/deploymentActionRunUtils.js';
+import { buildActionRunOrgChoices, buildCustomUserAlias, buildDevOrgBackpromoteRow, getDevOrgSkipReason, isUsableAuthorization, pickBranchOrgUsername } from '../../../src/common/utils/deploymentActionRunUtils.js';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 
 function entry(overrides: Partial<DeploymentActionStateEntry>): DeploymentActionStateEntry {
@@ -429,5 +429,11 @@ describe('forecastAction()', () => {
   it('runs an action at every deployment when runOnlyOnceByOrg is false', () => {
     seed('success');
     expect(forecast({ runOnlyOnceByOrg: false } as any)).to.include({ forecast: 'runs-at-deployment', reason: 'every-deployment' });
+  });
+});
+
+describe('buildCustomUserAlias()', () => {
+  it('gives the login of a custom user an alias of its own, never an org branch name', () => {
+    expect(buildCustomUserAlias('Jane.Doe@acme.com.uat')).to.equal('action-user-jane-doe-acme-com-uat');
   });
 });

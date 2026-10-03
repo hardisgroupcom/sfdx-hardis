@@ -61,6 +61,7 @@
   "actionRunSelectOrgHeadless": "--select-org faz uma pergunta: no modo agente ou CI, passe --target-org ou --org-branch.",
   "actionRunSelectOrgUser": "Vários usuários estão autenticados em {{instanceUrl}}: qual você quer usar?",
   "actionRunSelectPr": "Selecione o Pull Request da ação",
+  "actionRunSeveralUsersHeadless": "Vários usuários de {{instanceUrl}} estão autenticados neste computador ({{users}}): no modo agente ou CI, indique qual usar com --target-org.",
   "actionRunStatusFailed": "com falha",
   "actionRunStatusManual": "aguardando execução manual",
   "actionRunStatusNeverRun": "nunca executada",

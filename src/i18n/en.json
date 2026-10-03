@@ -95,6 +95,7 @@
   "actionRunSelectOrgHeadless": "--select-org asks a question: in agent or CI mode, pass --target-org or --org-branch instead.",
   "actionRunSelectOrgUser": "Several users are authenticated on {{instanceUrl}}: which one do you want to use?",
   "actionRunSelectPr": "Select the Pull Request of the action",
+  "actionRunSeveralUsersHeadless": "Several users of {{instanceUrl}} are authenticated on this computer ({{users}}): in agent or CI mode, pass the one to run as with --target-org.",
   "actionRunStatusFailed": "failed",
   "actionRunStatusManual": "waiting for manual execution",
   "actionRunStatusNeverRun": "never run",

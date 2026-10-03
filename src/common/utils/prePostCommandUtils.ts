@@ -550,9 +550,6 @@ function recordActionProducedNothing(cmd: PrePostCommand, reason?: string): void
 }
 
 /**
- * A movedFrom written as a quoted number in YAML ("41") is still the Pull Request number
- */
-/**
  * Record the actions a failure stopped as 'not-run' in their source Pull Request comments, linked to
  * the failed action, so they can be retried (sf hardis:project:action:run) or closed by hand.
  * Only the actions that would really have run here are recorded: not the validation-only ones,

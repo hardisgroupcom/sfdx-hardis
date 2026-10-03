@@ -182,7 +182,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       // After the prompt, the next line must be an action log for VS Code to show it
       uxLog("action", this, c.cyan(t('actionRunOrgSelected', { username: targetOrg.getUsername() || '' })));
     }
-    const target = await resolveActionRunTarget(targetOrg, flags['select-org'] ? undefined : flags['org-branch']);
+    const target = await resolveActionRunTarget(targetOrg, flags['select-org'] ? undefined : flags['org-branch'], headless);
     uxLog("action", this, c.cyan(t('actionRunTargetOrg', { orgBranch: target.orgBranch, username: target.username })));
     if (!target.isMajorOrg) {
       return await this.runInDevOrg(flags, target, headless);

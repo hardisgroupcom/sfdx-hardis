@@ -83,7 +83,7 @@ export async function requireGitProviderForActionState(): Promise<void> {
  * - Without it, the target org (or the default org) decides: a major org when its instance URL is
  *   the one of a major branch config, otherwise a dev org tracked under the current git branch.
  */
-export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBranchFlag: string | undefined): Promise<ActionRunTarget> {
+export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBranchFlag: string | undefined, headless = false): Promise<ActionRunTarget> {
   const majorOrgs = await listMajorOrgs();
   if (orgBranchFlag) {
     const majorOrg = majorOrgs.find((org: any) => org.branchName === orgBranchFlag);
@@ -98,7 +98,7 @@ export async function resolveActionRunTarget(targetOrg: Org | undefined, orgBran
     if (targetOrg && isOrgOfMajorBranch(targetOrg.getConnection(), majorOrg)) {
       return buildTarget(targetOrg.getConnection(), orgBranchFlag, true);
     }
-    const conn = await findAuthenticatedConnection(majorOrg);
+    const conn = await findAuthenticatedConnection(majorOrg, headless);
     if (!conn) {
       throw new SfError(t('actionRunNoAuthenticatedOrg', { branch: orgBranchFlag, instanceUrl: majorOrg.instanceUrl || '?' }));
     }
@@ -233,11 +233,7 @@ export async function selectRecoverableAction(prNumber: number, actionIdFlag: st
   await loadDeploymentActionsState([prNumber]);
   // A box ticked in a comment since the last job must be recorded before this command rewrites the
   // comment: rebuilt from the state alone, it would come back unticked
-  try {
-    await syncManualActionCheckboxes([prNumber]);
-  } catch (e) {
-    uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsCheckboxSyncError', { message: (e as Error).message })));
-  }
+  await syncCheckboxesBeforeWrite(prNumber);
   if (actionIdFlag) {
     return actionIdFlag;
   }
@@ -358,7 +354,10 @@ export async function ensureCustomUsernameAuth(def: PrePostCommand, target: Acti
   if (!confirmed) {
     throw new SfError(t('actionRunCancelled'));
   }
-  await authOrg(target.orgBranch, { forceUsername: user.Username, instanceUrl: target.instanceUrl, setDefault: false });
+  // An alias of its own, derived from the username: authOrg uses its first argument as the alias of
+  // the login and to look for SFDX_AUTH_URL_<alias> or JWT settings, so the org branch name would
+  // repoint an alias of the user (integration...) to the custom user, or log in as the CI user
+  await authOrg(buildCustomUserAlias(user.Username), { forceUsername: user.Username, instanceUrl: target.instanceUrl, setDefault: false });
   if (!(await isUsernameConnected(user.Username))) {
     const actual = globalThis.justConnectedOrg?.username || '?';
     throw new SfError(t('actionRunWrongCustomUsername', { actual, label: def.label, expected: user.Username }));
@@ -603,7 +602,7 @@ export async function closeActionInDevOrg(prNumber: number, def: PrePostCommand,
  * Returns the number (0 for the draft) and the id of its actions file.
  */
 export async function resolveDevOrgPullRequest(prFlag: string | undefined, headless: boolean): Promise<{ prNumber: number; prId: string }> {
-  if (prFlag === 'draft') {
+  if (String(prFlag || '').toLowerCase() === 'draft') {
     return { prNumber: 0, prId: 'draft' };
   }
   if (prFlag) {
@@ -812,6 +811,35 @@ export async function recordDevOrgRunInBackpromotes(store: BackpromoteCommentSto
 }
 
 /**
+ * The user of the org of a major branch authenticated on this computer, for a note: its
+ * targetUsername first, then a user of its instance, null when none is (no question asked, the
+ * note just names nobody on the Salesforce side).
+ */
+export function pickBranchOrgUsername(
+  authorizations: { username: string; instanceUrl?: string }[],
+  majorOrg: { targetUsername?: string; instanceUrl?: string }
+): string | null {
+  const sameUser = authorizations.find((auth) => sameUsername(auth.username, majorOrg.targetUsername));
+  if (sameUser) {
+    return sameUser.username;
+  }
+  return authorizations.find((auth) => sameInstance(auth.instanceUrl, majorOrg.instanceUrl))?.username || null;
+}
+
+/** "action-user-jane-acme-com": the alias of the login of a custom username, unique to that user */
+export function buildCustomUserAlias(username: string): string {
+  return 'action-user-' + String(username || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/**
+ * An authorization worth trying. isExpired is true, false or "unknown": most sandbox and production
+ * authorizations say "unknown" (no expiry recorded), and a truthy check dropped every one of them.
+ */
+export function isUsableAuthorization(auth: { error?: string; isExpired?: boolean | string }): boolean {
+  return !auth.error && auth.isExpired !== true;
+}
+
+/**
  * An action marked as done in a major branch it has no status in yet (or was skipped in): the entry
  * is created from its definition, so the validation and deployment jobs of that branch skip it.
  */
@@ -879,34 +907,10 @@ function sameInstance(url1?: string, url2?: string): boolean {
 }
 
 /**
- * The user of the org of a major branch authenticated on this computer, for a note: its
- * targetUsername first, then a user of its instance, null when none is (no question asked, the
- * note just names nobody on the Salesforce side).
- */
-export function pickBranchOrgUsername(
-  authorizations: { username: string; instanceUrl?: string }[],
-  majorOrg: { targetUsername?: string; instanceUrl?: string }
-): string | null {
-  const sameUser = authorizations.find((auth) => sameUsername(auth.username, majorOrg.targetUsername));
-  if (sameUser) {
-    return sameUser.username;
-  }
-  return authorizations.find((auth) => sameInstance(auth.instanceUrl, majorOrg.instanceUrl))?.username || null;
-}
-
-/**
- * An authorization worth trying. isExpired is true, false or "unknown": most sandbox and production
- * authorizations say "unknown" (no expiry recorded), and a truthy check dropped every one of them.
- */
-export function isUsableAuthorization(auth: { error?: string; isExpired?: boolean | string }): boolean {
-  return !auth.error && auth.isExpired !== true;
-}
-
-/**
  * An org of a major branch already authenticated on this computer, if any: its username first,
  * then any user of its instance
  */
-async function findAuthenticatedConnection(majorOrg: any): Promise<Connection | null> {
+async function findAuthenticatedConnection(majorOrg: any, headless: boolean): Promise<Connection | null> {
   const authorizations = (await AuthInfo.listAllAuthorizations()).filter(isUsableAuthorization);
   const sameUser = authorizations.find((auth) => sameUsername(auth.username, majorOrg.targetUsername));
   if (sameUser) {
@@ -919,7 +923,11 @@ async function findAuthenticatedConnection(majorOrg: any): Promise<Connection | 
     return null;
   }
   let username = matching[0].username;
-  if (matching.length > 1 && !isCI) {
+  if (matching.length > 1 && headless) {
+    // Never a question in agent or CI mode: the user to run as must be named
+    throw new SfError(t('actionRunSeveralUsersHeadless', { instanceUrl, users: matching.map((auth) => auth.username).join(', ') }));
+  }
+  if (matching.length > 1) {
     username = await promptActionSelect(t('actionRunSelectOrgUser', { instanceUrl }), matching.map((auth) => ({
       title: auth.aliases && auth.aliases.length > 0 ? `${auth.username} (${auth.aliases.join(', ')})` : auth.username,
       value: auth.username,
@@ -964,5 +972,3 @@ async function confirmOrWarn(message: string, headless: boolean): Promise<void> 
     throw new SfError(t('actionRunCancelled'));
   }
 }
-
-

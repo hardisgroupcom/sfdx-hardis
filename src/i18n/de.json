@@ -95,6 +95,7 @@
   "actionRunSelectOrgHeadless": "--select-org stellt eine Frage: Übergeben Sie im Agent- oder CI-Modus stattdessen --target-org oder --org-branch.",
   "actionRunSelectOrgUser": "Auf {{instanceUrl}} sind mehrere Benutzer authentifiziert: Welchen möchten Sie verwenden?",
   "actionRunSelectPr": "Pull Request der Aktion auswählen",
+  "actionRunSeveralUsersHeadless": "Auf diesem Computer sind mehrere Benutzer von {{instanceUrl}} authentifiziert ({{users}}): Übergeben Sie im Agent- oder CI-Modus den zu verwendenden mit --target-org.",
   "actionRunStatusFailed": "fehlgeschlagen",
   "actionRunStatusManual": "wartet auf manuelle Ausführung",
   "actionRunStatusNeverRun": "nie ausgeführt",

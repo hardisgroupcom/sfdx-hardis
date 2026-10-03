@@ -279,11 +279,6 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
 }
 
 /**
- * Validate the movedFrom property of an action: the number of the Pull Request it was moved from.
- * Only an action of a Pull Request can be moved, and never from its own Pull Request.
- * Returns an array of error messages (empty if valid).
- */
-/**
  * A movedFrom written as a quoted number in YAML ("12") is the number 12: coerced in place
  */
 export function normalizeMovedFrom(action: Partial<PrePostCommand>): void {
@@ -292,6 +287,11 @@ export function normalizeMovedFrom(action: Partial<PrePostCommand>): void {
   }
 }
 
+/**
+ * Validate the movedFrom property of an action: the number of the Pull Request it was moved from.
+ * Only an action of a Pull Request can be moved, and never from its own Pull Request.
+ * Returns an array of error messages (empty if valid).
+ */
 export function validateMovedFrom(action: Partial<PrePostCommand>, scope: ActionScope, prId?: string): string[] {
   if (action.movedFrom === undefined || action.movedFrom === null) {
     return [];
