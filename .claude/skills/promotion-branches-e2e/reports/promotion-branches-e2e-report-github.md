@@ -28,15 +28,15 @@ ___
 
 ## Counts
 
-| Section                                                                          | Checks | OK         | FAIL |
-|----------------------------------------------------------------------------------|--------|------------|------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42     | 42         | 0    |
-| 6: edge cases, groups g1 to g6                                                   | 47     | 46         | 1    |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org (third pass)  | 21     | 21         | 0    |
-| 6quinquies: the same features through real GitHub Actions workflows              | 15     | 15         | 0    |
-| 7bis: single place in the diagram                                                | 1      | 1          | 0    |
-| 6bis: backpromote B0 to B17, C1 to C4                                            | 63     | 59         | 4    |
-| 7ter: flag-off A/B against `origin/main` (`a236259ef`)                           | 5 files compared, passes 2 and 3 | `TOTAL DIFFERING LINES: 0` | 0 |
+| Section                                                                             | Checks                           | OK                         | FAIL |
+|-------------------------------------------------------------------------------------|----------------------------------|----------------------------|------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                               | 42                         | 0    |
+| 6: edge cases, groups g1 to g6                                                      | 47                               | 46                         | 1    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org (third pass)     | 21                               | 21                         | 0    |
+| 6quinquies: the same features through real GitHub Actions workflows                 | 15                               | 15                         | 0    |
+| 7bis: single place in the diagram                                                   | 1                                | 1                          | 0    |
+| 6bis: backpromote B0 to B17, C1 to C4                                               | 63                               | 59                         | 4    |
+| 7ter: flag-off A/B against `origin/main` (`a236259ef`)                              | 5 files compared, passes 2 and 3 | `TOTAL DIFFERING LINES: 0` | 0    |
 
 None of the remaining failures is a product defect: 52a is a race in the test script (fixed), the
 four backpromote ones are network and resource failures of the workstation, replayed below.
@@ -85,26 +85,26 @@ ___
 
 ### Backpromote failures, replayed
 
-| Step        | First run                  | Replay                                                                                   |
-|-------------|----------------------------|------------------------------------------------------------------------------------------|
+| Step        | First run                                      | Replay                                                                             |
+|-------------|------------------------------------------------|------------------------------------------------------------------------------------|
 | B3-plan-s1  | `sgd` "not a valid sha" during the memory stop | plan built, version 3, progress written; only "already run" differs (B4 ran since) |
-| B3-progress | no `retrieve` line         | OK, 14 progress lines                                                                    |
-| B5-confirm  | `fetch failed`             | OK                                                                                       |
-| C2-comments | the confirm never ran      | the original org row is done; a second row belongs to the refreshed sandbox of B16      |
+| B3-progress | no `retrieve` line                             | OK, 14 progress lines                                                              |
+| B5-confirm  | `fetch failed`                                 | OK                                                                                 |
+| C2-comments | the confirm never ran                          | the original org row is done; a second row belongs to the refreshed sandbox of B16 |
 
 ___
 
 ## Real CI workflows (section 6quinquies, `-26`)
 
-| Check | Result                                                                                         |
-|-------|------------------------------------------------------------------------------------------------|
-| W0    | the jobs run `sfdx-hardis (link) /tmp/sfdx-hardis`                                             |
-| W1    | the validation stops on the pending pre-deployment manual action; the comment shows why        |
-| W2    | the checkbox ticked through the API, Re-run all jobs: recorded as done, green                  |
+| Check | Result                                                                                        |
+|-------|-----------------------------------------------------------------------------------------------|
+| W0    | the jobs run `sfdx-hardis (link) /tmp/sfdx-hardis`                                            |
+| W1    | the validation stops on the pending pre-deployment manual action; the comment shows why       |
+| W2    | the checkbox ticked through the API, Re-run all jobs: recorded as done, green                 |
 | W3    | a GitHub draft with no "draft" in its title is only warned (the provider's draft flag)        |
-| W4    | the deployment job fails on the flaky command and stops the next ones; statuses read back      |
+| W4    | the deployment job fails on the flaky command and stops the next ones; statuses read back     |
 | W5    | the promotion to uat stops until the manual action is done in uat; forecast "after the merge" |
-| W6    | `set-status --org-branch uat`, the re-run passes, the forecast says done                       |
+| W6    | `set-status --org-branch uat`, the re-run passes, the forecast says done                      |
 | W7    | the promotion deploys the commands with the fix that travelled with it                        |
 
 ___
