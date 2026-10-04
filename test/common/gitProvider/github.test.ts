@@ -125,7 +125,7 @@ describe('GithubProvider (native fetch client)', () => {
     const page2 = 'https://api.github.com/repos/acme/widgets/issues/7/comments?per_page=100&page=2';
     const page3 = 'https://api.github.com/repos/acme/widgets/issues/7/comments?per_page=100&page=3';
     mockFetch(
-      jsonResponse([{ id: 1, body: 'MARK one', html_url: 'u1' }, { id: 2, body: 'other' }], 200, { Link: `<${page2}>; rel="next", <${page3}>; rel="last"` }),
+      jsonResponse([{ id: 1, body: 'MARK one', html_url: 'u1', updated_at: '2026-10-04T09:00:00Z' }, { id: 2, body: 'other' }], 200, { Link: `<${page2}>; rel="next", <${page3}>; rel="last"` }),
       jsonResponse([{ id: 3, body: 'MARK three', html_url: 'u3' }], 200, { Link: `<${page3}>; rel="next", <${page3}>; rel="last"` }),
       jsonResponse([{ id: 4, body: 'MARK four', html_url: 'u4' }], 200, { Link: `<${page2}>; rel="prev"` }),
     );
@@ -137,7 +137,7 @@ describe('GithubProvider (native fetch client)', () => {
       page3,
     ]);
     expect(refs.map((r) => r.ref)).to.deep.equal([1, 3, 4]);
-    expect(refs[0]).to.deep.equal({ prNumber: 7, ref: 1, body: 'MARK one', url: 'u1' });
+    expect(refs[0]).to.deep.equal({ prNumber: 7, ref: 1, body: 'MARK one', url: 'u1', updatedAt: '2026-10-04T09:00:00Z' });
   });
 
   it('updates the existing comment when the marker is found (upsert)', async () => {

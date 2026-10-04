@@ -147,6 +147,11 @@ export class BitbucketProvider extends GitProviderRoot {
     };
   }
 
+  // Bitbucket Cloud escapes raw HTML in comments: an HTML comment is displayed as it is written
+  public hidesHtmlCommentsInPrComments(): boolean {
+    return false;
+  }
+
   public getLabel(): string {
     return 'sfdx-hardis Bitbucket connector';
   }

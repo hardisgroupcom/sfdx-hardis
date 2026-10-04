@@ -17,6 +17,7 @@ import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCom
 import { ActionForecastItem, findOpenPromotionPullRequest, forecastAction, markIdenticalForecasts } from '../../../../common/utils/deploymentActionForecastUtils.js';
 import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
 import { parseWorkflowRunsFromComments, PR_COMMENT_HIDDEN_MARKER } from '../../../../common/gitProvider/prRunSummary.js';
+import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from '../../../../common/utils/adaptiveBatch.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -35,7 +36,7 @@ With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it
 
 With \`--with-backpromotes\`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
 
-With \`--with-workflows\`, it also returns what the comments of these Pull Requests report: the validation and deployment runs of sfdx-hardis (kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests) and the analysis of MegaLinter, each with the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. The VS Code Pull Request view shows them in its Validation, Deployment and MegaLinter tabs.
+With \`--with-workflows\`, it also returns what the comments of these Pull Requests report: the validation and deployment runs of sfdx-hardis (kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests) and the analysis of MegaLinter, each with the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. \`--workflow-pr-ids\` limits it to some of the Pull Requests; one whose comments could not be read is left out of the result. The VS Code Pull Request view shows them in its Validation, Code Quality and Deployment tabs.
 
 ### Agent Mode
 
@@ -99,6 +100,9 @@ Required in agent mode:
       default: false,
       description: 'With --with-status, also return the validation, deployment and MegaLinter results reported in the comments of --pr-ids',
     }),
+    'workflow-pr-ids': Flags.string({
+      description: 'With --with-workflows, the Pull Request numbers whose comments are read (defaults to --pr-ids)',
+    }),
     'pr-ids': Flags.string({
       description: 'Comma-separated list of Pull Request numbers, or draft (with --with-status)',
     }),
@@ -123,7 +127,7 @@ Required in agent mode:
     const agentMode = flags.agent === true;
 
     if (flags['with-status']) {
-      return await this.listStatuses(flags['pr-ids'] || '', flags['with-backpromotes'] === true, flags.forecast, flags['from-branch'], flags['with-workflows'] === true);
+      return await this.listStatuses(flags['pr-ids'] || '', flags['with-backpromotes'] === true, flags.forecast, flags['from-branch'], flags['with-workflows'] === true, flags['workflow-pr-ids']);
     }
 
     const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
@@ -163,7 +167,7 @@ Required in agent mode:
    * Status of the actions of some Pull Requests in each org branch, from their Deployment Actions
    * comments, for the VS Code Deployment Actions tab.
    */
-  private async listStatuses(prIdsFlag: string, withBackpromotes: boolean, forecastBranch?: string, fromBranch?: string, withWorkflows = false): Promise<AnyJson> {
+  private async listStatuses(prIdsFlag: string, withBackpromotes: boolean, forecastBranch?: string, fromBranch?: string, withWorkflows = false, workflowPrIdsFlag?: string): Promise<AnyJson> {
     const prIds = [...new Set(prIdsFlag.split(',').map((id) => id.replace('#', '').trim()).filter((id) => id === 'draft' || /^\d+$/.test(id)))];
     if (prIds.length === 0) {
       throw new SfError(t('missingRequiredFlag', { flag: 'pr-ids' }));
@@ -210,17 +214,27 @@ Required in agent mode:
         }
       }
     }
-    // The validation and deployment runs, from the comments that report them (one listing per Pull Request)
+    // The validation, deployment and MegaLinter results, from the comments that report them: one
+    // listing per Pull Request, for the Pull Requests of --workflow-pr-ids when given (a window of
+    // forty stories asks the statuses of all of them, and the runs of one)
     const workflows: Record<string, any[]> = {};
     if (withWorkflows && gitProvider) {
-      uxLog("action", this, c.cyan(t('actionListWorkflowsHeader', { count: prNumbers.length })));
-      // Read together: the VS Code view waits for this answer, and there are only a few Pull Requests
-      // (the one shown and the ones that carried it)
-      const commentsByPr = await Promise.all(
-        prNumbers.map((prNumber) => GitProvider.tryListPullRequestCommentsByMarker(PR_COMMENT_HIDDEN_MARKER, prNumber))
+      const workflowPrNumbers = workflowPrIdsFlag
+        ? [...new Set(workflowPrIdsFlag.split(',').map((id) => parseInt(id.replace('#', '').trim(), 10)).filter((id) => id > 0))]
+        : prNumbers;
+      uxLog("action", this, c.cyan(t('actionListWorkflowsHeader', { count: workflowPrNumbers.length })));
+      const commentsByPr = await mapInAdaptiveBatchesSettled(
+        workflowPrNumbers,
+        (prNumber) => GitProvider.tryListPullRequestCommentsByMarker(PR_COMMENT_HIDDEN_MARKER, prNumber),
+        { sizes: gitProviderBatchSizes(gitProvider) }
       );
-      prNumbers.forEach((prNumber, index) => {
-        workflows[String(prNumber)] = parseWorkflowRunsFromComments(commentsByPr[index] || []);
+      workflowPrNumbers.forEach((prNumber, index) => {
+        // Comments that could not be read are not "no result": the Pull Request is left out, so a
+        // UI can tell it does not know from it knows there is none
+        const comments = commentsByPr[index];
+        if (Array.isArray(comments)) {
+          workflows[String(prNumber)] = parseWorkflowRunsFromComments(comments);
+        }
       });
     }
     const forecast = forecastBranch && gitProvider ? await this.buildForecast(prNumbers, forecastBranch, fromBranch) : null;

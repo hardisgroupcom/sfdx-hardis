@@ -189,7 +189,8 @@ function parseMegaLinterComment(comment: { body: string; url?: string; updatedAt
   if (!body.includes(MEGALINTER_MARKER) && !title) {
     return null;
   }
-  const outcome = (title?.[1] || '').toLowerCase();
+  // The outcome is a link in recent versions: "analysis: [Success with warnings](https://...)"
+  const outcome = (title?.[1] || '').replace(/^[\s[]+/, '').toLowerCase();
   let status: PrRunStatus = 'pending';
   if (outcome.startsWith('success')) {
     status = 'valid';

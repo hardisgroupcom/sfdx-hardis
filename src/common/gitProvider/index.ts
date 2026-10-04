@@ -283,7 +283,10 @@ export abstract class GitProvider {
       }
       markdownBody = removeMermaidLinks(markdownBody).trim(); // Remove "click" elements that are useless and ugly on some providers 😊
       const status = resolvePrCommentStatus(prData);
-      markdownBody += "\n\n" + await GitProvider.buildRunSummaryMarker(gitProvider, prData, checkOnly, status);
+      // Not where the marker would show as text: the run is then read from the title of the comment
+      if (gitProvider.hidesHtmlCommentsInPrComments()) {
+        markdownBody += "\n\n" + await GitProvider.buildRunSummaryMarker(gitProvider, prData, checkOnly, status);
+      }
       const prMessageRequest: PullRequestMessageRequest = {
         title: (checkOnly === true ? "🔍 Validation Results (deployment simulation)" : "🚀 Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
         message: markdownBody,
@@ -384,7 +387,7 @@ export abstract class GitProvider {
     const placeholderMessage: PullRequestMessageRequest = {
       title: "🚀 Deployment Results\n\n⏳ Waiting for the Pull Request to be merged",
       message: "The deployment job will update this comment after the Pull Request is merged." +
-        "\n\n" + encodeRunSummaryMarker({ kind: 'deployment', status: 'pending' }),
+        (gitProvider.hidesHtmlCommentsInPrComments() ? "\n\n" + encodeRunSummaryMarker({ kind: 'deployment', status: 'pending' }) : ""),
       status: "tovalidate",
       messageKey: "deployment",
       navBlock: buildPrCommentNavBlock('deployment'),

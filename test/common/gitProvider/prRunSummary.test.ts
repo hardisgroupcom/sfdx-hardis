@@ -134,6 +134,9 @@ describe('Pull Request run summary', () => {
     expect(success?.body).to.not.include('<!--');
     const failure = parseWorkflowRunFromComment({ body: '## ❌ [MegaLinter](https://megalinter.io/9.0.1) analysis: Error\n\nDetails' });
     expect(failure).to.deep.include({ kind: 'megalinter', status: 'invalid' });
+    // Recent versions link the outcome, and put no mark of their own in front of an error
+    const linked = parseWorkflowRunFromComment({ body: '## [MegaLinter](https://megalinter.io/10.1.0) analysis: [Error](https://ci.example.com/jobs/1)\n\nDetails' });
+    expect(linked).to.deep.include({ kind: 'megalinter', status: 'invalid' });
   });
 
   it('lists the MegaLinter analysis after the runs of sfdx-hardis, and ignores any other comment', () => {
