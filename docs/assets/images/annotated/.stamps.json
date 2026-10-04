@@ -24,8 +24,8 @@
     "out": "c94f45557d2cbfa6"
   },
   "vscode-guide/pipeline-pr-actions-list.png": {
-    "spec": "f9043f1036e480ce",
-    "out": "1fcfb5cb316d75ec"
+    "spec": "b9a58b1e8e494880",
+    "out": "75909392ab7baee8"
   },
   "vscode-guide/pipeline-branch-modal-actions.png": {
     "spec": "9cb24fbafe1a68de",
@@ -124,7 +124,7 @@
     "out": "b5ab5c6fe3bdebbc"
   },
   "vscode-guide/pipeline-pr-view-validation.png": {
-    "spec": "ae814b84abeba1e0",
-    "out": "6c43dbcf406d48b2"
+    "spec": "b381dfff8c0e6563",
+    "out": "4885ac6c0bcd30f6"
   }
 }
