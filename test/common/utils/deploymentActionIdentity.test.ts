@@ -118,8 +118,11 @@ describe('Identity of a deployment action', () => {
     expect(remove(['ApexClass:A'])).to.not.equal(remove(['ApexClass:B']));
   });
 
-  it('never merges a custom function action, whose script receives its own id and label', () => {
-    expect(keyOf(new CustomFunctionAction(), action({ type: 'notifySlack', parameters: { channel: '#releases' } }))).to.equal(null);
+  it('compares the type and the input parameters of a custom function action', () => {
+    const fn = (type: string, parameters: Record<string, any>) => keyOf(new CustomFunctionAction(), action({ type, parameters }));
+    expect(fn('notifySlack', { channel: '#releases', severity: '' })).to.equal(fn('notifySlack', { channel: '#releases' }));
+    expect(fn('notifySlack', { channel: '#releases' })).to.not.equal(fn('notifySlack', { channel: '#ops' }));
+    expect(fn('notifySlack', { channel: '#releases' })).to.not.equal(fn('notifyTeams', { channel: '#releases' }));
   });
 
   it('never merges a manual action', () => {

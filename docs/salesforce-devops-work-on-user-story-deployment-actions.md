@@ -167,7 +167,7 @@ The resolved scope is visible in two places:
 
 When several Pull Requests of the same deployment carry the same action, for example five User Stories that each publish the same Experience Cloud site, it runs once. The first one runs, and the others are recorded as done by it on their own Pull Request.
 
-Two actions are the same when they are of the same type, run at the same moment (before or after the deployment) as the same user, with the same parameters: the same command line, Apex script, data workspace, site name... Their labels do not matter. Manual steps and custom functions are never merged, and an action written twice in the same Pull Request runs twice.
+Two actions are the same when they are of the same type, run at the same moment (before or after the deployment) as the same user, with the same parameters: the same command line, Apex script, data workspace, site name... Their labels do not matter. Manual steps are never merged: each Pull Request keeps its own checkbox. An action written twice in the same Pull Request runs twice.
 
 <details markdown="1"><summary>Technical: how identical actions are detected and recorded</summary>
 
@@ -175,17 +175,17 @@ Two actions are the same when they are of the same type, run at the same moment 
 
 The type, the phase (`commandsPreDeploy` or `commandsPostDeploy`), `customUsername`, and what the action does, once its `${{ }}` references are resolved:
 
-| Type                      | Compared                                                                 |
-|---------------------------|--------------------------------------------------------------------------|
-| `command`                 | The command line                                                         |
-| `apex`                    | The path of the Apex script                                              |
-| `data`                    | The data workspace                                                       |
-| `publish-community`       | The site name                                                            |
-| `schedule-batch`          | The class, the cron expression and the job name                          |
-| `run-batch`               | The class and the run options, with their defaults applied               |
-| `remove-packagexml-items` | The items to remove, whatever their order                                |
-| Custom function           | Never merged: its script receives the id and the label of its own action |
-| `manual`                  | Never merged                                                             |
+| Type                      | Compared                                                   |
+|---------------------------|------------------------------------------------------------|
+| `command`                 | The command line                                           |
+| `apex`                    | The path of the Apex script                                |
+| `data`                    | The data workspace                                         |
+| `publish-community`       | The site name                                              |
+| `schedule-batch`          | The class, the cron expression and the job name            |
+| `run-batch`               | The class and the run options, with their defaults applied |
+| `remove-packagexml-items` | The items to remove, whatever their order                  |
+| Custom function           | Its input parameters                                       |
+| `manual`                  | Never merged                                               |
 
 The id, the label, the Pull Request, `context`, the branch filters, `allowFailure` and `runOnlyOnceByOrg` are not compared: whether an action runs in a job is decided before it is compared.
 
@@ -201,6 +201,7 @@ The id, the label, the Pull Request, `context`, the branch filters, `allowFailur
 - In the results of the job, a copy is ⚪ skipped: `same action as <label> (#101), run once for this deployment`.
 - In the status matrix of its own Pull Request, it is ✅ done in that org, with a note naming the action that ran. A re-run of the job does not run it again.
 - When a failure stops the job, a later copy of an action that already succeeded is recorded as done, not as stopped.
+- A copy of a custom function receives the outputs of the action that ran, so `${{ actions.<id of the copy>.outputs.<name> }}` keeps working.
 - The **Next promotion** mode of the VS Code Deployment Actions tab and the Backpromote panel show which actions run once with an identical one.
 
 </details>
