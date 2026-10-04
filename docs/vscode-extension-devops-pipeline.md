@@ -78,7 +78,7 @@ The window of a Pull Request shows:
 - **General**: the description of the Pull Request.
 - **Tickets**, with their status and who they are assigned to.
 - **Deployment Actions** and **Tests**, as in your own Pull Request.
-- **Validation**, **Deployment** and **MegaLinter**: the comment each of them posted on this Pull Request, as you would read it on your git provider, with its outcome and the links to the job and to the comment. They show the comments of this Pull Request only, not those of a promotion that carried it further.
+- **Validation**, **Code Quality** (MegaLinter) and **Deployment**: the comment each of them posted on this Pull Request, as you would read it on your git provider, with its outcome and the links to the job and to the comment. They show the comments of this Pull Request only, not those of a promotion that carried it further.
 
 **Open on GitHub** (or your git provider) in the header is the way out to the Pull Request page. When the Pull Request was opened from a list or from another Pull Request, **Previous** and **Close** bring that window back; **Close** closes the window otherwise.
 
