@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/) asks for the alias of an org before the browser opens when its URL is known, and an org you reconnect keeps the alias it has ([#2269](https://github.com/hardisgroupcom/sfdx-hardis/issues/2269)).
 - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/) can regenerate the documentation of chosen commands only, keeps a page for removed commands, and no longer writes broken or machine-dependent parameter tables ([#2270](https://github.com/hardisgroupcom/sfdx-hardis/issues/2270)).
 - VS Code [Deployment Actions tab](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action): a **Total** row adds up the pills of its Pull Requests and filters the actions by status, for the status in the branch and for the next promotion ([#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274)).
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once): when several Pull Requests of one deployment carry the same action, it runs once and the others are recorded as done.
