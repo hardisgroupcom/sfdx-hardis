@@ -82,7 +82,7 @@ The window of a Pull Request shows:
 
 **Open on GitHub** (or your git provider) in the header is the way out to the Pull Request page. When the Pull Request was opened from a list or from another Pull Request, **Previous** and **Close** bring that window back; **Close** closes the window otherwise.
 
-The deployment actions and the test classes are read from the files of the branch you have checked out, and written there. On a Pull Request that is not the one of your branch, a warning names that branch: what you change travels with your own Pull Request. **Run in my org** is only offered on your own Pull Request.
+The deployment actions and the test classes are read from the files of the branch you have checked out, and written there. When you change them on a Pull Request that is not the one of your branch, a warning names that branch: what you change travels with your own Pull Request. **Run in my org** is only offered on your own Pull Request.
 
 ## Configure the pipeline
 
