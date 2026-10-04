@@ -82,6 +82,7 @@ The window of a Pull Request shows:
 - **(2)** its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell.
 - **(3)** its tabs, and **(4)** the content of the one selected, here the validation comment.
 - **General**: the description of the Pull Request.
+- **Pull Requests**, on a promotion or on a merge between two major branches: the Pull Requests it carries, each one opening in the same window.
 - **Tickets**, with their status and who they are assigned to.
 - **Deployment Actions** and **Tests**, as in your own Pull Request.
 - **Validation**, **Code Quality** (MegaLinter) and **Deployment**: the comment each of them posted on this Pull Request, as you would read it on your git provider, with its outcome and the links to the job and to the comment. They show the comments of this Pull Request only, not those of a promotion that carried it further.
