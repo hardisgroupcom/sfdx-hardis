@@ -2,6 +2,7 @@ import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from
 import { execCommand, uxLog } from '../utils/index.js';
 import fs from '../utils/fsUtils.js';
 import c from 'chalk';
+import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
 
 export class ApexAction extends ActionsProvider {
   public getLabel(): string {
@@ -20,6 +21,11 @@ export class ApexAction extends ActionsProvider {
       return { statusCode: 'failed', skippedReason: `Apex script file ${apexScript} does not exist` };
     }
     return null;
+  }
+
+  // ./scripts/apex/x.apex and scripts\apex\x.apex run the same script
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { apexScript: normalizeIdentityPath(cmd.parameters?.apexScript) };
   }
 
   public async run(cmd: PrePostCommand): Promise<ActionResult> {

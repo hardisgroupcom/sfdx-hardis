@@ -9,6 +9,7 @@ import { createTempDir, getGitRepoRoot, isCI, uxLog } from '../../../common/util
 import { parsePackageXmlFile } from '../../../common/utils/xmlUtils.js';
 import {
   BackpromoteActionCandidate,
+  BackpromoteActionsOutcome,
   BackpromotePrGroup,
   collectBackpromoteActions,
   executeBackpromoteActions,
@@ -39,6 +40,7 @@ import {
   promptParentBranch,
   promptStartPullRequest,
   promptWaitForSolvedMerges,
+  markIdenticalPlanActions,
   readBackpromoteRunState,
   writeBackpromoteDeployErrorsPrompt,
   writeBackpromoteMergePrompt,
@@ -107,6 +109,7 @@ import {
   BackpromoteCommentStore,
   BackpromoteLeftOutItem,
   BackpromoteSandboxRow,
+  backpromoteActionKey,
   findActionRow,
   hasGitProviderForBackpromote,
   upsertActionRow,
@@ -119,6 +122,7 @@ import { reportCommandProgress } from '../../../common/utils/progressFileUtils.j
 import { gitProviderBatchSizes, mapInAdaptiveBatches, mapInAdaptiveBatchesSettled } from '../../../common/utils/adaptiveBatch.js';
 import { GitProvider } from '../../../common/gitProvider/index.js';
 import fs from '../../../common/utils/fsUtils.js';
+import { computeActionIdentityKey, resetIdenticalActionRuns } from '../../../common/utils/deploymentActionIdentityUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -196,7 +200,7 @@ What the command does, in order:
 
 1. **Checks:** a git provider token must be configured (the history lives in the Pull Request comments), the target org must be a development environment, meaning a developer sandbox, a scratch org or a Developer Edition org (a production org, or the org of a major branch declared in \`config/branches\`, is refused: the CI/CD pipeline deploys those), and the parent branch must be \`developmentBranch\` or one of \`availableTargetBranches\`.
 2. **Start Pull Request:** the merged Pull Requests of the parent branch are listed, newest first, and the "Backpromotes" comment of each one is read until one holds a row for this sandbox: the default start is the Pull Request merged right after it. Everything merged after the start, up to the head of the parent branch, is the **window**.
-3. **Delta and actions:** sfdx-git-delta computes what the window deploys and deletes, and \`scripts/actions/.sfdx-hardis.<PR>.yml\` gives the deployment actions of its Pull Requests. An action with a success row for this sandbox in the "Backpromotes" comment never runs twice (\`runOnlyOnceByOrg\`).
+3. **Delta and actions:** sfdx-git-delta computes what the window deploys and deletes, and \`scripts/actions/.sfdx-hardis.<PR>.yml\` gives the deployment actions of its Pull Requests. An action with a success row for this sandbox in the "Backpromotes" comment never runs twice (\`runOnlyOnceByOrg\`). When two Pull Requests of the window carry the same action (same type, phase, user and parameters), it runs once and the other one is written as done in its own Pull Request rows. An action moved to a fix Pull Request (\`movedFrom\`) runs from the fix only.
 4. **Comparison with the sandbox:** the ticked items are retrieved from the sandbox into a cache and compared with the parent branch version. For every file that differs, one decision: **Overwrite** (\`git\`, the parent branch version is deployed), **Keep org version** (\`org\`, the item is not deployed and listed as kept) or **Merge** (\`merge\`, the file is written with conflict markers in the backpromote branch and solved with the VS Code merge editor, by hand or with the coding agent prompt saved in \`hardis-report/\`). An item listed in \`manifest/package-no-overwrite.xml\` of the parent branch is deployed when it is absent from the sandbox; when the sandbox already has it, it is not deployed unless you tick it (\`--include-no-overwrite Type:Name\`).
 5. **Deployment from the backpromote branch:** the checkout is switched to \`backpromote/<parent branch>/<sandbox name>\` (a child of the parent branch that only holds the manual merges; the working tree is committed or stashed first when it is not clean), the merged files are committed, then the pre-deployment actions run, the metadata is deployed (\`NoTestRun\`), the deletions are applied, the post-deployment actions run.
 6. **History:** every Pull Request of the window gets a row for the sandbox in its "Backpromotes" comment (complete, or partial with the items left out), and the backpromote branch is pushed when it holds manual merges. The checkout **stays on the backpromote branch**: the last line of the output says how to get back to your own branch.
@@ -207,7 +211,7 @@ What the command does, in order:
 
 ### Plan (read-only)
 
-\`--plan --json\` returns the checks, the Pull Requests with their backpromote rows, the window, the items, the deletions, the deployment actions with what already ran in this sandbox, and the comparison of every file with the sandbox (with the absolute paths of the sandbox, parent branch and base versions kept in the cache). It reads git, the Pull Request comments and the sandbox: it deploys, merges, commits and writes nothing. \`--prepare\` goes one step further: it switches the checkout to the backpromote branch and writes the files marked \`merge\` with their markers, so that they can be solved before the run.
+\`--plan --json\` returns the checks, the Pull Requests with their backpromote rows, the window, the items, the deletions, the deployment actions with what already ran in this sandbox (each with a \`key\` unique in the plan, \`<Pull Request>:<pre|post>:<id>\`, and an \`identicalTo\` naming the action it runs once with, null when it runs on its own), and the comparison of every file with the sandbox (with the absolute paths of the sandbox, parent branch and base versions kept in the cache). It reads git, the Pull Request comments and the sandbox: it deploys, merges, commits and writes nothing. \`--prepare\` goes one step further: it switches the checkout to the backpromote branch and writes the files marked \`merge\` with their markers, so that they can be solved before the run.
 
 ### Agent Mode
 
@@ -226,6 +230,7 @@ Typical sequence: \`--plan --json\` to read the plan, decide, \`--agent --run-id
 
 - **Target org check:** queries \`Organization.Id\`, \`IsSandbox\` and \`TrialExpirationDate\`, and compares the username (and the sandbox it belongs to) and the instance URL with the major orgs of \`config/branches\`. The sandbox name comes from the instance URL (\`mycompany--dev1.sandbox...\` gives \`dev1\`), else from the username, else from the org id; \`--sandbox-name\` overrides it.
 - **History:** the "Backpromotes" comment is found by the hidden marker \`<!-- sfdx-hardis backpromotes -->\` and holds a hidden JSON block plus two readable tables: the sandbox rows (name, org id, date, user, parent branch, complete or partial with the items left out) and the deployment actions run by backpromotes. A refreshed sandbox has a new org id: its old rows are history, not state. \`backpromoteScanLimit\` (default 100) bounds the number of Pull Requests read.
+- **Identical actions:** compared within one run on their type, phase, \`customUsername\` and parameters (the same rules as a deployment job), between actions of different Pull Requests only. The result lists them in \`actions.skipped\` and in \`actions.identical\`, and \`actions.byKey\` gives the outcome of each action by its plan key. \`--actions\` and \`--confirm-action\` take action ids: an id reused by two Pull Requests selects or confirms both.
 - **Backpromote branch:** fetched at every run, rebuilt on the parent head (the manual merge commits are cherry-picked over it), pushed with \`--force-with-lease\` when it holds merges. \`--reset\` deletes it.
 - **Merges:** three-way with \`git merge-file\` (base = the version at the start of the window) when the sandbox already received a backpromote, two-way with markers around every differing block otherwise. The three versions are kept in the cache for the VS Code merge editor.
 - **Cache:** under the temporary folder, \`sfdx-hardis/backpromote/\`: the sfdx-git-delta output per commit pair, the comment reads and the run state per run id, the sandbox retrieve per org id and run id. Deleting it loses nothing.
@@ -833,11 +838,13 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     for (let index = 0; index < phased.length; index++) {
       const { phase, action } = phased[index];
       const row = rows[index] || null;
+      const key = backpromoteActionKey(action.prId, phase, action.id);
       if (row) {
-        ctx.actionRows.set(action.id, row);
+        ctx.actionRows.set(key, row);
       }
       ctx.actions.push({
         id: action.id,
+        key,
         label: action.label,
         type: action.type || 'command',
         phase,
@@ -848,8 +855,15 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
         customUsername: action.customUsername || null,
         runnable: true,
         runOnlyOnceByOrg: action.runOnlyOnceByOrg !== false,
+        identicalTo: null,
       });
     }
+    // The actions that run once with an identical one, so the terminal and the VS Code panel say it
+    const identityKeys = new Map<string, string | null>();
+    for (const { phase, action } of phased) {
+      identityKeys.set(backpromoteActionKey(action.prId, phase, action.id), await computeActionIdentityKey(action, phase === 'pre' ? 'pre-deploy' : 'post-deploy'));
+    }
+    markIdenticalPlanActions(ctx.actions, identityKeys);
   }
 
   private async readNoOverwrite(parentRef: string): Promise<Record<string, string[]> | null> {
@@ -1149,7 +1163,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       deployed: 0,
       deleted: 0,
       excluded: [],
-      actions: { run: [], skipped: [], failed: [], pending: [] },
+      actions: { run: [], skipped: [], failed: [], pending: [], identical: [], byKey: {} },
       conflictPending: [],
       commentedPullRequests: [],
       pushed: false,
@@ -1255,25 +1269,29 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
     // The rows are read again from the provider, not from the run cache: a colleague may have run the
     // same actions in this sandbox between the plan and this run
-    const refreshActionRows = async (candidates: BackpromoteActionCandidate[]) => {
+    const refreshActionRows = async (candidates: BackpromoteActionCandidate[], phase: 'pre' | 'post') => {
       for (const action of candidates.filter((entry) => selectedActionIds.has(entry.id) && entry.prId > 0)) {
         const row = findActionRow(await ctx.store.read(action.prId, { fresh: true }), action.id, ctx.targetOrg.sandboxName, ctx.targetOrg.orgId);
         if (row) {
-          ctx.actionRows.set(action.id, row);
+          ctx.actionRows.set(backpromoteActionKey(action.prId, phase, action.id), row);
         } else {
-          ctx.actionRows.delete(action.id);
+          ctx.actionRows.delete(backpromoteActionKey(action.prId, phase, action.id));
         }
       }
     };
     const actionOptions = { selectedActionIds, alreadyRun: ctx.actionRows, sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, user: ctx.user, conn: ctx.conn, store: ctx.store, commandThis: this };
-    const merge = (outcome: { run: string[]; skipped: string[]; failed: string[]; pending: string[] }) => {
+    const merge = (outcome: BackpromoteActionsOutcome) => {
       result.actions.run.push(...outcome.run);
       result.actions.skipped.push(...outcome.skipped);
       result.actions.failed.push(...outcome.failed);
       result.actions.pending.push(...outcome.pending);
+      result.actions.identical.push(...outcome.identical);
+      Object.assign(result.actions.byKey, outcome.byKey);
     };
+    // Identical actions run once per backpromote: nothing that ran before this run stands for them
+    resetIdenticalActionRuns();
     reportCommandProgress({ step: 'preActions', message: t('backpromoteProgressPreActions') });
-    await refreshActionRows(ctx.actionCandidates.pre);
+    await refreshActionRows(ctx.actionCandidates.pre, 'pre');
     merge(await executeBackpromoteActions({ ...actionOptions, actions: ctx.actionCandidates.pre, phase: 'commandsPreDeploy' }));
 
     reportCommandProgress({ step: 'deploy', message: t('backpromoteProgressDeploy', { count: deployKeys.length, sandboxName: backpromoteOrgDisplayName(ctx.targetOrg) }) });
@@ -1307,7 +1325,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       }
     }
     reportCommandProgress({ step: 'postActions', message: t('backpromoteProgressPostActions') });
-    await refreshActionRows(ctx.actionCandidates.post);
+    await refreshActionRows(ctx.actionCandidates.post, 'post');
     merge(await executeBackpromoteActions({ ...actionOptions, actions: ctx.actionCandidates.post, phase: 'commandsPostDeploy' }));
     result.excluded = [...leftOut.values()];
     result.conflictPending = result.excluded.filter((item) => item.reason === 'conflictPending').map((item) => item.key);
@@ -1372,6 +1390,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       const confirmed = await this.writeConfirmedActions(ctx, [...confirmIds]);
       result.actions.pending = result.actions.pending.filter((id) => !confirmed.includes(id));
       result.actions.run.push(...confirmed);
+      for (const action of ctx.actions.filter((entry) => confirmed.includes(entry.id) && entry.pullRequest > 0)) {
+        result.actions.byKey[action.key] = 'run';
+      }
     }
 
     // The backpromote branch is pushed when it holds manual merges
@@ -1408,20 +1429,25 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
   private async writeConfirmedActions(ctx: BackpromoteContext, ids: string[]): Promise<string[]> {
     const confirmed: string[] = [];
     for (const id of ids) {
-      const action = ctx.actions.find((entry) => entry.id === id);
-      if (!action || action.pullRequest <= 0) {
+      // An id reused by two Pull Requests confirms the action of each
+      const actions = ctx.actions.filter((entry) => entry.id === id && entry.pullRequest > 0);
+      if (actions.length === 0) {
         uxLog('warning', this, c.yellow(t('backpromoteUnknownAction', { id })));
         continue;
       }
-      const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase: action.phase, sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, date: new Date().toISOString(), status: 'success', user: ctx.user };
-      try {
-        await ctx.store.update(action.pullRequest, (state) => upsertActionRow(state, row));
-        action.alreadyRunOn = row.date;
-        ctx.actionRows.set(action.id, row);
-        confirmed.push(id);
-        uxLog('action', this, c.cyan(t('backpromoteManualActionCompleted', { label: action.label })));
-      } catch (e) {
-        uxLog('warning', this, c.yellow(t('backpromoteCommentWriteFailed', { pr: action.pullRequest, message: (e as Error).message })));
+      for (const action of actions) {
+        const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase: action.phase, sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, date: new Date().toISOString(), status: 'success', user: ctx.user };
+        try {
+          await ctx.store.update(action.pullRequest, (state) => upsertActionRow(state, row));
+          action.alreadyRunOn = row.date;
+          ctx.actionRows.set(action.key, row);
+          if (!confirmed.includes(id)) {
+            confirmed.push(id);
+          }
+          uxLog('action', this, c.cyan(t('backpromoteManualActionCompleted', { label: action.label })));
+        } catch (e) {
+          uxLog('warning', this, c.yellow(t('backpromoteCommentWriteFailed', { pr: action.pullRequest, message: (e as Error).message })));
+        }
       }
     }
     return confirmed;

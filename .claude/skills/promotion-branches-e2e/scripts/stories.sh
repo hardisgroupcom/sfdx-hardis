@@ -41,6 +41,8 @@ META
 # The deployment actions of a story, in the file that travels with the cherry-picked commit.
 # Usage: story_actions <branch> <pull request number> <kind>
 #   kind: pre-command+post-manual | post-command | pre-command | recovery | pre-manual
+#         identical | identical-twice | identical-check | identical-pre | same-id-a | same-id-b | flaky-uat
+#         (section 6sexies)
 story_actions() {
   local branch="$1" pr="$2" kind="$3"
   cd "$WORK" || return 1
@@ -130,6 +132,98 @@ commandsPreDeploy:
     type: manual
     parameters:
       instructions: Nothing to do in the org, mark it as done.
+YAML
+    ;;
+  identical)
+    # Section 6sexies: the shared step. Every story carrying it writes the same command, so the
+    # actions are identical whatever their id and label. It appends one character to
+    # e2e-identical-count.txt (untracked), which counts the real runs of a job
+    cat >"$file" <<YAML
+commandsPostDeploy:
+  - id: e2e-shared-$pr
+    label: E2E shared step of PR $pr
+    type: command
+    command: >-
+      node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"
+    context: process-deployment-only
+YAML
+    ;;
+  identical-twice)
+    # The shared step written twice in one Pull Request, another step between them: meant twice
+    cat >"$file" <<YAML
+commandsPostDeploy:
+  - id: e2e-shared-$pr
+    label: E2E shared step of PR $pr
+    type: command
+    command: >-
+      node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"
+    context: process-deployment-only
+  - id: e2e-between-$pr
+    label: E2E step between the shared steps of PR $pr
+    type: command
+    command: echo "E2E step between the shared steps of PR $pr"
+    context: process-deployment-only
+  - id: e2e-shared-again-$pr
+    label: E2E shared step again of PR $pr
+    type: command
+    command: >-
+      node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"
+    context: process-deployment-only
+YAML
+    ;;
+  identical-check)
+    # The shared step with context all: the validation job runs it too, once for the Pull Requests
+    # that carry it, and the deployment job finds them done
+    cat >"$file" <<YAML
+commandsPostDeploy:
+  - id: e2e-check-shared-$pr
+    label: E2E shared check step of PR $pr
+    type: command
+    command: >-
+      node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"
+    context: all
+YAML
+    ;;
+  identical-pre)
+    # The same command before the deployment: another phase, never merged with the post-deploy ones
+    cat >"$file" <<YAML
+commandsPreDeploy:
+  - id: e2e-shared-pre-$pr
+    label: E2E shared step before the deployment of PR $pr
+    type: command
+    command: >-
+      node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"
+    context: process-deployment-only
+YAML
+    ;;
+  same-id-a | same-id-b)
+    # Two Pull Requests reusing one hand-written id with different commands: both must run
+    local variant
+    variant=$(printf '%s' "${kind#same-id-}" | tr '[:lower:]' '[:upper:]')
+    cat >"$file" <<YAML
+commandsPostDeploy:
+  - id: e2e-same-id
+    label: E2E same id, command $variant of PR $pr
+    type: command
+    command: echo "E2E same id, command $variant"
+    context: process-deployment-only
+YAML
+    ;;
+  flaky-uat)
+    # A post-deployment command failing in uat until e2e-identical-ok.txt exists in the working copy.
+    # One script per story: a shared file would only reach the branch with the first story
+    mkdir -p scripts/e2e
+    echo "process.exit(require('fs').existsSync('e2e-identical-ok.txt') ? 0 : 1);" >"scripts/e2e/flaky-$pr.cjs"
+    git add "scripts/e2e/flaky-$pr.cjs"
+    cat >"$file" <<YAML
+commandsPostDeploy:
+  - id: e2e-flaky-$pr
+    label: E2E flaky post-deploy of PR $pr
+    type: command
+    command: node scripts/e2e/flaky-$pr.cjs
+    context: process-deployment-only
+    includeTargetBranches:
+      - uat
 YAML
     ;;
   *)

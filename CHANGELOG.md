@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once): when several Pull Requests of one deployment carry the same action, it runs once and the others are recorded as done.
+- Two Pull Requests reusing the same deployment action id no longer skip each other's action.
 - Deployment jobs stop with the line to add to the CI workflow when git refuses the checkout ("detected dubious ownership"), instead of skipping the deployment actions; the GitHub Actions templates now include it.
 - The validation of a Pull Request stops while one of its pre-deployment manual actions is not marked as performed in the target org, except on a draft Pull Request or with `failValidationOnPendingManualActions: false`.
 - [Recover a failed deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action) without redeploying: retry it with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/), close it with [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/), or move it to a fix Pull Request.

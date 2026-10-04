@@ -19,6 +19,7 @@ import {
   DeploymentActionRef,
   DeploymentActionStateEntry,
   buildClosedByHandNote,
+  buildIdenticalActionNote,
   buildMarkedDoneAheadNote,
   buildRunLocallyNote,
   getActionStateEntry,
@@ -29,7 +30,8 @@ import {
   syncManualActionCheckboxes,
   upsertActionInState,
 } from './deploymentActionsStateUtils.js';
-import { getEffectiveActionContext, getReportedActionStatus, replayActionOutputs, runSingleDeploymentAction } from './prePostCommandUtils.js';
+import { getEffectiveActionContext, getRecordedActionStatus, replayActionOutputs, runSingleDeploymentAction } from './prePostCommandUtils.js';
+import { isIdenticalActionCopy } from './deploymentActionIdentityUtils.js';
 import { findLocalActionState, upsertLocalActionState } from './deploymentActionsLocalState.js';
 import { buildPipelineContext } from './pipelineContextUtils.js';
 
@@ -404,6 +406,9 @@ export async function runActionOutsideDeployment(
     deployWhen: def.when || 'post-deploy',
     orgBranchName: target.orgBranch,
     currentPrNumber: prNumber,
+    // The definition comes from the Pull Request files, without cmd.pullRequest: its state is the one
+    // that says whether it already ran here
+    actionPrNumber: prNumber > 0 ? prNumber : undefined,
     executionOrder,
     targetBranchCandidates: buildActionTargetBranchCandidates(target.orgBranch, majorBranchNames),
     hasGitProvider: !options.localPrId,
@@ -422,14 +427,17 @@ export async function runActionOutsideDeployment(
       orgBranch: target.orgBranch,
       when: def.when || 'post-deploy',
       executionOrder,
-      status: getReportedActionStatus(def),
+      // An identical action of the same run did its work: done in this org
+      status: getRecordedActionStatus(def),
       jobId: 'local',
       jobUrl: '',
       date: new Date().toISOString(),
       // The end of the output, where the outcome is: an Apex debug log can be thousands of lines
       output: (def.result.output || def.result.skippedReason || '').slice(-2000),
       outputs: def.result.outputsForDisplay,
-      note: buildRunLocallyNote(gitUserName() || null, target.username, isCI),
+      note: isIdenticalActionCopy(def) && def.result.identicalTo
+        ? buildIdenticalActionNote(def.result.identicalTo)
+        : buildRunLocallyNote(gitUserName() || null, target.username, isCI),
     });
     uxLog("log", this, c.grey(t('actionRunLocalStateSaved', { file })));
   }

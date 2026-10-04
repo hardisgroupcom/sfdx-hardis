@@ -105,7 +105,7 @@ github)
     local pr="$1" target="$2" label="$3" edit="$4" code
     cd "$WORK" || return 1
     git checkout -q -f --detach HEAD
-    git fetch -q origin "+refs/pull/$pr/merge:refs/heads/prmerge-$pr" || return 1
+    e2e_fetch_merge_ref "$pr" "prmerge-$pr" "$label" || return 1
     git checkout -q -f "prmerge-$pr" || return 1
     eval "$edit"
     e2e_ci_env GITHUB_REF_NAME="$pr/merge" GITHUB_REF="refs/pull/$pr/merge" FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target" node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" >"$LOGS/$label.log" 2>&1

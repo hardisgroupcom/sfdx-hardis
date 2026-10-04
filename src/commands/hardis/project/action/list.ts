@@ -14,7 +14,7 @@ import { getStateEntriesForPr, loadDeploymentActionsState } from '../../../../co
 import { readLocalActionStates } from '../../../../common/utils/deploymentActionsLocalState.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
-import { findOpenPromotionPullRequest, forecastAction } from '../../../../common/utils/deploymentActionForecastUtils.js';
+import { ActionForecastItem, findOpenPromotionPullRequest, forecastAction, markIdenticalForecasts } from '../../../../common/utils/deploymentActionForecastUtils.js';
 import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -30,7 +30,7 @@ export default class ActionList extends ActionCommandBase {
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
-With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. With \`--forecast <branch>\` (and \`--from-branch <branch>\`), it also returns what the next promotion will do with each action in that branch: waiting for someone before the merge, a manual step to do once the promotion is deployed, done already, run by the validation job, run by the deployment job, failed there, not for that branch (branch filter, validation only), or not carried by the open promotion Pull Request, which it also returns. The VS Code Deployment Actions tab shows it in its "Next promotion" mode.
+With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. With \`--forecast <branch>\` (and \`--from-branch <branch>\`), it also returns what the next promotion will do with each action in that branch: waiting for someone before the merge, a manual step to do once the promotion is deployed, done already, run by the validation job, run by the deployment job, failed there, not for that branch (branch filter, validation only), or not carried by the open promotion Pull Request, which it also returns. The VS Code Deployment Actions tab shows it in its "Next promotion" mode. When the same job runs an action once for several Pull Requests (same type, phase, user and parameters), the copies keep the job they belong to, with the \`identical-action\` reason and an \`identicalTo\` field naming the action that runs.
 
 With \`--with-backpromotes\`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
 
@@ -223,14 +223,22 @@ Required in agent mode:
     const majorBranchNames = (await listMajorOrgs()).map((org: any) => org.branchName);
     const promotionPullRequest = fromBranch ? await findOpenPromotionPullRequest(fromBranch, forecastBranch) : null;
     const actions: Record<string, any[]> = {};
-    for (const prNumber of prNumbers) {
+    // In the order the promotion runs them, as far as the numbers tell (the deployment takes the
+    // oldest merge first): an identical action runs at its first occurrence
+    const forecastItems: ActionForecastItem[] = [];
+    for (const prNumber of [...prNumbers].sort((a, b) => a - b)) {
       const carried = !promotionPullRequest || promotionPullRequest.carriedPrIds === null || promotionPullRequest.carriedPrIds.includes(prNumber);
       const defs = [
         ...(await readActions('pr', 'pre-deploy', undefined, String(prNumber))).map((def) => ({ ...def, when: 'pre-deploy' as const })),
         ...(await readActions('pr', 'post-deploy', undefined, String(prNumber))).map((def) => ({ ...def, when: 'post-deploy' as const })),
       ];
-      actions[String(prNumber)] = defs.map((def) => forecastAction(def, prNumber, forecastBranch, majorBranchNames, carried));
+      actions[String(prNumber)] = defs.map((def) => {
+        const forecast = forecastAction(def, prNumber, forecastBranch, majorBranchNames, carried);
+        forecastItems.push({ prNumber, def, forecast });
+        return forecast;
+      });
     }
+    await markIdenticalForecasts(forecastItems);
     return { branch: forecastBranch, fromBranch: fromBranch || null, promotionPullRequest: promotionPullRequest as any, actions };
   }
 }

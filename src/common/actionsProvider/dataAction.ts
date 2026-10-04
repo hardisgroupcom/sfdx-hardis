@@ -1,6 +1,7 @@
 import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
+import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
 import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
 
 export class DataAction extends ActionsProvider {
@@ -21,6 +22,11 @@ export class DataAction extends ActionsProvider {
       return { statusCode: 'failed', skippedReason: `Data workspace ${sfdmuProject} does not exist` };
     }
     return null;
+  }
+
+  // The workspace path is relative to scripts/data, written by hand with either slash
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { sfdmuProject: normalizeIdentityPath(cmd.parameters?.sfdmuProject) };
   }
 
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
