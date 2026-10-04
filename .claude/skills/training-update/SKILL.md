@@ -360,8 +360,15 @@ node scripts/build/shots.mjs --all --kind vscode  # every VS Code image of the c
 node scripts/build/shots.mjs --lab 3.1 --dry-run  # what it would take
 ```
 
-A workbench menu (the **...** of a view, a context menu) cannot be captured: activating the window
-for the capture closes it. Webview menus, quick picks and the Command Palette can.
+**The capture never takes the desktop.** The extension harness drives VS Code through the Chrome
+DevTools Protocol (`src/test/ui/cdpWindow.ts` in vscode-sfdx-hardis): no real mouse, no foreground
+window. Run it in the background whenever it is needed, without asking the user for their screen.
+The Salesforce and web captures of this repository have their own tools: check theirs before
+assuming the same.
+
+A workbench menu (the **...** of a view, a context menu) could not be captured with the former
+desktop driver, which activated the window and closed the menu. This has not been tried again with
+the protocol driver. Webview menus, quick picks and the Command Palette can be captured.
 
 Pass only the names you need: the full batch takes about twenty-five minutes, and with no names at
 all it also records the GIFs, which writes `recordings/` and `*-for-recording.png` into the output

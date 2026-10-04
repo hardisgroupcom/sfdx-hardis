@@ -25,7 +25,7 @@ For the concepts behind it (major branches, merges, delta deployments), read [Sa
 - **(2)** is a major branch. The badge on its corner counts the Pull Requests open against it. Click it to see its Pull Requests, tickets and deployment actions.
 - **(3)** is the org a major branch deploys to. The dotted line carries the result of the last deployment: a check mark when it passed.
 - **(4)** shows or hides the feature branches. They are shown by default.
-- **(5)** opens the pipeline settings menu, **(6)** the package files menu, **(7)** reloads branches, Pull Requests and deployments, and **(8)** opens this guide.
+- **(5)** opens the pipeline settings menu, **(6)** the package files menu, **(7)** the [Pull Requests explorer](#find-and-open-any-pull-request), and **(8)** reloads branches, Pull Requests and deployments. The last button of the row opens this guide.
 - **(9)** is the legend of the lines and statuses.
 - **(10)** switches between the contribution cards and the list of open Pull Requests.
 
@@ -68,13 +68,19 @@ Click the number or the title of a Pull Request to open it without leaving the w
 
 ## Find and open any Pull Request
 
-The search button of the toolbar opens the **Pull Requests explorer**. Type a number, a title, a branch, an author or a ticket: the Pull Requests the pipeline already shows are listed at once, then the ones found on your git provider, open or merged.
+![Pull Requests explorer](assets/images/annotated/vscode-guide/pipeline-pr-explorer.png)
+
+The search button of the toolbar opens the **Pull Requests explorer**. Type a number, a title, a branch, an author or a ticket in **(1)**: the Pull Requests the pipeline already shows are listed at once, then the ones found on your git provider, open or merged.
 
 A Pull Request opens the same way from everywhere: the explorer, the **My Pull Request** card, the **Open Pull Requests** tab, a feature branch or a Pull Request number of the diagram, and a Pull Request named in a ticket, a deployment action or another panel. Ctrl+click (Cmd+click on macOS) on a Pull Request number of the diagram still opens it on your git provider.
 
+![Window of a Pull Request, on its Validation tab](assets/images/annotated/vscode-guide/pipeline-pr-view-validation.png)
+
 The window of a Pull Request shows:
 
-- Its state, its author, its branches, and its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell.
+- **(1)** its state, its author, its branches, and the button that opens it on your git provider.
+- **(2)** its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell.
+- **(3)** its tabs, and **(4)** the content of the one selected, here the validation comment.
 - **General**: the description of the Pull Request.
 - **Tickets**, with their status and who they are assigned to.
 - **Deployment Actions** and **Tests**, as in your own Pull Request.

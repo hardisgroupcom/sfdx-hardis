@@ -4,40 +4,40 @@
     "out": "f687bca142b86914"
   },
   "vscode-guide/welcome-language-menu.png": {
-    "spec": "a09c9856c45f1d25",
-    "out": "7f27e912ee4be99f"
+    "spec": "b7e76e32ab7aaf0f",
+    "out": "92dd62a15517f603"
   },
   "vscode-guide/devops-pipeline.png": {
-    "spec": "fe1a7e04c23dfd11",
-    "out": "51ec1eb8c7425a37"
+    "spec": "fa398d9bd95e6f0e",
+    "out": "be52ddf84cdf1adb"
   },
   "vscode-guide/pipeline-settings-menu.png": {
-    "spec": "1d4cac4ad4999287",
-    "out": "2b805ae97eb70b0b"
+    "spec": "9bb465682e1cc9b2",
+    "out": "f6860c18d4897c24"
   },
   "vscode-guide/pipeline-packages-menu.png": {
-    "spec": "bcbba4aa3296b97a",
-    "out": "1c5dbd2ab1b24f4b"
+    "spec": "5b4c03f6eb125e8f",
+    "out": "e248151e7e366d92"
   },
   "vscode-guide/pipeline-workflow-cards.png": {
-    "spec": "dfac2a562eccc5da",
-    "out": "6d55ea70be47201f"
+    "spec": "cda9c550806d50b1",
+    "out": "c94f45557d2cbfa6"
   },
   "vscode-guide/pipeline-pr-actions-list.png": {
-    "spec": "f6c9a2250cb9c84c",
-    "out": "ed2475180c577dd5"
+    "spec": "b9752bcff951aab5",
+    "out": "05f030bddd12be26"
   },
   "vscode-guide/pipeline-branch-modal-actions.png": {
-    "spec": "8694efcf16d159b7",
-    "out": "7342501fe85e987e"
+    "spec": "9cb24fbafe1a68de",
+    "out": "2a96ffbcd6a23511"
   },
   "vscode-guide/org-monitoring.png": {
     "spec": "6a78e31354b0e958",
     "out": "4b029b346f278cc7"
   },
   "vscode-guide/org-monitoring-packages-menu.png": {
-    "spec": "61b1d9c383bde889",
-    "out": "80006b0f9e03ef61"
+    "spec": "69aad0c102799cf8",
+    "out": "412d75c636babf20"
   },
   "vscode-guide/command-runner-question.png": {
     "spec": "fdb359faaed037f6",
@@ -80,8 +80,8 @@
     "out": "034480d667bd5720"
   },
   "vscode-guide/metadata-dependencies-row-menu.png": {
-    "spec": "b5ddbd76df81a720",
-    "out": "45b2ac250a7f0c80"
+    "spec": "8a71f64c27033f58",
+    "out": "9fe39fd5731cf6e1"
   },
   "vscode-guide/data-workbench.png": {
     "spec": "153b6db6c188fa73",
@@ -116,7 +116,15 @@
     "out": "a3b200497610c96c"
   },
   "vscode-guide/orgs-manager-row-menu.png": {
-    "spec": "3768b911eb3d9b8c",
-    "out": "7e34fc0ef6c488d2"
+    "spec": "2619b8502a84436a",
+    "out": "260cbca9d3c59899"
+  },
+  "vscode-guide/pipeline-pr-explorer.png": {
+    "spec": "22c19f468f1a9a0e",
+    "out": "b5ab5c6fe3bdebbc"
+  },
+  "vscode-guide/pipeline-pr-view-validation.png": {
+    "spec": "ae814b84abeba1e0",
+    "out": "6c43dbcf406d48b2"
   }
 }

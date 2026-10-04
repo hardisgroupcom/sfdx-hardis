@@ -40,7 +40,7 @@ When in doubt, grep the extension for the command id, the flag, the config key o
 | Commands, their flags and their `--json` output                                        | `execSfdxJson()` / `execCommandWithProgress()` calls, `src/hardis-commands-provider.ts`, LWC `runCommand` messages                       |
 | Read-only JSON commands meant for a UI (`hardis:config:monitoring-defaults`)           | Panels that load data first, then run the real command (`src/utils/monitoringConfigUtils.ts`)                                            |
 | `colorClass` values of categories, notifications and commands                          | Tile hues of the LWC catalogs: the CLI sets them, the extension reads them                                                               |
-| Extension screenshots in `docs/assets/images`                                          | `yarn screenshots` regenerates them and copies them into this repository                                                                 |
+| Extension screenshots in `docs/assets/images`                                          | `yarn screenshots` regenerates them and copies them into this repository. It never takes the desktop: run it in the background, no need to ask for the screen |
 | `src/i18n/*.json` (CLI messages shown in the command runner)                           | Its own `src/i18n/*.json` for the extension labels, same 9 locales, case-sensitive key order                                             |
 
 ## Rules
