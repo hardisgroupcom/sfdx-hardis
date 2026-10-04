@@ -33,13 +33,29 @@ e2e_ci_env() {
     "$@"
 }
 
+# GitHub writes refs/pull/<N>/merge a few seconds after the Pull Request is opened: a validation
+# started right after p_open finds no ref. Retry for a while, and say so in the job log when it never
+# comes, so a missing log is never the only trace of it.
+# Usage: e2e_fetch_merge_ref <pr number> <local branch> <log label>
+e2e_fetch_merge_ref() {
+  local pr="$1" branch="$2" label="$3"
+  for _ in $(seq 1 20); do
+    if git fetch -q origin "+refs/pull/$pr/merge:refs/heads/$branch" 2>/dev/null; then
+      return 0
+    fi
+    sleep 3
+  done
+  echo "refs/pull/$pr/merge could not be fetched: GitHub never wrote it (conflicting or closed Pull Request?)" >"$LOGS/$label.log"
+  return 1
+}
+
 # Validation job: GitHub Actions checks out refs/pull/<N>/merge
 # Usage: e2e_check <pr number> <target branch> <log label>
 e2e_check() {
   local pr="$1" target="$2" label="$3" code
   cd "$WORK" || return 1
   git checkout -q -f --detach HEAD
-  git fetch -q origin "+refs/pull/$pr/merge:refs/heads/prmerge-$pr" || return 1
+  e2e_fetch_merge_ref "$pr" "prmerge-$pr" "$label" || return 1
   git checkout -q -f "prmerge-$pr" || return 1
   local start
   start=$(e2e_now_ms)

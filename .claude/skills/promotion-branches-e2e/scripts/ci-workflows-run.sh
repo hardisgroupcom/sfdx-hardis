@@ -17,6 +17,8 @@
 #   W6  marked as done with set-status (the Mark as done button), the validation re-run passes
 #   W7  the deployment of the promotion runs the commands (the fix travelled with it)
 #   W8  a workflow without the safe.directory line: the job stops and names the line to add
+#   W9  two stories with the same action: each merge into integration runs its own, the deployment
+#       of the promotion carrying both runs it once and records the second as done by the first
 #
 # Prints one line per assertion and writes $LOGS/results-section6quinquies.txt.
 set -uo pipefail
@@ -285,6 +287,47 @@ wait_workflow check-deploy.yml "$(head_sha feature/E2E-504-no-safe-dir)" ci-chec
 assert_log W8 ci-check-no-safe-dir 1 "git refuses the checkout: the job stops and names the line to add" \
   "Git refuses this repository \(detected dubious ownership\)" "git config --global --add safe.directory \"[$]GITHUB_WORKSPACE\""
 p_close "$C4" >/dev/null 2>&1
+
+# ------------------------------------------------------------------ W9: identical actions in a real job
+# Two stories carrying the same post-deployment command (sfdx-hardis#2271). Each merge into integration
+# is a job of its own, so each runs its copy; the promotion carrying both to uat is one job, which runs
+# it once and records the second as done by the first
+step "W9: identical actions"
+for kind_story in "505-ci-shared-a:E2E_C5" "506-ci-shared-b:E2E_C6"; do
+  slug="${kind_story%%:*}"
+  resource="${kind_story##*:}"
+  printf 'CI story %s: the shared post-deployment step of section 6sexies.\n' "$resource" >"$BODIES/$resource.md"
+  story_branch "feature/E2E-$slug" integration "$resource" >/dev/null 2>&1
+  number=$(p_open "feature/E2E-$slug" integration "E2E-$slug $resource shared step" "$BODIES/$resource.md") || exit 1
+  story_actions "feature/E2E-$slug" "$number" identical >/dev/null 2>&1
+  printf 'export %s="%s"\n' "${resource#E2E_}" "$number" >>"$LOGS/ci-vars.sh"
+done
+# shellcheck source=/dev/null
+source "$LOGS/ci-vars.sh"
+step "C5=#$C5 C6=#$C6"
+# The validations prove GitHub knows the head with the actions file before the merge takes it
+wait_workflow check-deploy.yml "$(head_sha feature/E2E-505-ci-shared-a)" ci-check-c5
+wait_workflow check-deploy.yml "$(head_sha feature/E2E-506-ci-shared-b)" ci-check-c6
+p_merge "$C5" >/dev/null || record "merge-$C5" FAIL "merge of #$C5"
+wait_workflow process-deploy.yml "$(merge_sha "$C5")" ci-deploy-integration-c5
+p_merge "$C6" >/dev/null || record "merge-$C6" FAIL "merge of #$C6"
+wait_workflow process-deploy.yml "$(merge_sha "$C6")" ci-deploy-integration-c6
+assert_log W9a ci-deploy-integration-c6 0 "the merge of #$C6 is a job of its own: its shared step runs there" \
+  "Running action E2E shared step of PR $C6 \(from PR #$C6\)" "!same action as"
+job_promote integration "$C5,$C6" ci-promotion-identical-uat
+CP2=$(grep -aoE "Promotion Pull Request created: \S+" "$LOGS/ci-promotion-identical-uat.log" | grep -oE "[0-9]+$" | tail -1)
+printf 'export CP2="%s"\n' "$CP2" >>"$LOGS/ci-vars.sh"
+step "promotion #$CP2"
+wait_workflow check-deploy.yml "$(gh pr view "$CP2" -R "$REPO" --json headRefOid --jq .headRefOid)" ci-check-promotion-identical
+p_merge "$CP2" >/dev/null || record "merge-$CP2" FAIL "merge of #$CP2"
+wait_workflow process-deploy.yml "$(merge_sha "$CP2")" ci-deploy-uat-identical
+assert_log W9 ci-deploy-uat-identical 0 "the deployment of the promotion runs the shared step once and records the second as done by the first" \
+  "Running action E2E shared step of PR $C5 \(from PR #$C5\)" \
+  "Skipping action E2E shared step of PR $C6 \(from PR #$C6\): same action as E2E shared step of PR $C5 \(#$C5\), run once for this deployment" \
+  "!Running action E2E shared step of PR $C6 "
+status_check W9b ci-status-identical-uat "the copy is done in uat, with the note naming the action that ran" "--pr-ids $C5,$C6" \
+  "S:$C5:e2e-shared-$C5:uat=success" "S:$C6:e2e-shared-$C6:uat=success" \
+  "N:$C6:e2e-shared-$C6:uat~Not run twice: the identical action \"E2E shared step of PR $C5\" of #$C5"
 
 echo
 echo "=== section 6quinquies summary ==="

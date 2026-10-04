@@ -35,11 +35,11 @@ not already, so you know what each assertion is protecting.
 | `scripts/promotion-run.sh`                | Sections 3, 4 and 4bis scripted: the six stories, the four promotions, the release notes, the retrofit, an assertion per job log and a pipeline check per step.                                                                                                                        |
 | `scripts/promotion-edge.sh`               | Section 6 scripted in five groups (`g1` to `g5`) that build on each other, run after `promotion-run.sh`.                                                                                                                                                                               |
 | `scripts/deployment-actions-run.sh`       | Section 6quater scripted: the manual action gate of validations, a failed action retried with `action:run`, `set-status` (also ahead in the next branch), the promotion forecast and the developer org runs. After `promotion-run.sh`.                                                 |
-| `scripts/identical-actions-run.sh`        | Section 6sexies scripted: an action carried by several stories runs once in the promotion to uat, the repeat inside one story, the other phase, a reused id, a copy met after a failure, the forecast, the re-run and, with `DEV_ORG`, the backpromote plan. After `promotion-run.sh`. |
+| `scripts/identical-actions-run.sh`        | Section 6sexies: an action shared by several stories runs once in the promotion to uat; a repeat inside one story, another phase, a reused id, a copy after a failure, the forecast, the re-run, the branch config, the validation job, the backpromote. After `promotion-run.sh`.     |
 | `scripts/section-lib.sh`                  | The assertion helpers of the section scripts (`record`, `assert_log`, `job`, `cli`, `status_check`, `open_story`). Sourced by `deployment-actions-run.sh` and `identical-actions-run.sh`.                                                                                              |
 | `scripts/check-action-status.cjs`         | Asserts an `action:list --with-status [--forecast] [--with-backpromotes] --json` document: statuses, notes, forecasts and the identical action of a copy, the promotion carried, Backpromotes rows.                                                                                    |
 | `scripts/ci-workflows-prepare.cjs`        | The GitHub Actions workflows of the CI section: the sfdx-hardis templates plus a step that links the branch under test and `SFDX_AUTH_URL_<BRANCH>` logins.                                                                                                                            |
-| `scripts/ci-workflows-run.sh`             | Section 6quinquies: the gate, the checkbox, a real draft, the deployment, the promotion and its forecast, run by REAL GitHub Actions jobs in a repository of its own.                                                                                                                  |
+| `scripts/ci-workflows-run.sh`             | Section 6quinquies: the gate, the checkbox, a real draft, the deployment, the promotion and its forecast, the same action in two stories, run by REAL GitHub Actions jobs in a repository of its own.                                                                                  |
 | `scripts/timing-report.cjs`               | Performance tables of a run: `timings.tsv` (every job and backpromote call) and the backpromote progress files, median and worst per step, slowest calls.                                                                                                                              |
 | `scripts/ab-run.sh`                       | Runs the same CI jobs with a given CLI checkout and stores the logs.                                                                                                                                                                                                                   |
 | `scripts/ab-run-gitlab.sh`                | The same on GitLab.                                                                                                                                                                                                                                                                    |
@@ -103,7 +103,9 @@ failure cannot be an artefact of the previous run's state.
 5bis-quater. **Run the identical actions section** (runbook section 6sexies): `identical-actions-run.sh`,
    after `promotion-run.sh`. Eight stories promoted together to uat: the action they share runs once
    (the counter file says how many times it really ran), an action written twice in one story runs
-   twice, a reused id runs for each story, and a copy met after a failure is recorded as done.
+   twice, a reused id runs for each story, and a copy met after a failure is recorded as done. Then
+   the backpromote of that window, the same action in the branch config and in a story, and the
+   validation job running an action with context `all`.
 5quater. **Run backpromote (Beta)** (runbook section 6bis): `backpromote-setup.sh` then
    `backpromote-steps.sh`, against scratch orgs created from the Dev Hub. Steps B0 to B16: no git
    provider token, refused orgs (major branch org, production), refused parent branch, the first plan
@@ -153,8 +155,9 @@ State them again in the report unless you close them:
   same `--json` documents the run asserts, and its command builder, greying rules and marker watch
   are unit tested. The terminal prompts of step B17 are only covered when someone answers them by
   hand. The retry of a comment read after a dropped connection only runs when the provider drops one.
-- Section 6sexies (identical actions, sfdx-hardis#2271) was written on 2026-10-04 and has not run
-  yet: its first run is pending.
+- Section 6sexies (identical actions, sfdx-hardis#2271) ran on GitHub and GitLab on 2026-10-04,
+  twice on GitHub (`IA_RUN=2`), and W9 ran it through real GitHub Actions. Identical copies of custom
+  function actions with outputs, and of actions with a `customUsername`, are unit tested only.
 - `scripts/promotion-provider.sh` covers GitHub and GitLab only: Azure DevOps and Bitbucket still
   run sections 4 and 6 by hand with their own libraries.
 

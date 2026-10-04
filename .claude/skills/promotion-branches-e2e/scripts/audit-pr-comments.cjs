@@ -187,6 +187,10 @@ for (const pr of dump.prs) {
       cells.forEach((cell, index) => {
         const branch = columns[index];
         if (!branch) return;
+        // The dev-sandboxes column holds the tries of `action:run --dev-org`: information for their
+        // author, never a pending step of the pipeline, so it offers no checkbox on purpose (the
+        // manual actions of a developer org are confirmed per sandbox in the Backpromotes comment)
+        if (branch === 'dev-sandboxes') return;
         const waiting = cell.includes('\u{1F44B}');
         const skipped = cell.includes('\u26AA');
         const hasCheckbox = body.includes(`<!-- sfdx-hardis-manual-action id:${actionId} org:${branch} pr:${pr.number} when:`);

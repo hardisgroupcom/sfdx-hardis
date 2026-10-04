@@ -182,26 +182,35 @@ print(json.dumps({'source_branch': sys.argv[1], 'target_branch': sys.argv[2], 't
 # GitLab computes mergeability asynchronously and refuses the merge while it is still checking.
 # Usage: gl_mr_merge <iid>
 gl_mr_merge() {
-  local mr="$1" status
+  local mr="$1" status answer
   local url="$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$mr"
-  for _ in $(seq 1 30); do
-    status=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$url" |
-      python -c "import json,sys; d=json.load(sys.stdin); print(d.get('detailed_merge_status') or d.get('merge_status'))")
-    case "$status" in
-    checking | unchecked | preparing) sleep 2 ;;
-    *) break ;;
-    esac
+  # GitLab computes the mergeability after every push and refuses the merge until it is done. On a
+  # busy instance that takes more than a minute (2026-10-04: !18 stayed "checking" about 90 seconds,
+  # and section 6sexies lost its promotion), so wait up to 3 minutes, and retry the merge itself
+  for _ in $(seq 1 5); do
+    for _ in $(seq 1 60); do
+      status=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$url" |
+        python -c "import json,sys; d=json.loads(sys.stdin.buffer.read().decode('utf-8')); print('merged' if d.get('state') == 'merged' else (d.get('detailed_merge_status') or d.get('merge_status')))")
+      case "$status" in
+      merged)
+        # an earlier attempt went through though its answer did not say so
+        echo merged
+        return 0
+        ;;
+      checking | unchecked | preparing | approvals_syncing) sleep 3 ;;
+      *) break ;;
+      esac
+    done
+    answer=$(curl -sS -X PUT -H "PRIVATE-TOKEN: $GL_TOKEN" -H "Content-Type: application/json" \
+      -d '{"squash": false, "should_remove_source_branch": false}' "$url/merge")
+    if printf '%s' "$answer" | python -c "import json,sys; sys.exit(0 if json.loads(sys.stdin.buffer.read().decode('utf-8')).get('state') == 'merged' else 1)" 2>/dev/null; then
+      echo merged
+      return 0
+    fi
+    sleep 5
   done
-  curl -sS -X PUT -H "PRIVATE-TOKEN: $GL_TOKEN" -H "Content-Type: application/json" \
-    -d '{"squash": false, "should_remove_source_branch": false}' "$url/merge" |
-    python -c "
-import json, sys
-answer = json.load(sys.stdin)
-if answer.get('state') == 'merged':
-    print('merged')
-else:
-    print('MERGE FAILED', json.dumps(answer)[:300]); sys.exit(1)
-"
+  echo "MERGE FAILED $(printf '%s' "$answer" | head -c 300)"
+  return 1
 }
 
 # Dump the merge requests and their notes in the provider agnostic shape audit-pr-comments.cjs

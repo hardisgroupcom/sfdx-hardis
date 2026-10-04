@@ -34,7 +34,13 @@ cd "$WORK" || exit 1
 
 set_flag() {
   if [ "$MODE" = "off" ]; then
-    sed -i 's/^enablePromotionBranches: true$/enablePromotionBranches: false/' config/.sfdx-hardis.yml
+    # Git on Windows can check the file out with CRLF: match the line with or without its \r, and
+    # stop when it did not change, or the "off" pass would silently run with the feature on
+    sed -i -E 's/^enablePromotionBranches: true\r?$/enablePromotionBranches: false/' config/.sfdx-hardis.yml
+    if ! grep -qE $'^enablePromotionBranches: false\r?$' config/.sfdx-hardis.yml; then
+      echo "ERROR: enablePromotionBranches could not be set to false in config/.sfdx-hardis.yml" >&2
+      exit 1
+    fi
   fi
 }
 restore_flag() { git checkout -q -- config/.sfdx-hardis.yml; }

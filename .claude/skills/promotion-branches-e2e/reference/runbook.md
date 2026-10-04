@@ -697,6 +697,7 @@ base project is never deployed by CI.
 | W6    | `set-status --org-branch uat` (what **Mark as done in uat** runs), the validation re-run skips it and passes, the forecast says done                                                                                                                                                  |
 | W7    | The deployment of the promotion runs the commands with the fix that travelled with it; the post-deployment manual step waits in uat                                                                                                                                                   |
 | W8    | A workflow without the `safe.directory` line (a project that copied the templates before it): git refuses the checkout, the job stops and names the line to add                                                                                                                       |
+| W9    | C5 and C6 carry the same post-deployment command (section 6sexies). Each merge into integration is a job of its own and runs its copy; the deployment job of the promotion carrying both to uat runs it once, and C6 is `success` in uat with the "Not run twice" note                |
 
 Traps:
 
@@ -719,18 +720,21 @@ Traps:
 Issue #2271: when several Pull Requests of one run carry the same action (same type, phase, user and
 parameters), the first one runs and the others are recorded as done by it. `scripts/identical-actions-run.sh`
 runs after `promotion-run.sh`, on the same repository. It adds eight stories into integration, and
-promotes them together to uat (P7):
+promotes them together to uat (PI). Groups I9 and I10 add three more, promoted on their own (PD, PV):
 
-| Story | Branch                         | Actions (`story_actions` kind)                                            |
-|-------|--------------------------------|---------------------------------------------------------------------------|
-| SA    | `feature/E2E-501-shared-a`     | `identical`: the shared step, after the deployment                        |
-| SB    | `feature/E2E-502-shared-b`     | `identical`                                                               |
-| ST    | `feature/E2E-503-shared-twice` | `identical-twice`: the shared step, another step, the shared step again   |
-| SP    | `feature/E2E-504-shared-pre`   | `identical-pre`: the shared step, before the deployment                   |
-| SX    | `feature/E2E-505-same-id-a`    | `same-id-a`: the hand-written id `e2e-same-id`, command A                 |
-| SY    | `feature/E2E-506-same-id-b`    | `same-id-b`: the same id, command B                                       |
-| SF    | `feature/E2E-507-flaky`        | `flaky-uat`: a command failing in uat until `e2e-identical-ok.txt` exists |
-| SC    | `feature/E2E-508-shared-c`     | `identical`, after the failure of SF                                      |
+| Story | Branch                           | Actions (`story_actions` kind)                                            |
+|-------|----------------------------------|---------------------------------------------------------------------------|
+| SA    | `feature/E2E-501-shared-a`       | `identical`: the shared step, after the deployment                        |
+| SB    | `feature/E2E-502-shared-b`       | `identical`                                                               |
+| SW    | `feature/E2E-503-shared-twice`   | `identical-twice`: the shared step, another step, the shared step again   |
+| SP    | `feature/E2E-504-shared-pre`     | `identical-pre`: the shared step, before the deployment                   |
+| SX    | `feature/E2E-505-same-id-a`      | `same-id-a`: the hand-written id `e2e-same-id`, command A                 |
+| SY    | `feature/E2E-506-same-id-b`      | `same-id-b`: the same id, command B                                       |
+| SF    | `feature/E2E-507-flaky`          | `flaky-uat`: a command failing in uat until `e2e-identical-ok.txt` exists |
+| SC    | `feature/E2E-508-shared-c`       | `identical`, after the failure of SF                                      |
+| SD    | `feature/E2E-509-shared-d`       | `identical`, next to the same action in the uat branch config (I9)        |
+| SG    | `feature/E2E-510-shared-check-g` | `identical-check`: the shared step with context `all` (I10)               |
+| SH    | `feature/E2E-511-shared-check-h` | `identical-check` (I10)                                                   |
 
 The shared step is the same command in every story that carries it:
 `node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"`. The size of
@@ -744,13 +748,16 @@ bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh   # 
 
 | Group | Checks                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 |-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| I1    | Only ST is deployed to integration: the deployment of a feature merge carries that Pull Request alone, and its two shared steps both run (2 runs). One Pull Request is one source: an action written twice in it is meant twice                                                                                                                                                                                                         |
-| I2    | P7 (integration -> uat) carries the eight stories. `--forecast uat --from-branch integration` gives SB, the first shared step of ST and SC the `identical-action` reason with `identicalTo` SA, and leaves SA, the repeat of ST, SP (other phase) and the two same-id actions on their own                                                                                                                                              |
-| I3    | The validation of P7 merges nothing (the actions are deployment-only). Its deployment exits 1 on SF and runs the shared step 3 times (SP before the deployment, SA, the repeat of ST): SB and the first step of ST log `Skipping action ... same action as E2E shared step of PR <SA> (#<SA>), run once for this deployment`, both same-id actions run, and SC, met after the failure, logs the same copy line instead of being stopped |
-| I4    | The copies are `success` in uat with the note `Not run twice: the identical action "..." of #<SA>`, SF is `failed`, the repeat of ST and both same-id actions are `success`                                                                                                                                                                                                                                                             |
+| I1    | Only SW is deployed to integration: the deployment of a feature merge carries that Pull Request alone, and its two shared steps both run (2 runs). One Pull Request is one source: an action written twice in it is meant twice                                                                                                                                                                                                         |
+| I2    | PI (integration -> uat) carries the eight stories. `--forecast uat --from-branch integration` gives SB, the first shared step of SW and SC the `identical-action` reason with `identicalTo` SA, and leaves SA, the repeat of SW, SP (other phase) and the two same-id actions on their own                                                                                                                                              |
+| I3    | The validation of PI merges nothing (the actions are deployment-only). Its deployment exits 1 on SF and runs the shared step 3 times (SP before the deployment, SA, the repeat of SW): SB and the first step of SW log `Skipping action ... same action as E2E shared step of PR <SA> (#<SA>), run once for this deployment`, both same-id actions run, and SC, met after the failure, logs the same copy line instead of being stopped |
+| I4    | The copies are `success` in uat with the note `Not run twice: the identical action "..." of #<SA>`, SF is `failed`, the repeat of SW and both same-id actions are `success`                                                                                                                                                                                                                                                             |
 | I5    | `action:run --next all` retries SF in uat once `e2e-identical-ok.txt` exists: `success` with a "Run locally by" note. Nothing waits after it: SC was recorded as a copy, not stopped                                                                                                                                                                                                                                                    |
 | I6    | The deployment of uat run again skips everything as `already run in uat`, the copies included, and runs the shared step 0 times                                                                                                                                                                                                                                                                                                         |
 | I7    | With `DEV_ORG`: the backpromote plan of the window (`--plan --from-pull-request <SA>`) gives every action its own `key`, the two same-id actions included (`<pr>:post:e2e-same-id`), and the same `identicalTo` as the forecast                                                                                                                                                                                                         |
+| I8    | With `DEV_ORG`: the backpromote run of that window (`--auto --run-id <plan>`) gives `actions.byKey` `identical` for SB, the first step of SW and SC, `run` for SA, the repeat of SW, SP and both same-id actions; the shared step runs 3 times, and the copies are `success` rows of the "Backpromotes" comments of SB and SC                                                                                                           |
+| I9    | The shared step written twice in `config/branches/.sfdx-hardis.uat.yml` (committed on uat), and a ninth story SD carrying it, promoted alone (PD). The deployment runs the config actions first: both run (one source), SD logs `same action as E2E shared step of the uat config (branch or project config)`; 2 runs, and SD is `success` in uat with a note naming the config. The config commit is reverted afterwards               |
+| I10   | SG and SH carry the shared step with context `all`, promoted together (PV). The forecast says `runs-at-validation` for both, SH with the `identical-action` reason. The validation job runs it once for SG and logs the copy line for SH (1 run); the deployment job skips both as `already run in uat` (0 runs)                                                                                                                        |
 
 Traps:
 
@@ -801,6 +808,9 @@ Traps:
   branch names of the User Stories of section 3: run the two halves against two throwaway
   repositories (`-e2e-<n>` for the promotions, `-e2e-<n+1>` for the backpromote), or run 6bis alone
   on a repository built by `build-repo.sh` and pushed, with no stories opened.
+- **`promo-vars.sh` exports short names** (`S1` to `S9`, `SA`, `SP`, `SW`, `PI`, `C1`...). A wrapper
+  that sources it must not keep its own state in such names: `SP` holding a scratch path became the
+  number of a story, and the next command ran `54/run-ab.sh` (2026-10-04).
 - **`NODE_OPTIONS`**: with VS Code's inspector bootloader set, node hangs after the command
   finishes and the job looks stuck. `env -u NODE_OPTIONS` (the library does it).
 - **Fast-forwarding a major branch from a lower one** to propagate a config change ships every
@@ -816,6 +826,10 @@ Traps:
 - **`refs/pull/<N>/merge` lags behind a push.** After pushing a fix to a Pull Request branch, a
   validation job fetched immediately can still run against the previous merge ref and fail on
   something you just fixed. Fetch again a few seconds later before believing the failure.
+- **It does not exist yet right after the Pull Request is opened.** A validation started just after
+  `p_open` failed to fetch it and never ran (check 38 of 2026-10-04: exit 1 and no job log at all).
+  `e2e_check` now retries the fetch for a minute, and writes the reason in the job log when the ref
+  never comes.
 - **So does the head the GitHub API reports.** `GET /pulls/<N>` can answer with the previous
   `head.sha` for several seconds after a push, so waiting until the merge ref contains "the head the
   API gives" returns at once and validates the old tree. Wait on the commit you pushed
@@ -955,7 +969,14 @@ PYTHONIOENCODING=utf-8 python "$AB/ab-diff.py" "$LOGS/ab-main2" "$LOGS/ab-branch
 ```
 
 Expected: `TOTAL DIFFERING LINES: 0`, or 1 when a merged branch is named `promotion/...` (the
-informational line saying it is treated as an ordinary feature branch). Anything else is a
+informational line saying it is treated as an ordinary feature branch).
+
+> **The "off" pass must really be off.** `ab-run.sh` checks out each merge ref fresh, and with
+> `core.autocrlf=true` git writes `config/.sfdx-hardis.yml` with CRLF. The flag edit used to match
+> `true$` only, which never matches `true\r`: the "off" pass then ran with the feature on, and both
+> CLIs agreeing proved nothing about a project that does not use the feature. Since 2026-10-04 the
+> four `ab-run*.sh` match the line with or without its `\r` and stop when the flag is not `false`
+> afterwards. Anything else is a
 regression, **unless** it is one of these, which the run of 2026-09-09 met and which are not
 promotion branches behaviour:
 
@@ -1003,6 +1024,10 @@ Traps that only bite on GitLab:
   conflict markers "still there" after you solved them. `gl_check` waits until the merge ref
   actually contains the head of the source branch. Never trust a GitLab validation result you got
   within seconds of a push without that wait.
+- **GitLab computes the mergeability after every push, and refuses the merge until it is done.** On
+  2026-10-04 merge request !18 stayed `checking` for about 90 seconds, longer than the minute
+  `gl_mr_merge` used to wait: the merge was refused, section 6sexies promoted seven stories out of
+  eight, and its run was lost. `gl_mr_merge` now waits up to 3 minutes and retries the merge.
 - **Python's `urllib` refuses a corporate CA** that `curl` and node accept. Every API call of the
   GitLab library goes through `curl`; python is only used to build and read JSON.
 - **Python on Windows decodes stdin with the system codepage.** Piping a GitLab API answer into

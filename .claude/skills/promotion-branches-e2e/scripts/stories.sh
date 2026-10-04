@@ -41,7 +41,8 @@ META
 # The deployment actions of a story, in the file that travels with the cherry-picked commit.
 # Usage: story_actions <branch> <pull request number> <kind>
 #   kind: pre-command+post-manual | post-command | pre-command | recovery | pre-manual
-#         identical | identical-twice | identical-pre | same-id-a | same-id-b | flaky-uat (section 6sexies)
+#         identical | identical-twice | identical-check | identical-pre | same-id-a | same-id-b | flaky-uat
+#         (section 6sexies)
 story_actions() {
   local branch="$1" pr="$2" kind="$3"
   cd "$WORK" || return 1
@@ -168,6 +169,19 @@ commandsPostDeploy:
     command: >-
       node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"
     context: process-deployment-only
+YAML
+    ;;
+  identical-check)
+    # The shared step with context all: the validation job runs it too, once for the Pull Requests
+    # that carry it, and the deployment job finds them done
+    cat >"$file" <<YAML
+commandsPostDeploy:
+  - id: e2e-check-shared-$pr
+    label: E2E shared check step of PR $pr
+    type: command
+    command: >-
+      node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"
+    context: all
 YAML
     ;;
   identical-pre)
