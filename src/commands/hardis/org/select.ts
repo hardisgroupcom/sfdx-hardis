@@ -29,7 +29,7 @@ Key functionalities:
 
 - **Interactive Org Selection:** Displays a list of your authenticated Salesforce orgs, allowing you to choose one.
 - **Default Org Setting:** Sets the selected org as the default for your Salesforce CLI environment.
-- **Org Naming:** When you connect a new org, it is given an alias, so it shows up under a short name instead of its username everywhere afterwards. Pass \`--alias\`, or accept the suggestion the command makes from the org's instance URL.
+- **Org Naming:** An org you connect is given an alias, so it shows up under a short name instead of its username everywhere afterwards. Pass \`--alias\`, or accept the suggestion the command makes from the org's instance URL. The question comes before the browser opens when you gave the URL of the org, and after the login when you went through login.salesforce.com or test.salesforce.com. An org that already has an alias keeps it when you reconnect it, and an org of the list that has none is offered one.
 - **Dev Hub Filtering:** The \`--devhub\` flag filters the list to show only Dev Hub orgs.
 - **Scratch Org Filtering:** The \`--scratch\` flag filters the list to show only scratch orgs related to your default Dev Hub.
 - **Connection Verification:** Ensures that the selected org is connected and prompts for re-authentication if necessary.
@@ -43,7 +43,8 @@ The command's technical implementation involves:
 - **Interactive Org Prompt:** Uses the \`promptOrg\` utility to display a list of available Salesforce orgs and allows the user to select one. It passes the \`devHub\` and \`scratch\` flags to \`promptOrg\` to filter the displayed list.
 - **Default Org Configuration:** The \`promptOrg\` utility (internally) handles setting the selected org as the default using Salesforce CLI's configuration mechanisms.
 - **Connection Check:** It calls \`makeSureOrgIsConnected\` to verify the connection status of the selected org and guides the user to re-authenticate if the org is not connected.
-- **Forced Reconnection:** When \`--reconnect\` is used, the command skips the connection check and directly triggers \`sf org login web\` with \`--set-default\`, combining re-authentication and default-setting into a single CLI call.
+- **Forced Reconnection:** When \`--reconnect\` is used, the command skips the connection check and directly triggers \`sf org login web\` with \`--set-default\` and \`--alias\`, combining re-authentication, default-setting and naming into a single CLI call.
+- **Org Naming:** The alias is passed to \`sf org login web --alias\` whenever it is known before the login: \`--alias\`, the alias the username already has, or the answer to a prompt whose default value is built from the instance URL. \`sf alias set\` is only called when the instance URL is not known before the login (login.salesforce.com, test.salesforce.com), or when no login happens.
 - **Salesforce CLI Integration:** It relies on Salesforce CLI's underlying commands for org listing and authentication.
 - **Authentication Failure Detection:** Errors raised while authenticating are re-thrown instead of being swallowed by the oclif hook mechanism, and the command fails if it ends without a connected org.
 </details>
@@ -174,6 +175,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
         setDefault,
         instanceUrl,
         forceUsername: username || undefined,
+        alias: flags.alias,
       });
       org = globalThis.justConnectedOrg || {};
     } else if (username) {
@@ -206,7 +208,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     } else {
       // Prompt user to select an org
       // promptOrg handles connection verification and default-setting
-      org = await promptOrg(this, { devHub, setDefault, scratch, useCache: false, alias: flags.alias });
+      org = await promptOrg(this, { devHub, setDefault, scratch, useCache: false, alias: flags.alias, nameOrg: true });
     }
 
     // Never report a success if we did not end up with a connected org

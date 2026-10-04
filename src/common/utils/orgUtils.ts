@@ -3,7 +3,7 @@ import { prompts } from './prompts.js';
 import c from 'chalk';
 import fs from './fsUtils.js';
 import * as path from 'path';
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isAgentMode, isCI, uxLog } from './index.js';
 import { getOrgAccessToken } from './credentialUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, setConfig } from '../../config/index.js';
@@ -18,7 +18,7 @@ import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { t } from './i18n.js';
-import { runAuthHook } from './authUtils.js';
+import { decideOrgAlias, getAliasOfUsername, nameConnectedOrg, promptOrgAlias, runAuthHook } from './authUtils.js';
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -250,15 +250,15 @@ export async function promptOrg(
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
     uxLog("action", this, c.yellow('⚠️ ' + t('authenticationHasExpiredPleaseLogIn')));
-    const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
-    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    org = loginResult.result;
-    if (!org?.username) {
-      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
-    }
+    org = await reloginExpiredOrg(org, { nameOrg: options.nameOrg === true });
   }
 
   uxLog("action", commandThis, c.cyan(t('selectedOrg', { org: c.green(org.username), org1: c.green(org.instanceUrl) })));
+
+  // Offer to name an org that has no alias yet
+  if (options.nameOrg === true && !org.alias) {
+    org.alias = await nameConnectedOrg(org.username, org.instanceUrl);
+  }
 
   if (options.setDefault === true) {
     // Set default username
@@ -375,14 +375,11 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Authentication is necessary
   if (connectedStatus?.includes("expired") || connectedStatus === "RefreshTokenAuthError") {
     uxLog("action", this, c.yellow(t('yourAuthTokenHasExpiredYouNeed')));
+    // Read the alias before the auth file is deleted
+    const alias = orgResult?.alias || (await getAliasOfUsername(targetOrg));
     await deleteRottenAuthFile(targetOrg);
     // Authenticate again
-    const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
-    const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    if (!loginRes?.result?.username) {
-      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
-    }
-    return loginRes.result;
+    return await reloginExpiredOrg({ username: targetOrg, instanceUrl, alias });
   }
   // A scratch org reports no connectedStatus at all: sf org display gives its
   // lifecycle in "status" instead. Read after the checks above, never before,
@@ -846,4 +843,27 @@ export async function listOrgSObjectsFilteredWithQualifiedNames(connection: Conn
   return sObjectResults.records.filter((record) =>
     !record.QualifiedApiName.endsWith("__Share") && !record.QualifiedApiName.endsWith("__ChangeEvent")
   );
+}
+
+// Logs in again to an org whose token expired, keeping its alias, or naming it in the same call
+async function reloginExpiredOrg(
+  org: { username?: string; instanceUrl: string; alias?: string | null },
+  options: { nameOrg?: boolean } = {}
+) {
+  const aliasDecision = decideOrgAlias({
+    existingAlias: org.alias || (await getAliasOfUsername(org.username)),
+    instanceUrl: org.instanceUrl,
+    interactive: options.nameOrg === true && !isCI && !isAgentMode(),
+  });
+  const alias = aliasDecision.ask === 'before' ? await promptOrgAlias(org.instanceUrl) : aliasDecision.alias;
+  if (aliasDecision.ask === 'before') {
+    // The VS Code UI hides everything after a prompt until the next action log
+    uxLog("action", this, c.cyan(t('authenticatingUsingWebLogin')));
+  }
+  const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}` + (alias ? ` --alias ${alias}` : '');
+  const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
+  if (!loginResult?.result?.username) {
+    throw new SfError(t('authenticationDidNotConnectAnyOrg'));
+  }
+  return { ...loginResult.result, alias: alias || loginResult.result.alias || null };
 }
