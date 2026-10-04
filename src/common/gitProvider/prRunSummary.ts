@@ -217,23 +217,24 @@ function parseMegaLinterComment(comment: { body: string; url?: string; updatedAt
 }
 
 /**
- * Outcome of a comment that carries no run summary: from its banner, else from the mark of its
- * title (banners can be switched off, and older comments have none). A failure mark wins: a
- * failed run still prints a success mark next to a coverage that is fine. Without any mark, the
- * comment is the placeholder waiting for the merge.
+ * Outcome of a comment that carries no run summary: from its banner, else from the first mark
+ * of the comment (banners can be switched off, and older comments have none). Without any mark,
+ * the comment is the placeholder waiting for the merge.
  */
 function readLegacyStatus(body: string): PrRunStatus {
   const banner = body.match(BANNER_REGEX);
   if (banner) {
     return banner[2] === 'success' ? 'valid' : 'invalid';
   }
-  if (body.includes('❌')) {
-    return 'invalid';
+  // The line that says how the run ended comes first: the first mark of the comment is the
+  // outcome, the ones further down belong to details (a coverage that is fine after a failure,
+  // a tip quoting a failed test after a success)
+  const failure = body.indexOf('❌');
+  const success = body.indexOf('✅');
+  if (failure === -1 && success === -1) {
+    return 'pending';
   }
-  if (body.includes('✅')) {
-    return 'valid';
-  }
-  return 'pending';
+  return failure !== -1 && (success === -1 || failure < success) ? 'invalid' : 'valid';
 }
 
 function cleanText(value: unknown): string | undefined {

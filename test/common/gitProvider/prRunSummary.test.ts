@@ -116,6 +116,11 @@ describe('Pull Request run summary', () => {
       body: `## 🚀 Deployment Results\n\n❌ Deployment failure\n\n✅ Your code coverage is ok\n\n${DEPLOYMENT_KEY}`,
     });
     expect(failure?.status).to.equal('invalid');
+    // A run that passed, with a failure mark in a detail further down, did pass
+    const successWithDetail = parseWorkflowRunFromComment({
+      body: `## 🔍 Validation Results\n\n✅ Deployment check success\n\n> Tip: a test marked ❌ in an earlier run was fixed\n\n${VALIDATION_KEY}`,
+    });
+    expect(successWithDetail?.status).to.equal('valid');
   });
 
   it('keeps the links of a provider served over http, and nothing but web addresses', () => {

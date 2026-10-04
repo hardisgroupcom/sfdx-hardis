@@ -334,42 +334,6 @@ export abstract class GitProvider {
   }
 
   /**
-   * Hidden summary of the run a validation or deployment comment reports, read back by
-   * `hardis:project:action:list --with-workflows`. Never fails the comment: a missing job URL or
-   * target branch is simply left out.
-   */
-  private static async buildRunSummaryMarker(
-    gitProvider: GitProviderRoot,
-    prData: Partial<PullRequestData>,
-    checkOnly: boolean,
-    status: "valid" | "invalid" | "tovalidate",
-  ): Promise<string> {
-    let targetBranch = '';
-    let jobUrl = '';
-    try {
-      // A validation targets the branch of the Pull Request, a deployment runs on the branch itself
-      targetBranch = checkOnly === true
-        ? (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch || ''
-        : (await getCurrentGitBranch()) || '';
-      jobUrl = (await gitProvider.getCurrentJobUrl()) || '';
-    } catch (e) {
-      debug('Run summary of the Pull Request comment built without job context: ' + (e as Error).message);
-    }
-    return encodeRunSummaryMarker({
-      kind: checkOnly === true ? 'validation' : 'deployment',
-      status: status === 'tovalidate' ? 'pending' : status,
-      targetBranch,
-      jobUrl,
-      date: new Date().toISOString(),
-      quickDeploy: checkOnly === false && prData.usedQuickDeploy === true,
-      testLevel: prData.checkTestLevel || '',
-      errorCount: prData.errorCount,
-      failedTestsCount: prData.failedTestsCount,
-      coverageText: markdownFirstLineAsText(prData.codeCoverageMarkdownBody),
-    });
-  }
-
-  /**
    * Create the deployment comment as a pending placeholder when it does not exist yet, so its
    * URL can be linked from the Pull Request description before the merge freezes it.
    */
@@ -954,6 +918,42 @@ export abstract class GitProvider {
     }
     // Fallback: just return null
     return null;
+  }
+
+  /**
+   * Hidden summary of the run a validation or deployment comment reports, read back by
+   * `hardis:project:action:list --with-workflows`. Never fails the comment: a missing job URL or
+   * target branch is simply left out.
+   */
+  private static async buildRunSummaryMarker(
+    gitProvider: GitProviderRoot,
+    prData: Partial<PullRequestData>,
+    checkOnly: boolean,
+    status: "valid" | "invalid" | "tovalidate",
+  ): Promise<string> {
+    let targetBranch = '';
+    let jobUrl = '';
+    try {
+      // A validation targets the branch of the Pull Request, a deployment runs on the branch itself
+      targetBranch = checkOnly === true
+        ? (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch || ''
+        : (await getCurrentGitBranch()) || '';
+      jobUrl = (await gitProvider.getCurrentJobUrl()) || '';
+    } catch (e) {
+      debug('Run summary of the Pull Request comment built without job context: ' + (e as Error).message);
+    }
+    return encodeRunSummaryMarker({
+      kind: checkOnly === true ? 'validation' : 'deployment',
+      status: status === 'tovalidate' ? 'pending' : status,
+      targetBranch,
+      jobUrl,
+      date: new Date().toISOString(),
+      quickDeploy: checkOnly === false && prData.usedQuickDeploy === true,
+      testLevel: prData.checkTestLevel || '',
+      errorCount: prData.errorCount,
+      failedTestsCount: prData.failedTestsCount,
+      coverageText: markdownFirstLineAsText(prData.codeCoverageMarkdownBody),
+    });
   }
 }
 
