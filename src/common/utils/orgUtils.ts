@@ -250,7 +250,7 @@ export async function promptOrg(
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
     uxLog("action", this, c.yellow('⚠️ ' + t('authenticationHasExpiredPleaseLogIn')));
-    org = await reloginExpiredOrg(org, { nameOrg: options.nameOrg === true });
+    org = await reconnectExpiredOrg(org, { nameOrg: options.nameOrg === true });
   }
 
   uxLog("action", commandThis, c.cyan(t('selectedOrg', { org: c.green(org.username), org1: c.green(org.instanceUrl) })));
@@ -379,7 +379,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     const alias = orgResult?.alias || (await getAliasOfUsername(targetOrg));
     await deleteRottenAuthFile(targetOrg);
     // Authenticate again
-    return await reloginExpiredOrg({ username: targetOrg, instanceUrl, alias });
+    return await reconnectExpiredOrg({ username: targetOrg, instanceUrl, alias });
   }
   // A scratch org reports no connectedStatus at all: sf org display gives its
   // lifecycle in "status" instead. Read after the checks above, never before,
@@ -846,7 +846,7 @@ export async function listOrgSObjectsFilteredWithQualifiedNames(connection: Conn
 }
 
 // Logs in again to an org whose token expired, keeping its alias, or naming it in the same call
-async function reloginExpiredOrg(
+async function reconnectExpiredOrg(
   org: { username?: string; instanceUrl: string; alias?: string | null },
   options: { nameOrg?: boolean } = {}
 ) {
