@@ -81,7 +81,7 @@ A Pull Request opens the same way from everywhere: the explorer, the **My Pull R
 The window of a Pull Request shows:
 
 - **(1)** its state, its author, its branches, and the button that opens it on your git provider.
-- **(2)** its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell.
+- **(2)** its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell. A promotion, or a merge between two major branches, stops at the branch it is merged into: the stories it carries go further, it does not.
 - **(3)** its tabs, and **(4)** the content of the one selected, here the validation comment.
 - **General**: the description of the Pull Request.
 - **Pull Requests**, on a promotion or on a merge between two major branches: the Pull Requests it carries, each one opening in the same window.
