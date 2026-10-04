@@ -50,7 +50,7 @@ Some changes need a step that metadata alone cannot do: load reference data, run
 
 1. Click **(1)** to add an action, pick its type and when it runs (before or after the deployment).
 2. The list **(2)** shows the actions of the Pull Request, numbered in the order they run. Click a label to see or edit it, **Run in my org** to try the action in your developer org before the merge (**Rerun** after a failed try), or open the menu at the end of its row to delete it. See [Try your actions in your own org](salesforce-devops-work-on-user-story-deployment-actions.md#try-your-actions-in-your-own-org).
-3. **(3)** opens the Pull Request on your git provider.
+3. The **Open on** button of the header opens the Pull Request on your git provider.
 
 The actions run automatically when the Pull Request is deployed. See [Deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md) for every action type.
 
@@ -75,9 +75,12 @@ A Pull Request opens the same way from everywhere: the explorer, the **My Pull R
 The window of a Pull Request shows:
 
 - Its state, its author, its branches, and its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell.
+- **General**: the description of the Pull Request.
 - **Tickets**, with their status and who they are assigned to.
 - **Deployment Actions** and **Tests**, as in your own Pull Request.
-- **Workflows**: the validation and the deployments sfdx-hardis reported in the comments of the Pull Request, with their outcome, the job, and the comment itself under **Show details**. A run reported by a version of sfdx-hardis older than this feature has its outcome and its comment, without the number of errors.
+- **Validation**, **Deployment** and **MegaLinter**: the comment each of them posted on this Pull Request, as you would read it on your git provider, with its outcome and the links to the job and to the comment. They show the comments of this Pull Request only, not those of a promotion that carried it further.
+
+**Open on GitHub** (or your git provider) in the header is the way out to the Pull Request page. When the Pull Request was opened from a list or from another Pull Request, **Previous** and **Close** bring that window back; **Close** closes the window otherwise.
 
 The deployment actions and the test classes are read from the files of the branch you have checked out, and written there. On a Pull Request that is not the one of your branch, a warning names that branch: what you change travels with your own Pull Request. **Run in my org** is only offered on your own Pull Request.
 

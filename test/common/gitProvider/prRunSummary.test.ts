@@ -124,6 +124,27 @@ describe('Pull Request run summary', () => {
     expect(run?.commentUrl).to.equal('');
   });
 
+  it('reads the comment of MegaLinter as a third kind, with the outcome of its title', () => {
+    const success = parseWorkflowRunFromComment({
+      body: '## ⚠️ [MegaLinter](https://megalinter.io/9.0.1) analysis: Success with warnings\n\n| Descriptor | Linter |\n\n<!-- megalinter: github-comment-reporter workflow=MegaLinter -->',
+      url: 'https://git.example.com/pr/128#c3',
+      updatedAt: '2026-10-04T10:00:00Z',
+    });
+    expect(success).to.deep.include({ kind: 'megalinter', status: 'valid', commentUrl: 'https://git.example.com/pr/128#c3' });
+    expect(success?.body).to.not.include('<!--');
+    const failure = parseWorkflowRunFromComment({ body: '## ❌ [MegaLinter](https://megalinter.io/9.0.1) analysis: Error\n\nDetails' });
+    expect(failure).to.deep.include({ kind: 'megalinter', status: 'invalid' });
+  });
+
+  it('lists the MegaLinter analysis after the runs of sfdx-hardis, and ignores any other comment', () => {
+    const runs = parseWorkflowRunsFromComments([
+      { body: 'Analysis\n\n<!-- megalinter: gitlab-comment-reporter -->' },
+      { body: 'A reviewer comment with a hidden <!-- note -->' },
+      { body: `Checked\n\n${VALIDATION_KEY}` },
+    ]);
+    expect(runs.map((run) => run.kind)).to.deep.equal(['validation', 'megalinter']);
+  });
+
   it('reads the placeholder deployment comment as pending', () => {
     const run = parseWorkflowRunFromComment({ body: `## Deployment Results\n\nWaiting for the merge\n\n${DEPLOYMENT_KEY}` });
     expect(run?.status).to.equal('pending');

@@ -10,12 +10,22 @@ the comment itself, so reading the comments is enough and nothing else has to be
 A comment posted before the marker existed is still read: its kind comes from its message key and
 its outcome from its banner. It has no counts, and is flagged as legacy.
 
+The comment MegaLinter posts on the Pull Request is read the same way, as a third kind of run: it
+is not written by sfdx-hardis, so it never carries a run summary, only its outcome and its text.
+
 This module holds only pure helpers, with no git provider import, like prCommentNav.ts.
 */
 
 import { getPrCommentKind, PR_NAV_END, PR_NAV_START } from "./prCommentNav.js";
 
 export type PrRunKind = 'validation' | 'deployment';
+
+// What a Pull Request comment can report: a run of sfdx-hardis, or the analysis of MegaLinter
+export type PrWorkflowKind = PrRunKind | 'megalinter';
+
+// Present in every HTML comment marker, the ones of sfdx-hardis and the one of MegaLinter: used
+// to list the comments of a Pull Request once for both
+export const PR_COMMENT_HIDDEN_MARKER = '<!-- ';
 
 // pending: the placeholder deployment comment created before the merge, with no result yet
 export type PrRunStatus = 'valid' | 'invalid' | 'pending';
@@ -36,7 +46,7 @@ export interface PrRunSummary {
 }
 
 export interface PrWorkflowRun {
-  kind: PrRunKind;
+  kind: PrWorkflowKind;
   status: PrRunStatus;
   targetBranch: string;
   jobUrl: string;
@@ -57,6 +67,11 @@ const RUN_SUMMARY_VERSION = 1;
 const RUN_SUMMARY_REGEX = /<!-- sfdx-hardis run-summary ([A-Za-z0-9+/=]+) -->/;
 const BANNER_REGEX = /pr-banner-(validation|deployment)-(success|failure)/;
 const HIDDEN_MARKER_REGEX = /[ \t]*<!-- sfdx-hardis [^>]*-->[ \t]*\n?/g;
+// The comment reporters of MegaLinter sign their comment with <!-- megalinter: <reporter> ... -->
+const MEGALINTER_MARKER = '<!-- megalinter:';
+// Its title when the marker is missing: "## ✅ [MegaLinter](https://megalinter.io/...) analysis: Success"
+const MEGALINTER_TITLE_REGEX = /^#+ .*MegaLinter.*analysis: *([^\n]*)$/im;
+const ANY_HIDDEN_MARKER_REGEX = /[ \t]*<!--[\s\S]*?-->[ \t]*\n?/g;
 const MAX_TEXT_LENGTH = 200;
 
 /**
@@ -128,7 +143,7 @@ export function parseWorkflowRunFromComment(comment: { body: string; url?: strin
   const body = comment?.body || '';
   const kind = getPrCommentKind(body);
   if (kind !== 'validation' && kind !== 'deployment') {
-    return null;
+    return kind === null ? parseMegaLinterComment(comment) : null;
   }
   const summary = decodeRunSummaryMarker(body);
   // The kind of the message key wins: it is what sfdx-hardis itself matches a comment on
@@ -159,8 +174,45 @@ export function parseWorkflowRunsFromComments(comments: Array<{ body: string; ur
   const runs = (comments || [])
     .map((comment) => parseWorkflowRunFromComment(comment))
     .filter((run): run is PrWorkflowRun => run !== null);
-  const kindOrder: Record<PrRunKind, number> = { validation: 0, deployment: 1 };
+  const kindOrder: Record<PrWorkflowKind, number> = { validation: 0, deployment: 1, megalinter: 2 };
   return runs.sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind] || a.date.localeCompare(b.date));
+}
+
+/**
+ * The analysis MegaLinter reported in its own Pull Request comment, or null when the comment is
+ * not one of MegaLinter. The outcome comes from its title ("analysis: Success", "Success with
+ * warnings", "Error"): warnings do not fail the analysis.
+ */
+function parseMegaLinterComment(comment: { body: string; url?: string; updatedAt?: string }): PrWorkflowRun | null {
+  const body = comment?.body || '';
+  const title = body.match(MEGALINTER_TITLE_REGEX);
+  if (!body.includes(MEGALINTER_MARKER) && !title) {
+    return null;
+  }
+  const outcome = (title?.[1] || '').toLowerCase();
+  let status: PrRunStatus = 'pending';
+  if (outcome.startsWith('success')) {
+    status = 'valid';
+  } else if (outcome.startsWith('error')) {
+    status = 'invalid';
+  } else {
+    status = readLegacyStatus(body);
+  }
+  return {
+    kind: 'megalinter',
+    status,
+    targetBranch: '',
+    jobUrl: '',
+    commentUrl: cleanWebUrl(comment.url) || '',
+    date: cleanDate(comment.updatedAt) || '',
+    quickDeploy: false,
+    testLevel: '',
+    errorCount: null,
+    failedTestsCount: null,
+    coverageText: '',
+    body: body.replace(ANY_HIDDEN_MARKER_REGEX, '').trim(),
+    legacy: false,
+  };
 }
 
 /**

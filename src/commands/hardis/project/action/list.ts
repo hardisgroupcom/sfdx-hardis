@@ -16,8 +16,7 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
 import { ActionForecastItem, findOpenPromotionPullRequest, forecastAction, markIdenticalForecasts } from '../../../../common/utils/deploymentActionForecastUtils.js';
 import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
-import { SFDX_HARDIS_COMMENT_MARKER } from '../../../../common/gitProvider/prCommentNav.js';
-import { parseWorkflowRunsFromComments } from '../../../../common/gitProvider/prRunSummary.js';
+import { parseWorkflowRunsFromComments, PR_COMMENT_HIDDEN_MARKER } from '../../../../common/gitProvider/prRunSummary.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,7 +35,7 @@ With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it
 
 With \`--with-backpromotes\`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
 
-With \`--with-workflows\`, it also returns the validation and deployment runs reported in the comments of these Pull Requests: kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests, and the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. The VS Code Pull Request view lists them in its Workflows tab.
+With \`--with-workflows\`, it also returns what the comments of these Pull Requests report: the validation and deployment runs of sfdx-hardis (kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests) and the analysis of MegaLinter, each with the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. The VS Code Pull Request view shows them in its Validation, Deployment and MegaLinter tabs.
 
 ### Agent Mode
 
@@ -98,7 +97,7 @@ Required in agent mode:
     }),
     'with-workflows': Flags.boolean({
       default: false,
-      description: 'With --with-status, also return the validation and deployment runs reported in the comments of --pr-ids',
+      description: 'With --with-status, also return the validation, deployment and MegaLinter results reported in the comments of --pr-ids',
     }),
     'pr-ids': Flags.string({
       description: 'Comma-separated list of Pull Request numbers, or draft (with --with-status)',
@@ -218,7 +217,7 @@ Required in agent mode:
       // Read together: the VS Code view waits for this answer, and there are only a few Pull Requests
       // (the one shown and the ones that carried it)
       const commentsByPr = await Promise.all(
-        prNumbers.map((prNumber) => GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber))
+        prNumbers.map((prNumber) => GitProvider.tryListPullRequestCommentsByMarker(PR_COMMENT_HIDDEN_MARKER, prNumber))
       );
       prNumbers.forEach((prNumber, index) => {
         workflows[String(prNumber)] = parseWorkflowRunsFromComments(commentsByPr[index] || []);
