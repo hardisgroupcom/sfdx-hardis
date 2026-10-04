@@ -14,7 +14,8 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 | `yarn test:nuts`                     | Integration tests (long timeout, parallel)               |
 | `yarn format`                        | Prettier on src/test/schemas                             |
 | `yarn clean`                         | sf-clean                                                 |
-| `yarn build:doc`                     | Auto-generate command documentation                      |
+| `yarn build:doc`                     | Auto-generate command documentation (all commands)       |
+| `yarn build:doc --commands <id>`     | Regenerate the doc of some commands (ids or `*` patterns) |
 | `./bin/dev.js hardis:<cat>:<action>` | Test a command locally (no build needed)                 |
 
 **Package manager**: Yarn only. Do not use npm. Lock file: `yarn.lock`.

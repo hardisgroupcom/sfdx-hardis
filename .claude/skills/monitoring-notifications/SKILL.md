@@ -209,7 +209,7 @@ After any change in this area, run:
 ```sh
 yarn compile      # TypeScript catches missing union members and enum drift
 yarn lint
-yarn build:doc    # Regenerates docs/hardis/**/*.md including monitor:all and config:monitoring-defaults
+yarn build:doc --commands "hardis:org:monitor:all,hardis:config:monitoring-defaults"    # Regenerates only these two pages, plus the pages of the commands you changed
 node -e "for (const l of ['en','de','es','fr','it','ja','nl','pl','pt-BR']) JSON.parse(require('fs').readFileSync('src/i18n/'+l+'.json','utf8'))"
 ```
 
