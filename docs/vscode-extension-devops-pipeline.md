@@ -64,6 +64,8 @@ Click a major branch in the diagram. The window lists the Pull Requests merged i
 - **(2)** lists the deployment actions of those Pull Requests, grouped by Pull Request with its author, numbered in the order they run. Once the deployment ran, each action shows its status in the org of the branch, and a failed one can be retried from there: see [Recover a failed action](salesforce-devops-work-on-user-story-deployment-actions.md#recover-a-failed-action).
 - **(3)** previews or generates the promotion notes of the next merge to the upper branch.
 
+The Pull Requests tab is a list you can filter: type a number, a title, an author, a branch or a ticket. A story a promotion brought into the branch says **Carried by** and the number of that promotion, which opens it; typing that number lists everything it brought. **Merges and promotions** adds the Pull Requests that only move other ones.
+
 Click the number or the title of a Pull Request to open it without leaving the window: a line above the title brings you back, with the stories you had ticked still ticked.
 
 ## Find and open any Pull Request

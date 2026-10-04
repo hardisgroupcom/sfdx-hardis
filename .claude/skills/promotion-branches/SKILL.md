@@ -335,8 +335,8 @@ Major-to-major merges are filtered for **every** project: such a merge is plumbi
 A `promotion/` branch is only a vehicle when the feature is enabled, because otherwise it really is
 an ordinary branch, which is exactly how the deployment jobs treat it.
 
-What brings the vehicles back: the **Show merge and promotion Pull Requests** toggle (top right of
-the branch window modal), and `--include-promotions` on `hardis:doc:release-notes`.
+What brings the vehicles back: the **Merges and promotions** chip of the Pull Requests list
+(`s/pullRequestList`, next to its text filter), and `--include-promotions` on `hardis:doc:release-notes`.
 
 ## Performance
 
