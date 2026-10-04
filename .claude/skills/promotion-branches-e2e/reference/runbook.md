@@ -713,7 +713,9 @@ Traps:
 - A `pull_request` run is listed under the head commit of the Pull Request, a `push` run under the
   merge commit: `gh run list --commit` finds both.
 - The link step takes three to four minutes per job (install and `tsc`): the section is about
-  25 runs long, so count about an hour.
+  30 runs long with W9, so count 70 to 80 minutes (2026-10-04: 72). It runs on GitHub's runners and
+  outlives the two-hour limit of a tracked background command: launch it with `nohup ... & disown`
+  and wait for its last line with a polling loop.
 
 ## 6sexies. Identical deployment actions run once
 
