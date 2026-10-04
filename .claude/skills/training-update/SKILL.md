@@ -360,9 +360,11 @@ node scripts/build/shots.mjs --all --kind vscode  # every VS Code image of the c
 node scripts/build/shots.mjs --lab 3.1 --dry-run  # what it would take
 ```
 
-**The capture never takes the desktop.** The extension harness drives VS Code through the Chrome
-DevTools Protocol (`src/test/ui/cdpWindow.ts` in vscode-sfdx-hardis): no real mouse, no foreground
-window. Run it in the background whenever it is needed, without asking the user for their screen.
+**On Windows the capture shows no window; elsewhere, ask first.** The extension harness drives
+VS Code through the Chrome DevTools Protocol (`src/test/ui/cdpWindow.ts` in vscode-sfdx-hardis),
+so it never uses the real mouse, and on Windows it starts VS Code on a desktop of its own
+(`scripts/hidden-desktop`), so no window opens on the user's desktop. There it can run in the
+background while they work. On macOS and Linux a window opens at every run.
 The Salesforce and web captures of this repository have their own tools: check theirs before
 assuming the same.
 
