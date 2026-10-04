@@ -1078,6 +1078,7 @@ ${getBannerMarkdownAndLink()}
           ref: comment.id,
           body: comment.content?.raw || '',
           url: comment?.links?.html?.href || '',
+          updatedAt: comment?.updated_on || comment?.created_on || '',
         });
       }
     }

@@ -16,6 +16,8 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
 import { ActionForecastItem, findOpenPromotionPullRequest, forecastAction, markIdenticalForecasts } from '../../../../common/utils/deploymentActionForecastUtils.js';
 import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
+import { SFDX_HARDIS_COMMENT_MARKER } from '../../../../common/gitProvider/prCommentNav.js';
+import { parseWorkflowRunsFromComments } from '../../../../common/gitProvider/prRunSummary.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -34,6 +36,8 @@ With \`--with-status\` and \`--pr-ids\` (Pull Request numbers, or \`draft\`), it
 
 With \`--with-backpromotes\`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in \`config/user/deployment-actions/\`, are included. Without a git provider token, only those are returned.
 
+With \`--with-workflows\`, it also returns the validation and deployment runs reported in the comments of these Pull Requests: kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests, and the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. The VS Code Pull Request view lists them in its Workflows tab.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -41,6 +45,7 @@ Supports non-interactive execution with \`--agent\`:
 \`\`\`sh
 sf hardis:project:action:list --agent --scope branch --when pre-deploy
 sf hardis:project:action:list --agent --with-status --pr-ids 123,124 --json
+sf hardis:project:action:list --agent --with-status --with-workflows --pr-ids 123 --json
 \`\`\`
 
 Required in agent mode:
@@ -59,6 +64,7 @@ Required in agent mode:
     '$ sf hardis:project:action:list',
     '$ sf hardis:project:action:list --agent --scope branch --when pre-deploy',
     '$ sf hardis:project:action:list --scope project --when post-deploy --json',
+    '$ sf hardis:project:action:list --agent --with-status --with-workflows --pr-ids 123 --json',
   ];
 
   public static flags: any = {
@@ -90,6 +96,10 @@ Required in agent mode:
       default: false,
       description: 'With --with-status, also return the rows of the Backpromotes comments of --pr-ids: the actions run in each developer org',
     }),
+    'with-workflows': Flags.boolean({
+      default: false,
+      description: 'With --with-status, also return the validation and deployment runs reported in the comments of --pr-ids',
+    }),
     'pr-ids': Flags.string({
       description: 'Comma-separated list of Pull Request numbers, or draft (with --with-status)',
     }),
@@ -114,7 +124,7 @@ Required in agent mode:
     const agentMode = flags.agent === true;
 
     if (flags['with-status']) {
-      return await this.listStatuses(flags['pr-ids'] || '', flags['with-backpromotes'] === true, flags.forecast, flags['from-branch']);
+      return await this.listStatuses(flags['pr-ids'] || '', flags['with-backpromotes'] === true, flags.forecast, flags['from-branch'], flags['with-workflows'] === true);
     }
 
     const { scope, when } = await this.collectScopeAndWhen(flags, agentMode);
@@ -154,7 +164,7 @@ Required in agent mode:
    * Status of the actions of some Pull Requests in each org branch, from their Deployment Actions
    * comments, for the VS Code Deployment Actions tab.
    */
-  private async listStatuses(prIdsFlag: string, withBackpromotes: boolean, forecastBranch?: string, fromBranch?: string): Promise<AnyJson> {
+  private async listStatuses(prIdsFlag: string, withBackpromotes: boolean, forecastBranch?: string, fromBranch?: string, withWorkflows = false): Promise<AnyJson> {
     const prIds = [...new Set(prIdsFlag.split(',').map((id) => id.replace('#', '').trim()).filter((id) => id === 'draft' || /^\d+$/.test(id)))];
     if (prIds.length === 0) {
       throw new SfError(t('missingRequiredFlag', { flag: 'pr-ids' }));
@@ -201,6 +211,15 @@ Required in agent mode:
         }
       }
     }
+    // The validation and deployment runs, from the comments that report them (one listing per Pull Request)
+    const workflows: Record<string, any[]> = {};
+    if (withWorkflows && gitProvider) {
+      uxLog("action", this, c.cyan(t('actionListWorkflowsHeader', { count: prNumbers.length })));
+      for (const prNumber of prNumbers) {
+        const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber);
+        workflows[String(prNumber)] = parseWorkflowRunsFromComments(comments || []);
+      }
+    }
     const forecast = forecastBranch && gitProvider ? await this.buildForecast(prNumbers, forecastBranch, fromBranch) : null;
     // gitProvider false: the comments could not be read, only the local results are there, and a UI
     // must not present "no status" as "not run yet"
@@ -209,8 +228,9 @@ Required in agent mode:
       statuses,
       gitProvider: prNumbers.length === 0 || !!gitProvider,
       ...(withBackpromotes ? { backpromotes } : {}),
+      ...(withWorkflows ? { workflows } : {}),
       ...(forecast ? { forecast } : {}),
-    };
+    } as AnyJson;
   }
 
 

@@ -402,4 +402,6 @@ export declare type PullRequestCommentRef = {
   // Permalink of the comment, used to navigate from one sfdx-hardis comment to another.
   // Empty when the provider cannot build it.
   url?: string;
+  // Last update of the comment (ISO date), when the provider returns it
+  updatedAt?: string;
 };

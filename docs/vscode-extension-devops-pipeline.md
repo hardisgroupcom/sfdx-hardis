@@ -64,6 +64,23 @@ Click a major branch in the diagram. The window lists the Pull Requests merged i
 - **(2)** lists the deployment actions of those Pull Requests, grouped by Pull Request with its author, numbered in the order they run. Once the deployment ran, each action shows its status in the org of the branch, and a failed one can be retried from there: see [Recover a failed action](salesforce-devops-work-on-user-story-deployment-actions.md#recover-a-failed-action).
 - **(3)** previews or generates the promotion notes of the next merge to the upper branch.
 
+Click the number or the title of a Pull Request to open it without leaving the window: a line above the title brings you back, with the stories you had ticked still ticked.
+
+## Find and open any Pull Request
+
+The search button of the toolbar opens the **Pull Requests explorer**. Type a number, a title, a branch, an author or a ticket: the Pull Requests the pipeline already shows are listed at once, then the ones found on your git provider, open or merged.
+
+A Pull Request opens the same way from everywhere: the explorer, the **My Pull Request** card, the **Open Pull Requests** tab, a feature branch or a Pull Request number of the diagram, and a Pull Request named in a ticket, a deployment action or another panel. Ctrl+click (Cmd+click on macOS) on a Pull Request number of the diagram still opens it on your git provider.
+
+The window of a Pull Request shows:
+
+- Its state, its author, its branches, and its way through the pipeline: the validation, then each major branch up to production, with the promotion that carried it when there is one. A branch reads **Not in the pipeline windows** when the Pull Request was merged too long ago for the pipeline to tell.
+- **Tickets**, with their status and who they are assigned to.
+- **Deployment Actions** and **Tests**, as in your own Pull Request.
+- **Workflows**: the validation and the deployments sfdx-hardis reported in the comments of the Pull Request, with their outcome, the job, and the comment itself under **Show details**. A run reported by a version of sfdx-hardis older than this feature has its outcome and its comment, without the number of errors.
+
+The deployment actions and the test classes are read from the files of the branch you have checked out, and written there. On a Pull Request that is not the one of your branch, a warning names that branch: what you change travels with your own Pull Request. **Run in my org** is only offered on your own Pull Request.
+
 ## Configure the pipeline
 
 ![Pipeline settings menu](assets/images/annotated/vscode-guide/pipeline-settings-menu.png)

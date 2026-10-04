@@ -880,6 +880,7 @@ ${getBannerMarkdownAndLink()}
           ref: { projectId: ctx.projectId, noteId: note.id },
           body: note.body || '',
           url: mergeRequestUrl ? `${mergeRequestUrl}#note_${note.id}` : '',
+          updatedAt: String(note.updated_at || note.created_at || ''),
         });
       }
     }
