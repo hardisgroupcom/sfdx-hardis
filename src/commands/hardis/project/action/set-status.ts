@@ -18,7 +18,8 @@ import {
   selectSourcePullRequest,
 } from '../../../../common/utils/deploymentActionRunUtils.js';
 import { DEV_SANDBOXES_BRANCH_NAME } from '../../../../common/utils/actionUtils.js';
-import { loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
+import { getStateEntriesForPr, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
+import { buildActionStatusRows } from '../../../../common/utils/deploymentActionsLocalState.js';
 import { syncCheckboxesBeforeWrite } from '../../../../common/utils/deploymentActionRunUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -66,6 +67,7 @@ Required in agent mode:
 - Reads the state of the Pull Request from its "Deployment Actions" comment, rewrites the entry of the action for the org branch, and runs the checkbox sync on the comments of the Pull Request.
 - No org work is done. The org, when there is one, gives the Salesforce username written in the note, and the org branch when \`--org-branch\` is not passed.
 - A git provider token is required.
+- With \`--json\`, the result holds \`statuses\`: the status of every action of the Pull Request in every org after the write, in the shape of \`hardis:project:action:list --with-status\`. A panel shows the outcome without a second call.
 </details>
 
 <!-- training-links:start -->
@@ -152,7 +154,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       uxLog("warning", this, c.yellow(t('actionRunStoppedActionsLeft', { count: entry.stoppedActions!.length })));
     }
     WebSocketClient.sendRefreshPipelineMessage();
-    return { outputString: 'Action status set', prNumber, actionId, orgBranch, status: entry.status, note: entry.note || '' };
+    return { outputString: 'Action status set', prNumber, actionId, orgBranch, status: entry.status, note: entry.note || '', statuses: { [String(prNumber)]: buildActionStatusRows(String(prNumber), getStateEntriesForPr(prNumber)) } };
   }
 
   /**
@@ -179,7 +181,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     uxLog("success", this, c.green(t('actionSetStatusDone', { label: entry.actionLabel, orgBranch: choice.orgBranch })));
     uxLog("action", this, c.cyan(entry.note || ''));
     WebSocketClient.sendRefreshPipelineMessage();
-    return { outputString: 'Action status set', prNumber, actionId: flags['action-id'], orgBranch: choice.orgBranch, status: entry.status, note: entry.note || '' };
+    return { outputString: 'Action status set', prNumber, actionId: flags['action-id'], orgBranch: choice.orgBranch, status: entry.status, note: entry.note || '', statuses: { [String(prNumber)]: buildActionStatusRows(String(prNumber), getStateEntriesForPr(prNumber)) } };
   }
 
   /**

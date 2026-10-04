@@ -14,7 +14,7 @@ With `--with-status` and `--pr-ids` (Pull Request numbers, or `draft`), it retur
 
 With `--with-backpromotes`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in `config/user/deployment-actions/`, are included. Without a git provider token, only those are returned.
 
-With `--with-workflows`, it also returns what the comments of these Pull Requests report: the validation and deployment runs of sfdx-hardis (kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests) and the analysis of MegaLinter, each with the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. The VS Code Pull Request view shows them in its Validation, Deployment and MegaLinter tabs.
+With `--with-workflows`, it also returns what the comments of these Pull Requests report: the validation and deployment runs of sfdx-hardis (kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests) and the analysis of MegaLinter, each with the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. `--workflow-pr-ids` limits it to some of the Pull Requests; one whose comments could not be read is left out of the result. The VS Code Pull Request view shows them in its Validation, Code Quality and Deployment tabs.
 
 ### Agent Mode
 
@@ -57,6 +57,7 @@ Required in agent mode:
 | with-backpromotes | boolean | With --with-status, also return the rows of the Backpromotes comments of --pr-ids: the actions run in each developer org               |         |          |                            |
 | with-status       | boolean | Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments                           |         |          |                            |
 | with-workflows    | boolean | With --with-status, also return the validation, deployment and MegaLinter results reported in the comments of --pr-ids                 |         |          |                            |
+| workflow-pr-ids   | option  | With --with-workflows, the Pull Request numbers whose comments are read (defaults to --pr-ids)                                         |         |          |                            |
 
 ## Examples
 

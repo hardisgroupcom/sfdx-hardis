@@ -11,7 +11,7 @@ import {
 } from '../../../../common/utils/actionUtils.js';
 import { ActionCommandBase } from './base.js';
 import { getStateEntriesForPr, loadDeploymentActionsState } from '../../../../common/utils/deploymentActionsStateUtils.js';
-import { readLocalActionStates } from '../../../../common/utils/deploymentActionsLocalState.js';
+import { buildActionStatusRows } from '../../../../common/utils/deploymentActionsLocalState.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
 import { ActionForecastItem, findOpenPromotionPullRequest, forecastAction, markIdenticalForecasts } from '../../../../common/utils/deploymentActionForecastUtils.js';
@@ -24,6 +24,9 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class ActionList extends ActionCommandBase {
   public static title = 'List deployment actions';
+
+  // Read by panels and scripts, never a command somebody follows in VS Code: no command tab
+  public static disableWebsocket = true;
 
   public static description = `
 ## Command Behavior
@@ -183,23 +186,7 @@ Required in agent mode:
     const statuses: Record<string, any[]> = {};
     for (const prId of prIds) {
       const fromComment = prId !== 'draft' && gitProvider ? getStateEntriesForPr(parseInt(prId, 10)) : [];
-      const fromLocal = readLocalActionStates(prId).filter(
-        (local) => !fromComment.some((e) => e.actionId === local.actionId && e.orgBranch === local.orgBranch)
-      );
-      statuses[prId] = [...fromComment, ...fromLocal].map((e) => ({
-        actionId: e.actionId,
-        actionLabel: e.actionLabel,
-        orgBranch: e.orgBranch,
-        when: e.when,
-        status: e.status,
-        date: e.date,
-        jobUrl: e.jobUrl,
-        note: e.note || '',
-        movedTo: e.movedTo || null,
-        blockedBy: e.blockedBy || null,
-        stoppedActions: e.stoppedActions || [],
-        local: fromLocal.includes(e),
-      }));
+      statuses[prId] = buildActionStatusRows(prId, fromComment);
     }
     // The actions run in developer orgs, from the Backpromotes comments (one more read per Pull Request)
     const backpromotes: Record<string, any[]> = {};
