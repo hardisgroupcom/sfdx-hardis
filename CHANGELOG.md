@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- VS Code [Deployment Actions tab](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action): a **Total** row adds up the pills of its Pull Requests, for the status in the branch and for the next promotion ([#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274)).
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once): when several Pull Requests of one deployment carry the same action, it runs once and the others are recorded as done.
 - Two Pull Requests reusing the same deployment action id no longer skip each other's action.
 - Deployment jobs stop with the line to add to the CI workflow when git refuses the checkout ("detected dubious ownership"), instead of skipping the deployment actions; the GitHub Actions templates now include it.
