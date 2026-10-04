@@ -45,7 +45,8 @@ describe('Pull Request run summary', () => {
 
   it('returns null without a marker, or with one that is not readable', () => {
     expect(decodeRunSummaryMarker('No marker here')).to.be.null;
-    expect(decodeRunSummaryMarker('<!-- sfdx-hardis run-summary bm90IGpzb24= -->')).to.be.null;
+    const notJson = Buffer.from('not json', 'utf8').toString('base64');
+    expect(decodeRunSummaryMarker(`<!-- sfdx-hardis run-summary ${notJson} -->`)).to.be.null;
     expect(decodeRunSummaryMarker(forgedMarker(['a']))).to.be.null;
   });
 
