@@ -60,6 +60,7 @@ Defaults applied: `--next none`. The confirmations are skipped with a warning. A
 - The `sf` commands started by the action target the org through the `SF_TARGET_ORG` environment variable of the process: the default org of the project is not changed.
 - The state entry carries a note such as "Run locally by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
 - The stopped actions come from the failed entry (`stoppedActions`) and from the `blockedBy` link of each stopped entry.
+- Actions run in one go (a retry followed by the actions it stopped, or `--all` in a developer org) follow the rule of deployment jobs: an action identical to one that already succeeded in that run (same type, phase, user and parameters) is not run again. It is recorded as done, with a note naming the action that ran.
 </details>
 
 <!-- training-links:start -->

@@ -11,7 +11,8 @@ import { findUserByUsernameLike } from './orgUtils.js';
 import { parsePromotionBranchName } from './promotionBranchUtils.js';
 import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
 import { t } from './i18n.js';
-import { BackpromoteActionRow, BackpromoteCommentStore, upsertActionRow } from './backpromoteCommentUtils.js';
+import { BackpromoteActionRow, BackpromoteCommentStore, backpromoteActionKey, upsertActionRow } from './backpromoteCommentUtils.js';
+import { computeActionIdentityKey, findIdenticalActionRun, formatIdenticalActionSource, recordSuccessfulActionRun } from './deploymentActionIdentityUtils.js';
 
 // ---- Interfaces ----
 
@@ -677,8 +678,10 @@ export function collectBackpromoteActions(
 ): BackpromoteActionCandidate[] {
   const allActions: BackpromoteActionCandidate[] = [];
   const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, parentBranch];
-  // Newest first: when two Pull Requests declare the same action id, the newest one owns it (and
-  // its comment gets the row); the result goes back to the chronological order of the groups
+  // Newest first, so an action moved to a fix Pull Request (movedFrom) drops its original copy of an
+  // older Pull Request, and a Pull Request listed twice keeps one copy of its action. Two Pull
+  // Requests reusing one id (a copied actions file) both keep theirs: an identical one runs once at
+  // execution time. The result goes back to the chronological order of the groups
   const groupIndex = new Map(selectedPrs.map((group, index) => [group.commit.hash, index]));
   for (const prGroup of [...selectedPrs].reverse()) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
@@ -697,7 +700,7 @@ export function collectBackpromoteActions(
           }
           continue;
         }
-        if (allActions.some((action) => action.id === cmd.id)) {
+        if (allActions.some((action) => action.id === cmd.id && (action.prId === prId || Number(action.movedFrom) === prId))) {
           continue;
         }
         allActions.push({ ...cmd, prLabel, prId, commitHash: prGroup.commit.hash });
@@ -712,6 +715,8 @@ export interface BackpromoteActionsOutcome {
   skipped: string[];
   failed: string[];
   pending: string[];
+  // The skipped actions that an identical action of the same backpromote did (also in skipped)
+  identical: string[];
 }
 
 /**
@@ -733,7 +738,7 @@ export async function executeBackpromoteActions(options: {
   store: BackpromoteCommentStore;
   commandThis: any;
 }): Promise<BackpromoteActionsOutcome> {
-  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [] };
+  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [], identical: [] };
   const phase: 'pre' | 'post' = options.phase === 'commandsPreDeploy' ? 'pre' : 'post';
   const record = async (action: BackpromoteActionCandidate, status: BackpromoteActionRow['status']) => {
     if (action.prId <= 0) {
@@ -753,7 +758,7 @@ export async function executeBackpromoteActions(options: {
   uxLog('action', options.commandThis, c.cyan(t('backpromoteExecutingActions', { count: toRun.length, phase: phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy') })));
   globalThis.jsForceConn = options.conn;
   for (const action of toRun) {
-    const previous = options.alreadyRun.get(action.id);
+    const previous = options.alreadyRun.get(backpromoteActionKey(action.prId, action.id));
     if (previous && previous.status === 'success' && action.runOnlyOnceByOrg !== false) {
       uxLog('log', options.commandThis, c.grey(t('backpromoteActionAlreadyRun', { label: action.label, date: previous.date.substring(0, 10) })));
       outcome.skipped.push(action.id);
@@ -763,6 +768,17 @@ export async function executeBackpromoteActions(options: {
       uxLog('warning', options.commandThis, c.yellow(t('backpromoteManualActionPending', { label: action.label })));
       outcome.pending.push(action.id);
       await record(action, 'pending');
+      continue;
+    }
+    // An identical action (same type, phase, user and parameters) already ran in this backpromote:
+    // its work is in the sandbox, so this one is written as done without logging in nor running
+    const identityKey = await computeActionIdentityKey(action, phase === 'pre' ? 'pre-deploy' : 'post-deploy');
+    const identicalRun = findIdenticalActionRun(identityKey);
+    if (identicalRun) {
+      uxLog('log', options.commandThis, c.grey(t('backpromoteActionIdentical', { label: action.label, identicalLabel: identicalRun.ref.label, source: formatIdenticalActionSource(identicalRun.ref) })));
+      outcome.skipped.push(action.id);
+      outcome.identical.push(action.id);
+      await record(action, 'success');
       continue;
     }
     let actionInstance: any = null;
@@ -812,6 +828,7 @@ export async function executeBackpromoteActions(options: {
     if (status === 'success') {
       uxLog('success', options.commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
       outcome.run.push(action.id);
+      recordSuccessfulActionRun(identityKey, { ref: { actionId: action.id, label: action.label, pr: action.prId } });
     } else if (status === 'pending') {
       outcome.pending.push(action.id);
     } else {

@@ -198,6 +198,17 @@ export class RunBatchAction extends ActionsProvider {
     return null;
   }
 
+  // With the defaults applied: an unset batch size runs what an explicit 200 runs. Without waiting,
+  // the wait parameters change nothing.
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    const options: Partial<RunBatchOptions> = resolveRunBatchOptions(cmd.parameters);
+    if (options.runMode === 'no-wait') {
+      delete options.waitTimeoutMinutes;
+      delete options.successEvenIfBatchErrors;
+    }
+    return { className: String(cmd.parameters?.className || '').trim(), ...options };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;

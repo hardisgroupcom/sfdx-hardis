@@ -212,11 +212,14 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
 
 /**
  * Check if an action already ran successfully in an org.
- * Searches across ALL loaded PR state buckets.
+ * With ownerPrs, only the state of these Pull Requests is read: a Pull Request action is read from
+ * its own Pull Request and from the one it was moved from (movedFrom keeps the id on purpose), so
+ * two Pull Requests reusing an id (a copied actions file) never see each other's runs.
+ * Without ownerPrs, every loaded Pull Request is searched: an action of the branch or project config
+ * is recorded on whichever Pull Request each job deployed.
  */
-export function checkActionInState(actionId: string, orgBranch: string): DeploymentActionStateEntry | null {
-  const state = getMultiPrState();
-  for (const entries of state.entriesByPr.values()) {
+export function checkActionInState(actionId: string, orgBranch: string, ownerPrs: number[] = []): DeploymentActionStateEntry | null {
+  for (const entries of listStateBuckets(ownerPrs)) {
     const found = entries.find(e => e.actionId === actionId && e.orgBranch.trim() === orgBranch.trim() && e.status === 'success');
     if (found) return found;
   }
@@ -1014,6 +1017,15 @@ export function buildRunLocallyNote(gitUser: string | null, sfUsername: string |
     : `Run locally by ${who} on ${formatNoteDate(new Date())}.`;
 }
 
+/**
+ * Note of an action that an identical action of the same run did (same type, phase, user and
+ * parameters): it is recorded as done in the org without running a second time.
+ */
+export function buildIdenticalActionNote(ref: { label: string; pr: number }): string {
+  const source = ref.pr > 0 ? `of #${ref.pr}` : 'of the branch or project config';
+  return `Not run twice: the identical action "${ref.label}" ${source} ran earlier in the same run.`;
+}
+
 function formatNoteDate(date: Date): string {
   return `${date.toISOString().replace('T', ' ').substring(0, 16)} UTC`;
 }
@@ -1058,11 +1070,12 @@ export function parseManualActionCheckboxes(body: string): ManualActionCheckboxI
  * Tick the checkbox of a manual action in a comment body. Returns the updated body and
  * whether a line was actually changed.
  */
-export function checkManualActionCheckboxInBody(body: string, actionId: string, orgBranch: string): { body: string; changed: boolean } {
+// prNumber: only the checkbox of that Pull Request, when two Pull Requests reuse the same action id
+export function checkManualActionCheckboxInBody(body: string, actionId: string, orgBranch: string, prNumber?: number): { body: string; changed: boolean } {
   let changed = false;
   const lines = body.split('\n').map((line) => {
     const match = line.match(MANUAL_ACTION_CHECKBOX_REGEX);
-    if (match && decodeActionId(match[3]) === actionId && match[4] === orgBranch && match[1] === ' ') {
+    if (match && decodeActionId(match[3]) === actionId && match[4] === orgBranch && match[1] === ' ' && (prNumber === undefined || Number(match[5]) === prNumber)) {
       changed = true;
       // Tick the checkbox itself: the regex accepts both '-' and '*' bullets, and the first
       // '[ ]' of a matched line is always the checkbox
@@ -1073,9 +1086,8 @@ export function checkManualActionCheckboxInBody(body: string, actionId: string, 
   return { body: lines.join('\n'), changed };
 }
 
-function findEntryAnyStatus(actionId: string, orgBranch: string | null): DeploymentActionStateEntry | null {
-  const state = getMultiPrState();
-  for (const entries of state.entriesByPr.values()) {
+function findEntryAnyStatus(actionId: string, orgBranch: string | null, ownerPrs: number[] = []): DeploymentActionStateEntry | null {
+  for (const entries of listStateBuckets(ownerPrs)) {
     const found = entries.find((e) => e.actionId === actionId && (orgBranch === null || e.orgBranch.trim() === orgBranch.trim()));
     if (found) return found;
   }
@@ -1118,18 +1130,18 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
   for (const comment of allComments) {
     for (const item of parseManualActionCheckboxes(comment.body)) {
       if (!item.checked) continue;
-      const pairKey = `${item.actionId}||${item.orgBranch}`;
+      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
+      const pairKey = `${sourcePr}||${item.actionId}||${item.orgBranch}`;
       if (processedPairs.has(pairKey)) continue;
       processedPairs.add(pairKey);
-      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
       // A comment can carry checkboxes of Pull Requests outside the current scope (the validation
       // comment of a promotion lists the manual actions of every Pull Request it carries). Their
       // state is not loaded with the scope: without this, an already-recorded tick is not found,
       // gets recorded again with today's date and this job, and the source Pull Request's comment
       // is rewritten on every run that scans this comment.
       await loadDeploymentActionsState([sourcePr]);
-      if (checkActionInState(item.actionId, item.orgBranch)) continue; // already recorded as done
-      const base = findEntryAnyStatus(item.actionId, item.orgBranch) || findEntryAnyStatus(item.actionId, null);
+      if (checkActionInState(item.actionId, item.orgBranch, [sourcePr])) continue; // already recorded as done
+      const base = findEntryAnyStatus(item.actionId, item.orgBranch, [sourcePr]) || findEntryAnyStatus(item.actionId, null, [sourcePr]);
       const label = base?.actionLabel || item.label || item.actionId;
       const { jobId, jobUrl } = await getJobInfoWithUrl();
       const closedFailure = item.kind === 'failed';
@@ -1171,8 +1183,9 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
     let updatedBody = comment.body;
     let changed = false;
     for (const item of parseManualActionCheckboxes(updatedBody)) {
-      if (!item.checked && checkActionInState(item.actionId, item.orgBranch)) {
-        const res = checkManualActionCheckboxInBody(updatedBody, item.actionId, item.orgBranch);
+      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
+      if (!item.checked && checkActionInState(item.actionId, item.orgBranch, [sourcePr])) {
+        const res = checkManualActionCheckboxInBody(updatedBody, item.actionId, item.orgBranch, item.prNumber);
         updatedBody = res.body;
         changed = changed || res.changed;
       }
@@ -1182,6 +1195,16 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
       uxLog("log", null, c.grey(`[DeploymentActions] ${t('manualActionCheckboxPropagated', { pr: comment.prNumber })}`));
     }
   }
+}
+
+/** The state of these Pull Requests, or of every loaded Pull Request when none is given */
+function listStateBuckets(ownerPrs: number[]): DeploymentActionStateEntry[][] {
+  const state = getMultiPrState();
+  const owners = ownerPrs.filter((prNumber) => prNumber > 0);
+  if (owners.length === 0) {
+    return [...state.entriesByPr.values()];
+  }
+  return [...new Set(owners)].map((prNumber) => state.entriesByPr.get(prNumber) || []);
 }
 
 // Augment globalThis types

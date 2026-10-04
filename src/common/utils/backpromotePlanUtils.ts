@@ -14,6 +14,7 @@ import { WebSocketClient } from '../websocketClient.js';
 import { t } from './i18n.js';
 import { BackpromoteDiffChoice } from './backpromoteRules.js';
 import { BackpromoteLeftOutItem, BackpromoteSandboxRow } from './backpromoteCommentUtils.js';
+import { findIdenticalCopies, formatIdenticalActionSource } from './deploymentActionIdentityUtils.js';
 
 export const BACKPROMOTE_PLAN_VERSION = 3;
 export const BACKPROMOTE_DEFAULT_SCAN_LIMIT = 100;
@@ -70,6 +71,8 @@ export interface BackpromotePlanItem {
 
 export interface BackpromotePlanAction {
   id: string;
+  /** "<Pull Request>:<id>": unique in the plan, where two Pull Requests can reuse one action id */
+  key: string;
   label: string;
   type: string;
   phase: 'pre' | 'post';
@@ -82,6 +85,18 @@ export interface BackpromotePlanAction {
   /** Can run from this computer (a custom username must be authenticated locally) */
   runnable: boolean;
   runOnlyOnceByOrg: boolean;
+  /**
+   * The action of the plan this one runs once with: same type, phase, user and parameters. Null when
+   * it runs on its own. When that action is not selected, this one runs.
+   */
+  identicalTo: BackpromotePlanActionRef | null;
+}
+
+export interface BackpromotePlanActionRef {
+  key: string;
+  id: string;
+  pullRequest: number;
+  label: string;
 }
 
 export type BackpromoteComparisonStatus = 'same' | 'different' | 'missingInOrg' | 'pendingInOrg' | 'notCompared';
@@ -108,7 +123,8 @@ export interface BackpromoteRunResult {
   deployed: number;
   deleted: number;
   excluded: BackpromoteLeftOutItem[];
-  actions: { run: string[]; skipped: string[]; failed: string[]; pending: string[] };
+  /** identical: the skipped actions that an identical action of the same run did (also in skipped) */
+  actions: { run: string[]; skipped: string[]; failed: string[]; pending: string[]; identical: string[] };
   conflictPending: string[];
   commentedPullRequests: number[];
   pushed: boolean;
@@ -376,6 +392,21 @@ export async function promptDirtyTree(files: string[], currentBranch: string): P
   return { action: 'stash', message: null };
 }
 
+/**
+ * Mark the actions that run once with an identical one. Among the actions a run takes by default
+ * (not manual, runnable, not already run in this sandbox), the first of each identity key runs and
+ * the next ones point at it. Pre-deployment actions come first, as they run first.
+ */
+export function markIdenticalPlanActions(actions: BackpromotePlanAction[], identityKeys: Map<string, string | null>): void {
+  const runsByDefault = (action: BackpromotePlanAction) => !action.manual && action.runnable && !(action.alreadyRunOn && action.runOnlyOnceByOrg);
+  const inRunOrder = [...actions.filter((action) => action.phase === 'pre'), ...actions.filter((action) => action.phase === 'post')];
+  const copies = findIdenticalCopies(inRunOrder, (action) => (runsByDefault(action) ? identityKeys.get(action.key) || null : null));
+  for (const action of actions) {
+    const first = copies.get(action);
+    action.identicalTo = first ? { key: first.key, id: first.id, pullRequest: first.pullRequest, label: first.label } : null;
+  }
+}
+
 export async function promptActionsToRun(actions: BackpromotePlanAction[]): Promise<string[]> {
   const runnable = actions.filter((action) => action.alreadyRunOn === null || !action.runOnlyOnceByOrg);
   if (runnable.length === 0) {
@@ -387,7 +418,7 @@ export async function promptActionsToRun(actions: BackpromotePlanAction[]): Prom
     message: c.cyanBright(t('backpromoteSelectActionsPrompt')),
     description: t('backpromoteSelectActionsPrompt'),
     choices: runnable.map((action) => ({
-      title: `[${action.phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy')}] ${action.label} (#${action.pullRequest})${action.manual ? ` [${t('backpromoteManualStep')}]` : ''}`,
+      title: `[${action.phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy')}] ${action.label} (#${action.pullRequest})${action.manual ? ` [${t('backpromoteManualStep')}]` : ''}${action.identicalTo ? ` (${t('backpromoteActionChoiceIdentical', { label: action.identicalTo.label, source: formatIdenticalActionSource({ pr: action.identicalTo.pullRequest }) })})` : ''}`,
       value: action.id,
       selected: true,
     })),

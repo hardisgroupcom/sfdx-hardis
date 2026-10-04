@@ -31,6 +31,11 @@ export class CommandAction extends ActionsProvider {
     return null;
   }
 
+  // The command line is what a command action does, its parameters are not used
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { command: (cmd.command || '').trim() };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;

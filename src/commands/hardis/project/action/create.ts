@@ -54,7 +54,7 @@ Branch names are matched exactly, ignoring case. The virtual name \`dev-sandboxe
 
 \`\`\`yaml
 commandsPostDeploy:
-  - id: publishCommunity
+  - id: 6e9749de-d7e7-4e44-8742-f8cae3e2142e
     label: Publish the customer community
     type: publish-community
     parameters:

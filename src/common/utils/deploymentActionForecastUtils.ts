@@ -6,10 +6,11 @@
  */
 import { getConfig } from '../../config/index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
-import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { buildActionTargetBranchCandidates, evaluateActionBranchFilter } from './actionUtils.js';
 import { DeploymentActionStateEntry, getActionStateEntry } from './deploymentActionsStateUtils.js';
 import { getEffectiveActionContext } from './prePostCommandUtils.js';
+import { computeActionIdentityKey, findIdenticalCopies } from './deploymentActionIdentityUtils.js';
 import {
   getPromotionBranchConfig,
   isPromotionPullRequestForItsTarget,
@@ -41,7 +42,8 @@ export type ActionForecastReason =
   | 'failed-in-branch'
   | 'stopped-in-branch'
   | 'not-carried'
-  | 'moved';
+  | 'moved'
+  | 'identical-action';
 
 export interface ActionForecast {
   actionId: string;
@@ -55,6 +57,15 @@ export interface ActionForecast {
   jobUrl: string;
   note: string;
   movedTo: number | null;
+  // The action of the same job this one runs once with (same type, phase, user and parameters), null
+  // when it runs on its own. Its forecast code stays the one of the job, with the identical-action reason.
+  identicalTo: { pr: number; actionId: string; actionLabel: string } | null;
+}
+
+export interface ActionForecastItem {
+  prNumber: number;
+  def: PrePostCommand;
+  forecast: ActionForecast;
 }
 
 export interface PromotionPullRequestInfo {
@@ -109,6 +120,7 @@ export function forecastAction(
     jobUrl: entry?.jobUrl || '',
     note: entry?.note || '',
     movedTo: entry?.movedTo || null,
+    identicalTo: null,
   };
   const make = (forecast: ActionForecastCode, reason: ActionForecastReason): ActionForecast => ({ ...base, forecast, reason });
   if (!carried) {
@@ -149,6 +161,33 @@ export function forecastAction(
   }
   // Context "all": the validation job runs it first, the deployment then skips it
   return entry?.status === 'skipped' ? make('runs-at-deployment', 'skipped-by-validation') : make('runs-at-validation', 'validation-first');
+}
+
+/**
+ * Point the forecasts of identical actions at the one that runs. In each job of the promotion (the
+ * validation, the deployment), the first action of an identity key runs and the next ones are done by
+ * it. Items come in the order the promotion runs them. An action still holding a ${{ }} reference is
+ * never grouped: its values are only known in the job.
+ */
+export async function markIdenticalForecasts(items: ActionForecastItem[]): Promise<void> {
+  const keys = new Map<ActionForecast, string | null>();
+  for (const item of items) {
+    if (item.forecast.forecast !== 'runs-at-validation' && item.forecast.forecast !== 'runs-at-deployment') {
+      continue;
+    }
+    const identityKey = await computeActionIdentityKey(item.def, (item.def.when || 'post-deploy') as ActionWhen, { refusePlaceholders: true });
+    keys.set(item.forecast, identityKey ? `${item.forecast.forecast}|${identityKey}` : null);
+  }
+  applyIdenticalForecasts(items, keys);
+}
+
+/** The grouping of markIdenticalForecasts, once the keys are known. Exported for unit tests. */
+export function applyIdenticalForecasts(items: Pick<ActionForecastItem, 'prNumber' | 'forecast'>[], keys: Map<ActionForecast, string | null>): void {
+  const copies = findIdenticalCopies(items, (item) => keys.get(item.forecast) || null);
+  for (const [copy, first] of copies) {
+    copy.forecast.reason = 'identical-action';
+    copy.forecast.identicalTo = { pr: first.prNumber, actionId: first.forecast.actionId, actionLabel: first.forecast.actionLabel };
+  }
 }
 
 function isPromotionOf(pr: CommonPullRequestInfo, sourceBranch: string): boolean {

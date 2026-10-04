@@ -50,7 +50,7 @@ You can also review the deployment actions of already merged Pull Requests: clic
 
 <details markdown="1"><summary>Technical: where actions are stored (YAML)</summary>
 
-Actions are stored in properties `commandsPreDeploy` / `commandsPostDeploy` of `.sfdx-hardis.yml` config files. The VS Code extension reads and writes these files for you, but you can also edit them by hand.
+Actions are stored in properties `commandsPreDeploy` / `commandsPostDeploy` of `.sfdx-hardis.yml` config files. The VS Code extension reads and writes these files for you. Create each action with it, or with [hardis:project:action:create](hardis/project/action/create.md): both generate the `id` of the action. When you edit a file by hand, never write or change an `id`: it links the action to its state in the Pull Request comments.
 
 - Pull Request level: `scripts/actions/.sfdx-hardis.<PR_ID>.yml` (ex: `scripts/actions/.sfdx-hardis.372.yml`).
 - Repository level: `config/.sfdx-hardis.yml`
@@ -60,13 +60,13 @@ Example of a Pull Request level configuration file defining pre-deploy and post-
 ```yaml
 # scripts/actions/.sfdx-hardis.372.yml
 commandsPreDeploy:
-  - id: runInitApex
+  - id: 00de1479-8639-46a2-96e1-88cfa69be4db
     label: Run initialization apex
     type: apex
     parameters:
       apexScript: scripts/apex/init.apex
     context: process-deployment-only
-  - id: removeKnowledgeFlag
+  - id: 47f666ba-944c-4721-9127-a08f51fb0a6c
     label: Remove KnowledgeUser flag
     type: command
     command: >-
@@ -74,13 +74,13 @@ commandsPreDeploy:
     context: all
 
 commandsPostDeploy:
-  - id: importTemplates
+  - id: f150d991-ecec-460a-8a0e-5f2db77ded60
     label: Import email templates
     type: data
     parameters:
       sfdmuProject: EmailTemplate
     context: process-deployment-only
-  - id: publishSite
+  - id: 3d700b21-4916-4344-ac46-67919081a008
     label: Publish Experience site
     type: publish-community
     parameters:
@@ -92,7 +92,7 @@ Each action is an object with the following required and optional properties.
 
 | Field                   | Type    | Required? | Description                                                                                                                                                                                      |
 |-------------------------|---------|:---------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `id`                    | string  |    Yes    | Unique identifier for the action.                                                                                                                                                                |
+| `id`                    | string  |    Yes    | Generated when the action is created. Never write it or change it by hand: it links the action to its tracked state.                                                                             |
 | `label`                 | string  |    Yes    | Human-readable description of the action.                                                                                                                                                        |
 | `type`                  | string  |    Yes    | One of `command`, `data`, `apex`, `publish-community`, `schedule-batch`, `run-batch`, `remove-packagexml-items`, `manual`.                                                                       |
 | `context`               | string  |    Yes    | When the action should run. Allowed values: `all` (default), `check-deployment-only`, `process-deployment-only`.                                                                                 |
@@ -163,6 +163,48 @@ The resolved scope is visible in two places:
 
 </details>
 
+#### Identical actions run once
+
+When several Pull Requests of the same deployment carry the same action, for example five User Stories that each publish the same Experience Cloud site, it runs once. The first one runs, and the others are recorded as done by it on their own Pull Request.
+
+Two actions are the same when they are of the same type, run at the same moment (before or after the deployment) as the same user, with the same parameters: the same command line, Apex script, data workspace, site name... Their labels do not matter. Manual steps are never merged: each Pull Request keeps its own checkbox.
+
+<details markdown="1"><summary>Technical: how identical actions are detected and recorded</summary>
+
+**What is compared**
+
+The type, the phase (`commandsPreDeploy` or `commandsPostDeploy`), `customUsername`, and what the action does, once its `${{ }}` references are resolved:
+
+| Type                      | Compared                                                         |
+|---------------------------|------------------------------------------------------------------|
+| `command`                 | The command line                                                 |
+| `apex`                    | The path of the Apex script                                      |
+| `data`                    | The data workspace                                               |
+| `publish-community`       | The site name                                                    |
+| `schedule-batch`          | The class, the cron expression and the job name                  |
+| `run-batch`               | The class and the run options, with their defaults applied       |
+| `remove-packagexml-items` | The items to remove, whatever their order                        |
+| Custom function           | Its parameters                                                   |
+| `manual`                  | Never merged                                                     |
+
+The id, the label, the Pull Request, `context`, the branch filters, `allowFailure` and `runOnlyOnceByOrg` are not compared: whether an action runs in a job is decided before it is compared.
+
+**Which one runs**
+
+- Actions are compared within one job: the validation job, the deployment job, a retry with `sf hardis:project:action:run` and a backpromote each run their own. Two copies that run in different jobs both run, for example one with `context: all` (run by the validation job) and one with `context: process-deployment-only`.
+- The first copy in the deployment order runs: the branch and project actions first, then the Pull Requests from the oldest merge to the newest. When a later Pull Request lists other actions before its copy, they run after the shared action.
+- Only a successful run stands for the others. When the first copy fails, even with `allowFailure: true`, the next copy runs.
+
+**How a copy is recorded**
+
+- In the results of the job, a copy is ⚪ skipped: `same action as <label> (#101), run once for this deployment`.
+- In the status matrix of its own Pull Request, it is ✅ done in that org, with a note naming the action that ran. A re-run of the job does not run it again.
+- When a failure stops the job, a later copy of an action that already succeeded is recorded as done, not as stopped.
+- A copy of a custom function receives the outputs of the action that ran, so `${{ actions.<id of the copy>.outputs.<name> }}` keeps working.
+- The **Next promotion** mode of the VS Code Deployment Actions tab and the Backpromote panel show which actions run once with an identical one.
+
+</details>
+
 ### Choose the target orgs
 
 By default, an action runs in every org your work is deployed to. In the editor, the **Target orgs** field lets you restrict it: run it **everywhere**, only on **some major branches** (for example only `uat`), or **everywhere except** a few (for example everywhere but production). You can also target **developer sandboxes** specifically.
@@ -185,7 +227,7 @@ Two mutually exclusive properties control the target orgs:
 ```yaml
 commandsPostDeploy:
   # Runs on UAT and preprod only
-  - id: publishCommunity
+  - id: 6e9749de-d7e7-4e44-8742-f8cae3e2142e
     label: Publish the customer community
     type: publish-community
     parameters:
@@ -196,7 +238,7 @@ commandsPostDeploy:
       - preprod
 
   # Runs everywhere except production
-  - id: seedDemoData
+  - id: 1a4d01e2-7008-4651-9afb-589c280d9b2e
     label: Import demo records
     type: data
     parameters:
@@ -215,7 +257,7 @@ A deployment does not always target a major branch. `sf hardis:work:backpromote`
 ```yaml
 commandsPreDeploy:
   # Never runs when a developer backpromotes into their own sandbox
-  - id: lockIntegrationUser
+  - id: 6c3daad7-9fbc-4bfd-b8fc-587a6fe7ff85
     label: Lock the integration user
     type: apex
     parameters:
@@ -251,7 +293,7 @@ In case of multiple commands, use `&&` to separate them.
 | `command`        | Command line to run (string). | `echo "My custom command"` |
 
 ```yaml
-- id: removeKnowledgeFlag
+- id: 47f666ba-944c-4721-9127-a08f51fb0a6c
   label: Remove KnowledgeUser flag
   type: command
   command: >-
@@ -276,7 +318,7 @@ Runs a SFDMU import for the specified project name. Typically used post-deploy t
 | `parameters.sfdmuProject` | Name of the SFDMU project to run. | `EmailTemplate` |
 
 ```yaml
-- id: importTemplates
+- id: f150d991-ecec-460a-8a0e-5f2db77ded60
   label: Import email templates
   type: data
   parameters:
@@ -301,7 +343,7 @@ Executes an Apex script file against the target org using `sf apex run --file`.
 | `parameters.apexScript` | Relative path to the `.apex` script file in the repository. | `scripts/apex/init.apex` |
 
 ```yaml
-- id: runInitApex
+- id: 00de1479-8639-46a2-96e1-88cfa69be4db
   label: Run initialization apex
   type: apex
   parameters:
@@ -326,7 +368,7 @@ Publishes the specified Experience Cloud (community) site using `sf community pu
 | `parameters.communityName` | Name of the community/Experience site to publish. | `MyExperienceSite` |
 
 ```yaml
-- id: publishSite
+- id: 3d700b21-4916-4344-ac46-67919081a008
   label: Publish Experience site
   type: publish-community
   parameters:
@@ -357,7 +399,7 @@ If a scheduled job with the same name and cron expression already exists, the ac
 | `parameters.jobName`        |    No     | Name of the scheduled job. Defaults to `<className>_Schedule` if omitted.              | `MyBatch_Nightly`  |
 
 ```yaml
-- id: scheduleNightlyBatch
+- id: 1991c08c-a791-4e54-8adb-307ff23b7564
   label: Schedule nightly batch
   type: schedule-batch
   parameters:
@@ -409,7 +451,7 @@ Like for `schedule-batch`, a class of a managed package is written with its name
 | `parameters.successEvenIfBatchErrors` |    No     | Wait mode only. Keeps the action successful when the batch completes with batches in error.   | `true`              |
 
 ```yaml
-- id: recalculateCrewCapacity
+- id: 13334707-29d0-44e7-bd88-725e4097d30d
   label: Recalculate crew capacity
   type: run-batch
   parameters:
@@ -443,7 +485,7 @@ Only available as a **pre-deploy** action. The removal applies to the temporary 
 | `parameters.packageXmlItems` | List of items to remove, each in format `TypeName:Member1,Member2`. Use `*` as member to remove a whole type. Member names also support glob wildcards (ex: `Account*`). A single string is also accepted for a single entry. | `ApexClass:MyClass1,MyClass3` |
 
 ```yaml
-- id: removeLegacyItems
+- id: a803e4c8-4471-48fd-ba14-7cd6c45b8ad1
   label: Remove legacy items from deployment package.xml
   type: remove-packagexml-items
   parameters:
@@ -490,7 +532,7 @@ The Pull Request comments show the instructions (rendered as markdown) and an un
 Too short: which named credential? what is the expected value? how do I know it worked?
 
 ```yaml
-- id: url-check
+- id: 86cb1653-4072-4f32-b956-093130866cff
   label: Check external callback URL
   type: manual
   parameters:
@@ -501,7 +543,7 @@ Too short: which named credential? what is the expected value? how do I know it 
 Click by click: anyone can replay it in uat, preprod or production.
 
 ```yaml
-- id: url-check
+- id: 86cb1653-4072-4f32-b956-093130866cff
   label: Set the ERP callback URL in Named Credential ERP_Callback
   type: manual
   parameters:

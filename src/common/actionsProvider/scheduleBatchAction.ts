@@ -37,6 +37,16 @@ export class ScheduleBatchAction extends ActionsProvider {
     return null;
   }
 
+  // With its default job name, as run() schedules it
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    const className = String(cmd.parameters?.className || '').trim();
+    return {
+      className,
+      cronExpression: String(cmd.parameters?.cronExpression || '').trim(),
+      jobName: String(cmd.parameters?.jobName || '').trim() || `${className}_Schedule`,
+    };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
