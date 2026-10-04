@@ -29,6 +29,14 @@ export class CustomFunctionAction extends ActionsProvider {
     return 'CustomFunctionAction';
   }
 
+  // Never merged with an identical action: the script receives the id and the label of its own
+  // action (SFDX_HARDIS_ACTION_ID, SFDX_HARDIS_ACTION_LABEL), so equal parameters do not prove
+  // that two actions do the same thing
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getIdentityParameters(_cmd: PrePostCommand): Record<string, any> | null {
+    return null;
+  }
+
   public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
     const definition = await getCustomFunctionById(cmd.type);
     if (!definition) {

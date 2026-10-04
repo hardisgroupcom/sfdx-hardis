@@ -28,9 +28,9 @@ import {
   IdenticalActionRun,
   buildIdenticalCopyResult,
   buildIdentityKeyFromProvider,
-  computeActionIdentityKey,
   findIdenticalActionRun,
   isIdenticalActionCopy,
+  markIdentitySeen,
   recordSuccessfulActionRun,
   resetIdenticalActionRuns,
 } from './deploymentActionIdentityUtils.js';
@@ -478,13 +478,15 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
       }
     }
   }
-  // An identical action (same type, phase, user and parameters) already succeeded in this run: its
-  // work is in the org, so this one is recorded as done by it instead of running a second time.
+  // An identical action (same type, phase, user and parameters) of another source already succeeded
+  // in this run: its work is in the org, so this one is recorded as done by it instead of running a
+  // second time. An action written twice in one Pull Request, or twice in the config, runs twice.
   // The key is read before the run: a command action appends --target-org to its command.
   let identityKey: string | null = null;
   if (!skipAction) {
     identityKey = buildIdentityKeyFromProvider(actionsInstance, cmd, ctx.deployWhen);
-    const identicalRun = findIdenticalActionRun(identityKey);
+    const repeatedInSource = markIdentitySeen(identityKey, getActionSourcePr(cmd, ctx));
+    const identicalRun = repeatedInSource ? null : findIdenticalActionRun(identityKey);
     if (identicalRun) {
       applyIdenticalCopy(cmd, identicalRun);
       skipAction = true;
@@ -539,6 +541,15 @@ export async function markActionsStoppedByFailure(commands: PrePostCommand[], fa
     stoppedCommands.push(cmd);
   }
   return stoppedCommands;
+}
+
+/**
+ * Status of an action as written in the state stores (the Deployment Actions comment, the local file
+ * of a draft, the Backpromotes comment). A copy of an identical action of the same run is done there:
+ * the work it describes is in the org.
+ */
+export function getRecordedActionStatus(cmd: PrePostCommand): 'success' | 'failed' | 'warning' | 'manual' | 'skipped' {
+  return isIdenticalActionCopy(cmd) ? 'success' : getReportedActionStatus(cmd);
 }
 
 /**
@@ -615,9 +626,14 @@ function getActionOwnerPrs(cmd: PrePostCommand, actionPrNumber?: number): number
   return Number.isInteger(movedFrom) && movedFrom > 0 && movedFrom !== ownerPr ? [ownerPr, movedFrom] : [ownerPr];
 }
 
+/** The Pull Request an action comes from, 0 for the branch or project config: its source for identical actions */
+function getActionSourcePr(cmd: PrePostCommand, ctx: SingleActionRunContext): number {
+  return cmd.pullRequest?.idNumber || ctx.actionPrNumber || 0;
+}
+
 function applyIdenticalCopy(cmd: PrePostCommand, identicalRun: IdenticalActionRun): void {
   cmd.result = buildIdenticalCopyResult(identicalRun);
-  uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: ${cmd.result.skippedReason}`));
+  uxLog("action", this, c.grey(`[DeploymentActions] ${t('deploymentActionSkipped', { label: describeActionWithPr(cmd), reason: cmd.result.skippedReason })}`));
 }
 
 /** What a successful action leaves for the identical actions that come after it in the run */
@@ -626,7 +642,7 @@ function buildIdenticalActionRun(cmd: PrePostCommand, ctx: SingleActionRunContex
     ref: {
       actionId: cmd.id,
       label: cmd.label,
-      pr: cmd.pullRequest?.idNumber || ctx.actionPrNumber || 0,
+      pr: getActionSourcePr(cmd, ctx),
       prUrl: cmd.pullRequest?.webUrl,
     },
     outputs: cmd.result?.outputs,
@@ -685,16 +701,24 @@ async function recordActionOutcomeInState(cmd: PrePostCommand, ctx: SingleAction
 }
 
 /**
- * A stopped action whose identical action already succeeded in this run is a copy, when this job
- * would have run it. Its raw fields are compared: one still holding a ${{ }} reference stays
- * stopped, as its real values may depend on the actions the failure prevented.
+ * A stopped action whose identical action of another source already succeeded in this run is a
+ * copy, when this job would have run it. Its raw fields are compared: one still holding a ${{ }}
+ * reference stays stopped, as its real values may depend on the actions the failure prevented.
  */
 async function recordIdenticalCopyOfStoppedAction(cmd: PrePostCommand, ctx: SingleActionRunContext): Promise<boolean> {
   normalizeMovedFrom(cmd);
-  if (cmd.type === 'manual' || !wouldRunInThisJob(cmd, ctx)) {
+  if (cmd.type === 'manual') {
     return false;
   }
-  const identicalRun = findIdenticalActionRun(await computeActionIdentityKey(cmd, ctx.deployWhen, { refusePlaceholders: true }));
+  const provider = await ActionsProvider.buildActionInstance(cmd, { quiet: true });
+  if (!provider || !wouldRunInThisJob(cmd, ctx, provider)) {
+    return false;
+  }
+  const identityKey = buildIdentityKeyFromProvider(provider, cmd, ctx.deployWhen, { refusePlaceholders: true });
+  if (markIdentitySeen(identityKey, getActionSourcePr(cmd, ctx))) {
+    return false;
+  }
+  const identicalRun = findIdenticalActionRun(identityKey);
   if (!identicalRun) {
     return false;
   }
@@ -705,10 +729,13 @@ async function recordIdenticalCopyOfStoppedAction(cmd: PrePostCommand, ctx: Sing
 }
 
 /**
- * Whether this job would have run an action it did not reach: its context and its branch filter let
- * it run, it was not moved to a fix Pull Request, and it is not done in the org yet.
+ * Whether this job would have run an action it did not reach, with the decisions of
+ * runSingleDeploymentAction: its context and its branch filter let it run, it was not moved to a fix
+ * Pull Request, and runOnlyOnceByOrg does not skip it (done in the org already, or no git provider
+ * to track it). Its validity is not checked again: an action identical to one that succeeded, with
+ * the same parameters and the same user, is valid.
  */
-function wouldRunInThisJob(cmd: PrePostCommand, ctx: SingleActionRunContext): boolean {
+function wouldRunInThisJob(cmd: PrePostCommand, ctx: SingleActionRunContext, provider: ActionsProvider): boolean {
   const context = getEffectiveActionContext(cmd);
   if ((context === 'check-deployment-only' && !ctx.checkOnly) || (context === 'process-deployment-only' && ctx.checkOnly)) {
     return false;
@@ -717,12 +744,15 @@ function wouldRunInThisJob(cmd: PrePostCommand, ctx: SingleActionRunContext): bo
   if (verdict.invalid || verdict.run === false) {
     return false;
   }
-  const sourcePr = cmd.pullRequest?.idNumber || ctx.actionPrNumber || ctx.currentPrNumber;
-  if (sourcePr > 0 && getStateEntriesForPr(sourcePr).some((entry) => entry.actionId === cmd.id && entry.status === 'moved')) {
+  const ownerPr = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
+  if (ownerPr > 0 && getStateEntriesForPr(ownerPr).some((entry) => entry.actionId === cmd.id && entry.status === 'moved')) {
     return false;
   }
-  const runsAtEveryDeployment = cmd.runOnlyOnceByOrg === false || cmd.type === 'remove-packagexml-items' || ctx.skipRunOnlyOnceCheck === true;
-  return runsAtEveryDeployment || !checkActionInState(cmd.id, ctx.orgBranchName, getActionOwnerPrs(cmd, ctx.actionPrNumber));
+  const runOnlyOnceByOrg = provider.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false && ctx.skipRunOnlyOnceCheck !== true;
+  if (!runOnlyOnceByOrg) {
+    return true;
+  }
+  return ctx.hasGitProvider && !checkActionInState(cmd.id, ctx.orgBranchName, getActionOwnerPrs(cmd, ctx.actionPrNumber));
 }
 
 /**
@@ -1124,15 +1154,6 @@ export function getReportedActionStatus(cmd: PrePostCommand): 'success' | 'faile
     return 'warning';
   }
   return cmd.result?.statusCode as 'success' | 'failed' | 'manual' | 'skipped';
-}
-
-/**
- * Status of an action as written in the state stores (the Deployment Actions comment, the local file
- * of a draft, the Backpromotes comment). A copy of an identical action of the same run is done there:
- * the work it describes is in the org.
- */
-export function getRecordedActionStatus(cmd: PrePostCommand): 'success' | 'failed' | 'warning' | 'manual' | 'skipped' {
-  return isIdenticalActionCopy(cmd) ? 'success' : getReportedActionStatus(cmd);
 }
 
 // Status icons of the actions results table, in the order they are listed in the legend

@@ -1038,6 +1038,7 @@
   "deploymentActionPhaseDeploy": "deploy",
   "deploymentActionPhasePostDeploy": "post-deploy",
   "deploymentActionPhasePreDeploy": "pre-deploy",
+  "deploymentActionSkipped": "Skipping action {{label}}: {{reason}}",
   "deploymentActionStatusFailed": "failed",
   "deploymentActionStatusFailedAllowed": "failed (allowed)",
   "deploymentActionStatusManual": "manual",

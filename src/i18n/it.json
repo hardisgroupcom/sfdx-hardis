@@ -1034,6 +1034,7 @@
   "deploymentActionPhaseDeploy": "deploy",
   "deploymentActionPhasePostDeploy": "post-deploy",
   "deploymentActionPhasePreDeploy": "pre-deploy",
+  "deploymentActionSkipped": "Azione {{label}} ignorata: {{reason}}",
   "deploymentActionStatusFailed": "non riuscito",
   "deploymentActionStatusFailedAllowed": "non riuscito (consentito)",
   "deploymentActionStatusManual": "manuale",

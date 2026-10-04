@@ -1032,6 +1032,7 @@
   "deploymentActionPhaseDeploy": "deploy",
   "deploymentActionPhasePostDeploy": "post-deploy",
   "deploymentActionPhasePreDeploy": "pre-deploy",
+  "deploymentActionSkipped": "アクション {{label}} をスキップします: {{reason}}",
   "deploymentActionStatusFailed": "失敗",
   "deploymentActionStatusFailedAllowed": "失敗 (許容)",
   "deploymentActionStatusManual": "手動",

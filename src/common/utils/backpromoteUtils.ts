@@ -12,7 +12,7 @@ import { parsePromotionBranchName } from './promotionBranchUtils.js';
 import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
 import { t } from './i18n.js';
 import { BackpromoteActionRow, BackpromoteCommentStore, backpromoteActionKey, upsertActionRow } from './backpromoteCommentUtils.js';
-import { computeActionIdentityKey, findIdenticalActionRun, formatIdenticalActionSource, recordSuccessfulActionRun } from './deploymentActionIdentityUtils.js';
+import { buildIdentityKeyFromProvider, findIdenticalActionRun, formatIdenticalActionSource, markIdentitySeen, recordSuccessfulActionRun } from './deploymentActionIdentityUtils.js';
 
 // ---- Interfaces ----
 
@@ -710,6 +710,9 @@ export function collectBackpromoteActions(
   return allActions.sort((a, b) => (groupIndex.get(a.commitHash) ?? 0) - (groupIndex.get(b.commitHash) ?? 0));
 }
 
+/** What happened to one action of a backpromote. identical: done by an identical action of the same run */
+export type BackpromoteActionOutcome = 'run' | 'skipped' | 'failed' | 'pending' | 'identical';
+
 export interface BackpromoteActionsOutcome {
   run: string[];
   skipped: string[];
@@ -717,6 +720,9 @@ export interface BackpromoteActionsOutcome {
   pending: string[];
   // The skipped actions that an identical action of the same backpromote did (also in skipped)
   identical: string[];
+  // The outcome of each action by its key (<Pull Request>:<pre|post>:<id>): the lists above hold ids,
+  // which two Pull Requests can reuse
+  byKey: Record<string, BackpromoteActionOutcome>;
 }
 
 /**
@@ -738,8 +744,18 @@ export async function executeBackpromoteActions(options: {
   store: BackpromoteCommentStore;
   commandThis: any;
 }): Promise<BackpromoteActionsOutcome> {
-  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [], identical: [] };
+  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [], identical: [], byKey: {} };
   const phase: 'pre' | 'post' = options.phase === 'commandsPreDeploy' ? 'pre' : 'post';
+  // Into the id lists that panels already read, and under the key of the action
+  const settle = (action: BackpromoteActionCandidate, result: BackpromoteActionOutcome) => {
+    outcome.byKey[backpromoteActionKey(action.prId, phase, action.id)] = result;
+    if (result === 'identical') {
+      outcome.skipped.push(action.id);
+      outcome.identical.push(action.id);
+    } else {
+      outcome[result].push(action.id);
+    }
+  };
   const record = async (action: BackpromoteActionCandidate, status: BackpromoteActionRow['status']) => {
     if (action.prId <= 0) {
       return;
@@ -758,30 +774,34 @@ export async function executeBackpromoteActions(options: {
   uxLog('action', options.commandThis, c.cyan(t('backpromoteExecutingActions', { count: toRun.length, phase: phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy') })));
   globalThis.jsForceConn = options.conn;
   for (const action of toRun) {
-    const previous = options.alreadyRun.get(backpromoteActionKey(action.prId, action.id));
+    const previous = options.alreadyRun.get(backpromoteActionKey(action.prId, phase, action.id));
     if (previous && previous.status === 'success' && action.runOnlyOnceByOrg !== false) {
       uxLog('log', options.commandThis, c.grey(t('backpromoteActionAlreadyRun', { label: action.label, date: previous.date.substring(0, 10) })));
-      outcome.skipped.push(action.id);
+      settle(action, 'skipped');
       continue;
     }
     if (action.type === 'manual') {
       uxLog('warning', options.commandThis, c.yellow(t('backpromoteManualActionPending', { label: action.label })));
-      outcome.pending.push(action.id);
+      settle(action, 'pending');
       await record(action, 'pending');
       continue;
     }
-    // An identical action (same type, phase, user and parameters) already ran in this backpromote:
-    // its work is in the sandbox, so this one is written as done without logging in nor running
-    const identityKey = await computeActionIdentityKey(action, phase === 'pre' ? 'pre-deploy' : 'post-deploy');
-    const identicalRun = findIdenticalActionRun(identityKey);
+    const actionInstance: any = await ActionsProvider.buildActionInstance(action);
+    if (!actionInstance) {
+      settle(action, 'skipped');
+      continue;
+    }
+    // An identical action (same type, phase, user and parameters) of another Pull Request already ran
+    // in this backpromote: its work is in the sandbox, so this one is written as done without logging
+    // in nor running. An action written twice in one Pull Request runs twice.
+    const identityKey = buildIdentityKeyFromProvider(actionInstance, action, phase === 'pre' ? 'pre-deploy' : 'post-deploy');
+    const identicalRun = markIdentitySeen(identityKey, action.prId) ? null : findIdenticalActionRun(identityKey);
     if (identicalRun) {
       uxLog('log', options.commandThis, c.grey(t('backpromoteActionIdentical', { label: action.label, identicalLabel: identicalRun.ref.label, source: formatIdenticalActionSource(identicalRun.ref) })));
-      outcome.skipped.push(action.id);
-      outcome.identical.push(action.id);
+      settle(action, 'identical');
       await record(action, 'success');
       continue;
     }
-    let actionInstance: any = null;
     if (action.customUsername) {
       const user = await findUserByUsernameLike(action.customUsername, options.conn).catch(() => null);
       let authenticated = false;
@@ -794,19 +814,12 @@ export async function executeBackpromoteActions(options: {
       }
       if (!user || !authenticated) {
         uxLog('warning', options.commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: action.customUsername, label: action.label })));
-        outcome.pending.push(action.id);
+        settle(action, 'pending');
         await record(action, 'pending');
         continue;
       }
       uxLog('log', options.commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
-      actionInstance = await ActionsProvider.buildActionInstance(action);
       actionInstance.customUsernameToUse = user.Username;
-    } else {
-      actionInstance = await ActionsProvider.buildActionInstance(action);
-    }
-    if (!actionInstance) {
-      outcome.skipped.push(action.id);
-      continue;
     }
     let status: BackpromoteActionRow['status'] = 'success';
     try {
@@ -818,7 +831,7 @@ export async function executeBackpromoteActions(options: {
       } else if (['failed', 'not-run'].includes(code)) {
         status = 'failed';
       } else if (code === 'skipped') {
-        outcome.skipped.push(action.id);
+        settle(action, 'skipped');
         continue;
       }
     } catch (e) {
@@ -827,12 +840,12 @@ export async function executeBackpromoteActions(options: {
     }
     if (status === 'success') {
       uxLog('success', options.commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
-      outcome.run.push(action.id);
+      settle(action, 'run');
       recordSuccessfulActionRun(identityKey, { ref: { actionId: action.id, label: action.label, pr: action.prId } });
     } else if (status === 'pending') {
-      outcome.pending.push(action.id);
+      settle(action, 'pending');
     } else {
-      outcome.failed.push(action.id);
+      settle(action, 'failed');
     }
     await record(action, status);
   }

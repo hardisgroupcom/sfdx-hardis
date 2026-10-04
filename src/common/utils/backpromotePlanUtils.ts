@@ -15,6 +15,7 @@ import { t } from './i18n.js';
 import { BackpromoteDiffChoice } from './backpromoteRules.js';
 import { BackpromoteLeftOutItem, BackpromoteSandboxRow } from './backpromoteCommentUtils.js';
 import { findIdenticalCopies, formatIdenticalActionSource } from './deploymentActionIdentityUtils.js';
+import type { BackpromoteActionOutcome } from './backpromoteUtils.js';
 
 export const BACKPROMOTE_PLAN_VERSION = 3;
 export const BACKPROMOTE_DEFAULT_SCAN_LIMIT = 100;
@@ -71,7 +72,7 @@ export interface BackpromotePlanItem {
 
 export interface BackpromotePlanAction {
   id: string;
-  /** "<Pull Request>:<id>": unique in the plan, where two Pull Requests can reuse one action id */
+  /** "<Pull Request>:<pre|post>:<id>": unique in the plan, where two Pull Requests can reuse one action id */
   key: string;
   label: string;
   type: string;
@@ -123,8 +124,12 @@ export interface BackpromoteRunResult {
   deployed: number;
   deleted: number;
   excluded: BackpromoteLeftOutItem[];
-  /** identical: the skipped actions that an identical action of the same run did (also in skipped) */
-  actions: { run: string[]; skipped: string[]; failed: string[]; pending: string[]; identical: string[] };
+  /**
+   * identical: the skipped actions that an identical action of the same run did (also in skipped).
+   * byKey: the outcome of each action by its plan key, as the id lists cannot tell apart two Pull
+   * Requests reusing one id.
+   */
+  actions: { run: string[]; skipped: string[]; failed: string[]; pending: string[]; identical: string[]; byKey: Record<string, BackpromoteActionOutcome> };
   conflictPending: string[];
   commentedPullRequests: number[];
   pushed: boolean;
@@ -395,12 +400,17 @@ export async function promptDirtyTree(files: string[], currentBranch: string): P
 /**
  * Mark the actions that run once with an identical one. Among the actions a run takes by default
  * (not manual, runnable, not already run in this sandbox), the first of each identity key runs and
- * the next ones point at it. Pre-deployment actions come first, as they run first.
+ * the next ones of other Pull Requests point at it. Pre-deployment actions come first, as they run
+ * first, and an action written twice in one Pull Request runs twice.
  */
 export function markIdenticalPlanActions(actions: BackpromotePlanAction[], identityKeys: Map<string, string | null>): void {
   const runsByDefault = (action: BackpromotePlanAction) => !action.manual && action.runnable && !(action.alreadyRunOn && action.runOnlyOnceByOrg);
   const inRunOrder = [...actions.filter((action) => action.phase === 'pre'), ...actions.filter((action) => action.phase === 'post')];
-  const copies = findIdenticalCopies(inRunOrder, (action) => (runsByDefault(action) ? identityKeys.get(action.key) || null : null));
+  const copies = findIdenticalCopies(
+    inRunOrder,
+    (action) => (runsByDefault(action) ? identityKeys.get(action.key) || null : null),
+    (action) => action.pullRequest
+  );
   for (const action of actions) {
     const first = copies.get(action);
     action.identicalTo = first ? { key: first.key, id: first.id, pullRequest: first.pullRequest, label: first.label } : null;

@@ -165,8 +165,8 @@ export function forecastAction(
 
 /**
  * Point the forecasts of identical actions at the one that runs. In each job of the promotion (the
- * validation, the deployment), the first action of an identity key runs and the next ones are done by
- * it. Items come in the order the promotion runs them. An action still holding a ${{ }} reference is
+ * validation, the deployment), the first action of an identity key runs and the next ones of other
+ * Pull Requests are done by it: an action written twice in one Pull Request runs twice. Items come in the order the promotion runs them. An action still holding a ${{ }} reference is
  * never grouped: its values are only known in the job.
  */
 export async function markIdenticalForecasts(items: ActionForecastItem[]): Promise<void> {
@@ -183,7 +183,11 @@ export async function markIdenticalForecasts(items: ActionForecastItem[]): Promi
 
 /** The grouping of markIdenticalForecasts, once the keys are known. Exported for unit tests. */
 export function applyIdenticalForecasts(items: Pick<ActionForecastItem, 'prNumber' | 'forecast'>[], keys: Map<ActionForecast, string | null>): void {
-  const copies = findIdenticalCopies(items, (item) => keys.get(item.forecast) || null);
+  const copies = findIdenticalCopies(
+    items,
+    (item) => keys.get(item.forecast) || null,
+    (item) => item.prNumber
+  );
   for (const [copy, first] of copies) {
     copy.forecast.reason = 'identical-action';
     copy.forecast.identicalTo = { pr: first.prNumber, actionId: first.forecast.actionId, actionLabel: first.forecast.actionLabel };

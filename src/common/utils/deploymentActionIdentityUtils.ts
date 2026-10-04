@@ -8,6 +8,10 @@
  * Requests, contexts and branch filters are not compared: whether an action runs in a job is
  * decided before it is compared, and only an action that succeeded stands for the others.
  *
+ * Only actions of different sources are merged: two Pull Requests, or a Pull Request and the branch
+ * or project config. An action written twice in one Pull Request, or twice in the config, is meant
+ * twice and runs twice.
+ *
  * The memory of what already ran lasts one process, like the outputs registry of
  * prePostCommandUtils: one validation job, one deployment job, one sf hardis:project:action:run or
  * one backpromote. This module has no runtime import other than i18n, so the action providers and
@@ -43,9 +47,12 @@ export interface ActionIdentitySource {
 }
 
 const successfulRunsByIdentity = new Map<string, IdenticalActionRun>();
+// "<source Pull Request>|<identity key>" of the actions that reached the comparison in this run
+const identitiesSeenBySource = new Set<string>();
 
 export function resetIdenticalActionRuns(): void {
   successfulRunsByIdentity.clear();
+  identitiesSeenBySource.clear();
 }
 
 /**
@@ -106,6 +113,21 @@ export function buildActionIdentityKey(
   );
 }
 
+/**
+ * Remember that an action of this source (its Pull Request, 0 for the branch or project config)
+ * reached the comparison, and say whether an action of the same source and key did before: that one
+ * is a repeat written on purpose, never a copy.
+ */
+export function markIdentitySeen(identityKey: string | null, sourcePr: number): boolean {
+  if (!identityKey) {
+    return false;
+  }
+  const seenKey = `${sourcePr > 0 ? sourcePr : 0}|${identityKey}`;
+  const alreadySeen = identitiesSeenBySource.has(seenKey);
+  identitiesSeenBySource.add(seenKey);
+  return alreadySeen;
+}
+
 /** The run of this process that stands for the action of that key, null when there is none */
 export function findIdenticalActionRun(identityKey: string | null): IdenticalActionRun | null {
   return identityKey ? successfulRunsByIdentity.get(identityKey) || null : null;
@@ -141,21 +163,26 @@ export function formatIdenticalActionSource(ref: Pick<IdenticalActionRef, 'pr'>)
 }
 
 /**
- * In run order, the first item of each key stands for the later ones: returns, for every later item
- * sharing a key, that first item. Items without a key are never grouped.
+ * In run order, the first item of each key stands for the later ones of other sources: returns, for
+ * each of them, that first item. Items without a key are never grouped, and a later item of a source
+ * that already had the key is a repeat written on purpose, not a copy.
  */
-export function findIdenticalCopies<T>(items: T[], keyOf: (item: T) => string | null): Map<T, T> {
+export function findIdenticalCopies<T>(items: T[], keyOf: (item: T) => string | null, sourceOf: (item: T) => number): Map<T, T> {
   const firstByKey = new Map<string, T>();
+  const seenBySource = new Set<string>();
   const copies = new Map<T, T>();
   for (const item of items) {
     const key = keyOf(item);
     if (!key) {
       continue;
     }
+    const seenKey = `${sourceOf(item)}|${key}`;
+    const repeatedInSource = seenBySource.has(seenKey);
+    seenBySource.add(seenKey);
     const first = firstByKey.get(key);
     if (first === undefined) {
       firstByKey.set(key, item);
-    } else {
+    } else if (!repeatedInSource) {
       copies.set(item, first);
     }
   }

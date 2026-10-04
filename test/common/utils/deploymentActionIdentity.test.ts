@@ -41,8 +41,9 @@ import {
 } from '../../../src/common/utils/deploymentActionsStateUtils.js';
 import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { ActionForecast, applyIdenticalForecasts, markIdenticalForecasts } from '../../../src/common/utils/deploymentActionForecastUtils.js';
-import { collectBackpromoteActions } from '../../../src/common/utils/backpromoteUtils.js';
+import { collectBackpromoteActions, executeBackpromoteActions } from '../../../src/common/utils/backpromoteUtils.js';
 import { BackpromotePlanAction, markIdenticalPlanActions } from '../../../src/common/utils/backpromotePlanUtils.js';
+import { backpromoteActionKey } from '../../../src/common/utils/backpromoteCommentUtils.js';
 
 function action(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -117,10 +118,8 @@ describe('Identity of a deployment action', () => {
     expect(remove(['ApexClass:A'])).to.not.equal(remove(['ApexClass:B']));
   });
 
-  it('compares the parameters of a custom function', () => {
-    const fn = (parameters: Record<string, any>) => keyOf(new CustomFunctionAction(), action({ type: 'notifySlack', parameters }));
-    expect(fn({ channel: '#releases', severity: '' })).to.equal(fn({ channel: '#releases' }));
-    expect(fn({ channel: '#releases' })).to.not.equal(fn({ channel: '#ops' }));
+  it('never merges a custom function action, whose script receives its own id and label', () => {
+    expect(keyOf(new CustomFunctionAction(), action({ type: 'notifySlack', parameters: { channel: '#releases' } }))).to.equal(null);
   });
 
   it('never merges a manual action', () => {
@@ -151,13 +150,29 @@ describe('Identical actions already run in this process', () => {
     expect(findIdenticalActionRun('k')).to.equal(null);
   });
 
-  it('points every later item of a key at the first one, and never groups items without a key', () => {
-    const items = ['a1', 'b1', 'a2', 'x', 'a3', 'y'];
-    const copies = findIdenticalCopies(items, (item) => (item.startsWith('a') || item.startsWith('b') ? item[0] : null));
-    expect([...copies.entries()]).to.deep.equal([
-      ['a2', 'a1'],
-      ['a3', 'a1'],
+  it('points the later items of a key from other sources at the first one, and never groups items without a key', () => {
+    // [identity key, source Pull Request, name]
+    const items: Array<[string | null, number, string]> = [
+      ['a', 101, 'a@101'],
+      ['b', 101, 'b@101'],
+      ['a', 105, 'a@105'],
+      [null, 105, 'x@105'],
+      ['a', 107, 'a@107'],
+      ['a', 107, 'a@107 again'],
+    ];
+    const copies = findIdenticalCopies(items, (item) => item[0], (item) => item[1]);
+    expect([...copies.entries()].map(([copy, first]) => [copy[2], first[2]])).to.deep.equal([
+      ['a@105', 'a@101'],
+      ['a@107', 'a@101'],
     ]);
+  });
+
+  it('never groups an action written twice by the same source', () => {
+    const items: Array<[string, number]> = [
+      ['a', 101],
+      ['a', 101],
+    ];
+    expect(findIdenticalCopies(items, (item) => item[0], (item) => item[1]).size).to.equal(0);
   });
 
   it('builds the result of a copy, recorded as done in the state stores', () => {
@@ -249,6 +264,21 @@ describe('Identical actions in a deployment job', () => {
     await runSingleDeploymentAction(action({ id: 'a', allowFailure: true, pullRequest: pullRequest(101) }), context());
     await runSingleDeploymentAction(action({ id: 'b', pullRequest: pullRequest(105) }), context());
     expect(runs).to.deep.equal(['a', 'b']);
+  });
+
+  it('runs twice an action written twice in the same Pull Request, and merges only the other Pull Requests', async () => {
+    await runSingleDeploymentAction(action({ id: 'a1', pullRequest: pullRequest(101) }), context());
+    await runSingleDeploymentAction(action({ id: 'a2', pullRequest: pullRequest(101) }), context());
+    const other = action({ id: 'b', pullRequest: pullRequest(105) });
+    await runSingleDeploymentAction(other, context());
+    expect(runs).to.deep.equal(['a1', 'a2']);
+    expect(isIdenticalActionCopy(other)).to.be.true;
+  });
+
+  it('runs twice an action written twice in the branch or project config', async () => {
+    await runSingleDeploymentAction(action({ id: 'c1' }), context());
+    await runSingleDeploymentAction(action({ id: 'c2' }), context());
+    expect(runs).to.deep.equal(['c1', 'c2']);
   });
 
   it('keeps the identical actions of two phases apart', async () => {
@@ -365,19 +395,23 @@ describe('Identical actions in the forecast of a promotion', () => {
   it('points the later copies of one job at the first one, and keeps two jobs apart', () => {
     const items = [
       { prNumber: 101, forecast: forecast('a', 'runs-at-deployment') },
+      { prNumber: 101, forecast: forecast('a2', 'runs-at-deployment') },
       { prNumber: 105, forecast: forecast('b', 'runs-at-deployment') },
       { prNumber: 107, forecast: forecast('c', 'runs-at-validation') },
     ];
     const keys = new Map<ActionForecast, string | null>([
       [items[0].forecast, 'runs-at-deployment|k'],
       [items[1].forecast, 'runs-at-deployment|k'],
-      [items[2].forecast, 'runs-at-validation|k'],
+      [items[2].forecast, 'runs-at-deployment|k'],
+      [items[3].forecast, 'runs-at-validation|k'],
     ]);
     applyIdenticalForecasts(items, keys);
     expect(items[0].forecast.identicalTo).to.equal(null);
-    expect(items[1].forecast.reason).to.equal('identical-action');
-    expect(items[1].forecast.identicalTo).to.deep.equal({ pr: 101, actionId: 'a', actionLabel: 'Action a' });
-    expect(items[2].forecast.identicalTo).to.equal(null);
+    // Written twice in #101: it runs twice
+    expect(items[1].forecast.identicalTo).to.equal(null);
+    expect(items[2].forecast.reason).to.equal('identical-action');
+    expect(items[2].forecast.identicalTo).to.deep.equal({ pr: 101, actionId: 'a', actionLabel: 'Action a' });
+    expect(items[3].forecast.identicalTo).to.equal(null);
   });
 
   it('compares the definitions of the actions the promotion runs, but not those still holding a reference', async () => {
@@ -432,7 +466,7 @@ describe('Identical actions in a backpromote', () => {
 
   it('marks in the plan the actions that run once with an identical one', () => {
     const planAction = (key: string, overrides: Partial<BackpromotePlanAction> = {}): BackpromotePlanAction => ({
-      id: key.split(':')[1],
+      id: key.split(':')[2],
       key,
       label: `Publish ${key}`,
       type: 'publish-community',
@@ -447,18 +481,101 @@ describe('Identical actions in a backpromote', () => {
       identicalTo: null,
       ...overrides,
     });
-    const actions = [planAction('101:a', { alreadyRunOn: '2026-10-01' }), planAction('105:b'), planAction('107:c'), planAction('108:d', { phase: 'pre' })];
+    const actions = [
+      planAction('101:post:a', { alreadyRunOn: '2026-10-01' }),
+      planAction('105:post:b'),
+      planAction('105:post:b2'),
+      planAction('107:post:c'),
+      planAction('108:pre:d', { phase: 'pre' }),
+    ];
     const keys = new Map<string, string | null>([
-      ['101:a', 'k'],
-      ['105:b', 'k'],
-      ['107:c', 'k'],
-      ['108:d', 'other'],
+      ['101:post:a', 'k'],
+      ['105:post:b', 'k'],
+      ['105:post:b2', 'k'],
+      ['107:post:c', 'k'],
+      ['108:pre:d', 'other'],
     ]);
     markIdenticalPlanActions(actions, keys);
     // Already run in the sandbox: it does not run, the next one does
     expect(actions[0].identicalTo).to.equal(null);
     expect(actions[1].identicalTo).to.equal(null);
-    expect(actions[2].identicalTo).to.deep.equal({ key: '105:b', id: 'b', pullRequest: 105, label: 'Publish 105:b' });
-    expect(actions[3].identicalTo).to.equal(null);
+    // Written twice in #105: it runs twice
+    expect(actions[2].identicalTo).to.equal(null);
+    expect(actions[3].identicalTo).to.deep.equal({ key: '105:post:b', id: 'b', pullRequest: 105, label: 'Publish 105:post:b' });
+    expect(actions[4].identicalTo).to.equal(null);
+  });
+
+  it('keys an action by its Pull Request, its phase and its id', () => {
+    expect(backpromoteActionKey(105, 'pre', 'x')).to.equal('105:pre:x');
+    expect(backpromoteActionKey(105, 'pre', 'x')).to.not.equal(backpromoteActionKey(105, 'post', 'x'));
+  });
+
+  describe('executeBackpromoteActions()', () => {
+    const originalBuild = ActionsProvider.buildActionInstance;
+    const originalConn = (globalThis as any).jsForceConn;
+    const ran: string[] = [];
+
+    class FakeAction extends ActionsProvider {
+      public getLabel(): string {
+        return 'FakeAction';
+      }
+      public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+        return { command: cmd.command };
+      }
+      public async run(cmd: PrePostCommand): Promise<ActionResult> {
+        ran.push(`${(cmd as any).prId}:${cmd.id}`);
+        return { statusCode: 'success' };
+      }
+    }
+
+    const candidate = (prId: number, id: string, command = 'sf community publish -n Customer'): any => ({
+      id,
+      label: `Publish (${id})`,
+      type: 'command',
+      command,
+      context: 'all',
+      prId,
+      prLabel: `#${prId}`,
+      commitHash: `c${prId}`,
+    });
+    const run = (actions: any[]) =>
+      executeBackpromoteActions({
+        actions,
+        phase: 'commandsPostDeploy',
+        selectedActionIds: new Set(actions.map((entry) => entry.id)),
+        alreadyRun: new Map(),
+        sandboxName: 'dev1',
+        orgId: '00D000000000001',
+        user: 'tester',
+        conn: {},
+        store: { update: async () => undefined } as any,
+        commandThis: null,
+      });
+
+    beforeEach(() => {
+      ran.length = 0;
+      resetIdenticalActionRuns();
+      ActionsProvider.buildActionInstance = async () => new FakeAction();
+    });
+
+    afterEach(() => {
+      ActionsProvider.buildActionInstance = originalBuild;
+      (globalThis as any).jsForceConn = originalConn;
+      resetIdenticalActionRuns();
+    });
+
+    it('runs once the action two Pull Requests carry, and gives each one its outcome by key', async () => {
+      const outcome = await run([candidate(101, 'x'), candidate(105, 'x')]);
+      expect(ran).to.deep.equal(['101:x']);
+      expect(outcome.byKey).to.deep.equal({ '101:post:x': 'run', '105:post:x': 'identical' });
+      expect(outcome.identical).to.deep.equal(['x']);
+      expect(outcome.skipped).to.deep.equal(['x']);
+    });
+
+    it('runs twice an action written twice in one Pull Request', async () => {
+      const outcome = await run([candidate(101, 'x'), candidate(101, 'y')]);
+      expect(ran).to.deep.equal(['101:x', '101:y']);
+      expect(outcome.identical).to.deep.equal([]);
+    });
   });
 });

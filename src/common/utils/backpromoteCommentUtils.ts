@@ -205,9 +205,12 @@ export function findActionRow(state: BackpromotesCommentState | null | undefined
   return (state?.actionRows || []).find((row) => row.actionId === actionId && row.sandboxName === sandboxName && row.orgId === orgId) || null;
 }
 
-/** "<Pull Request>:<action id>": unique in a backpromote, where two Pull Requests can reuse one action id */
-export function backpromoteActionKey(prId: number, actionId: string): string {
-  return `${prId}:${actionId}`;
+/**
+ * "<Pull Request>:<pre|post>:<action id>": unique in a backpromote, where two Pull Requests can reuse
+ * one action id, and one Pull Request can use it in both phases
+ */
+export function backpromoteActionKey(prId: number, phase: 'pre' | 'post', actionId: string): string {
+  return `${prId}:${phase}:${actionId}`;
 }
 
 // ---- Provider access, with the run cache ----
