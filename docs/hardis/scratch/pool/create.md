@@ -21,14 +21,14 @@ Select a data storage service and configure information to build a scratch org p
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 

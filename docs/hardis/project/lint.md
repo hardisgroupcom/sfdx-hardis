@@ -21,9 +21,9 @@ Key functionalities:
 
 The command's technical implementation involves:
 
-- **Mega-Linter Integration:** It leverages the `mega-linter-runner` library to execute Mega-Linter.
-- **Configuration Check:** Before running, it checks for the presence of `.mega-linter.yml`. If not found and not in a CI environment, it initiates an interactive setup process using `MegaLinterRunner().run({ install: true })`.
-- **Linter Execution:** It calls `MegaLinterRunner().run(megaLinterOptions)` with the `salesforce` flavor and the `fix` flag (if provided).
+- **Mega-Linter Integration:** It runs Mega-Linter by spawning `npx mega-linter-runner`, so the runner is only downloaded when the command is used.
+- **Configuration Check:** Before running, it checks for the presence of `.mega-linter.yml`. If not found and not in a CI environment, it initiates an interactive setup process using `npx mega-linter-runner --install`.
+- **Linter Execution:** It calls `npx mega-linter-runner` with the `salesforce` flavor and the `--fix` flag (if provided).
 - **Exit Code Handling:** The `process.exitCode` is set based on the Mega-Linter's exit status, allowing CI/CD pipelines to react to linting failures.
 - **User Feedback:** Provides clear messages about the success or failure of the linting process.
 </details>
@@ -47,10 +47,10 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
 | fix<br/>-f        | boolean | Apply linters fixes                                           |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                          |         |          |         |
 | json              | boolean | Format output as json.                                        |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org.                          |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples

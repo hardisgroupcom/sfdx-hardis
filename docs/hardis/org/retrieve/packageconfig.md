@@ -48,11 +48,11 @@ In agent mode:
 |:-----------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent                  | boolean | Run in non-interactive mode for agents and automation                                                                |         |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                                                                      |         |          |         |
-| flags-dir              | option  | undefined                                                                                                            |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                                                                 |         |          |         |
 | json                   | boolean | Format output as json.                                                                                               |         |          |         |
 | packages               | option  | Comma-separated list of package names or subscriber package IDs to update in the project config. Used in agent mode. |         |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required                                                        |         |          |         |
-| target-org<br/>-o      | option  | undefined                                                                                                            |         |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.         |         |   true   |         |
 | update-all-config      | boolean | Update config with all retrieved packages (existing and new).                                                        |         |          |         |
 | update-existing-config | boolean | Update only packages already present in the project config (version upgrade). Useful in agent mode.                  |         |          |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                            |         |          |         |

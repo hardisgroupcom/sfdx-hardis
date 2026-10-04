@@ -22,7 +22,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 |:--------------|:-------:|:--------------------------------------------------------------|:---------:|:--------:|:-------:|
 | agent         | boolean | Run in non-interactive mode for agents and automation         |           |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                               |           |          |         |
-| flags-dir     | option  | undefined                                                     |           |          |         |
+| flags-dir     | option  | Import flag values from a directory.                          |           |          |         |
 | folder<br/>-f | option  | Root folder                                                   | force-app |          |         |
 | json          | boolean | Format output as json.                                        |           |          |         |
 | skipauth      | boolean | Skip authentication check when a default username is required |           |          |         |

@@ -36,7 +36,7 @@ In agent mode:
 |:-------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------|:---------------------------------------:|:--------:|:-------:|
 | agent              | boolean | Run in non-interactive mode for agents and automation                                                               |                                         |          |         |
 | debug<br/>-d       | boolean | Activate debug mode (more logs)                                                                                     |                                         |          |         |
-| flags-dir          | option  | undefined                                                                                                           |                                         |          |         |
+| flags-dir          | option  | Import flag values from a directory.                                                                                |                                         |          |         |
 | folder<br/>-f      | option  | Root folder                                                                                                         |                force-app                |          |         |
 | globpattern<br/>-p | option  | Glob pattern to find files to clean. Ex: /**/*.flexipage-meta.xml                                                   |                                         |          |         |
 | json               | boolean | Format output as json.                                                                                              |                                         |          |         |

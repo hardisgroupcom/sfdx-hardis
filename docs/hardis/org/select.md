@@ -16,6 +16,7 @@ Key functionalities:
 
 - **Interactive Org Selection:** Displays a list of your authenticated Salesforce orgs, allowing you to choose one.
 - **Default Org Setting:** Sets the selected org as the default for your Salesforce CLI environment.
+- **Org Naming:** When you connect a new org, it is given an alias, so it shows up under a short name instead of its username everywhere afterwards. Pass `--alias`, or accept the suggestion the command makes from the org's instance URL.
 - **Dev Hub Filtering:** The `--devhub` flag filters the list to show only Dev Hub orgs.
 - **Scratch Org Filtering:** The `--scratch` flag filters the list to show only scratch orgs related to your default Dev Hub.
 - **Connection Verification:** Ensures that the selected org is connected and prompts for re-authentication if necessary.
@@ -34,15 +35,26 @@ The command's technical implementation involves:
 - **Authentication Failure Detection:** Errors raised while authenticating are re-thrown instead of being swallowed by the oclif hook mechanism, and the command fails if it ends without a connected org.
 </details>
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
+
+- [Lab 1.2 - Create your Dev Hub, scratch orgs and CI/CD pipeline](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
 | Name             |  Type   | Description                                                                                                                                         | Default | Required | Options |
 |:-----------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent            | boolean | Run in non-interactive mode for agents and automation                                                                                               |         |          |         |
+| alias<br/>-a     | option  | Alias to give the org you connect. When omitted, the command suggests one built from the org instance URL                                           |         |          |         |
 | debug<br/>-d     | boolean | Activate debug mode (more logs)                                                                                                                     |         |          |         |
 | devhub<br/>-h    | boolean | Also connect associated DevHub                                                                                                                      |         |          |         |
-| flags-dir        | option  | undefined                                                                                                                                           |         |          |         |
+| flags-dir        | option  | Import flag values from a directory.                                                                                                                |         |          |         |
 | instance-url     | option  | Instance URL to use for login when reconnecting (e.g. https://myorg.salesforce.com). Required with --reconnect.                                     |         |          |         |
 | json             | boolean | Format output as json.                                                                                                                              |         |          |         |
 | reconnect<br/>-r | boolean | Force re-authentication (skip connection check and go straight to login)                                                                            |         |          |         |
@@ -60,6 +72,10 @@ $ sf hardis:org:select
 
 ```shell
 $ sf hardis:org:select --devhub
+```
+
+```shell
+$ sf hardis:org:select --alias acme-dev
 ```
 
 ```shell

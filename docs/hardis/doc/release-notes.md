@@ -1,5 +1,4 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:doc:release-notes
 
 ## Description
@@ -46,7 +45,6 @@ Per-item Pull Request and commit attribution is computed with `git log --name-on
 Deployment actions are loaded from PR comments (via the `<!-- sfdx-hardis deployment-actions-state -->` marker) or from `scripts/actions/.sfdx-hardis.{PR_ID}.yml` files.
 
 Inter-major-branch PRs (e.g., integration to preprod) are excluded since they represent promotions, not user stories.
-
 </details>
 
 ### Agent Mode
@@ -65,13 +63,26 @@ In agent mode:
 - When `--mode post` and `--target-branch` are provided without `--merge-commit`, the latest merge commit on the target branch is used automatically.
 - When `--mode prepare` and `--source-branch` is provided without `--target-branch`, the target branch is inferred from the source branch mergeTargets configuration.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
+
+
 ## Parameters
 
 | Name                 |  Type   | Description                                                                                                                                                                                                                      | Default | Required |     Options      |
 |:---------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:----------------:|
 | agent                | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                            |         |          |                  |
 | debug<br/>-d         | boolean | Activate debug mode (more logs)                                                                                                                                                                                                  |         |          |                  |
-| flags-dir            | option  | undefined                                                                                                                                                                                                                        |         |          |                  |
+| flags-dir            | option  | Import flag values from a directory.                                                                                                                                                                                             |         |          |                  |
 | from-date            | option  | Start date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.                                                                                                                                                |         |          |                  |
 | include-promotions   | boolean | Also list the Pull Requests that move other Pull Requests: merges between two major branches, and promotion branches when they are enabled. Left out by default, since what the release delivers are the User Stories they carry |         |          |                  |
 | json                 | boolean | Format output as json.                                                                                                                                                                                                           |         |          |                  |
@@ -86,7 +97,7 @@ In agent mode:
 | source-branch        | option  | Source branch name (e.g. integration, develop). In prepare mode, if --target-branch is not set, the target branch is inferred from this branch's mergeTargets configuration.                                                     |         |          |                  |
 | source-commit        | option  | Source commit SHA to use as the start of the release scope                                                                                                                                                                       |         |          |                  |
 | target-branch<br/>-t | option  | Target major branch name (e.g. main, production). If omitted, prompted or auto-detected.                                                                                                                                         |         |          |                  |
-| target-org<br/>-o    | option  | undefined                                                                                                                                                                                                                        |         |          |                  |
+| target-org<br/>-o    | option  | Username or alias of the target org.                                                                                                                                                                                             |         |          |                  |
 | to-date              | option  | End date for the release scope (YYYY-MM-DD). Mutually exclusive with tag flags.                                                                                                                                                  |         |          |                  |
 | websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                        |         |          |                  |
 
@@ -123,3 +134,5 @@ $ sf hardis:doc:release-notes --mode post --from-date 2026-01-01 --to-date 2026-
 ```shell
 $ sf hardis:doc:release-notes --agent --mode post --target-branch main
 ```
+
+

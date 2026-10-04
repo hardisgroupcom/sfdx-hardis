@@ -30,7 +30,7 @@ The command's technical implementation involves several steps:
 - **Metadata Analysis:** It iterates through specific metadata types (currently `reportType-meta.xml` files) within the configured source folder.
 - **Field and Object Validation:** For each `reportType-meta.xml` file, it examines the columns and filters out references to custom fields or objects that are not found in the merged `package.xml` content or are marked for destruction.
 - **XML Modification:** If changes are detected, it updates the `reportType-meta.xml` file by writing the modified XML content back to the file using `writeXmlFile`.
-- **File System Operations:** It uses `fs-extra` for file system operations and `glob` for pattern matching to find relevant metadata files.
+- **File System Operations:** It uses Node.js `fs` for file system operations and `glob` for pattern matching to find relevant metadata files.
 - **SOQL Queries:** The `buildOrgManifest` utility (used internally) performs SOQL queries to retrieve metadata information from the Salesforce org.
 </details>
 
@@ -50,20 +50,17 @@ In agent mode:
 
 ## Parameters
 
-| Name          |  Type   | Description                                           |  Default  | Required | Options |
-|:--------------|:-------:|:------------------------------------------------------|:---------:|:--------:|:-------:|
-| agent         | boolean | Run in non-interactive mode for agents and automation |           |          |         |
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                       |           |          |         |
-| flags-dir     | option  | undefined                                             |           |          |         |
-| folder<br/>-f | option  | Root folder                                           | force-app |          |         |
-| json          | boolean | Format output as json.                                |           |          |         |
-|packagexmlfull<br/>-p|option|Path to packagexml used for cleaning.
-Must contain also standard CustomObject and CustomField elements.
-If not provided, it will be generated from a remote org||||
-|packagexmltargetorg<br/>-t|option|Target org username or alias to build package.xml (SF CLI must be authenticated).
-If not provided, will be prompted to the user.||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                       |  Type   | Description                                                                                                                                                             |  Default  | Required | Options |
+|:---------------------------|:-------:|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:---------:|:--------:|:-------:|
+| agent                      | boolean | Run in non-interactive mode for agents and automation                                                                                                                   |           |          |         |
+| debug<br/>-d               | boolean | Activate debug mode (more logs)                                                                                                                                         |           |          |         |
+| flags-dir                  | option  | Import flag values from a directory.                                                                                                                                    |           |          |         |
+| folder<br/>-f              | option  | Root folder                                                                                                                                                             | force-app |          |         |
+| json                       | boolean | Format output as json.                                                                                                                                                  |           |          |         |
+| packagexmlfull<br/>-p      | option  | Path to packagexml used for cleaning.<br/>Must contain also standard CustomObject and CustomField elements.<br/>If not provided, it will be generated from a remote org |           |          |         |
+| packagexmltargetorg<br/>-t | option  | Target org username or alias to build package.xml (SF CLI must be authenticated).<br/>If not provided, will be prompted to the user.                                    |           |          |         |
+| skipauth                   | boolean | Skip authentication check when a default username is required                                                                                                           |           |          |         |
+| websocket                  | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                               |           |          |         |
 
 ## Examples
 

@@ -1,5 +1,4 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:project:deploy:smart
 
 ## Description
@@ -8,7 +7,7 @@ Smart deploy of SFDX sources to target org, with many useful options.
 
 In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTips/) will be included within the error messages.
 
-> See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-devops-smart-deployment.md)
+> See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-devops-smart-deployment/)
 
 ### Quick Deploy
 
@@ -117,7 +116,7 @@ deploymentApexTestClasses:
 
 If necessary,you can define the following files:
 
-- `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org).
+- `manifest/package-no-overwrite.xml`: Every element defined in this file will be deployed only if it is not existing yet in the target org (can be useful with ListView for example, if the client wants to update them directly in production org). The target org content is listed only when an item of the deployment package matches one of its members.
   - Supports `<members>*</members>` (all members of a type), exact names, and glob-style patterns such as `<members>*__dlm</members>` or `<members>Prod_*</members>`.
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
@@ -275,7 +274,7 @@ Note: it is also possible to define these behaviors as ENV variables:
 
 ### Deployment plan (deprecated)
 
-> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.**
+> **This feature is deactivated by default (enable with `enableDeprecatedDeploymentPlan` in project configuration). Use preCommands and postCommands instead.** 
 
 If you need to deploy in multiple steps, you can define a property `deploymentPlan` in `.sfdx-hardis.yml`.
 
@@ -351,25 +350,46 @@ In agent mode:
 - Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded - providing the correct `targetUsername` for that org automatically.
 - If a deployment action requires a `customUsername` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.3 - Fix broken records with an Apex deployment action](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-3-fix-broken-records-with-an-apex-deployment-action/)
+- [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
+- [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
+- [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
+- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
+
+
 ## Parameters
 
-| Name              |  Type   | Description                                                             | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
-| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org            |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes |         |          |         |
-| flags-dir         | option  | undefined                                                               |         |          |         |
-| json              | boolean | Format output as json.                                                  |         |          |         |
-| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org    |         |          |         |
-| runtests<br/>-r                                                                                                                                                  | option  | If testlevel=RunSpecifiedTests, please provide a list of classes.                                                                   |
-| If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo. |         |                                                                                                                                     |         |
-| skipauth                                                                                                                                                         | boolean | Skip authentication check when a default username is required                                                                       |         |          |                                                                                                                                                           |
-| source-branch                                                                                                                                                    | option  | Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)                                   |         |          |                                                                                                                                                           |
-| target-branch                                                                                                                                                    | option  | Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername) |         |          |                                                                                                                                                           |
-| target-org<br/>-o                                                                                                                                                | option  | undefined                                                                                                                           |         |          |                                                                                                                                                           |
-| testlevel<br/>-l                                                                                                                                                 | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes                           |         |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
-| websocket                                                                                                                                                        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                           |         |          |                                                                                                                                                           |
+| Name              |  Type   | Description                                                                                                                                                                                                                            | Default | Required |                                                                          Options                                                                          |
+|:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                                  |         |          |                                                                                                                                                           |
+| check<br/>-c      | boolean | Only checks the deployment, there is no impact on target org                                                                                                                                                                           |         |          |                                                                                                                                                           |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                                                                                        |         |          |                                                                                                                                                           |
+| delta             | boolean | Applies sfdx-git-delta to package.xml before other deployment processes                                                                                                                                                                |         |          |                                                                                                                                                           |
+| flags-dir         | option  | Import flag values from a directory.                                                                                                                                                                                                   |         |          |                                                                                                                                                           |
+| json              | boolean | Format output as json.                                                                                                                                                                                                                 |         |          |                                                                                                                                                           |
+| packagexml<br/>-p | option  | Path to package.xml containing what you want to deploy in target org                                                                                                                                                                   |         |          |                                                                                                                                                           |
+| runtests<br/>-r   | option  | If testlevel=RunSpecifiedTests, please provide a list of classes.<br/>If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo. |         |          |                                                                                                                                                           |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                                                          |         |          |                                                                                                                                                           |
+| source-branch     | option  | Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)                                                                                                                                      |         |          |                                                                                                                                                           |
+| target-branch     | option  | Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)                                                                                                    |         |          |                                                                                                                                                           |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                                                                           |         |   true   |                                                                                                                                                           |
+| testlevel<br/>-l  | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes                                                                                                                              |         |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                              |         |          |                                                                                                                                                           |
 
 ## Examples
 
@@ -420,3 +440,5 @@ $ sf hardis:project:deploy:smart --agent --check
 ```shell
 $ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-feature --target-branch integration --target-org deploy@myclient.com.integration
 ```
+
+

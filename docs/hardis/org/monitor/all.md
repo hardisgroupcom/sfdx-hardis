@@ -103,21 +103,24 @@ The default list of commands is the following:
 |           [MISSING_ATTRIBUTES](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes)           | Detect **missing description** on custom field                                      | [sf hardis:lint:missingattributes](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes)                                                             |  weekly   |
 |       [UNDERUSED_PERMSETS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets)       | Detect **underused permission sets**                                                | [sf hardis:org:diagnose:underusedpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/underusedpermsets)                                             |  weekly   |
 |         [MINIMAL_PERMSETS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/minimalpermsets)         | Detect **permission sets with minimal permissions** in project                      | [sf hardis:org:diagnose:minimalpermsets](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/minimalpermsets)                                                 |  weekly   |
+|      [USAGE_ENTITLEMENTS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/usage-entitlements)       | Detect **usage-based entitlements** consumed faster than their period allows        | [sf hardis:org:diagnose:usage-entitlements](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/usage-entitlements)                                           |   daily   |
+|      [CONSUMPTION_ALERTS](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/consumption-alerts)       | Report active **utilization alerts** raised by Salesforce                           | [sf hardis:org:diagnose:consumption-alerts](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/consumption-alerts)                                           |   daily   |
+|                [AI_USAGE](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage)                 | Track **Agentforce and Data 360 credit** consumption                                | [sf hardis:org:diagnose:ai-usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/ai-usage)                                                               |  weekly   |
 
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                    | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                          |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                |         |          |         |
-| flags-dir         | option  | undefined                                                                      |         |          |         |
-| force-all         | boolean | Force all monitoring commands to run, regardless of their configured frequency |         |          |         |
-| json              | boolean | Format output as json.                                                         |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                  |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                      |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                      |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| force-all         | boolean | Force all monitoring commands to run, regardless of their configured frequency                               |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

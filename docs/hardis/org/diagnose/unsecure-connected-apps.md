@@ -15,7 +15,7 @@ Key functionalities:
 - **OAuth Token Analysis:** Queries all OAuth tokens in the org using SOQL to retrieve comprehensive token information including app names, users, authorization status, and usage statistics.
 - **Connected App and External Client App Coverage:** Checks both Connected Apps (via `AppMenuItem.IsUsingAdminAuthorization`) and External Client Apps (via `ExtlClntAppOauthPlcyCnfg.PermittedUsersPolicyType`) for proper admin pre-approval settings.
 - **App Type Column:** Each report row includes an `App Type` column indicating whether the app is a `Connected App`, an `Ext Client App`, or an `Ext Client App (converted)`.
-- **Converted Connected Apps:** A Connected App migrated to an External Client App stays in the org as a read-only copy that Salesforce no longer uses for authentication, while its existing OAuth tokens still point to it. When an External Client App with the same name exists, the tokens are evaluated against the External Client App OAuth policy instead of the stale Connected App settings, so a properly secured migration is not reported as unsecured.
+- **Converted Connected Apps:** A Connected App migrated to an External Client App stays in the org as a read-only copy that Salesforce no longer uses for authentication, while its existing OAuth tokens still point to it. When an External Client App with the same name exists, the tokens are evaluated against the External Client App OAuth policy instead of the stale Connected App settings, so a properly secured migration is not reported as unsecured. If that External Client App has no OAuth policy record (or the org does not expose `ExtlClntAppOauthPlcyCnfg`), the Connected App settings are kept and the app is listed in a warning, so a secured Connected App is never reported as unsecured because of a missing policy.
 - **AppName-based Fallback Matching:** When an OAuth token has no `AppMenuItem` link (common for External Client App tokens, and for Connected App tokens issued before the app was reinstalled), the command falls back to matching by `AppName` against `ExternalClientApplication.MasterLabel` or `DeveloperName`, then against `ConnectedApplication.Name`. The Connected App setting `OptionsAllowAdminApprovedUsersOnly` ("Admin approved users are pre-authorized") then decides the status.
 - **Ignore List Support:** Skips warning/escalation for apps configured in `monitoringUnsecureConnectedAppsIgnore` (project config) or `MONITORING_UNSECURE_CONNECTED_APPS_IGNORE` (environment variable). Matching OAuth tokens are marked as *Ignored*.
 - **Unsecured App Detection:** Identifies apps that allow users to authorize themselves without admin approval, which can pose security risks.
@@ -42,7 +42,7 @@ The command's technical implementation involves:
 - **SOQL Query Execution:** Executes a comprehensive SOQL query on the `OauthToken` object, joining with `AppMenuItem` and `User` objects to gather complete security context.
 - **Connected App Security Logic:** Analyzes the `ConnectedApplication.OptionsAllowAdminApprovedUsersOnly` field (falling back to `AppMenuItem.IsUsingAdminAuthorization`) to determine if a Connected App requires admin pre-approval for user authorization. Booleans returned as strings by the Bulk API are normalized, so a `"false"` value is never read as secured.
 - **External Client App Security Logic:** Queries `ExtlClntAppOauthPlcyCnfg` for each External Client App and checks `PermittedUsersPolicyType === 'AdminApprovedPreAuthorized'` to determine if admin pre-approval is required. Falls back to AppName-based matching when `AppMenuItem.ApplicationId` is not populated.
-- **Converted Connected App Logic:** When a token points to a Connected App whose name matches an `ExternalClientApplication` `MasterLabel` or `DeveloperName`, the Connected App is considered migrated: the External Client App OAuth policy decides the status and the app type is reported as `Ext Client App (converted)`.
+- **Converted Connected App Logic:** When a token points to a Connected App whose name matches an `ExternalClientApplication` `MasterLabel` or `DeveloperName`, the Connected App is considered migrated: the External Client App OAuth policy decides the status and the app type is reported as `Ext Client App (converted)`. The match is made on the name only, so every app whose status comes from an External Client App policy is logged, as well as every name match without an available policy.
 - **Ignore Handling:** Normalizes app names and marks matching OAuth tokens as *Ignored* so they do not contribute to unsecured app counts and notifications.
 - **Data Transformation:** Processes raw SOQL results to add security status indicators, app type, and reorganizes data for optimal reporting and analysis.
 - **Aggregation Processing:** Groups OAuth tokens by app name to provide summary statistics and identify the most problematic applications.
@@ -70,16 +70,16 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                       | Default | Required | Options |
-|:------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| flags-dir         | option  | undefined                                                         |         |          |         |
-| json              | boolean | Format output as json.                                            |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o | option  | undefined                                                         |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

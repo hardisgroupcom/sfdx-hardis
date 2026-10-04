@@ -28,7 +28,7 @@ Key functionalities:
 
 The command's technical implementation involves:
 
-- **File I/O:** Uses `fs-extra` for file system operations (reading TOML, writing CSVs, creating directories) and `readline` for efficient line-by-line processing of large TOML files.
+- **File I/O:** Uses Node.js `fs` for file system operations (reading TOML, writing CSVs, creating directories) and `readline` for efficient line-by-line processing of large TOML files.
 - **Configuration Loading:** Reads and parses the `transfoConfig.json` file, which defines the mapping rules, transformations, and filters. It also loads external enum files if specified in the configuration.
 - **Data Processing Pipeline:** Iterates through each line of the TOML file:
   - Identifies section headers to determine the current data context.
@@ -58,20 +58,20 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                              | Default | Required | Options |
-|:----------------------|:-------:|:-------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                    |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                          |         |          |         |
-| filtersections<br/>-l | option  | List of sections to process (if not set, all sections will be processed) |         |          |         |
-| flags-dir             | option  | undefined                                                                |         |          |         |
-| json                  | boolean | Format output as json.                                                   |         |          |         |
-| outputdir<br/>-z      | option  | Output directory                                                         |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required            |         |          |         |
-| skiptransfo<br/>-s    | boolean | Do not apply transformation to input data                                |         |          |         |
-| target-org<br/>-o     | option  | undefined                                                                |         |          |         |
-| tomlfile<br/>-f       | option  | Input TOML file path                                                     |         |          |         |
-| transfoconfig<br/>-t  | option  | Path to JSON config file for mapping and transformation                  |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                |         |          |         |
+| Name                  |  Type   | Description                                                                                                  | Default | Required | Options |
+|:----------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| filtersections<br/>-l | option  | List of sections to process (if not set, all sections will be processed)                                     |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json                  | boolean | Format output as json.                                                                                       |         |          |         |
+| outputdir<br/>-z      | option  | Output directory                                                                                             |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| skiptransfo<br/>-s    | boolean | Do not apply transformation to input data                                                                    |         |          |         |
+| target-org<br/>-o     | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| tomlfile<br/>-f       | option  | Input TOML file path                                                                                         |         |   true   |         |
+| transfoconfig<br/>-t  | option  | Path to JSON config file for mapping and transformation                                                      |         |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

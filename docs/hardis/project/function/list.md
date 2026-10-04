@@ -33,7 +33,7 @@ This command is read-only and never prompts, so it already runs headless. `--age
 | agent          | boolean | Run in non-interactive mode for agents and automation                  |         |          |         |
 | check-runtimes | boolean | Also report whether each function runtime is available on this machine |         |          |         |
 | debug<br/>-d   | boolean | Activate debug mode (more logs)                                        |         |          |         |
-| flags-dir      | option  | undefined                                                              |         |          |         |
+| flags-dir      | option  | Import flag values from a directory.                                   |         |          |         |
 | json           | boolean | Format output as json.                                                 |         |          |         |
 | websocket      | option  | Websocket host:port for VsCode SFDX Hardis UI integration              |         |          |         |
 

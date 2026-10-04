@@ -46,7 +46,7 @@ Required in agent mode:
 | agent        | boolean | Run in non-interactive mode for agents and automation                       |         |          |                            |
 | branch       | option  | Target branch name (for branch scope, defaults to current branch)           |         |          |                            |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                             |         |          |                            |
-| flags-dir    | option  | undefined                                                                   |         |          |                            |
+| flags-dir    | option  | Import flag values from a directory.                                        |         |          |                            |
 | json         | boolean | Format output as json.                                                      |         |          |                            |
 | order        | option  | Comma-separated list of all action IDs in desired order (full reorder mode) |         |          |                            |
 | position     | option  | New 1-based position for the action (single move mode)                      |         |          |                            |

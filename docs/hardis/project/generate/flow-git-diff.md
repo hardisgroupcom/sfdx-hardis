@@ -31,7 +31,7 @@ In agent mode:
 | commit-after  | option  | Hash of the commit of the new flow state (will be prompted if not set)                      |         |          |         |
 | commit-before | option  | Hash of the commit of the previous flow state, or "allStates" (will be prompted if not set) |         |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                                                             |         |          |         |
-| flags-dir     | option  | undefined                                                                                   |         |          |         |
+| flags-dir     | option  | Import flag values from a directory.                                                        |         |          |         |
 | flow          | option  | Path to flow file (will be prompted if not set)                                             |         |          |         |
 | json          | boolean | Format output as json.                                                                      |         |          |         |
 | skipauth      | boolean | Skip authentication check when a default username is required                               |         |          |         |

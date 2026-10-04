@@ -50,7 +50,7 @@ In agent mode (or in CI):
 |:-------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent              | boolean | Run in non-interactive mode for agents and automation            |         |          |         |
 | debug<br/>-d       | boolean | Activate debug mode (more logs)                                  |         |          |         |
-| flags-dir          | option  | undefined                                                        |         |          |         |
+| flags-dir          | option  | Import flag values from a directory.                             |         |          |         |
 | json               | boolean | Format output as json.                                           |         |          |         |
 | open<br/>-o        | boolean | Open the GitHub new issue page directly without prompting        |         |          |         |
 | skip-version-check | boolean | Do not query npm for the latest versions (faster, works offline) |         |          |         |

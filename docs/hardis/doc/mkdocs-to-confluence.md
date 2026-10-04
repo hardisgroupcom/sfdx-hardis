@@ -92,7 +92,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | confluenceParentPageId | option  | Confluence parent page ID. Overrides CONFLUENCE_PARENT_PAGE_ID[_<LANG>] env vars |         |          |         |
 | confluenceSpaceKey     | option  | Confluence space key. Overrides CONFLUENCE_SPACE_KEY[_<LANG>] env vars           |         |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                                  |         |          |         |
-| flags-dir              | option  | undefined                                                                        |         |          |         |
+| flags-dir              | option  | Import flag values from a directory.                                             |         |          |         |
 | json                   | boolean | Format output as json.                                                           |         |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required                    |         |          |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration                        |         |          |         |

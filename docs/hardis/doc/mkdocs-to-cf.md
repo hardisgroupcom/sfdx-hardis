@@ -42,11 +42,11 @@ More information can be found in the [Documentation section](https://sfdx-hardis
 The command orchestrates interactions with MkDocs, Cloudflare APIs, and Git:
 
 - **Zensical Integration:** It calls `generateMkDocsHTML()` to run the Zensical build, which converts Markdown files into static HTML. It checks for the presence of `mkdocs.yml` to ensure it's a valid documentation project.
-- **Cloudflare API Interaction:** It uses the `cloudflare` npm package to interact with the Cloudflare API. This involves:
-  - **Authentication:** Initializes the Cloudflare client using `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID` environment variables.
-  - **Pages Project Management:** Calls `client.pages.projects.get()` to check for an existing project and `client.pages.projects.create()` to create a new one if needed.
-  - **Access Policy Management:** Lists existing access policies (`client.zeroTrust.access.policies.list()`) and creates a new one (`client.zeroTrust.access.policies.create()`) if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.
-  - **Access Application Management:** Lists existing access applications (`client.zeroTrust.access.applications.list()`) and creates a new one (`client.zeroTrust.access.applications.create()`) for the deployed site. It then updates the application to associate it with the created access policy.
+- **Cloudflare API Interaction:** It calls the Cloudflare REST API directly (no SDK dependency). This involves:
+  - **Authentication:** Sends `CLOUDFLARE_EMAIL`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID` (from environment variables) with each API call.
+  - **Pages Project Management:** Reads the Pages project to check for an existing one and creates a new one if needed.
+  - **Access Policy Management:** Lists existing access policies and creates a new one if the required policy doesn't exist. It configures the policy with email domain restrictions and a default login method.
+  - **Access Application Management:** Lists existing access applications and creates a new one for the deployed site. It then updates the application to associate it with the created access policy.
 - **Git Integration:** Retrieves the current Git branch name using `getCurrentGitBranch()` to construct the Cloudflare project name and branch for deployment.
 - **Wrangler CLI:** Uses the `wrangler` CLI (Cloudflare's developer tool) to deploy the generated HTML pages to Cloudflare Pages via `wrangler pages deploy`.
 - **Environment Variable Management:** Reads various environment variables to configure Cloudflare settings and project names.
@@ -71,7 +71,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

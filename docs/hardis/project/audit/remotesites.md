@@ -25,7 +25,7 @@ The command's technical implementation involves:
 - **File Discovery:** Uses `glob` to find all RemoteSiteSetting metadata files within the project.
 - **Content Analysis:** Reads the content of each XML file and uses regular expressions (/<url>(.*?)<\/url>/gim, /<isActive>(.*?)<\/isActive>/gim, /<description>(.*?)<\/description>/gim) to extract relevant details.
 - **`catchMatches` Utility:** This utility function is used to apply the defined regular expressions to each file and extract all matching occurrences.
-- **URL Parsing:** Uses Node.js's `url` module to parse the extracted URLs and `psl` (Public Suffix List) to extract the domain name from the hostname.
+- **URL Parsing:** Uses Node.js's `url` module to parse the extracted URLs and extracts the registrable domain name from the hostname.
 - **Data Structuring:** Organizes the extracted information into a structured format, including the remote site's name, file name, namespace, URL, active status, description, protocol, and domain.
 - **Reporting:** Uses `generateReports` to create a CSV report and display a table in the console, summarizing the audit findings.
 </details>
@@ -48,7 +48,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

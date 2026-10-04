@@ -39,7 +39,7 @@ This command is part of [sfdx-hardis Documentation](https://sfdx-hardis.cloudity
 <summary>Technical explanations</summary>
 
 The command queries `DeployRequest` records via the Salesforce Tooling API to build deployment metrics.
-It uses `GitProvider.listPullRequests()` to fetch merged PRs with date filtering, falling back to local `git log --merges` when no provider API is available.
+It uses `GitProvider.listPullRequests()` to fetch merged PRs with date filtering, falling back to the local `git log` when no provider API is available: merge commits, and the squash commits of GitHub (`(#123)`) and Azure DevOps (`Merged PR 123:`).
 Ticket references are extracted from PR titles/descriptions via `TicketProvider`, enriched with server data when configured, and used to compute MTTR from bug/incident resolution times.
 
 Mermaid `xychart-beta` diagrams visualize deployment frequency trends and lead time, while `pie` charts show deployment outcome distribution.
@@ -60,6 +60,17 @@ In agent mode:
 - All interactive prompts are skipped.
 - `--period` defaults to 90 days when not provided.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
@@ -67,13 +78,13 @@ In agent mode:
 |:------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation            |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                  |         |          |         |
-| flags-dir         | option  | undefined                                                        |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                             |         |          |         |
 | json              | boolean | Format output as json.                                           |         |          |         |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .md |         |          |         |
 | pdf               | boolean | Also generate the documentation in PDF format                    |         |          |         |
 | period<br/>-p     | option  | Number of days to analyze (default: 90)                          |   90    |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required    |         |          |         |
-| target-org<br/>-o | option  | undefined                                                        |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org.                             |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration        |         |          |         |
 
 ## Examples
