@@ -23,6 +23,7 @@
   "actionInterpolationUnknownPipelineVariable": "Variable de pipeline inconnue dans {{reference}} : [{{name}}] n'existe pas. Variables disponibles : {{names}}",
   "actionListHeader": "Actions {{when}} (portée {{scope}})",
   "actionListStatusHeader": "Lecture du statut des actions de déploiement de {{count}} Pull Request(s)...",
+  "actionListWorkflowsHeader": "Lecture des résultats de validation et de déploiement de {{count}} Pull Request(s)",
   "actionMoveToPrNeedsSourcePr": "--move-to-pr nécessite --scope pr et le numéro de la Pull Request dont provient l'action dans --pr-id.",
   "actionMovedFromDescription": "L'action {{label}} est déclarée dans la description de la Pull Request #{{pr}}, qui ne peut plus être modifiée après son merge : elle est copiée, et sa version d'origine ne s'exécutera plus.",
   "actionMovedSuperseded": "L'action {{label}} de la Pull Request #{{oldPr}} est remplacée par sa copie dans la Pull Request #{{newPr}} : seule la copie s'exécute.",

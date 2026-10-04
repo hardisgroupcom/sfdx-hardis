@@ -20,10 +20,13 @@ The headline is **Deployment Actions leaving beta**. But there is a lot more:
 | [**Deployment Actions are generally available**](#deployment-actions-are-generally-available) | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org |
 | [**Promotion branches (Beta)**](#promotion-branches-beta-ship-only-the-approved-user-stories) | Ship only the approved User Stories to production, with their deployment actions, tests and release notes        |
 | [**Backpromote (Beta)**](#backpromote-beta-catch-your-sandbox-up-with-the-team)               | Bring what your teammates merged into your developer sandbox, by hand or with a coding agent                     |
+| [**Pull Requests explorer**](#find-any-pull-request-without-leaving-vs-code)                  | Find any Pull Request and read its tickets, actions, validation and deployment results in VS Code                |
+| [**Metadata dependencies**](#know-what-uses-a-component-before-you-change-it)                 | See what uses an Apex class, a Flow or a field before you change or delete it                                    |
 | [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)       | You know in one second which comment you are reading and how the deployment went                                 |
 | [**Smaller footprint, safer supply chain**](#lighter-and-safer)                               | Half the npm packages removed: faster installs and fewer dependencies to trust                                   |
 | [**Personal data anonymized**](#personal-data-no-longer-leaves-your-org-in-clear-text)        | Names, emails, user Ids and IP addresses are pseudonymized in every report and every notification channel        |
 | [**Usage and cost monitoring**](#watch-what-your-org-consumes-and-what-it-costs)              | Entitlements, consumption alerts and Agentforce credits, in percentages and in your own currency                 |
+| [**Ask a coding agent**](#ask-a-coding-agent-about-your-org-and-your-pipeline)                | Your monitoring repository explains itself to a coding agent, which answers about the org and the pipeline       |
 | [**Sandbox refresh covered end to end**](#sandbox-refresh-covered-end-to-end)                 | Connected Apps, Scheduled Apex and restores that survive a failure                                               |
 | [**Flow deletion in destructive changes**](#deleting-a-flow-is-now-part-of-the-deployment)    | Deleting a Flow no longer means a manual step in every org                                                       |
 | [**Pipelines run in the Docker image**](#pipelines-run-in-the-sfdx-hardis-docker-image)       | Faster jobs that a bad dependency release can no longer break                                                    |
@@ -274,6 +277,37 @@ A [**backpromote**](salesforce-devops-backpromote.md) deploys into your sandbox 
 
 ---
 
+## Find any Pull Request without leaving VS Code
+
+"Is this story in production yet?" used to mean opening your git provider, finding the Pull Request, then hunting for its comments. The DevOps Pipeline now has a [**Pull Requests explorer**](vscode-extension-devops-pipeline.md#find-and-open-any-pull-request): type a number, a title, a branch, an author or a ticket, and open it in place.
+
+![Window of a Pull Request, on its Validation tab](assets/images/vscode-guide/pipeline-pr-view-validation.png)
+
+- **Where it stands**, as a path: the validation, then each major branch up to production, filled once reached.
+- **Everything about it in tabs**: its description, its tickets, its deployment actions and test classes, and the validation, code quality and deployment comments posted on it, as you would read them on your git provider.
+- **A promotion lists what it carries**, and each story names the promotion that carried it: one click goes from one to the other, and **Previous** brings you back.
+- **Search goes beyond the pipeline**: the Pull Requests already loaded are listed as you type, then your git provider is searched, open and merged alike.
+- Pull Request links of the Backpromote panel and of command results open the same window.
+
+*Ships in v8.13.0.*
+
+---
+
+## Know what uses a component before you change it
+
+Before you change or delete an Apex class, a Flow, a field or a layout, you want to know what uses it. The new [**Metadata Dependencies**](vscode-extension-metadata-dependencies.md) panel asks the org and lists every component that uses the one you picked, or every component it uses.
+
+![Metadata Dependencies](assets/images/metadata-dependencies.png)
+
+- **Right-click a metadata file**, or pick **Find where it is used** in the Metadata Retriever.
+- **Walk the chain** one level at a time, open a dependent, or retrieve it into your project.
+- **Export the list** as a CSV and an Excel file, to share it or attach it to a ticket.
+- The panel runs [hardis:doc:metadata-deps](hardis/doc/metadata-deps.md), which you can also call from a terminal or a pipeline.
+
+*Ships in v8.12.0.*
+
+---
+
 ## Pull Request comments you can read at a glance
 
 sfdx-hardis posts up to three comments on a Pull Request. Until v8 they all looked the same. Now each one opens with a **colored banner** that says what it is and how it went.
@@ -370,6 +404,21 @@ A new **"08 - Usage & Cost"** dashboard joins the Grafana v2 set for entitlement
 Two MFA fixes matter here: privileged users whose permissions come from a **Permission Set Group** were missed by the report, and an org where neither built-in authenticators nor security keys are enabled now raises an error, because no user can register the method Salesforce requires.
 
 A monitoring run that skips most of its commands used to look exactly like a broken one. It now opens by stating whether **frequency gating** is active or was forced, and its summary keeps a row for every configured command, including the ones `skipped` by their frequency and the ones `disabled` in your configuration.
+
+---
+
+## Ask a coding agent about your org and your pipeline
+
+The monitoring repository holds the daily history of your org. Each backup now writes an `AGENTS.md` file in it, which tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each folder holds and which checks run. Open the repository with your agent and [**ask**](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent):
+
+- "Which Flows changed last week?"
+- "Is the field `Invoice__c.Status__c` the same in production and in the UAT sandbox?"
+- "Was this change deployed by the pipeline, or made directly in production?"
+- "On which days did Apex errors spike this quarter?"
+
+Declare your CI/CD repository as `deploymentRepository` and the agent reads the pipeline too: its branches, its deployment actions, its Pull Requests and its job logs. Add `grafanaUrl` and it queries months of monitoring logs and metrics. It only reads: no push, no comment, no pipeline run.
+
+*Ships in v8.11.0.*
 
 ---
 

@@ -23,6 +23,7 @@
   "actionInterpolationUnknownPipelineVariable": "{{reference}} 内の不明なパイプライン変数: [{{name}}] は存在しません。使用可能な変数: {{names}}",
   "actionListHeader": "{{when}} アクション（{{scope}} スコープ）",
   "actionListStatusHeader": "{{count}} 件の Pull Request のデプロイアクションの状態を読み取っています...",
+  "actionListWorkflowsHeader": "{{count}} 件の Pull Request の検証とデプロイの結果を読み取っています",
   "actionMoveToPrNeedsSourcePr": "--move-to-pr には --scope pr と、アクションの元になった Pull Request の番号を指定する --pr-id が必要です。",
   "actionMovedFromDescription": "アクション {{label}} は Pull Request #{{pr}} の説明で宣言されていますが、マージ後は変更できません。そのためコピーされ、元のバージョンは今後実行されません。",
   "actionMovedSuperseded": "Pull Request #{{oldPr}} のアクション {{label}} は、Pull Request #{{newPr}} のコピーに置き換えられます。コピーのみが実行されます。",

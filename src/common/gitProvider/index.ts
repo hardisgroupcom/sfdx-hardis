@@ -25,6 +25,7 @@ import {
   SFDX_HARDIS_COMMENT_MARKER,
   upsertNavInDescription,
 } from "./prCommentNav.js";
+import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./prRunSummary.js";
 // Enable with NODE_DEBUG=sfdxhardis
 const debug = debuglog("sfdxhardis");
 // The answer of git about the checkout, asked once per process (assertGitRepositoryNotRefused)
@@ -282,6 +283,10 @@ export abstract class GitProvider {
       }
       markdownBody = removeMermaidLinks(markdownBody).trim(); // Remove "click" elements that are useless and ugly on some providers 😊
       const status = resolvePrCommentStatus(prData);
+      // Not where the marker would show as text: the run is then read from the title of the comment
+      if (gitProvider.hidesHtmlCommentsInPrComments()) {
+        markdownBody += "\n\n" + await GitProvider.buildRunSummaryMarker(gitProvider, prData, checkOnly, status);
+      }
       const prMessageRequest: PullRequestMessageRequest = {
         title: (checkOnly === true ? "🔍 Validation Results (deployment simulation)" : "🚀 Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
         message: markdownBody,
@@ -345,7 +350,8 @@ export abstract class GitProvider {
     // result yet, so it displays its plain title until the merge job updates it
     const placeholderMessage: PullRequestMessageRequest = {
       title: "🚀 Deployment Results\n\n⏳ Waiting for the Pull Request to be merged",
-      message: "The deployment job will update this comment after the Pull Request is merged.",
+      message: "The deployment job will update this comment after the Pull Request is merged." +
+        (gitProvider.hidesHtmlCommentsInPrComments() ? "\n\n" + encodeRunSummaryMarker({ kind: 'deployment', status: 'pending' }) : ""),
       status: "tovalidate",
       messageKey: "deployment",
       navBlock: buildPrCommentNavBlock('deployment'),
@@ -913,6 +919,42 @@ export abstract class GitProvider {
     // Fallback: just return null
     return null;
   }
+
+  /**
+   * Hidden summary of the run a validation or deployment comment reports, read back by
+   * `hardis:project:action:list --with-workflows`. Never fails the comment: a missing job URL or
+   * target branch is simply left out.
+   */
+  private static async buildRunSummaryMarker(
+    gitProvider: GitProviderRoot,
+    prData: Partial<PullRequestData>,
+    checkOnly: boolean,
+    status: "valid" | "invalid" | "tovalidate",
+  ): Promise<string> {
+    let targetBranch = '';
+    let jobUrl = '';
+    try {
+      // A validation targets the branch of the Pull Request, a deployment runs on the branch itself
+      targetBranch = checkOnly === true
+        ? (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch || ''
+        : (await getCurrentGitBranch()) || '';
+      jobUrl = (await gitProvider.getCurrentJobUrl()) || '';
+    } catch (e) {
+      debug('Run summary of the Pull Request comment built without job context: ' + (e as Error).message);
+    }
+    return encodeRunSummaryMarker({
+      kind: checkOnly === true ? 'validation' : 'deployment',
+      status: status === 'tovalidate' ? 'pending' : status,
+      targetBranch,
+      jobUrl,
+      date: new Date().toISOString(),
+      quickDeploy: checkOnly === false && prData.usedQuickDeploy === true,
+      testLevel: prData.checkTestLevel || '',
+      errorCount: prData.errorCount,
+      failedTestsCount: prData.failedTestsCount,
+      coverageText: markdownFirstLineAsText(prData.codeCoverageMarkdownBody),
+    });
+  }
 }
 
 /**
@@ -975,6 +1017,9 @@ export declare type PullRequestData = {
   // What the deployment really altered in the org: created / updated / deleted / unchanged split
   deploymentComponentsMarkdownBody?: string;
   codeCoverageMarkdownBody?: string;
+  // Number of deployment errors and of failing Apex tests, for the run summary of the comment
+  errorCount?: number;
+  failedTestsCount?: number;
   flowDeletionMarkdownBody?: string;
   // Explains which Pull Requests the deployment actions and Apex test classes were collected from
   deploymentScopeMarkdownBody?: string;

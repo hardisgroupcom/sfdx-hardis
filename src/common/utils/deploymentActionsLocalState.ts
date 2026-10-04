@@ -15,6 +15,34 @@ export function getLocalActionStateFile(prId: string): string {
   return path.join(LOCAL_STATE_DIR, `${prId || 'draft'}.json`);
 }
 
+/**
+ * The status of every action of a Pull Request in every org, as `hardis:project:action:list
+ * --with-status` answers it: the entries of the Pull Request comments, then the local results of
+ * the actions tried in a developer org that no comment knows.
+ *
+ * `fromComments` is what the state loaded from the git provider holds for that Pull Request
+ * (getStateEntriesForPr), empty for a draft or without a git provider.
+ */
+export function buildActionStatusRows(prId: string, fromComments: DeploymentActionStateEntry[]): any[] {
+  const fromLocal = readLocalActionStates(prId).filter(
+    (local) => !fromComments.some((e) => e.actionId === local.actionId && e.orgBranch === local.orgBranch)
+  );
+  return [...fromComments, ...fromLocal].map((e) => ({
+    actionId: e.actionId,
+    actionLabel: e.actionLabel,
+    orgBranch: e.orgBranch,
+    when: e.when,
+    status: e.status,
+    date: e.date,
+    jobUrl: e.jobUrl,
+    note: e.note || '',
+    movedTo: e.movedTo || null,
+    blockedBy: e.blockedBy || null,
+    stoppedActions: e.stoppedActions || [],
+    local: fromLocal.includes(e),
+  }));
+}
+
 export function readLocalActionStates(prId: string): DeploymentActionStateEntry[] {
   const file = getLocalActionStateFile(prId);
   if (!fs.existsSync(file)) {

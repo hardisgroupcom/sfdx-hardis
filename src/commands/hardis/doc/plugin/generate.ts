@@ -27,6 +27,9 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class DocPluginGenerate extends SfCommand<any> {
   public static title = 'Generate SF Cli Plugin Documentation';
 
+  // Listed in DISABLE_WEBSOCKET_COMMANDS of src/hooks/init/start-ws-client.ts: keep both in sync
+  public static disableWebsocket = true;
+
   public static description = `
 ## Command Behavior
 

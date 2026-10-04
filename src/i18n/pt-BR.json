@@ -1,5 +1,6 @@
 {
   "actionListStatusHeader": "Lendo o status das ações de deploy de {{count}} Pull Request(s)...",
+  "actionListWorkflowsHeader": "Lendo os resultados de validação e deploy de {{count}} Pull Request(s)",
   "actionMovedFromDescription": "A ação {{label}} está declarada na descrição do Pull Request #{{pr}}, que não pode ser alterada após o merge: ela é copiada e sua versão original não será mais executada.",
   "actionMovedSuperseded": "A ação {{label}} do Pull Request #{{oldPr}} é substituída pela cópia no Pull Request #{{newPr}}: apenas a cópia é executada.",
   "actionMovedToPr": "A ação {{label}} foi movida do Pull Request #{{oldPr}} para {{target}}. Corrija-a lá e depois faça o merge do Pull Request.",

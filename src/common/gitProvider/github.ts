@@ -796,7 +796,7 @@ ${getBannerMarkdownAndLink()}
     const results: PullRequestCommentRef[] = [];
     for (const comment of comments) {
       if (comment?.body?.includes(marker)) {
-        results.push({ prNumber: issueNumber, ref: comment.id, body: comment.body, url: comment.html_url || '' });
+        results.push({ prNumber: issueNumber, ref: comment.id, body: comment.body, url: comment.html_url || '', updatedAt: comment.updated_at || comment.created_at || '' });
       }
     }
     return results;

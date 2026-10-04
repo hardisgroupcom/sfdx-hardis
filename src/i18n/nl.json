@@ -23,6 +23,7 @@
   "actionInterpolationUnknownPipelineVariable": "Onbekende pipelinevariabele in {{reference}}: [{{name}}] bestaat niet. Beschikbare variabelen: {{names}}",
   "actionListHeader": "{{when}} acties ({{scope}} scope)",
   "actionListStatusHeader": "Status van de deploy-acties van {{count}} Pull Request(s) lezen...",
+  "actionListWorkflowsHeader": "Validatie- en deploy-resultaten van {{count}} Pull Request(s) lezen",
   "actionMoveToPrNeedsSourcePr": "--move-to-pr heeft --scope pr nodig en het nummer van de Pull Request waar de actie vandaan komt in --pr-id.",
   "actionMovedFromDescription": "Actie {{label}} is gedeclareerd in de beschrijving van Pull Request #{{pr}}, die na de merge niet meer kan worden gewijzigd: de actie wordt gekopieerd en de oorspronkelijke versie wordt niet meer uitgevoerd.",
   "actionMovedSuperseded": "Actie {{label}} van Pull Request #{{oldPr}} wordt vervangen door de kopie in Pull Request #{{newPr}}: alleen de kopie wordt uitgevoerd.",

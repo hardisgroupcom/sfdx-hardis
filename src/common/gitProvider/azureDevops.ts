@@ -1354,6 +1354,9 @@ ${getBannerMarkdownAndLink()}
             body: comment.content || '',
             url: `${this.buildPullRequestWebUrl(pullRequestId)}?_a=overview&discussionId=${thread.id}` +
               (publishedEpochSeconds ? `#${publishedEpochSeconds}` : ''),
+            updatedAt: (comment.lastUpdatedDate || comment.publishedDate)
+              ? new Date((comment.lastUpdatedDate || comment.publishedDate) as Date).toISOString()
+              : '',
           });
         }
       }

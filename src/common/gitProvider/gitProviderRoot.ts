@@ -181,6 +181,12 @@ export abstract class GitProviderRoot {
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
 
+  // False when the provider shows HTML comments as text in a Pull Request comment (Bitbucket
+  // Cloud): a long hidden marker would be a line of gibberish under every comment there.
+  public hidesHtmlCommentsInPrComments(): boolean {
+    return true;
+  }
+
   // False when the provider refuses to edit the description of a merged Pull Request (Azure
   // DevOps): the description navigation must then be completed before the merge, so the check
   // job creates the deployment comment as a pending placeholder.
@@ -402,4 +408,6 @@ export declare type PullRequestCommentRef = {
   // Permalink of the comment, used to navigate from one sfdx-hardis comment to another.
   // Empty when the provider cannot build it.
   url?: string;
+  // Last update of the comment (ISO date), when the provider returns it
+  updatedAt?: string;
 };

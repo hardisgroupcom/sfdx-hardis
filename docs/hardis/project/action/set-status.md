@@ -42,6 +42,7 @@ Required in agent mode:
 - Reads the state of the Pull Request from its "Deployment Actions" comment, rewrites the entry of the action for the org branch, and runs the checkbox sync on the comments of the Pull Request.
 - No org work is done. The org, when there is one, gives the Salesforce username written in the note, and the org branch when `--org-branch` is not passed.
 - A git provider token is required.
+- With `--json`, the result holds `statuses`: the status of every action of the Pull Request in every org after the write, in the shape of `hardis:project:action:list --with-status`. A panel shows the outcome without a second call.
 </details>
 
 <!-- training-links:start -->

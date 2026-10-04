@@ -23,6 +23,7 @@
   "actionInterpolationUnknownPipelineVariable": "Unknown pipeline variable in {{reference}}: [{{name}}] does not exist. Available variables: {{names}}",
   "actionListHeader": "{{when}} actions ({{scope}} scope)",
   "actionListStatusHeader": "Reading the status of the deployment actions of {{count}} Pull Request(s)...",
+  "actionListWorkflowsHeader": "Reading the validation and deployment results of {{count}} Pull Request(s)",
   "actionMoveToPrNeedsSourcePr": "--move-to-pr needs --scope pr and the number of the Pull Request the action comes from in --pr-id.",
   "actionMovedFromDescription": "Action {{label}} is declared in the description of Pull Request #{{pr}}, which cannot be changed after its merge: it is copied, and its original version will no longer run.",
   "actionMovedSuperseded": "Action {{label}} of Pull Request #{{oldPr}} is replaced by its copy in Pull Request #{{newPr}}: only the copy runs.",

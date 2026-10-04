@@ -291,6 +291,8 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     deployStatus: "valid",
     // Also set the comment status, otherwise it stays "tovalidate" and the comment displays no banner
     status: "valid",
+    errorCount: errorsAndTips.length,
+    failedTestsCount: failedTests.length,
   };
   if (errorsAndTips.length > 0) {
     prData.title = options.check ? "❌ Deployment check failure" : "❌ Deployment failure";

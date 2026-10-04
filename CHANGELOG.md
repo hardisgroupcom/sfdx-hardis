@@ -2,19 +2,23 @@
 
 ## [beta] (main)
 
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - [Recover a failed action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action) without redeploying: retry it with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/), close it with [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/), or move it to a fix Pull Request.
+  - [Try the actions of your Pull Request](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#try-your-actions-in-your-own-org) in your own developer org before the merge, with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/).
+  - New [Run Batch](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#run-an-apex-batch) action, to run an Apex batch once before or after a deployment and optionally wait for its result.
+  - A Schedule Batch action can schedule a class of an installed package, a global class of a managed package being written `ns.ClassName`.
+  - [Identical actions run once](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once): when several Pull Requests of one deployment carry the same action, it runs once and the others are recorded as done.
+  - Two Pull Requests reusing the same action id no longer skip each other's action.
+  - The validation of a Pull Request stops while one of its pre-deployment manual actions is not marked as performed in the target org, except on a draft Pull Request or with `failValidationOnPendingManualActions: false`.
+  - Deployment jobs stop with the line to add to the CI workflow when git refuses the checkout ("detected dubious ownership"), instead of skipping the deployment actions; the GitHub Actions templates now include it.
+- [VS Code DevOps Pipeline](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/):
+  - A **Pull Requests explorer** finds any Pull Request and shows its tickets, deployment actions, test classes, validation and deployment results without leaving VS Code.
+  - Deployment Actions tab: a **Total** row adds up the pills of its Pull Requests and filters the actions by status, for the status in the branch and for the next promotion ([#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274)).
+  - Deployment Actions tab: **Mark as done** shows its result about twice as fast, and reading the statuses no longer opens a command tab.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no item of the deployment package matches package-no-overwrite.xml, even when their metadata types match; the split packages of a deployment plan are checked too.
 - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/) asks for the alias of an org before the browser opens when its URL is known, and an org you reconnect keeps the alias it has ([#2269](https://github.com/hardisgroupcom/sfdx-hardis/issues/2269)).
 - [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/) can regenerate the documentation of chosen commands only, keeps a page for removed commands, and no longer writes broken or machine-dependent parameter tables ([#2270](https://github.com/hardisgroupcom/sfdx-hardis/issues/2270)).
-- VS Code [Deployment Actions tab](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action): a **Total** row adds up the pills of its Pull Requests and filters the actions by status, for the status in the branch and for the next promotion ([#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274)).
-- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once): when several Pull Requests of one deployment carry the same action, it runs once and the others are recorded as done.
-- Two Pull Requests reusing the same deployment action id no longer skip each other's action.
-- Deployment jobs stop with the line to add to the CI workflow when git refuses the checkout ("detected dubious ownership"), instead of skipping the deployment actions; the GitHub Actions templates now include it.
-- The validation of a Pull Request stops while one of its pre-deployment manual actions is not marked as performed in the target org, except on a draft Pull Request or with `failValidationOnPendingManualActions: false`.
-- [Recover a failed deployment action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action) without redeploying: retry it with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/), close it with [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/), or move it to a fix Pull Request.
-- [Try the deployment actions of your Pull Request](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#try-your-actions-in-your-own-org) in your own developer org before the merge, with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/).
-- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#run-an-apex-batch): new Run Batch action, to run an Apex batch once before or after a deployment and optionally wait for its result.
 - Documentation and command help now link to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
-- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/): a Schedule Batch action can now schedule a class of an installed package, a global class of a managed package being written `ns.ClassName`.
-- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no item of the deployment package matches package-no-overwrite.xml, even when their metadata types match. A delta deployment touching `CustomObject: Lead` while package-no-overwrite.xml protects `CustomObject: Account` now saves those minutes. The split packages of a deployment plan are checked too.
 
 ## [8.12.1] 2026-10-02
 
