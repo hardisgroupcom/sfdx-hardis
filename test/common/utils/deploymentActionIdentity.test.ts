@@ -454,7 +454,7 @@ describe('Identical actions in a backpromote', () => {
 
   it('runs an action moved to a fix Pull Request from the fix only', () => {
     const actions = collectBackpromoteActions(
-      [group('c1', 101, [publish('Custmer')]), group('c2', 105, [publish('Customer', { movedFrom: 101 })])],
+      [group('c1', 101, [publish('Partner')]), group('c2', 105, [publish('Customer', { movedFrom: 101 })])],
       'integration',
       'commandsPostDeploy',
       null
