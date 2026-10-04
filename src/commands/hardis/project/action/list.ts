@@ -215,10 +215,14 @@ Required in agent mode:
     const workflows: Record<string, any[]> = {};
     if (withWorkflows && gitProvider) {
       uxLog("action", this, c.cyan(t('actionListWorkflowsHeader', { count: prNumbers.length })));
-      for (const prNumber of prNumbers) {
-        const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber);
-        workflows[String(prNumber)] = parseWorkflowRunsFromComments(comments || []);
-      }
+      // Read together: the VS Code view waits for this answer, and there are only a few Pull Requests
+      // (the one shown and the ones that carried it)
+      const commentsByPr = await Promise.all(
+        prNumbers.map((prNumber) => GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber))
+      );
+      prNumbers.forEach((prNumber, index) => {
+        workflows[String(prNumber)] = parseWorkflowRunsFromComments(commentsByPr[index] || []);
+      });
     }
     const forecast = forecastBranch && gitProvider ? await this.buildForecast(prNumbers, forecastBranch, fromBranch) : null;
     // gitProvider false: the comments could not be read, only the local results are there, and a UI

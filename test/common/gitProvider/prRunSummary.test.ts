@@ -107,6 +107,23 @@ describe('Pull Request run summary', () => {
     expect(failure).to.deep.include({ kind: 'deployment', status: 'invalid', legacy: true });
   });
 
+  it('reads a comment without marker and without banner from the mark of its title', () => {
+    const success = parseWorkflowRunFromComment({ body: `## 🔍 Validation Results\n\n✅ Deployment check success\n\n${VALIDATION_KEY}` });
+    expect(success?.status).to.equal('valid');
+    // A failed run still prints a success mark next to a coverage that is fine
+    const failure = parseWorkflowRunFromComment({
+      body: `## 🚀 Deployment Results\n\n❌ Deployment failure\n\n✅ Your code coverage is ok\n\n${DEPLOYMENT_KEY}`,
+    });
+    expect(failure?.status).to.equal('invalid');
+  });
+
+  it('keeps the links of a provider served over http, and nothing but web addresses', () => {
+    const marker = encodeRunSummaryMarker({ kind: 'deployment', status: 'valid', jobUrl: 'http://git.intranet/acme/sf/-/jobs/12' });
+    const run = parseWorkflowRunFromComment({ body: `Done\n\n${marker}\n${DEPLOYMENT_KEY}`, url: 'data:text/html,x' });
+    expect(run?.jobUrl).to.equal('http://git.intranet/acme/sf/-/jobs/12');
+    expect(run?.commentUrl).to.equal('');
+  });
+
   it('reads the placeholder deployment comment as pending', () => {
     const run = parseWorkflowRunFromComment({ body: `## Deployment Results\n\nWaiting for the merge\n\n${DEPLOYMENT_KEY}` });
     expect(run?.status).to.equal('pending');

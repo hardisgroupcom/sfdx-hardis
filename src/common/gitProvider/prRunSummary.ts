@@ -98,7 +98,7 @@ export function decodeRunSummaryMarker(body: string): PrRunSummary | null {
     kind: parsed.kind,
     status: parsed.status,
     targetBranch: cleanText(parsed.targetBranch),
-    jobUrl: cleanHttpsUrl(parsed.jobUrl),
+    jobUrl: cleanWebUrl(parsed.jobUrl),
     date: cleanDate(parsed.date),
     quickDeploy: parsed.quickDeploy === true,
     testLevel: cleanText(parsed.testLevel),
@@ -133,14 +133,13 @@ export function parseWorkflowRunFromComment(comment: { body: string; url?: strin
   const summary = decodeRunSummaryMarker(body);
   // The kind of the message key wins: it is what sfdx-hardis itself matches a comment on
   const usableSummary = summary && summary.kind === kind ? summary : null;
-  const banner = body.match(BANNER_REGEX);
-  const legacyStatus: PrRunStatus = banner ? (banner[2] === 'success' ? 'valid' : 'invalid') : 'pending';
+  const legacyStatus = usableSummary ? usableSummary.status : readLegacyStatus(body);
   return {
     kind,
-    status: usableSummary ? usableSummary.status : legacyStatus,
+    status: legacyStatus,
     targetBranch: usableSummary?.targetBranch || '',
     jobUrl: usableSummary?.jobUrl || '',
-    commentUrl: cleanHttpsUrl(comment.url) || '',
+    commentUrl: cleanWebUrl(comment.url) || '',
     date: usableSummary?.date || cleanDate(comment.updatedAt) || '',
     quickDeploy: usableSummary?.quickDeploy === true,
     testLevel: usableSummary?.testLevel || '',
@@ -164,6 +163,26 @@ export function parseWorkflowRunsFromComments(comments: Array<{ body: string; ur
   return runs.sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind] || a.date.localeCompare(b.date));
 }
 
+/**
+ * Outcome of a comment that carries no run summary: from its banner, else from the mark of its
+ * title (banners can be switched off, and older comments have none). A failure mark wins: a
+ * failed run still prints a success mark next to a coverage that is fine. Without any mark, the
+ * comment is the placeholder waiting for the merge.
+ */
+function readLegacyStatus(body: string): PrRunStatus {
+  const banner = body.match(BANNER_REGEX);
+  if (banner) {
+    return banner[2] === 'success' ? 'valid' : 'invalid';
+  }
+  if (body.includes('❌')) {
+    return 'invalid';
+  }
+  if (body.includes('✅')) {
+    return 'valid';
+  }
+  return 'pending';
+}
+
 function cleanText(value: unknown): string | undefined {
   if (typeof value !== 'string') {
     return undefined;
@@ -172,13 +191,14 @@ function cleanText(value: unknown): string | undefined {
   return text === '' ? undefined : text;
 }
 
-function cleanHttpsUrl(value: unknown): string | undefined {
+// http next to https: a self-hosted git provider or CI server is not always served over https
+function cleanWebUrl(value: unknown): string | undefined {
   if (typeof value !== 'string') {
     return undefined;
   }
   try {
     const url = new URL(value.trim());
-    return url.protocol === 'https:' ? url.toString() : undefined;
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : undefined;
   } catch {
     return undefined;
   }
