@@ -30,7 +30,7 @@ The command's technical implementation involves:
 
 | Name        |  Type   | Description                             | Default | Required | Options |
 |:------------|:-------:|:----------------------------------------|:-------:|:--------:|:-------:|
-| flags-dir   | option  | undefined                               |         |          |         |
+| flags-dir   | option  | Import flag values from a directory.    |         |          |         |
 | json        | boolean | Format output as json.                  |         |          |         |
 | name<br/>-n | option  | This person can be anyone in the world! |  World  |          |         |
 

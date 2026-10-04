@@ -1,8 +1,8 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:project:promotion:create
 
 ## Description
+
 
 ## Command Behavior (Beta)
 
@@ -14,6 +14,7 @@ This is the only supported way to create a [promotion branch (Beta)](https://sfd
 
 - checks that `enablePromotionBranches: true` is set in the sfdx-hardis configuration;
 - checks that `allowedPromotionSteps` declares the steps promotions may run on (ex: `- source: uat` / `target: preprod`), and keeps to them: only those source and target branches are offered, and naming another one fails;
+- requires the [git provider connection](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/) (GitHub, GitLab, Bitbucket or Azure DevOps) and refuses to run without it: the carried Pull Requests are read from the provider, so the command behaves the same on every platform and every carried Pull Request gets its real title and author. From VS Code, the extension passes its own connection; from a terminal, an agent or CI, set the provider token as an environment variable or in a `.env` file at the repository root;
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from `--pull-requests`). A Pull Request another promotion branch already carries to the same target is left out, unless `--include-already-promoted` is passed;
 - creates the branch from the target branch, named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` (UTC, ex: `promotion/uat/preprod/2026-09-06-1430`), with `-2`, `-3`... added only when that name is already taken;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with `-x` so each commit keeps a pointer to its origin;
@@ -31,7 +32,8 @@ On a cherry-pick conflict, you choose (or `--on-conflict` decides) to:
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Candidates are the first-parent commits of `origin/<source>` since its merge base with `origin/<target>`, grouped with their Pull Requests like `hardis:work:backpromote` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- Candidates are the first-parent commits of `origin/<source>` since its merge base with `origin/<target>`, grouped with their Pull Requests like `hardis:work:backpromote` does (Pull Request numbers read from the merge commit messages and completed by the git provider API, whose connection this command requires).
+- A first-parent commit that only moves other merges (a major-to-major sync like `integration -> uat`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - The branch is created with `git checkout -b <name> origin/<target>`, commits are applied with `git cherry-pick -x` (`-m 1` for merge commits).
 - The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the `gh` CLI on GitHub. The creation is retried a few times: the branch is pushed a fraction of a second before, and a provider that has not indexed the new ref yet answers that the source branch does not exist. Without either, the branch is pushed and the description is saved under `hardis-report/` to create the Pull Request by hand, and the message names the reason the provider gave.
 - The date and the time are in UTC. The name is checked against every promotion branch of the step that exists or existed: local and remote branches, remote-tracking refs, the merge commits of the target branch and its Pull Requests merged in the last two days. A name already taken gets `-2`, `-3`..., one more than the highest one found, and the branch creation stops on a name that still exists instead of resuming that branch.
@@ -51,6 +53,18 @@ In agent mode:
 - Every number of `--pull-requests` must match a Pull Request merged into the source branch and not yet promoted, otherwise the command fails before touching git.
 - A cherry-pick conflict undoes the whole promotion (branch deleted, nothing pushed) and fails the command naming the conflicting Pull Request, unless `--on-conflict skip` or `--on-conflict commit-with-markers` is passed.
 - To choose those numbers first, list what can be promoted with `sf hardis:project:promotion:list-candidates --agent --source-branch uat --json`: same candidates, nothing created.
+- The git provider token must be available (ex: `GITHUB_TOKEN`), from the environment or from a `.env` file at the repository root: agent mode never prompts for the connection, it stops without it.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
@@ -58,7 +72,7 @@ In agent mode:
 |:-------------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:--------------------------------------:|
 | agent                    | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                            |         |          |                                        |
 | debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                                                                                                                                                  |         |          |                                        |
-| flags-dir                | option  | undefined                                                                                                                                                                                                                        |         |          |                                        |
+| flags-dir                | option  | Import flag values from a directory.                                                                                                                                                                                             |         |          |                                        |
 | include-already-promoted | boolean | Also offer the Pull Requests another promotion branch already carries to the same target branch (left out by default).                                                                                                           |         |          |                                        |
 | json                     | boolean | Format output as json.                                                                                                                                                                                                           |         |          |                                        |
 | on-conflict              | option  | What to do when a cherry-pick conflicts: skip (leave the story out), commit-with-markers (commit it with its conflict markers, to solve later), abort (undo the whole promotion). Prompted if not provided, abort in agent mode. |         |          | skip<br/>commit-with-markers<br/>abort |
@@ -95,12 +109,4 @@ $ sf hardis:project:promotion:create --agent --source-branch uat --pull-requests
 $ sf hardis:project:promotion:create --agent --source-branch uat --pull-requests 482,487 --on-conflict commit-with-markers
 ```
 
-<!-- training-links:start -->
 
-## Learn by doing
-
-The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
-
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
-
-<!-- training-links:end -->

@@ -84,14 +84,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 | allow-branch-mismatch | boolean | Run even when the current git branch is not the branch of the org (the definition is read from the current branch)                    |         |          |                      |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                       |         |          |                      |
 | dev-org               | boolean | Refuse to run when the org is a major org: the run is meant for a developer org only                                                  |         |          |                      |
-| flags-dir             | option  | undefined                                                                                                                             |         |          |                      |
+| flags-dir             | option  | Import flag values from a directory.                                                                                                  |         |          |                      |
 | json                  | boolean | Format output as json.                                                                                                                |         |          |                      |
 | next                  | option  | Once the action succeeded, run none, the next one, or all the actions its failure stopped                                             |         |          | none<br/>one<br/>all |
 | org-branch            | option  | Major branch of the org to run the action in (ex: integration). Uses an org of that instance authenticated on this computer           |         |          |                      |
 | pr                    | option  | Number of the Pull Request the action comes from, or draft for the actions file of a branch without Pull Request (developer org only) |         |          |                      |
 | select-org            | boolean | Choose the org among all the orgs authenticated on this computer (major orgs of the pipeline first) instead of --target-org           |         |          |                      |
 | skipauth              | boolean | Skip authentication check when a default username is required                                                                         |         |          |                      |
-| target-org<br/>-o     | option  | undefined                                                                                                                             |         |          |                      |
+| target-org<br/>-o     | option  | Username or alias of the target org.                                                                                                  |         |          |                      |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                             |         |          |                      |
 
 ## Examples

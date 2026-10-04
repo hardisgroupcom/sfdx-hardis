@@ -46,7 +46,7 @@ Use `--agent` to disable all interactive prompts. In agent mode:
 |:---------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-----------------------------:|
 | agent                | boolean | Run in non-interactive mode for agents and automation             |         |          |                               |
 | debug<br/>-d         | boolean | Activate debug mode (more logs)                                   |         |          |                               |
-| flags-dir            | option  | undefined                                                         |         |          |                               |
+| flags-dir            | option  | Import flag values from a directory.                              |         |          |                               |
 | json                 | boolean | Format output as json.                                            |         |          |                               |
 | min-date<br/>-m      | option  | Minimum date for PR                                               |         |          |                               |
 | outputfile<br/>-f    | option  | Force the path and name of output report file. Must end with .csv |         |          |                               |

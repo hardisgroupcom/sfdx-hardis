@@ -51,13 +51,13 @@ In agent mode, the interactive prompt to automatically add missing accesses to P
 | agent                  | boolean | Run in non-interactive mode for agents and automation             |           |          |         |
 | debug<br/>-d           | boolean | Activate debug mode (more logs)                                   |           |          |         |
 | elementsignored<br/>-e | option  | Ignore specific elements separated by commas                      |           |          |         |
-| flags-dir              | option  | undefined                                                         |           |          |         |
+| flags-dir              | option  | Import flag values from a directory.                              |           |          |         |
 | folder<br/>-f          | option  | Root folder                                                       | force-app |          |         |
 | ignorerights<br/>-i    | option  | Ignore permission sets or profiles                                |           |          |         |
 | json                   | boolean | Format output as json.                                            |           |          |         |
 | outputfile<br/>-x      | option  | Force the path and name of output report file. Must end with .csv |           |          |         |
 | skipauth               | boolean | Skip authentication check when a default username is required     |           |          |         |
-| target-org<br/>-o      | option  | undefined                                                         |           |          |         |
+| target-org<br/>-o      | option  | Username or alias of the target org.                              |           |          |         |
 | websocket              | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |           |          |         |
 
 ## Examples

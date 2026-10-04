@@ -31,7 +31,7 @@ The command's technical implementation involves:
 
 - **SFDMU Integration:** It acts as a setup wizard for SFDMU, generating the necessary configuration files that the `sfdmu` plugin consumes.
 - **Interactive Prompts:** Uses the `prompts` library to gather user input for various configuration parameters, such as the data path, label, and description.
-- **File System Operations:** Employs `fs-extra` to create directories (e.g., `data/your-project-name/`) and write the `export.json` and any additional configuration files.
+- **File System Operations:** Employs Node.js `fs` to create directories (e.g., `data/your-project-name/`) and write the `export.json` and any additional configuration files.
 - **JSON Manipulation:** Constructs the `export.json` content dynamically based on user input and selected templates, including defining objects, queries, and operations.
 - **PascalCase Conversion:** Uses `pascalcase` to format the SFDMU folder name consistently.
 - **Configuration Persistence:** Updates the project's `sfdx-hardis.yml` file (via `setConfig`) to include the newly configured data package if it's intended for scratch org initialization.
@@ -45,7 +45,7 @@ The command's technical implementation involves:
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

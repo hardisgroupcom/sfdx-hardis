@@ -13,6 +13,7 @@ Agentforce actions and Data 360 operations are billed in Flex Credits. This comm
 Key functionalities:
 
 - **Consumption Breakdown:** Aggregates credits consumed and event counts per agent, action, usage type and metered flag.
+- **Billed vs Covered Usage:** Only metered usage is charged. Standard generative AI features covered by an add-on run unmetered and are usually the bulk of consumption, so the report leads with billed credits and shows the total alongside. If the org's usage model exposes no metered flag, every credit is counted as billed and the report says so, rather than reporting zero billed credits.
 - **Data 360 Credits:** Reports Data 360 credit consumption alongside Agentforce usage.
 - **Date Windowing:** Restricts the analysis to a recent period, 30 days by default.
 - **CSV Report Generation:** Produces a report of the aggregated consumption rows.
@@ -47,17 +48,17 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                   | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
-| days              | option  | Number of days to analyze                                                                     |   30    |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
-| json              | boolean | Format output as json.                                                                        |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                |         |          |         |
+| days              | option  | Number of days to analyze                                                                                    |   30    |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

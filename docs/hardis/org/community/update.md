@@ -44,15 +44,15 @@ Use `--agent` to disable all prompts. Typical usage:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                  | Default | Required | Options |
-|:------------------|:-------:|:-----------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                        |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                              |         |          |         |
-| flags-dir         | option  | undefined                                                                    |         |          |         |
-| json              | boolean | Format output as json.                                                       |         |          |         |
-| name<br/>-n       | option  | List of Networks Names that you want to update, separated by comma           |         |          |         |
-| status<br/>-s     | option  | New status for the community, available values are: Live, DownForMaintenance |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                    |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| name<br/>-n       | option  | List of Networks Names that you want to update, separated by comma                                           |         |   true   |         |
+| status<br/>-s     | option  | New status for the community, available values are: Live, DownForMaintenance                                 |         |   true   |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
 
 ## Examples
 

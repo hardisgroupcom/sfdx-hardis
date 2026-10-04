@@ -27,7 +27,7 @@ The command's technical implementation involves:
 
 - **XML Parsing:** It reads the content of the specified `package.xml` file and parses its XML structure to extract the metadata types and their members.
 - **Markdown Generation:** It utilizes the `DocBuilderPackageXML.generatePackageXmlMarkdown` utility to transform the parsed `package.xml` data into a structured Markdown format. This utility handles the formatting and organization of the metadata information.
-- **File System Operations:** It uses `fs-extra` (implicitly through `DocBuilderPackageXML`) to read the input `package.xml` and write the generated Markdown file.
+- **File System Operations:** It uses Node.js `fs` (implicitly through `DocBuilderPackageXML`) to read the input `package.xml` and write the generated Markdown file.
 - **WebSocket Communication:** It interacts with a WebSocket client (`WebSocketClient.requestOpenFile`) to open the generated Markdown file in a VS Code tab, enhancing user experience.
 - **Salesforce Org Context:** It can optionally use the `target-org` flag to provide context, such as the instance URL, which might be used for generating links or additional information within the Markdown.
 </details>
@@ -50,12 +50,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
 |:------------------|:-------:|:-------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation                                |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                      |         |          |         |
-| flags-dir         | option  | undefined                                                                            |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                 |         |          |         |
 | inputfile<br/>-x  | option  | Path to package.xml file. If not specified, the command will look in manifest folder |         |          |         |
 | json              | boolean | Format output as json.                                                               |         |          |         |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .md                     |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                        |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                            |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org.                                                 |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                            |         |          |         |
 
 ## Examples

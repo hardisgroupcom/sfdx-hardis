@@ -16,6 +16,7 @@ Key functionalities:
 - **Period Derivation:** Salesforce rarely populates an end date, so the current billing window is derived from the entitlement start date and its frequency (daily, weekly, fortnightly, monthly, quarterly, yearly).
 - **Consumption Projection:** Compares the share of the allowance consumed against the share of the period elapsed, and projects consumption at period end. A resource at 60% consumption when only 30% of the period has passed projects to 200%, and is flagged even though a flat percentage rule would stay silent.
 - **Threshold-Based Alerting:** Warns above 120% projected consumption and errors above 150%, both configurable. Flat consumption thresholds act as a floor so a nearly exhausted allowance still alerts late in the period.
+- **Already-Exceeded Detection:** An allowance consumed past 100% is reported as critical and listed separately from the forecasts. Everything below that level is a prediction; above it the allowance is already spent and overage is accruing.
 - **Per-Resource Configuration:** Thresholds can be tightened, loosened or muted per resource in `.sfdx-hardis.yml`.
 - **CSV Report Generation:** Produces a report with consumption, allowance, period boundaries, elapsed share, projection and severity for every entitlement.
 - **Notifications:** Sends notifications to configured channels (Grafana, Slack, MS Teams) summarizing entitlements at risk.
@@ -53,16 +54,16 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                   | Default | Required | Options |
-|:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
-| json              | boolean | Format output as json.                                                                        |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts.                |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

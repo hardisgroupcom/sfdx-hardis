@@ -52,14 +52,14 @@ In agent mode:
 | allowpurgefailure<br/>-f      | boolean | Allows purges to fail without exiting with 1. Use --no-allowpurgefailure to disable                                      |                              |          |         |
 | debug<br/>-d                  | boolean | Activate debug mode (more logs)                                                                                          |                              |          |         |
 | delete-flow-interviews<br/>-w | boolean | If the presence of Flow interviews prevent to delete flows versions, delete them before retrying to delete flow versions |                              |          |         |
-| flags-dir                     | option  | undefined                                                                                                                |                              |          |         |
+| flags-dir                     | option  | Import flag values from a directory.                                                                                     |                              |          |         |
 | instanceurl<br/>-r            | option  | URL of org instance                                                                                                      | https://login.salesforce.com |          |         |
 | json                          | boolean | Format output as json.                                                                                                   |                              |          |         |
 | name<br/>-n                   | option  | Filter according to Name criteria                                                                                        |                              |          |         |
 | prompt<br/>-z                 | boolean | Prompt for confirmation (true by default, use --no-prompt to skip)                                                       |                              |          |         |
 | skipauth                      | boolean | Skip authentication check when a default username is required                                                            |                              |          |         |
 | status<br/>-s                 | option  | Filter according to Status criteria                                                                                      |                              |          |         |
-| target-org<br/>-o             | option  | undefined                                                                                                                |                              |          |         |
+| target-org<br/>-o             | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.             |                              |   true   |         |
 | websocket                     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                |                              |          |         |
 
 ## Examples

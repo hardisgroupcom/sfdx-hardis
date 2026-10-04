@@ -39,7 +39,7 @@ Required in agent mode: `--id`. Add `--force` to delete a function that deployme
 |:-------------|:-------:|:------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation       |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                             |         |          |         |
-| flags-dir    | option  | undefined                                                   |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                        |         |          |         |
 | force        | boolean | Delete even when deployment actions still use this function |         |          |         |
 | id           | option  | Id of the function to delete                                |         |          |         |
 | json         | boolean | Format output as json.                                      |         |          |         |

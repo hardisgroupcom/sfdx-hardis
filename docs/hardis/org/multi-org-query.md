@@ -49,7 +49,7 @@ In agent mode, both `--query` (or `--query-template`) and `--target-orgs` flags 
 |:----------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
 | agent                 | boolean | Run in non-interactive mode for agents and automation             |         |          |                            |
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                   |         |          |                            |
-| flags-dir             | option  | undefined                                                         |         |          |                            |
+| flags-dir             | option  | Import flag values from a directory.                              |         |          |                            |
 | json                  | boolean | Format output as json.                                            |         |          |                            |
 | outputfile<br/>-f     | option  | Force the path and name of output report file. Must end with .csv |         |          |                            |
 | query<br/>-q          | option  | SOQL Query to run on multiple orgs                                |         |          |                            |

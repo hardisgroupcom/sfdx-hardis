@@ -35,23 +35,23 @@ Required in agent mode: `--id`. Every other flag is optional, and every prompt i
 
 ## Parameters
 
-| Name             |  Type   | Description                                                                           | Default | Required | Options |
-|:-----------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent            | boolean | Run in non-interactive mode for agents and automation                                 |         |          |         |
-| allowed-contexts | option  | New comma-separated execution contexts. Pass an empty value to remove the restriction |         |          |         |
-| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                       |         |          |         |
-| description      | option  | New description                                                                       |         |          |         |
-| flags-dir        | option  | undefined                                                                             |         |          |         |
-| id               | option  | Id of the function to update                                                          |         |          |         |
-|inputs|option|Replace the input contract: "name[:type][:required][|opt1,opt2][=default]" entries separated by ";". Empty value removes every input||||
-|json|boolean|Format output as json.||||
-|label|option|New label||||
-|outputs|option|Replace the output contract: "name[:type]" entries separated by ";". Empty value removes every output||||
-|runtime|option|New runtime: node, python or bash|||node<br/>python<br/>bash|
-|script|option|New script path||||
-|timeout|option|New maximum duration of a run, in seconds||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
-|when|option|Restrict the function to one deployment phase, or "any" to remove the restriction|||pre-deploy<br/>post-deploy<br/>any|
+| Name             |  Type   | Description                                                                                                                           | Default | Required |              Options               |
+|:-----------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:----------------------------------:|
+| agent            | boolean | Run in non-interactive mode for agents and automation                                                                                 |         |          |                                    |
+| allowed-contexts | option  | New comma-separated execution contexts. Pass an empty value to remove the restriction                                                 |         |          |                                    |
+| debug<br/>-d     | boolean | Activate debug mode (more logs)                                                                                                       |         |          |                                    |
+| description      | option  | New description                                                                                                                       |         |          |                                    |
+| flags-dir        | option  | Import flag values from a directory.                                                                                                  |         |          |                                    |
+| id               | option  | Id of the function to update                                                                                                          |         |          |                                    |
+| inputs           | option  | Replace the input contract: "name[:type][:required][\|opt1,opt2][=default]" entries separated by ";". Empty value removes every input |         |          |                                    |
+| json             | boolean | Format output as json.                                                                                                                |         |          |                                    |
+| label            | option  | New label                                                                                                                             |         |          |                                    |
+| outputs          | option  | Replace the output contract: "name[:type]" entries separated by ";". Empty value removes every output                                 |         |          |                                    |
+| runtime          | option  | New runtime: node, python or bash                                                                                                     |         |          |      node<br/>python<br/>bash      |
+| script           | option  | New script path                                                                                                                       |         |          |                                    |
+| timeout          | option  | New maximum duration of a run, in seconds                                                                                             |         |          |                                    |
+| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                             |         |          |                                    |
+| when             | option  | Restrict the function to one deployment phase, or "any" to remove the restriction                                                     |         |          | pre-deploy<br/>post-deploy<br/>any |
 
 ## Examples
 

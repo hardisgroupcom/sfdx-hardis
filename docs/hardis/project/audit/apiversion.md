@@ -32,7 +32,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                                      |         |          |         |
 | failiferror<br/>-f       | boolean | Fails (exit code 1) if an error is found                                                                             |         |          |         |
 | fix                      | boolean | Automatically update API versions in files that are below the minimum version threshold to match the minimum version |         |          |         |
-| flags-dir                | option  | undefined                                                                                                            |         |          |         |
+| flags-dir                | option  | Import flag values from a directory.                                                                                 |         |          |         |
 | json                     | boolean | Format output as json.                                                                                               |         |          |         |
 | metadatatype             | option  | Metadata Types to fix. Comma separated. Supported Metadata types: ApexClass, ApexTrigger, ApexPage                   |         |          |         |
 | minimumapiversion<br/>-m | option  | Minimum allowed API version                                                                                          |   20    |          |         |

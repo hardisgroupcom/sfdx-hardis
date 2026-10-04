@@ -18,7 +18,7 @@ Select a common metadata type and API name interactively, pass `--type` and `--n
 - **Standard objects:** `--type CustomObject --name Account` looks up standard objects too. Standard fields are not in the Salesforce dependency data, only custom fields are.
 - **Direct Id:** Pass `--id` to skip lookup. Without `--type`, dependencies are not filtered on the selected component type.
 - **Type filter:** Pass `--component-type Flow` (for example) to keep only one type of component on the other side of the dependency.
-- **Large graphs:** Salesforce returns at most 2,000 dependency rows to one query. When a component reaches that cap, the command splits the query into smaller ones until each part is under the cap, so the result is always complete, on any org.
+- **Large graphs:** Salesforce returns at most 2,000 dependency rows to one query. The command always runs one normal query first. Only when it reaches that cap, the rows are read again with the Bulk API, or, when the org rejects it (Developer Edition orgs), with smaller queries until each is under the cap.
 - **VS Code panel:** In VS Code, the Metadata Dependencies panel shows the result in both directions, opens the files and the Setup pages of the components, drills down and retrieves them. It runs this command with `--json --skip-report`.
 - **Reports:** Writes a CSV and an Excel workbook with a Summary sheet and a Used by (or Uses) sheet under `hardis-report/metadata-deps/<api-name>-<type>/`.
 
@@ -47,7 +47,8 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 - When `listMetadata` finds nothing (a Tooling-only type, or a name that is not an API name such as a custom object without its `__c` suffix), the command queries the Tooling object of the type by `Name` or `DeveloperName`.
 - `setupPath` is `/<Id>` (Salesforce redirects it to the Setup page of the component), Flow Builder for a Flow, the Object Manager for a standard object, and the list page for LWC and Aura bundles. A standard object (`StandardEntity`, on the used side) is named by its API name. `--skip-report` skips the CSV and Excel files.
 - Salesforce records the dependencies of each Flow version. The Flow versions are resolved with a Tooling query on `Flow` (`Definition.DeveloperName`, `VersionNumber`, `Status`) and merged into one row per Flow, which keeps the active version (else the newest) as its Id and lists its versions in `versions` (the `versions` column of the CSV).
-- `MetadataComponentDependency` supports neither `queryMore`, `OFFSET`, `COUNT()` nor range filters on Ids. When a query returns 2,000 rows, it is split on the other side of the dependency: one query per component type found (except `StandardEntity`, which cannot be filtered on), plus one excluding these types, then, for a type still at the cap, by Id prefix (`LIKE '<prefix><character>%'` on the 62 characters 0-9, A-Z and a-z: `LIKE` is case-sensitive on this object), one character deeper while a part stays at the cap. The parts run in parallel and their rows are merged without duplicates.
+- `MetadataComponentDependency` supports neither `queryMore`, `OFFSET`, `COUNT()` nor range filters on Ids. When the REST query returns 2,000 rows, a Tooling Bulk API 2.0 job (`/services/data/vXX.X/tooling/jobs/query`) runs the same query, and its rows are merged with the REST ones: on some orgs the Bulk API misses rows (Flow dependencies) that the REST query returned.
+- When the Bulk API fails, the query is split on the other side of the dependency: one query per component type found (except `StandardEntity`, which cannot be filtered on), plus one excluding these types, then, for a type still at the cap, by Id prefix (`LIKE '<prefix><character>%'` on the 62 characters 0-9, A-Z and a-z: `LIKE` is case-sensitive on this object), one character deeper while a part stays at the cap. One `LIKE` per query: an `OR` of many `LIKE` filters is not applied reliably on this object. The parts run in parallel and their rows are merged without duplicates.
 - `--source-file` resolves the file with the `@salesforce/source-deploy-retrieve` metadata resolver, then runs the same lookup as `--type` and `--name`. It cannot be combined with `--id`, `--type` or `--name`.
 - Salesforce does not allow `RefMetadataComponentType = 'StandardEntity'`; for this type the command filters by Id only.
 </details>
@@ -55,21 +56,21 @@ In agent mode, pass either `--source-file`, `--id`, or both `--type` and `--name
 
 ## Parameters
 
-| Name              |  Type   | Description                                                                                                                      |            Default            | Required |     Options      |
-|:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|:-----------------------------:|:--------:|:----------------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation                                                                            |                               |          |                  |
-| component-type    | option  | Only return dependent components of this Tooling metadata type                                                                   |                               |          |                  |
-| direction         | option  | used-by: the components that use the selected one; uses: the components the selected one uses                                    |            used-by            |          | used-by<br/>uses |
-| flags-dir         | option  | undefined                                                                                                                        |                               |          |                  |
-| id                | option  | Salesforce Id of the selected component (15 or 18 characters); skips name lookup                                                 |                               |          |                  |
-| json              | boolean | Format output as json.                                                                                                           |                               |          |                  |
-| name              | option  | API name of the selected component (for example MyClass or Account.Status__c)                                                    |                               |          |                  |
-| skip-report       | boolean | Do not write the CSV and Excel reports nor print the result table: the caller shows the --json result itself (the VS Code panel) |                               |          |                  |
-| skipauth          | boolean | Skip authentication check when a default username is required                                                                    |                               |          |                  |
-| source-file       | option  | Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name                  |                               |          |                  |
-| target-org<br/>-o | option  | undefined                                                                                                                        | nicolas.vuillamy@cloudity.com |          |                  |
-| type              | option  | Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)                                     |                               |          |                  |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                        |                               |          |                  |
+| Name              |  Type   | Description                                                                                                                      | Default | Required |     Options      |
+|:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:----------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                            |         |          |                  |
+| component-type    | option  | Only return dependent components of this Tooling metadata type                                                                   |         |          |                  |
+| direction         | option  | used-by: the components that use the selected one; uses: the components the selected one uses                                    | used-by |          | used-by<br/>uses |
+| flags-dir         | option  | Import flag values from a directory.                                                                                             |         |          |                  |
+| id                | option  | Salesforce Id of the selected component (15 or 18 characters); skips name lookup                                                 |         |          |                  |
+| json              | boolean | Format output as json.                                                                                                           |         |          |                  |
+| name              | option  | API name of the selected component (for example MyClass or Account.Status__c)                                                    |         |          |                  |
+| skip-report       | boolean | Do not write the CSV and Excel reports nor print the result table: the caller shows the --json result itself (the VS Code panel) |         |          |                  |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                                    |         |          |                  |
+| source-file       | option  | Local metadata source file (for example force-app/main/default/classes/MyClass.cls); resolves --type and --name                  |         |          |                  |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                     |         |   true   |                  |
+| type              | option  | Tooling metadata type of the selected component (for example ApexClass, Flow or CustomField)                                     |         |          |                  |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                        |         |          |                  |
 
 ## Examples
 

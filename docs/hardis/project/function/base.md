@@ -7,10 +7,10 @@
 
 ## Parameters
 
-| Name      |  Type   | Description            | Default | Required | Options |
-|:----------|:-------:|:-----------------------|:-------:|:--------:|:-------:|
-| flags-dir | option  | undefined              |         |          |         |
-| json      | boolean | Format output as json. |         |          |         |
+| Name      |  Type   | Description                          | Default | Required | Options |
+|:----------|:-------:|:-------------------------------------|:-------:|:--------:|:-------:|
+| flags-dir | option  | Import flag values from a directory. |         |          |         |
+| json      | boolean | Format output as json.               |         |          |         |
 
 ## Examples
 

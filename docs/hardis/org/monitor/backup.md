@@ -40,7 +40,13 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 ## In CI/CD
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When the backup fails, it sends a `BACKUP` notification with the `error` severity and the error message, then exits with that error.
+
+## Coding agents
+
+After each backup, the command writes an `AGENTS.md` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
+
+Only the block between the `sfdx-hardis-monitoring-agents-start` and `sfdx-hardis-monitoring-agents-end` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A `CLAUDE.md` file that imports `AGENTS.md` is also created when the repository has none.
 
 ## Troubleshooting
 
@@ -97,7 +103,7 @@ In agent mode:
 | agent                     | boolean | Run in non-interactive mode for agents and automation                                                                                       |         |          |         |
 | debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                             |         |          |         |
 | exclude-namespaces<br/>-e | boolean | If mode --full is activated, exclude namespaced metadatas                                                                                   |         |          |         |
-| flags-dir                 | option  | undefined                                                                                                                                   |         |          |         |
+| flags-dir                 | option  | Import flag values from a directory.                                                                                                        |         |          |         |
 | full                      | boolean | Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower !  |         |          |         |
 | full-apply-filters<br/>-z | boolean | If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway              |         |          |         |
 | json                      | boolean | Format output as json.                                                                                                                      |         |          |         |
@@ -107,7 +113,7 @@ In agent mode:
 | skip-doc                  | boolean | Skip the generation of project documentation at the end of the command                                                                      |         |          |         |
 | skipauth                  | boolean | Skip authentication check when a default username is required                                                                               |         |          |         |
 | start-chunk               | option  | Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve                                         |    1    |          |         |
-| target-org<br/>-o         | option  | undefined                                                                                                                                   |         |          |         |
+| target-org<br/>-o         | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                |         |   true   |         |
 | websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                   |         |          |         |
 
 ## Examples

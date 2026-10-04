@@ -99,6 +99,16 @@ zensical serve || python -m zensical serve || py -m zensical serve
 To just generate HTML pages that you can host anywhere, run `zensical build || python -m zensical build || py -m zensical build`
 
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.9 - Generate the Salesforce project documentation](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-9-generate-the-project-documentation/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
@@ -108,7 +118,7 @@ To just generate HTML pages that you can host anywhere, run `zensical build || p
 | debug<br/>-d             | boolean | Activate debug mode (more logs)                                                                                 |         |          |         |
 | diff-only                | boolean | Generate documentation only for changed files (used for monitoring)                                             |         |          |         |
 | excel                    | boolean | Also generate an Excel file with all metadata in separate tabs                                                  |         |          |         |
-| flags-dir                | option  | undefined                                                                                                       |         |          |         |
+| flags-dir                | option  | Import flag values from a directory.                                                                            |         |          |         |
 | generate-apex-doc        | boolean | Generate Apex documentation                                                                                     |         |          |         |
 | generate-aura-doc        | boolean | Generate Aura components documentation                                                                          |         |          |         |
 | generate-automations-doc | boolean | Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules) |         |          |         |
@@ -125,7 +135,7 @@ To just generate HTML pages that you can host anywhere, run `zensical build || p
 | json                     | boolean | Format output as json.                                                                                          |         |          |         |
 | pdf                      | boolean | Also generate the documentation in PDF format                                                                   |         |          |         |
 | skipauth                 | boolean | Skip authentication check when a default username is required                                                   |         |          |         |
-| target-org<br/>-o        | option  | undefined                                                                                                       |         |          |         |
+| target-org<br/>-o        | option  | Username or alias of the target org.                                                                            |         |          |         |
 | websocket                | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                       |         |          |         |
 | with-history             | boolean | Generate a markdown file with the history diff of the Flow                                                      |         |          |         |
 

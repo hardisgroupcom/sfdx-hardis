@@ -39,7 +39,7 @@ Key functionalities:
 | addon        | boolean | Persist the repository URL to the skillsRepoAddOns array config property instead of the main skillsRepo property |         |          |         |
 | agent        | boolean | Run in non-interactive mode for agents and automation                                                            |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                                                                  |         |          |         |
-| flags-dir    | option  | undefined                                                                                                        |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                                                                             |         |          |         |
 | json         | boolean | Format output as json.                                                                                           |         |          |         |
 | repo<br/>-r  | option  | Git repository URL containing .claude/ skills, agents, and rules to import                                       |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required                                                    |         |          |         |

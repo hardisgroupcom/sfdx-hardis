@@ -44,12 +44,12 @@ The command has no interactive prompts, so agent mode behaves like a normal run.
 |:------------------|:-------:|:--------------------------------------------------------------------------------------|:-------:|:--------:|:----------------------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation                                 |         |          |                        |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                       |         |          |                        |
-| flags-dir         | option  | undefined                                                                             |         |          |                        |
+| flags-dir         | option  | Import flag values from a directory.                                                  |         |          |                        |
 | json              | boolean | Format output as json.                                                                |         |          |                        |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                     |         |          |                        |
 | skipauth          | boolean | Skip authentication check when a default username is required                         |         |          |                        |
 | source<br/>-s     | option  | Where to read permission definitions from: org (SOQL), local (metadata files) or both |   org   |          | org<br/>local<br/>both |
-| target-org<br/>-o | option  | undefined                                                                             |         |          |                        |
+| target-org<br/>-o | option  | Username or alias of the target org.                                                  |         |          |                        |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                             |         |          |                        |
 
 ## Examples

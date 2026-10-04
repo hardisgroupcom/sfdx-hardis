@@ -46,10 +46,10 @@ In agent mode, all interactive prompts are skipped and default values are used.
 |:-------------------|:-------:|:------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent              | boolean | Run in non-interactive mode for agents and automation |         |          |         |
 | debug              | boolean | debug                                                 |         |          |         |
-| flags-dir          | option  | undefined                                             |         |          |         |
+| flags-dir          | option  | Import flag values from a directory.                  |         |          |         |
 | json               | boolean | Format output as json.                                |         |          |         |
-| outputfile<br/>-f  | option  | package.xml output file                               |         |          |         |
-| packagexmls<br/>-p | option  | package.xml files path (separated by commas)          |         |          |         |
+| outputfile<br/>-f  | option  | package.xml output file                               |         |   true   |         |
+| packagexmls<br/>-p | option  | package.xml files path (separated by commas)          |         |   true   |         |
 | websocket          | option  | websocket                                             |         |          |         |
 
 ## Examples
