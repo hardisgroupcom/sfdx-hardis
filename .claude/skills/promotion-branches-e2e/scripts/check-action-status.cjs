@@ -11,6 +11,7 @@
  *   S:<pr>:<actionId>:<orgBranch>=none              no entry for that org branch
  *   N:<pr>:<actionId>:<orgBranch>~<regex>           its note matches the regex
  *   F:<pr>:<actionId>=<forecast>[/<reason>]         forecast of the next promotion
+ *   I:<pr>:<actionId>=<pr>:<actionId>|none           the identical action it runs once with (section 6sexies)
  *   P=<number>|none                                  open promotion Pull Request of the forecast
  *   C:<pr>=yes|no                                    the promotion carries that Pull Request
  *   B:<pr>:<actionId>=<status>                       a Backpromotes row with that status exists
@@ -59,6 +60,11 @@ for (const expectation of expectations) {
     const item = (forecast?.actions?.[pr] || []).find((a) => a.actionId === actionId);
     const got = item ? `${item.forecast}/${item.reason}` : 'no forecast';
     report(!!item && item.forecast === want && (!wantReason || item.reason === wantReason), expectation, got);
+  } else if ((match = expectation.match(/^I:(\d+):([^=]+)=(.+)$/))) {
+    const [, pr, actionId, want] = match;
+    const item = (forecast?.actions?.[pr] || []).find((a) => a.actionId === actionId);
+    const got = !item ? 'no forecast' : item.identicalTo ? `${item.identicalTo.pr}:${item.identicalTo.actionId}` : 'none';
+    report(got === want, expectation, got);
   } else if ((match = expectation.match(/^P=(.+)$/))) {
     const got = forecast?.promotionPullRequest ? String(forecast.promotionPullRequest.number) : 'none';
     report(got === match[1], expectation, got);

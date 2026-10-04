@@ -714,6 +714,65 @@ Traps:
 - The link step takes three to four minutes per job (install and `tsc`): the section is about
   25 runs long, so count about an hour.
 
+## 6sexies. Identical deployment actions run once
+
+Issue #2271: when several Pull Requests of one run carry the same action (same type, phase, user and
+parameters), the first one runs and the others are recorded as done by it. `scripts/identical-actions-run.sh`
+runs after `promotion-run.sh`, on the same repository. It adds eight stories into integration, and
+promotes them together to uat (P7):
+
+| Story | Branch                         | Actions (`story_actions` kind)                                            |
+|-------|--------------------------------|---------------------------------------------------------------------------|
+| SA    | `feature/E2E-501-shared-a`     | `identical`: the shared step, after the deployment                        |
+| SB    | `feature/E2E-502-shared-b`     | `identical`                                                               |
+| ST    | `feature/E2E-503-shared-twice` | `identical-twice`: the shared step, another step, the shared step again   |
+| SP    | `feature/E2E-504-shared-pre`   | `identical-pre`: the shared step, before the deployment                   |
+| SX    | `feature/E2E-505-same-id-a`    | `same-id-a`: the hand-written id `e2e-same-id`, command A                 |
+| SY    | `feature/E2E-506-same-id-b`    | `same-id-b`: the same id, command B                                       |
+| SF    | `feature/E2E-507-flaky`        | `flaky-uat`: a command failing in uat until `e2e-identical-ok.txt` exists |
+| SC    | `feature/E2E-508-shared-c`     | `identical`, after the failure of SF                                      |
+
+The shared step is the same command in every story that carries it:
+`node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"`. The size of
+`e2e-identical-count.txt` is the number of real runs of a job, whatever its log says.
+
+```bash
+export PROVIDER=github ORG REPO WORK LOGS DEV API      # plus GL_* and PROJECT_* on GitLab
+export DEV_ORG=<scratch org username>                   # optional: group I7
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh   # results-section6sexies.txt
+```
+
+| Group | Checks                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| I1    | Only ST is deployed to integration: the deployment of a feature merge carries that Pull Request alone, and its two shared steps both run (2 runs). One Pull Request is one source: an action written twice in it is meant twice                                                                                                                                                                                                         |
+| I2    | P7 (integration -> uat) carries the eight stories. `--forecast uat --from-branch integration` gives SB, the first shared step of ST and SC the `identical-action` reason with `identicalTo` SA, and leaves SA, the repeat of ST, SP (other phase) and the two same-id actions on their own                                                                                                                                              |
+| I3    | The validation of P7 merges nothing (the actions are deployment-only). Its deployment exits 1 on SF and runs the shared step 3 times (SP before the deployment, SA, the repeat of ST): SB and the first step of ST log `Skipping action ... same action as E2E shared step of PR <SA> (#<SA>), run once for this deployment`, both same-id actions run, and SC, met after the failure, logs the same copy line instead of being stopped |
+| I4    | The copies are `success` in uat with the note `Not run twice: the identical action "..." of #<SA>`, SF is `failed`, the repeat of ST and both same-id actions are `success`                                                                                                                                                                                                                                                             |
+| I5    | `action:run --next all` retries SF in uat once `e2e-identical-ok.txt` exists: `success` with a "Run locally by" note. Nothing waits after it: SC was recorded as a copy, not stopped                                                                                                                                                                                                                                                    |
+| I6    | The deployment of uat run again skips everything as `already run in uat`, the copies included, and runs the shared step 0 times                                                                                                                                                                                                                                                                                                         |
+| I7    | With `DEV_ORG`: the backpromote plan of the window (`--plan --from-pull-request <SA>`) gives every action its own `key`, the two same-id actions included (`<pr>:post:e2e-same-id`), and the same `identicalTo` as the forecast                                                                                                                                                                                                         |
+
+Traps:
+
+- **Creation order, merge order and Pull Request numbers must agree.** The forecast picks the first
+  copy by ascending Pull Request number, the deployment by run order (merge order for a batch,
+  declared order for a promotion). The script creates and merges the stories in the same order, so
+  I2 and I3 name the same first copy. Merge them in another order and I2 fails, while the product
+  is right.
+- **The counter and `e2e-identical-ok.txt` are untracked on purpose**, and listed in
+  `.git/info/exclude`: untracked and not excluded, `promotion:create` refuses the working copy as
+  not clean. Delete `e2e-identical-ok.txt` to replay I3.
+- **SF fails in uat only** (`includeTargetBranches: [uat]`): nothing else deploys it, but a later
+  section that deploys integration with SF in its scope must not fail on it.
+- **Two skip lines, two wordings.** A copy logs `Skipping action <label>: same action as ...`, an
+  action already done in the org logs `Skipping <label>: already run in <branch>`, without
+  "action". The patterns of I3 and I6 differ on purpose.
+- **`IA_RUN=<n>` replays the section on the same repository** with story branches of their own.
+- The section scripts share their assertion helpers (`record`, `assert_log`, `job`, `cli`,
+  `status_check`, `open_story`) through `scripts/section-lib.sh`.
+- **Not run yet**: written on 2026-10-04 with sfdx-hardis#2277. Its first run is pending: fix the
+  runbook or the product with what it finds, as for every other section.
+
 ## 7. Traps met while writing this
 
 - **The Dev Hub has a daily scratch org signup limit, and it resets at midnight in the org's own
