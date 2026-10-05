@@ -65,7 +65,7 @@ export function storeGitCredentials(
     // Helpers are configured and none of them kept the credentials (a Git Credential Manager
     // without a store on Linux, a cache that is not running): git's own file is added for
     // this repository, the existing configuration is left as it is
-    const added = runGit(['config', '--local', '--add', 'credential.helper', 'store'], cwd);
+    const added = runGitCredentialCommand(['config', '--local', '--add', 'credential.helper', 'store'], cwd);
     if (added.status === 0 && approveAndVerify(credentials, cwd)) {
       return { stored: true, helper: 'store', configuredScope: 'local' };
     }
@@ -73,7 +73,7 @@ export function storeGitCredentials(
   } else {
     // No helper at all: the user's git gets one, so every repository of the machine has it
     for (const helper of listCandidateGitCredentialHelpers(probes)) {
-      const set = runGit(['config', '--global', 'credential.helper', helper], cwd);
+      const set = runGitCredentialCommand(['config', '--global', 'credential.helper', helper], cwd);
       if (set.status === 0 && approveAndVerify(credentials, cwd)) {
         return { stored: true, helper, configuredScope: 'global' };
       }
@@ -90,13 +90,13 @@ export function storeGitCredentials(
 
 /** Removes credentials from git's credential helper: the remote refused them. */
 export function forgetGitCredentials(credentials: GitCredentials, cwd: string): void {
-  runGit(['credential', 'reject'], cwd, buildGitCredentialInput(credentials));
+  runGitCredentialCommand(['credential', 'reject'], cwd, buildGitCredentialInput(credentials));
 }
 
 /** The credentials git's helper holds for a URL, or null. Never asks anything. */
 export function readStoredGitCredentials(url: string, cwd: string): { username: string; password: string } | null {
   // core.askPass is emptied too: fill would otherwise ask through it when nothing is stored
-  const filled = runGit(['-c', 'core.askPass=', 'credential', 'fill'], cwd, buildGitCredentialInput({ url }));
+  const filled = runGitCredentialCommand(['-c', 'core.askPass=', 'credential', 'fill'], cwd, buildGitCredentialInput({ url }));
   if (filled.status !== 0) {
     return null;
   }
@@ -130,7 +130,7 @@ export function parseGitCredentialOutput(output: string): Record<string, string>
 
 /** The credential helpers git would use in a folder. An empty entry resets the ones before it. */
 export function listGitCredentialHelpers(cwd: string): string[] {
-  const configured = runGit(['config', '--get-all', 'credential.helper'], cwd);
+  const configured = runGitCredentialCommand(['config', '--get-all', 'credential.helper'], cwd);
   if (configured.status !== 0) {
     return [];
   }
@@ -168,9 +168,9 @@ function defaultGitCredentialHelperProbes(): GitCredentialHelperProbes {
   return {
     platform: process.platform,
     forcedHelper: process.env.SFDX_HARDIS_GIT_CREDENTIAL_HELPER || undefined,
-    hasManager: () => runGit(['credential-manager', '--version'], process.cwd()).status === 0,
+    hasManager: () => runGitCredentialCommand(['credential-manager', '--version'], process.cwd()).status === 0,
     hasBundledHelper: (name: string) => {
-      const execPath = runGit(['--exec-path'], process.cwd()).stdout.trim();
+      const execPath = runGitCredentialCommand(['--exec-path'], process.cwd()).stdout.trim();
       const file = `git-credential-${name}${process.platform === 'win32' ? '.exe' : ''}`;
       return execPath !== '' && fs.existsSync(path.join(execPath, file));
     },
@@ -179,7 +179,7 @@ function defaultGitCredentialHelperProbes(): GitCredentialHelperProbes {
 
 // A helper can accept credentials and keep nothing: only reading them back tells
 function approveAndVerify(credentials: GitCredentials, cwd: string): boolean {
-  const approved = runGit(['credential', 'approve'], cwd, buildGitCredentialInput(credentials));
+  const approved = runGitCredentialCommand(['credential', 'approve'], cwd, buildGitCredentialInput(credentials));
   if (approved.status !== 0) {
     return false;
   }
@@ -187,9 +187,12 @@ function approveAndVerify(credentials: GitCredentials, cwd: string): boolean {
   return stored?.username === credentials.username && stored?.password === credentials.password;
 }
 
-// git, without anything of it displayed and without it asking anything: its input and its output
-// hold credentials, and a helper left to itself would open a window or wait on a terminal
-function runGit(args: string[], cwd: string, input?: string): { status: number; stdout: string; stderr: string } {
+// git, for the credential commands only. It does not go through git() or execCommand() of
+// index.ts, which cannot do what these commands need: feed their standard input (where the
+// token goes, never on a command line), display nothing of the command or of its output (git
+// credential fill prints the password), and keep git from asking anything by itself (a helper
+// left to itself opens a window or waits on a terminal).
+function runGitCredentialCommand(args: string[], cwd: string, input?: string): { status: number; stdout: string; stderr: string } {
   const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' };
   delete env.GIT_ASKPASS;
   delete env.SSH_ASKPASS;
