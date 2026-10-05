@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- New [Aha! integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/): Aha! features are listed in Pull Request comments and notifications, and get a comment and a tag when they are deployed.
+- When `ticketingProvider` is defined in `.sfdx-hardis.yml`, ticket references are only looked for with that ticketing provider.
 - [Org Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) jobs that ran to their end are now green even when they found issues: a red job means the job could not run.
 - Git credentials asked by a command are typed once and kept by the credential helper of git, on every platform. The token is never displayed, and the command says what git answered when it is refused.
 - New [hardis:project:pipeline:describe](https://sfdx-hardis.cloudity.com/hardis/project/pipeline/describe/): Describe the major branches of a project and the steps between them, so scripts and coding agents stop assuming the pipeline is integration, uat, preprod and main.

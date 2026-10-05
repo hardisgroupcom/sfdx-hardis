@@ -41,6 +41,7 @@ This list was initially generated with GitHub Copilot, so if you spot an inconsi
   - [Email Notifications](#email-notifications)
   - [Browser Automation](#browser-automation)
   - [ServiceNow Integration](#servicenow-integration)
+  - [Aha! Integration](#aha-integration)
   - [Generic Ticketing](#generic-ticketing)
   - [Generic CI/CD](#generic-cicd)
 - [Summary](#summary)
@@ -310,6 +311,14 @@ Project-wide defaults (e.g., preferred model) can be stored directly at the root
 | **SERVICENOW_TABLE_PREFIXES**     | Additional record number prefixes and their table, as `PREFIX:table,PREFIX:table`       | `undefined`                                            | `'STRY:x_acme_story'`, `'STRY:x_acme_story,DEFECT:x_acme_defect'`  | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
 | **SERVICENOW_COMMENT_FIELD**      | Journal field the deployment comment is written into                                    | `"work_notes"`                                         | `'work_notes'`, `'comments'`, any journal field of the table       | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
 | **SERVICENOW_ADD_DEPLOYMENT_TAG** | Tag the deployed records with the deployment tag                                        | `"false"`                                              | `'true'`, `'false'`                                                | [`src/common/ticketProvider/serviceNowProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/serviceNowProvider.ts) |
+
+### Aha! Integration
+
+| Variable Name        | Description                                                                           | Default Value                           | Possible Values                                         | Usage Location                                                                                                                                 |
+|----------------------|---------------------------------------------------------------------------------------|-----------------------------------------|---------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| **AHA_HOST**         | Host of the Aha! account, with or without the scheme                                  | `undefined`                             | `'mycompany.aha.io'`, `'https://mycompany.euw4.aha.io'` | [`src/common/ticketProvider/ahaProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/ahaProvider.ts) |
+| **AHA_API_KEY**      | Aha! API key, sent as a Bearer token                                                  | `undefined`                             | Any valid Aha! API key                                  | [`src/common/ticketProvider/ahaProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/ahaProvider.ts) |
+| **AHA_TICKET_REGEX** | Regular expression for Aha! feature references in commits, branches and Pull Requests | A workspace prefix, a dash and a number | Valid regular expressions (e.g., `'(PROD-[0-9]+)'`)     | [`src/common/ticketProvider/ahaProvider.ts`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/src/common/ticketProvider/ahaProvider.ts) |
 
 ### Generic Ticketing
 

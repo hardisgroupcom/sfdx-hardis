@@ -10,7 +10,7 @@ Generate release notes for a Salesforce project release.
 Collects data from multiple sources and generates a comprehensive release notes document:
 
 - **Git Provider** (GitHub, GitLab, Azure DevOps, Bitbucket): merged pull requests, contributors
-- **Ticket Provider** (JIRA, Azure Boards): ticket details, status, assignees
+- **Ticket Provider** (JIRA, Azure Boards, ServiceNow, Aha!): ticket details, status, assignees
 - **sfdx-git-delta**: metadata changes (created, updated, deleted)
 - **Deployment Actions**: manual tasks and automated actions from PR comments
 - **AI Provider** (optional): generates a structured summary of the release

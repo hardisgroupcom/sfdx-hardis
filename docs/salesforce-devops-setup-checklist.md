@@ -102,7 +102,7 @@ Find your platform below and tick only its items. Only what **you** have to do i
 - **GitHub / GitHub Actions** _(see [variables](salesforce-devops-setup-auth-github.md), [integration](salesforce-devops-setup-integration-github.md))_
   - [ ] Folder `.github/workflows` is kept, the workflow files of the other providers are deleted.
   - [ ] Secrets are created in **Settings -> Secrets and variables -> Actions**.
-  - [ ] Any secret **not already wired** in the `env` blocks of the templates is added there, since GitHub Actions does not expose secrets to jobs automatically. The templates wire the `SFDX_CLIENT_*` of the default branch names plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS` and `JIRA_*`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL`, `NOTIF_API_*`, or the AI keys that are commented out.
+  - [ ] Any secret **not already wired** in the `env` blocks of the templates is added there, since GitHub Actions does not expose secrets to jobs automatically. The templates wire the `SFDX_CLIENT_*` of the default branch names plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS`, `JIRA_*` and `AHA_*`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL`, `NOTIF_API_*`, or the AI keys that are commented out.
   - [ ] Branch protection rules require the check deploy and MegaLinter status checks to pass before merge.
 - **GitLab / GitLab CI** _(see [variables](salesforce-devops-setup-auth-gitlab.md), [integration](salesforce-devops-setup-integration-gitlab.md))_
   - [ ] Files `.gitlab-ci.yml` and `gitlab-ci-config.yml` are kept, the workflow files of the other providers are deleted.
@@ -116,7 +116,7 @@ Find your platform below and tick only its items. Only what **you** have to do i
   - [ ] Pipeline **Check Pull Request** is created from `azure-pipelines-checks.yml`, with the continuous integration trigger **disabled**.
   - [ ] Pipeline **Deploy to org** is created from `azure-pipelines-deployment.yml`, with continuous integration **enabled** and branch filters including all major branches.
   - [ ] Branch policies on the major branches include **Build Validation** with the Check Pull Request pipeline.
-  - [ ] Variables are defined on the pipelines (**Edit -> Variables**), and those **not already wired** in the templates are added to the YAML with `$(VARIABLE_NAME)`: the templates wire `SFDX_CLIENT_*_INTEGRATION` only, plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS`, `JIRA_*` and `OPENAI_API_KEY`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL` or `NOTIF_API_*`.
+  - [ ] Variables are defined on the pipelines (**Edit -> Variables**), and those **not already wired** in the templates are added to the YAML with `$(VARIABLE_NAME)`: the templates wire `SFDX_CLIENT_*_INTEGRATION` only, plus `SLACK_*`, `NOTIF_EMAIL_ADDRESS`, `JIRA_*`, `AHA_*` and `OPENAI_API_KEY`, so add for example your other branch aliases, `MS_TEAMS_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL` or `NOTIF_API_*`.
   - [ ] **Contribute** and **Contribute to Pull Requests** are allowed on the Build Service, so the pipeline can post on Pull Requests.
   - [ ] A Work Item named **sfdx-hardis tech attachments** exists (or `AZURE_ATTACHMENTS_WORK_ITEM_ID` is defined), so Flow visual git diff images can be uploaded.
 - **Bitbucket / Bitbucket Pipelines** _(see [variables](salesforce-devops-setup-auth-bitbucket.md), [integration](salesforce-devops-setup-integration-bitbucket.md))_
@@ -194,6 +194,10 @@ At least one channel must be configured, otherwise nobody is told when a deploym
 - **Azure Boards** _(see [Azure Boards integration](salesforce-devops-setup-integration-azure-boards.md))_
   - [ ] `SYSTEM_COLLECTIONURI`, `SYSTEM_ACCESSTOKEN`, `SYSTEM_TEAMPROJECT` and `BUILD_REPOSITORY_ID` are available from the pipelines.
   - [ ] The team knows that Work Items must be **linked to the Pull Requests** to be detected.
+- **Aha!** _(see [Aha! integration](salesforce-devops-setup-integration-aha.md))_
+  - [ ] `ticketingProvider: AHA` and `ahaHost` are defined in `.sfdx-hardis.yml`, so the VS Code extension can use them too.
+  - [ ] `AHA_API_KEY` is configured as a CI/CD secret, created by a dedicated Aha! user who can comment on the features of your workspaces.
+  - [ ] `ahaTicketRegex` is tuned to your workspace prefixes in `.sfdx-hardis.yml`, if the default expression catches too much.
 - **Any other ticketing tool** _(see [Generic ticketing](salesforce-devops-setup-integration-generic-ticketing.md))_
   - [ ] `genericTicketingProviderRegex` is defined in `.sfdx-hardis.yml` and tested against real ticket references.
   - [ ] `genericTicketingProviderUrlBuilder` is defined in `.sfdx-hardis.yml`, with its `{REF}` segment.

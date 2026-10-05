@@ -30,7 +30,7 @@ According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesfo
 
   - Slack, Microsoft Teams, Email deployment summary after a successful deployment
 
-  - JIRA tags and comments on tickets that just has been deployed
+  - JIRA, Azure Boards, ServiceNow or Aha! comments and tags on the tickets that have just been deployed
 
 ![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-jira-gitlab.jpg)
 

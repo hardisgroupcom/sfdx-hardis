@@ -19,6 +19,8 @@ description: With sfdx-hardis, enrich pull requests with JIRA info and post comm
 
 If you use Jira on your project, sfdx-hardis can use it to enrich its integrations.
 
+> When **ticketingProvider** is defined in `.sfdx-hardis.yml`, only that ticketing system is used: set it to `JIRA`, or leave it empty. An Aha! feature reference looks like a Jira key, so a project that tracks its work in Aha! sets it to `AHA` and follows the [Aha! integration](salesforce-devops-setup-integration-aha.md) page.
+
 sfdx-hardis automatically analyzes commits and Pull Request descriptions to collect Jira ticket URLs.
 
 You can **use the full URL of Jira tickets** in your commits and Pull Request descriptions.

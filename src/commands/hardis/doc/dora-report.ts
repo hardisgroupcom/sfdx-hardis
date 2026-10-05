@@ -55,7 +55,7 @@ Collects data from three sources and computes industry-standard DORA metrics:
 
 - **Tooling API** (DeployRequest): deployment/validation history, duration, success rate
 - **Git Provider** (GitHub, GitLab, Azure DevOps, Bitbucket): merged pull requests, lead time, cycle time
-- **Ticket Provider** (JIRA, Azure Boards): incident/bug resolution for MTTR enrichment
+- **Ticket Provider** (JIRA, Azure Boards, ServiceNow, Aha!): incident/bug resolution for MTTR enrichment
 
 **Core DORA Metrics (5):**
 

@@ -17,7 +17,7 @@ According to the [integrations you configured](https://sfdx-hardis.cloudity.com/
 
   - Slack, Microsoft Teams, Email deployment summary after a successful deployment
 
-  - JIRA tags and comments on tickets that just has been deployed
+  - JIRA, Azure Boards, ServiceNow or Aha! comments and tags on the tickets that have just been deployed
 
 ![](https://sfdx-hardis.cloudity.com/assets/images/screenshot-jira-gitlab.jpg)
 
