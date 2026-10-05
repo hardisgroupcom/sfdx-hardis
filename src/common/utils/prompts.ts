@@ -256,6 +256,8 @@ export async function askTerminalQuestion(question: PromptsQuestion): Promise<an
     message: question.message,
     default: typeof defaultValue === "string" ? defaultValue : undefined,
     validate: validate,
+    // A secret is never shown in the terminal, neither while it is typed nor once it is given
+    ...(question.sensitive === true ? { transformer: (value: string) => "*".repeat((value || "").length) } : {}),
   });
 }
 

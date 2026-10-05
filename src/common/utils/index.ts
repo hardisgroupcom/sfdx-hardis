@@ -422,7 +422,7 @@ export async function gitCheckOutRemote(branchName: string) {
 }
 
 // Helper function to detect git authentication errors
-function isGitAuthError(error: any): boolean {
+export function isGitAuthError(error: any): boolean {
   const errorStr = (error?.message || error?.toString() || '').toLowerCase();
   const authErrorPatterns = [
     'authentication failed',
@@ -435,15 +435,48 @@ function isGitAuthError(error: any): boolean {
     'publickey',
     'could not read from remote repository',
     'correct access rights',
-    '403',
-    '401',
     'unauthorized',
   ];
-  return authErrorPatterns.some((pattern) => errorStr.includes(pattern));
+  // 401 and 403 as an HTTP status only: a commit hash or a branch name can hold these digits
+  return authErrorPatterns.some((pattern) => errorStr.includes(pattern)) || /(error|status|code|http)\D{0,12}40[13]\b/.test(errorStr);
+}
+
+// Credentials given during this command that the remote refused: asking again would only loop,
+// every later fetch, pull or push ending in the same questions
+let gitCredentialsRejected = false;
+
+// Text of a git error, without the credentials a remote URL may carry
+export function describeGitError(error: any): string {
+  return String(error?.message || error || '')
+    .replace(/\/\/[^/@\s]+@/g, '//***@')
+    .trim();
+}
+
+// Ask for credentials after an authentication error, then run the git operation again, once
+async function retryGitAfterAuthError<T>(operation: string, retryMessageKey: string, error: any, run: () => Promise<T>): Promise<T> {
+  if (!isGitAuthError(error) || gitCredentialsRejected) {
+    throw error;
+  }
+  const credentialsUpdated = await handleGitAuthError(operation, error);
+  if (!credentialsUpdated) {
+    throw error;
+  }
+  uxLog("action", this, c.cyan(t(retryMessageKey)));
+  try {
+    return await run();
+  } catch (retryError) {
+    if (isGitAuthError(retryError)) {
+      gitCredentialsRejected = true;
+      uxLog("action", this, c.cyan(t('gitStillFailsWithTheseCredentials', { operation })), { alwaysVisible: true });
+      uxLog("error", this, c.red(describeGitError(retryError)));
+      uxLog("warning", this, c.yellow(t('gitCredentialsChecklist')));
+    }
+    throw retryError;
+  }
 }
 
 // Helper function to prompt for git credentials and update remote URL
-async function handleGitAuthError(operation: string): Promise<boolean> {
+async function handleGitAuthError(operation: string, error: any): Promise<boolean> {
   // Nobody can answer a prompt in a CI job, and neither can they in a background --json run a VS
   // Code panel started: no WebSocket to show the question in VS Code, and no terminal to type in.
   // Asking there waits forever, with the panel spinning on a command that never answers.
@@ -453,6 +486,8 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
   }
 
   uxLog("warning", this, c.yellow(t('gitFailedDueToAuthenticationError', { operation })));
+  // What git answered: without it, nobody can tell an expired token from a missing scope
+  uxLog("action", this, c.cyan(t('gitRefusedByRemote', { operation, message: describeGitError(error) })));
   uxLog("action", this, c.cyan(t('pleaseProvideYourGitCredentialsToContinue')));
 
   const usernamePrompt = await prompts({
@@ -471,6 +506,8 @@ async function handleGitAuthError(operation: string): Promise<boolean> {
   const passwordPrompt = await prompts({
     type: 'text',
     name: 'password',
+    // Never echoed in the logs, and typed in a masked field in VS Code
+    sensitive: true,
     message: c.cyanBright(t('enterYourGitPasswordOrPersonalAccess')),
     description: t('descGitPassword'),
     validate: (value: string) => (value && value.trim().length > 0) || 'Password/PAT is required',
@@ -542,18 +579,12 @@ export async function gitFetch(argsOrOptions?: string[] | any, argsIfOptionsFirs
     }
     return await git().fetch(args);
   } catch (error) {
-    if (isGitAuthError(error)) {
-      const credentialsUpdated = await handleGitAuthError('fetch');
-      if (credentialsUpdated) {
-        // Retry the operation
-        uxLog("action", this, c.cyan(t('retryingGitFetchWithUpdatedCredentials')));
-        if (options.output !== undefined || options.displayCommand !== undefined) {
-          return await git(options).fetch(args);
-        }
-        return await git().fetch(args);
+    return retryGitAfterAuthError('fetch', 'retryingGitFetchWithUpdatedCredentials', error, async () => {
+      if (options.output !== undefined || options.displayCommand !== undefined) {
+        return await git(options).fetch(args);
       }
-    }
-    throw error;
+      return await git().fetch(args);
+    });
   }
 }
 
@@ -576,18 +607,12 @@ export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst
     }
     return await git().pull(args);
   } catch (error) {
-    if (isGitAuthError(error)) {
-      const credentialsUpdated = await handleGitAuthError('pull');
-      if (credentialsUpdated) {
-        // Retry the operation
-        uxLog("action", this, c.cyan(t('retryingGitPullWithUpdatedCredentials')));
-        if (options.output !== undefined || options.displayCommand !== undefined) {
-          return await git(options).pull(args);
-        }
-        return await git().pull(args);
+    return retryGitAfterAuthError('pull', 'retryingGitPullWithUpdatedCredentials', error, async () => {
+      if (options.output !== undefined || options.displayCommand !== undefined) {
+        return await git(options).pull(args);
       }
-    }
-    throw error;
+      return await git().pull(args);
+    });
   }
 }
 
@@ -610,18 +635,12 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
     }
     return await git().push(args);
   } catch (error) {
-    if (isGitAuthError(error)) {
-      const credentialsUpdated = await handleGitAuthError('push');
-      if (credentialsUpdated) {
-        // Retry the operation
-        uxLog("action", this, c.cyan(t('retryingGitPushWithUpdatedCredentials')));
-        if (options.output !== undefined || options.displayCommand !== undefined) {
-          return await git(options).push(args);
-        }
-        return await git().push(args);
+    return retryGitAfterAuthError('push', 'retryingGitPushWithUpdatedCredentials', error, async () => {
+      if (options.output !== undefined || options.displayCommand !== undefined) {
+        return await git(options).push(args);
       }
-    }
-    throw error;
+      return await git().push(args);
+    });
   }
 }
 
