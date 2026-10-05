@@ -76,36 +76,40 @@ export class AhaProvider extends TicketProviderRoot {
   /**
    * Collects the Aha! features of a commit message, a branch name or a Pull Request body.
    *
-   * Links to a feature are always collected. Bare references need the host to be turned into a
-   * link, so nothing is made of them in a project that does not name its Aha! account.
+   * Nothing is collected in a project that does not name its Aha! account. A link to a feature of
+   * another account is left alone: its reference would be read, then commented on, in the account
+   * of the project, where it is another feature or none.
    */
   public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     const config = options.config || (await getConfig('project'));
+    const host = AhaProvider.getHost(config);
+    if (!host) {
+      return tickets;
+    }
     // Features given as a link: the link is kept as it was written
     for (const match of text.matchAll(AHA_FEATURE_URL_REGEX)) {
       const ticketId = match[2].toUpperCase();
-      if (!tickets.some((ticket) => ticket.id === ticketId)) {
+      if (AhaProvider.isSameAccount(match[1], host) && !tickets.some((ticket) => ticket.id === ticketId)) {
         tickets.push({ provider: 'AHA', id: ticketId, url: match[0] });
       }
     }
-    // Features given as a bare reference: the link needs the host
-    const host = AhaProvider.getHost(config);
-    if (host) {
-      const customRegex = getEnvVar('AHA_TICKET_REGEX') || config?.ahaTicketRegex;
-      let referenceRegex: RegExp;
-      try {
-        referenceRegex = new RegExp(customRegex || AHA_DEFAULT_TICKET_REGEX, 'gm');
-      } catch (e: any) {
-        // A malformed project regex must cost its own tickets, not the whole Pull Request comment
-        uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderInvalidTicketRegex', { regex: String(customRegex), message: e.message })));
-        return sortArray(tickets, { by: ['id'], order: ['asc'] }) as Ticket[];
-      }
-      for (const reference of await extractRegexMatches(referenceRegex, text)) {
-        const ticketId = reference.trim().toUpperCase();
-        if (ticketId && !tickets.some((ticket) => ticket.id === ticketId)) {
-          tickets.push({ provider: 'AHA', id: ticketId, url: AhaProvider.featureUrl(host, ticketId) });
-        }
+    // Features given as a bare reference
+    const customRegex = getEnvVar('AHA_TICKET_REGEX') || config?.ahaTicketRegex;
+    let referenceRegex: RegExp;
+    try {
+      referenceRegex = new RegExp(customRegex || AHA_DEFAULT_TICKET_REGEX, 'gm');
+    } catch (e: any) {
+      // A malformed project regex must cost its own tickets, not the whole Pull Request comment
+      uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderInvalidTicketRegex', { regex: String(customRegex), message: e.message })));
+      return sortArray(tickets, { by: ['id'], order: ['asc'] }) as Ticket[];
+    }
+    // The reference inside a link to another account must not come back as a bare reference
+    const ownText = text.replace(AHA_FEATURE_URL_REGEX, (link, linkHost) => (AhaProvider.isSameAccount(linkHost, host) ? link : ' '));
+    for (const reference of await extractRegexMatches(referenceRegex, ownText)) {
+      const ticketId = reference.trim().toUpperCase();
+      if (ticketId && !tickets.some((ticket) => ticket.id === ticketId)) {
+        tickets.push({ provider: 'AHA', id: ticketId, url: AhaProvider.featureUrl(host, ticketId) });
       }
     }
     return sortArray(tickets, { by: ['id'], order: ['asc'] }) as Ticket[];
@@ -129,7 +133,6 @@ export class AhaProvider extends TicketProviderRoot {
       WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: ahaTickets.length }), ahaTickets.length);
     }
     let failedTicketsNumber = 0;
-    let notFoundTicketsNumber = 0;
     let firstErrorMessage = '';
     let authRefused = false;
     // try/finally so the progress bar never stays stuck in the VS Code UI when a fetch throws
@@ -139,11 +142,12 @@ export class AhaProvider extends TicketProviderRoot {
       // usually share the same cause (revoked key, workspace the user cannot read).
       const features = await mapInAdaptiveBatchesSettled(ahaTickets, (ticket) => this.fetchFeature(ticket.id, AHA_COLLECT_FIELDS), {
         sizes: PROVIDER_BATCH_PROFILES.aha,
-        onBackoff: (size, e, waitMs) => uxLog('log', this, c.grey('[AhaProvider] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
+        onBackoff: this.logBackoff,
         onError: (e: any, ticket) => {
           const status = e?.response?.status;
           if (status === 404) {
-            notFoundTicketsNumber++;
+            // Usually a reference that is not a feature (UTF-8, ISO-27001): it stays a bare link, and
+            // the Pull Request comment says nothing of it
             uxLog('log', this, c.grey('[AhaProvider] ' + t('ahaProviderTicketNotFound', { ticketId: ticket.id })));
             return;
           }
@@ -194,13 +198,6 @@ export class AhaProvider extends TicketProviderRoot {
       if (showProgress) {
         WebSocketClient.sendProgressEndMessage(ahaTickets.length);
       }
-    }
-    // A reference Aha! does not know is usually not a feature (UTF-8, ISO-27001): it stays a bare
-    // link and nothing is reported. When no reference at all is found, the cause is elsewhere: Aha!
-    // answers the same 404 for a workspace the user of the API key cannot see.
-    if (failedTicketsNumber === 0 && notFoundTicketsNumber === ahaTickets.length) {
-      failedTicketsNumber = notFoundTicketsNumber;
-      firstErrorMessage = 'Record not found';
     }
     if (authRefused) {
       uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderAuthRefused', { host: this.host })));
@@ -322,22 +319,34 @@ export class AhaProvider extends TicketProviderRoot {
     uxLog('action', this, c.cyan('[AhaProvider] ' + t('ahaProviderPostingComments', { count: ahaTickets.length })));
     const tag = await this.getDeploymentTag();
     const comment = await this.buildDeploymentComment(org, pullRequestInfo);
-    const commentedTickets: Ticket[] = [];
-    const taggedTickets: Ticket[] = [];
-    for (const ticket of ahaTickets) {
-      try {
+    // Comments, then tags, each in the adaptive batches of the Aha! ladder: a deployment of many
+    // features must slow down when Aha! throttles, not lose the writes that come after
+    const commented = await mapInAdaptiveBatchesSettled(
+      ahaTickets,
+      async (ticket) => {
         await httpPost(`${this.featureApiUrl(ticket.id)}/comments`, { comment: { body: comment } }, this.requestConfig());
-        commentedTickets.push(ticket);
-      } catch (e: any) {
-        uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderErrorPostingComment', { ticketId: ticket.id, message: e.message })));
+        return true;
+      },
+      {
+        sizes: PROVIDER_BATCH_PROFILES.aha,
+        onBackoff: this.logBackoff,
+        onError: (e: any, ticket) => uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderErrorPostingComment', { ticketId: ticket.id, message: e.message }))),
       }
-      try {
+    );
+    const tagged = await mapInAdaptiveBatchesSettled(
+      ahaTickets,
+      async (ticket) => {
         await this.addTagOnFeature(ticket.id, tag);
-        taggedTickets.push(ticket);
-      } catch (e: any) {
-        uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderErrorAddingTag', { tag, ticketId: ticket.id, message: e.message })));
+        return true;
+      },
+      {
+        sizes: PROVIDER_BATCH_PROFILES.aha,
+        onBackoff: this.logBackoff,
+        onError: (e: any, ticket) => uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderErrorAddingTag', { tag, ticketId: ticket.id, message: e.message }))),
       }
-    }
+    );
+    const commentedTickets = ahaTickets.filter((_ticket, index) => commented[index]);
+    const taggedTickets = ahaTickets.filter((_ticket, index) => tagged[index]);
     if (commentedTickets.length > 0) {
       uxLog('log', this, c.grey('[AhaProvider] ' + t('ahaProviderPostedComments', {
         count: commentedTickets.length,
@@ -354,17 +363,33 @@ export class AhaProvider extends TicketProviderRoot {
     return tickets;
   }
 
-  /** AHA_HOST may be given as a bare account host or as a full URL, with or without a path */
+  /**
+   * AHA_HOST may be given as a bare account host or as a full URL, with or without a path.
+   * Always https: the API key must never leave in clear text because of a scheme typed by hand.
+   */
   private static getHost(config: any = {}): string {
     const raw = String(getEnvVar('AHA_HOST') || config?.ahaHost || '').trim();
     if (!raw) {
       return '';
     }
-    const withScheme = raw.startsWith('http') ? raw : `https://${raw}`;
     try {
-      return new URL(withScheme).origin;
+      return `https://${new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`).host}`;
     } catch {
       return '';
+    }
+  }
+
+  /**
+   * True for the host of the project, and for another aha.io host of the same account: Aha! serves
+   * an account on its main host (acme.aha.io) and on a regional one (acme.euw4.aha.io).
+   */
+  private static isSameAccount(otherHost: string, projectHost: string): boolean {
+    try {
+      const other = otherHost.toLowerCase();
+      const project = new URL(projectHost).host.toLowerCase();
+      return other === project || (other.endsWith('.aha.io') && project.endsWith('.aha.io') && other.split('.')[0] === project.split('.')[0]);
+    } catch {
+      return false;
     }
   }
 
@@ -415,6 +440,10 @@ export class AhaProvider extends TicketProviderRoot {
     return /^https?:\/\//i.test(url || '') ? `<a href="${AhaProvider.escapeHtml(url)}">${safeLabel}</a>` : safeLabel;
   }
 
+  private logBackoff = (size: number, e: unknown, waitMs: number): void => {
+    uxLog('log', this, c.grey('[AhaProvider] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' })));
+  };
+
   private authHeaders(): Record<string, string> {
     return { Authorization: `Bearer ${this.apiKey}` };
   }
@@ -435,26 +464,30 @@ export class AhaProvider extends TicketProviderRoot {
 
   private async fetchAllComments(reference: string): Promise<{ comments: any[]; truncated: boolean }> {
     const all: any[] = [];
+    let truncated = false;
     try {
       for (let page = 1; ; page++) {
         const response = await httpGet(`${this.featureApiUrl(reference)}/comments`, this.requestConfig({ page, per_page: AHA_COMMENTS_PAGE_SIZE }));
         const comments = response?.data?.comments || [];
         all.push(...comments);
-        if (all.length >= AHA_COMMENTS_MAX) {
-          return { comments: all.slice(0, AHA_COMMENTS_MAX), truncated: true };
-        }
         const totalPages = response?.data?.pagination?.total_pages ?? page;
-        if (comments.length === 0 || page >= totalPages) {
+        const lastPage = comments.length === 0 || page >= totalPages;
+        if (all.length > AHA_COMMENTS_MAX || (all.length === AHA_COMMENTS_MAX && !lastPage)) {
+          truncated = true;
+          break;
+        }
+        if (lastPage) {
           break;
         }
       }
     } catch (e: any) {
-      // The feature itself was read: return it with the comments collected so far
+      // The feature itself was read: return it with the comments collected so far, flagged as incomplete
       uxLog('warning', this, c.yellow('[AhaProvider] ' + t('ahaProviderCommentsError', { ticketId: reference, message: e.message })));
+      truncated = true;
     }
     // Aha! lists the newest comment first, a reader expects the conversation in the order it happened
     all.sort((a, b) => String(a?.created_at || '').localeCompare(String(b?.created_at || '')));
-    return { comments: all, truncated: false };
+    return { comments: all.slice(0, AHA_COMMENTS_MAX), truncated };
   }
 
   /**
@@ -470,10 +503,8 @@ export class AhaProvider extends TicketProviderRoot {
       return this.host;
     }
     try {
-      const webHost = new URL(feature?.url || '').host.toLowerCase();
-      const configuredHost = new URL(this.host).host.toLowerCase();
-      const sameAccount = webHost.split('.')[0] === configuredHost.split('.')[0];
-      if (sameAccount && webHost.endsWith('.aha.io') && configuredHost.endsWith('.aha.io') && isSameHost(firstUrl, `https://${webHost}`)) {
+      const webHost = new URL(feature?.url || '').host;
+      if (AhaProvider.isSameAccount(webHost, this.host) && isSameHost(firstUrl, `https://${webHost}`)) {
         return `https://${webHost}`;
       }
     } catch {

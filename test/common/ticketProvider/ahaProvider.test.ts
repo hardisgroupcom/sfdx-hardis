@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import { Ticket, TicketProvider, activeTicketProviders, allTicketProviders } from '../../../src/common/ticketProvider/index.js';
 import { AhaProvider } from '../../../src/common/ticketProvider/ahaProvider.js';
 import { getTicketCollectionIssues, clearTicketCollectionIssues } from '../../../src/common/ticketProvider/ticketProviderRoot.js';
-import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
+import { HttpError, httpGet, setFetchForTests } from '../../../src/common/utils/httpUtils.js';
 
 const TICKETING_VARS = ['AHA_HOST', 'AHA_API_KEY', 'AHA_TICKET_REGEX', 'JIRA_HOST', 'JIRA_EMAIL', 'JIRA_TOKEN', 'JIRA_PAT', 'JIRA_TICKET_REGEX', 'DEPLOYED_TAG_TEMPLATE'];
 
@@ -177,9 +177,28 @@ describe('AhaProvider', () => {
       expect(tickets).to.deep.equal([{ provider: 'AHA', id: 'PROD-9', url: 'https://acme.euw4.aha.io/features/PROD-9' }]);
     }));
 
-    it('only collects links when the host is unknown', withEnv({}, async () => {
-      const tickets = await AhaProvider.getTicketsFromString(text, { config: {} });
-      expect(tickets.map((ticket) => ticket.id)).to.deep.equal(['MOBILE-3']);
+    it('collects nothing in a project that does not name its Aha! account', withEnv({}, async () => {
+      expect(await AhaProvider.getTicketsFromString(text, { config: {} })).to.deep.equal([]);
+    }));
+
+    it('leaves alone a link to a feature of another account', withEnv({ AHA_HOST: 'acme.aha.io' }, async () => {
+      // Its reference would be read, then commented on, in the account of the project
+      const tickets = await AhaProvider.getTicketsFromString('see https://partner.aha.io/features/APP-7, and PROD-12', { config: {} });
+      expect(tickets.map((ticket) => ticket.url)).to.deep.equal(['https://acme.aha.io/features/PROD-12']);
+    }));
+
+    it('always calls the account over https', withEnv({ AHA_HOST: 'http://acme.aha.io/products/PROD', AHA_API_KEY: 'secret' }, async () => {
+      const tickets = await AhaProvider.getTicketsFromString('PROD-12', { config: {} });
+      expect(tickets[0].url).to.equal('https://acme.aha.io/features/PROD-12');
+      const calls = stubAha(() => [200, { feature: { name: 'Close date' } }]);
+      await new AhaProvider({}).collectTicketsInfo(tickets);
+      expect(calls[0].url.startsWith('https://acme.aha.io/api/v1/')).to.equal(true);
+    }));
+
+    it('accepts an account whose name starts with http', withEnv({ AHA_HOST: 'httpworks.aha.io', AHA_API_KEY: 'secret' }, async () => {
+      expect(AhaProvider.isAvailable({})).to.equal(true);
+      const tickets = await AhaProvider.getTicketsFromString('PROD-12', { config: {} });
+      expect(tickets[0].url).to.equal('https://httpworks.aha.io/features/PROD-12');
     }));
 
     it('narrows the detection down to the project regex', withEnv({ ...AHA_ENV, AHA_TICKET_REGEX: '(MOBILE-[0-9]+)' }, async () => {
@@ -273,18 +292,40 @@ describe('AhaProvider', () => {
       expect(getTicketCollectionIssues()).to.deep.equal([]);
     }));
 
-    it('reports it when Aha! knows none of the references', withEnv(AHA_ENV, async () => {
-      // Aha! answers 404 for a workspace the user of the API key cannot see
+    it('reports nothing either when the only reference of a Pull Request is not a feature', withEnv(AHA_ENV, async () => {
       clearTicketCollectionIssues();
       stubAha(() => [404, { error: 'Record not found.' }]);
-      const tickets: Ticket[] = [
-        { provider: 'AHA', id: 'PROD-12', url: '' },
-        { provider: 'AHA', id: 'PROD-13', url: '' },
-      ];
+      const tickets: Ticket[] = [{ provider: 'AHA', id: 'UTF-8', url: '' }];
       await new AhaProvider({}).collectTicketsInfo(tickets);
-      expect(getTicketCollectionIssues()).to.have.lengthOf(1);
-      expect(getTicketCollectionIssues()[0]).to.contain('2 of 2');
+      expect(tickets[0].foundOnServer).to.equal(undefined);
+      expect(getTicketCollectionIssues()).to.deep.equal([]);
     }));
+
+    it('reads a throttled feature again, after the delay Aha! asked for', withEnv(AHA_ENV, async () => {
+      let attempts = 0;
+      setFetchForTests(async () => {
+        attempts++;
+        return attempts === 1
+          ? new Response(JSON.stringify({ error: 'Rate limit exceeded' }), { status: 429, headers: { 'content-type': 'application/json', 'retry-after': '0' } })
+          : new Response(JSON.stringify({ feature }), { status: 200, headers: { 'content-type': 'application/json' } });
+      });
+      const tickets: Ticket[] = [{ provider: 'AHA', id: 'PROD-12', url: '' }];
+      await new AhaProvider({}).collectTicketsInfo(tickets);
+      expect(attempts).to.equal(2);
+      expect(tickets[0].foundOnServer).to.equal(true);
+    }));
+
+    it('gives the headers of a refused request to whoever catches it', async () => {
+      setFetchForTests(async () => new Response('{}', { status: 429, headers: { 'content-type': 'application/json', 'retry-after': '7' } }));
+      let caught: any = null;
+      try {
+        await httpGet('https://acme.aha.io/api/v1/me');
+      } catch (e) {
+        caught = e;
+      }
+      expect(caught).to.be.instanceOf(HttpError);
+      expect(caught.response.headers['retry-after']).to.equal('7');
+    });
 
     it('reports the features that could not be read for another reason', withEnv(AHA_ENV, async () => {
       clearTicketCollectionIssues();
@@ -417,6 +458,22 @@ describe('AhaProvider', () => {
       const details = await new AhaProvider({}).getTicketDetails('PROD-12', { downloadAttachments: false });
       expect(details!.subject).to.equal('Block a past close date');
       expect(details!.comments).to.deep.equal([]);
+      // Nothing was read: the list must not pass for a feature without comments
+      expect(details!.commentsTruncated).to.equal(true);
+    }));
+
+    it('flags the comments as incomplete when a page is missing, and keeps them oldest first', withEnv(AHA_ENV, async () => {
+      stubAha((url) => {
+        if (!url.includes('/comments')) {
+          return [200, { feature }];
+        }
+        return /[?&]page=1(&|$)/.test(url)
+          ? [200, { comments: [{ body: '<p>Second</p>', created_at: '2026-08-05T10:00:00.000Z' }, { body: '<p>First</p>', created_at: '2026-08-02T10:00:00.000Z' }], pagination: { total_pages: 2 } }]
+          : [500, { error: 'Server error' }];
+      });
+      const details = await new AhaProvider({}).getTicketDetails('PROD-12', { downloadAttachments: false });
+      expect(details!.comments.map((comment) => comment.body)).to.deep.equal(['First', 'Second']);
+      expect(details!.commentsTruncated).to.equal(true);
     }));
   });
 
@@ -475,6 +532,14 @@ describe('AhaProvider', () => {
       await provider.postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
       expect(calls.some((call) => call.method === 'PUT')).to.equal(false);
       expect(calls.filter((call) => call.method === 'POST')).to.have.lengthOf(1);
+    }));
+
+    it('writes to every feature of a deployment', withEnv(AHA_ENV, async () => {
+      const calls = stubWrites([]);
+      const tickets: Ticket[] = Array.from({ length: 12 }, (_unused, index) => ({ provider: 'AHA', id: `PROD-${index + 1}`, url: '', foundOnServer: true }));
+      await new AhaProvider({}).postDeploymentComments(tickets, 'https://acme.my.salesforce.com', null);
+      expect(calls.filter((call) => call.method === 'POST')).to.have.lengthOf(12);
+      expect(calls.filter((call) => call.method === 'PUT')).to.have.lengthOf(12);
     }));
 
     it('still tags a feature whose comment was refused', withEnv(AHA_ENV, async () => {

@@ -80,6 +80,9 @@ export function activeTicketProviders(config: any = {}): TicketProviderClass[] {
 }
 
 export abstract class TicketProvider {
+  // The connectors left out by ticketingProvider are named once per run, not once per Pull Request
+  private static skippedProvidersReported = false;
+
   static getInstances(config: any): TicketProviderRoot[] {
     const ticketProviders: TicketProviderRoot[] = [];
     for (const provider of allTicketProviders) {
@@ -94,7 +97,9 @@ export abstract class TicketProvider {
   public static async getProvidersTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
     const tickets: Ticket[] = [];
     const optionsWithConfig: TicketsFromStringOptions = { ...options, config: options.config || (await getConfig("project")) };
-    for (const ticketProvider of activeTicketProviders(optionsWithConfig.config)) {
+    const activeProviders = activeTicketProviders(optionsWithConfig.config);
+    this.reportSkippedProviders(optionsWithConfig.config, activeProviders);
+    for (const ticketProvider of activeProviders) {
       const providerTickets = await ticketProvider.getTicketsFromString(text, optionsWithConfig);
       tickets.push(...providerTickets);
     }
@@ -211,6 +216,24 @@ export abstract class TicketProvider {
       }
     }
     return tickets;
+  }
+
+  /**
+   * A connector whose variables are defined, and that `ticketingProvider` leaves out, finds no
+   * ticket anymore: say which ones, so missing references are not a mystery.
+   */
+  private static reportSkippedProviders(config: any, activeProviders: TicketProviderClass[]): void {
+    if (this.skippedProvidersReported || !config?.ticketingProvider) {
+      return;
+    }
+    this.skippedProvidersReported = true;
+    const skipped = allTicketProviders.filter((provider) => !activeProviders.includes(provider) && provider.isAvailable(config));
+    if (skipped.length > 0) {
+      uxLog("log", this, c.grey('[TicketProvider] ' + t('ticketProvidersSkipped', {
+        declared: config.ticketingProvider,
+        skipped: skipped.map((provider) => provider.providerLabel).join(", "),
+      })));
+    }
   }
 }
 

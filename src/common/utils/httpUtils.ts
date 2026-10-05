@@ -47,10 +47,10 @@ export interface HttpResponse<T = any> {
 }
 
 export class HttpError extends Error {
-  public response: { status: number; statusText: string; data: any };
+  public response: { status: number; statusText: string; data: any; headers?: Record<string, string> };
   public status: number;
 
-  constructor(message: string, response: { status: number; statusText: string; data: any }) {
+  constructor(message: string, response: { status: number; statusText: string; data: any; headers?: Record<string, string> }) {
     super(message);
     this.name = 'HttpError';
     this.response = response;
@@ -146,6 +146,8 @@ async function request<T = any>(method: string, url: string, data?: any, config:
       status: response.status,
       statusText: response.statusText,
       data: responseData,
+      // Read by the adaptive batches, to wait the delay of a Retry-After
+      headers,
     });
   }
   return { status: response.status, statusText: response.statusText, headers, data: responseData as T };

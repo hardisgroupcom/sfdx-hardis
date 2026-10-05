@@ -26,6 +26,8 @@ sfdx-hardis analyzes **commit messages, branch names and Pull Request titles and
 
 > Only **features** are collected. A requirement (`PROD-12-3`), an epic (`PROD-E-4`), a release (`PROD-R-2`) or an idea is left alone.
 
+> A link to a feature of another Aha! account is ignored: only the account defined in **ahaHost** is read and written.
+
 ### For git providers
 
 GitHub, GitLab, Azure, Bitbucket: post references to Aha! features in Pull Request comments
@@ -120,4 +122,4 @@ This integration uses the following variables, which must be available from the 
 - AHA_API_KEY
 - AHA_TICKET_REGEX (optional)
 
-It calls the [Aha! REST API v1](https://www.aha.io/api): one read per feature of a Pull Request, then one comment, one read and at most one update per deployed feature. Calls are sent in parallel batches that shrink when Aha! answers that the rate limit is reached.
+It calls the [Aha! REST API v1](https://www.aha.io/api), always over https: one read per feature of a Pull Request, then one comment, one read and at most one update per deployed feature. Calls are sent in parallel batches that shrink, and wait the delay Aha! asks for, when the rate limit is reached.
