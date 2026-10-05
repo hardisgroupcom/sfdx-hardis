@@ -246,7 +246,11 @@ export async function listMajorOrgs(): Promise<any[]> {
     if (majorOrg?.mergeTargets?.length > 0) {
       return majorOrg;
     }
+    const declaredAsFinal = Array.isArray(majorOrg.mergeTargets) || isProduction(majorOrg.branchName);
     majorOrg.mergeTargets = guessMatchingMergeTargets(majorOrg.branchName, majorOrgs);
+    // Lets hardis:project:pipeline:describe tell a declared step from a guessed one. A branch
+    // that declares an empty list, or a production branch, is final on purpose: nothing was guessed.
+    majorOrg.mergeTargetsGuessed = majorOrg.mergeTargets.length > 0 || !declaredAsFinal;
     return majorOrg;
   });
   listMajorOrgsCache = completedMajorOrgs;
