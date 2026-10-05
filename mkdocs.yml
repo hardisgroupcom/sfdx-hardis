@@ -450,6 +450,7 @@ nav:
           - lint: hardis/project/lint.md
           - metadata activate-decomposed: hardis/project/metadata/activate-decomposed.md
           - metadata findduplicates: hardis/project/metadata/findduplicates.md
+          - pipeline describe: hardis/project/pipeline/describe.md
           - promotion create: hardis/project/promotion/create.md
           - promotion list-candidates: hardis/project/promotion/list-candidates.md
           - skills import: hardis/project/skills/import.md

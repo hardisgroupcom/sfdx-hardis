@@ -389,6 +389,41 @@ $ARGUMENTS
 
 ---
 
+## `hardis:project:pipeline:describe --agent` - Know the Pipeline Before Acting on It
+
+A pipeline is not always `integration -> uat -> preprod -> main`. A project can have a core branch feeding several production orgs, a run branch next to the build ones, or a single sandbox before production. Before an agent picks a target branch, promotes a major branch, prepares a hotfix or a retrofit, it reads the pipeline the project declares instead of assuming branch names.
+
+### Usage
+
+```bash
+sf hardis:project:pipeline:describe --agent --json
+```
+
+No flag is required. The command reads the configuration files of the current checkout: no org, no git provider token and no network are needed, and nothing is written. Run it on a branch that is up to date with the remote.
+
+### What the result holds
+
+| Key                          | Content                                                                                                                                              |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `branches`                   | Every major branch: `name`, `instanceUrl`, `targetUsername`, `mergeTargets`, `mergeTargetsGuessed`, and `mergeSources` (the branches merged into it) |
+| `steps`                      | Every `source` and `target` a merge between major branches can follow, with `promotionBranchAllowed`                                                 |
+| `entryBranches`              | The major branches no other major branch is merged into: where the pipeline starts                                                                   |
+| `finalBranches`              | The major branches merged into no other one (ex: production): where the pipeline ends                                                                |
+| `developmentBranch`          | The default target of a new User Story                                                                                                               |
+| `availableTargetBranches`    | The branches a new User Story may target                                                                                                             |
+| `promotionBranches`          | `enabled` and `allowedSteps`, from `enablePromotionBranches` and `allowedPromotionSteps`                                                             |
+| `warnings`                   | What is missing or was guessed in the configuration                                                                                                  |
+| `mergeTargetsRecommendation` | A sentence to relay to the user when merge targets were guessed from branch names, `null` otherwise                                                  |
+
+### Behavior in agent mode
+
+- **Read `steps`, never assume names**: a source branch can have several targets, and there can be several entry and final branches. When a source has more than one target, ask the user which one is meant.
+- **A step is always open to a full promotion**: a Pull Request from the source branch to the target one. `promotionBranchAllowed` only says whether a [promotion branch (Beta)](salesforce-devops-promotion-branches.md), which carries a subset of the User Stories, may be assembled on that step.
+- **A final branch is a release**: a merge into a branch listed in `finalBranches` is the last step of the pipeline, a good moment to offer the release notes with `hardis:doc:release-notes`.
+- **Relay `mergeTargetsRecommendation`**: when it is not `null`, the merge targets of some branches are not declared and were guessed from their names. Tell the user to declare `mergeTargets` explicitly in the `config/branches/.sfdx-hardis.<branch>.yml` files it names, with an empty list for a branch merged into no other one.
+
+---
+
 ## Deployment Actions Commands (`hardis:project:action:*`)
 
 Deployment actions are pre- or post-deployment steps stored in YAML config files and executed automatically during CI/CD pipelines. They can be scoped to the whole **project**, a specific **branch**, or a **Pull Request**. The [Deployment actions](salesforce-devops-work-on-user-story-deployment-actions.md) guide explains when they run, how their status is tracked and how to recover a failed one.
@@ -925,6 +960,7 @@ These have their own `--agent` mode and their own guide. They are listed here so
 - [`hardis:work:new` command reference](hardis/work/new.md)
 - [`hardis:work:save` command reference](hardis/work/save.md)
 - [`hardis:project:deploy:smart` command reference](hardis/project/deploy/smart.md)
+- [`hardis:project:pipeline:describe` command reference](hardis/project/pipeline/describe.md)
 - [`hardis:project:action:create` command reference](hardis/project/action/create.md)
 - [`hardis:project:action:list` command reference](hardis/project/action/list.md)
 - [`hardis:project:action:update` command reference](hardis/project/action/update.md)
