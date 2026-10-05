@@ -1236,6 +1236,23 @@ describe('buildFlowDeletionMarkdown', () => {
     expect(tableLine(markdown, '| `MyFlow`')).to.equal('| `MyFlow` | ✅ | Whole Flow | 2 | 1, 2 | 1 | 3 | 2 |');
   });
 
+  it('says on a preflight that nothing is deleted yet, and drops the columns only a deletion fills', () => {
+    const markdown = buildFlowDeletionMarkdown([outcome({ interviewCount: 3 })], { preflight: true });
+    expect(markdown.split('\n')[0]).to.equal('## Flow deletion planned');
+    expect(markdown).to.contain('Nothing has been deleted yet');
+    expect(tableLine(markdown, '| Flow |')).to.equal(
+      '| Flow | Status | Scope | Active version | Versions targeted | Interviews blocking |'
+    );
+    expect(tableLine(markdown, '| ---')).to.equal('| --- | :-: | --- | :-: | --- | :-: |');
+    expect(tableLine(markdown, '| `MyFlow`')).to.equal('| `MyFlow` | ✅ | Whole Flow | 2 | 1, 2 | 3 |');
+  });
+
+  it('keeps the plain title and no preflight note for a real deletion', () => {
+    const markdown = buildFlowDeletionMarkdown([outcome({ versionsDeleted: [1, 2] })]);
+    expect(markdown.split('\n')[0]).to.equal('## Flow deletion');
+    expect(markdown).to.not.contain('Nothing has been deleted yet');
+  });
+
   it('spells out an inactive Flow and dashes the empty cells', () => {
     const markdown = buildFlowDeletionMarkdown([outcome({ previousActiveVersion: null, versionsToDelete: [] })]);
     expect(tableLine(markdown, '| `MyFlow`')).to.equal('| `MyFlow` | ✅ | Whole Flow | already inactive | - | - | 0 | 0 |');
@@ -1417,6 +1434,16 @@ describe('writeFlowDeletionReport', () => {
     expect(header).to.equal('Flow,Status,Scope,Active Version,Versions Targeted,Versions Deleted,Interviews Blocking,Interviews Deleted');
     expect(flows).to.deep.equal(['HardisTestFlowOne', 'HardisTestFlowTwo']);
     expect(tableFlows()).to.deep.equal(['HardisTestFlowOne', 'HardisTestFlowTwo']);
+  });
+
+  it('titles the console table of a preflight as a plan, with the same CSV columns', async () => {
+    const outcomes = [outcome('HardisTestFlowOne', { versionsDeleted: [] })];
+    const result = await writeFlowDeletionReport(outcomes, commandThis, outcomes, { preflight: true });
+    const titles = logged.map(stripAnsi);
+    expect(titles.some((text) => text.includes('Flow deletion plan (nothing is deleted now'))).to.equal(true);
+    expect(titles.some((text) => text.includes('Flow deletion summary'))).to.equal(false);
+    const { header } = await csvFlows(result.csvFile);
+    expect(header).to.equal('Flow,Status,Scope,Active Version,Versions Targeted,Versions Deleted,Interviews Blocking,Interviews Deleted');
   });
 
   it('writes every accumulated outcome to the CSV while the table stays on the current phase', async () => {

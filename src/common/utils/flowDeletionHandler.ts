@@ -198,8 +198,8 @@ export class FlowDeletionHandler {
   private async runPreflight(pendingFlowDeletions: PendingFlowDeletion[]): Promise<void> {
     const conn = await this.getConnection();
     const outcomes = await runFlowDeletionPreflight(pendingFlowDeletions, conn, this.commandThis, this.deleteInterviews);
-    await writeFlowDeletionReport(outcomes, this.commandThis);
-    setPullRequestData({ flowDeletionMarkdownBody: buildFlowDeletionMarkdown(outcomes) });
+    await writeFlowDeletionReport(outcomes, this.commandThis, outcomes, { preflight: true });
+    setPullRequestData({ flowDeletionMarkdownBody: buildFlowDeletionMarkdown(outcomes, { preflight: true }) });
     if (isFailedFlowDeletionStatus(worstFlowDeletionStatus(outcomes))) {
       const blockedMessages = outcomes
         .filter((outcome) => isFailedFlowDeletionStatus(outcome.status))

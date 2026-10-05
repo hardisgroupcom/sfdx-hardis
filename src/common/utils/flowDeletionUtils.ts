@@ -986,6 +986,14 @@ type FlowDeletionColumn = {
   markdownAlign: string;
   value: (outcome: FlowDeletionOutcome) => string | number;
   markdownValue?: (outcome: FlowDeletionOutcome) => string;
+  // Filled by a real deletion only: left out of the Pull Request comment of a preflight, where an
+  // empty "deleted" column reads as a deletion that ran and removed nothing.
+  executionOnly?: boolean;
+};
+
+// A preflight (--check) reads the org and deletes nothing: its reports must say so.
+export type FlowDeletionReportOptions = {
+  preflight?: boolean;
 };
 
 const FLOW_DELETION_COLUMNS: FlowDeletionColumn[] = [
@@ -1035,6 +1043,7 @@ const FLOW_DELETION_COLUMNS: FlowDeletionColumn[] = [
     markdownAlign: '---',
     value: (outcome) => formatVersionList(outcome.flowName, outcome.versionsDeleted),
     markdownValue: (outcome) => outcome.versionsDeleted.join(', '),
+    executionOnly: true,
   },
   {
     header: 'Interviews Blocking',
@@ -1047,6 +1056,7 @@ const FLOW_DELETION_COLUMNS: FlowDeletionColumn[] = [
     markdownHeaderKey: 'flowDeletionMarkdownInterviewsDeleted',
     markdownAlign: ':-:',
     value: (outcome) => outcome.interviewsDeleted,
+    executionOnly: true,
   },
 ];
 
@@ -1059,10 +1069,13 @@ function flowDeletionMarkdownCell(column: FlowDeletionColumn, outcome: FlowDelet
 // Console table + CSV report of what the Flow deletion did (or plans to do).
 // The console table shows the current phase only, the CSV every outcome of the run: the report path
 // is deterministic, so a post-destructive phase would otherwise overwrite the pre-destructive one.
+// The columns are the same for a preflight, so scripts reading the CSV keep working: only the title
+// of the console table changes.
 export async function writeFlowDeletionReport(
   outcomes: FlowDeletionOutcome[],
   commandThis: any,
-  allOutcomes: FlowDeletionOutcome[] = outcomes
+  allOutcomes: FlowDeletionOutcome[] = outcomes,
+  options: FlowDeletionReportOptions = {}
 ): Promise<any> {
   if (outcomes.length === 0) {
     return {};
@@ -1071,7 +1084,7 @@ export async function writeFlowDeletionReport(
     outcomeList.map((outcome) =>
       Object.fromEntries(FLOW_DELETION_COLUMNS.map((column) => [column.header, column.value(outcome)]))
     );
-  uxLog('action', commandThis, c.cyan(t('flowDeletionSummary')));
+  uxLog('action', commandThis, c.cyan(t(options.preflight ? 'flowDeletionPreflightSummary' : 'flowDeletionSummary')));
   uxLogTable(commandThis, toRows(outcomes));
   const reportPath = await generateReportPath('flow-deletion', '');
   return await generateCsvFile(toRows(allOutcomes), reportPath, { fileTitle: t('flowDeletionReportTitle') });
@@ -1079,17 +1092,28 @@ export async function writeFlowDeletionReport(
 
 // Markdown block appended to the Pull Request comment: which Flows are deleted, and how many Flow
 // Interviews that destroys.
-export function buildFlowDeletionMarkdown(outcomes: FlowDeletionOutcome[]): string {
+// On a preflight, the title and a note say that nothing has been deleted yet, and the columns only
+// a real deletion fills are left out.
+export function buildFlowDeletionMarkdown(
+  outcomes: FlowDeletionOutcome[],
+  options: FlowDeletionReportOptions = {}
+): string {
   if (outcomes.length === 0) {
     return '';
   }
+  const preflight = options.preflight === true;
+  const columns = FLOW_DELETION_COLUMNS.filter((column) => !preflight || column.executionOnly !== true);
   const lines: string[] = [];
-  lines.push(`## ${t('flowDeletionMarkdownTitle')}`);
+  lines.push(`## ${t(preflight ? 'flowDeletionMarkdownPreflightTitle' : 'flowDeletionMarkdownTitle')}`);
   lines.push('');
-  lines.push(`| ${FLOW_DELETION_COLUMNS.map((column) => t(column.markdownHeaderKey)).join(' | ')} |`);
-  lines.push(`| ${FLOW_DELETION_COLUMNS.map((column) => column.markdownAlign).join(' | ')} |`);
+  if (preflight) {
+    lines.push(t('flowDeletionMarkdownPreflightNote'));
+    lines.push('');
+  }
+  lines.push(`| ${columns.map((column) => t(column.markdownHeaderKey)).join(' | ')} |`);
+  lines.push(`| ${columns.map((column) => column.markdownAlign).join(' | ')} |`);
   for (const outcome of outcomes) {
-    lines.push(`| ${FLOW_DELETION_COLUMNS.map((column) => flowDeletionMarkdownCell(column, outcome)).join(' | ')} |`);
+    lines.push(`| ${columns.map((column) => flowDeletionMarkdownCell(column, outcome)).join(' | ')} |`);
   }
   lines.push('');
   lines.push(t('flowDeletionMarkdownFooter'));
