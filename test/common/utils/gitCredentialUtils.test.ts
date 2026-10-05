@@ -74,7 +74,7 @@ describe('listCandidateGitCredentialHelpers()', () => {
 describe('git credentials in the credential helper (real git)', function () {
   this.timeout(60000);
   const url = 'https://git.example.invalid/acme/crm.git';
-  const credentials = { url, username: 'jane', password: 'glpat-s3cret/with@odd:chars' };
+  const credentials = { url, username: 'jane', password: 'fake-pass/with@odd:chars' };
   const envBefore = { ...process.env };
   let workDir: string;
   let repo: string;
