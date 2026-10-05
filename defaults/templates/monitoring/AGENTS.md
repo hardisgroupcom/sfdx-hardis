@@ -17,6 +17,7 @@ Read this file before answering questions about the org, and answer from the fil
   - `sf hardis:org:test:apex` runs the Apex tests of the org.
   - `sf hardis:org:monitor:all` runs the monitoring checks listed below.
   - MegaLinter scans the retrieved sources for quality and security issues.
+- **A red job is a job that could not run, not a job that found issues.** A job that ran to its end is green: failing Apex tests, a limit close to its maximum, MegaLinter errors, and even a single check that crashed are read in the job log, the notifications, the reports and Grafana. Runs made with an older sfdx-hardis version were red in both cases.
 - **Their results are not stored in the repository.** They are sent as notifications (Slack, Microsoft Teams, email), to an API or a Grafana dashboard when configured, and kept as CI job artifacts (`hardis-report/`, `megalinter-reports/`) for a limited time.
 
 ## Answering questions with git
@@ -213,7 +214,7 @@ Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deplo
   - Pipelines: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pipelines/?sort=-created_on&pagelen=50`, keep the ones whose `target.ref_name` is `<branch>`, then `.../pipelines/<uuid>/steps/` and `.../pipelines/<uuid>/steps/<step uuid>/log`
   - Pull Requests: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pullrequests?state=MERGED&q=destination.branch.name="<branch>"`
 
-In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
+In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check: its end-of-run summary gives each check a status, and a check that is not `success` either found issues or could not run: its own log lines, above the summary, say which. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
 
 ## Monitoring results in Grafana
 
@@ -322,7 +323,7 @@ Backups, checks and deployments:
 
 - Did the backup succeed every night, with `$LOKI/query_range` and `step=1d`: `sum by (severity) (count_over_time({source="sfdx-hardis", orgIdentifier="acme", type="BACKUP"}[1d]))`. An `error` point is a failed backup. A day with no point at all had no backup: the job did not run, or it ran with an sfdx-hardis version that sent nothing on failure, and the pipeline logs of this repository say why.
 - Why a backup failed: `{source="sfdx-hardis", orgIdentifier="acme", type="BACKUP", severity="error"} | json e="error" | line_format "{{.e}}" | keep type` gives the error message of each failure.
-- Checks that failed in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones is only in the pipeline logs.
+- Checks that found issues or could not run in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones, and which of the two, is only in the pipeline logs.
 - Deployments to this org: `{source="sfdx-hardis", orgIdentifier="acme", type="DEPLOYMENT"} | json t="_title", j="_jobUrl" | line_format "{{.t}} {{.j}}" | keep severity`. The `_logBodyText` of a deployment lists its deployment actions, its commits and the link of its Pull Request.
 
 All the monitored orgs (leave out `orgIdentifier`):
@@ -368,7 +369,7 @@ Any other command against an org counts as a write: do not run it, even when the
 | `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org, and the `grafanaUrl` (and optional datasource uids) that receives the monitoring results. Never a secret. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |
 | `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. |
-| `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. |
+| `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. The backup adds `DISABLE_ERRORS: true` to `.mega-linter.yml` when the key is missing, so that MegaLinter findings do not fail its job, and creates the file when the repository has none. |
 | `THIS_IS_MONITORING`, `DO_NOT_DEPLOY_FROM_THIS_REPO` | Empty marker files: this repository is for monitoring only. |
 
 ## What is not in the backup

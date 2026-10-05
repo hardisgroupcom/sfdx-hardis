@@ -47,6 +47,7 @@ Key functionalities:
 - **Report generation toggle (disabled by default):** Enable coding-agent PPTX generation with \`codingAgentGenerateReports: true\` or env var \`SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS=true\`. Requires \`codingAgent\` to be configured.
 - **Frequency control:** Commands can run \`daily\`, \`weekly\`, \`biweekly\`, \`monthly\`, or \`off\`. Use \`frequencyDay\` (monday..sunday) to pick the firing day for weekly/biweekly, and \`frequencyDayOfMonth\` (1-31) for monthly. Use \`--force-all\` (or env var \`MONITORING_IGNORE_FREQUENCY=true\`) to force all commands to run regardless of their configured frequency.
 - **Cadence traceability:** The run starts with a line stating today's date and whether frequency gating is active, or disabled and by which of \`--force-all\` / \`MONITORING_IGNORE_FREQUENCY\`. The end-of-run summary lists every configured command with its frequency and its status, including the ones that were skipped (\`skipped\`) or turned off through \`monitoringDisable\` (\`disabled\`).
+- **Job status:** The command exits with code 0 as soon as it ran to its end, even when checks found issues or could not run: read them in the end-of-run summary, the notifications, the reports and Grafana (\`CommandsFailed\` metric). The job fails only when the command itself could not run (authentication error, crash).
 - **Per-channel notification routing:** Each entry accepts a \`notifications\` block with severity thresholds per channel (\`messaging\`, \`email\`, \`api\`). User entries are merged by \`key\` onto the built-in defaults, so you can override only the fields you need.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-home/).
@@ -227,7 +228,6 @@ ${this.getDefaultCommandsMarkdown()}
     await fs.emptyDir(notifDir);
     process.env.MONITORING_NOTIF_OUTPUT_DIR = notifDir;
 
-    let success = true;
     const commandsSummary: any[] = [];
     for (const command of commands) {
       if (!command.command) {
@@ -276,7 +276,6 @@ ${this.getDefaultCommandsMarkdown()}
         if (execCommandResult.status === 0) {
           uxLog("success", this, c.green(t('commandHasBeenRunSuccessfully', { command: c.bold(commandTitle) })));
         } else {
-          success = false;
           uxLog("warning", this, c.yellow(t('commandHasFailed', { command: c.bold(commandTitle) })));
         }
         commandsSummary.push({
@@ -289,7 +288,6 @@ ${this.getDefaultCommandsMarkdown()}
       } catch (e) {
         // Handle unexpected failure
         const duration = Date.now() - startTime;
-        success = false;
         uxLog("warning", this, c.yellow(t('commandHasFailed2', { command: c.bold(commandTitle), as: (e as Error).message })));
         commandsSummary.push({
           title: commandTitle,
@@ -425,9 +423,10 @@ ${this.getDefaultCommandsMarkdown()}
 
     delete process.env.MONITORING_NOTIF_OUTPUT_DIR;
 
-    // Exit code is 1 if monitoring detected stuff
-    if (success === false) {
-      process.exitCode = 1;
+    // A monitoring that ran to its end does not fail its job: what the checks found, and the checks
+    // that could not run, are in the summary, the notifications and the CommandsFailed metric
+    if (summaryMetrics.CommandsFailed > 0) {
+      uxLog("warning", this, c.yellow(t('monitoringChecksFailedJobSucceeds', { count: summaryMetrics.CommandsFailed })));
     }
     return { outputString: 'Monitoring processed on org ' + orgUrl };
   }

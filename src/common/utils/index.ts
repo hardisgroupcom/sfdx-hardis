@@ -2472,6 +2472,10 @@ export async function isMonitoringJob() {
     return false;
   }
   const repoName = await git().revparse('--show-toplevel');
+  // Marker file of the monitoring repository template: the repository can then have any name
+  if (fs.existsSync(path.join(repoName, 'THIS_IS_MONITORING'))) {
+    return true;
+  }
   if (isCI && repoName.includes('monitoring')) {
     return true;
   }
