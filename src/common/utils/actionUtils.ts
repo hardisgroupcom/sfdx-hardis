@@ -78,7 +78,13 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
   if (fs.existsSync(configFile)) {
     doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
   }
-  doc[configKey] = actions;
+  // The key the actions are stored under already says when they run: readActions sets
+  // "when" on each of them for its callers, and it must not be written back into the file
+  doc[configKey] = actions.map((action) => {
+    const stored: any = { ...action };
+    delete stored.when;
+    return stored;
+  });
   await fs.ensureDir(path.dirname(configFile));
   await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   // A created or updated branch config file changes the major orgs list: drop its cache.

@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- The deployment action commands ([create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/), update, delete, reorder) no longer add a `when` key to the actions already in the file.
+
 ## [8.13.0] 2026-10-04
 
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
