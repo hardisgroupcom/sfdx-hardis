@@ -13,7 +13,7 @@ import { Connection, SfError } from '@salesforce/core';
 import { createSpinner } from './spinner.js';
 import { tryRunSfCommandInProcess } from './sfCoreCommands.js';
 import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
-import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getReportDirectory, setConfig } from '../../config/index.js';
+import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getEnvVar, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
 import { deployMetadatas, shortenLogLines } from './deployUtils.js';
@@ -28,7 +28,7 @@ let pluginsStdout: string | null = null;
 
 export { isCI, isAgentMode } from './envUtils.js';
 import { isCI, isAgentMode } from './envUtils.js';
-import { forgetGitCredentials, GitCredentials, storeGitCredentials } from './gitCredentialUtils.js';
+import { storeGitCredentials } from './gitCredentialUtils.js';
 import { anonymizeRows, getChannelAnonymizationLevel, getChannelAnonymizationLevelSync } from './anonymizeUtils.js';
 
 export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
@@ -425,14 +425,16 @@ export async function gitCheckOutRemote(branchName: string) {
 // Once credentials were refused during a command, or could not be asked or used, they are not
 // asked again: every later fetch, pull or push would end in the same questions
 let gitCredentialsNotAskedAgain = false;
-// Credentials just given to git's credential helper, to take them back when the remote refuses them
-let gitCredentialsJustStored: GitCredentials | null = null;
+// How to undo what was changed to store the credentials just typed, for when the remote refuses them
+let gitCredentialsUndo: { undoStore: () => Promise<void>; originUrlToRestore: string | null } | null = null;
 
 // Helper function to detect git authentication errors
 export function isGitAuthError(error: any): boolean {
   const errorStr = (error?.message || error?.toString() || '').toLowerCase();
-  // A branch that does not exist can be named after anything, an HTTP status included
-  if (errorStr.includes("couldn't find remote ref")) {
+  // What git says of a branch, which can be named after anything, an HTTP status included: a
+  // branch that does not exist, a push the remote rejects for its history or by a hook
+  const aboutABranch = ["couldn't find remote ref", '[rejected]', 'non-fast-forward', 'pre-receive hook declined'];
+  if (aboutABranch.some((text) => errorStr.includes(text))) {
     return false;
   }
   const authErrorPatterns = [
@@ -442,10 +444,9 @@ export function isGitAuthError(error: any): boolean {
     'could not read password',
     'invalid username or password',
     'access denied',
-    'publickey',
+    'permission denied (publickey',
     'could not read from remote repository',
     'correct access rights',
-    'unauthorized',
   ];
   // 401 and 403 the way git, curl and the git providers word them, never as bare digits: a commit
   // hash or a branch name can hold them. "Permission denied" alone is not here either: it is what
@@ -456,6 +457,8 @@ export function isGitAuthError(error: any): boolean {
     /\bhttp(\/[\d.]+)? 40[13]\b/,
     /status code[^\n]{0,40}\b40[13]\b/,
     /\b40[13] (forbidden|unauthorized)\b/,
+    // The word alone, never as a part of a branch name (fix/unauthorized-endpoint)
+    /(^|[\s:(])unauthorized([\s.):]|$)/m,
     /\(forbidden\)/,
     // Azure DevOps: repository not found or no permission, missing contribute permission, not authorized
     /\btf40(1019|1027|0813)\b/,
@@ -492,7 +495,7 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
 export interface GitCredentialsRetryDeps {
   /** Asks for credentials and gives them to git's credential helper. False when there is nothing to retry with. */
   askCredentials: (operation: string, error: any) => Promise<boolean>;
-  /** Takes back from the credential helper what askCredentials gave it */
+  /** Undoes what askCredentials changed: the credential helper, the git configuration, the remote URL */
   forgetCredentials: () => Promise<void>;
 }
 
@@ -504,7 +507,7 @@ export async function retryGitAfterAuthError<T>(
   retryMessageKey: string,
   error: any,
   run: () => Promise<T>,
-  deps: GitCredentialsRetryDeps = { askCredentials: handleGitAuthError, forgetCredentials: forgetRefusedGitCredentials }
+  deps: GitCredentialsRetryDeps = { askCredentials: handleGitAuthError, forgetCredentials: undoGitCredentialsChanges }
 ): Promise<T> {
   if (!isGitAuthError(error) || gitCredentialsNotAskedAgain) {
     throw redactGitError(error);
@@ -523,7 +526,7 @@ export async function retryGitAfterAuthError<T>(
     if (isGitAuthError(retryError)) {
       gitCredentialsNotAskedAgain = true;
       // Refused credentials must not stay in the credential helper, where every git command of
-      // the machine would find them
+      // the machine would find them. What it held before comes back.
       await deps.forgetCredentials();
       uxLog("action", this, c.cyan(t('gitStillFailsWithTheseCredentials', { operation })), { alwaysVisible: true });
       uxLog("error", this, c.red(describeGitError(retryError)));
@@ -536,7 +539,7 @@ export async function retryGitAfterAuthError<T>(
 /** Forgets what a previous git operation of the process decided (unit tests only). */
 export function resetGitCredentialsStateForTests(): void {
   gitCredentialsNotAskedAgain = false;
-  gitCredentialsJustStored = null;
+  gitCredentialsUndo = null;
 }
 
 // One git operation, run again once with new credentials when the remote refuses the first attempt
@@ -590,6 +593,7 @@ async function handleGitAuthError(operation: string, error: any): Promise<boolea
   uxLog("action", this, c.cyan(t('gitRefusedByRemote', { operation, message: describeGitError(error) })));
 
   // git's credential helpers keep credentials for http(s) remotes only: checked before asking
+  let originUrl: string;
   let remoteUrl: URL;
   try {
     const origin = await git({ output: false, displayCommand: false }).getConfig('remote.origin.url');
@@ -597,10 +601,8 @@ async function handleGitAuthError(operation: string, error: any): Promise<boolea
       uxLog("error", this, c.red(t('couldNotRetrieveRemoteOriginUrl')));
       return false;
     }
-    remoteUrl = new URL(origin.value);
-    if (!['https:', 'http:'].includes(remoteUrl.protocol)) {
-      throw new Error('not an http(s) URL');
-    }
+    originUrl = origin.value;
+    remoteUrl = parseHttpRemoteUrl(originUrl);
   } catch {
     // An SSH remote (git@host:group/repo.git) is not a URL either
     uxLog("action", this, c.cyan(t('onlyHttpRemoteUrlsAreSupportedFor')));
@@ -637,53 +639,89 @@ async function handleGitAuthError(operation: string, error: any): Promise<boolea
     return false;
   }
 
-  // Credentials left in the remote URL by an older sfdx-hardis, or a user name alone as in the
-  // clone URLs of Azure DevOps and Bitbucket, win over the credential helper: git would keep
-  // sending them. The URL is cleaned so the helper is what git reads.
-  const hadCredentialsInUrl = remoteUrl.username !== '' || remoteUrl.password !== '';
+  // The remote URL is only touched when it names a user or holds a password, which both win
+  // over the credential helper: an older sfdx-hardis wrote them there, and the clone URLs of
+  // Azure DevOps and Bitbucket name a user. The password goes, and the user becomes the one who
+  // just answered, so git asks the helper for theirs.
+  const namedUserInUrl = remoteUrl.username !== '' || remoteUrl.password !== '';
   remoteUrl.username = '';
   remoteUrl.password = '';
-  const cleanRemoteUrl = remoteUrl.toString();
-  if (hadCredentialsInUrl) {
+  const urlWithoutCredentials = remoteUrl.toString();
+  remoteUrl.username = namedUserInUrl ? usernamePrompt.username : '';
+  const newOriginUrl = remoteUrl.toString();
+
+  // The credentials are stored first: the remote URL does not change before git is known to
+  // read them back
+  const storeResult = await storeGitCredentials(
+    { url: urlWithoutCredentials, username: usernamePrompt.username, password: passwordPrompt.password },
+    process.cwd(),
+    { forcedHelper: getEnvVar('SFDX_HARDIS_GIT_CREDENTIAL_HELPER') || undefined }
+  );
+  if (!storeResult.stored) {
+    const reason = t(storeResult.error === 'lineBreak' ? 'gitCredentialsLineBreakNotAllowed' : 'gitNoCredentialHelperKeptCredentials');
+    uxLog("action", this, c.cyan(t('gitCredentialsCouldNotBeStored', { message: reason })));
+    return false;
+  }
+  gitCredentialsUndo = { undoStore: storeResult.undo, originUrlToRestore: null };
+  if (newOriginUrl !== originUrl) {
     try {
       // Neither the command line nor its output is displayed: the previous URL may hold a token
-      await git({ output: false, displayCommand: false }).remote(['set-url', 'origin', cleanRemoteUrl]);
+      await git({ output: false, displayCommand: false }).remote(['set-url', 'origin', newOriginUrl]);
+      gitCredentialsUndo.originUrlToRestore = originUrl;
       uxLog("action", this, c.cyan(t('gitRemoteUrlCredentialsRemoved')));
     } catch (e: any) {
       uxLog("action", this, c.cyan(t('failedToUpdateRemoteUrl', { message: describeGitError(e) })));
+      await undoGitCredentialsChanges();
       return false;
     }
   }
-
-  const credentials: GitCredentials = {
-    url: cleanRemoteUrl,
-    username: usernamePrompt.username,
-    password: passwordPrompt.password,
-  };
-  const storeResult = storeGitCredentials(credentials, process.cwd());
-  if (!storeResult.stored) {
-    uxLog("action", this, c.cyan(t('gitCredentialsCouldNotBeStored', { message: redactUrlCredentials(storeResult.error || '') })));
-    return false;
-  }
-  gitCredentialsJustStored = credentials;
   if (storeResult.configuredScope) {
     uxLog("action", this, c.cyan(t('gitCredentialHelperConfigured', { helper: storeResult.helper, scope: storeResult.configuredScope })));
   }
   uxLog("action", this, c.cyan(t('gitCredentialsStored', { helper: storeResult.helper })));
   if (storeResult.helper.split(', ').includes('store')) {
-    uxLog("warning", this, c.yellow(t('gitCredentialsStoredInPlainText')));
+    // An action line: it must be read, and a panel shows nothing else after an answer
+    uxLog("action", this, c.cyan(t('gitCredentialsStoredInPlainText')));
   }
   return true;
 }
 
-// Takes back from git's credential helper the credentials handleGitAuthError gave it
-async function forgetRefusedGitCredentials(): Promise<void> {
-  if (!gitCredentialsJustStored) {
+// The remote refused what handleGitAuthError stored: the credential helper, the git
+// configuration and the remote URL go back to what they were. Nothing stays unless it worked.
+async function undoGitCredentialsChanges(): Promise<void> {
+  const undo = gitCredentialsUndo;
+  gitCredentialsUndo = null;
+  if (!undo) {
     return;
   }
-  forgetGitCredentials(gitCredentialsJustStored, process.cwd());
-  gitCredentialsJustStored = null;
+  if (undo.originUrlToRestore) {
+    try {
+      await git({ output: false, displayCommand: false }).remote(['set-url', 'origin', undo.originUrlToRestore]);
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('failedToUpdateRemoteUrl', { message: describeGitError(e) })));
+    }
+  }
+  await undo.undoStore();
   uxLog("log", this, c.grey(t('gitCredentialsForgotten')));
+}
+
+// An http(s) remote URL as a URL. A password typed by hand in it can hold a slash or a hash,
+// which no URL parser accepts: what stands before the last @ of the host part is then dropped,
+// since it is replaced anyway. Throws for anything that is not http(s), an SSH remote included.
+function parseHttpRemoteUrl(remoteUrl: string): URL {
+  let url: URL;
+  try {
+    url = new URL(remoteUrl);
+  } catch (e) {
+    if (!/^https?:\/\//i.test(remoteUrl)) {
+      throw e;
+    }
+    url = new URL(remoteUrl.replace(/^(https?:\/\/)[^\s]*@/i, '$1'));
+  }
+  if (!['https:', 'http:'].includes(url.protocol)) {
+    throw new Error('not an http(s) URL');
+  }
+  return url;
 }
 
 // Get local git branch name

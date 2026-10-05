@@ -26,6 +26,8 @@ describe('isGitAuthError()', () => {
       'Response status code does not indicate success: 403 (Forbidden).',
       'remote: TF401019: The Git repository with name or identifier crm does not exist or you do not have permissions',
       'remote: TF401027: You need the Git GenericContribute permission to perform this action',
+      'remote: Unauthorized',
+      'fatal: unable to access the repository: 401 Unauthorized',
     ]) {
       expect(isGitAuthError(new Error(message)), message).to.be.true;
     }
@@ -38,6 +40,9 @@ describe('isGitAuthError()', () => {
       "fatal: couldn't find remote ref fix/unauthorized-endpoint",
       'error: cannot lock ref refs/heads/integration: is at 4f403a1c but expected 9b7401d2',
       "fatal: refusing to fetch into branch 'refs/heads/feature/http-401-retry' checked out at '/work/crm'",
+      ' ! [rejected]        fix/unauthorized-endpoint -> fix/unauthorized-endpoint (non-fast-forward)',
+      ' ! [remote rejected] feature/rotate-publickey -> feature/rotate-publickey (pre-receive hook declined)',
+      'error: failed to push some refs to fix/unauthorized-endpoint',
     ]) {
       expect(isGitAuthError(new Error(message)), message).to.be.false;
     }
