@@ -1012,6 +1012,86 @@ Can also be set with the FLOW<em>DELETE</em>RETRY<em>DELAY</em>MS env variable, 
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionahaHost">
+    <div class="card">
+        <div class="card-header" id="headingahaHost">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#ahaHost"
+                        aria-expanded="" aria-controls="ahaHost" onclick="setAnchor('#ahaHost')"><span class="property-name">ahaHost</span></button>
+            </h2>
+        </div>
+
+        <div id="ahaHost"
+             class="collapse property-definition-div" aria-labelledby="headingahaHost"
+             data-parent="#accordionahaHost">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#ahaHost" onclick="anchorLink('ahaHost')">ahaHost</a></div><h4>Aha! Host</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Host of your Aha! account. Example: mycompany.aha.io</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="ahaHost_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;mycompany.aha.io&quot;</span>
+</pre></div>
+</div><div id="ahaHost_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;mycompany.euw4.aha.io&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionahaTicketRegex">
+    <div class="card">
+        <div class="card-header" id="headingahaTicketRegex">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#ahaTicketRegex"
+                        aria-expanded="" aria-controls="ahaTicketRegex" onclick="setAnchor('#ahaTicketRegex')"><span class="property-name">ahaTicketRegex</span></button>
+            </h2>
+        </div>
+
+        <div id="ahaTicketRegex"
+             class="collapse property-definition-div" aria-labelledby="headingahaTicketRegex"
+             data-parent="#accordionahaTicketRegex">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#ahaTicketRegex" onclick="anchorLink('ahaTicketRegex')">ahaTicketRegex</a></div><h4>Aha! Ticket Regex</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Regular expression to identify Aha! feature references in commits, branch names and Pull Request descriptions. The first capturing group must be the whole reference. Example: (PROD-[0-9]+)</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="ahaTicketRegex_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;(PROD-[0-9]+)&quot;</span>
+</pre></div>
+</div><div id="ahaTicketRegex_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;((?:PROD|MOBILE)-[0-9]+)&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionallowedOrgTypes">
     <div class="card">
         <div class="card-header" id="headingallowedOrgTypes">
@@ -18172,10 +18252,10 @@ If active, contributors are never offered to initialize their sandbox on New Use
             />
         </svg>
     <a href="#ticketingProvider" onclick="anchorLink('ticketingProvider')">ticketingProvider</a></div><h4>Ticketing Provider</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
-<span class="description"><p>Ticketing provider used on the project</p>
+<span class="description"><p>Ticketing provider used on the project. When defined, ticket references are only looked for with this provider. When empty, every provider that is configured is used, and a reference like PROJ-123 is a Jira ticket.</p>
 </span><div class="enum-value" id="ticketingProvider_enum">
             <h4>Must be one of:</h4>
-            <ul class="list-group"><li class="list-group-item enum-item">"JIRA"</li><li class="list-group-item enum-item">"AZURE"</li><li class="list-group-item enum-item">"SERVICENOW"</li><li class="list-group-item enum-item">"GENERIC"</li></ul>
+            <ul class="list-group"><li class="list-group-item enum-item">"JIRA"</li><li class="list-group-item enum-item">"AZURE"</li><li class="list-group-item enum-item">"SERVICENOW"</li><li class="list-group-item enum-item">"AHA"</li><li class="list-group-item enum-item">"GENERIC"</li></ul>
             </div>
         
 
