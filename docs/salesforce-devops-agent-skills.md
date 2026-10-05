@@ -403,17 +403,17 @@ No flag is required. The command reads the configuration files of the current ch
 
 ### What the result holds
 
-| Key                          | Content                                                                                                                                                            |
-|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `branches`                   | Every major branch: `name`, `instanceUrl`, `targetUsername`, `mergeTargets`, `mergeTargetsGuessed`, and `mergeSources` (the branches merged into it)               |
-| `steps`                      | Every `source` and `target` a merge between major branches can follow, with `promotionBranchAllowed`                                                               |
-| `entryBranches`              | The major branches no other major branch is merged into: where the pipeline starts                                                                                 |
-| `finalBranches`              | The major branches merged into no other one (ex: production): where the pipeline ends                                                                              |
-| `developmentBranch`          | The default target of a new User Story                                                                                                                             |
-| `availableTargetBranches`    | The branches a new User Story may target                                                                                                                           |
-| `promotionBranches`          | `enabled` and `allowedSteps`, from `enablePromotionBranches` and `allowedPromotionSteps`                                                                           |
-| `warnings`                   | What is missing or was guessed in the configuration                                                                                                                |
-| `mergeTargetsRecommendation` | A sentence to relay to the user when merge targets were guessed from branch names, `null` otherwise                                                                |
+| Key                          | Content                                                                                                                                              |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `branches`                   | Every major branch: `name`, `instanceUrl`, `targetUsername`, `mergeTargets`, `mergeTargetsGuessed`, and `mergeSources` (the branches merged into it) |
+| `steps`                      | Every `source` and `target` a merge between major branches can follow, with `promotionBranchAllowed`                                                 |
+| `entryBranches`              | The major branches no other major branch is merged into: where the pipeline starts                                                                   |
+| `finalBranches`              | The major branches merged into no other one (ex: production): where the pipeline ends                                                                |
+| `developmentBranch`          | The default target of a new User Story                                                                                                               |
+| `availableTargetBranches`    | The branches a new User Story may target                                                                                                             |
+| `promotionBranches`          | `enabled` and `allowedSteps`, from `enablePromotionBranches` and `allowedPromotionSteps`                                                             |
+| `warnings`                   | What is missing or was guessed in the configuration                                                                                                  |
+| `mergeTargetsRecommendation` | A sentence to relay to the user when merge targets were guessed from branch names, `null` otherwise                                                  |
 
 ### Behavior in agent mode
 
