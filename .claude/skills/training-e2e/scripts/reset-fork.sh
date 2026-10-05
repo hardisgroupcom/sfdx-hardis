@@ -21,6 +21,18 @@ REF=${REF:-main}
 git -C "$COURSE" fetch -q "https://github.com/$UPSTREAM.git" \
   "+refs/heads/*:refs/remotes/e2e-upstream/*"
 
+# A fork that does not exist has nothing to reset: every call below would die
+# on a 404 that says nothing. Clone the learner's copy and let "Set up my
+# training environment" create the fork, which is what a learner's first run does.
+if ! gh api "repos/$FORK" -q .full_name >/dev/null 2>&1; then
+  echo "$FORK does not exist: nothing to reset. Lab 1.2 (training.mjs init) will create it."
+  rm -rf "$RUN"
+  git clone -q "https://github.com/$UPSTREAM.git" "$RUN"
+  git -C "$RUN" checkout -q -B main "origin/$REF"
+  echo "$RUN cloned from $UPSTREAM at $(git -C "$RUN" log --oneline -1)"
+  exit 0
+fi
+
 echo "resetting $FORK from $UPSTREAM@$REF"
 for n in $(gh pr list -R "$FORK" --state open --json number -q '.[].number'); do gh pr close "$n" -R "$FORK" >/dev/null; done
 for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do gh api -X DELETE "repos/$FORK/branches/$b/protection" >/dev/null 2>&1 || true; done

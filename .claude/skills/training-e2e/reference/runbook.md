@@ -240,6 +240,33 @@ Traps that cost earlier runs time:
   metadata deploys and Setup use the new one. When a recreated object gives that error, look under
   Deleted Objects: erase the old one, or grant through the Setup page.
 
+- **A promotion stops red until its manual step is done in that org** (2026-10-05, since sfdx-hardis
+  8.13.0). The check of every Pull Request between two major branches fails right after its
+  pre-deployment actions while the deliverability step of US-026 is not marked as done in the target
+  org: `uat` in Lab 3.5, then `preprod` and `main` in Lab 3.6, and again in Lab 3.11. Tick the box
+  and run the check again: `scripts/promo.sh <pr> <targetBranch> tick` does it, merges without a
+  squash and watches the deployment job. `prflow.sh` is the wrong tool for a promotion: it reads the
+  checks of the head commit, and the head of a promotion is a major branch whose own deployment
+  job already passed.
+- **What a previous walk left in an org can make a lab pass where it should fail** (2026-10-05).
+  `helios-integration` still held the Crew Leads public group of the walk before, so the first
+  action of US-062 passed in Lab 3.3 and the lab described a failure nobody saw. The course's
+  teardown removes the group since then. When a lab is built on something being absent, query for
+  it before the lab: `SELECT Id FROM Group WHERE DeveloperName = 'Helios_Crew_Leads'`.
+- **Do not export `MSYS_NO_PATHCONV` for a whole shell.** The CDP scripts need it (`sf org open
+  --path /lightning/...`), and `panel.mjs` dies with it (`spawn C:\WINDOWS\system32\cmd.exe
+  ENOENT`, then `cannot change to '/c/git/training-run'`). Prefix the one command.
+- **`panel.mjs` prints bytes `grep` calls binary.** Filter its output with `grep -a`, or the only
+  line you get is *Binary file (standard input) matches*.
+- **A deleted fork is not a fork to reset.** `reset-fork.sh` now says so and only clones the
+  learner's copy. Let `init` create the fork, the way a learner's does: it opens the Actions page
+  and waits, and the banner is clicked over CDP (a button whose text starts with *I understand my
+  workflows*). No beta override, no trap D1.
+- **Lab 3.8 needs an empty repository, and `gh` cannot delete the one of the last run** (no
+  `delete_repo` scope). Create another one whose name still contains `monitoring`, and pass it:
+  `MONREPO=<login>/sfdx-hardis-training-monitoring-run3 MONRUN=C:/git/training-monitoring-run3 node
+  scripts/mon.mjs`. Point the `github-run-workflow` web capture at it.
+
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
 branches from the course, and clones the shared repository into `$RUN` the way a learner does. Three
@@ -317,6 +344,42 @@ What has actually gone wrong here before, none of it caught by a number check:
 A stale screenshot is regenerated with the harness, never edited by hand:
 `node scripts/build/shots.mjs --lab 1.4` in the course repository, then the pills. The rules and the
 traps of that harness are in the `training-update` skill; do not rediscover them here.
+
+### When the products were released since the last walk: retake everything, then look at what moved
+
+Reading 140 pictures one by one against a product that changed is how stale ones get through. After
+a release of sfdx-hardis or of the extension, do it the other way round (2026-10-05):
+
+1. `node scripts/build/shots.mjs --all --kind vscode` in the course, on a branch. About twenty
+   minutes, no window on Windows. It retakes every VS Code picture with the extension built from
+   `../vscode-sfdx-hardis`, so pull that clone first.
+2. Compare each raw picture with `git show HEAD:<file>`, pixel by pixel (PIL `ImageChops.difference`,
+   the share of pixels that moved and their bounding box), and write old and new side by side.
+   Everything moves a little when VS Code or the side bar changed, so sort by share and open the
+   side by side sheets from the top: a picture that lost its dialog reads 60%, a re-rendered one 5%.
+3. Open the **annotated** pictures four to a sheet and check each pill against its step. A pill
+   spec is in percentages of the picture, so a panel that gained a row moves every box under it.
+4. Re-pin in `labs/_assets/annotations.json`, redraw with `annotate.mjs`, open again.
+
+Three things that run found, none of which a green harness says:
+
+- **A capture that clicks at a fixed height goes blind when a panel gains a header.** The four
+  action editor pictures showed the list with no dialog, because the Pull Request window gained its
+  path bar and the rows moved up by thirty pixels. Same for the rows the Metadata Retriever picture
+  ticks (`retrieverRows` in `scripts/build/mocks.mjs`).
+- **`.shot-gates.json` does not know every picture.** `shots.mjs` prints them as UNKNOWN and takes
+  nothing: `pipeline-config-user-stories` (gate of the same name, the file the lab uses is its
+  `-top` capture), and the three of the action recovery variant
+  (`SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY=true` plus two click points nobody recorded).
+- **`shots.mjs` leaves the extension on its tsc build.** Run `yarn dev` in the extension before the
+  next lab driver run, or every `sf` call costs 38 seconds again.
+
+The GitHub pictures follow the fork. A new fork means new Pull Request numbers and a new branch
+rule id: point `labs/_assets/web-captures.json` at the Pull Requests of the walk as each lab
+produces them (the check, the comment, the merge box, the failed check, the flow diff, the files
+tab, the deployment actions, the promotion), and read the rule id with `gh api graphql`,
+`branchProtectionRules { databaseId pattern }`. The improved release notes picture of Lab 3.5 is a
+written example: its capture looks for a Pull Request description titled *Promotion 2026-09 to UAT*.
 
 ## 5. Level 1, seven labs
 
