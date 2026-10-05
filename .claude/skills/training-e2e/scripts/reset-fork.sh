@@ -33,20 +33,20 @@ if [ -z "$FORK_EXISTS" ] && ! echo "$FORK_STATE" | grep -q "HTTP 404"; then
 fi
 
 if [ -n "$FORK_EXISTS" ]; then
-echo "resetting $FORK from $UPSTREAM@$REF"
-for n in $(gh pr list -R "$FORK" --state open --json number -q '.[].number'); do gh pr close "$n" -R "$FORK" >/dev/null; done
-for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do gh api -X DELETE "repos/$FORK/branches/$b/protection" >/dev/null 2>&1 || true; done
+  echo "resetting $FORK from $UPSTREAM@$REF"
+  for n in $(gh pr list -R "$FORK" --state open --json number -q '.[].number'); do gh pr close "$n" -R "$FORK" >/dev/null; done
+  for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do gh api -X DELETE "repos/$FORK/branches/$b/protection" >/dev/null 2>&1 || true; done
 
-git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/$REF:refs/heads/main"
-for lvl in 1 2 3; do
-  git -C "$COURSE" rev-parse -q --verify "e2e-upstream/training/start-level-$lvl" >/dev/null &&
-    git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/training/start-level-$lvl:refs/heads/training/start-level-$lvl"
-done
+  git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/$REF:refs/heads/main"
+  for lvl in 1 2 3; do
+    git -C "$COURSE" rev-parse -q --verify "e2e-upstream/training/start-level-$lvl" >/dev/null &&
+      git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/training/start-level-$lvl:refs/heads/training/start-level-$lvl"
+  done
 
-for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do
-  case $b in main | gh-pages | training/start-level-*) ;; *) gh api -X DELETE "repos/$FORK/git/refs/heads/$b" >/dev/null ;; esac
-done
-for s in $(gh api "repos/$FORK/actions/secrets" -q '.secrets[].name'); do gh secret delete "$s" -R "$FORK" >/dev/null; done
+  for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do
+    case $b in main | gh-pages | training/start-level-*) ;; *) gh api -X DELETE "repos/$FORK/git/refs/heads/$b" >/dev/null ;; esac
+  done
+  for s in $(gh api "repos/$FORK/actions/secrets" -q '.secrets[].name'); do gh secret delete "$s" -R "$FORK" >/dev/null; done
 else
   echo "$FORK does not exist: nothing to reset. Lab 1.2 (training.mjs init) will create it."
 fi

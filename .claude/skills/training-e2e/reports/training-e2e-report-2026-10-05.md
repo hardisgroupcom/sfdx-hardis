@@ -32,26 +32,26 @@ screenshot of the course was taken again and compared with the one it replaces. 
 
 ## Versions under test
 
-| Thing              | Version                                                                                                |
-|--------------------|--------------------------------------------------------------------------------------------------------|
-| sfdx-hardis        | `main` at `9625bdf69`, **v8.13.0**, linked working copy                                                |
-| vscode-sfdx-hardis | `main` at `6b84a313`, **v8.10.0**, built from sources (`yarn compile && yarn dev`) for the lab driver  |
-| Course             | `main` at `af0ed27`, then branch `fix/training-e2e-2026-10-05`                                         |
-| CI images          | `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest` = v8.13.0 (npm 21:54Z, image 21:59Z on 2026-10-04)  |
-| Salesforce CLI     | @salesforce/cli 2.151.7, node 24.11.1                                                                  |
-| Published site     | `main` at `af0ed27`, the same as the course clone when the walk started                                |
+| Thing              | Version                                                                                               |
+|--------------------|-------------------------------------------------------------------------------------------------------|
+| sfdx-hardis        | `main` at `9625bdf69`, **v8.13.0**, linked working copy                                               |
+| vscode-sfdx-hardis | `main` at `6b84a313`, **v8.10.0**, built from sources (`yarn compile && yarn dev`) for the lab driver |
+| Course             | `main` at `af0ed27`, then branch `fix/training-e2e-2026-10-05`                                        |
+| CI images          | `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest` = v8.13.0 (npm 21:54Z, image 21:59Z on 2026-10-04) |
+| Salesforce CLI     | @salesforce/cli 2.151.7, node 24.11.1                                                                 |
+| Published site     | `main` at `af0ed27`, the same as the course clone when the walk started                               |
 
 ## Environment
 
-| Item             | State                                                                                                             |
-|------------------|-------------------------------------------------------------------------------------------------------------------|
+| Item             | State                                                                                                                   |
+|------------------|-------------------------------------------------------------------------------------------------------------------------|
 | Fork             | `nvuillam/sfdx-hardis-training`, deleted by the user, **created by `init`** in Lab 1.2, Actions banner clicked over CDP |
-| Scratch orgs     | `helios-dev`, `-integration`, `-uat` of 2026-09-24, torn down, kept by `init` and re-seeded                       |
-| `helios-prod`    | Developer Edition, Dev Hub; torn down, re-seeded by **Set up one of my training orgs**                            |
-| `helios-preprod` | Developer Edition; same                                                                                           |
-| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring-run3`, new and private (the one of the last run cannot be deleted by `gh`) |
-| Learner clone    | `C:/git/training-run`, cloned from the shared repository                                                          |
-| Browser on CDP   | a dedicated Chrome profile on 9222, started by the run, already signed in to GitHub                               |
+| Scratch orgs     | `helios-dev`, `-integration`, `-uat` of 2026-09-24, torn down, kept by `init` and re-seeded                             |
+| `helios-prod`    | Developer Edition, Dev Hub; torn down, re-seeded by **Set up one of my training orgs**                                  |
+| `helios-preprod` | Developer Edition; same                                                                                                 |
+| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring-run3`, new and private (the one of the last run cannot be deleted by `gh`)    |
+| Learner clone    | `C:/git/training-run`, cloned from the shared repository                                                                |
+| Browser on CDP   | a dedicated Chrome profile on 9222, started by the run, already signed in to GitHub                                     |
 
 The five teardowns ran clean. One thing they left: the Crew Leads public group in
 `helios-integration` (finding F6).
