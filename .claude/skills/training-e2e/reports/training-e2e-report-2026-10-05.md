@@ -224,6 +224,9 @@ The fork ended the walk with 43 Pull Requests, the last one the release of Lab 3
 - **O-repo** (again): the fixtures of Labs 1.3 and 1.6 name `hardisgroupcom` as the repository.
 - `prettier --check` already fails on `pipelineConfig.js` on `main` of the extension, before this
   change.
+- `doc-links.mjs --check` of the course flags `docs/hardis/project/promotion/create.md`: the page
+  generated from the command description says the course "runs this command", and the link
+  generator wants "does this" there. One sentence, two generators that disagree. Left as it is.
 
 ## Deviations from what a learner does
 
