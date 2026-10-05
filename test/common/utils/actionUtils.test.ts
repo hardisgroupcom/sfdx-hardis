@@ -92,6 +92,24 @@ describe('actionUtils', () => {
       expect(doc.commandsPreDeploy[0].id).to.equal('new-1');
     });
 
+    it('does not write the phase back into the actions it was given', async () => {
+      const first = { id: 'act-1', label: 'First', type: 'command' as const, command: 'echo 1', context: 'all' as const };
+      await writeActions('project', 'post-deploy', [first]);
+
+      // What create, update, delete and reorder do: read the file, change the list, write it
+      const actions = await readActions('project', 'post-deploy');
+      expect(actions[0].when).to.equal('post-deploy');
+      actions.push({ id: 'act-2', label: 'Second', type: 'command' as const, command: 'echo 2', context: 'all' as const });
+      const configFile = await writeActions('project', 'post-deploy', actions);
+
+      const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+      expect(doc.commandsPostDeploy).to.have.lengthOf(2);
+      expect(doc.commandsPostDeploy[0]).to.not.have.property('when');
+      expect(doc.commandsPostDeploy[1]).to.not.have.property('when');
+      // The list the caller holds keeps its phase: only the file loses it
+      expect(actions[0].when).to.equal('post-deploy');
+    });
+
     it('preserves other config keys in the file', async () => {
       const configFile = path.join(ctx.getDir(), 'config', '.sfdx-hardis.yml');
       await fs.ensureDir(path.dirname(configFile));

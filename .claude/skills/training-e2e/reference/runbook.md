@@ -244,7 +244,7 @@ Traps that cost earlier runs time:
   8.13.0). The check of every Pull Request between two major branches fails right after its
   pre-deployment actions while the deliverability step of US-026 is not marked as done in the target
   org: `uat` in Lab 3.5, then `preprod` and `main` in Lab 3.6, and again in Lab 3.11. Tick the box
-  and run the check again: `scripts/promo.sh <pr> <targetBranch> tick` does it, merges without a
+  and run the check again: `scripts/promo.sh <pr> <targetBranch> tick` does it (the pre-deployment boxes only), merges without a
   squash and watches the deployment job. `prflow.sh` is the wrong tool for a promotion: it reads the
   checks of the head commit, and the head of a promotion is a major branch whose own deployment
   job already passed.

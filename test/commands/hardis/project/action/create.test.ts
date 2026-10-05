@@ -30,23 +30,6 @@ describe('hardis:project:action:create - unit logic', () => {
     expect(doc.commandsPreDeploy[0].command).to.include('disable.apex');
   });
 
-  it('does not write the phase back into the actions already in the file', async () => {
-    const first = buildAction({ id: randomUUID(), label: 'First', type: 'command', command: 'echo 1', context: 'all', parameters: {} });
-    await writeActions('project', 'post-deploy', [first]);
-
-    // What every command does to add an action: read the file, push, write
-    const actions = await readActions('project', 'post-deploy');
-    actions.push(buildAction({ id: randomUUID(), label: 'Second', type: 'command', command: 'echo 2', context: 'all', parameters: {} }));
-    const configFile = await writeActions('project', 'post-deploy', actions);
-
-    const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8'));
-    expect(doc.commandsPostDeploy).to.have.lengthOf(2);
-    expect(doc.commandsPostDeploy[0]).to.not.have.property('when');
-    expect(doc.commandsPostDeploy[1]).to.not.have.property('when');
-    // The callers still get the phase on what they read
-    expect((await readActions('project', 'post-deploy'))[0].when).to.equal('post-deploy');
-  });
-
   it('creates a data action with sfdmuProject parameter', async () => {
     const action = buildAction({
       id: randomUUID(),
