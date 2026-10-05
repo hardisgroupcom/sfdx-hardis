@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [Org Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) jobs that ran to their end are now green even when they found issues: a red job means the job could not run.
 - Git credentials asked by a command are typed once and kept by the credential helper of git, on every platform. The token is never displayed, and the command says what git answered when it is refused.
 - New [hardis:project:pipeline:describe](https://sfdx-hardis.cloudity.com/hardis/project/pipeline/describe/): Describe the major branches of a project and the steps between them, so scripts and coding agents stop assuming the pipeline is integration, uat, preprod and main.
 - The deployment action commands ([create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/), update, delete, reorder) no longer add a `when` key to the actions already in the file.

@@ -4,7 +4,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
-import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from '../../../../common/utils/index.js';
+import { execCommand, extractRegexMatchesMultipleGroups, isMonitoringJob, uxLog } from '../../../../common/utils/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS, getConfig, getEnvVar, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -24,6 +24,8 @@ If following configuration is defined, it will fail if apex coverage target is n
 
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
+
+In a monitoring job, failing tests or a coverage under the target do not fail the job: the result is in the notification and the reports. Everywhere else, the command exits with code 1.
 
 You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
@@ -144,8 +146,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
     // Handle output message & exit code
     if (this.notifSeverity === 'error') {
-      process.exitCode = 1;
       uxLog("error", this, c.red(this.statusMessage));
+      // A monitoring job that ran to its end does not fail: the notification and the reports carry the result
+      if (await isMonitoringJob()) {
+        uxLog("warning", this, c.yellow(t('monitoringFindingsDoNotFailJob', { command: c.bold('hardis:org:test:apex') })));
+      } else {
+        process.exitCode = 1;
+      }
     } else {
       uxLog("success", this, c.green(this.statusMessage));
     }

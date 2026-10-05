@@ -124,6 +124,8 @@ Every night (or on your own schedule), a CI job extracts all metadata from the o
 
 Additional jobs then run on top of the backup: Apex tests, code quality, legacy API checks, plus any custom command you define. Results are stored as job artifacts and forwarded to your notification channels.
 
+A job that ran to its end is green, even when it found issues: failing Apex tests, a limit close to its maximum or MegaLinter errors are read in the notifications, the reports and Grafana, not in the color of the pipeline. A red job means the job itself could not run (expired authentication, crash), and that is worth a look the same day. Configure at least one notification channel, or the findings stay in the job artifacts.
+
 ![Example workflow on GitHub Actions](assets/images/screenshot-monitoring-jobs.jpg)
 
 ---

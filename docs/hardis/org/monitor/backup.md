@@ -48,6 +48,10 @@ After each backup, the command writes an `AGENTS.md` file at the root of the rep
 
 Only the block between the `sfdx-hardis-monitoring-agents-start` and `sfdx-hardis-monitoring-agents-end` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A `CLAUDE.md` file that imports `AGENTS.md` is also created when the repository has none.
 
+## MegaLinter
+
+The MegaLinter job of a monitoring pipeline reports its findings and must not fail because of them. After each backup, the command adds `DISABLE_ERRORS: true` to the `.mega-linter.yml` of the repository when the key is missing, and creates the file when the repository has none. A `DISABLE_ERRORS` key that is already there is never changed: write `DISABLE_ERRORS: false` to make the job fail on linter errors.
+
 ## Troubleshooting
 
 If you have unknown errors (it happens !), you can investigate using the full command with smaller chunks.

@@ -227,6 +227,8 @@ The score travels with the `MONITORING_SUMMARY` notification, which reaches mess
 
 The summary also carries a `ChannelsFailed` metric: notification channel failures (expired Slack token, wrong email configuration...) are logged as warnings without failing the monitoring jobs, so chart or alert on `ChannelsFailed_metric` to detect them.
 
+The same goes for the checks: a monitoring job that ran to its end is green even when its checks found issues or could not run. `CommandsFailed_metric` counts those checks: chart it, or alert on it, without watching the pipelines.
+
 ## Import the alerts (optional)
 
 The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/alerts-v2):
