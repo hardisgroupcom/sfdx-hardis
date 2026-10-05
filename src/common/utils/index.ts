@@ -28,6 +28,7 @@ let pluginsStdout: string | null = null;
 
 export { isCI, isAgentMode } from './envUtils.js';
 import { isCI, isAgentMode } from './envUtils.js';
+import { forgetGitCredentials, GitCredentials, storeGitCredentials } from './gitCredentialUtils.js';
 import { anonymizeRows, getChannelAnonymizationLevel, getChannelAnonymizationLevelSync } from './anonymizeUtils.js';
 
 export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
@@ -424,8 +425,8 @@ export async function gitCheckOutRemote(branchName: string) {
 // Once credentials were refused during a command, or could not be asked or used, they are not
 // asked again: every later fetch, pull or push would end in the same questions
 let gitCredentialsNotAskedAgain = false;
-// Remote URL as it was before credentials were written in it, to put it back when they are refused
-let gitRemoteUrlBeforeCredentials: string | null = null;
+// Credentials just given to git's credential helper, to take them back when the remote refuses them
+let gitCredentialsJustStored: GitCredentials | null = null;
 
 // Helper function to detect git authentication errors
 export function isGitAuthError(error: any): boolean {
@@ -489,10 +490,10 @@ export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst
 }
 
 export interface GitCredentialsRetryDeps {
-  /** Asks for credentials and writes them in the remote URL. False when there is nothing to retry with. */
+  /** Asks for credentials and gives them to git's credential helper. False when there is nothing to retry with. */
   askCredentials: (operation: string, error: any) => Promise<boolean>;
-  /** Puts the remote URL back to what it was before askCredentials changed it */
-  restoreRemoteUrl: () => Promise<void>;
+  /** Takes back from the credential helper what askCredentials gave it */
+  forgetCredentials: () => Promise<void>;
 }
 
 // Ask for credentials after an authentication error, then run the git operation again, once.
@@ -503,7 +504,7 @@ export async function retryGitAfterAuthError<T>(
   retryMessageKey: string,
   error: any,
   run: () => Promise<T>,
-  deps: GitCredentialsRetryDeps = { askCredentials: handleGitAuthError, restoreRemoteUrl: restoreGitRemoteUrl }
+  deps: GitCredentialsRetryDeps = { askCredentials: handleGitAuthError, forgetCredentials: forgetRefusedGitCredentials }
 ): Promise<T> {
   if (!isGitAuthError(error) || gitCredentialsNotAskedAgain) {
     throw redactGitError(error);
@@ -521,9 +522,9 @@ export async function retryGitAfterAuthError<T>(
   } catch (retryError) {
     if (isGitAuthError(retryError)) {
       gitCredentialsNotAskedAgain = true;
-      // Refused credentials must not stay in .git/config, where they would also replace the
-      // login the user's own git was using until now
-      await deps.restoreRemoteUrl();
+      // Refused credentials must not stay in the credential helper, where every git command of
+      // the machine would find them
+      await deps.forgetCredentials();
       uxLog("action", this, c.cyan(t('gitStillFailsWithTheseCredentials', { operation })), { alwaysVisible: true });
       uxLog("error", this, c.red(describeGitError(retryError)));
       uxLog("warning", this, c.yellow(t('gitCredentialsChecklist')));
@@ -535,7 +536,7 @@ export async function retryGitAfterAuthError<T>(
 /** Forgets what a previous git operation of the process decided (unit tests only). */
 export function resetGitCredentialsStateForTests(): void {
   gitCredentialsNotAskedAgain = false;
-  gitRemoteUrlBeforeCredentials = null;
+  gitCredentialsJustStored = null;
 }
 
 // One git operation, run again once with new credentials when the remote refuses the first attempt
@@ -573,7 +574,7 @@ function redactGitError(error: any): any {
   return error;
 }
 
-// Helper function to prompt for git credentials and update remote URL
+// Helper function to prompt for git credentials and give them to git's credential helper
 async function handleGitAuthError(operation: string, error: any): Promise<boolean> {
   // Nobody can answer a prompt in a CI job or in an agent run, and neither can they in a
   // background --json run a VS Code panel started: no WebSocket to show the question in VS Code,
@@ -588,7 +589,7 @@ async function handleGitAuthError(operation: string, error: any): Promise<boolea
   // What git answered: without it, nobody can tell an expired token from a missing scope
   uxLog("action", this, c.cyan(t('gitRefusedByRemote', { operation, message: describeGitError(error) })));
 
-  // Credentials can only be written in an http(s) remote URL: checked before asking for them
+  // git's credential helpers keep credentials for http(s) remotes only: checked before asking
   let remoteUrl: URL;
   try {
     const origin = await git({ output: false, displayCommand: false }).getConfig('remote.origin.url');
@@ -596,7 +597,6 @@ async function handleGitAuthError(operation: string, error: any): Promise<boolea
       uxLog("error", this, c.red(t('couldNotRetrieveRemoteOriginUrl')));
       return false;
     }
-    gitRemoteUrlBeforeCredentials = origin.value;
     remoteUrl = new URL(origin.value);
     if (!['https:', 'http:'].includes(remoteUrl.protocol)) {
       throw new Error('not an http(s) URL');
@@ -637,33 +637,53 @@ async function handleGitAuthError(operation: string, error: any): Promise<boolea
     return false;
   }
 
-  uxLog("action", this, c.cyan(t('updatingGitRemoteUrlWithCredentials')));
-  try {
-    // The URL setters encode what they are given, and replace whatever the URL already carried:
-    // a user and a password, or a user alone as in the clone URLs of Azure DevOps and Bitbucket
-    remoteUrl.username = usernamePrompt.username;
-    remoteUrl.password = passwordPrompt.password;
-    // Neither the command line nor its output is displayed: both hold the token
-    await git({ output: false, displayCommand: false }).remote(['set-url', 'origin', remoteUrl.toString()]);
-    uxLog("action", this, c.green(t('remoteUrlUpdatedWithCredentialsSuccessfully')));
-    return true;
-  } catch (e: any) {
-    uxLog("error", this, c.red(t('failedToUpdateRemoteUrl', { message: describeGitError(e) })));
+  // Credentials left in the remote URL by an older sfdx-hardis, or a user name alone as in the
+  // clone URLs of Azure DevOps and Bitbucket, win over the credential helper: git would keep
+  // sending them. The URL is cleaned so the helper is what git reads.
+  const hadCredentialsInUrl = remoteUrl.username !== '' || remoteUrl.password !== '';
+  remoteUrl.username = '';
+  remoteUrl.password = '';
+  const cleanRemoteUrl = remoteUrl.toString();
+  if (hadCredentialsInUrl) {
+    try {
+      // Neither the command line nor its output is displayed: the previous URL may hold a token
+      await git({ output: false, displayCommand: false }).remote(['set-url', 'origin', cleanRemoteUrl]);
+      uxLog("action", this, c.cyan(t('gitRemoteUrlCredentialsRemoved')));
+    } catch (e: any) {
+      uxLog("action", this, c.cyan(t('failedToUpdateRemoteUrl', { message: describeGitError(e) })));
+      return false;
+    }
+  }
+
+  const credentials: GitCredentials = {
+    url: cleanRemoteUrl,
+    username: usernamePrompt.username,
+    password: passwordPrompt.password,
+  };
+  const storeResult = storeGitCredentials(credentials, process.cwd());
+  if (!storeResult.stored) {
+    uxLog("action", this, c.cyan(t('gitCredentialsCouldNotBeStored', { message: redactUrlCredentials(storeResult.error || '') })));
     return false;
   }
+  gitCredentialsJustStored = credentials;
+  if (storeResult.configuredScope) {
+    uxLog("action", this, c.cyan(t('gitCredentialHelperConfigured', { helper: storeResult.helper, scope: storeResult.configuredScope })));
+  }
+  uxLog("action", this, c.cyan(t('gitCredentialsStored', { helper: storeResult.helper })));
+  if (storeResult.helper.split(', ').includes('store')) {
+    uxLog("warning", this, c.yellow(t('gitCredentialsStoredInPlainText')));
+  }
+  return true;
 }
 
-// Puts the remote URL back to what it was before handleGitAuthError wrote credentials in it
-async function restoreGitRemoteUrl(): Promise<void> {
-  if (!gitRemoteUrlBeforeCredentials) {
+// Takes back from git's credential helper the credentials handleGitAuthError gave it
+async function forgetRefusedGitCredentials(): Promise<void> {
+  if (!gitCredentialsJustStored) {
     return;
   }
-  try {
-    await git({ output: false, displayCommand: false }).remote(['set-url', 'origin', gitRemoteUrlBeforeCredentials]);
-    uxLog("log", this, c.grey(t('gitRemoteUrlRestored')));
-  } catch (e: any) {
-    uxLog("warning", this, c.yellow(t('failedToUpdateRemoteUrl', { message: describeGitError(e) })));
-  }
+  forgetGitCredentials(gitCredentialsJustStored, process.cwd());
+  gitCredentialsJustStored = null;
+  uxLog("log", this, c.grey(t('gitCredentialsForgotten')));
 }
 
 // Get local git branch name

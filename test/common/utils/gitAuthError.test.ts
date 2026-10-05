@@ -91,7 +91,7 @@ describe('retryGitAfterAuthError()', () => {
       asked++;
       return answer;
     },
-    restoreRemoteUrl: async () => {
+    forgetCredentials: async () => {
       restored++;
     },
   });
@@ -128,7 +128,7 @@ describe('retryGitAfterAuthError()', () => {
     expect(restored).to.equal(0);
   });
 
-  it('puts the remote URL back and stops asking once the new credentials are refused too', async () => {
+  it('takes the credentials back from the helper and stops asking once they are refused too', async () => {
     const run = async () => {
       throw refused();
     };

@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- Git credentials asked by a command: the token is hidden while typed and never echoed, and the command says what git answered instead of asking again and again.
+- Git credentials asked by a command are typed once and kept by the credential helper of git, on every platform. The token is never displayed, and the command says what git answered when it is refused.
 - New [hardis:project:pipeline:describe](https://sfdx-hardis.cloudity.com/hardis/project/pipeline/describe/): Describe the major branches of a project and the steps between them, so scripts and coding agents stop assuming the pipeline is integration, uat, preprod and main.
 - The deployment action commands ([create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/), update, delete, reorder) no longer add a `when` key to the actions already in the file.
 - The [coding agents guides](https://sfdx-hardis.cloudity.com/salesforce-devops-agent-skills/#deployment-actions-commands-hardisprojectaction) now cover trying, retrying and closing deployment actions, their status by org, and list every command that accepts `--agent`.
