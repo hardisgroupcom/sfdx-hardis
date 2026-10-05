@@ -2506,6 +2506,7 @@
   "monitoringHealthScoreComputed": "Wskaźnik kondycji org: {{score}}/100",
   "monitoringInitialCommitNotPushed": "Nie udało się wypchnąć pierwszego commit z main: {{message}}",
   "monitoringMegaLinterConfigCreated": "Utworzono {{file}}: MegaLinter raportuje swoje ustalenia bez powodowania niepowodzenia jobu monitorowania",
+  "monitoringMegaLinterConfigNotWritten": "Nie udało się zapisać pliku {{file}}: {{message}}",
   "monitoringMegaLinterConfigUnparsable": "Nie udało się odczytać {{file}} jako YAML, plik pozostawiono bez zmian: {{message}}",
   "monitoringMegaLinterConfigUpdated": "Dodano DISABLE_ERRORS: true do {{file}}: MegaLinter raportuje swoje ustalenia bez powodowania niepowodzenia jobu monitorowania",
   "monitoringNotifReadError": "Nie udało się odczytać pliku powiadomienia monitorowania {{file}}: {{message}}",

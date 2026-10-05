@@ -53,5 +53,11 @@ export function addDisableErrors(content: string): string | null {
   }
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
   const separator = content.trim() === '' ? '' : (content.endsWith('\n') ? '' : eol) + eol;
-  return content + separator + DISABLE_ERRORS_LINES.join(eol) + eol;
+  const updatedContent = content + separator + DISABLE_ERRORS_LINES.join(eol) + eol;
+  // Text appended after a document end marker, or to a root written in flow style, is not read as a
+  // property of the file: better leave it alone than write a file MegaLinter cannot load
+  if ((yaml.load(updatedContent) as any)?.DISABLE_ERRORS !== true) {
+    throw new Error('DISABLE_ERRORS cannot be appended to this file');
+  }
+  return updatedContent;
 }

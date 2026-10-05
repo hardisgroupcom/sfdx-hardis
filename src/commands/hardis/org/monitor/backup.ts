@@ -575,7 +575,7 @@ In agent mode:
         uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigUnparsable', { file: MEGALINTER_CONFIG_FILE, message: megaLinterConfigResult.message })));
       }
     } catch (e: any) {
-      uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigUnparsable', { file: MEGALINTER_CONFIG_FILE, message: e.message })));
+      uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigNotWritten', { file: MEGALINTER_CONFIG_FILE, message: e.message })));
     }
   }
 

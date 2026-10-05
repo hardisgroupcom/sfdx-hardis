@@ -25,7 +25,7 @@ If following configuration is defined, it will fail if apex coverage target is n
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 
-In a monitoring job, failing tests or a coverage under the target do not fail the job: the result is in the notification and the reports. Everywhere else, the command exits with code 1.
+In a monitoring job, failing tests or a coverage under the target do not fail the job: the result is in the notification and the reports. A test run that stops without a result (expired session, timeout) still fails it. Everywhere else, the command exits with code 1.
 
 You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
@@ -81,6 +81,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
   protected coverageTarget = 75.0;
   protected coverageValue = 0.0;
   protected failingTestClasses: any[] = [];
+  // False when sf apex run test stopped without a test result (expired session, timeout, crash)
+  protected testRunCompleted = true;
   private notifSeverity: NotifSeverity = 'log';
   private notifText: string;
   private notifAttachments: any = [];
@@ -147,8 +149,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
     // Handle output message & exit code
     if (this.notifSeverity === 'error') {
       uxLog("error", this, c.red(this.statusMessage));
-      // A monitoring job that ran to its end does not fail: the notification and the reports carry the result
-      if (await isMonitoringJob()) {
+      // A monitoring job that ran to its end does not fail: the notification and the reports carry the result.
+      // A test run that gave no result did not run to its end
+      if (this.testRunCompleted && (await isMonitoringJob())) {
         uxLog("warning", this, c.yellow(t('monitoringFindingsDoNotFailJob', { command: c.bold('hardis:org:test:apex') })));
       } else {
         process.exitCode = 1;
@@ -194,9 +197,10 @@ In agent mode, all interactive prompts are skipped and default values are used.
       ) {
         this.testRunOutcome = 'NoApex';
       } else {
-        // Failing Apex tests
+        // Failing Apex tests, or a run that could not give a result: only the first one prints an outcome
         this.testRunOutputString = (e as Error).message;
         this.testRunOutcome = 'Failed';
+        this.testRunCompleted = /Outcome\s+\S+/.test(this.testRunOutputString);
         await generateApexCoverageOutputFile();
       }
     }

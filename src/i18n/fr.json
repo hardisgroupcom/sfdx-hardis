@@ -2506,6 +2506,7 @@
   "monitoringHealthScoreComputed": "Score de santé de l'org : {{score}}/100",
   "monitoringInitialCommitNotPushed": "Le premier commit de main n'a pas pu être poussé : {{message}}",
   "monitoringMegaLinterConfigCreated": "{{file}} créé : MegaLinter signale ses résultats sans faire échouer le job de monitoring",
+  "monitoringMegaLinterConfigNotWritten": "{{file}} n'a pas pu être écrit : {{message}}",
   "monitoringMegaLinterConfigUnparsable": "{{file}} n'a pas pu être lu comme du YAML et n'a pas été modifié : {{message}}",
   "monitoringMegaLinterConfigUpdated": "DISABLE_ERRORS: true ajouté à {{file}} : MegaLinter signale ses résultats sans faire échouer le job de monitoring",
   "monitoringNotifReadError": "Impossible de lire le fichier de notification de monitoring {{file}} : {{message}}",

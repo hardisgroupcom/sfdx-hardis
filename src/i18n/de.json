@@ -2505,6 +2505,7 @@
   "monitoringHealthScoreComputed": "Org-Health-Score: {{score}}/100",
   "monitoringInitialCommitNotPushed": "Der erste commit von main konnte nicht gepusht werden: {{message}}",
   "monitoringMegaLinterConfigCreated": "{{file}} erstellt: MegaLinter meldet seine Ergebnisse, ohne den Monitoring-Job fehlschlagen zu lassen",
+  "monitoringMegaLinterConfigNotWritten": "{{file}} konnte nicht geschrieben werden: {{message}}",
   "monitoringMegaLinterConfigUnparsable": "{{file}} konnte nicht als YAML gelesen werden und wurde nicht verändert: {{message}}",
   "monitoringMegaLinterConfigUpdated": "DISABLE_ERRORS: true zu {{file}} hinzugefügt: MegaLinter meldet seine Ergebnisse, ohne den Monitoring-Job fehlschlagen zu lassen",
   "monitoringNotifReadError": "Monitoring-Benachrichtigungsdatei {{file}} konnte nicht gelesen werden: {{message}}",

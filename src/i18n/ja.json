@@ -2504,6 +2504,7 @@
   "monitoringHealthScoreComputed": "組織のヘルススコア: {{score}}/100",
   "monitoringInitialCommitNotPushed": "main の最初の commit を push できませんでした: {{message}}",
   "monitoringMegaLinterConfigCreated": "{{file}} を作成しました: MegaLinter は監視ジョブを失敗させずに検出結果を報告します",
+  "monitoringMegaLinterConfigNotWritten": "{{file}} を書き込めませんでした: {{message}}",
   "monitoringMegaLinterConfigUnparsable": "{{file}} を YAML として読み取れなかったため、変更していません: {{message}}",
   "monitoringMegaLinterConfigUpdated": "DISABLE_ERRORS: true を {{file}} に追加しました: MegaLinter は監視ジョブを失敗させずに検出結果を報告します",
   "monitoringNotifReadError": "監視通知ファイル {{file}} の読み取りに失敗しました: {{message}}",

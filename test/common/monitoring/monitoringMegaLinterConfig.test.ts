@@ -33,6 +33,11 @@ describe('monitoringMegaLinterConfig', () => {
       expect(yaml.load(addDisableErrors('') as string)).to.deep.equal({ DISABLE_ERRORS: true });
     });
 
+    it('throws when the appended key would not be read as a property of the file', () => {
+      expect(() => addDisableErrors('APPLY_FIXES: none\n...\n')).to.throw();
+      expect(() => addDisableErrors('{ APPLY_FIXES: none }\n')).to.throw();
+    });
+
     it('throws on a file that is not a list of properties', () => {
       expect(() => addDisableErrors('- a\n- b\n')).to.throw();
       expect(() => addDisableErrors('key: [unclosed\n')).to.throw();
