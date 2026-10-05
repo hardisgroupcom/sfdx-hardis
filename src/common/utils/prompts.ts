@@ -254,9 +254,10 @@ export async function askTerminalQuestion(question: PromptsQuestion): Promise<an
   }
   return terminalPromptFunctions.input({
     message: question.message,
-    default: typeof defaultValue === "string" ? defaultValue : undefined,
+    // A secret is never shown in the terminal: not while it is typed, not once it is given, and
+    // not as a default value, which inquirer prints next to the question as it is
+    default: typeof defaultValue === "string" && question.sensitive !== true ? defaultValue : undefined,
     validate: validate,
-    // A secret is never shown in the terminal, neither while it is typed nor once it is given
     ...(question.sensitive === true ? { transformer: (value: string) => "*".repeat((value || "").length) } : {}),
   });
 }
