@@ -5,7 +5,7 @@ import {
   optionalOrgFlagWithDeprecations,
   optionalHubFlagWithDeprecations,
 } from '@salesforce/sf-plugins-core';
-import { fs, Messages, SfError } from '@salesforce/core';
+import { fs, Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import * as yaml from 'js-yaml';
@@ -35,7 +35,7 @@ It creates an **External Client App** that uses the JWT Bearer flow with SSL cer
 
 Key functionalities include:
 
-- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one.
+- **Org Selection/Login:** Guides the user to select an existing Salesforce org or log in to a new one. The selected org becomes the default org, and the command continues with it without asking again.
 - **Config Naming:** Names the auth config after an existing Git branch (default), or derives a name from the org domain with \`--name-type org-domain\` (or pass an explicit name with \`--name\`). Org-domain configs are not tied to a Git branch, so the merge targets step is skipped.
 - **Git Branch Association:** Allows associating a specific Git branch with the chosen Salesforce org.
 - **Merge Target Definition:** Enables defining target Git branches into which the configured branch can merge, ensuring controlled deployment flows.
@@ -64,7 +64,8 @@ prompts
 - **Configuration Management:** Leverages internal utilities (\`checkConfig\`, \`getConfig\`, \`setConfig\`, \`setInConfigFile\`) to read from and write to project-specific configuration files (e.g., \`.sfdx-hardis.<branchName>.yml\`).
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands programmatically via \`execSfdxJson\` for org interactions.
 - **SSL Certificate Generation:** Calls \`generateSSLCertificate\` to create necessary SSL certificates for JWT-based authentication.
-- **WebSocket Communication:** Uses \`WebSocketClient\` for potential communication with external tools or processes, such as restarting the command in VS Code.
+- **WebSocket Communication:** Uses \`WebSocketClient\` to communicate with the VS Code extension.
+- **Org Switch:** When the selected org differs from the one the command started with, it loads the selected org with \`Org.create\` and continues with it, instead of restarting the command.
 - **Dependency Check:** Ensures the presence of \`openssl\` on the system, which is required for SSL certificate generation.
 
 <!-- training-links:start -->
@@ -167,13 +168,16 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     let newUsername = configGetRes?.result[0]?.value || '';
     newUsername = (await getOrgAliasUsername(newUsername)) || newUsername;
 
-    if (prevUserName !== newUsername) {
-      // Restart command so the org is selected as default org (will help to select profiles)
-      const infoMsg = t('defaultOrgChangedRestartVsCode');
-      uxLog("warning", this, c.yellow(infoMsg));
-      const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ');
-      WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
-      return { outputString: infoMsg };
+    if (newUsername && prevUserName !== newUsername) {
+      // Continue with the selected org instead of restarting the command: every later step
+      // (instance URL, username, profiles of the External Client App) reads it from the flags.
+      // Restarting made the user pick the same org twice.
+      const selectedOrg = await Org.create({ aliasOrUsername: newUsername });
+      if (devHub) {
+        flags['target-dev-hub'] = selectedOrg;
+      } else {
+        flags['target-org'] = selectedOrg;
+      }
     }
 
     const config = await getConfig('project');
