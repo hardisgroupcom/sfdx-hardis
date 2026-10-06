@@ -10,6 +10,10 @@
  *     the JWT connected app a real project uses.
  *
  *   node ci-workflows-prepare.cjs <sfdx-hardis root> <repository root> <sfdx-hardis branch>
+ *
+ * With SFDX_HARDIS_IMAGE set (ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta for instance), the jobs
+ * run in that image instead of `:latest`, and the branch argument may be `-`: no link step, the jobs
+ * run the release the image holds. A step prints `sf plugins` so the version can be asserted.
  */
 const fs = require('fs');
 const path = require('path');
@@ -20,7 +24,13 @@ if (!root || !target || !branch) {
   process.exit(2);
 }
 const branches = ['INTEGRATION', 'UAT', 'PREPROD', 'MAIN'];
-const linkStep = [
+const image = process.env.SFDX_HARDIS_IMAGE || '';
+const versionStep = [
+  `      # E2E ONLY: sfdx-hardis of the image ${image}`,
+  `      - name: E2E ONLY - sfdx-hardis version`,
+  '        run: sf plugins',
+];
+const linkStep = branch === '-' ? versionStep : [
   `      # E2E ONLY: sfdx-hardis built from its branch ${branch}`,
   `      - name: E2E ONLY - sfdx-hardis from ${branch}`,
   '        run: |',
@@ -47,6 +57,14 @@ for (const name of ['check-deploy.yml', 'process-deploy.yml']) {
   if (envIndex < 0) {
     console.error(`${name}: no env block in the sfdx-hardis step`);
     process.exit(1);
+  }
+  if (image) {
+    const containerIndex = lines.findIndex((l) => /^ {4}container: /.test(l));
+    if (containerIndex < 0) {
+      console.error(`${name}: no container line`);
+      process.exit(1);
+    }
+    lines[containerIndex] = `    container: ${image}`;
   }
   lines.splice(envIndex + 1, 0, ...authLines);
   lines.splice(loginIndex, 0, ...linkStep);

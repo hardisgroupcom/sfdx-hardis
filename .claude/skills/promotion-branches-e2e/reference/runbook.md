@@ -679,6 +679,18 @@ export SFDX_HARDIS_BRANCH=<branch>         # pushed to hardisgroupcom/sfdx-hardi
 bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh   # results-section6quinquies.txt
 ```
 
+To prove a published release (a beta for instance) rather than a branch, run the jobs in its image
+and skip the link step: W0 then asserts the version the job prints.
+
+```bash
+export SFDX_HARDIS_BRANCH=- SFDX_HARDIS_IMAGE=ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+export SFDX_HARDIS_VERSION=8.14.1-beta202610062235.0   # npm view sfdx-hardis@beta version
+```
+
+Read the version the image really holds before trusting it: its config blob carries
+`ARG SFDX_HARDIS_VERSION=...` in its history, and an image built before npm served the beta holds
+the previous one.
+
 `scripts/ci-workflows-prepare.cjs` changes two things in `check-deploy.yml` and `process-deploy.yml`:
 a step before the sfdx-hardis one clones the branch, builds it and runs `sf plugins link`, so the
 jobs run the code under test and not the release of the Docker image; and the four
