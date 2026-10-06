@@ -4,6 +4,16 @@ const require = createRequire(import.meta.url);
 const js = require('@eslint/js');
 const tsPlugin = require('@typescript-eslint/eslint-plugin');
 
+// Every git process sfdx-hardis starts goes through createSimpleGit: it keeps the inherited
+// GIT_* environment that simple-git v4 removes by default. Listed again in the startup block
+// below, because a later no-restricted-imports entry replaces this one instead of merging.
+const simpleGitFactoryRestriction = {
+  name: 'simple-git',
+  importNames: ['simpleGit'],
+  message:
+    'Use createSimpleGit() from src/common/utils/simpleGitInstance.ts (or git() from common/utils): a bare simpleGit() drops the inherited GIT_* environment.',
+};
+
 const mochaGlobals = {
   describe: 'readonly',
   it: 'readonly',
@@ -47,6 +57,13 @@ export default [
     },
   },
   {
+    files: ['src/**/*.ts'],
+    ignores: ['src/common/utils/simpleGitInstance.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: [simpleGitFactoryRestriction] }],
+    },
+  },
+  {
     // PERF guard: these modules run before every sf hardis command boots.
     // They must never statically import the heavy common/utils barrel or
     // config/index (1000+ transitive modules: langchain, puppeteer, jira...):
@@ -63,6 +80,7 @@ export default [
       'no-restricted-imports': [
         'error',
         {
+          paths: [simpleGitFactoryRestriction],
           patterns: [
             {
               group: ['**/utils/index.js', '**/common/utils/index.js'],
