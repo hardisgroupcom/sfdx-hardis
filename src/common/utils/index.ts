@@ -13,7 +13,7 @@ import { Connection, SfError } from '@salesforce/core';
 import { createSpinner } from './spinner.js';
 import { tryRunSfCommandInProcess } from './sfCoreCommands.js';
 import { FileStatusResult, SimpleGit } from 'simple-git';
-import { createSimpleGit } from './simpleGitInstance.js';
+import { createSimpleGit, SimpleGitUnsafeOptions } from './simpleGitInstance.js';
 import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getEnvVar, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
@@ -32,7 +32,13 @@ import { isCI, isAgentMode } from './envUtils.js';
 import { storeGitCredentials } from './gitCredentialUtils.js';
 import { anonymizeRows, getChannelAnonymizationLevel, getChannelAnonymizationLevelSync } from './anonymizeUtils.js';
 
-export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
+export type GitInstanceOptions = {
+  output?: boolean;
+  displayCommand?: boolean;
+  unsafe?: SimpleGitUnsafeOptions;
+};
+
+export function git(options: GitInstanceOptions = { output: false, displayCommand: true }): SimpleGit {
   // options.unsafe lifts one simple-git guard for this call only: see createSimpleGit
   const simpleGitInstance = createSimpleGit(undefined, options.unsafe);
   // Hack to be able to display executed git command (and it still doesn't work...)

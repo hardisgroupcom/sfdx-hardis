@@ -6,6 +6,12 @@ import * as path from 'path';
 import { simpleGit } from 'simple-git';
 import { git } from '../../../src/common/utils/index.js';
 import { createSimpleGit } from '../../../src/common/utils/simpleGitInstance.js';
+import {
+  GIT_DIFF_TOOL_CONFIG,
+  GIT_MERGE_TOOL_CONFIG,
+  GIT_QUOTE_PATH_CONFIG,
+  HookGitConfigEntry,
+} from '../../../src/hooks/prerun/check-dependencies.js';
 
 // simple-git v4 removes inherited GIT_* variables (and EDITOR, VISUAL, PAGER, SSH_ASKPASS, PREFIX)
 // from the git process unless they are allowed. These tests run real git in throwaway repositories
@@ -14,7 +20,7 @@ import { createSimpleGit } from '../../../src/common/utils/simpleGitInstance.js'
 const originalCwd = process.cwd();
 const sandboxes: string[] = [];
 
-// Variables a test sets in process.env, removed afterwards
+// Variables a test sets in process.env, put back to their original value afterwards
 const testEnv: Record<string, string> = {
   GIT_CONFIG_COUNT: '2',
   GIT_CONFIG_KEY_0: 'hardis.inherited',
@@ -54,11 +60,22 @@ async function writeAndCommit(dir: string, file: string, content: string, messag
 
 describe('simple-git instances (createSimpleGit, git())', function () {
   this.timeout(60000);
+  const originalEnv: Record<string, string | undefined> = {};
+
+  before(() => {
+    for (const key of Object.keys(testEnv)) {
+      originalEnv[key] = process.env[key];
+    }
+  });
 
   afterEach(async () => {
     process.chdir(originalCwd);
     for (const key of Object.keys(testEnv)) {
-      delete process.env[key];
+      if (originalEnv[key] === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = originalEnv[key];
+      }
     }
     for (const dir of sandboxes.splice(0)) {
       await fs.remove(dir).catch(() => undefined);
@@ -93,10 +110,12 @@ describe('simple-git instances (createSimpleGit, git())', function () {
     });
 
     it('a bare simple-git instance does not see them: createSimpleGit is what keeps them', async () => {
-      const value = await simpleGit(process.cwd())
-        .raw(['config', '--get', 'hardis.inherited'])
-        .catch(() => '');
-      expect(value.trim()).to.equal('');
+      // --default makes git exit 0 with the sentinel when the key is not set, so any other failure rejects
+      const configGetArgs = ['config', '--default', 'hardis-not-set', '--get', 'hardis.inherited'];
+      const bareValue = await simpleGit(process.cwd()).raw(configGetArgs);
+      expect(bareValue.trim()).to.equal('hardis-not-set');
+      const value = await createSimpleGit(process.cwd()).raw(configGetArgs);
+      expect(value.trim()).to.equal('from-ci-runner');
     });
   });
 
@@ -108,12 +127,18 @@ describe('simple-git instances (createSimpleGit, git())', function () {
       await writeAndCommit(repo, 'a.txt', 'a\n', 'first');
     });
 
-    it('refuses an abbreviated long option', async () => {
+    it('refuses an abbreviated long option that git alone would accept', async () => {
+      // --dry is an unambiguous abbreviation of --dry-run: git accepts it unless GIT_TEST_DISALLOW_ABBREVIATED_OPTIONS is set
+      const args = ['commit', '--allow-empty', '--dry', '-m', 'x'];
       let error: any = null;
       await createSimpleGit(repo)
-        .raw(['log', '--max-c=1'])
+        .raw(args)
         .catch((e) => (error = e));
-      expect(error).to.not.equal(null);
+      expect(error?.message || '').to.include('allowAbbreviatedOptions');
+      expect(error?.message || '').to.include('disallowed abbreviated');
+
+      const output = await createSimpleGit(repo, { allowAbbreviatedOptions: true }).raw(args);
+      expect(output).to.include('nothing to commit');
     });
 
     it('refuses an unsafe config key unless the call allows it', async () => {
@@ -126,6 +151,22 @@ describe('simple-git instances (createSimpleGit, git())', function () {
       await createSimpleGit(repo, { allowUnsafeDiffExternal: true }).addConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE');
       const value = await createSimpleGit(repo).raw(['config', '--get', 'difftool.vscode.cmd']);
       expect(value.trim()).to.equal('code --wait --diff $LOCAL $REMOTE');
+    });
+
+    it('writes every git config value of the prerun hook with the flags the hook passes', async () => {
+      const entries: HookGitConfigEntry[] = [
+        // user.name and user.email values are computed by the hook: any plain value goes the same way
+        { key: 'user.name', value: 'Hardis Hook' },
+        { key: 'user.email', value: 'hardis-hook@example.com' },
+        GIT_QUOTE_PATH_CONFIG,
+        ...GIT_MERGE_TOOL_CONFIG,
+        ...GIT_DIFF_TOOL_CONFIG,
+      ];
+      for (const entry of entries) {
+        await createSimpleGit(repo, entry.unsafe).addConfig(entry.key, entry.value);
+        const value = await createSimpleGit(repo).raw(['config', '--get', entry.key]);
+        expect(value.trim(), entry.key).to.equal(entry.value);
+      }
     });
   });
 

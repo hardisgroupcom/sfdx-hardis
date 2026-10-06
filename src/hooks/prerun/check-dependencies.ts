@@ -1,6 +1,21 @@
 /* jscpd:ignore-start */
 import { Hook } from '@oclif/core';
 import { t } from '../../common/utils/i18n.js';
+import type { SimpleGitUnsafeOptions } from '../../common/utils/simpleGitInstance.js';
+
+export type HookGitConfigEntry = { key: string; value: string; unsafe?: SimpleGitUnsafeOptions };
+
+// Fixed git config values the hook writes when they are missing (user.name and user.email are computed at run time).
+// simple-git v4 guards mergetool.*.cmd and difftool.*.cmd: these fixed values are the only ones the hook lets through.
+export const GIT_QUOTE_PATH_CONFIG: HookGitConfigEntry = { key: 'core.quotepath', value: 'false' };
+export const GIT_MERGE_TOOL_CONFIG: HookGitConfigEntry[] = [
+  { key: 'merge.tool', value: 'vscode' },
+  { key: 'mergetool.vscode.cmd', value: 'code --wait $MERGED', unsafe: { allowUnsafeMergeDriver: true } },
+];
+export const GIT_DIFF_TOOL_CONFIG: HookGitConfigEntry[] = [
+  { key: 'diff.tool', value: 'vscode' },
+  { key: 'difftool.vscode.cmd', value: 'code --wait --diff $LOCAL $REMOTE', unsafe: { allowUnsafeDiffExternal: true } },
+];
 
 const hook: Hook<'prerun'> = async (options) => {
   // Skip hooks from other commands than hardis commands
@@ -31,7 +46,7 @@ const hook: Hook<'prerun'> = async (options) => {
   // Check Git config and complete it if necessary (asynchronously so the script is not stopped)
   if (!isCI && isGitRepo()) {
     const { default: c } = await import('chalk');
-    const tryAddGitConfig = async (key: string, value: string, unsafe?: any) => {
+    const tryAddGitConfig = async (key: string, value: string, unsafe?: SimpleGitUnsafeOptions) => {
       try {
         await git({ output: true, unsafe }).addConfig(key, value);
         return true;
@@ -39,6 +54,14 @@ const hook: Hook<'prerun'> = async (options) => {
         uxLog("warning", this, c.yellow(t('couldNotSetGitConfig', { key, value, message: e.message })));
         return false;
       }
+    };
+    // Writes every entry, even after a failure, and tells if all of them were written
+    const tryAddGitConfigs = async (entries: HookGitConfigEntry[]) => {
+      let allOk = true;
+      for (const entry of entries) {
+        allOk = (await tryAddGitConfig(entry.key, entry.value, entry.unsafe)) && allOk;
+      }
+      return allOk;
     };
     git()
       .listConfig()
@@ -61,24 +84,19 @@ const hook: Hook<'prerun'> = async (options) => {
         }
         // Manage special characters in git file / folder names
         if (allConfigs['core.quotepath'] == null || allConfigs['core.quotepath'] == 'true') {
-          if (await tryAddGitConfig('core.quotepath', 'false')) {
+          if (await tryAddGitConfig(GIT_QUOTE_PATH_CONFIG.key, GIT_QUOTE_PATH_CONFIG.value)) {
             uxLog("log", this, t('definedFalseAsGitCoreQuotepath'));
           }
         }
         // Merge tool
         if (allConfigs['merge.tool'] == null) {
-          const okMergeTool = await tryAddGitConfig('merge.tool', 'vscode');
-          const okMergeCmd = await tryAddGitConfig('mergetool.vscode.cmd', 'code --wait $MERGED');
-          if (okMergeTool && okMergeCmd) {
+          if (await tryAddGitConfigs(GIT_MERGE_TOOL_CONFIG)) {
             uxLog("log", this, t('definedVsCodeAsGitMergeTool'));
           }
         }
         // Diff tool
         if (allConfigs['diff.tool'] == null) {
-          const okDiffTool = await tryAddGitConfig('diff.tool', 'vscode');
-          // simple-git v4 guards difftool.*.cmd like diff.external: this fixed value is the only one allowed through
-          const okDiffCmd = await tryAddGitConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE', { allowUnsafeDiffExternal: true });
-          if (okDiffTool && okDiffCmd) {
+          if (await tryAddGitConfigs(GIT_DIFF_TOOL_CONFIG)) {
             uxLog("log", this, t('definedVsCodeAsGitDiffTool'));
           }
         }
