@@ -1873,6 +1873,7 @@
   "flowDeletionMarkdownScope": "Scope",
   "flowDeletionMarkdownSelectedVersions": "Selected versions",
   "flowDeletionMarkdownStatus": "Status",
+  "flowDeletionMarkdownTableSummary": "{{count}} Flow(s) and their versions",
   "flowDeletionMarkdownTitle": "Flow deletion",
   "flowDeletionMarkdownVersions": "Versions targeted",
   "flowDeletionMarkdownVersionsDeleted": "Versions deleted",

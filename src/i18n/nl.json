@@ -1869,6 +1869,7 @@
   "flowDeletionMarkdownScope": "Bereik",
   "flowDeletionMarkdownSelectedVersions": "Geselecteerde versies",
   "flowDeletionMarkdownStatus": "Status",
+  "flowDeletionMarkdownTableSummary": "{{count}} Flow(s) en hun versies",
   "flowDeletionMarkdownTitle": "Flow-verwijdering",
   "flowDeletionMarkdownVersions": "Beoogde versies",
   "flowDeletionMarkdownVersionsDeleted": "Verwijderde versies",

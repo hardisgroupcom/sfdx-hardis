@@ -1219,6 +1219,18 @@ describe('buildFlowDeletionMarkdown', () => {
     return markdown.split('\n').find((line) => line.startsWith(startsWith)) || '';
   }
 
+  it('collapses the table and keeps the interviews warning visible', () => {
+    const markdown = buildFlowDeletionMarkdown([outcome({ deleteInterviewsAllowed: true, interviewCount: 3 })]);
+    const opening = markdown.indexOf('<details>');
+    const closing = markdown.indexOf('</details>');
+    expect(opening).to.be.greaterThan(-1);
+    expect(markdown.indexOf('| ')).to.be.greaterThan(opening);
+    expect(markdown.indexOf('| ')).to.be.lessThan(closing);
+    expect(markdown).to.contain('<summary>📋 <b>1 Flow(s) and their versions</b></summary>');
+    // The irreversible part is outside the collapsed block
+    expect(markdown.indexOf('⚠️')).to.be.greaterThan(closing);
+  });
+
   it('lists the Flow, its versions and its active version', () => {
     const markdown = buildFlowDeletionMarkdown([outcome()]);
     expect(markdown).to.contain('`MyFlow`');

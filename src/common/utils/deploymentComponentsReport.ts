@@ -242,7 +242,18 @@ export function buildNoOverwriteMarkdown(
     ...(showCreatedOnce ? [{ status: 'Created' as DeploymentComponentStatus, title: '➕ Created this once' }] : []),
   ];
   const protectedRows = rows.filter((row) => row.noOverwriteFile !== '' && (row.status === 'Not overwritten' || row.status === 'Created'));
-  lines.push(...buildCountsPerTypeTable(protectedRows, columns), '');
+  // Collapsed: a project can protect hundreds of components, and the sentences above already say
+  // how many. The table is there for whoever wants the split per type.
+  const typeCount = new Set(protectedRows.filter((row) => columns.some((column) => column.status === row.status)).map((row) => row.type)).size;
+  lines.push(
+    '<details>',
+    `<summary>🛡️ <b>Protected components per metadata type (${countOf(typeCount, 'type')})</b></summary>`,
+    '',
+    ...buildCountsPerTypeTable(protectedRows, columns),
+    '',
+    '</details>',
+    ''
+  );
   lines.push(`[How package-no-overwrite.xml works](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-overwrite/)`);
   return lines.join('\n');
 }

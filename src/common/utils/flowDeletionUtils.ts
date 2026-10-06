@@ -1110,6 +1110,11 @@ export function buildFlowDeletionMarkdown(
     lines.push(t('flowDeletionMarkdownPreflightNote'));
     lines.push('');
   }
+  // The table is collapsed, like every table of the deployment comment: the warnings below it stay
+  // visible, because they are what a reviewer has to act on.
+  lines.push('<details>');
+  lines.push(`<summary>📋 <b>${t('flowDeletionMarkdownTableSummary', { count: outcomes.length })}</b></summary>`);
+  lines.push('');
   lines.push(`| ${columns.map((column) => t(column.markdownHeaderKey)).join(' | ')} |`);
   lines.push(`| ${columns.map((column) => column.markdownAlign).join(' | ')} |`);
   for (const outcome of outcomes) {
@@ -1117,6 +1122,8 @@ export function buildFlowDeletionMarkdown(
   }
   lines.push('');
   lines.push(t('flowDeletionMarkdownFooter'));
+  lines.push('');
+  lines.push('</details>');
   // Interviews the deletion still has to destroy: irreversible, so it gets its own warning line
   // instead of hiding in a table cell.
   const interviewsPendingDeletion = outcomes
