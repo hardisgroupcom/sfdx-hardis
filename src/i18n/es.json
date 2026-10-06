@@ -2897,7 +2897,7 @@
   "pendingManualActionsBlockValidation": "{{count}} acción(es) manual(es) de pre-despliegue sin marcar como hecha(s) en {{orgBranch}}: deben hacerse antes del merge.",
   "pendingManualActionsDraftPullRequest": "{{count}} acción(es) manual(es) de pre-despliegue sin marcar como hecha(s) en {{orgBranch}}: la Pull Request es un borrador (draft), la validación continúa. Se detendrá cuando la Pull Request esté lista.",
   "pendingManualActionsHowToConfirm": "Hazlas en la org de {{orgBranch}}, luego marca su casilla en la lista \"Pending manual actions\" del comentario de la Pull Request, o haz clic en Mark as done en la pestaña Deployment Actions de VS Code, y vuelve a lanzar la validación.",
-  "pendingManualActionsNotBlocking": "{{count}} acción(es) manual(es) de pre-despliegue aún sin marcar como hecha(s) (failValidationOnPendingManualActions es false: la validación no falla).",
+  "pendingManualActionsNotBlocking": "{{count}} acción(es) manual(es) de pre-despliegue aún sin marcar como hecha(s) (failValidationOnPendingManualActions no es true: la validación no falla).",
   "performingQueryOn": "Ejecutando consulta en {{orgId}}...",
   "permissionSetGroupsCsvFileGeneratedAt": "Archivo CSV de Permission Set Groups generado en {{green}}.",
   "permissionSetGroupsMarkdownFileGeneratedAt": "Archivo Markdown de Permission Set Groups generado en {{green}}.",

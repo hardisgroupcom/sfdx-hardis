@@ -57,8 +57,10 @@ ORG_INSTANCE=$(echo "$ORG_JSON" | node -e "console.log(JSON.parse(require('fs').
 for f in config/branches/.sfdx-hardis.*.yml; do
   grep -q "^targetUsername:" "$f" || printf 'targetUsername: %s\ninstanceUrl: %s\n' "$ORG_USERNAME" "$ORG_INSTANCE" >>"$f"
 done
+# Section A tests the manual action gate, off by default
+grep -q "^failValidationOnPendingManualActions:" config/.sfdx-hardis.yml || printf 'failValidationOnPendingManualActions: true\n' >>config/.sfdx-hardis.yml
 if ! git diff --quiet; then
-  git add config/branches && git commit -qm "chore: declare the org of each major branch" && git push -q origin integration
+  git add config && git commit -qm "chore: declare the org of each major branch, turn the manual action gate on" && git push -q origin integration
 fi
 # DA_RUN names a second run of this section on the same repository (its story branches differ)
 SUFFIX="${DA_RUN:+-$DA_RUN}"

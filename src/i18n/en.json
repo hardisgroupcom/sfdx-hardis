@@ -2901,7 +2901,7 @@
   "pendingManualActionsBlockValidation": "{{count}} pre-deployment manual action(s) not marked as performed in {{orgBranch}}: they must be done before the merge.",
   "pendingManualActionsDraftPullRequest": "{{count}} pre-deployment manual action(s) not marked as performed in {{orgBranch}}: the Pull Request is a draft, so the validation goes on. It will stop once the Pull Request is ready.",
   "pendingManualActionsHowToConfirm": "Perform them in the org of {{orgBranch}}, then tick their box in the \"Pending manual actions\" list of the Pull Request comment, or click Mark as done in the VS Code Deployment Actions tab, and run the validation again.",
-  "pendingManualActionsNotBlocking": "{{count}} pre-deployment manual action(s) not marked as performed yet (failValidationOnPendingManualActions is false: the validation does not fail).",
+  "pendingManualActionsNotBlocking": "{{count}} pre-deployment manual action(s) not marked as performed yet (failValidationOnPendingManualActions is not true: the validation does not fail).",
   "performingQueryOn": "Performing query on {{orgId}}...",
   "permissionSetGroupsCsvFileGeneratedAt": "Permission set groups CSV file generated at {{green}}.",
   "permissionSetGroupsMarkdownFileGeneratedAt": "Permission set groups Markdown file generated at {{green}}.",

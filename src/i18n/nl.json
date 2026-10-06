@@ -2897,7 +2897,7 @@
   "pendingManualActionsBlockValidation": "{{count}} handmatige pre-deployment-actie(s) niet als uitgevoerd gemarkeerd in {{orgBranch}}: ze moeten vóór de merge gebeuren.",
   "pendingManualActionsDraftPullRequest": "{{count}} handmatige pre-deployment-actie(s) niet als uitgevoerd gemarkeerd in {{orgBranch}}: de Pull Request is een concept (draft), de validatie gaat door. Ze stopt zodra de Pull Request klaar is.",
   "pendingManualActionsHowToConfirm": "Voer ze uit in de org van {{orgBranch}}, vink ze daarna aan in de lijst \"Pending manual actions\" van de Pull Request-opmerking, of klik op Mark as done in het tabblad Deployment Actions van VS Code, en voer de validatie opnieuw uit.",
-  "pendingManualActionsNotBlocking": "{{count}} handmatige pre-deployment-actie(s) nog niet als uitgevoerd gemarkeerd (failValidationOnPendingManualActions is false: de validatie faalt niet).",
+  "pendingManualActionsNotBlocking": "{{count}} handmatige pre-deployment-actie(s) nog niet als uitgevoerd gemarkeerd (failValidationOnPendingManualActions is niet true: de validatie faalt niet).",
   "performingQueryOn": "Query uitvoeren op {{orgId}}...",
   "permissionSetGroupsCsvFileGeneratedAt": "CSV-bestand voor machtigingensetgroepen gegenereerd op {{green}}.",
   "permissionSetGroupsMarkdownFileGeneratedAt": "Markdown-bestand voor machtigingensetgroepen gegenereerd op {{green}}.",
