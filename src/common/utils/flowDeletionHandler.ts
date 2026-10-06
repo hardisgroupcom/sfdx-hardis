@@ -9,6 +9,7 @@ import { t } from './i18n.js';
 import {
   buildFlowDeletionMarkdown,
   detectPendingFlowDeletions,
+  flowDeletionNotDeletedFlows,
   FlowDeletionOutcome,
   isFailedFlowDeletionStatus,
   mergePendingFlowDeletions,
@@ -63,6 +64,8 @@ export class FlowDeletionHandler {
   private pendingPreDeployDeletions: PendingFlowDeletion[] = [];
   private pendingPostDeployDeletions: PendingFlowDeletion[] = [];
   private outcomes: FlowDeletionOutcome[] = [];
+  // Flows the post-deploy deletion left in the org, reported as a warning
+  private notDeletedFlows: string[] = [];
   private deleteInterviews = false;
   private conn: any = null;
 
@@ -77,6 +80,11 @@ export class FlowDeletionHandler {
   // True when a Flow deletion still has to run after the constructive deployment
   public get hasPostDeployDeletions(): boolean {
     return this.pendingPostDeployDeletions.length > 0;
+  }
+
+  // Flows the post-deploy deletion could not delete. They do not fail the deployment.
+  public get flowsNotDeleted(): string[] {
+    return this.notDeletedFlows;
   }
 
   /**
@@ -105,11 +113,16 @@ export class FlowDeletionHandler {
   /**
    * Deletes the Flows stripped from the deployment, via the Tooling API. Real deploy only, before or
    * after the metadata deployment according to the source destructive manifest.
+   * A Flow left in the org fails the command before the deployment, and only raises a warning after it.
    */
   public async execute(phase: 'pre' | 'post'): Promise<void> {
     const pendingFlowDeletions =
       phase === 'pre' ? this.pendingPreDeployDeletions : this.pendingPostDeployDeletions;
     if (pendingFlowDeletions.length === 0) {
+      return;
+    }
+    if (phase === 'post') {
+      await this.executePostDeploy(pendingFlowDeletions);
       return;
     }
     const conn = await this.getConnection();
@@ -142,6 +155,47 @@ export class FlowDeletionHandler {
       });
       await GitProvider.managePostPullRequestComment(false);
       throw e;
+    }
+  }
+
+  // After the deployment, the metadata is in the org: a Flow that can not be deleted only raises a
+  // warning. It stays deactivated when its deactivation succeeded, and stays in the destructive
+  // manifest, so the next deployment tries again. That includes an unexpected failure of the step
+  // itself, which leaves every pending Flow in the org as far as this run knows.
+  private async executePostDeploy(pendingFlowDeletions: PendingFlowDeletion[]): Promise<void> {
+    let outcomes: FlowDeletionOutcome[] = [];
+    try {
+      const conn = await this.getConnection();
+      outcomes = await runFlowDeletionStep(
+        pendingFlowDeletions,
+        conn,
+        this.commandThis,
+        this.deleteInterviews,
+        'post',
+        resolveFlowDeletionRetrySettings(this.commandThis, this.configInfo)
+      );
+    } catch (e: any) {
+      uxLog('warning', this.commandThis, c.yellow('[FlowDeletion] ' + (e?.message || String(e))));
+      this.notDeletedFlows = pendingFlowDeletions.map((pending) => pending.flowName);
+    }
+    if (outcomes.length > 0) {
+      this.outcomes.push(...outcomes);
+      await writeFlowDeletionReport(outcomes, this.commandThis, this.outcomes);
+      setPullRequestData({ flowDeletionMarkdownBody: buildFlowDeletionMarkdown(this.outcomes) });
+      this.notDeletedFlows = flowDeletionNotDeletedFlows(outcomes);
+    }
+    if (this.notDeletedFlows.length > 0) {
+      uxLog(
+        'warning',
+        this.commandThis,
+        c.yellow(
+          '[FlowDeletion] ' +
+          t('flowDeletionNotBlockingAfterDeploy', {
+            count: this.notDeletedFlows.length,
+            flows: this.notDeletedFlows.join(', '),
+          })
+        )
+      );
     }
   }
 

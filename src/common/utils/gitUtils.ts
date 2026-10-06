@@ -550,9 +550,20 @@ export async function isDeploymentNotifTranslationEnabled(): Promise<boolean> {
   return config?.notifTranslateDeploymentMessages === true;
 }
 
-export async function handlePostDeploymentNotifications(flags, targetUsername: any, quickDeploy: any, delta: boolean, debugMode: boolean, additionalMessage = "", deploymentMetrics: DeploymentMetrics | null = null) {
+export async function handlePostDeploymentNotifications(
+  flags,
+  targetUsername: any,
+  quickDeploy: any,
+  delta: boolean,
+  debugMode: boolean,
+  additionalMessage = "",
+  deploymentMetrics: DeploymentMetrics | null = null,
+  // Flows a post-deploy Flow deletion left in the org: the notification becomes a warning listing them
+  options: { flowsNotDeleted?: string[] } = {}
+) {
   const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
   const translateNotif = await isDeploymentNotifTranslationEnabled();
+  const flowsNotDeleted = options.flowsNotDeleted || [];
   // Only report the split when it accounts for every deployed component (see the predicate)
   const changeDetailComplete = isComponentChangeDetailComplete(deploymentMetrics);
   const deploymentActionsText = buildDeploymentActionsAttachmentText(translateNotif, {
@@ -586,10 +597,19 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     );
   }
 
-  // Section order: tickets, deployment actions, manual actions, commits.
+  // Section order: Flows not deleted, tickets, deployment actions, manual actions, commits.
+  // The Flows not deleted come first, as they are what a reader has to act on.
   // Commits stay last because the size guard trims from the last attachment backwards, and the
   // commit list is both the longest and the least actionable section.
   const attachments: MessageAttachment[] = [
+    flowsNotDeleted.length > 0
+      ? {
+        text: `⚠️ ${tMaybe(translateNotif, 'flowDeletionNotifNotDeleted', {
+          count: flowsNotDeleted.length,
+          flows: flowsNotDeleted.join(', '),
+        })}`,
+      }
+      : undefined,
     commitAttachments.tickets,
     deploymentActionsText ? { text: deploymentActionsText } : undefined,
     commitAttachments.manualActions,
@@ -629,7 +649,8 @@ export async function handlePostDeploymentNotifications(flags, targetUsername: a
     buttons: notifButtons,
     pullRequestUrl: pullRequestInfo?.webUrl,
     translateMessages: translateNotif,
-    severity: 'success',
+    // The metadata deployment succeeded either way, so DeploymentSuccess below stays 1
+    severity: flowsNotDeleted.length > 0 ? 'warning' : 'success',
     attachments: attachments,
     logElements: [],
     data: { metric: deploymentMetrics?.componentsDeployed ?? 0 },

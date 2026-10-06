@@ -22,7 +22,9 @@ import {
   writeFlowDeletionReport,
   extractBlockingFlowInterviewIds,
   dedupeFlowInterviewIds,
+  flowDeletionNotDeletedFlows,
 } from '../../../src/common/utils/flowDeletionUtils.js';
+import { FlowDeletionHandler } from '../../../src/common/utils/flowDeletionHandler.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -90,6 +92,9 @@ function flowInterviewRecord(id: string, flowName: string, versionNumber: number
 type MockConnOptions = {
   flowVersions?: any[];
   flowVersionsAfterDelete?: any[];
+  // Answers of the successive Flow version queries, the last one repeating. Wins over the two above,
+  // for runs that query the versions more than twice (dependency passes).
+  flowVersionsSequence?: any[][];
   flowDefinitions?: any[];
   versionViews?: any[];
   interviews?: any[];
@@ -124,6 +129,11 @@ function mockConn(opts: MockConnOptions = {}): any {
           throw new Error('flow query boom');
         }
         flowQueryCount++;
+        if (opts.flowVersionsSequence && opts.flowVersionsSequence.length > 0) {
+          const records =
+            opts.flowVersionsSequence.length > 1 ? opts.flowVersionsSequence.shift() : opts.flowVersionsSequence[0];
+          return { records };
+        }
         if (flowQueryCount > 1) {
           return { records: opts.flowVersionsAfterDelete || [] };
         }
@@ -695,6 +705,7 @@ describe('deleteFlowVersionsViaToolingApi', () => {
     });
     const res = await deleteFlowVersionsViaToolingApi('MyFlow', [version(1)], conn, null);
     expect(res.blockedByInterviews).to.be.true;
+    expect(res.blockedByDependency).to.be.false;
     expect(res.deletedVersions).to.be.empty;
     expect(res.errors).to.have.length(1);
   });
@@ -705,8 +716,50 @@ describe('deleteFlowVersionsViaToolingApi', () => {
     });
     const res = await deleteFlowVersionsViaToolingApi('MyFlow', [version(1)], conn, null);
     expect(res.blockedByInterviews).to.be.false;
+    expect(res.blockedByDependency).to.be.false;
     expect(res.errors).to.have.length(1);
     expect(res.errors[0]).to.contain('INSUFFICIENT_ACCESS');
+  });
+
+  it('reports a subflow reference as a dependency block (real DEPENDENCY_EXISTS wording)', async () => {
+    const conn = mockConn({
+      destroyResults: [
+        {
+          id: '301id1',
+          success: false,
+          errors: [
+            {
+              statusCode: 'DEPENDENCY_EXISTS',
+              message:
+                'This flow is referenced by at least one subflow element. Modify the subflow elements in the following flows: ParentFlow.',
+            },
+          ],
+        },
+      ],
+    });
+    const res = await deleteFlowVersionsViaToolingApi('MyFlow', [version(1)], conn, null);
+    expect(res.blockedByDependency).to.be.true;
+    expect(res.blockedByInterviews).to.be.false;
+  });
+
+  it('reports a Process Builder reference as a dependency block (real DELETE_FAILED wording)', async () => {
+    const conn = mockConn({
+      destroyResults: [
+        {
+          id: '301id1',
+          success: false,
+          errors: [
+            {
+              statusCode: 'DELETE_FAILED',
+              message:
+                'Cannot complete this operation. Can\'t delete this Flow Definition because it\'s referenced by the "My_Process" process version 1. Remove the "Call MyFlow" action from the process. : Open the process in the Process Builder',
+            },
+          ],
+        },
+      ],
+    });
+    const res = await deleteFlowVersionsViaToolingApi('MyFlow', [version(1)], conn, null);
+    expect(res.blockedByDependency).to.be.true;
   });
 
   it('falls back to unitary deletes when the composite call fails', async () => {
@@ -1056,6 +1109,105 @@ describe('runFlowDeletionPostStep', () => {
     expect(outcomes.map((outcome) => outcome.status)).to.deep.equal(['FLOW_DELETE_BLOCKED', 'SUCCESS']);
   });
 
+  it('deletes a Flow referenced by a later Flow of the manifest in a dependency pass', async () => {
+    // ChildFlow is a subflow of ParentFlow, and the manifest lists it first: its delete fails until
+    // ParentFlow is gone.
+    const destroyCalls: any[] = [];
+    const updateCalls: any[] = [];
+    const conn = mockConn({
+      flowVersionsSequence: [
+        // Pass 1 enumeration
+        [flowVersionRecord('ChildFlow', 1, 'Active'), flowVersionRecord('ParentFlow', 1)],
+        // ParentFlow post-deletion check (ChildFlow still there, already deactivated)
+        [flowVersionRecord('ChildFlow', 1)],
+        // Pass 2 enumeration
+        [flowVersionRecord('ChildFlow', 1)],
+        // ChildFlow post-deletion check
+        [],
+      ],
+      flowDefinitions: [
+        { Id: '300xx01', DeveloperName: 'ChildFlow', ActiveVersionId: '301xx01' },
+        { Id: '300xx02', DeveloperName: 'ParentFlow', ActiveVersionId: null },
+      ],
+      destroyResultsSequence: [
+        [
+          {
+            id: flowVersionRecord('ChildFlow', 1).Id,
+            success: false,
+            errors: [{ statusCode: 'DEPENDENCY_EXISTS', message: 'This flow is referenced by at least one subflow element.' }],
+          },
+        ],
+        [],
+        [],
+      ],
+      destroyCalls,
+      updateCalls,
+    });
+    const outcomes = await runFlowDeletionStep(
+      [
+        { flowName: 'ChildFlow', requestedVersions: null },
+        { flowName: 'ParentFlow', requestedVersions: null },
+      ],
+      conn,
+      null,
+      false
+    );
+    expect(outcomes.map((outcome) => outcome.status)).to.deep.equal(['SUCCESS', 'SUCCESS']);
+    expect(destroyCalls).to.have.length(3);
+    // The first pass saw ChildFlow active: the merged outcome keeps that version, not the inactive state of pass 2
+    expect(outcomes[0].previousActiveVersion).to.equal(1);
+    expect(outcomes[0].versionsToDelete).to.deep.equal([1]);
+    expect(outcomes[0].versionsDeleted).to.deep.equal([1]);
+    expect(outcomes[0].blockedByDependency).to.not.be.true;
+    expect(flowDeletionNotDeletedFlows(outcomes)).to.be.empty;
+  });
+
+  it('stops the dependency passes when a pass deletes nothing', async () => {
+    // The referencing Flow is not part of the run: a retry can never pass.
+    const destroyCalls: any[] = [];
+    const conn = mockConn({
+      flowVersions: [flowVersionRecord('ChildFlow', 1)],
+      flowDefinitions: [{ Id: '300xx01', DeveloperName: 'ChildFlow', ActiveVersionId: null }],
+      destroyResults: [
+        {
+          id: flowVersionRecord('ChildFlow', 1).Id,
+          success: false,
+          errors: [{ statusCode: 'DEPENDENCY_EXISTS', message: 'This flow is referenced by at least one subflow element.' }],
+        },
+      ],
+      destroyCalls,
+    });
+    const outcomes = await runFlowDeletionStep([{ flowName: 'ChildFlow', requestedVersions: null }], conn, null, false);
+    expect(outcomes[0].status).to.equal('FLOW_DELETE_ERROR');
+    expect(outcomes[0].blockedByDependency).to.be.true;
+    expect(destroyCalls).to.have.length(1);
+    expect(flowDeletionNotDeletedFlows(outcomes)).to.deep.equal(['ChildFlow']);
+  });
+
+  it('never retries a failure that is not a dependency block', async () => {
+    const destroyCalls: any[] = [];
+    const conn = mockConn({
+      flowVersionsSequence: [[flowVersionRecord('DeniedFlow', 1), flowVersionRecord('OkFlow', 1)], []],
+      flowDefinitions: [
+        { Id: '300xx01', DeveloperName: 'DeniedFlow', ActiveVersionId: null },
+        { Id: '300xx02', DeveloperName: 'OkFlow', ActiveVersionId: null },
+      ],
+      destroyResultsSequence: [[{ id: flowVersionRecord('DeniedFlow', 1).Id, success: false, error: 'INSUFFICIENT_ACCESS' }], []],
+      destroyCalls,
+    });
+    const outcomes = await runFlowDeletionStep(
+      [
+        { flowName: 'DeniedFlow', requestedVersions: null },
+        { flowName: 'OkFlow', requestedVersions: null },
+      ],
+      conn,
+      null,
+      false
+    );
+    expect(outcomes.map((outcome) => outcome.status)).to.deep.equal(['FLOW_DELETE_ERROR', 'SUCCESS']);
+    expect(destroyCalls).to.have.length(2);
+  });
+
   it('reports an error when a whole-Flow deletion leaves a version behind', async () => {
     const conn = mockConn({
       flowVersions: [flowVersionRecord('MyFlow', 1)],
@@ -1296,6 +1448,101 @@ describe('buildFlowDeletionMarkdown', () => {
   it('marks an absent Flow as a no-op', () => {
     const markdown = buildFlowDeletionMarkdown([outcome({ status: 'FLOW_DELETE_NOOP', versionsToDelete: [] })]);
     expect(markdown).to.contain('➖');
+  });
+
+  it('titles a real deletion that left a Flow in the org as incomplete, with a note above the table', () => {
+    const markdown = buildFlowDeletionMarkdown([
+      outcome({ flowName: 'OkFlow', versionsDeleted: [1, 2] }),
+      outcome({ status: 'FLOW_DELETE_ERROR', message: 'still referenced' }),
+    ]);
+    expect(markdown.split('\n')[0]).to.equal('## ⚠️ Flow deletion incomplete');
+    const note = markdown.indexOf('Some Flows could not be deleted');
+    expect(note).to.be.greaterThan(-1);
+    expect(note).to.be.lessThan(markdown.indexOf('<details>'));
+    expect(markdown).to.contain('> still referenced');
+  });
+
+  it('keeps the preflight title when a preflight finds a blocked Flow', () => {
+    const markdown = buildFlowDeletionMarkdown([outcome({ status: 'FLOW_DELETE_BLOCKED', message: 'blocked' })], {
+      preflight: true,
+    });
+    expect(markdown.split('\n')[0]).to.equal('## Flow deletion planned');
+    expect(markdown).to.not.contain('Some Flows could not be deleted');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FlowDeletionHandler
+// ---------------------------------------------------------------------------
+
+describe('FlowDeletionHandler', () => {
+  const dependencyError = [
+    {
+      id: flowVersionRecord('ChildFlow', 1).Id,
+      success: false,
+      errors: [{ statusCode: 'DEPENDENCY_EXISTS', message: 'This flow is referenced by at least one subflow element.' }],
+    },
+  ];
+
+  function handlerWithPending(conn: any, phase: 'pre' | 'post'): any {
+    const handler: any = new FlowDeletionHandler({
+      commandThis: null,
+      checkOnly: false,
+      configInfo: {},
+      targetOrg: { getUsername: () => 'test@example.com', getConnection: () => conn },
+      smartDeployOptions: {},
+    });
+    const pending = [{ flowName: 'ChildFlow', requestedVersions: null }];
+    if (phase === 'pre') {
+      handler.pendingPreDeployDeletions = pending;
+    } else {
+      handler.pendingPostDeployDeletions = pending;
+    }
+    return handler;
+  }
+
+  it('does not fail after the deployment when a Flow can not be deleted, and lists it', async () => {
+    const conn = mockConn({
+      flowVersions: [flowVersionRecord('ChildFlow', 1)],
+      flowDefinitions: [{ Id: '300xx01', DeveloperName: 'ChildFlow', ActiveVersionId: null }],
+      destroyResults: dependencyError,
+    });
+    const handler = handlerWithPending(conn, 'post');
+    await handler.execute('post');
+    expect(handler.flowsNotDeleted).to.deep.equal(['ChildFlow']);
+  });
+
+  it('does not fail after the deployment when the step itself fails, and lists every pending Flow', async () => {
+    const handler = handlerWithPending(mockConn({ flowQueryThrows: true }), 'post');
+    await handler.execute('post');
+    expect(handler.flowsNotDeleted).to.deep.equal(['ChildFlow']);
+  });
+
+  it('lists nothing when every Flow is deleted after the deployment', async () => {
+    const conn = mockConn({
+      flowVersions: [flowVersionRecord('ChildFlow', 1)],
+      flowVersionsAfterDelete: [],
+      flowDefinitions: [{ Id: '300xx01', DeveloperName: 'ChildFlow', ActiveVersionId: null }],
+    });
+    const handler = handlerWithPending(conn, 'post');
+    await handler.execute('post');
+    expect(handler.flowsNotDeleted).to.be.empty;
+  });
+
+  it('still fails before the deployment when a Flow can not be deleted', async () => {
+    const conn = mockConn({
+      flowVersions: [flowVersionRecord('ChildFlow', 1)],
+      flowDefinitions: [{ Id: '300xx01', DeveloperName: 'ChildFlow', ActiveVersionId: null }],
+      destroyResults: dependencyError,
+    });
+    const handler = handlerWithPending(conn, 'pre');
+    let error: any = null;
+    try {
+      await handler.execute('pre');
+    } catch (e) {
+      error = e;
+    }
+    expect(error?.message).to.contain('FLOW_DELETE_ERROR');
   });
 });
 

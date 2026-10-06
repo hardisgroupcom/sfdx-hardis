@@ -280,9 +280,11 @@ On a real deployment, each Flow goes through:
 
 1. Existence check. A Flow that is already gone is reported as \`FLOW_DELETE_NOOP\`, not an error (same for a Flow with no deletable version, for example one from a managed package).
 2. Deactivation through the Tooling API (\`FlowDefinition.activeVersionNumber = 0\`), which stops new Flow Interviews from starting.
-3. Flow Interview gate. If interviews remain and \`FLOW_DELETE_INTERVIEWS\` is not set, the deployment fails with \`FLOW_DELETE_BLOCKED\`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
+3. Flow Interview gate. If interviews remain and \`FLOW_DELETE_INTERVIEWS\` is not set, the Flow is reported as \`FLOW_DELETE_BLOCKED\`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
 4. Flow Interview deletion, only when \`FLOW_DELETE_INTERVIEWS\` authorizes it.
 5. Version deletion through the Tooling API, oldest version first, then a check that no version is left.
+
+A Flow that another Flow still references (a subflow element, a Process Builder action) can not be deleted while that Flow exists. When the referencing Flow is deleted in the same run, the blocked Flows are tried again after the others, as long as each pass deletes something.
 
 When deleting Flow Interviews is authorized, step 5 retries: an interview that was still running when the Flow got deactivated can pause mid-sequence and block a version. Both bounds can be tuned, as an env variable or as a \`.sfdx-hardis.yml\` property (the env variable wins). A value that is not an integer, or is below the minimum, is ignored with a warning and the default applies.
 
@@ -291,7 +293,9 @@ When deleting Flow Interviews is authorized, step 5 retries: an interview that w
 | FLOW_DELETE_MAX_ATTEMPTS | flowDeleteMaxAttempts | 3 | 1 | Number of version deletion attempts per Flow. \`1\` disables the retry. Only used when \`FLOW_DELETE_INTERVIEWS\` authorizes deleting interviews: without that authorization a block is final. |
 | FLOW_DELETE_RETRY_DELAY_MS | flowDeleteRetryDelayMs | 10000 | 0 | Delay in milliseconds between two attempts, to give a paused interview time to be deleted. |
 
-Any failure that is not an interview block (insufficient access, network error mid-run...) is reported as \`FLOW_DELETE_ERROR\` and also fails the deployment. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+Any failure that is not an interview block (a referencing Flow that stays in the org, insufficient access, network error mid-run...) is reported as \`FLOW_DELETE_ERROR\`. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+
+A Flow that can not be deleted only stops the job **before** the deployment (\`preDestructiveChanges.xml\`). **After** the deployment, the metadata is already in the org, so a Flow left behind, whatever the reason, does not fail the job: it stays deactivated when its deactivation succeeded, the Pull Request comment shows a ⚠️ Flow deletion section, and the deployment notification is sent as a warning that lists it. The Flow stays in \`destructiveChanges.xml\`, so the next deployment tries again.
 
 Notes:
 
@@ -654,14 +658,16 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       }
     }
 
-    // Post-destructive Flow deletions. A blocked Flow fails the command before any success comment or
-    // notification is sent.
+    // Post-destructive Flow deletions. The metadata is in the org by now: a Flow that can not be
+    // deleted turns the comment section and the notification into a warning, not the command into a failure.
     if (!this.checkOnly) {
       await this.flowDeletion.execute('post');
       if (this.smartDeployOptions.deferSuccessPullRequestComment === true) {
         await GitProvider.managePostPullRequestComment(this.checkOnly);
       }
-      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics);
+      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
+        flowsNotDeleted: this.flowDeletion.flowsNotDeleted,
+      });
     }
     // Return result
     return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
