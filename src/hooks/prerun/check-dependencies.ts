@@ -31,9 +31,9 @@ const hook: Hook<'prerun'> = async (options) => {
   // Check Git config and complete it if necessary (asynchronously so the script is not stopped)
   if (!isCI && isGitRepo()) {
     const { default: c } = await import('chalk');
-    const tryAddGitConfig = async (key: string, value: string) => {
+    const tryAddGitConfig = async (key: string, value: string, unsafe?: any) => {
       try {
-        await git({ output: true }).addConfig(key, value);
+        await git({ output: true, unsafe }).addConfig(key, value);
         return true;
       } catch (e: any) {
         uxLog("warning", this, c.yellow(t('couldNotSetGitConfig', { key, value, message: e.message })));
@@ -76,7 +76,8 @@ const hook: Hook<'prerun'> = async (options) => {
         // Diff tool
         if (allConfigs['diff.tool'] == null) {
           const okDiffTool = await tryAddGitConfig('diff.tool', 'vscode');
-          const okDiffCmd = await tryAddGitConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE');
+          // simple-git v4 guards difftool.*.cmd like diff.external: this fixed value is the only one allowed through
+          const okDiffCmd = await tryAddGitConfig('difftool.vscode.cmd', 'code --wait --diff $LOCAL $REMOTE', { allowUnsafeDiffExternal: true });
           if (okDiffTool && okDiffCmd) {
             uxLog("log", this, t('definedVsCodeAsGitDiffTool'));
           }

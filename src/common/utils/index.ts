@@ -12,7 +12,8 @@ const exec = util.promisify(child.exec);
 import { Connection, SfError } from '@salesforce/core';
 import { createSpinner } from './spinner.js';
 import { tryRunSfCommandInProcess } from './sfCoreCommands.js';
-import { simpleGit, FileStatusResult, SimpleGit } from 'simple-git';
+import { FileStatusResult, SimpleGit } from 'simple-git';
+import { createSimpleGit } from './simpleGitInstance.js';
 import { CONSTANTS, getApiVersion, getApiVersionNumber, getConfig, getEnvVar, getReportDirectory, setConfig } from '../../config/index.js';
 import { prompts } from './prompts.js';
 import { encryptFile } from '../cryptoUtils.js';
@@ -32,7 +33,8 @@ import { storeGitCredentials } from './gitCredentialUtils.js';
 import { anonymizeRows, getChannelAnonymizationLevel, getChannelAnonymizationLevelSync } from './anonymizeUtils.js';
 
 export function git(options: any = { output: false, displayCommand: true }): SimpleGit {
-  const simpleGitInstance = simpleGit();
+  // options.unsafe lifts one simple-git guard for this call only: see createSimpleGit
+  const simpleGitInstance = createSimpleGit(undefined, options.unsafe);
   // Hack to be able to display executed git command (and it still doesn't work...)
   // cf: https://github.com/steveukx/git-js/issues/593
   return simpleGitInstance.outputHandler((command, stdout, stderr, gitArgs) => {
