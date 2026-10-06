@@ -12,6 +12,8 @@
 - Upgrade simple-git to v4 to fix security advisories, keeping the git environment variables of CI runners and proxies.
 - Git hooks, aliases and merge drivers run by sfdx-hardis git commands must spell git options in full: an abbreviation such as `--dry` for `--dry-run` is now refused.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): the Flow deletion table of a validation Pull Request comment now says that nothing has been deleted yet and that the Flows are deleted during the real deployment.
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/) no longer asks for the org a second time when you pick one that is not your default org.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) never reuses an existing branch: when the name is taken, it asks for another one.
 
 ## [8.13.0] 2026-10-04
 

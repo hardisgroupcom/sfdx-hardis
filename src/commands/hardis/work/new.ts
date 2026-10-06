@@ -11,7 +11,9 @@ import {
   execCommand,
   execSfdxJson,
   getGitRepoUrl,
+  isCI,
   uxLog,
+  workBranchExists,
 } from '../../../common/utils/index.js';
 import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
@@ -48,7 +50,7 @@ This command guides you through the process of preparing your local environment 
 
 Key features include:
 
-- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
+- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`. A new User Story never reuses an existing branch: if a branch with the same name already exists, locally or on the remote, the command says so and asks for another name (in \`--agent\` mode, in CI, or when the name comes from \`--task-name\`, it stops and asks to run it again with another \`--task-name\`). When the remote can not be reached, only the branches of the last fetch are checked, with a warning.
 
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in \`config/.sfdx-hardis.yml\
 
@@ -103,7 +105,7 @@ Advanced instructions are available in the [Create New User Story documentation]
 
 The command's logic orchestrates various underlying processes:
 
-- **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), checks out the branch if it already exists, and fails with a clear message if it is checked out in another git worktree.
+- **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), refuses a branch that already exists (\`workBranchExists\` checks the local branches and \`git ls-remote --heads origin\`, and drops a stale remote-tracking ref of a branch deleted on the remote), and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
 - **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
@@ -281,7 +283,18 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     // Create the new branch from the latest version of the target branch.
     // We branch from origin/<target> instead of checking out <target>, so this works even
     // when the target branch is checked out in another git worktree.
-    const branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    // A new User Story never reuses an existing branch: an old branch with the same name would
+    // carry its commits into the new Pull Request. The user picks another name instead.
+    let branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    while (await workBranchExists(branchName)) {
+      if (agentMode || isCI || flags['task-name']) {
+        // Nobody to ask: the caller has to run the command again with another name
+        throw new SfError(t('workBranchAlreadyExistsUseAnotherTaskName', { branch: branchName }));
+      }
+      uxLog("action", this, c.yellow(t('workBranchAlreadyExistsChooseAnotherName', { branch: branchName })));
+      taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+      branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    }
     const repoUrl = await getGitRepoUrl();
     uxLog(
       "action",
@@ -289,7 +302,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       c.cyan(t('checkingOutLatestVersionOfBranch', { branch: c.bold(this.targetBranch), repoUrl }))
     );
     uxLog("action", this, c.cyan(t('creatingNewBranch', { branchName: c.green(branchName) })));
-    await createWorkBranchFromTarget(branchName, this.targetBranch);
+    await createWorkBranchFromTarget(branchName, this.targetBranch, { refuseExisting: true });
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
       let shouldUpdateDefaultTargetBranch = false;

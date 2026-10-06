@@ -915,6 +915,38 @@ export async function createWorkBranchFromTarget(
   uxLog("action", this, c.green(t('createdAndCheckedOutGitBranch', { branchName: c.bold(branchName) })));
 }
 
+/**
+ * True when a branch with this name exists locally or on origin.
+ *
+ * Origin is asked directly with ls-remote, so a branch created by a teammate since the last fetch
+ * is found. A remote-tracking ref left behind by a branch deleted on origin is removed, so that
+ * createWorkBranchFromTarget does not refuse a name that is free again.
+ */
+export async function workBranchExists(branchName: string): Promise<boolean> {
+  const localBranches = await git().branchLocal();
+  if (localBranches.all.includes(branchName)) {
+    return true;
+  }
+  let onRemote = false;
+  try {
+    const heads = await git().raw(['ls-remote', '--heads', 'origin', branchName]);
+    onRemote = heads.split(/\r?\n/).some((line) => line.trim().endsWith(`refs/heads/${branchName}`));
+  } catch (e) {
+    // No reachable origin: fall back to the remote-tracking refs of the last fetch, which can miss
+    // a branch (a shallow or single-branch clone in CI fetches only one), so say so
+    uxLog("warning", this, c.yellow(t('workBranchRemoteCheckFailed', { branch: branchName, message: describeGitError(e) })));
+    const remoteBranches = await git().branch(['-r']);
+    return remoteBranches.all.includes(`origin/${branchName}`);
+  }
+  if (!onRemote) {
+    const remoteBranches = await git().branch(['-r']);
+    if (remoteBranches.all.includes(`origin/${branchName}`)) {
+      await git().raw(['branch', '-d', '-r', `origin/${branchName}`]);
+    }
+  }
+  return onRemote;
+}
+
 // Checks that current git status is clean.
 export async function checkGitClean(options: any) {
   if (!isGitRepo()) {
