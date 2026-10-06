@@ -111,6 +111,21 @@ Four things the 2026-09-21 run paid for, driving Salesforce Setup over CDP:
 - **Setup buttons carry assistive text.** The New button's text content is `NewCustom Field`, so an
   exact-text selector finds nothing; `button[title="Custom Field"]` does. The wizard itself is a
   classic form in an iframe, with plain `input[name=...]` controls (`digleft` is Length).
+- **A CDP script whose shell was stopped can stay alive and hold the attach** (2026-10-06). Stopping
+  the background task kills the shell, not always the `node` under it; that `node` keeps its CDP
+  session, and every later `connectOverCDP` hangs after *ws connected*, which looks exactly like a
+  wedged Chrome. Look first: `Get-CimInstance Win32_Process -Filter "Name='node.exe'"` and match
+  your script's name in `CommandLine`. A script of the run must make a freeze visible on its own:
+  log each step with the time, give `connectOverCDP` a `timeout`, arm a watchdog that exits with the
+  name of the stuck step, and end with `process.exit()`, since an attached CDP connection keeps node
+  running after the work is done. Never wait silently on a step longer than its watchdog.
+- **The custom field wizard is a classic form with coded controls** (2026-10-06): the data type
+  radios are `dtype` + a code (`dtypeN` is Number; read the `label[for]` to be sure), **Next** is
+  `input[name=goNext]` with the value `" Next "`, then `MasterLabel`, `digleft` (Length), `Scale`
+  (capital S), `DeveloperName`, `Description`, `InlineHelpText`, and `options_0` is Required. On the
+  Object Settings edit page, a `tr` filtered by the field label also matches the outer layout rows:
+  take the innermost one (`.last()`), which holds exactly two boxes, Read then Edit. Prove a grant
+  by querying `FieldPermissions`, never by the page saving.
 - **Bring the tab to front before a screenshot.** Chrome throttles background tabs hard enough that
   `page.screenshot` times out. And after a long session the DevTools endpoint can wedge: `/json`
   still answers over HTTP while Playwright's attach hangs, and the cure is to close the instance's
@@ -156,6 +171,10 @@ Traps that cost earlier runs time:
   `node scripts/build/start-branches.mjs --check` on the course's `main` says whether they are
   current. Since training PR #36 the course's `start-branches.yml` publishes them on every push to
   `main`; before it, only the monthly check looked, and a push by hand was the release step.
+- **`sf plugins link .` replaces the installed sfdx-hardis, it does not shadow it** (2026-10-06).
+  `sf plugins unlink sfdx-hardis` at the end of a run leaves no sfdx-hardis at all. Put the user's
+  CLI back with `sf plugins install sfdx-hardis` (the `latest` tag): installing `sfdx-hardis@x.y.z`
+  pins that version, and `sf plugins update` then never moves it.
 - **Docker Desktop is usually not running on the workstation.** `docker run ... sf plugins` to read
   the version inside an image fails on the daemon socket. Read the version from the job instead,
   or from the registry timestamps.
