@@ -1867,6 +1867,7 @@
   "flowDeletionMarkdownScope": "対象範囲",
   "flowDeletionMarkdownSelectedVersions": "選択したバージョン",
   "flowDeletionMarkdownStatus": "ステータス",
+  "flowDeletionMarkdownTableSummary": "{{count}}件のフローとそのバージョン",
   "flowDeletionMarkdownTitle": "フローの削除",
   "flowDeletionMarkdownVersions": "対象バージョン",
   "flowDeletionMarkdownVersionsDeleted": "削除したバージョン",

@@ -240,8 +240,13 @@ export abstract class GitProvider {
     if (prData && gitProvider && prCommentSent === false) {
       uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPostingPrComment')));
       let markdownBody = "";
+      // Code coverage first, right under the status line of the title: it is the other verdict a
+      // reviewer reads before anything else
+      if (prData.codeCoverageMarkdownBody) {
+        markdownBody += prData.codeCoverageMarkdownBody;
+      }
       if (prData.deployErrorsMarkdownBody) {
-        markdownBody += prData.deployErrorsMarkdownBody;
+        markdownBody += (markdownBody ? "\n\n" : "") + prData.deployErrorsMarkdownBody;
       }
       if (prData?.autoFixPullRequestUrl) {
         markdownBody += `\n\n---\n🤖 **A coding agent created a fix pull request:** [View fix PR](${prData.autoFixPullRequestUrl})`;
@@ -254,9 +259,6 @@ export abstract class GitProvider {
       }
       if (prData.noOverwriteMarkdownBody) {
         markdownBody += "\n\n" + prData.noOverwriteMarkdownBody;
-      }
-      if (prData.codeCoverageMarkdownBody) {
-        markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
       // Explain the Quick Deploy mechanics so "Apex tests: none run" on the merge job does not read
       // as an anomaly. No promise when quick deploy is disabled or the validation ran no tests:

@@ -1869,6 +1869,7 @@
   "flowDeletionMarkdownScope": "Zakres",
   "flowDeletionMarkdownSelectedVersions": "Wybrane wersje",
   "flowDeletionMarkdownStatus": "Status",
+  "flowDeletionMarkdownTableSummary": "{{count}} Flow i ich wersje",
   "flowDeletionMarkdownTitle": "Usuwanie Flow",
   "flowDeletionMarkdownVersions": "Wersje docelowe",
   "flowDeletionMarkdownVersionsDeleted": "Usunięte wersje",

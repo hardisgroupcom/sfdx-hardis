@@ -1869,6 +1869,7 @@
   "flowDeletionMarkdownScope": "Alcance",
   "flowDeletionMarkdownSelectedVersions": "Versiones seleccionadas",
   "flowDeletionMarkdownStatus": "Estado",
+  "flowDeletionMarkdownTableSummary": "{{count}} Flow(s) y sus versiones",
   "flowDeletionMarkdownTitle": "Eliminación de Flows",
   "flowDeletionMarkdownVersions": "Versiones objetivo",
   "flowDeletionMarkdownVersionsDeleted": "Versiones eliminadas",

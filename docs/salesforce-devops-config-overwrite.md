@@ -76,11 +76,11 @@ The job logs describe each of these steps:
 
 #### See what is protected in the Pull Request
 
-The validation and deployment Pull Request comments have a **Protected metadata** section when the Pull Request contains protected items. It counts, per metadata type, the items already in the target org that are not overwritten, and the items created this once.
+The validation and deployment Pull Request comments have a **Protected metadata** section when the Pull Request contains protected items. It says how many items already in the target org are not overwritten, and how many are created this once, and a collapsed table splits them per metadata type.
 
 ![Protected metadata section of a validation Pull Request comment](assets/images/screenshot-package-no-overwrite-pr-comment.png)
 
-The same comment counts, per metadata type, what the deployment creates, updates and deletes:
+The same comment opens on the code coverage, then counts what the deployment creates, updates and deletes, with a collapsed table per metadata type:
 
 ![Validation Pull Request comment with the components per metadata type and the protected metadata](assets/images/screenshot-deployment-components-pr-comment.png)
 
