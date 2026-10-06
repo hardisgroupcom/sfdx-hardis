@@ -195,10 +195,10 @@ describe('AhaProvider', () => {
       expect(calls[0].url.startsWith('https://acme.aha.io/api/v1/')).to.equal(true);
     }));
 
-    it('accepts an account whose name starts with http', withEnv({ AHA_HOST: 'httpworks.aha.io', AHA_API_KEY: 'secret' }, async () => {
+    it('accepts an account whose name starts with http', withEnv({ AHA_HOST: 'http-tools.aha.io', AHA_API_KEY: 'secret' }, async () => {
       expect(AhaProvider.isAvailable({})).to.equal(true);
       const tickets = await AhaProvider.getTicketsFromString('PROD-12', { config: {} });
-      expect(tickets[0].url).to.equal('https://httpworks.aha.io/features/PROD-12');
+      expect(tickets[0].url).to.equal('https://http-tools.aha.io/features/PROD-12');
     }));
 
     it('narrows the detection down to the project regex', withEnv({ ...AHA_ENV, AHA_TICKET_REGEX: '(MOBILE-[0-9]+)' }, async () => {
