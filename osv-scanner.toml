@@ -66,3 +66,36 @@ reason = "Added 2026-10-03: no fixed braces release exists (3.0.3, the latest, i
 id = "GHSA-ch52-4w7c-c8xp"
 ignoreUntil = 2026-12-31
 reason = "Added 2026-10-03: no fixed http-cache-semantics release exists (4.2.0, the latest, is affected). The flaw lets a client read cached responses of other users from a SHARED cache. Here it is reached through @salesforce/source-deploy-retrieve > got > cacheable-request, a private client-side cache of a single-user CLI process: no response of another user is ever stored in it, so the path is not reachable."
+
+# simple-git 3.36.0 / @simple-git/argv-parser 1.1.1: the unsafe-operations guard can be bypassed
+# through git config includes, abbreviated long options, trailer command config and the VISUAL
+# editor variable, which lets a caller that forwards untrusted arguments, config or env run a
+# command. Fixed in simple-git 4.0.0 / 4.0.1 and @simple-git/argv-parser 2.0.1.
+# sfdx-hardis builds every git argument, config value and environment variable it hands to
+# simple-git itself and never forwards untrusted input there. The fix needs simple-git v4, which
+# also strips the inherited GIT_* and askpass variables our CI jobs rely on, so the migration is
+# planned as a separate PR. Remove once sfdx-hardis moves to simple-git 4. Same CVEs in .trivyignore.
+[[IgnoredVulns]]
+id = "GHSA-858h-whjf-mvg5"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-06: simple-git 3.36.0 unsafe-operations guard bypass (CVE-2026-102826/102827). sfdx-hardis builds the git args, config and env it passes to simple-git itself and never forwards untrusted input. The fix needs simple-git v4, which strips inherited GIT_* / askpass env vars, so the migration is planned as a separate PR."
+
+[[IgnoredVulns]]
+id = "GHSA-g4wm-2vf7-vfgr"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-06: simple-git 3.36.0 unsafe-operations guard bypass (CVE-2026-102826/102827). sfdx-hardis builds the git args, config and env it passes to simple-git itself and never forwards untrusted input. The fix needs simple-git v4, which strips inherited GIT_* / askpass env vars, so the migration is planned as a separate PR."
+
+[[IgnoredVulns]]
+id = "GHSA-x6jw-m9v5-85vh"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-06: simple-git 3.36.0 does not block trailer command configuration (CVE-2026-102828). sfdx-hardis builds the git args, config and env it passes to simple-git itself and never forwards untrusted input. The fix needs simple-git v4, which strips inherited GIT_* / askpass env vars, so the migration is planned as a separate PR."
+
+[[IgnoredVulns]]
+id = "GHSA-v5rq-49vh-5v5c"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-06: @simple-git/argv-parser 1.1.1 omits the VISUAL editor variable from unsafe editor detection (CVE-2026-102829). sfdx-hardis builds the git args, config and env it passes to simple-git itself and never forwards untrusted input. The fixed 2.0.1 ships with simple-git v4, planned as a separate PR."
+
+[[IgnoredVulns]]
+id = "GHSA-hp3w-g68c-fv3c"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-06: no fixed sprintf-js release exists. 1.0.3 only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, so no untrusted format string ever reaches sprintf-js."
