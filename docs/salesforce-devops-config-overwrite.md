@@ -74,6 +74,8 @@ The job logs describe each of these steps:
 - the full list of protected items, written to a `calculated-package-no-overwrite.xml` file (its path is shown in the log);
 - the final `package.xml` to deploy, displayed after all package filtering steps (or summarized when it holds more than 100 items).
 
+The validation and deployment Pull Request comments have a **Protected metadata** section when the Pull Request contains protected items. It counts, per metadata type, the items already in the target org that are not overwritten, and the items created this once. The `deployment-components.xlsx` file of the job artifacts lists them by name, with the status **Not overwritten**, or **Created** and the name of the `package-no-overwrite.xml` file in the **No-overwrite** column.
+
 #### When to use it
 
 Use `package-no-overwrite.xml` for metadata that:

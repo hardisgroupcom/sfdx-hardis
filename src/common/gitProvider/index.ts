@@ -249,6 +249,12 @@ export abstract class GitProvider {
       if (prData.deploymentComponentsMarkdownBody) {
         markdownBody += "\n\n" + prData.deploymentComponentsMarkdownBody;
       }
+      if (prData.deploymentComponentTypesMarkdownBody) {
+        markdownBody += "\n\n" + prData.deploymentComponentTypesMarkdownBody;
+      }
+      if (prData.noOverwriteMarkdownBody) {
+        markdownBody += "\n\n" + prData.noOverwriteMarkdownBody;
+      }
       if (prData.codeCoverageMarkdownBody) {
         markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
       }
@@ -1016,6 +1022,10 @@ export declare type PullRequestData = {
   deployErrorsMarkdownBody?: string;
   // What the deployment really altered in the org: created / updated / deleted / unchanged split
   deploymentComponentsMarkdownBody?: string;
+  // Components that changed or failed, counted per metadata type (collapsible table)
+  deploymentComponentTypesMarkdownBody?: string;
+  // package-no-overwrite.xml components kept in the org or created this once
+  noOverwriteMarkdownBody?: string;
   codeCoverageMarkdownBody?: string;
   // Number of deployment errors and of failing Apex tests, for the run summary of the comment
   errorCount?: number;

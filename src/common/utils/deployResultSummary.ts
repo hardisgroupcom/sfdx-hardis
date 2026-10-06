@@ -40,6 +40,24 @@ export interface DeployComponentChanges {
   detailed: boolean;
 }
 
+/** What a deployment did to one component */
+export type DeployComponentChangeStatus = 'Created' | 'Updated' | 'Deleted' | 'Unchanged';
+
+/** One component of a deploy result. filePath is empty when the result does not give it */
+export interface DeployComponentChange {
+  type: string;
+  name: string;
+  filePath: string;
+  status: DeployComponentChangeStatus;
+}
+
+/** One component a deploy result reports as failed. name is empty when the result only gives the file */
+export interface DeployComponentFailure {
+  type: string;
+  name: string;
+  filePath: string;
+}
+
 /** Metadata API booleans reach us as real booleans through the CLI, but as "true"/"false" through some raw XML clients */
 function isTrue(value: any): boolean {
   return value === true || value === 'true';
@@ -89,6 +107,14 @@ interface ComponentChangeFlags {
   deleted: boolean;
 }
 
+/** One component of a deploy result, with the flags of every detail row mentioning it */
+interface ComponentChangeEntry {
+  type: string;
+  name: string;
+  filePath: string;
+  flags: ComponentChangeFlags;
+}
+
 /**
  * Merge one detail row into the per-component map.
  *
@@ -97,29 +123,30 @@ interface ComponentChangeFlags {
  * OR-ed: a component is "changed" as soon as one row says so.
  */
 function mergeComponentChangeFlags(
-  flagsByComponent: Map<string, ComponentChangeFlags>,
-  key: string,
+  flagsByComponent: Map<string, ComponentChangeEntry>,
+  component: { type: string; name: string; filePath: string },
   flags: ComponentChangeFlags
 ): void {
+  const key = `${component.type}:${component.name}`;
   const existing = flagsByComponent.get(key);
   if (!existing) {
-    flagsByComponent.set(key, { ...flags });
+    flagsByComponent.set(key, { ...component, flags: { ...flags } });
     return;
   }
-  existing.created = existing.created || flags.created;
-  existing.updated = existing.updated || flags.updated;
-  existing.deleted = existing.deleted || flags.deleted;
+  existing.flags.created = existing.flags.created || flags.created;
+  existing.flags.updated = existing.flags.updated || flags.updated;
+  existing.flags.deleted = existing.flags.deleted || flags.deleted;
 }
 
 /** Collect the per-component flags from `details.componentSuccesses`, the Metadata API deploy result shape */
-function collectFlagsFromComponentSuccesses(componentSuccesses: any[]): Map<string, ComponentChangeFlags> {
-  const flagsByComponent = new Map<string, ComponentChangeFlags>();
+function collectFlagsFromComponentSuccesses(componentSuccesses: any[]): Map<string, ComponentChangeEntry> {
+  const flagsByComponent = new Map<string, ComponentChangeEntry>();
   for (const item of componentSuccesses) {
     if (isManifestRow(item)) {
       continue;
     }
-    const key = `${item?.componentType || ''}:${item?.fullName || ''}`;
-    mergeComponentChangeFlags(flagsByComponent, key, {
+    const component = { type: `${item?.componentType || ''}`, name: `${item?.fullName || ''}`, filePath: `${item?.fileName || ''}` };
+    mergeComponentChangeFlags(flagsByComponent, component, {
       created: isTrue(item?.created),
       updated: isTrue(item?.changed),
       deleted: isTrue(item?.deleted),
@@ -137,30 +164,31 @@ function collectFlagsFromComponentSuccesses(componentSuccesses: any[]): Map<stri
  * untouched component. Failed rows also often carry no fullName, so they would collapse into a
  * single entry per metadata type.
  */
-function collectFlagsFromFiles(files: any[]): Map<string, ComponentChangeFlags> {
-  const flagsByComponent = new Map<string, ComponentChangeFlags>();
+function collectFlagsFromFiles(files: any[]): Map<string, ComponentChangeEntry> {
+  const flagsByComponent = new Map<string, ComponentChangeEntry>();
   for (const item of files) {
     const flags = FILE_STATE_FLAGS[`${item?.state || ''}`];
     if (!flags) {
       continue;
     }
-    const key = `${item?.type || ''}:${item?.fullName || item?.filePath || ''}`;
-    mergeComponentChangeFlags(flagsByComponent, key, flags);
+    const component = { type: `${item?.type || ''}`, name: `${item?.fullName || item?.filePath || ''}`, filePath: `${item?.filePath || ''}` };
+    mergeComponentChangeFlags(flagsByComponent, component, flags);
   }
   return flagsByComponent;
 }
 
 /**
- * Count how many components a deploy result created, updated, deleted, or left untouched.
+ * List the components of a deploy result, each with what the deployment did to it.
  *
- * Deduplicated on componentType + fullName so the counters add up to numberComponentsDeployed:
- * on a real deployment result, 38 detail rows collapsed to exactly the 34 components Salesforce
- * reported as deployed, once the package.xml row and the duplicates were removed.
+ * Deduplicated on componentType + fullName so the list has one entry per component: on a real
+ * deployment result, 38 detail rows collapsed to exactly the 34 components Salesforce reported as
+ * deployed, once the package.xml row and the duplicates were removed. Empty when the result
+ * carried no usable per-component detail.
  */
-export function countDeployComponentChanges(deployResultJson: any): DeployComponentChanges {
+export function listDeployComponentChanges(deployResultJson: any): DeployComponentChange[] {
   const componentSuccesses = deployResultJson?.details?.componentSuccesses;
   const files = deployResultJson?.files;
-  let flagsByComponent = new Map<string, ComponentChangeFlags>();
+  let flagsByComponent = new Map<string, ComponentChangeEntry>();
   if (Array.isArray(componentSuccesses)) {
     flagsByComponent = collectFlagsFromComponentSuccesses(componentSuccesses);
   }
@@ -169,18 +197,32 @@ export function countDeployComponentChanges(deployResultJson: any): DeployCompon
   if (flagsByComponent.size === 0 && Array.isArray(files)) {
     flagsByComponent = collectFlagsFromFiles(files);
   }
-  if (flagsByComponent.size === 0) {
+  return [...flagsByComponent.values()].map((entry) => ({
+    type: entry.type,
+    name: entry.name,
+    filePath: entry.filePath,
+    status: componentChangeStatus(entry.flags),
+  }));
+}
+
+/**
+ * Count how many components a deploy result created, updated, deleted, or left untouched.
+ *
+ * Built from listDeployComponentChanges, so the counters add up to numberComponentsDeployed and
+ * always match the deployment components report.
+ */
+export function countDeployComponentChanges(deployResultJson: any): DeployComponentChanges {
+  const componentChanges = listDeployComponentChanges(deployResultJson);
+  if (componentChanges.length === 0) {
     return { ...EMPTY_COMPONENT_CHANGES };
   }
   const changes: DeployComponentChanges = { ...EMPTY_COMPONENT_CHANGES, detailed: true };
-  for (const flags of flagsByComponent.values()) {
-    // A created component is often flagged both created and changed: the most specific wins, so
-    // each component is counted exactly once and the counters sum to the number of components.
-    if (flags.deleted) {
+  for (const componentChange of componentChanges) {
+    if (componentChange.status === 'Deleted') {
       changes.deleted++;
-    } else if (flags.created) {
+    } else if (componentChange.status === 'Created') {
       changes.created++;
-    } else if (flags.updated) {
+    } else if (componentChange.status === 'Updated') {
       changes.updated++;
     } else {
       changes.unchanged++;
@@ -188,6 +230,42 @@ export function countDeployComponentChanges(deployResultJson: any): DeployCompon
     changes.total++;
   }
   return changes;
+}
+
+/**
+ * List the components a deploy result reports as failed.
+ *
+ * Read from `details.componentFailures` (an object when there is a single failure), or from the
+ * `files[]` rows in state Failed. A failed row often has no fullName: the file path is kept so the
+ * report can still name the component.
+ */
+export function listDeployComponentFailures(deployResultJson: any): DeployComponentFailure[] {
+  const rawFailures = deployResultJson?.details?.componentFailures;
+  const componentFailures = Array.isArray(rawFailures) ? rawFailures : rawFailures ? [rawFailures] : [];
+  const failures: DeployComponentFailure[] = componentFailures
+    .filter((item: any) => !isManifestRow(item))
+    .map((item: any) => ({ type: `${item?.componentType || ''}`, name: `${item?.fullName || ''}`, filePath: `${item?.fileName || ''}` }));
+  if (failures.length > 0) {
+    return failures;
+  }
+  const files = Array.isArray(deployResultJson?.files) ? deployResultJson.files : [];
+  return files
+    .filter((item: any) => item?.state === 'Failed')
+    .map((item: any) => ({ type: `${item?.type || ''}`, name: `${item?.fullName || ''}`, filePath: `${item?.filePath || ''}` }));
+}
+
+/** A created component is often flagged both created and changed: the most specific wins, so each component has one status */
+function componentChangeStatus(flags: ComponentChangeFlags): DeployComponentChangeStatus {
+  if (flags.deleted) {
+    return 'Deleted';
+  }
+  if (flags.created) {
+    return 'Created';
+  }
+  if (flags.updated) {
+    return 'Updated';
+  }
+  return 'Unchanged';
 }
 
 /** True when the user asked to keep the complete deployment JSON in the console logs */

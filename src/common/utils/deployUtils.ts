@@ -32,13 +32,14 @@ import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitU
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, listPackageXmlItemsMatchingNoOverwrite, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, listPackageXmlItemsMatchingNoOverwrite, parsePackageXmlFile, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { executePrePostCommands, resetActionOutputsRegistry } from './prePostCommandUtils.js';
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
+import { finalizeDeploymentComponentsReport, recordDeployResult, recordNoOverwriteFiltering, resetDeploymentComponentsReport } from './deploymentComponentsReport.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
 import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
@@ -309,9 +310,12 @@ export function buildDeployedComponentsMarkdown(deploymentMetrics: DeploymentMet
   }
   const changed =
     deploymentMetrics.componentsCreated + deploymentMetrics.componentsUpdated + deploymentMetrics.componentsDeleted;
-  const verb = check === true ? 'would change' : 'changed';
+  const prefix =
+    check === true
+      ? `**Simulated deployment:** ${deploymentMetrics.componentsDeployed} components validated against the org, ${changed} would change`
+      : `**Deployed components:** ${deploymentMetrics.componentsDeployed} sent to the org, ${changed} changed`;
   return (
-    `**Deployed components:** ${deploymentMetrics.componentsDeployed} sent to the org, ${changed} ${verb}` +
+    prefix +
     ` (${deploymentMetrics.componentsCreated} created, ${deploymentMetrics.componentsUpdated} updated,` +
     ` ${deploymentMetrics.componentsDeleted} deleted, ${deploymentMetrics.componentsUnchanged} unchanged)`
   );
@@ -332,6 +336,23 @@ function accumulateComponentChanges(deploymentMetrics: DeploymentMetrics, deploy
   deploymentMetrics.componentsDeleted += changes.deleted;
   deploymentMetrics.componentsUnchanged += changes.unchanged;
   deploymentMetrics.componentsChangeTotal += changes.total;
+}
+
+/**
+ * Write the deployment components report and give its Markdown to the Pull Request comment.
+ * Called right before each post of the comment by the deployment flow.
+ */
+async function publishDeploymentComponentsReport(check: boolean): Promise<void> {
+  try {
+    const report = await finalizeDeploymentComponentsReport(check);
+    setPullRequestData({
+      deploymentComponentTypesMarkdownBody: report.componentTypesMarkdown,
+      noOverwriteMarkdownBody: report.noOverwriteMarkdown,
+    });
+  } catch (e: any) {
+    // The report must never fail a deployment
+    uxLog("warning", this, c.yellow(t('deploymentComponentsReportError', { message: e.message })));
+  }
 }
 
 function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boolean; startTime: number }): DeploymentMetrics {
@@ -379,6 +400,7 @@ export async function smartDeploy(
   // and so custom function outputs never leak from a previous deployment of the same process
   resetExecutedDeploymentActions();
   resetActionOutputsRegistry();
+  resetDeploymentComponentsReport();
   const deployStartTime = Date.now();
   let quickDeploy = false;
   const deploymentMetrics: DeploymentMetrics = buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime });
@@ -449,6 +471,7 @@ export async function smartDeploy(
     uxLog("other", this, t('noDeploymentToPerform'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
+    await publishDeploymentComponentsReport(check);
     if (options.deferSuccessPullRequestComment !== true) {
       await GitProvider.managePostPullRequestComment(check);
     }
@@ -577,6 +600,7 @@ export async function smartDeploy(
             if (quickDeployResultJson) {
               deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
               accumulateComponentChanges(deploymentMetrics, quickDeployResultJson);
+              recordDeployResult(quickDeployResultJson, { quickDeploy: true });
               deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
               deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
               deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
@@ -699,6 +723,7 @@ export async function smartDeploy(
         if (deployResultJson) {
           deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
           accumulateComponentChanges(deploymentMetrics, deployResultJson);
+          recordDeployResult(deployResultJson);
           deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
           deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
           deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);
@@ -747,6 +772,7 @@ export async function smartDeploy(
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
         } catch (errCoverage) {
+          await publishDeploymentComponentsReport(check);
           await GitProvider.managePostPullRequestComment(check);
           killBoringExitHandlers();
           throw errCoverage;
@@ -827,6 +853,7 @@ export async function smartDeploy(
   if (componentsMarkdown) {
     setPullRequestData({ deploymentComponentsMarkdownBody: componentsMarkdown });
   }
+  await publishDeploymentComponentsReport(check);
   // Post pull request comment if available
   if (options.deferSuccessPullRequestComment !== true) {
     await GitProvider.managePostPullRequestComment(check);
@@ -883,6 +910,8 @@ async function handleDeployError(
   }
   elapseEnd(`deploy ${deployment.label}`);
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check });
+  recordDeployResult(findJsonInString(output)?.result);
+  await publishDeploymentComponentsReport(check);
   await GitProvider.managePostPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
@@ -1073,6 +1102,7 @@ async function buildDeploymentPackageXmls(
   }
   const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFiles: packageXmlFilesToProtect });
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
+  const noOverwriteSourceFile = await resolvePackageNoOverwriteFile();
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDir = await createTempDir();
   const mainPackageXmlCopyFileName = path.join(tmpDir, 'calculated-package.xml');
@@ -1112,7 +1142,8 @@ async function buildDeploymentPackageXmls(
             deploymentItem.packageXmlFile,
             deployOncePackageXml,
             deployOnChangePackageXml,
-            debugMode
+            debugMode,
+            noOverwriteSourceFile
           );
         }
         deploymentItems.push(deploymentItem);
@@ -1122,7 +1153,8 @@ async function buildDeploymentPackageXmls(
       mainPackageXmlCopyFileName,
       deployOncePackageXml,
       deployOnChangePackageXml,
-      debugMode
+      debugMode,
+      noOverwriteSourceFile
     );
 
     // Sort in requested order
@@ -1138,7 +1170,8 @@ async function buildDeploymentPackageXmls(
       mainPackageXmlCopyFileName,
       deployOncePackageXml,
       deployOnChangePackageXml,
-      debugMode
+      debugMode,
+      noOverwriteSourceFile
     );
     return [
       {
@@ -1172,7 +1205,9 @@ async function warnOnDuplicateFolderMetadataApiNames(packageXmlFile: string, com
 }
 
 // Apply packageXml filtering using deployOncePackageXml and deployOnChangePackageXml
-async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deployOnChangePackageXml, debugMode) {
+async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deployOnChangePackageXml, debugMode, noOverwriteSourceFile: string | null = null) {
+  // Items package-no-overwrite.xml protects, listed before the filtering so the report can tell which ones it removed
+  const noOverwriteMatchingItems = noOverwriteSourceFile ? await listPackageXmlItemsMatchingNoOverwrite(packageXml, noOverwriteSourceFile) : [];
   // Main packageXml: Remove package-no-overwrite.xml items that are already present in target org
   if (deployOncePackageXml) {
     await removePackageXmlContent(packageXml, deployOncePackageXml, false, {
@@ -1180,6 +1215,12 @@ async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deploy
       keepEmptyTypes: true,
       context: 'no-overwrite-remove',
     });
+  }
+  // Recorded before the packageDeployOnChange.xml filtering, so what it removes is never reported as protected
+  if (noOverwriteSourceFile && noOverwriteMatchingItems.length > 0) {
+    const remainingContent = await parsePackageXmlFile(packageXml);
+    const notOverwrittenItems = noOverwriteMatchingItems.filter((item) => !(remainingContent[item.type] || []).includes(item.member));
+    await recordNoOverwriteFiltering(noOverwriteSourceFile, notOverwrittenItems);
   }
   //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
   if (deployOnChangePackageXml) {
@@ -1212,20 +1253,8 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     );
     return null;
   }
-  // Get default package-no-overwrite
-  let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
-  if (!fs.existsSync(packageNoOverwrite)) {
-    packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
-  }
-  const config = await getConfig("branch");
-  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
-    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
-    if (!fs.existsSync(packageNoOverwrite)) {
-      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
-    }
-    uxLog("log", this, c.grey(t('usingCustomPackageNoOverwriteFileDefined', { packageNoOverwrite })));
-  }
-  if (fs.existsSync(packageNoOverwrite)) {
+  const packageNoOverwrite = await resolvePackageNoOverwriteFile({ log: true });
+  if (packageNoOverwrite) {
     uxLog("action", this, c.cyan(t('handlingPackageNoOverwriteXmlMetadataThat')));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
@@ -1266,6 +1295,30 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     }
   }
   return null;
+}
+
+// The package-no-overwrite.xml file of the deployment (or its legacy name packageDeployOnce.xml), possibly
+// overridden for a branch with packageNoOverwritePath / PACKAGE_NO_OVERWRITE_PATH. Null when there is none
+// or when SKIP_PACKAGE_DEPLOY_ONCE=true.
+async function resolvePackageNoOverwriteFile(options: { log?: boolean } = {}): Promise<string | null> {
+  if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === 'true') {
+    return null;
+  }
+  let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
+  if (!fs.existsSync(packageNoOverwrite)) {
+    packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
+  }
+  const config = await getConfig("branch");
+  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
+    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
+    if (!fs.existsSync(packageNoOverwrite)) {
+      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
+    }
+    if (options.log === true) {
+      uxLog("log", this, c.grey(t('usingCustomPackageNoOverwriteFileDefined', { packageNoOverwrite })));
+    }
+  }
+  return fs.existsSync(packageNoOverwrite) ? packageNoOverwrite : null;
 }
 
 // packageDeployOnChange.xml items are deployed only if they have changed in target org
