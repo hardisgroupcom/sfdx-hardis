@@ -34,9 +34,10 @@ export interface DeploymentComponentsReportState {
   // What the deploy results say about each component, by Type:Name
   changes: Map<string, { type: string; name: string; status: DeploymentComponentStatus }>;
   failures: Map<string, { type: string; name: string }>;
-  // True as soon as one deploy result carried per-component detail
-  detailed: boolean;
-  quickDeploy: boolean;
+  // Deploy results that sent components but named none of them (Quick Deploy): the report is then partial
+  resultsWithoutDetail: number;
+  // Failed components known by neither name nor file: each one is still counted once
+  unnamedFailures: number;
 }
 
 export interface DeploymentComponentsReportResult {
@@ -47,6 +48,9 @@ export interface DeploymentComponentsReportResult {
 
 // Order of the report rows: what needs attention first, untouched components last
 const STATUS_ORDER: DeploymentComponentStatus[] = ['Failed', 'Created', 'Updated', 'Deleted', 'Not overwritten', 'Unchanged'];
+
+// When several deploy results name the same component, the most significant status wins
+const CHANGE_PRECEDENCE: DeploymentComponentStatus[] = ['Deleted', 'Created', 'Updated', 'Unchanged'];
 
 export const DEPLOYMENT_COMPONENTS_REPORT_NAME = 'deployment-components';
 
@@ -81,25 +85,33 @@ export async function recordNoOverwriteFiltering(
   }
 }
 
-/** Record the components of one deploy result, successful or failed */
-export function recordDeployResult(deployResultJson: any, options: { quickDeploy?: boolean } = {}): void {
-  if (options.quickDeploy === true) {
-    reportState.quickDeploy = true;
-  }
-  if (!deployResultJson) {
-    return;
-  }
-  const changes = listDeployComponentChanges(deployResultJson);
-  if (changes.length > 0) {
-    reportState.detailed = true;
+/**
+ * Record the components of one deploy result.
+ *
+ * failuresOnly is for a real deployment that failed: Salesforce rolled it back, so the components its
+ * result lists as created or updated did not change the org, and only the failures are kept.
+ */
+export function recordDeployResult(deployResultJson: any, options: { quickDeploy?: boolean; failuresOnly?: boolean } = {}): void {
+  const changes = deployResultJson && options.failuresOnly !== true ? listDeployComponentChanges(deployResultJson) : [];
+  if (
+    changes.length === 0 &&
+    options.failuresOnly !== true &&
+    (options.quickDeploy === true || Number(deployResultJson?.numberComponentsDeployed || 0) > 0)
+  ) {
+    reportState.resultsWithoutDetail++;
   }
   for (const change of changes) {
     const component = normalizeComponent(change.type, change.name, change.filePath);
-    reportState.changes.set(componentKey(component.type, component.name), { ...component, status: change.status });
+    const key = componentKey(component.type, component.name);
+    const existing = reportState.changes.get(key);
+    if (!existing || CHANGE_PRECEDENCE.indexOf(change.status) < CHANGE_PRECEDENCE.indexOf(existing.status)) {
+      reportState.changes.set(key, { ...component, status: change.status });
+    }
   }
-  for (const failure of listDeployComponentFailures(deployResultJson)) {
+  for (const failure of deployResultJson ? listDeployComponentFailures(deployResultJson) : []) {
     const component = normalizeComponent(failure.type, failure.name, failure.filePath);
-    reportState.failures.set(componentKey(component.type, component.name), component);
+    const key = component.name ? componentKey(component.type, component.name) : `${component.type}:#${++reportState.unnamedFailures}`;
+    reportState.failures.set(key, component);
   }
 }
 
@@ -110,13 +122,12 @@ export function recordDeployResult(deployResultJson: any, options: { quickDeploy
 export async function finalizeDeploymentComponentsReport(check: boolean): Promise<DeploymentComponentsReportResult> {
   const rows = buildDeploymentComponentRows(reportState);
   const result: DeploymentComponentsReportResult = {
-    componentTypesMarkdown: buildComponentTypesMarkdown(rows, check),
+    componentTypesMarkdown: reportState.resultsWithoutDetail > 0 ? '' : buildComponentTypesMarkdown(rows, check),
     noOverwriteMarkdown: buildNoOverwriteMarkdown(rows, check, reportState),
     reportFile: null,
   };
-  // A Quick Deploy result names no component: a report holding only the protected items would read as complete
-  const hasComponentDetail = reportState.detailed || reportState.failures.size > 0;
-  if (rows.length === 0 || (reportState.quickDeploy && !hasComponentDetail)) {
+  // A result naming no component (Quick Deploy) makes the list partial: no file that would read as complete
+  if (rows.length === 0 || reportState.resultsWithoutDetail > 0) {
     return result;
   }
   const reportFile = path.join(await getReportDirectory(), `${DEPLOYMENT_COMPONENTS_REPORT_NAME}.csv`);
@@ -201,14 +212,14 @@ export function buildComponentTypesMarkdown(rows: DeploymentComponentRow[], chec
 export function buildNoOverwriteMarkdown(
   rows: DeploymentComponentRow[],
   check: boolean,
-  state: Pick<DeploymentComponentsReportState, 'noOverwriteFile' | 'quickDeploy' | 'detailed'>
+  state: Pick<DeploymentComponentsReportState, 'noOverwriteFile' | 'resultsWithoutDetail'>
 ): string {
   if (!state.noOverwriteFile) {
     return '';
   }
   const notOverwrittenCount = rows.filter((row) => row.status === 'Not overwritten').length;
-  // A Quick Deploy result names no component: what was created this once is unknown
-  const showCreatedOnce = !(state.quickDeploy && !state.detailed);
+  // A result naming no component (Quick Deploy): what was created this once is unknown
+  const showCreatedOnce = state.resultsWithoutDetail === 0;
   const createdOnceCount = showCreatedOnce ? rows.filter((row) => row.status === 'Created' && row.noOverwriteFile !== '').length : 0;
   if (notOverwrittenCount === 0 && createdOnceCount === 0) {
     return '';
@@ -243,8 +254,8 @@ function buildEmptyState(): DeploymentComponentsReportState {
     notOverwritten: new Map(),
     changes: new Map(),
     failures: new Map(),
-    detailed: false,
-    quickDeploy: false,
+    resultsWithoutDetail: 0,
+    unnamedFailures: 0,
   };
 }
 
@@ -255,28 +266,60 @@ function componentKey(type: string, name: string): string {
 /**
  * Same Type and Name as in package.xml, read from the metadata registry: the type is spelled like its
  * xmlName, and a failed row that only gives its file path gets the name package.xml would give it
- * (objects/Account/fields/Rate__c.field-meta.xml is CustomField Account.Rate__c).
+ * (objects/Account/fields/Rate__c.field-meta.xml is CustomField Account.Rate__c, lwc/myCmp/myCmp.js is
+ * LightningComponentBundle myCmp).
  */
 function normalizeComponent(type: string, name: string, filePath: string): { type: string; name: string } {
-  const metadataTypes = listMetadataTypes() as any[];
-  const fileName = path.basename(filePath || '').replace(/-meta\.xml$/, '');
+  const registry = getMetadataRegistryIndex();
+  const segments = (filePath || '').replace(/\\/g, '/').split('/').filter((segment) => segment !== '');
+  const fileName = (segments[segments.length - 1] || '').replace(/-meta\.xml$/, '');
   const fileSuffix = fileName.includes('.') ? fileName.substring(fileName.lastIndexOf('.') + 1) : '';
   const metadataType =
-    metadataTypes.find((item) => item.xmlName.toLowerCase() === (type || '').toLowerCase()) ||
-    (type ? null : metadataTypes.find((item) => item.suffix === fileSuffix));
+    registry.byXmlName.get((type || '').toLowerCase()) ||
+    (type ? null : findBundleType(segments, registry) || registry.bySuffix.get(fileSuffix));
   const canonicalType = metadataType?.xmlName || type;
   if (name && name !== filePath) {
     return { type: canonicalType, name: name };
   }
-  if (!filePath || !metadataType) {
+  if (segments.length === 0 || !metadataType) {
     return { type: canonicalType, name: name || filePath || '' };
   }
-  return { type: canonicalType, name: nameFromFilePath(filePath, metadataType) };
+  return { type: canonicalType, name: nameFromFilePath(segments, fileName, metadataType) };
 }
 
-function nameFromFilePath(filePath: string, metadataType: any): string {
-  const segments = filePath.replace(/\\/g, '/').split('/');
-  const fileName = segments[segments.length - 1].replace(/-meta\.xml$/, '');
+let metadataRegistryIndex: { byXmlName: Map<string, any>; bySuffix: Map<string, any>; byDirectoryName: Map<string, any> } | null = null;
+
+// Built once: the registry holds about 600 types and a FULL deployment can name thousands of components
+function getMetadataRegistryIndex(): { byXmlName: Map<string, any>; bySuffix: Map<string, any>; byDirectoryName: Map<string, any> } {
+  if (metadataRegistryIndex === null) {
+    const byXmlName = new Map<string, any>();
+    const bySuffix = new Map<string, any>();
+    const byDirectoryName = new Map<string, any>();
+    for (const metadataType of listMetadataTypes() as any[]) {
+      byXmlName.set(metadataType.xmlName.toLowerCase(), metadataType);
+      if (metadataType.suffix && !bySuffix.has(metadataType.suffix)) {
+        bySuffix.set(metadataType.suffix, metadataType);
+      }
+      if (metadataType.directoryName && !metadataType.parentXmlName && !metadataType.inFolder && !byDirectoryName.has(metadataType.directoryName)) {
+        byDirectoryName.set(metadataType.directoryName, metadataType);
+      }
+    }
+    metadataRegistryIndex = { byXmlName, bySuffix, byDirectoryName };
+  }
+  return metadataRegistryIndex;
+}
+
+// A bundle file (lwc/myCmp/myCmp.html) has no suffix of its own: its type is the one of the folder above the bundle
+function findBundleType(segments: string[], registry: ReturnType<typeof getMetadataRegistryIndex>): any {
+  const directoryIndex = segments.length - 3;
+  if (directoryIndex < 0) {
+    return null;
+  }
+  const metadataType = registry.byDirectoryName.get(segments[directoryIndex]);
+  return metadataType && !metadataType.suffix ? metadataType : null;
+}
+
+function nameFromFilePath(segments: string[], fileName: string, metadataType: any): string {
   const baseName = metadataType.suffix && fileName.endsWith(`.${metadataType.suffix}`)
     ? fileName.substring(0, fileName.length - metadataType.suffix.length - 1)
     : fileName;
@@ -284,10 +327,14 @@ function nameFromFilePath(filePath: string, metadataType: any): string {
   if (metadataType.parentXmlName && segments.length >= 3) {
     return `${segments[segments.length - 3]}.${baseName}`;
   }
-  // Folder type (EmailTemplate, Report...): <directoryName>/<Folder>/<Name>.<suffix>-meta.xml
   const directoryIndex = segments.lastIndexOf(metadataType.directoryName);
-  if (metadataType.inFolder && directoryIndex >= 0 && directoryIndex < segments.length - 2) {
-    return [...segments.slice(directoryIndex + 1, segments.length - 1), baseName].join('/');
+  if (directoryIndex >= 0 && directoryIndex < segments.length - 2) {
+    // Folder type (EmailTemplate, Report...): <directoryName>/<Folder>/<Name>.<suffix>-meta.xml
+    if (metadataType.inFolder) {
+      return [...segments.slice(directoryIndex + 1, segments.length - 1), baseName].join('/');
+    }
+    // Bundle (LWC, Aura...): every file of the bundle is named after its folder
+    return segments[directoryIndex + 1];
   }
   return baseName;
 }

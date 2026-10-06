@@ -243,7 +243,8 @@ export function listDeployComponentFailures(deployResultJson: any): DeployCompon
   const rawFailures = deployResultJson?.details?.componentFailures;
   const componentFailures = Array.isArray(rawFailures) ? rawFailures : rawFailures ? [rawFailures] : [];
   const failures: DeployComponentFailure[] = componentFailures
-    .filter((item: any) => !isManifestRow(item))
+    // deploy:smart passes --ignore-warnings: a warning row is not a failure, even listed in componentFailures
+    .filter((item: any) => !isManifestRow(item) && item?.problemType !== 'Warning' && !isTrue(item?.success))
     .map((item: any) => ({ type: `${item?.componentType || ''}`, name: `${item?.fullName || ''}`, filePath: `${item?.fileName || ''}` }));
   if (failures.length > 0) {
     return failures;
@@ -252,20 +253,6 @@ export function listDeployComponentFailures(deployResultJson: any): DeployCompon
   return files
     .filter((item: any) => item?.state === 'Failed')
     .map((item: any) => ({ type: `${item?.type || ''}`, name: `${item?.fullName || ''}`, filePath: `${item?.filePath || ''}` }));
-}
-
-/** A created component is often flagged both created and changed: the most specific wins, so each component has one status */
-function componentChangeStatus(flags: ComponentChangeFlags): DeployComponentChangeStatus {
-  if (flags.deleted) {
-    return 'Deleted';
-  }
-  if (flags.created) {
-    return 'Created';
-  }
-  if (flags.updated) {
-    return 'Updated';
-  }
-  return 'Unchanged';
 }
 
 /** True when the user asked to keep the complete deployment JSON in the console logs */
@@ -456,4 +443,18 @@ function getDeployDurationMs(result: any, fallbackDurationMs?: number | null): n
     return fallbackDurationMs;
   }
   return null;
+}
+
+/** A created component is often flagged both created and changed: the most specific wins, so each component has one status */
+function componentChangeStatus(flags: ComponentChangeFlags): DeployComponentChangeStatus {
+  if (flags.deleted) {
+    return 'Deleted';
+  }
+  if (flags.created) {
+    return 'Created';
+  }
+  if (flags.updated) {
+    return 'Updated';
+  }
+  return 'Unchanged';
 }

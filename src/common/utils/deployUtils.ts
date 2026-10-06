@@ -338,23 +338,6 @@ function accumulateComponentChanges(deploymentMetrics: DeploymentMetrics, deploy
   deploymentMetrics.componentsChangeTotal += changes.total;
 }
 
-/**
- * Write the deployment components report and give its Markdown to the Pull Request comment.
- * Called right before each post of the comment by the deployment flow.
- */
-async function publishDeploymentComponentsReport(check: boolean): Promise<void> {
-  try {
-    const report = await finalizeDeploymentComponentsReport(check);
-    setPullRequestData({
-      deploymentComponentTypesMarkdownBody: report.componentTypesMarkdown,
-      noOverwriteMarkdownBody: report.noOverwriteMarkdown,
-    });
-  } catch (e: any) {
-    // The report must never fail a deployment
-    uxLog("warning", this, c.yellow(t('deploymentComponentsReportError', { message: e.message })));
-  }
-}
-
 function buildEmptyDeploymentMetrics(options: { quickDeploy: boolean; delta: boolean; startTime: number }): DeploymentMetrics {
   return {
     componentsDeployed: 0,
@@ -430,9 +413,7 @@ export async function smartDeploy(
     uxLog("action", this, c.cyan(t('bothPackageXmlAndDestructiveChangesFiles')));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    if (options.deferSuccessPullRequestComment !== true) {
-      await GitProvider.managePostPullRequestComment(check);
-    }
+    await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
@@ -442,9 +423,7 @@ export async function smartDeploy(
     uxLog("action", this, t('noDeploymentOrDestructiveChangesToPerform'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    if (options.deferSuccessPullRequestComment !== true) {
-      await GitProvider.managePostPullRequestComment(check);
-    }
+    await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
@@ -471,10 +450,7 @@ export async function smartDeploy(
     uxLog("other", this, t('noDeploymentToPerform'));
     await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    await publishDeploymentComponentsReport(check);
-    if (options.deferSuccessPullRequestComment !== true) {
-      await GitProvider.managePostPullRequestComment(check);
-    }
+    await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
@@ -772,8 +748,7 @@ export async function smartDeploy(
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
         } catch (errCoverage) {
-          await publishDeploymentComponentsReport(check);
-          await GitProvider.managePostPullRequestComment(check);
+          await postDeploymentPullRequestComment(check);
           killBoringExitHandlers();
           throw errCoverage;
         }
@@ -853,11 +828,8 @@ export async function smartDeploy(
   if (componentsMarkdown) {
     setPullRequestData({ deploymentComponentsMarkdownBody: componentsMarkdown });
   }
-  await publishDeploymentComponentsReport(check);
   // Post pull request comment if available
-  if (options.deferSuccessPullRequestComment !== true) {
-    await GitProvider.managePostPullRequestComment(check);
-  }
+  await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
   elapseEnd('all deployments');
   deploymentMetrics.quickDeploy = quickDeploy;
   deploymentMetrics.durationSeconds = Math.round((Date.now() - deployStartTime) / 1000);
@@ -873,12 +845,13 @@ async function handleDeployError(
   deployment: any
 ) {
   const output: string = (e as any).stdout + (e as any).stderr;
+  // The deploy output can weigh several MB: it is parsed once
+  const jsonResult = findJsonInString(output);
   // Handle coverage error if ignored
   if (
     check === true &&
     branchConfig?.testCoverageNotBlocking === true
   ) {
-    const jsonResult = findJsonInString(output);
     if (isDeployCheckCoverageOnlyFailure(jsonResult, commandThis)) {
       uxLog(
         "warning",
@@ -889,7 +862,7 @@ async function handleDeployError(
     }
   }
   // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
-  const deployResultReportFile = await writeDeployResultReportFile(findJsonInString(output), deployment.label);
+  const deployResultReportFile = await writeDeployResultReportFile(jsonResult, deployment.label);
   // Handle Effective error
   const { errLog, errorsAndTips: deployErrorsAndTips, failedTests: deployFailedTests } = await analyzeDeployErrorLogs(output, true, { check: check, label: deployment.label, deployResultReportFile: deployResultReportFile });
   uxLog("error", commandThis, c.red(c.bold(t('sadlyThereHasBeenDeploymentError'))));
@@ -910,9 +883,9 @@ async function handleDeployError(
   }
   elapseEnd(`deploy ${deployment.label}`);
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check });
-  recordDeployResult(findJsonInString(output)?.result);
-  await publishDeploymentComponentsReport(check);
-  await GitProvider.managePostPullRequestComment(check);
+  // A real deployment that failed was rolled back: only its failures say something about the org
+  recordDeployResult(jsonResult?.result, { failuresOnly: check !== true });
+  await postDeploymentPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
 }
@@ -1100,9 +1073,9 @@ async function buildDeploymentPackageXmls(
       }
     }
   }
-  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFiles: packageXmlFilesToProtect });
-  const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   const noOverwriteSourceFile = await resolvePackageNoOverwriteFile();
+  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFiles: packageXmlFilesToProtect, packageNoOverwrite: noOverwriteSourceFile });
+  const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDir = await createTempDir();
   const mainPackageXmlCopyFileName = path.join(tmpDir, 'calculated-package.xml');
@@ -1253,7 +1226,7 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     );
     return null;
   }
-  const packageNoOverwrite = await resolvePackageNoOverwriteFile({ log: true });
+  const packageNoOverwrite: string | null = options.packageNoOverwrite || null;
   if (packageNoOverwrite) {
     uxLog("action", this, c.cyan(t('handlingPackageNoOverwriteXmlMetadataThat')));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
@@ -1295,30 +1268,6 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     }
   }
   return null;
-}
-
-// The package-no-overwrite.xml file of the deployment (or its legacy name packageDeployOnce.xml), possibly
-// overridden for a branch with packageNoOverwritePath / PACKAGE_NO_OVERWRITE_PATH. Null when there is none
-// or when SKIP_PACKAGE_DEPLOY_ONCE=true.
-async function resolvePackageNoOverwriteFile(options: { log?: boolean } = {}): Promise<string | null> {
-  if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === 'true') {
-    return null;
-  }
-  let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
-  if (!fs.existsSync(packageNoOverwrite)) {
-    packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
-  }
-  const config = await getConfig("branch");
-  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
-    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
-    if (!fs.existsSync(packageNoOverwrite)) {
-      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
-    }
-    if (options.log === true) {
-      uxLog("log", this, c.grey(t('usingCustomPackageNoOverwriteFileDefined', { packageNoOverwrite })));
-    }
-  }
-  return fs.existsSync(packageNoOverwrite) ? packageNoOverwrite : null;
 }
 
 // packageDeployOnChange.xml items are deployed only if they have changed in target org
@@ -2056,4 +2005,55 @@ export function minutesBetween(start: Date | null, end: Date | null): number {
 declare global {
   // eslint-disable-next-line no-var
   var pendingDeploymentPackageXmlFiles: string[] | undefined;
+}
+
+/**
+ * Post the Pull Request comment of the deployment flow, with the deployment components report written
+ * first. Every post of the comment by smartDeploy goes through it, so the report sections cannot be
+ * missing or stale. With defer, the report is still written, and the caller posts the comment later.
+ */
+async function postDeploymentPullRequestComment(check: boolean, options: { defer?: boolean } = {}): Promise<void> {
+  await publishDeploymentComponentsReport(check);
+  if (options.defer !== true) {
+    await GitProvider.managePostPullRequestComment(check);
+  }
+}
+
+/**
+ * Write the deployment components report and give its Markdown to the Pull Request comment.
+ * Called right before each post of the comment by the deployment flow.
+ */
+async function publishDeploymentComponentsReport(check: boolean): Promise<void> {
+  try {
+    const report = await finalizeDeploymentComponentsReport(check);
+    setPullRequestData({
+      deploymentComponentTypesMarkdownBody: report.componentTypesMarkdown,
+      noOverwriteMarkdownBody: report.noOverwriteMarkdown,
+    });
+  } catch (e: any) {
+    // The report must never fail a deployment
+    uxLog("warning", this, c.yellow(t('deploymentComponentsReportError', { message: e.message })));
+  }
+}
+
+// The package-no-overwrite.xml file of the deployment (or its legacy name packageDeployOnce.xml), possibly
+// overridden for a branch with packageNoOverwritePath / PACKAGE_NO_OVERWRITE_PATH. Null when there is none
+// or when SKIP_PACKAGE_DEPLOY_ONCE=true.
+async function resolvePackageNoOverwriteFile(): Promise<string | null> {
+  if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === 'true') {
+    return null;
+  }
+  let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
+  if (!fs.existsSync(packageNoOverwrite)) {
+    packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
+  }
+  const config = await getConfig("branch");
+  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
+    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
+    if (!fs.existsSync(packageNoOverwrite)) {
+      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
+    }
+    uxLog("log", this, c.grey(t('usingCustomPackageNoOverwriteFileDefined', { packageNoOverwrite })));
+  }
+  return fs.existsSync(packageNoOverwrite) ? packageNoOverwrite : null;
 }

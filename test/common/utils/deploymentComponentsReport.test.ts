@@ -6,6 +6,7 @@ import {
   buildComponentTypesMarkdown,
   buildDeploymentComponentRows,
   buildNoOverwriteMarkdown,
+  finalizeDeploymentComponentsReport,
   getDeploymentComponentsReportState,
   recordDeployResult,
   recordNoOverwriteFiltering,
@@ -175,6 +176,60 @@ describe('deploymentComponentsReport', () => {
     expect(markdown).to.contain('were not overwritten');
     expect(markdown).to.contain('| Type | 🛡️ Not overwritten |');
     expect(markdown).to.not.contain('Created this once');
+  });
+
+  it('keeps the most significant status when several deploy results name the same component', () => {
+    recordDeployResult({ details: { componentSuccesses: [{ componentType: 'CustomField', fullName: 'Account.X__c', created: true }] } });
+    recordDeployResult({ details: { componentSuccesses: [{ componentType: 'CustomField', fullName: 'Account.X__c' }] } });
+    const rows = buildDeploymentComponentRows(getDeploymentComponentsReportState());
+    expect(rows.map((row) => row.status)).to.deep.equal(['Created']);
+  });
+
+  it('keeps only the failures of a real deployment that failed, as it was rolled back', () => {
+    recordDeployResult(
+      {
+        details: {
+          componentSuccesses: [{ componentType: 'ApexClass', fullName: 'Foo', created: true }],
+          componentFailures: [{ componentType: 'ApexClass', fullName: 'Bar', problemType: 'Error' }],
+        },
+      },
+      { failuresOnly: true }
+    );
+    const rows = buildDeploymentComponentRows(getDeploymentComponentsReportState());
+    expect(rows.map((row) => `${row.status}:${row.name}`)).to.deep.equal(['Failed:Bar']);
+    expect(buildComponentTypesMarkdown(rows, false)).to.contain('1 components failed, 0 changed in the org');
+  });
+
+  it('does not count warnings as failures', () => {
+    recordDeployResult({
+      details: {
+        componentSuccesses: [{ componentType: 'CustomObjectTranslation', fullName: 'Account-fr', changed: true }],
+        componentFailures: [{ componentType: 'CustomObjectTranslation', fullName: 'Account-fr', problemType: 'Warning' }],
+      },
+    });
+    const rows = buildDeploymentComponentRows(getDeploymentComponentsReportState());
+    expect(rows.map((row) => row.status)).to.deep.equal(['Updated']);
+  });
+
+  it('writes no types table when one deploy result named no component', async () => {
+    recordDeployResult(SAMPLE_RESULT);
+    recordDeployResult({ numberComponentsDeployed: 3 }, { quickDeploy: true });
+    const report = await finalizeDeploymentComponentsReport(true);
+    expect(report.componentTypesMarkdown).to.equal('');
+    expect(report.reportFile).to.equal(null);
+  });
+
+  it('names every file of a failed bundle after its folder, and counts unnamed failures one by one', () => {
+    recordDeployResult({
+      files: [
+        { type: '', fullName: '', state: 'Failed', filePath: 'force-app/main/default/lwc/myCmp/myCmp.js' },
+        { type: '', fullName: '', state: 'Failed', filePath: 'force-app/main/default/lwc/myCmp/myCmp.html' },
+        { type: '', fullName: '', state: 'Failed', filePath: 'force-app/main/default/lwc/myCmp/myCmp.js-meta.xml' },
+      ],
+    });
+    recordDeployResult({ details: { componentFailures: [{ componentType: 'Flow' }, { componentType: 'Flow' }] } });
+    const rows = buildDeploymentComponentRows(getDeploymentComponentsReportState());
+    expect(rows.map((row) => `${row.type}:${row.name}`)).to.deep.equal(['Flow:', 'Flow:', 'LightningComponentBundle:myCmp']);
   });
 
   it('builds no protected section when package-no-overwrite.xml matched nothing', () => {
