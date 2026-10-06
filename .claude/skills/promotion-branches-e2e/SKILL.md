@@ -94,9 +94,9 @@ failure cannot be an artefact of the previous run's state.
    (runbook section 4bis): `pipeline_check <label> <expectations.json>`. The job logs and the Pull
    Request comments say nothing about the view the release manager actually reads.
 5bis-bis. **Run the deployment actions section** (runbook section 6quater): `deployment-actions-run.sh`,
-   after `promotion-run.sh`. It checks that a pre-deployment manual action stops the validation
-   (not on a draft), the retry of a failed action, `set-status` here and ahead in the next branch,
-   the forecast of the next promotion, and, with `DEV_ORG`, the runs in a developer org.
+   after `promotion-run.sh`. It turns `failValidationOnPendingManualActions` on (off by default),
+   checks that a pre-deployment manual action stops the validation (not on a draft), the retry of
+   a failed action, `set-status` here and ahead in the next branch, the forecast of the next promotion, and, with `DEV_ORG`, the runs in a developer org.
 5bis-ter. **Run the same features through real CI** (runbook section 6quinquies):
    `ci-workflows-run.sh`, with its own `REPO`, `WORK` and `LOGS`. The simulators prove the CLI; this
    proves the workflows a project really runs, with the branch linked by `sf plugins link`.

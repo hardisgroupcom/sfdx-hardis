@@ -10858,8 +10858,8 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#failValidationOnPendingManualActions" onclick="anchorLink('failValidationOnPendingManualActions')">failValidationOnPendingManualActions</a></div><h4>Fail validation on pending manual actions</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
-<span class="description"><p>Stop the validation job of a Pull Request right after its pre-deployment actions while one of its pre-deployment manual actions is not marked as performed in the target org branch (ticked in the Pull Request comment, Mark as done in VS Code, or sf hardis:project:action:set-status): they must be done before the merge. A draft Pull Request (draft flag, or draft in its title) is never stopped. Set it to false to only list them, as before.</p>
+    <a href="#failValidationOnPendingManualActions" onclick="anchorLink('failValidationOnPendingManualActions')">failValidationOnPendingManualActions</a></div><h4>Fail validation on pending manual actions</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set it to true to stop the validation job of a Pull Request right after its pre-deployment actions while one of its pre-deployment manual actions is not marked as performed in the target org branch (ticked in the Pull Request comment, Mark as done in VS Code, or sf hardis:project:action:set-status): they must be done before the merge. A draft Pull Request (draft flag, or draft in its title) is never stopped. By default they are only listed, with a warning.</p>
 </span>
         
 
@@ -10868,7 +10868,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 
         <br/>
 <div class="badge badge-secondary">Example:</div>
-<br/><div id="failValidationOnPendingManualActions_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
+<br/><div id="failValidationOnPendingManualActions_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
 </pre></div>
 </div>
             </div>

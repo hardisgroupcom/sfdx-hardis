@@ -158,6 +158,8 @@ esac
 for f in config/branches/.sfdx-hardis.*.yml; do
   printf 'targetUsername: %s\ninstanceUrl: %s\n' "$(org_field username)" "$(org_field instanceUrl)" >>"$f"
 done
+# W1, W5 and W6 test the manual action gate, off by default
+grep -q "^failValidationOnPendingManualActions:" config/.sfdx-hardis.yml || printf 'failValidationOnPendingManualActions: true\n' >>config/.sfdx-hardis.yml
 node "$SCRIPTS_DIR/ci-workflows-prepare.cjs" "$SFDX_HARDIS_ROOT" "$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" "$SFDX_HARDIS_BRANCH" >>"$LOGS/build.log" || exit 1
 git add -A && git commit -qm "chore: base project" >/dev/null
 # Actions off while the major branches are pushed: no deployment of the base project

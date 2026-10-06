@@ -1299,15 +1299,15 @@ function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostD
 /**
  * Fail a validation job while a pre-deployment manual action is not marked as performed in the
  * target org branch: it must be done before the merge, and a green validation would let the Pull
- * Request be merged without it. Not on a draft Pull Request, still being worked on. Turned off with
- * failValidationOnPendingManualActions: false.
+ * Request be merged without it. Not on a draft Pull Request, still being worked on. Off by default:
+ * turned on with failValidationOnPendingManualActions: true.
  */
 async function failOnPendingPreDeployManualActions(): Promise<void> {
   if (pendingPreDeployManualActions.length === 0) {
     return;
   }
   const branchConfig = await getConfig('branch');
-  if (branchConfig.failValidationOnPendingManualActions === false) {
+  if (branchConfig.failValidationOnPendingManualActions !== true) {
     uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('pendingManualActionsNotBlocking', { count: pendingPreDeployManualActions.length })}`));
     return;
   }

@@ -2895,7 +2895,7 @@
   "pendingManualActionsBlockValidation": "{{orgBranch}} で実施済みとしてマークされていないデプロイ前の手動アクションが {{count}} 件あります。merge の前に実施する必要があります。",
   "pendingManualActionsDraftPullRequest": "{{orgBranch}} で実施済みとしてマークされていないデプロイ前の手動アクションが {{count}} 件あります。Pull Request が下書き (draft) のため、検証は続行します。Pull Request の準備ができると停止します。",
   "pendingManualActionsHowToConfirm": "{{orgBranch}} の org で実施してから、Pull Request コメントの \"Pending manual actions\" リストでチェックを付けるか、VS Code の Deployment Actions タブで Mark as done をクリックし、検証を再実行してください。",
-  "pendingManualActionsNotBlocking": "実施済みとしてマークされていないデプロイ前の手動アクションが {{count}} 件あります (failValidationOnPendingManualActions が false のため、検証は失敗しません)。",
+  "pendingManualActionsNotBlocking": "実施済みとしてマークされていないデプロイ前の手動アクションが {{count}} 件あります (failValidationOnPendingManualActions が true ではないため、検証は失敗しません)。",
   "performingQueryOn": "{{orgId}} でクエリを実行しています...",
   "permissionSetGroupsCsvFileGeneratedAt": "権限セットグループのCSVファイルを生成しました：{{green}}",
   "permissionSetGroupsMarkdownFileGeneratedAt": "権限セットグループのMarkdownファイルを生成しました：{{green}}",
