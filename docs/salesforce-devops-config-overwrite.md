@@ -289,5 +289,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 
 - [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
 - [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
 
 <!-- training-links:end -->
