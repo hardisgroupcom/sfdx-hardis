@@ -1,3 +1,4 @@
+// cspell:ignore apexclass
 import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
