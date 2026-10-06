@@ -144,9 +144,9 @@ pipeline {
                                     string(credentialsId: 'JIRA_EMAIL',                     variable: 'JIRA_EMAIL',                     optional: true),
                                     string(credentialsId: 'JIRA_TOKEN',                     variable: 'JIRA_TOKEN',                     optional: true),
                                     string(credentialsId: 'JIRA_PAT',                       variable: 'JIRA_PAT',                       optional: true),
-                            // Aha! integration (optional)
-                            string(credentialsId: 'AHA_HOST',                       variable: 'AHA_HOST',                       optional: true),
-                            string(credentialsId: 'AHA_API_KEY',                    variable: 'AHA_API_KEY',                    optional: true),
+                                    // Aha! integration (optional)
+                                    string(credentialsId: 'AHA_HOST',                       variable: 'AHA_HOST',                       optional: true),
+                                    string(credentialsId: 'AHA_API_KEY',                    variable: 'AHA_API_KEY',                    optional: true),
                                     // Aha! integration (optional)
                                     string(credentialsId: 'AHA_HOST',                       variable: 'AHA_HOST',                       optional: true),
                                     string(credentialsId: 'AHA_API_KEY',                    variable: 'AHA_API_KEY',                    optional: true),
