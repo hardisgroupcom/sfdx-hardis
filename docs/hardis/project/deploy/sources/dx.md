@@ -121,7 +121,17 @@ If necessary,you can define the following files:
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
+When components of the deployment package are protected by `package-no-overwrite.xml`, the Pull Request comment has a **Protected metadata** section counting the components already in the target org that are not overwritten, and the ones created this once, with a collapsed table per metadata type.
+
 See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/)
+
+### Deployment components report
+
+The validation and deployment Pull Request comments open on the code coverage, right under the deployment status, then count the components the deployment creates, updates, deletes or fails to deploy, with a collapsed table per metadata type. A validation comment calls its counts line **Simulated deployment**. Every table of these comments, Flow deletion included, is collapsed by default.
+
+![Validation Pull Request comment with the components per metadata type and the protected metadata](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-deployment-components-pr-comment.png)
+
+The full list is written to `hardis-report/deployment-components.csv` and `hardis-report/xls/deployment-components.xlsx`, kept as job artifacts: one row per component with its type, name, status (Failed, Created, Updated, Deleted, Not overwritten, Unchanged) and the package-no-overwrite file protecting it. When a deploy result does not list its components (some Quick Deploy results), the counts per type and the report are left out rather than shown incomplete.
 
 ### Packages installation
 
@@ -222,9 +232,11 @@ On a real deployment, each Flow goes through:
 
 1. Existence check. A Flow that is already gone is reported as `FLOW_DELETE_NOOP`, not an error (same for a Flow with no deletable version, for example one from a managed package).
 2. Deactivation through the Tooling API (`FlowDefinition.activeVersionNumber = 0`), which stops new Flow Interviews from starting.
-3. Flow Interview gate. If interviews remain and `FLOW_DELETE_INTERVIEWS` is not set, the deployment fails with `FLOW_DELETE_BLOCKED`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
+3. Flow Interview gate. If interviews remain and `FLOW_DELETE_INTERVIEWS` is not set, the Flow is reported as `FLOW_DELETE_BLOCKED`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
 4. Flow Interview deletion, only when `FLOW_DELETE_INTERVIEWS` authorizes it.
 5. Version deletion through the Tooling API, oldest version first, then a check that no version is left.
+
+A Flow that another Flow still references (a subflow element, a Process Builder action) can not be deleted while that Flow exists. When the referencing Flow is deleted in the same run, the blocked Flows are tried again after the others, as long as each pass deletes something.
 
 When deleting Flow Interviews is authorized, step 5 retries: an interview that was still running when the Flow got deactivated can pause mid-sequence and block a version. Both bounds can be tuned, as an env variable or as a `.sfdx-hardis.yml` property (the env variable wins). A value that is not an integer, or is below the minimum, is ignored with a warning and the default applies.
 
@@ -233,7 +245,9 @@ When deleting Flow Interviews is authorized, step 5 retries: an interview that w
 | FLOW_DELETE_MAX_ATTEMPTS   | flowDeleteMaxAttempts       |    3    |    1    | Number of version deletion attempts per Flow. `1` disables the retry. Only used when `FLOW_DELETE_INTERVIEWS` authorizes deleting interviews: without that authorization a block is final. |
 | FLOW_DELETE_RETRY_DELAY_MS | flowDeleteRetryDelayMs      |  10000  |    0    | Delay in milliseconds between two attempts, to give a paused interview time to be deleted.                                                                                                 |
 
-Any failure that is not an interview block (insufficient access, network error mid-run...) is reported as `FLOW_DELETE_ERROR` and also fails the deployment. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+Any failure that is not an interview block (a referencing Flow that stays in the org, insufficient access, network error mid-run...) is reported as `FLOW_DELETE_ERROR`. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
+
+A Flow that can not be deleted only stops the job **before** the deployment (`preDestructiveChanges.xml`). **After** the deployment, the metadata is already in the org, so a Flow left behind, whatever the reason, does not fail the job: it stays deactivated when its deactivation succeeded, the Pull Request comment shows a ⚠️ Flow deletion section, and the deployment notification is sent as a warning that lists it. Running the same deployment again retries it, but a later delta deployment does not include it anymore: solve what blocks it, then run the job again or delete the Flow manually.
 
 Notes:
 
