@@ -349,6 +349,46 @@ rest of the library is already using.
 > The check builds a **cold** cache on every call (an in-memory `Memento`), because a stale answer
 > here would look exactly like the defect being hunted. Do not add a persistent store to it.
 
+## 4ter. What the single Pull Request modal shows, merged Pull Requests included
+
+The DevOps Pipeline opens a modal on one Pull Request with four tabs: **Deployment Actions**,
+**Validation**, **Code Quality** and **Deployment**. A comment can exist on the provider and still not
+show there, and nothing else in this runbook would notice: the job logs and the comment audit (5bis)
+read the provider, never the modal. Merged Pull Requests are the case to watch: the modal of a story
+opened from the branch it reached, weeks after its merge.
+
+The extension reads none of these comments itself. For the three run tabs and the status column of
+Deployment Actions it runs `sf hardis:project:action:list --with-status --pr-ids N --with-workflows
+--workflow-pr-ids N --json`, with **only the provider token** in the environment
+(`collectProviderCredentialEnvVars`: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`...; no
+`GITHUB_REPOSITORY`, no `CI_PROJECT_ID`). The action list of Deployment Actions comes from its own
+`completePullRequestsWithActions(..., { fetch: true })`: the actions file of the source branch of an
+open Pull Request, of the target branch of a merged one.
+
+`scripts/check-pr-modal.cjs` makes those same calls for every open and merged Pull Request of the
+repository and compares them with the provider:
+
+```bash
+PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK")" DEV="$DEV" EXT="$EXT" \
+  node .claude/skills/promotion-branches-e2e/scripts/check-pr-modal.cjs --json "$(cygpath -m "$LOGS")/pr-modal.json"
+# GitLab: PROVIDER=gitlab GL_HOST GL_TOKEN PROJECT_ID instead of REPO
+```
+
+| Tab                | Expected                                                                                                                                                                                                                                                                                 |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| all three run tabs | the CLI answers, with an array for the Pull Request. No answer, or no entry for it, **hides** the three tabs instead of showing them empty, so a provider read that failed looks like "nothing to show"                                                                                  |
+| Validation         | one run per comment whose message key starts with `deployment-check-`, with the status of its `run-summary` marker when it has one                                                                                                                                                      |
+| Deployment         | one run per comment whose message key starts with `deployment-` (not `-check-`), same status rule                                                                                                                                                                                       |
+| Code Quality       | one run per MegaLinter comment (`<!-- megalinter:` or its title). The simulators post none, so it is only exercised by the CI section                                                                                                                                                  |
+| Deployment Actions | every cell of the "Status by org branch" table of the Deployment Actions comment is a status of the CLI (action id, org branch); the cells of the target branch are the pills of the modal; the list of a story equals the ids of its actions file |
+
+It prints one line per Pull Request, with a note for a Pull Request merged into a major branch with no
+deployment comment at all (a job side gap, not a modal one: section 6sexies merges stories it never
+deploys on purpose). One CLI start costs 20 to 40 seconds here, so run it once, at the end of the
+sections that share the repository, and on the CI repository of 6quinquies, whose comments come from
+real jobs. What it does not cover: the rendering of the tabs (the LWC unit tests), and the modal of a
+promotion or major-to-major Pull Request, whose action list is assembled from the stories it carries.
+
 ## 5. What to assert in each log
 
 | Job                                            | Assertion                                                                                                                                                                                                                                                                                            |

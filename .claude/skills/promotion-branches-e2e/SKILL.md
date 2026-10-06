@@ -26,6 +26,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/e2e-lib.sh`                      | GitHub job simulators: `e2e_check`, `e2e_deploy`, `e2e_promote`, `e2e_release_notes`, `e2e_grep`. Source it.                                                                                                                                                                       |
 | `scripts/e2e-lib-gitlab.sh`               | The same for GitLab, plus `gl_mr_create`, `gl_mr_merge` and the merge-ref wait GitLab needs.                                                                                                                                                                                       |
 | `scripts/check-pipeline.cjs`              | Drives the extension's own PipelineDataProvider against the test repository and asserts what the DevOps Pipeline shows at a point of the run.                                                                                                                                      |
+| `scripts/check-pr-modal.cjs`              | Makes the calls of the single Pull Request modal (`action:list --with-status --with-workflows` with the token only, the extension's `completePullRequestsWithActions`) for every open and merged Pull Request, and compares its Deployment Actions, Validation, Code Quality and Deployment tabs with the comments the provider holds (section 4ter). |
 | `scripts/check-diagram.cjs`               | Feeds the extension's compiled helpers with the real Pull Requests and asserts the "single place in the diagram" rule.                                                                                                                                                             |
 | `scripts/check-diagram-gitlab.cjs`        | The same, reading merge requests from the GitLab API.                                                                                                                                                                                                                              |
 | `scripts/check-backpromote-plan.cjs`      | Asserts a `hardis:work:backpromote ... --json` document (plan version 3: plan, prepare, run, confirm, reset) against the expectations of `reference/backpromote/*.json` (section 6bis).                                                                                            |
@@ -93,6 +94,11 @@ failure cannot be an artefact of the previous run's state.
 5ter. **Check the DevOps Pipeline before and after every promotion operation**
    (runbook section 4bis): `pipeline_check <label> <expectations.json>`. The job logs and the Pull
    Request comments say nothing about the view the release manager actually reads.
+5ter-bis. **Check the single Pull Request modal tabs** (runbook section 4ter): `check-pr-modal.cjs` on
+   every repository whose Pull Requests carry comments (the sections repository and the CI one), once
+   their sections are over. Deployment Actions, Validation, Code Quality and Deployment must show what
+   the provider holds, for merged Pull Requests as much as open ones. Never skip it: a comment that
+   exists and does not show in the modal is invisible to every other check.
 5bis-bis. **Run the deployment actions section** (runbook section 6quater): `deployment-actions-run.sh`,
    after `promotion-run.sh`. It turns `failValidationOnPendingManualActions` on (off by default),
    checks that a pre-deployment manual action stops the validation (not on a draft), the retry of
