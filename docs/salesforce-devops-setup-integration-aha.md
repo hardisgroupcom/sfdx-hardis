@@ -12,6 +12,7 @@ description: With sfdx-hardis, enrich pull requests with Aha! feature info and p
   - [Select Aha! as ticketing provider](#select-aha-as-ticketing-provider)
   - [Credentials](#credentials)
   - [Identify Aha! features](#identify-aha-features)
+- [In VS Code](#in-vs-code)
 - [Read a single feature](#read-a-single-feature)
 - [GitLab configuration](#gitlab-configuration)
 - [Technical notes](#technical-notes)
@@ -32,6 +33,8 @@ sfdx-hardis analyzes **commit messages, branch names and Pull Request titles and
 
 GitHub, GitLab, Azure, Bitbucket: post references to Aha! features in Pull Request comments
 
+![Aha! features listed in the Tickets section of a GitHub Pull Request comment](assets/images/screenshot-aha-github-pr.png)
+
 ### For notifications providers
 
 Slack, Microsoft Teams: add deployed Aha! features to deployment notifications
@@ -47,6 +50,8 @@ To override it, define the environment variable **DEPLOYED_TAG_TEMPLATE**, which
 Example: `DEPLOYED_TO_{BRANCH}`
 
 The tags a feature already has are kept, and a feature that already carries the tag is not updated again.
+
+![Comment and tag written by sfdx-hardis on an Aha! feature after a deployment](assets/images/screenshot-aha-feature-deployed.png)
 
 ## Configuration
 
@@ -72,9 +77,22 @@ Define the following variables:
 - .sfdx-hardis.yml property **ahaHost** or ENV variable **AHA_HOST** (examples: `mycompany.aha.io`, `https://mycompany.euw4.aha.io`)
 - ENV variable **AHA_API_KEY**, a secret of your CI/CD pipelines
 
-To create the API key, sign in to Aha! with the user that will post the deployment comments, then open **Settings -> Personal -> Developer -> API keys**, or go to `https://mycompany.aha.io/settings/api_keys`.
-
 An API key has the rights of the user who created it. Use a dedicated user who can read and comment on the features of the workspaces your project works with.
+
+To create the API key:
+
+1. Sign in to Aha! with the user that will post the deployment comments.
+2. Open **Settings -> Personal -> Developer**, tab **API keys**, or go to `https://mycompany.aha.io/settings/api_keys`.
+
+   ![API keys page of the personal settings of Aha!](assets/images/screenshot-aha-api-keys.png)
+
+3. Click **Generate API key**, give it a name that says what uses it, and confirm.
+
+   ![Generate API key dialog of Aha!](assets/images/screenshot-aha-api-key-generate.png)
+
+4. Copy the key right away: Aha! displays it once. Store it as the **AHA_API_KEY** secret of your CI/CD pipelines.
+
+To revoke a key, come back to the same page and click **Revoke** on its line. sfdx-hardis sends the key as a Bearer token, always over https, and only to the host defined in **ahaHost**.
 
 ### Identify Aha! features
 
@@ -85,6 +103,22 @@ Define a regular expression with a capturing group that identifies the features 
 If not defined, the default value is `(?<=[^a-zA-Z0-9_-]|^)([A-Za-z][A-Za-z0-9]{1,9}-\d{1,6})(?=[^a-zA-Z0-9_-]|$)`: a workspace prefix starting with a letter, a dash and a number.
 
 > The default expression also matches words like `UTF-8`. A reference that is not a feature is not found in Aha!, so nothing is written to it, but it is looked up at every Pull Request. Define **ahaTicketRegex** with your workspace prefixes to avoid it.
+
+## In VS Code
+
+The [DevOps Pipeline](vscode-extension-devops-pipeline.md) of the VS Code extension reads the same configuration.
+
+Select **Aha!** as Ticketing Provider and define the host of your account in **Pipeline Settings**, tab **Ticketing**.
+
+![Ticketing tab of Pipeline Settings, with Aha! selected](assets/images/screenshot-aha-vscode-settings.png)
+
+Then click on the ticketing icon in the header of the DevOps Pipeline to connect: the extension opens the API keys page of your account, and asks for the key you generated. The key is stored in the secret storage of VS Code, and passed to the sfdx-hardis commands the extension runs.
+
+![DevOps Pipeline connected to GitHub and Aha!](assets/images/screenshot-aha-vscode-pipeline.png)
+
+The features of a Pull Request are listed in its **Tickets** tab, with their name, their status and their owner in Aha!.
+
+![Tickets tab of a Pull Request, with its Aha! feature](assets/images/screenshot-aha-vscode-pr-tickets.png)
 
 ## Read a single feature
 
