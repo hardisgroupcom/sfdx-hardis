@@ -2658,7 +2658,7 @@
   "noObjectsSelectedAborting": "No objects selected; aborting.",
   "noObjectsWithLocalCustomizations": "No objects with local customizations found; aborting.",
   "noOrgSelectedEnsureYouKnow": "No org selected. Ensure you know what you're doing.",
-  "noOverwriteComponentsKept": "{{count}} components of the deployment package already exist in the target org and will not be overwritten ({{file}})",
+  "noOverwriteComponentsKept": "{{count}} component(s) of the deployment package already exist in the target org and will not be overwritten ({{file}})",
   "noOverwriteItemsMatchingInPackage": "{{count}} item(s) of the deployment package match package-no-overwrite.xml: the target org content must be listed to know which ones already exist there",
   "noOverwriteKeepIntro": "Detecting which package-no-overwrite.xml items already exist in the target org: an existing item will be protected (not overwritten), while an item absent from the org will be created by the deployment...",
   "noOverwriteNoProtectedItemInPackage": "No item of the deployment package matches package-no-overwrite.xml: nothing to protect, so the target org content is not listed",

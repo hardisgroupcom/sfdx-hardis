@@ -2622,7 +2622,7 @@
   "noObjectsSelectedAborting": "Nenhum objeto selecionado; abortando.",
   "noObjectsWithLocalCustomizations": "Nenhum objeto com personalizações locais encontrado; abortando.",
   "noOrgSelectedEnsureYouKnow": "Nenhuma org selecionada. Certifique-se de saber o que está fazendo.",
-  "noOverwriteComponentsKept": "{{count}} componentes do pacote de implantação já existem na org de destino e não serão sobrescritos ({{file}})",
+  "noOverwriteComponentsKept": "{{count}} componente(s) do pacote de implantação já existe(m) na org de destino e não será(ão) sobrescrito(s) ({{file}})",
   "noOverwriteItemsMatchingInPackage": "{{count}} item(ns) do pacote de implantação correspondem ao package-no-overwrite.xml: o conteúdo da org de destino precisa ser listado para saber quais já existem lá",
   "noOverwriteKeepIntro": "Detectando quais itens do package-no-overwrite.xml já existem na org de destino: um item existente será protegido (não sobrescrito), enquanto um item ausente na org será criado pela implantação...",
   "noOverwriteNoProtectedItemInPackage": "Nenhum item do pacote de implantação corresponde ao package-no-overwrite.xml: nada a proteger, então o conteúdo da org de destino não é listado",

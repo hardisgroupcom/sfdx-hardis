@@ -141,7 +141,7 @@ describe('deploymentComponentsReport', () => {
     recordDeployResult(SAMPLE_RESULT);
     recordDeployResult({ details: { componentFailures: [{ componentType: 'Flow', fullName: 'Opportunity_Discount_Approval' }] } });
     const markdown = buildComponentTypesMarkdown(buildDeploymentComponentRows(getDeploymentComponentsReportState()), false);
-    expect(markdown).to.contain('<b>1 components failed, 9 changed in the org</b>');
+    expect(markdown).to.contain('<b>1 component failed, 9 changed in the org</b>');
     expect(markdown).to.contain('| Type | ❌ Failed | ➕ Created | ✏️ Updated | 🗑️ Deleted |');
     expect(markdown).to.contain('| Flow | 1 |  |  |  |');
   });
@@ -159,7 +159,7 @@ describe('deploymentComponentsReport', () => {
     expect(markdown).to.contain('### 🛡️ Protected metadata (package-no-overwrite.xml)');
     expect(markdown).to.contain('**3 components of this Pull Request already exist in the target org and will not be overwritten**');
     expect(markdown).to.contain('such components are maintained manually in the org');
-    expect(markdown).to.contain('**1 protected components do not exist in the target org yet and will be created.**');
+    expect(markdown).to.contain('**1 protected component does not exist in the target org yet and will be created.**');
     expect(markdown).to.contain('| Type | 🛡️ Not overwritten | ➕ Created this once |');
     expect(markdown).to.contain('| EmailTemplate | 1 |  |');
     expect(markdown).to.contain('| ListView | 2 | 1 |');
@@ -197,7 +197,7 @@ describe('deploymentComponentsReport', () => {
     );
     const rows = buildDeploymentComponentRows(getDeploymentComponentsReportState());
     expect(rows.map((row) => `${row.status}:${row.name}`)).to.deep.equal(['Failed:Bar']);
-    expect(buildComponentTypesMarkdown(rows, false)).to.contain('1 components failed, 0 changed in the org');
+    expect(buildComponentTypesMarkdown(rows, false)).to.contain('1 component failed, 0 changed in the org');
   });
 
   it('does not count warnings as failures', () => {

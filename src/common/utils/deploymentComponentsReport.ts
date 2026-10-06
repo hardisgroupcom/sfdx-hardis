@@ -34,7 +34,7 @@ export interface DeploymentComponentsReportState {
   // What the deploy results say about each component, by Type:Name
   changes: Map<string, { type: string; name: string; status: DeploymentComponentStatus }>;
   failures: Map<string, { type: string; name: string }>;
-  // Deploy results that sent components but named none of them (Quick Deploy): the report is then partial
+  // Deploy results that sent components but named none of them (some Quick Deploy results): the report is then partial
   resultsWithoutDetail: number;
   // Failed components known by neither name nor file: each one is still counted once
   unnamedFailures: number;
@@ -126,7 +126,7 @@ export async function finalizeDeploymentComponentsReport(check: boolean): Promis
     noOverwriteMarkdown: buildNoOverwriteMarkdown(rows, check, reportState),
     reportFile: null,
   };
-  // A result naming no component (Quick Deploy) makes the list partial: no file that would read as complete
+  // A result naming no component (some Quick Deploy results) makes the list partial: no file that would read as complete
   if (rows.length === 0 || reportState.resultsWithoutDetail > 0) {
     return result;
   }
@@ -193,8 +193,8 @@ export function buildComponentTypesMarkdown(rows: DeploymentComponentRow[], chec
   const changeVerb = check ? 'would change' : 'changed';
   const summary =
     failedCount > 0
-      ? `${failedCount} components failed, ${changedCount} ${changeVerb} in the org`
-      : `${changedCount} components ${changeVerb} in the org`;
+      ? `${countOf(failedCount, 'component')} failed, ${changedCount} ${changeVerb} in the org`
+      : `${countOf(changedCount, 'component')} ${changeVerb} in the org`;
   const tableLines = buildCountsPerTypeTable(rows, columns);
   return [
     '<details>',
@@ -218,7 +218,7 @@ export function buildNoOverwriteMarkdown(
     return '';
   }
   const notOverwrittenCount = rows.filter((row) => row.status === 'Not overwritten').length;
-  // A result naming no component (Quick Deploy): what was created this once is unknown
+  // A result naming no component (some Quick Deploy results): what was created this once is unknown
   const showCreatedOnce = state.resultsWithoutDetail === 0;
   const createdOnceCount = showCreatedOnce ? rows.filter((row) => row.status === 'Created' && row.noOverwriteFile !== '').length : 0;
   if (notOverwrittenCount === 0 && createdOnceCount === 0) {
@@ -227,13 +227,13 @@ export function buildNoOverwriteMarkdown(
   const lines = ['### 🛡️ Protected metadata (package-no-overwrite.xml)', ''];
   if (notOverwrittenCount > 0) {
     lines.push(
-      `⚠️ **${notOverwrittenCount} components of this Pull Request already exist in the target org and ${check ? 'will not be' : 'were not'} overwritten**, because they are listed in \`${state.noOverwriteFile}\`. The version in the org is kept: such components are maintained manually in the org.`,
+      `⚠️ **${countOf(notOverwrittenCount, 'component')} of this Pull Request already ${notOverwrittenCount === 1 ? 'exists' : 'exist'} in the target org and ${check ? 'will not be' : notOverwrittenCount === 1 ? 'was not' : 'were not'} overwritten**, because ${notOverwrittenCount === 1 ? 'it is' : 'they are'} listed in \`${state.noOverwriteFile}\`. The version in the org is kept: such components are maintained manually in the org.`,
       ''
     );
   }
   if (createdOnceCount > 0) {
     lines.push(
-      `ℹ️ **${createdOnceCount} protected components ${check ? 'do' : 'did'} not exist in the target org yet and ${check ? 'will be' : 'were'} created.** Later deployments will not overwrite them.`,
+      `ℹ️ **${countOf(createdOnceCount, 'protected component')} ${check ? (createdOnceCount === 1 ? 'does' : 'do') : 'did'} not exist in the target org yet and ${check ? 'will be' : (createdOnceCount === 1 ? 'was' : 'were')} created.** Later deployments will not overwrite ${createdOnceCount === 1 ? 'it' : 'them'}.`,
       ''
     );
   }
@@ -355,4 +355,8 @@ function buildCountsPerTypeTable(rows: DeploymentComponentRow[], columns: { stat
     `|------|${columns.map(() => '---:').join('|')}|`,
     ...types.map((type) => `| ${type} | ${columns.map((column) => countsByType.get(type)?.get(column.status) || '').join(' | ')} |`),
   ];
+}
+
+function countOf(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }

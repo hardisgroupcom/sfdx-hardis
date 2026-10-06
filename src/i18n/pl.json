@@ -2654,7 +2654,7 @@
   "noObjectsSelectedAborting": "Nie wybrano obiektów; przerywanie.",
   "noObjectsWithLocalCustomizations": "Nie znaleziono obiektów z lokalnymi dostosowaniami; przerywanie.",
   "noOrgSelectedEnsureYouKnow": "Nie wybrano org. Upewnij się, że wiesz, co robisz.",
-  "noOverwriteComponentsKept": "{{count}} komponentów pakietu wdrożenia już istnieje w docelowej org i nie zostanie nadpisanych ({{file}})",
+  "noOverwriteComponentsKept": "{{count}} komponent(ów) pakietu wdrożenia już istnieje w docelowej org i nie zostanie nadpisanych ({{file}})",
   "noOverwriteItemsMatchingInPackage": "{{count}} element(y) pakietu wdrożenia pasują do package-no-overwrite.xml: należy pobrać zawartość docelowej org, aby ustalić, które już tam istnieją",
   "noOverwriteKeepIntro": "Wykrywanie, które elementy package-no-overwrite.xml już istnieją w docelowym org: istniejący element zostanie zabezpieczony (nie zostanie nadpisany), natomiast element nieobecny w org zostanie utworzony przez wdrożenie...",
   "noOverwriteNoProtectedItemInPackage": "Żaden element pakietu wdrożenia nie pasuje do package-no-overwrite.xml: nie ma nic do zabezpieczenia, więc zawartość docelowej org nie jest pobierana",

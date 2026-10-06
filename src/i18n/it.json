@@ -2654,7 +2654,7 @@
   "noObjectsSelectedAborting": "Nessun oggetto selezionato; operazione annullata.",
   "noObjectsWithLocalCustomizations": "Nessun oggetto con personalizzazioni locali trovato; operazione annullata.",
   "noOrgSelectedEnsureYouKnow": "Nessuna org selezionata. Assicurati di sapere cosa stai facendo.",
-  "noOverwriteComponentsKept": "{{count}} componenti del pacchetto di distribuzione esistono già nell'org di destinazione e non verranno sovrascritti ({{file}})",
+  "noOverwriteComponentsKept": "{{count}} componente/i del pacchetto di distribuzione esiste/esistono già nell'org di destinazione e non verrà/verranno sovrascritto/i ({{file}})",
   "noOverwriteItemsMatchingInPackage": "{{count}} elemento/i del pacchetto di distribuzione corrispondono a package-no-overwrite.xml: il contenuto della org di destinazione deve essere elencato per sapere quali esistono già",
   "noOverwriteKeepIntro": "Rilevamento degli elementi di package-no-overwrite.xml già presenti nell'org di destinazione: un elemento esistente verrà protetto (non sovrascritto), mentre un elemento assente dall'org verrà creato dalla distribuzione...",
   "noOverwriteNoProtectedItemInPackage": "Nessun elemento del pacchetto di distribuzione corrisponde a package-no-overwrite.xml: niente da proteggere, quindi il contenuto della org di destinazione non viene elencato",

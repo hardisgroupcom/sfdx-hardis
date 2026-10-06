@@ -2654,7 +2654,7 @@
   "noObjectsSelectedAborting": "Aucun objet sélectionné ; abandon.",
   "noObjectsWithLocalCustomizations": "Aucun objet avec des personnalisations locales trouvé ; abandon.",
   "noOrgSelectedEnsureYouKnow": "Aucune org sélectionnée. Assurez-vous de savoir ce que vous faites, et surtout de pas tout casser 🙃",
-  "noOverwriteComponentsKept": "{{count}} composants du package de déploiement existent déjà dans l'org cible et ne seront pas écrasés ({{file}})",
+  "noOverwriteComponentsKept": "{{count}} composant(s) du package de déploiement existe(nt) déjà dans l'org cible et ne sera/seront pas écrasé(s) ({{file}})",
   "noOverwriteItemsMatchingInPackage": "{{count}} élément(s) du package de déploiement correspondent à package-no-overwrite.xml : le contenu de l'org cible doit être listé pour savoir lesquels y existent déjà",
   "noOverwriteKeepIntro": "Détection des éléments de package-no-overwrite.xml déjà présents dans l'org cible : un élément existant sera protégé (non écrasé), tandis qu'un élément absent de l'org sera créé par le déploiement...",
   "noOverwriteNoProtectedItemInPackage": "Aucun élément du package de déploiement ne correspond à package-no-overwrite.xml : rien à protéger, le contenu de l'org cible n'est donc pas listé",

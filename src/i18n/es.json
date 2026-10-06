@@ -2654,7 +2654,7 @@
   "noObjectsSelectedAborting": "No se seleccionaron objetos; abortando.",
   "noObjectsWithLocalCustomizations": "No se encontraron objetos con personalizaciones locales; abortando.",
   "noOrgSelectedEnsureYouKnow": "No se seleccionó ninguna org. Asegúrese de saber lo que está haciendo.",
-  "noOverwriteComponentsKept": "{{count}} componentes del paquete de despliegue ya existen en la org de destino y no se sobrescribirán ({{file}})",
+  "noOverwriteComponentsKept": "{{count}} componente(s) del paquete de despliegue ya existe(n) en la org de destino y no se sobrescribirá(n) ({{file}})",
   "noOverwriteItemsMatchingInPackage": "{{count}} elemento(s) del paquete de despliegue coinciden con package-no-overwrite.xml: hay que listar el contenido de la org de destino para saber cuáles ya existen allí",
   "noOverwriteKeepIntro": "Detectando qué elementos de package-no-overwrite.xml ya existen en la org destino: un elemento existente se protegerá (no se sobrescribirá), mientras que un elemento ausente en la org será creado por el despliegue...",
   "noOverwriteNoProtectedItemInPackage": "Ningún elemento del paquete de despliegue coincide con package-no-overwrite.xml: no hay nada que proteger, así que no se lista el contenido de la org de destino",
