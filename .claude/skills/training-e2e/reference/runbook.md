@@ -171,6 +171,10 @@ Traps that cost earlier runs time:
   `node scripts/build/start-branches.mjs --check` on the course's `main` says whether they are
   current. Since training PR #36 the course's `start-branches.yml` publishes them on every push to
   `main`; before it, only the monthly check looked, and a push by hand was the release step.
+- **`sf plugins link .` replaces the installed sfdx-hardis, it does not shadow it** (2026-10-06).
+  `sf plugins unlink sfdx-hardis` at the end of a run leaves no sfdx-hardis at all. Put the user's
+  CLI back with `sf plugins install sfdx-hardis` (the `latest` tag): installing `sfdx-hardis@x.y.z`
+  pins that version, and `sf plugins update` then never moves it.
 - **Docker Desktop is usually not running on the workstation.** `docker run ... sf plugins` to read
   the version inside an image fails on the daemon socket. Read the version from the job instead,
   or from the registry timestamps.
