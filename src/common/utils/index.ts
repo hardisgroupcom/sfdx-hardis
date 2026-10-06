@@ -918,33 +918,48 @@ export async function createWorkBranchFromTarget(
 /**
  * True when a branch with this name exists locally or on origin.
  *
- * Origin is asked directly with ls-remote, so a branch created by a teammate since the last fetch
- * is found. A remote-tracking ref left behind by a branch deleted on origin is removed, so that
- * createWorkBranchFromTarget does not refuse a name that is free again.
+ * Origin is asked by fetching that one branch, through gitFetch so that an authentication error
+ * gets the usual credentials prompt, and a branch created by a teammate since the last fetch is
+ * found. When origin has no such branch, a remote-tracking ref left behind by a branch deleted
+ * there is removed, so that createWorkBranchFromTarget does not refuse a name that is free again.
  */
 export async function workBranchExists(branchName: string): Promise<boolean> {
   const localBranches = await git().branchLocal();
   if (localBranches.all.includes(branchName)) {
     return true;
   }
-  let onRemote = false;
+  const trackingRef = `refs/remotes/origin/${branchName}`;
   try {
-    const heads = await git().raw(['ls-remote', '--heads', 'origin', branchName]);
-    onRemote = heads.split(/\r?\n/).some((line) => line.trim().endsWith(`refs/heads/${branchName}`));
+    await gitFetch(['origin', `+refs/heads/${branchName}:${trackingRef}`]);
+    return true;
   } catch (e) {
-    // No reachable origin: fall back to the remote-tracking refs of the last fetch, which can miss
-    // a branch (a shallow or single-branch clone in CI fetches only one), so say so
-    uxLog("warning", this, c.yellow(t('workBranchRemoteCheckFailed', { branch: branchName, message: describeGitError(e) })));
     const remoteBranches = await git().branch(['-r']);
-    return remoteBranches.all.includes(`origin/${branchName}`);
-  }
-  if (!onRemote) {
-    const remoteBranches = await git().branch(['-r']);
-    if (remoteBranches.all.includes(`origin/${branchName}`)) {
-      await git().raw(['branch', '-d', '-r', `origin/${branchName}`]);
+    const trackedBefore = remoteBranches.all.includes(`origin/${branchName}`);
+    if (describeGitError(e).toLowerCase().includes("couldn't find remote ref")) {
+      // Origin answered: the branch does not exist there
+      if (trackedBefore) {
+        await git().raw(['branch', '-d', '-r', `origin/${branchName}`]);
+      }
+      return false;
     }
+    // Origin could not be asked: fall back to the remote-tracking refs of the last fetch, which can
+    // miss a branch (a shallow or single-branch clone in CI fetches only one), so say so. "action":
+    // this runs right after a prompt, where VS Code shows nothing else.
+    uxLog("action", this, c.yellow(t('workBranchRemoteCheckFailed', { branch: branchName, message: describeGitError(e) })));
+    return trackedBefore;
   }
-  return onRemote;
+}
+
+/**
+ * The first free work branch name: the name itself, else the name followed by -2, -3...
+ * Used when nobody can be asked for another name (CI, --agent).
+ */
+export async function firstFreeWorkBranchName(branchName: string): Promise<string> {
+  let candidate = branchName;
+  for (let suffix = 2; await workBranchExists(candidate); suffix++) {
+    candidate = `${branchName}-${suffix}`;
+  }
+  return candidate;
 }
 
 // Checks that current git status is clean.

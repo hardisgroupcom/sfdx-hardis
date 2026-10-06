@@ -10,6 +10,7 @@ import {
   assertBranchNotInOtherWorktree,
   createWorkBranchFromTarget,
   workBranchExists,
+  firstFreeWorkBranchName,
 } from '../../../src/common/utils/index.js';
 import { getGitDeltaScope } from '../../../src/common/utils/gitUtils.js';
 
@@ -428,6 +429,22 @@ describe('workBranchExists()', () => {
     expect(await workBranchExists('feature/gone')).to.equal(false);
     const remoteBranches = await simpleGit(workDir).branch(['-r']);
     expect(remoteBranches.all).to.not.include('origin/feature/gone');
+  });
+});
+
+describe('firstFreeWorkBranchName()', () => {
+  it('keeps a free name, and adds -2, -3... to a name already used here or on origin', async () => {
+    const base = await makeSandbox('suffix');
+    const { workDir, g } = await setupWithOrigin(base);
+    await g.checkout(['-b', 'feature/taken', 'main']);
+    await g.raw(['push', 'origin', 'feature/taken']);
+    await g.checkout(['-b', 'feature/taken-2', 'main']);
+    await g.checkout('main');
+    await g.raw(['branch', '-D', 'feature/taken']); // on origin only
+    process.chdir(workDir);
+
+    expect(await firstFreeWorkBranchName('feature/free')).to.equal('feature/free');
+    expect(await firstFreeWorkBranchName('feature/taken')).to.equal('feature/taken-3');
   });
 });
 

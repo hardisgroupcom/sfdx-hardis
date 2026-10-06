@@ -13,6 +13,7 @@ import {
   getGitRepoUrl,
   isCI,
   uxLog,
+  firstFreeWorkBranchName,
   workBranchExists,
 } from '../../../common/utils/index.js';
 import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
@@ -50,7 +51,7 @@ This command guides you through the process of preparing your local environment 
 
 Key features include:
 
-- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`. A new User Story never reuses an existing branch: if a branch with the same name already exists, locally or on the remote, the command says so and asks for another name (in \`--agent\` mode, in CI, or when the name comes from \`--task-name\`, it stops and asks to run it again with another \`--task-name\`). When the remote can not be reached, only the branches of the last fetch are checked, with a warning.
+- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`. A new User Story never reuses an existing branch: if a branch with the same name already exists, locally or on the remote, the command says so and asks for another name (in \`--agent\` mode or in CI, where nobody can answer, it adds a number suffix instead: \`-2\`, \`-3\`...). When the remote can not be reached, only the branches of the last fetch are checked, with a warning.
 
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in \`config/.sfdx-hardis.yml\
 
@@ -90,6 +91,7 @@ In \`--agent\` mode, the command also computes automatically:
 
 - branch prefix: value provided by \`--branch-prefix\`, otherwise first configured branch prefix choice, fallback \`feature\`
 - scratch mode: always create a new scratch org
+- branch name: when a branch with the same name already exists, locally or on the remote, a number suffix (\`-2\`, \`-3\`...) is added, and a warning names the branch created
 
 In \`--agent\` mode, the command intentionally skips:
 
@@ -284,16 +286,21 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     // We branch from origin/<target> instead of checking out <target>, so this works even
     // when the target branch is checked out in another git worktree.
     // A new User Story never reuses an existing branch: an old branch with the same name would
-    // carry its commits into the new Pull Request. The user picks another name instead.
+    // carry its commits into the new Pull Request. The user picks another name instead, and when
+    // nobody can be asked (CI, --agent) a number suffix makes the name free.
     let branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
-    while (await workBranchExists(branchName)) {
-      if (agentMode || isCI || flags['task-name']) {
-        // Nobody to ask: the caller has to run the command again with another name
-        throw new SfError(t('workBranchAlreadyExistsUseAnotherTaskName', { branch: branchName }));
+    if (agentMode || isCI) {
+      const freeBranchName = await firstFreeWorkBranchName(branchName);
+      if (freeBranchName !== branchName) {
+        uxLog("warning", this, c.yellow(t('workBranchAlreadyExistsUsingSuffix', { branch: branchName, newBranch: freeBranchName })));
+        branchName = freeBranchName;
       }
-      uxLog("action", this, c.yellow(t('workBranchAlreadyExistsChooseAnotherName', { branch: branchName })));
-      taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
-      branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    } else {
+      while (await workBranchExists(branchName)) {
+        uxLog("action", this, c.yellow(t('workBranchAlreadyExistsChooseAnotherName', { branch: branchName })));
+        taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+        branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+      }
     }
     const repoUrl = await getGitRepoUrl();
     uxLog(
