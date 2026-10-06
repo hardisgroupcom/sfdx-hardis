@@ -52,7 +52,8 @@ const DEFAULT_FLOW_DELETE_RETRY_DELAY_MS = 10000;
 // Process Builder action) that still references it. Real Tooling wordings:
 //  - DEPENDENCY_EXISTS: This flow is referenced by at least one subflow element...
 //  - DELETE_FAILED: ... Can't delete this Flow Definition because it's referenced by the "X" process...
-// When the referencing Flow is deleted in the same run, a later pass succeeds.
+// When the referencing Flow is deleted in the same run, a later pass succeeds. A reference from a
+// component that is not a Flow can match too: it only costs a pass, as passes stop without progress.
 const FLOW_DEPENDENCY_MARKERS = ['DEPENDENCY_EXISTS', 'referenced by'];
 // Safety net of the dependency passes: a pass only runs when the previous one deleted a Flow, so the
 // loop already stops on its own.
@@ -484,7 +485,12 @@ function toolingDeleteErrorMessage(result: any): string {
 }
 
 function isAlreadyDeletedError(message: string): boolean {
-  return ALREADY_DELETED_MARKERS.some((marker) => message.toUpperCase().includes(marker.toUpperCase()));
+  return messageHasMarker(message, ALREADY_DELETED_MARKERS);
+}
+
+function messageHasMarker(message: string, markers: string[]): boolean {
+  const upperMessage = message.toUpperCase();
+  return markers.some((marker) => upperMessage.includes(marker.toUpperCase()));
 }
 
 // Delete Flow versions via the Tooling API, in a single composite batch sent oldest version first.
@@ -560,7 +566,7 @@ export async function deleteFlowVersionsViaToolingApi(
 }
 
 function isFlowDependencyError(message: string): boolean {
-  return FLOW_DEPENDENCY_MARKERS.some((marker) => message.toUpperCase().includes(marker.toUpperCase()));
+  return messageHasMarker(message, FLOW_DEPENDENCY_MARKERS);
 }
 
 // ---------------------------------------------------------------------------
@@ -783,8 +789,18 @@ async function deleteFlowsOnePass(
   const flowNames = pendingFlowDeletions.map((pending) => pending.flowName);
   // Enumerate against the target org, never reusing a validation-time list: version counts differ
   // between the orgs of the promotion chain.
-  const versionsByFlow = await queryFlowVersions(flowNames, conn, commandThis);
-  const definitionsByFlow = await queryFlowDefinitions(flowNames, conn, commandThis);
+  let versionsByFlow: Record<string, FlowVersionRecord[]>;
+  let definitionsByFlow: Record<string, { id: string; hasActiveVersion: boolean }>;
+  try {
+    versionsByFlow = await queryFlowVersions(flowNames, conn, commandThis);
+    definitionsByFlow = await queryFlowDefinitions(flowNames, conn, commandThis);
+  } catch (e: any) {
+    // Nothing of this pass touched the org yet: every Flow of the pass is left as it was. Reported as
+    // outcomes rather than thrown, so the outcomes of a previous pass are kept and reported.
+    return pendingFlowDeletions.map((pending) =>
+      buildFlowDeletionErrorOutcome(pending, [], deleteInterviewsAllowed, e, commandThis)
+    );
+  }
   const outcomes: FlowDeletionOutcome[] = [];
   for (const pending of pendingFlowDeletions) {
     const allVersions = versionsByFlow[pending.flowName] || [];
@@ -801,28 +817,38 @@ async function deleteFlowsOnePass(
         )
       );
     } catch (e: any) {
-      // Unexpected failure (missing definition, transport error mid-run...): not an interview block,
-      // so it must not report as one. A transport error can also hide work that DID complete
-      // server-side, so the counts of this outcome are what the run saw, not necessarily the org state.
-      const versions = selectVersionsToDelete(allVersions, pending.requestedVersions);
-      const message = `FLOW_DELETE_ERROR: ${e?.message || String(e)}`;
-      const outcome: FlowDeletionOutcome = {
-        flowName: pending.flowName,
-        status: 'FLOW_DELETE_ERROR',
-        wholeFlow: pending.requestedVersions === null,
-        previousActiveVersion: findActiveVersionNumber(allVersions),
-        versionsToDelete: versions.map((version) => version.versionNumber),
-        versionsDeleted: [],
-        interviewCount: 0,
-        interviewsDeleted: 0,
-        deleteInterviewsAllowed,
-        message,
-      };
-      uxLog('error', commandThis, c.red(message));
-      outcomes.push(outcome);
+      outcomes.push(buildFlowDeletionErrorOutcome(pending, allVersions, deleteInterviewsAllowed, e, commandThis));
     }
   }
   return outcomes;
+}
+
+// Outcome of a Flow whose deletion hit an unexpected failure (missing definition, transport error
+// mid-run...): not an interview block, so it must not report as one. A transport error can also hide
+// work that DID complete server-side, so the counts of this outcome are what the run saw, not
+// necessarily the org state.
+function buildFlowDeletionErrorOutcome(
+  pending: PendingFlowDeletion,
+  allVersions: FlowVersionRecord[],
+  deleteInterviewsAllowed: boolean,
+  error: any,
+  commandThis: any
+): FlowDeletionOutcome {
+  const versions = selectVersionsToDelete(allVersions, pending.requestedVersions);
+  const message = `FLOW_DELETE_ERROR: ${error?.message || String(error)}`;
+  uxLog('error', commandThis, c.red(message));
+  return {
+    flowName: pending.flowName,
+    status: 'FLOW_DELETE_ERROR',
+    wholeFlow: pending.requestedVersions === null,
+    previousActiveVersion: findActiveVersionNumber(allVersions),
+    versionsToDelete: versions.map((version) => version.versionNumber),
+    versionsDeleted: [],
+    interviewCount: 0,
+    interviewsDeleted: 0,
+    deleteInterviewsAllowed,
+    message,
+  };
 }
 
 async function deleteOneFlow(
@@ -1000,7 +1026,9 @@ function isDeletedFlowStatus(status: FlowDeletionStatus): boolean {
 
 // Combine the outcome of a dependency pass with the one of the previous pass. The first pass saw the
 // Flow before its deactivation and holds the versions the manifest targets, while the retry holds the
-// final status. Deleted versions and interviews add up across passes.
+// final status. Deleted versions and deleted interviews add up across passes: a deleted record can not
+// be deleted again. The retry queries again the interviews the previous pass could not delete, so the
+// interviews seen are the ones deleted before plus the ones the retry found.
 function mergeRetryOutcome(previous: FlowDeletionOutcome, retry: FlowDeletionOutcome): FlowDeletionOutcome {
   const versionsDeleted = [...new Set([...previous.versionsDeleted, ...retry.versionsDeleted])].sort((a, b) => a - b);
   return {
@@ -1008,7 +1036,7 @@ function mergeRetryOutcome(previous: FlowDeletionOutcome, retry: FlowDeletionOut
     previousActiveVersion: previous.previousActiveVersion,
     versionsToDelete: previous.versionsToDelete,
     versionsDeleted,
-    interviewCount: previous.interviewCount + retry.interviewCount,
+    interviewCount: Math.max(previous.interviewCount, previous.interviewsDeleted + retry.interviewCount),
     interviewsDeleted: previous.interviewsDeleted + retry.interviewsDeleted,
   };
 }
@@ -1083,6 +1111,8 @@ type FlowDeletionColumn = {
 // A preflight (--check) reads the org and deletes nothing: its reports must say so.
 export type FlowDeletionReportOptions = {
   preflight?: boolean;
+  // Real deletion after the metadata deployment: a Flow left in the org is a warning, not a failure
+  afterDeployment?: boolean;
 };
 
 const FLOW_DELETION_COLUMNS: FlowDeletionColumn[] = [
@@ -1193,9 +1223,9 @@ export function buildFlowDeletionMarkdown(
   const preflight = options.preflight === true;
   const columns = FLOW_DELETION_COLUMNS.filter((column) => !preflight || column.executionOnly !== true);
   const failed = outcomes.filter((outcome) => isFailedFlowDeletionStatus(outcome.status));
-  // A real deletion that left Flows in the org says so in its title: once the deployment succeeded,
-  // that is a warning, not a failure.
-  const incomplete = !preflight && failed.length > 0;
+  // A deletion after the deployment that left Flows in the org says so in its title: the deployment
+  // succeeded, so that is a warning, not a failure. Before the deployment, the job fails instead.
+  const incomplete = !preflight && options.afterDeployment === true && failed.length > 0;
   const lines: string[] = [];
   if (preflight) {
     lines.push(`## ${t('flowDeletionMarkdownPreflightTitle')}`);

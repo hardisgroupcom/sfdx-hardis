@@ -1162,6 +1162,62 @@ describe('runFlowDeletionPostStep', () => {
     expect(flowDeletionNotDeletedFlows(outcomes)).to.be.empty;
   });
 
+  it('keeps the outcomes of the first pass when a dependency pass can not query the org', async () => {
+    const conn = mockConn({
+      flowVersionsSequence: [
+        [flowVersionRecord('ChildFlow', 1), flowVersionRecord('ParentFlow', 1)],
+        [flowVersionRecord('ChildFlow', 1)],
+      ],
+      flowDefinitions: [
+        { Id: '300xx01', DeveloperName: 'ChildFlow', ActiveVersionId: null },
+        { Id: '300xx02', DeveloperName: 'ParentFlow', ActiveVersionId: null },
+      ],
+      destroyResultsSequence: [
+        [
+          {
+            id: flowVersionRecord('ChildFlow', 1).Id,
+            success: false,
+            errors: [{ statusCode: 'DEPENDENCY_EXISTS', message: 'This flow is referenced by at least one subflow element.' }],
+          },
+        ],
+        [],
+      ],
+    });
+    // The network drops after the first pass: the definition query of pass 2 fails.
+    let definitionQueries = 0;
+    const toolingQuery = conn.tooling.query;
+    conn.tooling.query = async (soql: string) => {
+      if (soql.includes('FROM FlowDefinition') && ++definitionQueries > 1) {
+        throw new Error('network down');
+      }
+      return toolingQuery(soql);
+    };
+    const outcomes = await runFlowDeletionStep(
+      [
+        { flowName: 'ChildFlow', requestedVersions: null },
+        { flowName: 'ParentFlow', requestedVersions: null },
+      ],
+      conn,
+      null,
+      false
+    );
+    expect(outcomes.map((outcome) => outcome.status)).to.deep.equal(['FLOW_DELETE_ERROR', 'SUCCESS']);
+    expect(outcomes[0].message).to.contain('network down');
+    expect(flowDeletionNotDeletedFlows(outcomes)).to.deep.equal(['ChildFlow']);
+  });
+
+  it('reports every Flow as an error instead of throwing when the first enumeration fails', async () => {
+    const outcomes = await runFlowDeletionStep(
+      [{ flowName: 'MyFlow', requestedVersions: null }],
+      mockConn({ flowQueryThrows: true }),
+      null,
+      false
+    );
+    expect(outcomes).to.have.length(1);
+    expect(outcomes[0].status).to.equal('FLOW_DELETE_ERROR');
+    expect(outcomes[0].message).to.contain('flow query boom');
+  });
+
   it('stops the dependency passes when a pass deletes nothing', async () => {
     // The referencing Flow is not part of the run: a retry can never pass.
     const destroyCalls: any[] = [];
@@ -1450,15 +1506,22 @@ describe('buildFlowDeletionMarkdown', () => {
     expect(markdown).to.contain('➖');
   });
 
-  it('titles a real deletion that left a Flow in the org as incomplete, with a note above the table', () => {
-    const markdown = buildFlowDeletionMarkdown([
-      outcome({ flowName: 'OkFlow', versionsDeleted: [1, 2] }),
-      outcome({ status: 'FLOW_DELETE_ERROR', message: 'still referenced' }),
-    ]);
+  it('titles a deletion after the deployment that left a Flow in the org as incomplete, with a note above the table', () => {
+    const markdown = buildFlowDeletionMarkdown(
+      [outcome({ flowName: 'OkFlow', versionsDeleted: [1, 2] }), outcome({ status: 'FLOW_DELETE_ERROR', message: 'still referenced' })],
+      { afterDeployment: true }
+    );
     expect(markdown.split('\n')[0]).to.equal('## ⚠️ Flow deletion incomplete');
-    const note = markdown.indexOf('Some Flows could not be deleted');
+    const note = markdown.indexOf('some Flows could not be deleted');
     expect(note).to.be.greaterThan(-1);
     expect(note).to.be.lessThan(markdown.indexOf('<details>'));
+    expect(markdown).to.contain('> still referenced');
+  });
+
+  it('keeps the plain title when a deletion before the deployment fails, as the job fails', () => {
+    const markdown = buildFlowDeletionMarkdown([outcome({ status: 'FLOW_DELETE_ERROR', message: 'still referenced' })]);
+    expect(markdown.split('\n')[0]).to.equal('## Flow deletion');
+    expect(markdown).to.not.contain('some Flows could not be deleted');
     expect(markdown).to.contain('> still referenced');
   });
 
@@ -1467,7 +1530,7 @@ describe('buildFlowDeletionMarkdown', () => {
       preflight: true,
     });
     expect(markdown.split('\n')[0]).to.equal('## Flow deletion planned');
-    expect(markdown).to.not.contain('Some Flows could not be deleted');
+    expect(markdown).to.not.contain('some Flows could not be deleted');
   });
 });
 

@@ -247,7 +247,7 @@ When deleting Flow Interviews is authorized, step 5 retries: an interview that w
 
 Any failure that is not an interview block (a referencing Flow that stays in the org, insufficient access, network error mid-run...) is reported as `FLOW_DELETE_ERROR`. After a network error the org can be further along than the report shows: every step is re-runnable, so retry and trust the new report.
 
-A Flow that can not be deleted only stops the job **before** the deployment (`preDestructiveChanges.xml`). **After** the deployment, the metadata is already in the org, so a Flow left behind, whatever the reason, does not fail the job: it stays deactivated when its deactivation succeeded, the Pull Request comment shows a ⚠️ Flow deletion section, and the deployment notification is sent as a warning that lists it. The Flow stays in `destructiveChanges.xml`, so the next deployment tries again.
+A Flow that can not be deleted only stops the job **before** the deployment (`preDestructiveChanges.xml`). **After** the deployment, the metadata is already in the org, so a Flow left behind, whatever the reason, does not fail the job: it stays deactivated when its deactivation succeeded, the Pull Request comment shows a ⚠️ Flow deletion section, and the deployment notification is sent as a warning that lists it. Running the same deployment again retries it, but a later delta deployment does not include it anymore: solve what blocks it, then run the job again or delete the Flow manually.
 
 Notes:
 
