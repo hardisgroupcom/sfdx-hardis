@@ -74,6 +74,20 @@ The job logs describe each of these steps:
 - the full list of protected items, written to a `calculated-package-no-overwrite.xml` file (its path is shown in the log);
 - the final `package.xml` to deploy, displayed after all package filtering steps (or summarized when it holds more than 100 items).
 
+#### See what is protected in the Pull Request
+
+The validation and deployment Pull Request comments have a **Protected metadata** section when the Pull Request contains protected items. It counts, per metadata type, the items already in the target org that are not overwritten, and the items created this once.
+
+![Protected metadata section of a validation Pull Request comment](assets/images/screenshot-package-no-overwrite-pr-comment.png)
+
+The same comment counts, per metadata type, what the deployment creates, updates and deletes:
+
+![Validation Pull Request comment with the components per metadata type and the protected metadata](assets/images/screenshot-deployment-components-pr-comment.png)
+
+The `deployment-components.xlsx` file of the job artifacts lists every component by name. A protected item has the status **Not overwritten**, or **Created** when it did not exist in the target org yet, and the name of the `package-no-overwrite.xml` file in the **No-overwrite** column.
+
+![deployment-components.xlsx report of a validation job](assets/images/screenshot-deployment-components-xlsx.png)
+
 #### When to use it
 
 Use `package-no-overwrite.xml` for metadata that:
@@ -107,6 +121,16 @@ Common metadata types to protect:
 4. Commit the file to your repository
 
 > The file was formerly named `packageDeployOnce.xml`. Both names are still recognized for backward compatibility, but `package-no-overwrite.xml` is the current standard.
+
+#### View it in VS Code
+
+In [VS Code SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis), open the **DevOps Pipeline**, then the package files menu of its header (the second menu), and choose **No Overwrite** **(2)**.
+
+![Package files menu of the DevOps Pipeline](assets/images/annotated/vscode-guide/pipeline-packages-menu.png)
+
+The package viewer lists the protected metadata types, with **All** when every member of a type is protected. **Edit mode** adds or removes types and members without writing XML.
+
+![package-no-overwrite.xml in the package viewer of VS Code SFDX Hardis](assets/images/vscode-guide/package-no-overwrite.png)
 
 #### Wildcard support
 
@@ -265,5 +289,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 
 - [Lab 2.7 - Resolve a Git merge conflict with a teammate](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/)
 - [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
 
 <!-- training-links:end -->

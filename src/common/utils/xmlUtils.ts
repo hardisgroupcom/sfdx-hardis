@@ -508,20 +508,21 @@ export async function listPackageXmlItemsMatchingNoOverwrite(
 ): Promise<{ type: string; member: string }[]> {
   const packageContent = await parsePackageXmlFile(packageXmlFile);
   const noOverwriteContent = await parsePackageXmlFile(packageNoOverwriteFile);
-  const matchingItems: { type: string; member: string }[] = [];
-  for (const type of Object.keys(packageContent)) {
-    const patterns: string[] = noOverwriteContent[type] || [];
-    if (patterns.length === 0) {
-      continue;
-    }
-    const apiNameOnly = ORG_UNIQUE_FOLDER_METADATA_TYPES.includes(type);
-    for (const member of packageContent[type]) {
-      if (patterns.some((pattern) => memberMatchesPattern(member, pattern, apiNameOnly))) {
-        matchingItems.push({ type: type, member: member });
-      }
-    }
-  }
-  return matchingItems;
+  const items = Object.keys(packageContent).flatMap((type) => packageContent[type].map((member: string) => ({ type: type, member: member })));
+  return filterItemsMatchingNoOverwrite(items, noOverwriteContent);
+}
+
+// Keeps the items that the parsed content of a package-no-overwrite.xml protects, with the same matching
+// as the deployment filtering: * wildcards, and API name only for the folder types unique in the org.
+export function filterItemsMatchingNoOverwrite<T extends { type: string; member: string }>(
+  items: T[],
+  noOverwriteContent: Record<string, string[]>
+): T[] {
+  return items.filter((item) => {
+    const patterns: string[] = noOverwriteContent[item.type] || [];
+    const apiNameOnly = ORG_UNIQUE_FOLDER_METADATA_TYPES.includes(item.type);
+    return patterns.some((pattern) => memberMatchesPattern(item.member, pattern, apiNameOnly));
+  });
 }
 
 // Returns true when member matches pattern, supporting * as a glob wildcard (e.g. "*__dlm", "Account*").

@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#deployment-components-report): Pull Request comments count the deployed components per metadata type, show the components protected by package-no-overwrite.xml, and an Excel report lists every component.
 - New [Aha! integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/): Aha! features are listed in Pull Request comments and notifications, and get a comment and a tag when they are deployed.
 - When `ticketingProvider` is defined in `.sfdx-hardis.yml`, ticket references are only looked for with that ticketing provider.
 - [Org Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) jobs that ran to their end are now green even when they found issues: a red job means the job could not run.

@@ -121,7 +121,17 @@ If necessary,you can define the following files:
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: `packageNoOverwritePath: manifest/package-no-overwrite-main.xml` in config file `config/.sfdx-hardis.main.yml`)
 - `manifest/packageXmlOnChange.xml`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
+When components of the deployment package are protected by `package-no-overwrite.xml`, the Pull Request comment has a **Protected metadata** section counting, per metadata type, the components already in the target org that are not overwritten, and the ones created this once.
+
 See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/)
+
+### Deployment components report
+
+The validation and deployment Pull Request comments count, per metadata type, the components the deployment creates, updates, deletes or fails to deploy. A validation comment calls its counts line **Simulated deployment**.
+
+![Validation Pull Request comment with the components per metadata type and the protected metadata](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-deployment-components-pr-comment.png)
+
+The full list is written to `hardis-report/deployment-components.csv` and `hardis-report/xls/deployment-components.xlsx`, kept as job artifacts: one row per component with its type, name, status (Failed, Created, Updated, Deleted, Not overwritten, Unchanged) and the package-no-overwrite file protecting it. When a deploy result does not list its components (some Quick Deploy results), the counts per type and the report are left out rather than shown incomplete.
 
 ### Packages installation
 
