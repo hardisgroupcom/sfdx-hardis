@@ -9,6 +9,7 @@
 - New [hardis:project:pipeline:describe](https://sfdx-hardis.cloudity.com/hardis/project/pipeline/describe/): Describe the major branches of a project and the steps between them, so scripts and coding agents stop assuming the pipeline is integration, uat, preprod and main.
 - The deployment action commands ([create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/), update, delete, reorder) no longer add a `when` key to the actions already in the file.
 - The [coding agents guides](https://sfdx-hardis.cloudity.com/salesforce-devops-agent-skills/#deployment-actions-commands-hardisprojectaction) now cover trying, retrying and closing deployment actions, their status by org, and list every command that accepts `--agent`.
+- Upgrade simple-git to v4 to fix security advisories, keeping the git environment variables of CI runners and proxies.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): the Flow deletion table of a validation Pull Request comment now says that nothing has been deleted yet and that the Flows are deleted during the real deployment.
 
 ## [8.13.0] 2026-10-04
