@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.14.0] 2026-10-06
+
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):
   - [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#deployment-components-report) count the deployed components per metadata type, show the components protected by package-no-overwrite.xml, and an Excel report lists every component.
   - The code coverage comes first in Pull Request comments, and the protected metadata and Flow deletion tables are collapsed by default.
