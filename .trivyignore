@@ -434,3 +434,17 @@ CVE-2026-93748
 # braces: stack exhaustion when it expands an attacker-supplied deeply nested pattern (HIGH), same advisory as GHSA-vfj7-8cjw-p6xm in osv-scanner.toml. No fixed release exists (3.0.3, the latest, is affected).
 # In the images, braces 3.0.3 sits in the global node_modules and in the npm-shrinkwrapped @salesforce/cli, as a dependency of micromatch-based file globbing. It only expands glob patterns written in the project or in the tools themselves, never a pattern received from the network. Remove once a fixed version ships. Added 2026-10-03.
 CVE-2026-93687
+
+# https://avd.aquasec.com/nvd/cve-2026-102826 + cve-2026-102827 + cve-2026-102828 + cve-2026-102829 (GHSA-858h-whjf-mvg5, GHSA-g4wm-2vf7-vfgr, GHSA-x6jw-m9v5-85vh, GHSA-v5rq-49vh-5v5c)
+# simple-git 3.36.0 and @simple-git/argv-parser 1.1.1: the unsafe-operations guard misses git config includes (CVE-2026-102826), abbreviated long options such as --receive-p / --exe (CVE-2026-102827), trailer command config (CVE-2026-102828) and the VISUAL editor variable (CVE-2026-102829). Each one lets a caller that forwards untrusted arguments, config or env to simple-git run a command (HIGH / CRITICAL). Fixed in simple-git 4.0.0 / 4.0.1 and @simple-git/argv-parser 2.0.1.
+# sfdx-hardis builds every git argument, config value and environment variable it hands to simple-git itself, and never forwards untrusted input there, so the bypassed guard is never what stands between an attacker and git.
+# The fix needs simple-git v4, which also strips the inherited GIT_* and askpass variables our CI jobs rely on, so the migration is planned as a separate PR. Remove once sfdx-hardis moves to simple-git 4. Added 2026-10-06.
+CVE-2026-102826
+CVE-2026-102827
+CVE-2026-102828
+CVE-2026-102829
+
+# https://avd.aquasec.com/nvd/cve-2026-97058 (GHSA-hp3w-g68c-fv3c)
+# sprintf-js 1.0.3: an unbounded precision specifier in the format string exhausts memory (DoS, MEDIUM). No fixed release exists.
+# It only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, never in the library code we call. Remove once a fixed version ships. Added 2026-10-06.
+CVE-2026-97058

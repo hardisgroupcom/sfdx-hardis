@@ -18,7 +18,7 @@ export const TICKET_ATTACHMENT_MAX_BYTES_DEFAULT = 20 * 1024 * 1024; // 20 MB
 /** A comment body longer than this is truncated: a single pasted log must not blow up the payload */
 export const TICKET_TEXT_MAX_CHARS = 200_000;
 
-export type TicketDetailsProvider = 'JIRA' | 'AZURE' | 'SERVICENOW';
+export type TicketDetailsProvider = 'JIRA' | 'AZURE' | 'SERVICENOW' | 'AHA';
 
 /**
  * How the attachment can be consumed downstream:
@@ -144,7 +144,7 @@ export function newTicketDetails(provider: TicketDetailsProvider, id: string): T
 const HTML_BLOCK_TAGS = ['p', 'div', 'br', 'tr', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'];
 
 /**
- * Turns the HTML returned by Jira renderedFields, Azure Boards fields or ServiceNow journals into
+ * Turns the HTML returned by Jira renderedFields, Azure Boards fields, ServiceNow journals or Aha! into
  * readable plain text. sanitize-html does the stripping (rather than a regex) so that a crafted
  * ticket body cannot smuggle markup through, and entities are decoded correctly.
  */

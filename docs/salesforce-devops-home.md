@@ -85,7 +85,7 @@ Deploying a User Story is not always just about metadata. With [deployment actio
 **Integrations**
 
 - [Slack, Microsoft Teams and email notifications](salesforce-devops-setup-integrations-home.md) with detailed deployment results.
-- [Jira](salesforce-devops-setup-integration-jira.md), [Azure Boards](salesforce-devops-setup-integration-azure-boards.md) or [any other ticketing tool](salesforce-devops-setup-integration-generic-ticketing.md): tickets are linked in Pull Request comments and updated when they reach an org.
+- [Jira](salesforce-devops-setup-integration-jira.md), [Azure Boards](salesforce-devops-setup-integration-azure-boards.md), [Aha!](salesforce-devops-setup-integration-aha.md) or [any other ticketing tool](salesforce-devops-setup-integration-generic-ticketing.md): tickets are linked in Pull Request comments and updated when they reach an org.
 - [Deployment Agent](salesforce-deployment-agent-home.md): explains deployment errors with built-in rules and AI (Agentforce, or direct calls to OpenAI, Anthropic or Gemini).
 
 > Read the [Smart Deploy internals](salesforce-devops-smart-deployment.md) page to see how all these pieces fit together in a single deployment.

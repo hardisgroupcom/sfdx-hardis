@@ -477,6 +477,42 @@
       "title": "Flow deletion retry delay (ms)",
       "type": "integer"
     },
+    "ahaHost": {
+      "$id": "#/properties/ahaHost",
+      "description": "Host of your Aha! account. Example: mycompany.aha.io",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/",
+      "examples": [
+        "mycompany.aha.io",
+        "mycompany.euw4.aha.io"
+      ],
+      "title": "Aha! Host",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "AHA"
+        }
+      ]
+    },
+    "ahaTicketRegex": {
+      "$id": "#/properties/ahaTicketRegex",
+      "description": "Regular expression to identify Aha! feature references in commits, branch names and Pull Request descriptions. The first capturing group must be the whole reference. Example: (PROD-[0-9]+)",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/",
+      "examples": [
+        "(PROD-[0-9]+)",
+        "((?:PROD|MOBILE)-[0-9]+)"
+      ],
+      "title": "Aha! Ticket Regex",
+      "type": "string",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "AHA"
+        }
+      ]
+    },
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",
@@ -3927,17 +3963,19 @@
     },
     "ticketingProvider": {
       "$id": "#/properties/ticketingProvider",
-      "description": "Ticketing provider used on the project",
+      "description": "Ticketing provider used on the project. When defined, ticket references are only looked for with this provider. When empty, every provider that is configured is used, and a reference like PROJ-123 is a Jira ticket.",
       "enum": [
         "JIRA",
         "AZURE",
         "SERVICENOW",
+        "AHA",
         "GENERIC"
       ],
       "enumNames": [
         "Jira",
         "Azure Boards",
         "ServiceNow",
+        "Aha!",
         "Generic"
       ],
       "examples": [

@@ -20,7 +20,7 @@ export default class TicketGet extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
-**Fetches a single ticket from JIRA, Azure Boards or ServiceNow with everything attached to it, and returns it as structured JSON (and optionally as a markdown extract).**
+**Fetches a single ticket from JIRA, Azure Boards, ServiceNow or Aha! with everything attached to it, and returns it as structured JSON (and optionally as a markdown extract).**
 
 Where \`collectTicketsInfo\` gathers a shallow summary of every ticket referenced by a Pull Request, this command does the opposite: **one** ticket, in full, so that a human (or an AI agent preparing an implementation) has the complete requirement without opening the ticketing system.
 
@@ -28,7 +28,7 @@ It returns:
 
 - **Header fields:** type, status, priority, assignee, reporter, sprint, story points, labels, components, fix versions, parent, epic, and the key dates.
 - **Description and acceptance criteria**, converted from the provider's HTML / ADF to readable plain text.
-- **All comments**, in chronological order (paginated on JIRA).
+- **All comments**, in chronological order (paginated on JIRA and Aha!).
 - **Subtasks and linked items**, with their status.
 - **Attachments**, downloaded next to the report so images can be looked at and documents opened.
 - **Possible manual actions:** the lines of the ticket mentioning an operation that deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load...). Each one that survives the design phase should become an [sfdx-hardis deployment action](${'https://sfdx-hardis.cloudity.com/hardis/project/action/create/'}), so it is replayed in every org rather than done by hand once.
@@ -39,7 +39,7 @@ The ticketing system is deduced from the shape of the identifier, so \`--provide
 
 | Identifier | Provider | Example |
 |------------|----------|---------|
-| \`PROJECT-123\` | JIRA | \`--id ACME-4567\` |
+| \`PROJECT-123\` | JIRA, or Aha! when \`ticketingProvider\` is \`AHA\` | \`--id ACME-4567\` |
 | \`1234\` or \`AB-1234\` | Azure Boards | \`--id AB-4567\` |
 | \`INC0012345\`, \`CHG...\`, \`RITM...\`, \`DMND...\` | ServiceNow | \`--id INC0012345\` |
 
@@ -50,12 +50,13 @@ The command reuses the ticketing variables sfdx-hardis already documents, read f
 - **JIRA:** \`JIRA_HOST\` + (\`JIRA_EMAIL\` + \`JIRA_TOKEN\`) or \`JIRA_PAT\` or (\`JIRA_CLIENT_ID\` + \`JIRA_CLIENT_SECRET\`)
 - **Azure Boards:** a token only - \`CI_SFDX_HARDIS_AZURE_TOKEN\`, \`SYSTEM_ACCESSTOKEN\` or \`AZURE_DEVOPS_EXT_PAT\`. The organization and the project are read from the git remote of the current repository; set \`SYSTEM_COLLECTIONURI\` and \`SYSTEM_TEAMPROJECT\` only to override that (on a CI agent, Azure Pipelines already provides them).
 - **ServiceNow:** \`SERVICENOW_URL\` + \`SERVICENOW_USERNAME\` + \`SERVICENOW_PASSWORD\`
+- **Aha!:** \`AHA_HOST\` + \`AHA_API_KEY\`. An Aha! feature reference has the shape of a JIRA key: it is read from Aha! when \`ticketingProvider\` is \`AHA\` in **.sfdx-hardis.yml** or with \`--provider aha\`, and from JIRA otherwise.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 - **Provider abstraction:** every connector is declared in the same \`allTicketProviders\` list, with the same static surface (\`providerKey\`, \`providerLabel\`, \`isAvailable\`, \`matchesTicketId\`, \`getTicketsFromString\`, \`supportsTicketDetails\`). \`TicketProvider.getTicketDetails()\` picks the connector that supports a deep fetch, whose identifier pattern matches, and whose credentials are configured, then delegates to that provider's \`getTicketDetails()\`. A matching connector may first complete its own configuration: Azure Boards parses \`origin\` with \`parseAzureRepoUrl()\` and fills the organization and project it finds there, so only a token has to be supplied locally. Values already set always win, and the git remote is only read when the identifier could belong to Azure Boards. An identifier that matches nothing, or that matches a provider with no credentials, raises an explicit error naming the missing configuration rather than returning an empty result.
-- **Text conversion:** provider HTML (JIRA \`renderedFields\`, Azure Boards fields, ServiceNow journals) is converted to plain text with \`sanitize-html\`, and JIRA's Atlassian Document Format is walked as a fallback.
+- **Text conversion:** provider HTML (JIRA \`renderedFields\`, Azure Boards fields, ServiceNow journals, Aha! descriptions and comments) is converted to plain text with \`sanitize-html\`, and JIRA's Atlassian Document Format is walked as a fallback.
 - **Attachment safety:** the download URL of an attachment comes from the ticket payload, which is user-controlled data. Before any credential is sent, the URL is checked to resolve to the same host as the ticketing instance the command authenticated against. The response is read through a size cap (\`--max-attachment-size\`, 20 MB by default), the file name is sanitized and the resolved path is verified to stay inside the target directory.
 - **No sub-process:** downloaded content is never handed to an external converter. Text attachments are decoded in-process; images, PDFs and Office documents are saved as-is and reported through \`localPath\`, for the caller to open with its own tooling.
 - **Proxy support:** every call goes through the shared proxy-aware HTTP client, so \`HTTP_PROXY\` / \`HTTPS_PROXY\` / \`NO_PROXY\` are honored.
@@ -78,6 +79,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
     '$ sf hardis:ticket:get --id ACME-4567 --agent --json',
     '$ sf hardis:ticket:get --id INC0012345 --output-file docs/INC0012345/ticket-extract.md',
     '$ sf hardis:ticket:get --id AB-4567 --provider azure --attachments-dir ./ticket-attachments',
+    '$ sf hardis:ticket:get --id PROD-12 --provider aha --agent --json',
     '$ sf hardis:ticket:get --id ACME-4567 --skip-attachments --agent --json',
   ];
 
@@ -88,7 +90,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
     }),
     id: Flags.string({
       char: 'i',
-      description: 'Ticket identifier: JIRA key (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345)',
+      description: 'Ticket identifier: JIRA key or Aha! feature (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345)',
     }),
     provider: Flags.string({
       char: 'p',

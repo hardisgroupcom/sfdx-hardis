@@ -309,7 +309,7 @@ describe('unified provider surface', () => {
   });
 
   it('exposes as deep-fetch capable only the connectors that have an API', () => {
-    expect(ticketDetailsProviderKeys()).to.deep.equal(['jira', 'azure', 'servicenow']);
+    expect(ticketDetailsProviderKeys()).to.deep.equal(['jira', 'azure', 'servicenow', 'aha']);
     expect(GenericTicketingProvider.supportsTicketDetails).to.equal(false);
   });
 
