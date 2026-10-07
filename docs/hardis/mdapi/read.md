@@ -14,6 +14,7 @@ Key functionalities:
 
 - **Component selection:** Choose what to read with `--metadata` (e.g. `Profile:Admin`, or a bare type like `Profile` to read every component of that type), `--manifest` (a `package.xml`), or `--source-dir` (refresh the types/names already present in a local folder).
 - **Complete components:** Each component is read whole and written to standard source format, so a `git diff` shows exactly what file-based retrieve had been dropping.
+- **Active permissions only:** With `--active-only`, the entries of `Profile`, `PermissionSet` and `MutingPermissionSet` that grant nothing are left out of the files: field access with no read and no edit, object access with every flag false, Apex class, Visualforce page, Flow, custom permission, custom metadata type, custom setting and external data source access disabled, app not visible and not default, record type not visible, user permissions disabled. Tab visibilities (`Hidden` included), layout assignments, login hours and login IP ranges are kept, except the tab settings of tabs that do not exist: the API returns one for every standard object, tab or not, and a deployment refuses them (`You can't edit tab settings for X, as it's not a valid tab`). Deploying such a file grants what it lists and revokes nothing. The VS Code Metadata Retriever uses it in its Auto mode, the default, for Profiles.
 - **Chunking:** Reads are batched to respect the CRUD Metadata API limit (10 components per call, 200 for `CustomMetadata` and `CustomApplication`).
 - **Supported types are adapter-gated:** Compatibility is decided by the metadata type's @salesforce/source-deploy-retrieve registry adapter (`strategies.adapter`). Only pure-XML types round-trip through the CRUD Metadata API; types whose source carries non-XML content (code, binaries, multi-file bundles) are reported as skipped with a warning. The incompatible adapters are `bundle` (LWC, Aura), `matchingContentFile` (Apex classes/triggers/pages/components, Visualforce), `mixedContent` (`StaticResource`, `Document`), and `digitalExperience` (`DigitalExperienceBundle`). Retrieve those with file-based retrieve (`sf project retrieve start`).
 
@@ -24,6 +25,7 @@ The write counterpart is `sf hardis:mdapi:upsert`.
 
 - **Input resolution:** `ComponentSetBuilder` resolves `--metadata` / `--manifest` / `--source-dir`. Bare types and wildcards are expanded against the org via `listMetadata`.
 - **Read:** Components are grouped by type, chunked, and read with jsforce `connection.metadata.read`.
+- **Active only filter:** `removeInactiveEntries` runs on each read result before it is serialized. In a permission type, an entry is dropped when it has at least one boolean field and all of them are false (`readMetadata` returns booleans or `"true"`/`"false"` strings, both are handled). Entries without a boolean field are kept. Tab settings (`tabVisibilities`, `tabSettings`) are compared with the tabs of the org (`SELECT Name FROM TabDefinition`): the ones that name no existing tab are dropped. When the org can not be queried, a warning says so and they are all kept. The number of dropped entries is returned per component as `inactiveEntriesRemoved`.
 - **Conversion:** Read results are serialized to metadata-format XML (`fast-xml-parser`), then converted to source format with `@salesforce/source-deploy-retrieve`'s public converter, which handles per-type decomposition (e.g. CustomObject into `fields/` and `recordTypes/`).
 - **Adapter rule:** `partitionCrudCompatibility` resolves each type to its SDR adapter via `RegistryAccess.getTypeByName(name).strategies.adapter`. Types with adapter `bundle`, `matchingContentFile`, `mixedContent`, or `digitalExperience` are set aside as skipped; types with `decomposed`, `default`, or no adapter (e.g. `CustomObject`, `Profile`, `PermissionSet`, `Layout`, `CustomMetadata`, `CustomApplication`) are processed. Unknown type names are treated as compatible so the API call (not the guard) surfaces the real error.
 - **Limitations:** Folder-based types (Report, Dashboard, EmailTemplate) require explicit `Folder/Name` members; bare-type expansion does not enumerate folders yet.
@@ -39,11 +41,23 @@ sf hardis:mdapi:read --metadata Profile,PermissionSet --agent
 
 In agent mode (and in CI), interactive prompts are skipped. You must pass at least one of `--metadata`, `--manifest`, or `--source-dir`; the command never prompts for what to read.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 2.6 - Permission sets, profiles and why a grant disappears](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-6-permission-sets-and-profiles/)
+- [Lab 2.8 - Recover from committing the wrong metadata](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
 | Name              |  Type   | Description                                                                                                                                                                                            | Default | Required | Options |
 |:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| active-only       | boolean | Leave out the Profile, PermissionSet and MutingPermissionSet entries that grant nothing (all their flags false), and the tab settings of tabs that do not exist                                        |         |          |         |
 | agent             | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                  |         |          |         |
 | chunk-size        | option  | Components read per API call (max 10, or 200 for CustomMetadata/CustomApplication)                                                                                                                     |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                                                                                        |         |          |         |
@@ -74,6 +88,10 @@ $ sf hardis:mdapi:read --metadata "Profile:Admin" --metadata PermissionSet
 
 ```shell
 $ sf hardis:mdapi:read --manifest manifest/package.xml
+```
+
+```shell
+$ sf hardis:mdapi:read --metadata Profile --active-only
 ```
 
 ```shell

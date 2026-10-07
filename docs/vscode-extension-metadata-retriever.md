@@ -28,10 +28,18 @@ The Metadata Retriever replaces the standard Org Browser. It answers "what did I
 5. **(7)** filters the results without querying the org again.
 6. Check the rows you want **(8)**, then click the floating **Retrieve** button that appears once something is selected. The files land in your project, ready to commit.
 
-Two toggles change how it works **(6)**:
+Two settings change how it works **(6)**:
 
-- **Full metadata** retrieves complete components through the CRUD Metadata API, such as whole Profiles. It is slower, and nothing is truncated.
+- **Retrieve mode** picks how the selected components are retrieved:
+    - **Auto**, the default, retrieves Profiles complete with [sf hardis:mdapi:read](hardis/mdapi/read.md) and keeps only the permissions they grant. Everything else goes through the standard retrieve. A standard retrieve returns a Profile with only the permissions related to the other components retrieved with it, which is why Profiles get this treatment.
+    - **Full, active only** reads every selected component whole through the CRUD Metadata API, and leaves out the Profile and Permission Set entries that grant nothing.
+    - **Full, all tags** reads every selected component whole through the CRUD Metadata API, `false` entries included.
+    - **Off** uses the standard retrieve for everything.
+
+    The CRUD Metadata API can not read code, binary and bundle types (Apex, LWC, Static Resources...): the Full modes report them as skipped.
 - **Check local files** adds a column that tells which components already exist in your project.
+
+When you retrieve a field, a list view or a record type without its object, Salesforce CLI writes an empty `.object-meta.xml` file for the object. Committed, it makes the deployment fail with `Must specify a non-empty label for the CustomObject`. When a retrieve makes such a file appear, the Metadata Retriever runs [hardis:project:clean:emptyitems](hardis/project/clean/emptyitems.md) on CustomObject files and tells you which ones it removed. A file already committed is never touched, as deleting it would delete the object in the next deployment. To catch the ones that come from elsewhere, add `emptyItems` to [autoCleanTypes](hardis/project/clean/emptyitems.md).
 
 **(5)** manages presets, see below.
 

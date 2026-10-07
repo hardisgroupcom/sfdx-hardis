@@ -223,6 +223,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
   protected noClean = false;
   // Flow API names of the git delta package.xml. null when the delta could not be computed
   protected deltaFlowNames: string[] | null = null;
+  // Commit the git delta starts from, so the cleanings never delete a file that already exists there
+  protected deltaFromCommit: string | null = null;
   protected auto = false;
   protected agentMode = false;
   protected expertMode = false;
@@ -546,6 +548,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     uxLog("action", this, c.cyan(t('updatingManifestPackageXmlAndManifestDestructivechanges')));
     // Retrieving info about current branch latest commit and master branch latest commit
     const gitDeltaScope = await getGitDeltaScope(this.currentBranch, this.targetBranch || '');
+    this.deltaFromCommit = gitDeltaScope.fromCommit || null;
 
     // Build package.xml delta between most recent commit and developpement
     const localPackageXml = path.join('manifest', 'package.xml');
@@ -670,6 +673,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       if (this.deltaFlowNames !== null) {
         uxLog("log", this, c.grey(t('cleaningWillBeRestrictedToChangedFlows', { number: this.deltaFlowNames.length })));
         cleanReferencesArgs.push('--flows', this.deltaFlowNames.join(','));
+      }
+      if (this.deltaFromCommit) {
+        cleanReferencesArgs.push('--delta-from', this.deltaFromCommit);
       }
       await CleanReferences.run(cleanReferencesArgs);
       if (globalThis?.displayProfilesWarning === true) {
