@@ -128,7 +128,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     this.debugMode = flags.debug || false;
     this.deltaFrom = flags['delta-from'] || null;
     if (this.deltaFrom && !(await isKnownCommit(this.deltaFrom))) {
-      // An unfetched or mistyped ref must not make committed files look deletable
+      // A ref that was never fetched, or mistyped, must not make committed files look deletable
       uxLog("warning", this, c.yellow(t('emptyItemsUnknownDeltaFrom', { commit: this.deltaFrom })));
       this.deltaFrom = 'HEAD';
     }

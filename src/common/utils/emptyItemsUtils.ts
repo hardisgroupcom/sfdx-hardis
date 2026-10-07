@@ -76,7 +76,7 @@ export async function isEmptyItemDeletable(
   return true;
 }
 
-// True when the ref resolves to a commit in this repository (an unfetched or mistyped ref does not).
+// True when the ref resolves to a commit in this repository (a ref that was never fetched or is mistyped does not).
 export async function isKnownCommit(ref: string): Promise<boolean> {
   try {
     // simple-git does not throw on a failing command that writes nothing to stderr: check the hash it printed
