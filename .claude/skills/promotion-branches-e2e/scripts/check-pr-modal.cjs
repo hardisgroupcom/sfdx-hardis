@@ -159,7 +159,8 @@ function stateCells(body) {
     }
     orgs.forEach((org, j) => {
       const cell = parts[3 + j] || '';
-      if (cell && cell !== '-' && cell !== '—') {
+      // ⬜ is "not run in this org branch yet": no status, the tab says the same
+      if (cell && cell !== '-' && !cell.startsWith('⬜')) {
         cells.push({ actionId, orgBranch: org, cell });
       }
     });
