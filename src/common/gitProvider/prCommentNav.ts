@@ -23,7 +23,9 @@ export const SFDX_HARDIS_COMMENT_MARKER = '<!-- sfdx-hardis ';
 // Must match DEPLOYMENT_ACTIONS_MARKER in deploymentActionsStateUtils.ts
 export const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
 
-const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (\S+) -->/;
+// The key holds the name of the CI job, and a GitHub Actions job name has spaces in it
+// ("Simulate Deployment (sfdx-hardis)"): the key runs up to the end of the marker, not to the first space
+const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (.+?) -->/;
 
 /**
  * Which of the three sfdx-hardis comments a body is, read from its markers.

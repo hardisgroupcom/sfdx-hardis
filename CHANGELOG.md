@@ -3,6 +3,7 @@
 ## [beta] (main)
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): a Flow that can not be deleted after the deployment no longer fails it, and a Flow referenced by another deleted Flow is retried once that Flow is gone.
+- GitHub Actions: the validation and deployment comments of a Pull Request show again in the Pull Request window of the DevOps Pipeline, and the navigation line between the comments is filled again.
 
 ## [8.14.0] 2026-10-06
 
