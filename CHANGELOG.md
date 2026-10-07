@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) can leave out the Profile and Permission Set entries that grant nothing.
+- [hardis:project:clean:emptyitems](https://sfdx-hardis.cloudity.com/hardis/project/clean/emptyitems/) removes the empty CustomObject files that break deployments, and can run at each User Story save.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): a Flow that can not be deleted after the deployment no longer fails it, and a Flow referenced by another deleted Flow is retried once that Flow is gone.
 - GitHub Actions: the validation and deployment comments of a Pull Request show again in the Pull Request window of the DevOps Pipeline, and the navigation line between the comments is filled again.
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Apex class and Flow pages can now be protected with `DO_NOT_OVERWRITE_DOC=TRUE`, like the other pages, so what a person writes in them survives the next generation.
