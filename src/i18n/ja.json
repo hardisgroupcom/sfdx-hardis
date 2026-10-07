@@ -1585,6 +1585,8 @@
   "emailRecipientsReplacedByConfig": "{{type}} のメール送信先を設定で置き換えました: {{recipients}}",
   "emptyItemKeptAlreadyCommitted": "空の項目 {{file}} を保持しました。すでに git に存在するため、削除すると破壊的変更が生成されます。{{type}} 全体を取得するか、意図的に削除してください。",
   "emptyItemRemovedFromPackageXml": "{{type}} {{name}} を {{packageXml}} から削除しました。ソースファイルが空でした",
+  "emptyItemsRemovedCount": "空のソース項目を {{count}} 件削除しました",
+  "emptyItemsUnknownDeltaFrom": "不明な git コミット {{commit}} です。まだ commit されていない空のファイルのみ削除します",
   "emptyOutputFolder": "空の出力フォルダ ",
   "emptyPackageXmlNothingToDeploy": "package.xmlが空です: デプロイするものがありません",
   "encryptedCertFileNotFound": "暗号化された証明書ファイルが見つかりません: {{file}}",

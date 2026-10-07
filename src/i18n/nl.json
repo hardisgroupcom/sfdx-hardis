@@ -1587,6 +1587,8 @@
   "emailRecipientsReplacedByConfig": "E-mailontvangers voor {{type}} vervangen door configuratie: {{recipients}}",
   "emptyItemKeptAlreadyCommitted": "Leeg item {{file}} behouden: het staat al in git, verwijderen zou een destructieve wijziging genereren. Haal het hele {{type}} op of verwijder het bewust.",
   "emptyItemRemovedFromPackageXml": "{{type}} {{name}} verwijderd uit {{packageXml}}: het bronbestand was leeg",
+  "emptyItemsRemovedCount": "{{count}} lege bronitems verwijderd",
+  "emptyItemsUnknownDeltaFrom": "Onbekende git-commit {{commit}}: alleen de lege bestanden die nog niet gecommit zijn worden verwijderd",
   "emptyOutputFolder": "Lege uitvoermap ",
   "emptyPackageXmlNothingToDeploy": "Lege package.xml: niets te implementeren",
   "encryptedCertFileNotFound": "Versleuteld certificaatbestand niet gevonden: {{file}}",

@@ -199,4 +199,19 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
     expect(packageXml).to.not.include('<members>Acme__c</members>');
     expect(packageXml).to.include('<members>Other__c</members>');
   });
+
+  it('cleans only the requested metadata types, in the package directories, and falls back to HEAD on an unknown commit', async () => {
+    const objectDir = path.join(tmpDir, 'force-app', 'main', 'default', 'objects', 'Acme__c');
+    await fs.ensureDir(objectDir);
+    const objectFile = path.join(objectDir, 'Acme__c.object-meta.xml');
+    await fs.writeFile(
+      objectFile,
+      '<?xml version="1.0" encoding="UTF-8"?>\n<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"></CustomObject>\n'
+    );
+    await CleanEmptyItems.run(['--metadata-type', 'SharingRules', '--agent']);
+    expect(fs.existsSync(objectFile), 'not a requested type').to.be.true;
+    // The throwaway project is not committed, so the HEAD fallback still deletes its empty object
+    await CleanEmptyItems.run(['--metadata-type', 'CustomObject', '--delta-from', 'origin/never-fetched', '--agent']);
+    expect(fs.existsSync(objectFile), 'requested type, not committed').to.be.false;
+  });
 });

@@ -1587,6 +1587,8 @@
   "emailRecipientsReplacedByConfig": "Odbiorcy e-mail dla {{type}} zastąpieni przez konfigurację: {{recipients}}",
   "emptyItemKeptAlreadyCommitted": "Zachowano pusty element {{file}}: znajduje się już w git, jego usunięcie wygenerowałoby zmianę destrukcyjną. Należy pobrać cały {{type}} lub usunąć go celowo.",
   "emptyItemRemovedFromPackageXml": "Usunięto {{type}} {{name}} z {{packageXml}}: jego plik źródłowy był pusty",
+  "emptyItemsRemovedCount": "Usunięto puste elementy źródłowe: {{count}}",
+  "emptyItemsUnknownDeltaFrom": "Nieznany commit git {{commit}}: usuwane są tylko puste pliki, które nie mają jeszcze commita",
   "emptyOutputFolder": "Opróżnij folder wyjściowy ",
   "emptyPackageXmlNothingToDeploy": "Pusty package.xml: brak elementów do wdrożenia",
   "encryptedCertFileNotFound": "Zaszyfrowany plik certyfikatu nie został znaleziony: {{file}}",

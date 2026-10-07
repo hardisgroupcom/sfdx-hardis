@@ -41,6 +41,17 @@ sf hardis:mdapi:read --metadata Profile,PermissionSet --agent
 
 In agent mode (and in CI), interactive prompts are skipped. You must pass at least one of `--metadata`, `--manifest`, or `--source-dir`; the command never prompts for what to read.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 2.6 - Permission sets, profiles and why a grant disappears](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-6-permission-sets-and-profiles/)
+- [Lab 2.8 - Recover from committing the wrong metadata](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 

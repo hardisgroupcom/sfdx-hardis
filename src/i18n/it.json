@@ -1587,6 +1587,8 @@
   "emailRecipientsReplacedByConfig": "Destinatari email per {{type}} sostituiti dalla configurazione: {{recipients}}",
   "emptyItemKeptAlreadyCommitted": "Elemento vuoto {{file}} mantenuto: è già in git, eliminarlo genererebbe una modifica distruttiva. Recupera l'intero {{type}} o eliminalo di proposito.",
   "emptyItemRemovedFromPackageXml": "Rimosso {{type}} {{name}} da {{packageXml}}: il suo file sorgente era vuoto",
+  "emptyItemsRemovedCount": "Rimossi {{count}} elementi sorgente vuoti",
+  "emptyItemsUnknownDeltaFrom": "Commit git sconosciuto {{commit}}: vengono rimossi solo i file vuoti non ancora in un commit",
   "emptyOutputFolder": "Cartella di output vuota ",
   "emptyPackageXmlNothingToDeploy": "package.xml vuoto: nessun elemento da distribuire",
   "encryptedCertFileNotFound": "File del certificato cifrato non trovato: {{file}}",

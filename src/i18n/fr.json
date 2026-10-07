@@ -1587,6 +1587,8 @@
   "emailRecipientsReplacedByConfig": "Destinataires email pour {{type}} remplacés par la configuration : {{recipients}}",
   "emptyItemKeptAlreadyCommitted": "Élément vide {{file}} conservé : il est déjà dans git, le supprimer générerait un changement destructif. Récupérez l'ensemble du {{type}} ou supprimez-le volontairement.",
   "emptyItemRemovedFromPackageXml": "{{type}} {{name}} supprimé de {{packageXml}} : son fichier source était vide",
+  "emptyItemsRemovedCount": "{{count}} éléments sources vides supprimés",
+  "emptyItemsUnknownDeltaFrom": "Commit git inconnu {{commit}} : seuls les fichiers vides pas encore commités sont supprimés",
   "emptyOutputFolder": "Vider le dossier de sortie ",
   "emptyPackageXmlNothingToDeploy": "Package.xml vide : rien à déployer",
   "encryptedCertFileNotFound": "Fichier de certificat chiffré introuvable : {{file}}",

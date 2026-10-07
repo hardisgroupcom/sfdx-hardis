@@ -76,6 +76,17 @@ export async function isEmptyItemDeletable(
   return true;
 }
 
+// True when the ref resolves to a commit in this repository (an unfetched or mistyped ref does not).
+export async function isKnownCommit(ref: string): Promise<boolean> {
+  try {
+    // simple-git does not throw on a failing command that writes nothing to stderr: check the hash it printed
+    const hash = await git({ output: false, displayCommand: false }).raw(['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]);
+    return /^[0-9a-f]{40}/.test(hash.trim());
+  } catch {
+    return false;
+  }
+}
+
 export async function fileExistsAtCommit(file: string, commit: string): Promise<boolean> {
   const relativePath = path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, '/');
   try {

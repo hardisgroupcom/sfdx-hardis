@@ -1586,6 +1586,8 @@
   "emailRecipientsReplacedByConfig": "E-Mail-Empfänger für {{type}} durch Konfiguration ersetzt: {{recipients}}",
   "emptyItemKeptAlreadyCommitted": "Leeres Element {{file}} beibehalten: Es befindet sich bereits in git, ein Löschen würde eine destruktive Änderung erzeugen. Rufen Sie den gesamten {{type}} ab oder löschen Sie ihn gezielt.",
   "emptyItemRemovedFromPackageXml": "{{type}} {{name}} aus {{packageXml}} entfernt: Die Quelldatei war leer",
+  "emptyItemsRemovedCount": "{{count}} leere Quellelemente entfernt",
+  "emptyItemsUnknownDeltaFrom": "Unbekannter git-Commit {{commit}}: nur die noch nicht committeten leeren Dateien werden entfernt",
   "emptyOutputFolder": "Ausgabeordner leeren ",
   "emptyPackageXmlNothingToDeploy": "Leere package.xml: Nichts zu deployen",
   "encryptedCertFileNotFound": "Verschlüsselte Zertifikatsdatei nicht gefunden: {{file}}",

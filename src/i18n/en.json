@@ -1591,6 +1591,8 @@
   "emailRecipientsReplacedByConfig": "Email recipients for {{type}} replaced by config: {{recipients}}",
   "emptyItemKeptAlreadyCommitted": "Kept empty item {{file}}: it is already in git, deleting it would generate a destructive change. Retrieve the whole {{type}} or delete it on purpose.",
   "emptyItemRemovedFromPackageXml": "Removed {{type}} {{name}} from {{packageXml}}: its source file was empty",
+  "emptyItemsRemovedCount": "Removed {{count}} empty source items",
+  "emptyItemsUnknownDeltaFrom": "Unknown git commit {{commit}}: only the empty files not committed yet are removed",
   "emptyOutputFolder": "Empty output folder ",
   "emptyPackageXmlNothingToDeploy": "Empty package.xml: nothing to deploy",
   "encryptedCertFileNotFound": "Encrypted certificate file not found: {{file}}",

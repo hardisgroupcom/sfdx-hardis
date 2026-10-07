@@ -39,7 +39,7 @@ Two settings change how it works **(6)**:
     The CRUD Metadata API can not read code, binary and bundle types (Apex, LWC, Static Resources...): the Full modes report them as skipped.
 - **Check local files** adds a column that tells which components already exist in your project.
 
-When you retrieve a field, a list view or a record type without its object, Salesforce CLI writes an empty `.object-meta.xml` file for the object. Committed, it makes the deployment fail with `Must specify a non-empty label for the CustomObject`. The Metadata Retriever deletes that file when the retrieve just created it, and says so. A file that was already in your project is never touched. To catch the ones that come from elsewhere, add `emptyItems` to [autoCleanTypes](hardis/project/clean/emptyitems.md).
+When you retrieve a field, a list view or a record type without its object, Salesforce CLI writes an empty `.object-meta.xml` file for the object. Committed, it makes the deployment fail with `Must specify a non-empty label for the CustomObject`. When a retrieve makes such a file appear, the Metadata Retriever runs [hardis:project:clean:emptyitems](hardis/project/clean/emptyitems.md) on CustomObject files and tells you which ones it removed. A file already committed is never touched, as deleting it would delete the object in the next deployment. To catch the ones that come from elsewhere, add `emptyItems` to [autoCleanTypes](hardis/project/clean/emptyitems.md).
 
 **(5)** manages presets, see below.
 

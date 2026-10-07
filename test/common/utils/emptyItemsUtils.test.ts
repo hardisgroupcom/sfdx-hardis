@@ -6,6 +6,7 @@ import fs from '../../../src/common/utils/fsUtils.js';
 import {
   EMPTY_ITEM_CONSTRAINTS,
   isEmptyItemDeletable,
+  isKnownCommit,
   isEmptyMetadataRoot,
   removeTypeMembersFromPackageXml,
 } from '../../../src/common/utils/emptyItemsUtils.js';
@@ -121,6 +122,11 @@ describe('emptyItemsUtils', () => {
       expect(await isEmptyItemDeletable('committed.object-meta.xml', CUSTOM_OBJECT, 'HEAD~1')).to.be.false;
       expect(await isEmptyItemDeletable('story.object-meta.xml', CUSTOM_OBJECT, 'HEAD~1')).to.be.true;
       expect(await isEmptyItemDeletable('new.object-meta.xml', CUSTOM_OBJECT, 'HEAD~1')).to.be.true;
+    });
+
+    it('knows the commits of the repository and nothing else', async () => {
+      expect(await isKnownCommit('HEAD~1')).to.be.true;
+      expect(await isKnownCommit('origin/never-fetched')).to.be.false;
     });
 
     it('keeps the former behavior of the other types when no commit is given', async () => {
