@@ -182,6 +182,16 @@ The validation and deployment Pull Request comments all read the same way:
 - What **needs you**: deployment errors with their tips, failed actions with the end of their output, and the manual actions to perform, as checkboxes.
 - The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the tickets and the carried Pull Requests.
 
+![Validation Pull Request comment: verdict, checks and the manual action to do before the deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-validation.png)
+
+When a post-deployment action fails, the deployment comment says the metadata is in the org, and shows the end of the output of the failed action:
+
+![Deployment Pull Request comment: deployed, but a post-deployment action failed](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-deployment-failed-action.png)
+
+Each changed Flow gets a comment of its own, with the changed properties first, then its diagram:
+
+![Visual git diff comment of a Flow](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-flow-diff.png)
+
 Each comment stays under 50,000 characters (30,000 on Bitbucket). Above that, long outputs and lists are shortened, then the biggest folded sections are left out, and the comment says so. A Flow whose only change is its status (activated or deactivated) gets no visual diff comment: the Flows line of the validation comment names it.
 
 ### Deployment components report
