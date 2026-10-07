@@ -79,11 +79,12 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
       entry({ status: 'success', actionId: 'done' }),
       entry({ actionId: 'action-2', actionLabel: 'Load the reference data', status: 'not-run' }),
     ], undefined, 12);
-    expect(body).to.contain('### Failed actions');
-    expect(body).to.contain(`- [ ] ${buildFailedActionCheckboxMarker('action-2', 'integration', 12, 'post-deploy')} Load the reference data *(org branch: integration - not run, a previous action failed)*`);
+    expect(body).to.contain('#### Needs you');
+    expect(body).to.contain('### ⏸️ 1 waiting in integration');
+    expect(body).to.contain(`- [ ] ${buildFailedActionCheckboxMarker('action-2', 'integration', 12, 'post-deploy')} ⏸️ Load the reference data *(org branch: integration - waits for a failed action)*`);
     expect(body).to.not.contain(buildFailedActionCheckboxMarker('done', 'integration', 12, 'post-deploy'));
     expect(body).to.contain('pr-banner-actions-error');
-    expect(body).to.contain('⏸️ not run, a previous action failed');
+    expect(body).to.contain('⏸️ waits for a failed action');
   });
 
   it('never lists a failure in a developer org as a failed action, nor turns the banner red for it', () => {
@@ -91,7 +92,7 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
       entry({ status: 'success' }),
       entry({ orgBranch: 'dev-sandboxes', status: 'failed' }),
     ], undefined, 12);
-    expect(body).to.not.contain('### Failed actions');
+    expect(body).to.not.contain('#### Needs you');
     expect(body).to.not.contain('pr-banner-actions-error');
     expect(body).to.contain('| dev-sandboxes |');
   });
@@ -101,7 +102,7 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
       entry({ status: 'success' }),
       entry({ orgBranch: 'dev-sandboxes', status: 'manual' }),
     ], undefined, 12);
-    expect(body).to.not.contain('### Pending manual actions');
+    expect(body).to.not.contain('#### Needs you');
     expect(body).to.not.contain('pr-banner-actions-pending');
   });
 
@@ -113,7 +114,8 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
       entry({ orgBranch: 'uat', status: 'moved', movedTo: 15, note: 'Moved to #15' }),
     ], undefined, 12);
     expect(withNote).to.contain('| Org branch | Status | Date | Job | Note |');
-    expect(withNote).to.contain('| integration | ✅ success | 2026-10-03 | local | Run locally by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC. |');
+    // The email address stays in the hidden data of the matrix, not in the visible note
+    expect(withNote).to.contain('| integration | ✅ success | 2026-10-03 | local | Run locally by Jane Doe on 2026-10-03 14:05 UTC. |');
     expect(withNote).to.contain('↪️ moved to #15');
     expect(withNote).to.contain('<br/>moved to #15');
   });

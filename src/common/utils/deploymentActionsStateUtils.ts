@@ -9,6 +9,7 @@ import { t } from './i18n.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
+import { formatShortDate } from '../gitProvider/prCommentLayout.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
 
 // Enable with NODE_DEBUG=sfdxhardis
@@ -475,14 +476,14 @@ function parseLegacyDeploymentActionsCommentBody(body: string): DeploymentAction
   return entries;
 }
 
-// Status icons of the "Status by org branch" matrix, in the order they are listed in the legend
+// Status icons of the "Status by org" matrix, in the order they are listed in the legend
 const MATRIX_STATUS_LEGEND: { icon: string; label: string }[] = [
   { icon: '✅', label: 'done' },              // ✅
   { icon: '❌', label: 'failed' },            // ❌
   { icon: '⚠️', label: 'warning (failed, allowed to fail)' }, // ⚠️
-  { icon: '👋', label: 'waiting for manual execution' }, // 👋
+  { icon: '👋', label: 'to do by hand' }, // 👋
   { icon: '⚪', label: 'skipped' },           // ⚪
-  { icon: '⏸️', label: 'not run, a previous action failed' }, // ⏸️
+  { icon: '⏸️', label: 'waits for a failed action' }, // ⏸️
   { icon: '↪️', label: 'moved to another Pull Request' }, // ↪️
   { icon: '❓', label: 'unknown' },           // ❓
   { icon: '⬜', label: 'not run in this org branch yet' },     // ⬜
@@ -670,29 +671,26 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   const bannerMarkdown = getPrCommentBannerMarkdown(getActionsBannerKey(sorted), '🛠️ Deployment Actions');
   const headingMarkdown = bannerMarkdown === '' ? '## 🛠️ Deployment Actions\n\n' : '';
   let body = `${DEPLOYMENT_ACTIONS_MARKER}\n${buildActionsNavBlock(previousBody)}${bannerMarkdown}${headingMarkdown}`;
-  body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually, except to tick a checkbox in the "Pending manual actions" or "Failed actions" list once the action has been done.\n\n`;
 
-  // Pending manual actions: a checkable to-do per action still waiting to be performed in an org.
-  // Ticking a box is detected by the next check or deployment job, which records the action as done.
-  const pendingManualEntries = sorted.filter((e) => e.status === 'manual' && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH);
-  if (pendingManualEntries.length > 0) {
-    body += `### Pending manual actions\n\n`;
-    body += `Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.\n\n`;
-    for (const e of pendingManualEntries) {
-      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
-    }
-    body += `\n`;
-  }
-
-  // Failed actions: a checkable item per action that failed (or was stopped by a failure) in an org.
-  // Retry it with sf hardis:project:action:run, or tick the box once it has been done by hand.
-  const failedEntries = sorted.filter((e) => (e.status === 'failed' || e.status === 'not-run') && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH);
-  if (failedEntries.length > 0) {
-    body += `### Failed actions\n\n`;
-    body += `Retry an action with \`sf hardis:project:action:run\` (or the **Retry** button of the VS Code Deployment Actions tab), move it to a fix Pull Request, or tick its box once it has been done by hand: the next sfdx-hardis job will record it as done.\n\n`;
+  // Failed actions, actions stopped by a failure and manual actions still to perform, in one list:
+  // the reader ticks a box once the action is done (or done by hand), and the next check or
+  // deployment job records it. Each line keeps its hidden marker right after the checkbox.
+  const pipelineEntries = sorted.filter((e) => e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH);
+  const failedEntries = pipelineEntries.filter((e) => e.status === 'failed');
+  const stoppedEntries = pipelineEntries.filter((e) => e.status === 'not-run');
+  const pendingManualEntries = pipelineEntries.filter((e) => e.status === 'manual');
+  body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, pipelineEntries.length)}\n\n`;
+  if (failedEntries.length + stoppedEntries.length + pendingManualEntries.length > 0) {
+    body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Run** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;
+    body += `#### Needs you\n\n`;
     for (const e of failedEntries) {
-      const stopped = e.status === 'not-run' ? ' - not run, a previous action failed' : '';
-      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch}${stopped})*\n`;
+      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ❌ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch} - failed)*\n`;
+    }
+    for (const e of stoppedEntries) {
+      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ⏸️ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch} - waits for a failed action)*\n`;
+    }
+    for (const e of pendingManualEntries) {
+      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} 👋 ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch} - to do by hand)*\n`;
     }
     body += `\n`;
   }
@@ -715,7 +713,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   }
   const usedMatrixIcons: string[] = [];
   if (branches.length > 0 && matrixActionIds.length > 0) {
-    body += `### Status by org branch\n\n`;
+    body += `#### Status by org\n\n`;
     body += `| Action | When |${branches.map((b) => ` ${b} |`).join('')}\n`;
     body += `|--------|------|${branches.map(() => ':---:|').join('')}\n`;
     for (const actionId of matrixActionIds) {
@@ -742,7 +740,8 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
       body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
     }
     body += buildMatrixStatusLegend(usedMatrixIcons);
-    body += `\n*Last updated: ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC*\n`;
+    const now = new Date().toISOString();
+    body += `\n*Updated ${formatShortDate(now)}, ${now.substring(11, 16)} UTC*\n`;
   }
 
   // Details section - one collapsible per unique action, covering all orgs it ran in.
@@ -828,6 +827,36 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   return body;
 }
 
+// One line telling the state of the actions of the Pull Request across the pipeline orgs
+function buildActionsVerdict(
+  failed: DeploymentActionStateEntry[],
+  stopped: DeploymentActionStateEntry[],
+  manual: DeploymentActionStateEntry[],
+  total: number
+): string {
+  const byOrg = (entries: DeploymentActionStateEntry[]) => [...new Set(entries.map((e) => e.orgBranch))].join(', ');
+  const parts: string[] = [];
+  if (failed.length > 0) {
+    parts.push(`❌ ${failed.length} ${failed.length === 1 ? 'action' : 'actions'} failed in ${byOrg(failed)}`);
+  }
+  if (stopped.length > 0) {
+    parts.push(`⏸️ ${stopped.length} waiting in ${byOrg(stopped)}`);
+  }
+  if (manual.length > 0) {
+    parts.push(`👋 ${manual.length} to do by hand in ${byOrg(manual)}`);
+  }
+  if (parts.length > 0) {
+    return parts.join(' · ');
+  }
+  return total > 0 ? '✅ Nothing to do: every deployment action is done or skipped' : '✅ No deployment action yet';
+}
+
+// Note of the results table, without the email addresses and Salesforce usernames it may hold:
+// the hidden marker of the matrix keeps the full note
+function displayNote(note: string): string {
+  return note.replace(/ \([^()\s]+@[^()\s]+\)/g, '');
+}
+
 /**
  * Human-readable status of a state entry, for the results table of the details section.
  * Same wording as the matrix legend, so the two tables read alike.
@@ -861,7 +890,7 @@ function buildActionResultsTable(entries: DeploymentActionStateEntry[]): string 
     const date = e.date ? e.date.substring(0, 10) : '';
     const job = e.jobUrl ? `[${e.jobId}](${e.jobUrl})` : (e.jobId || '');
     table += withNotes
-      ? `| ${e.orgBranch} | ${status} | ${date} | ${job} | ${sanitizeCellText(e.note || '')} |\n`
+      ? `| ${e.orgBranch} | ${status} | ${date} | ${job} | ${sanitizeCellText(displayNote(e.note || ''))} |\n`
       : `| ${e.orgBranch} | ${status} | ${date} | ${job} |\n`;
   }
   return table + '\n';
@@ -1060,7 +1089,8 @@ export function parseManualActionCheckboxes(body: string): ManualActionCheckboxI
       orgBranch: match[4],
       prNumber: parseInt(match[5], 10),
       when: match[6] ? (match[6] as ActionWhen) : undefined,
-      label: unsanitizeCellText((match[7] || '').replace(/\*\(org branch: [^)]*\)\*\s*$/, '').trim()),
+      // The status icon written before the label (comment layout of 2026-10) is not part of it
+      label: unsanitizeCellText((match[7] || '').replace(/\*\(org branch: [^)]*\)\*\s*$/, '').trim().replace(/^(❌|⏸️|👋|⚠️)\s*/u, '')),
     });
   }
   return items;

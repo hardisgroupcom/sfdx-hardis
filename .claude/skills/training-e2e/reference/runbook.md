@@ -249,8 +249,8 @@ Traps that cost earlier runs time:
   set, deleted components included (`showMetadataRetriever.ts` adds the type filter and `LIMIT 2000`).
 - **`hardis:project:action:create --agent` is not the dialog** (2026-09-29). It defaults `--context`
   to `process-deployment-only`; the Deployment Actions editor defaults a new action to `all`. Pass
-  `--context all` for Lab 2.4's manual step, or the check comment has no **Pending manual actions**
-  box to show and tick.
+  `--context all` for Lab 2.4's manual step, or the validation comment has no **To do by hand** checklist
+  with a box to show and tick.
 - **CI logs carry ANSI codes inside words.** `Type RemoteSiteSetting: 1 item(s) skipped` is logged
   as `Type \e[1mRemoteSiteSetting\e[22m: ...`, so a grep for the plain sentence finds nothing and the
   line looks missing. Strip the codes first: `sed 's/\x1b\[[0-9;]*m//g'`.
@@ -591,7 +591,7 @@ in the course), never yet against real orgs in this shape. What a walk has to re
   real promotion Pull Request of the fork: the description with the folded prompt, and the red check
   comment naming the two files. Re-capture them when the Pull Request body or the comment changes.
 - The deployment comment of the release into `main` lists US-057, US-059 and US-061 **twice** in
-  its "Commits summary": once from the squash commits that arrive with the catch-up promotion, once
+  its former "Commits summary" (removed from the comments on 2026-10-07): once from the squash commits that arrive with the catch-up promotion, once
   from their cherry-picked copies on the promotion branch. The Tickets section lists each story
   once. Recorded in the 2026-09-24 report; not a lab failure.
 

@@ -17,7 +17,7 @@
  *   - a deployment comment (message key deployment-*) must be a deployment run of the tab, same;
  *   - a MegaLinter comment must be a megalinter run;
  *   - the tabs must not be hidden: the CLI must answer, with an array for the Pull Request;
- *   - every cell of the "Status by org branch" table of the Deployment Actions comment must be a
+ *   - every cell of the "Status by org" table of the Deployment Actions comment must be a
  *     status the CLI returns (actionId, orgBranch), and the cells of the target branch are the pills
  *     the modal shows;
  *   - the action list of a story equals the ids of its actions file (source branch of an open one,
@@ -139,7 +139,7 @@ function expectedRuns(comments) {
   return { runs, actionsState };
 }
 
-// The cells of the "Status by org branch" table: [{ actionId, orgBranch, cell }]
+// The cells of the "Status by org" table: [{ actionId, orgBranch, cell }]
 function stateCells(body) {
   if (!body) {
     return [];

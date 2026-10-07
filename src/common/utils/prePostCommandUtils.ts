@@ -186,7 +186,7 @@ async function executeDeploymentActionsOfPhase(property: 'commandsPreDeploy' | '
   // (pre-deploy callers always pass success: true)
   if (options.success === false) {
     for (const cmd of commands) {
-      cmd.result = { statusCode: "not-run", skippedReason: t('actionNotRunDeploymentFailed') };
+      cmd.result = { statusCode: "not-run", skippedCode: "deployment-failed", skippedReason: t('actionNotRunDeploymentFailed') };
     }
     uxLog("warning", this, c.yellow(
       `[DeploymentActions] ${t('deploymentActionsNotRunDeploymentFailed', { count: commands.length })}`
@@ -395,6 +395,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: validation-only action (context check-deployment-only), and this is the deployment job`));
     cmd.result = {
       statusCode: "skipped",
+      skippedCode: "context-validation-only",
       skippedReason: "Action context is check-deployment-only but this is the deployment job"
     };
     skipAction = true;
@@ -402,6 +403,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: deployment-only action (context process-deployment-only), and this is the validation job`));
     cmd.result = {
       statusCode: "skipped",
+      skippedCode: "context-deployment-only",
       skippedReason: "Action context is process-deployment-only but this is the validation job"
     };
     skipAction = true;
@@ -536,6 +538,8 @@ export async function markActionsStoppedByFailure(commands: PrePostCommand[], fa
     }
     cmd.result = {
       statusCode: "not-run",
+      skippedCode: "stopped-by-failure",
+      stoppedByLabel: failedCmd.label,
       skippedReason: `Not run because a previous action failed (${failedCmd.label})`,
     };
     stoppedCommands.push(cmd);
@@ -892,9 +896,17 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     if (!scopeInfo || scopeInfo.pullRequests.length === 0) {
       return;
     }
-    const prLinks = scopeInfo.pullRequests
-      .map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`))
-      .join(', ');
+    // Listed one per line in a folded section of the comment, never inline: a promotion window can
+    // carry hundreds of Pull Requests
+    setPullRequestData({
+      pullRequestsInScope: scopeInfo.pullRequests.map((pr) => ({
+        idStr: pr.idStr,
+        idNumber: pr.idNumber,
+        title: pr.title,
+        webUrl: pr.webUrl,
+        authorName: pr.authorName,
+      })),
+    });
     // Only name what the Pull Requests of the scope really carry
     const prConfigs = await Promise.all(
       scopeInfo.pullRequests.map((pr) => getPullRequestScopedSfdxHardisConfig(pr).catch(() => null))
@@ -908,13 +920,12 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       // Promotion branch: the stories come from the Pull Request description, say so in both jobs
       const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
       const carried = scopeInfo.pullRequests.filter((pr) => pr.idNumber !== prInfo?.idNumber);
-      const carriedLinks = carried.map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`)).join(', ');
       const branchLabel = prInfo?.sourceBranch ? `\`${prInfo.sourceBranch}\`` : 'this promotion branch';
       if (carried.length === 0) {
         paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch but none of the Pull Requests it declares (\`promotionPullRequests\`) could be used, so only its own deployment actions and Apex test classes ${checkOnly ? 'are' : 'were'} processed.`);
       } else {
         const subjectsSentence = subjects.length > 0 ? `${subjectsLabel} ${checkOnly ? 'are' : 'were'} collected from them` : `They carry no deployment action and no Apex test class`;
-        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description: ${carriedLinks}. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
+        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description.${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
       }
       const inheritedMarkdown = buildInheritedBehaviorsMarkdown(promotionDetails.inheritedBehaviors, scopeInfo.pullRequests);
       if (inheritedMarkdown) {
@@ -926,13 +937,14 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     // Stories brought by a promotion Pull Request of the window: say where they come from
     const carriedByPromotion = scopeInfo.pullRequests.filter((pr) => getCarriedBy(pr) !== null);
     if (carriedByPromotion.length > 0) {
-      const items = carriedByPromotion.map((pr) => {
+      // Name the promotion Pull Requests, not every story they carry
+      const promotions = new Map<string, string>();
+      for (const pr of carriedByPromotion) {
         const carriedBy = getCarriedBy(pr)!;
-        const prLink = pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`;
         const promotionLink = carriedBy.webUrl ? `[#${carriedBy.idStr}](${carriedBy.webUrl})` : `#${carriedBy.idStr}`;
-        return `${prLink} (via \`${carriedBy.sourceBranch}\` ${promotionLink})`;
-      });
-      paragraphs.push(`ℹ️ Pull Requests carried by a promotion branch of this window: ${items.join(', ')}.`);
+        promotions.set(carriedBy.idStr, `\`${carriedBy.sourceBranch}\` ${promotionLink}`);
+      }
+      paragraphs.push(`ℹ️ ${carriedByPromotion.length} Pull Request(s) of this window were carried by ${promotions.size === 1 ? 'the promotion branch' : 'the promotion branches'} ${[...promotions.values()].join(', ')}.`);
     }
     const alreadyPromotedMarkdown = buildAlreadyPromotedMarkdown(promotionDetails.alreadyPromoted);
     if (alreadyPromotedMarkdown) {
@@ -942,7 +954,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       if (subjects.length > 0) {
         let collectedSentence = `ℹ️ ${subjectsLabel} are collected from the content of this Pull Request`;
         if (scopeInfo.pullRequests.length > 1) {
-          collectedSentence += ` (${scopeInfo.pullRequests.length} Pull Requests carried: ${prLinks})`;
+          collectedSentence += ` (${scopeInfo.pullRequests.length} Pull Requests)`;
         }
         paragraphs.push(collectedSentence + `.`);
       }
@@ -967,7 +979,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       }
       // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
       // in which case the actions were collected but deliberately not run (see fix #2053)
-      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}.`;
+      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s).`;
       if (subjects.includes('Deployment actions')) {
         collectedSentence += ` Each action keeps its tracked state on its own Pull Request.`;
       }
@@ -1291,7 +1303,9 @@ export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'comm
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, orgBranch?: string) {
   const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
   const prData = {
-    [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly, orgBranch)
+    [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly, orgBranch),
+    // The comment layout renders the actions from these facts
+    [property === 'commandsPreDeploy' ? 'preDeployActions' : 'postDeployActions']: { commands, orgBranch },
   };
   setPullRequestData(prData);
 }

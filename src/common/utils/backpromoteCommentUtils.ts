@@ -15,6 +15,7 @@ import { GitProvider } from '../gitProvider/index.js';
 import { retryOnThrottling } from './adaptiveBatch.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
+import { getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 
 export const BACKPROMOTES_MARKER = '<!-- sfdx-hardis backpromotes -->';
 const DATA_START = '<!-- sfdx-hardis backpromotes-data ';
@@ -139,8 +140,14 @@ function cellText(text: string): string {
   return (text || '').replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;');
 }
 
+// "Sep 12, 18:25 UTC": the hidden data keeps the ISO date
 function shortDate(date: string): string {
-  return (date || '').substring(0, 16).replace('T', ' ');
+  const parsed = new Date(date || '');
+  if (isNaN(parsed.getTime())) {
+    return (date || '').substring(0, 16).replace('T', ' ');
+  }
+  const day = parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+  return `${day}, ${parsed.toISOString().substring(11, 16)} UTC`;
 }
 
 const LEFT_OUT_LABELS: Record<BackpromoteLeftOutReason, string> = {
@@ -150,35 +157,58 @@ const LEFT_OUT_LABELS: Record<BackpromoteLeftOutReason, string> = {
   noOverwrite: 'no overwrite',
 };
 
-/** The comment body: marker, hidden data, the sandbox table and the actions table */
+/** The comment body: marker, hidden data, a verdict, the sandbox table and the actions per sandbox */
 export function renderBackpromotesComment(state: BackpromotesCommentState): string {
   const lines: string[] = [];
   lines.push(BACKPROMOTES_MARKER);
   lines.push(`${DATA_START}${encodeCommentData(JSON.stringify({ sandboxRows: state.sandboxRows, actionRows: state.actionRows }))}${DATA_END}`);
-  lines.push('## :arrow_heading_down: Backpromotes');
+  const failed = state.actionRows.filter((row) => row.status === 'failed').length;
+  const pending = state.actionRows.filter((row) => row.status === 'pending').length;
+  const bannerKey: PrCommentBannerKey = failed > 0 ? 'backpromotes-error' : pending > 0 ? 'backpromotes-pending' : 'backpromotes-completed';
+  const banner = getPrCommentBannerMarkdown(bannerKey, '⤵️ Backpromotes');
+  lines.push(banner === '' ? '## ⤵️ Backpromotes\n' : banner.trimEnd() + '\n');
+  const sandboxCount = new Set(state.sandboxRows.map((row) => `${row.sandboxName}|${row.orgId}`)).size;
+  const verdictParts = [
+    sandboxCount === 0 ? 'No sandbox received this Pull Request yet' : `Received by ${sandboxCount} ${sandboxCount === 1 ? 'sandbox' : 'sandboxes'}`,
+    failed > 0 ? `❌ ${failed} ${failed === 1 ? 'action' : 'actions'} failed` : '',
+    pending > 0 ? `👋 ${pending} to do by hand` : '',
+  ].filter((part) => part !== '');
+  lines.push(`### ${verdictParts.join(' · ')}`);
   lines.push('');
-  lines.push('_Written by `sf hardis:work:backpromote`: which developer sandboxes received this Pull Request, and which of its deployment actions ran there._');
+  lines.push('_Developer sandboxes that got this Pull Request with `sf hardis:work:backpromote`, and the deployment actions it ran there._');
   lines.push('');
-  if (state.sandboxRows.length === 0) {
-    lines.push('No sandbox received this Pull Request yet.');
-  } else {
-    lines.push('| Sandbox | Date | By | From | Status | Left out |');
-    lines.push('|---------|------|----|------|--------|----------|');
+  // Two sandboxes can share a name across orgs: the org id then tells them apart
+  const sandboxLabel = (sandboxName: string, orgId: string) =>
+    state.sandboxRows.some((row) => row.sandboxName === sandboxName && row.orgId !== orgId) ? `${cellText(sandboxName)} (${cellText(orgId)})` : cellText(sandboxName);
+  if (state.sandboxRows.length > 0) {
+    lines.push('| Sandbox | From | When | By | Result | Left out |');
+    lines.push('|---------|------|------|----|--------|----------|');
     for (const row of [...state.sandboxRows].sort((a, b) => a.sandboxName.localeCompare(b.sandboxName) || a.date.localeCompare(b.date))) {
       const leftOut = row.leftOut.length === 0 ? '' : row.leftOut.map((item) => `${cellText(item.key)} (${LEFT_OUT_LABELS[item.reason]})`).join('<br/>');
-      const status = row.status === 'complete' ? ':white_check_mark: complete' : ':warning: partial';
-      lines.push(`| ${cellText(row.sandboxName)} <sub>${cellText(row.orgId)}</sub> | ${shortDate(row.date)} | ${cellText(row.user)} | ${cellText(row.parentBranch)} | ${status} | ${leftOut} |`);
+      const status = row.status === 'complete' ? '✅ complete' : '⚠️ partial';
+      lines.push(`| ${sandboxLabel(row.sandboxName, row.orgId)} | ${cellText(row.parentBranch)} | ${shortDate(row.date)} | ${cellText(row.user)} | ${status} | ${leftOut} |`);
     }
   }
-  if (state.actionRows.length > 0) {
+  // One table per sandbox, failures first, done actions folded
+  const statusOrder = { failed: 0, pending: 1, success: 2 };
+  const sandboxes = [...new Map(state.actionRows.map((row) => [`${row.sandboxName}|${row.orgId}`, row])).values()]
+    .sort((a, b) => a.sandboxName.localeCompare(b.sandboxName));
+  for (const sandbox of sandboxes) {
+    const rows = state.actionRows
+      .filter((row) => row.sandboxName === sandbox.sandboxName && row.orgId === sandbox.orgId)
+      .sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || a.phase.localeCompare(b.phase) || a.label.localeCompare(b.label));
+    const open = rows.filter((row) => row.status !== 'success');
+    const done = rows.filter((row) => row.status === 'success');
+    const actionLine = (row: BackpromoteActionRow) =>
+      `| ${row.status === 'failed' ? '❌ failed' : row.status === 'pending' ? '👋 to do by hand' : '✅ done'} | ${cellText(row.label)} | ${row.phase === 'pre' ? 'before' : 'after'} | ${shortDate(row.date)} |`;
     lines.push('');
-    lines.push('### Deployment actions run by backpromotes');
+    lines.push(`#### Deployment actions in ${sandboxLabel(sandbox.sandboxName, sandbox.orgId)}`);
     lines.push('');
-    lines.push('| Action | When | Sandbox | Date | By | Status |');
-    lines.push('|--------|------|---------|------|----|--------|');
-    for (const row of [...state.actionRows].sort((a, b) => a.sandboxName.localeCompare(b.sandboxName) || a.phase.localeCompare(b.phase) || a.actionId.localeCompare(b.actionId))) {
-      const status = row.status === 'success' ? ':white_check_mark: done' : row.status === 'pending' ? ':wave: to do by hand' : ':x: failed';
-      lines.push(`| ${cellText(row.label)} <sub>${cellText(row.actionId)}</sub> | ${row.phase === 'pre' ? 'pre-deploy' : 'post-deploy'} | ${cellText(row.sandboxName)} <sub>${cellText(row.orgId)}</sub> | ${shortDate(row.date)} | ${cellText(row.user)} | ${status} |`);
+    if (open.length > 0) {
+      lines.push('| Result | Action | When | Date |', '|--------|--------|------|------|', ...open.map(actionLine));
+    }
+    if (done.length > 0) {
+      lines.push('', '<details>', `<summary>✅ Done (${done.length})</summary>`, '', '| Result | Action | When | Date |', '|--------|--------|------|------|', ...done.map(actionLine), '', '</details>');
     }
   }
   lines.push('');

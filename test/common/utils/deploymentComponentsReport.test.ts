@@ -157,14 +157,15 @@ describe('deploymentComponentsReport', () => {
     recordDeployResult(SAMPLE_RESULT);
     const state = getDeploymentComponentsReportState();
     const markdown = buildNoOverwriteMarkdown(buildDeploymentComponentRows(state), true, state);
-    expect(markdown).to.contain('### 🛡️ Protected metadata (package-no-overwrite.xml)');
+    expect(markdown.startsWith('<details>')).to.be.true;
+    expect(markdown).to.contain('Protected by <code>');
     expect(markdown).to.contain('**3 components of this Pull Request already exist in the target org and will not be overwritten**');
     expect(markdown).to.contain('such components are maintained manually in the org');
     expect(markdown).to.contain('**1 protected component does not exist in the target org yet and will be created.**');
     expect(markdown).to.contain('| Type | 🛡️ Not overwritten | ➕ Created this once |');
-    // The sentences stay visible, the table per type is collapsed
-    expect(markdown.indexOf('**3 components of this Pull Request')).to.be.lessThan(markdown.indexOf('<details>'));
-    expect(markdown).to.contain('<summary>🛡️ <b>Protected components per metadata type (2 types)</b></summary>');
+    // One folded section: the sentences, then the table per type
+    expect(markdown.indexOf('**3 components of this Pull Request')).to.be.lessThan(markdown.indexOf('| Type |'));
+    expect(markdown).to.contain('Protected components per metadata type (2 types):');
     expect(markdown.indexOf('| Type |')).to.be.greaterThan(markdown.indexOf('<details>'));
     expect(markdown.indexOf('| Type |')).to.be.lessThan(markdown.indexOf('</details>'));
     expect(markdown).to.contain('| EmailTemplate | 1 |  |');

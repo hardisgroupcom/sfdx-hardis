@@ -80,9 +80,13 @@ describe('Backpromotes comment', () => {
     const state = upsertActionRow(upsertSandboxRow(emptyBackpromotesState(), sandboxRow), actionRow);
     const body = renderBackpromotesComment(state);
     expect(body.startsWith(BACKPROMOTES_MARKER)).to.be.true;
-    expect(body).to.contain('| dev1 <sub>00D5j000000ABCDEAA</sub> | 2026-09-12 10:15 | Sam Lee | integration | :warning: partial |');
+    expect(body).to.contain('| dev1 | integration | Sep 12, 10:15 UTC | Sam Lee | ⚠️ partial |');
+    // Org ids and action ids stay in the hidden data, out of the visible text
+    expect(body.split('\n').slice(2).join('\n')).to.not.contain('00D5j000000ABCDEAA');
+    expect(body).to.not.contain(':warning:');
     expect(body).to.contain('Layout:Case-Case Layout (org version kept)<br/>ApexClass:Legacy (conflict pending)');
-    expect(body).to.contain('| Load discount &#124; thresholds <sub>load-discounts</sub> | post-deploy | dev1 <sub>00D5j000000ABCDEAA</sub> |');
+    expect(body).to.contain('#### Deployment actions in dev1');
+    expect(body).to.contain('| Load discount &#124; thresholds | after |');
     // The hidden data block must not end the HTML comment early
     const dataLine = body.split('\n')[1];
     expect(dataLine.indexOf('-->')).to.equal(dataLine.length - 3);
@@ -114,8 +118,8 @@ describe('Backpromotes comment', () => {
 
   it('renders an empty state without a table', () => {
     const body = renderBackpromotesComment(emptyBackpromotesState());
-    expect(body).to.contain('No sandbox received this Pull Request yet.');
+    expect(body).to.contain('### No sandbox received this Pull Request yet');
     expect(body).to.not.contain('| Sandbox |');
-    expect(body).to.not.contain('Deployment actions run by backpromotes');
+    expect(body).to.not.contain('#### Deployment actions in');
   });
 });

@@ -75,7 +75,10 @@ export type ActionResult = {
   skippedReason?: string;
   // Machine-readable skip cause: skippedReason is user-facing wording that may change,
   // code must branch on this field instead
-  skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference' | 'identical-action-already-run';
+  skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference' | 'identical-action-already-run'
+    | 'context-validation-only' | 'context-deployment-only' | 'stopped-by-failure' | 'deployment-failed';
+  // Label of the failed action that stopped this one (stopped-by-failure)
+  stoppedByLabel?: string;
   // The action of the same run that already did the work of this one (identical-action-already-run)
   identicalTo?: IdenticalActionRef;
   // Values a custom function returned on the last line of its stdout, consumable by later actions

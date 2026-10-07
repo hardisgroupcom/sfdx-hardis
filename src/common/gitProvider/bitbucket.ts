@@ -152,6 +152,11 @@ export class BitbucketProvider extends GitProviderRoot {
     return false;
   }
 
+  // Bitbucket refuses comments over 32,768 characters: the 50,000 cap of the other providers is too high
+  public getMaxPullRequestCommentLength(): number {
+    return 30000;
+  }
+
   public getLabel(): string {
     return 'sfdx-hardis Bitbucket connector';
   }
@@ -807,6 +812,7 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+    messageBody = this.enforceHardCommentLimit(messageBody);
 
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
 
@@ -1012,6 +1018,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
@@ -1091,6 +1098,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     if (!repoSlug || !workspace || !commentRef?.ref) return;

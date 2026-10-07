@@ -576,15 +576,15 @@ This works on GitHub, GitLab, Azure DevOps and Bitbucket.
 
 **Comment structure**: one shared comment per PR, across all CI workflows:
 
-- A **Pending manual actions** checklist: one checkbox per manual action still waiting to be performed in an org.
-- A **Failed actions** checklist: one checkbox per action that failed, or was stopped by a failure, in an org. Ticking it records the action as closed by hand.
-- A **Status by org branch** matrix: one row per action, one column per org branch.
+- A one-line verdict: what failed, what waits for a failed action and what is still to do by hand, per org.
+- A **Needs you** checklist: one checkbox per action that failed (❌), was stopped by a failure (⏸️), or is a manual action still to perform (👋), in an org. Ticking it records the action as done, or as closed by hand for a failed one.
+- A **Status by org** matrix: one row per action, one column per org branch.
 - A collapsible **Action Details** section with the action properties (type, context, command or script...) and truncated output per org.
 
 Example of the status matrix:
 
 ```markdown
-### Status by org branch
+#### Status by org
 
 | Action                      | When        |          integration           |              uat              |
 |-----------------------------|-------------|:------------------------------:|:-----------------------------:|
@@ -593,10 +593,10 @@ Example of the status matrix:
 | Publish Experience site     | post-deploy | ❌ 2024-06-02<br/>[12501](...)  |               ⬜               |
 | Check external callback URL | post-deploy | 👋 2024-06-01<br/>[12345](...) |               ⬜               |
 
-*Legend: ✅ done · ❌ failed · 👋 waiting for manual execution · ⚪ skipped · ⏸️ not run, a previous action failed · ↪️ moved to another Pull Request · ⬜ not run in this org branch yet*
+*Legend: ✅ done · ❌ failed · 👋 to do by hand · ⚪ skipped · ⏸️ waits for a failed action · ↪️ moved to another Pull Request · ⬜ not run in this org branch yet*
 ```
 
-Columns are ordered from dev to production (integration → uat → preprod → prod), rows follow the deployment order (pre-deploy actions first, then post-deploy). Each cell shows the status icon, the execution date and a link to the CI job that performed the action. A *Last updated* date is displayed under the matrix. The action `id` is embedded in each row as an HTML comment for machine parsing.
+Columns are ordered from dev to production (integration → uat → preprod → prod), rows follow the deployment order (pre-deploy actions first, then post-deploy). Each cell shows the status icon, the execution date and a link to the CI job that performed the action. The date of the last update is displayed under the matrix. The action `id` is embedded in each row as an HTML comment for machine parsing. The notes of the *Action Details* section name who did an action, without their email address: the hidden data of the matrix keeps it.
 
 **Status icons:**
 
@@ -626,7 +626,7 @@ When someone ticks one of these checkboxes (in any of the three comments), or th
 
 A manual action that runs **before the metadata deployment** must be performed before the merge. By default, the validation job only lists the ones not marked as performed in the target org branch, with a warning. Set `failValidationOnPendingManualActions: true` in `config/.sfdx-hardis.yml` to make it stop instead: as long as one is not marked as performed in the target org branch, the validation job of the Pull Request fails right after its pre-deployment actions, before the deployment check, with the list of the actions to perform and the three ways to mark them:
 
-- tick its box in the **Pending manual actions** list of the Pull Request comment,
+- tick its box in the **Needs you** list of the Deployment Actions comment, or in the validation comment,
 - click **Mark as done in <branch>** in the VS Code Deployment Actions tab,
 - or run `sf hardis:project:action:set-status --pr <number> --action-id <id> --org-branch <branch> --status success`.
 
@@ -650,7 +650,7 @@ Before the merge, run the actions of your Pull Request in your own org, a develo
 
 ### Recover a failed action
 
-A post-deployment action runs after the metadata deployment, once the Pull Request is merged. When it fails, the metadata is already in the org, the job is red, and the actions after it were not run. The "Deployment Actions" comment of the Pull Request lists them under **Failed actions**: ❌ for the action that failed, ⏸️ for the ones its failure stopped.
+A post-deployment action runs after the metadata deployment, once the Pull Request is merged. When it fails, the metadata is already in the org, the job is red, and the actions after it were not run. The deployment comment says it first, *Deployed to integration, but an action failed after the deployment*, with the end of the output of the failed action. The "Deployment Actions" comment of the Pull Request lists them under **Needs you**: ❌ for the action that failed, ⏸️ for the ones its failure stopped.
 
 ![Deployment Actions comment with a failed action and two stopped ones](assets/images/screenshot-deployment-actions-comment-failed.jpg)
 
@@ -685,12 +685,12 @@ In the window of a major branch, the **Next promotion: preprod** switch (the fir
 **From the terminal**:
 
 - Retry: [sf hardis:project:action:run](hardis/project/action/run.md). Without flags, it proposes the recent Pull Requests with failed actions in the org, then their actions. Once the action succeeds, it offers to run only the next stopped action, or all of them.
-- Mark as done: [sf hardis:project:action:set-status](hardis/project/action/set-status.md), or tick the checkbox of the action in the **Failed actions** list of the Pull Request comment (recorded by the next sfdx-hardis job).
+- Mark as done: [sf hardis:project:action:set-status](hardis/project/action/set-status.md), or tick the checkbox of the action in the **Needs you** list of the Deployment Actions comment (recorded by the next sfdx-hardis job).
 - Move to a fix Pull Request, from your fix branch: `sf hardis:project:action:update --scope pr --pr-id <failed PR> --when post-deploy --action-id <id> --move-to-pr current`. The action keeps its id, leaves the file of the original Pull Request and gets `movedFrom: <failed PR>`. Correct it, then open and merge the fix Pull Request as usual.
 
 Things to know:
 
-- Anyone authenticated to the org can retry an action, production included. The Pull Request comment says who did it: *Run locally by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC*.
+- Anyone authenticated to the org can retry an action, production included. The Pull Request comment says who did it: *Run locally by Jane Doe on 2026-10-03 14:05 UTC*.
 - An action with a `customUsername` runs as that user. When your computer is not authenticated with it, you are asked to log in with it.
 - The action definition is read from your current branch. When the org is a major org and you are on another branch, you are warned and asked to confirm.
 - A pre-deployment action can be run after a confirmation, since in a deployment it runs before the metadata, which is already in the org. When it failed and blocked the deployment, nothing was deployed: re-run the deployment job instead.

@@ -218,7 +218,7 @@ for (const pr of dump.prs) {
     const seen = new Map();
     for (const id of actionRows) seen.set(id, (seen.get(id) || 0) + 1);
     for (const [id, count] of seen) {
-      // one row in "Status by org branch" plus one in the "Action Details" fold
+      // one row in "Status by org" plus one in the "Action Details" fold
       check(count <= 2, pr.number, `Deployment Actions repeats action ${id} ${count} times`);
     }
   } else if ((expected.manualActions || []).length > 0) {

@@ -5,6 +5,7 @@ import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
+import { enforceCommentLengthLimit } from "./prCommentSizeGuard.js";
 
 // Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
 // a PR is always updated when it is merged, so its update date cannot be older than the commits
@@ -200,6 +201,25 @@ export abstract class GitProviderRoot {
   // release manager with a pushed branch and no Pull Request at all.
   public getMaxPullRequestDescriptionLength(): number | null {
     return null;
+  }
+
+  // Largest Pull Request comment sfdx-hardis writes, with a margin under the limit of the provider:
+  // GitHub refuses comments over 65,536 characters, Azure DevOps over 150,000, GitLab over 1,000,000.
+  public getMaxPullRequestCommentLength(): number {
+    return 50000;
+  }
+
+  /**
+   * Last check before a comment is sent: a body still over the size cap is cut before its footer
+   * and hidden markers, so the provider accepts it and sfdx-hardis can still read it back.
+   */
+  protected enforceHardCommentLimit(body: string): string {
+    const limit = this.getMaxPullRequestCommentLength();
+    const result = enforceCommentLengthLimit(body, limit);
+    if (result.cut) {
+      uxLog("warning", this, c.yellow(t('prCommentStillTooLong', { length: body.length, limit, provider: this.getLabel() })));
+    }
+    return result.body;
   }
 
   /**

@@ -756,6 +756,7 @@ export async function smartDeploy(
         // Handle notif message when there is no apex
         const prDataCodeCoverage: Partial<PullRequestData> = {
           ...buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: quickDeploy }),
+          testsNotRunReason: testlevel === 'NoTestRun' ? 'smart-tests' : branchConfig?.skipCodeCoverage === true ? 'coverage-skipped' : 'no-apex',
           codeCoverageMarkdownBody:
             testlevel === 'NoTestRun'
               ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
@@ -826,7 +827,16 @@ export async function smartDeploy(
   // Tell the Pull Request comment how much of the package really moved in the org
   const componentsMarkdown = buildDeployedComponentsMarkdown(deploymentMetrics, check);
   if (componentsMarkdown) {
-    setPullRequestData({ deploymentComponentsMarkdownBody: componentsMarkdown });
+    setPullRequestData({
+      deploymentComponentsMarkdownBody: componentsMarkdown,
+      deploymentMetrics: {
+        deployed: deploymentMetrics.componentsDeployed,
+        created: deploymentMetrics.componentsCreated,
+        updated: deploymentMetrics.componentsUpdated,
+        deleted: deploymentMetrics.componentsDeleted,
+        unchanged: deploymentMetrics.componentsUnchanged,
+      },
+    });
   }
   // Post pull request comment if available
   await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
@@ -1944,6 +1954,10 @@ async function updatePullRequestResultCoverage(
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
   } else {
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
+  }
+  prDataCodeCoverage.coverage = { value: orgCoverage, target: orgCoverageTarget, status: coverageStatus };
+  if (options.testClasses) {
+    prDataCodeCoverage.testClasses = options.testClasses.split(' ').filter((testClass) => testClass !== '');
   }
   setPullRequestData(prDataCodeCoverage);
 }
