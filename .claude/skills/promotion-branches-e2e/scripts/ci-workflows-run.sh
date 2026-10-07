@@ -194,7 +194,7 @@ printf 'export C1="%s"\n' "$C1" >"$LOGS/ci-vars.sh"
 step "C1=#$C1"
 wait_workflow check-deploy.yml "$(head_sha feature/E2E-501-ci-gate)" ci-check-c1
 if [ "$SFDX_HARDIS_BRANCH" = "-" ]; then
-  assert_log W0 ci-check-c1 - "the job runs sfdx-hardis ${SFDX_HARDIS_VERSION:-?} of ${SFDX_HARDIS_IMAGE:-the default image}" "sfdx-hardis ${SFDX_HARDIS_VERSION:-NO_VERSION_GIVEN}" "!\(link\)"
+  assert_log W0 ci-check-c1 - "the job runs sfdx-hardis ${SFDX_HARDIS_VERSION:-?} of ${SFDX_HARDIS_IMAGE:-the default image}" "sfdx-hardis .{0,12}${SFDX_HARDIS_VERSION:-NO_VERSION_GIVEN}" "!\(link\)"
 else
   assert_log W0 ci-check-c1 - "the job runs sfdx-hardis linked from $SFDX_HARDIS_BRANCH" "sf plugins link /tmp/sfdx-hardis" "sfdx-hardis .*\(link\)"
 fi

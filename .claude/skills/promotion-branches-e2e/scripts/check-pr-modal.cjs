@@ -119,7 +119,8 @@ function expectedRuns(comments) {
       runs.push({ kind: 'megalinter', status: null });
       continue;
     }
-    const key = (body.match(/<!-- sfdx-hardis message-key (\S+) -->/) || [])[1];
+    // The key holds the CI job name, spaces included on GitHub Actions: read up to the end of the marker
+    const key = (body.match(/<!-- sfdx-hardis message-key (.+?) -->/) || [])[1];
     if (!key || !key.startsWith('deployment-')) {
       continue;
     }

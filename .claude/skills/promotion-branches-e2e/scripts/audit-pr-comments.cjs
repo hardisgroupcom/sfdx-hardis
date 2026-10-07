@@ -35,7 +35,8 @@ const expectations = EXPECTATIONS_PATH ? JSON.parse(fs.readFileSync(EXPECTATIONS
 const DEPLOYMENT_ACTIONS_MARKER = "<!-- sfdx-hardis deployment-actions-state -->";
 const NAV_START = "<!-- sfdx-hardis nav-start -->";
 const NAV_END = "<!-- sfdx-hardis nav-end -->";
-const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (\S+) -->/;
+// The key holds the CI job name, spaces included on GitHub Actions
+const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (.+?) -->/;
 
 // Same rule as getPrCommentKind in src/common/gitProvider/prCommentNav.ts
 function commentKind(body) {
