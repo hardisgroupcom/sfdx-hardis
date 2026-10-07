@@ -593,22 +593,47 @@ export function cleanFlowDiffMarkdownForPrComment(markdown: string): string {
 function extractFlowDiffChangedRows(lines: string[]): { where: string; property: string; before: string; after: string }[] {
   const rows: { where: string; property: string; before: string; after: string }[] = [];
   let where = 'Flow';
-  const stripHtml = (text: string) => text.replace(/<[^>]+>/g, '').replace(/[🟥🟩]/gu, '').trim();
+  let table = '';
+  // An element the Pull Request adds or removes as a whole is one row, not one row per property
+  let wholeElement: { where: string; change: 'added' | 'removed'; row: { where: string; property: string; before: string; after: string } } | null = null;
   for (const line of lines) {
-    const heading = line.match(/^#{2,3} (.+)$/);
+    const heading = line.match(/^(#{2,4}) (.+)$/);
     if (heading) {
-      where = heading[1].trim() === 'General Information' ? 'Flow' : heading[1].trim();
+      const text = cleanFlowDocCell(heading[2]).replace(/\*\*/g, '');
+      if (heading[1].length <= 3) {
+        where = text === 'General Information' ? 'Flow' : text;
+        table = '';
+        wholeElement = null;
+        if (/[🟥🟩]/u.test(heading[2]) && heading[1].length === 3) {
+          const change = heading[2].includes('🟩') ? 'added' : 'removed';
+          const row = { where, property: 'Element', before: change === 'added' ? '_none_' : where, after: change === 'added' ? where : '_removed_' };
+          rows.push(row);
+          wholeElement = { where, change, row };
+        }
+      } else {
+        table = text;
+      }
       continue;
     }
     if (!/^\|.*[🟥🟩].*\|/u.test(line)) {
       continue;
     }
-    const cells = line.split('|').slice(1, -1);
+    const cells = line.split('|').slice(1, -1).map(cleanFlowDocCell);
     if (cells.length < 2) {
       continue;
     }
-    const property = stripHtml(cells[0]);
-    const value = stripHtml(cells.slice(1).join(' '));
+    if (wholeElement) {
+      // "Element: Mark Warning Sent (Record Update)" rather than its every property
+      if (cells[0] === 'Type' && wholeElement.change === 'added') {
+        wholeElement.row.after = `${wholeElement.where} (${cells.slice(1).join(' ')})`;
+      }
+      continue;
+    }
+    const property = /^\d+$/.test(cells[0]) ? `${table || 'Row'} ${cells[0]}` : cells[0];
+    const value = cells.slice(1).filter((cell) => cell !== '').join(' · ');
+    if (property === '' && value === '') {
+      continue;
+    }
     const removed = line.includes('🟥');
     // The diff lists the removed rows of a block, then the added ones: an added row completes the
     // removed row of the same property, wherever it sits in the block
@@ -619,7 +644,25 @@ function extractFlowDiffChangedRows(lines: string[]): { where: string; property:
     }
     rows.push(removed ? { where, property, before: value, after: '_removed_' } : { where, property, before: '_none_', after: value });
   }
-  return rows;
+  return rows.map((row) => ({ ...row, before: escapeFlowDocCell(row.before), after: escapeFlowDocCell(row.after) }));
+}
+
+// The text of a cell of the Flow documentation: its formatting tags, diff markers and in-page links
+// removed. A literal "<" of a formula is kept: only known tags are stripped.
+function cleanFlowDocCell(cell: string): string {
+  return (cell || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\/?(span|b|i|em|strong|u|font)\b[^>]*>/gi, '')
+    .replace(/[🟥🟩]/gu, '')
+    .replace(/\[([^\]]*)\]\(#[^)]*\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// A value written back into a markdown table cell
+function escapeFlowDocCell(value: string): string {
+  return value.replace(/\|/g, '\\|').replace(/</g, '&lt;');
 }
 
 // The diff theme declares a classDef for every class it may use: keep the ones the diagram uses

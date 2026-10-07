@@ -152,6 +152,49 @@ describe('Flow diff comments', () => {
     expect(cleaned.indexOf('The greeting is now longer.')).to.be.lessThan(cleaned.indexOf('<details>'));
   });
 
+  it('keeps formulas whole, names numbered rows after their table, and makes a new element one row', () => {
+    const green = (text: string) => `<span style="background-color: #a6e22e; color: black;"><b>${text}</b></span>`;
+    const red = (text: string) => `<span style="background-color: #ff7f7f; color: black;"><i>${text}</i></span>`;
+    const markdown = [
+      '```mermaid',
+      'flowchart TB',
+      '```',
+      '',
+      '## General Information',
+      '',
+      '#### Filters (logic: **and**)',
+      '',
+      `|🟩${green('2')}|${green('Panels_Required__c')}|${green('Is Null')}|${green('<!-- -->')}|`,
+      '',
+      '## Formulas',
+      '',
+      `|🟥${red('crewTooSmall')}|${red('Boolean')}|${red('{!$Record.Crew_Size__c} < 2')}|${red('True when fewer than two people are assigned.')}|`,
+      `|🟩${green('crewTooSmall')}|${green('Boolean')}|${green('AND(<br/>  {!$Record.Crew_Size__c} * 8 < {!$Record.Panels_Required__c}<br/>)')}|${green('True when eight panels a person do not cover the job')}|`,
+      '',
+      '## Flow Nodes Details',
+      '',
+      '### Create_Warning_Task',
+      '',
+      `|🟩${green('Connector')}|${green('[Mark_Warning_Sent](#mark_warning_sent)')}|`,
+      '',
+      '### 🟩Mark_Warning_Sent',
+      '',
+      `|🟩${green('Type')}|${green('Record Update')}|`,
+      `|🟩${green('Label')}|${green('Mark Warning Sent')}|`,
+      '',
+      '#### 🟩Input Assignments',
+      '',
+      `|🟩${green('Crew_Warning_Sent__c')}|${green('true')}|`,
+    ].join('\n');
+    const cleaned = cleanFlowDiffMarkdownForPrComment(markdown);
+    expect(cleaned).to.contain('**4 properties changed**');
+    expect(cleaned).to.contain('| Flow | Filters (logic: and) 2 | _none_ | Panels_Required__c · Is Null |');
+    expect(cleaned).to.contain('| Formulas | crewTooSmall | Boolean · {!$Record.Crew_Size__c} &lt; 2 · True when fewer than two people are assigned. | Boolean · AND( {!$Record.Crew_Size__c} * 8 &lt; {!$Record.Panels_Required__c} ) · True when eight panels a person do not cover the job |');
+    expect(cleaned).to.contain('| Create_Warning_Task | Connector | _none_ | Mark_Warning_Sent |');
+    expect(cleaned).to.contain('| Mark_Warning_Sent | Element | _none_ | Mark_Warning_Sent (Record Update) |');
+    expect(cleaned).to.not.contain('| Mark_Warning_Sent | Label |');
+  });
+
   it('replaces a diagram too large for the comment instead of cutting it', () => {
     const hugeDiagram = diffMarkdown.replace('flowchart TB', 'flowchart TB\n' + Array.from({ length: 4000 }, (_, i) => `N${i}("Node ${i}")`).join('\n'));
     const message = buildFlowDiffCommentMessage(hugeDiagram, 'Legal_Email', 20000);
