@@ -684,13 +684,13 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
     body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Run** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;
     body += `#### Needs you\n\n`;
     for (const e of failedEntries) {
-      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ❌ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch} - failed)*\n`;
+      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ❌ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
     }
     for (const e of stoppedEntries) {
-      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ⏸️ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch} - waits for a failed action)*\n`;
+      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ⏸️ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
     }
     for (const e of pendingManualEntries) {
-      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} 👋 ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch} - to do by hand)*\n`;
+      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} 👋 ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
     }
     body += `\n`;
   }

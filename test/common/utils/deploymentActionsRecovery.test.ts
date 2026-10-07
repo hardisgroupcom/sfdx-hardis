@@ -81,7 +81,7 @@ describe('Deployment Actions state - not-run and moved statuses', () => {
     ], undefined, 12);
     expect(body).to.contain('#### Needs you');
     expect(body).to.contain('### In integration: ⏸️ 1 waiting');
-    expect(body).to.contain(`- [ ] ${buildFailedActionCheckboxMarker('action-2', 'integration', 12, 'post-deploy')} ⏸️ Load the reference data *(org branch: integration - waits for a failed action)*`);
+    expect(body).to.contain(`- [ ] ${buildFailedActionCheckboxMarker('action-2', 'integration', 12, 'post-deploy')} ⏸️ Load the reference data *(org branch: integration)*`);
     expect(body).to.not.contain(buildFailedActionCheckboxMarker('done', 'integration', 12, 'post-deploy'));
     expect(body).to.contain('pr-banner-actions-error');
     expect(body).to.contain('⏸️ waits for a failed action');

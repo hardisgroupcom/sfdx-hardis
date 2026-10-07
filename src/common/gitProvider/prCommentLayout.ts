@@ -261,18 +261,16 @@ function describeActions(commands: PhasedCommand[], options: PrCommentLayoutOpti
   const manual = count((cmd) => cmd.result?.statusCode === 'manual');
   const waiting = count((cmd) => cmd.result?.statusCode === 'not-run');
   const skipped = count((cmd) => cmd.result?.statusCode === 'skipped' || !cmd.result);
-  // Manual actions skipped during the validation because they run after the merge
-  const manualAfterMerge = options.checkOnly
-    ? commands.filter((c) => c.cmd.type === 'manual' && c.cmd.result?.skippedCode === 'context-deployment-only').length
-    : 0;
+  // Actions the validation leaves for the deployment job: they are not skipped, they run later
+  const afterMerge = options.checkOnly ? count((cmd) => cmd.result?.skippedCode === 'context-deployment-only') : 0;
   const parts = [
     failed > 0 ? `❌ ${failed} failed` : '',
     warnings > 0 ? `⚠️ ${warnings} failed, allowed to fail` : '',
     manual > 0 ? `👋 ${manual} to do by hand` : '',
     waiting > 0 ? `⏸️ ${waiting} not run` : '',
     done > 0 ? `✅ ${done} done` : '',
-    manualAfterMerge > 0 ? `👋 ${manualAfterMerge} to do by hand after the merge` : '',
-    skipped - manualAfterMerge > 0 ? `⚪ ${skipped - manualAfterMerge} skipped` : '',
+    afterMerge > 0 ? `🕒 ${afterMerge} after the merge` : '',
+    skipped - afterMerge > 0 ? `⚪ ${skipped - afterMerge} skipped` : '',
   ].filter((part) => part !== '');
   return parts.join(' · ');
 }
