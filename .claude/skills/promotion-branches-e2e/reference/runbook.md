@@ -374,12 +374,12 @@ PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK")" DEV="$DEV" EXT="$EXT" 
 # GitLab: PROVIDER=gitlab GL_HOST GL_TOKEN PROJECT_ID instead of REPO
 ```
 
-| Tab                | Expected                                                                                                                                                                                                                                           |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| all three run tabs | the CLI answers, with an array for the Pull Request. No answer, or no entry for it, **hides** the three tabs instead of showing them empty, so a provider read that failed looks like "nothing to show"                                            |
-| Validation         | one run per comment whose message key starts with `deployment-check-`, with the status of its `run-summary` marker when it has one                                                                                                                 |
-| Deployment         | one run per comment whose message key starts with `deployment-` (not `-check-`), same status rule                                                                                                                                                  |
-| Code Quality       | one run per MegaLinter comment (`<!-- megalinter:` or its title). The simulators post none, so it is only exercised by the CI section                                                                                                              |
+| Tab                | Expected                                                                                                                                                                                                                                    |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| all three run tabs | the CLI answers, with an array for the Pull Request. No answer, or no entry for it, **hides** the three tabs instead of showing them empty, so a provider read that failed looks like "nothing to show"                                     |
+| Validation         | one run per comment whose message key starts with `deployment-check-`, with the status of its `run-summary` marker when it has one                                                                                                          |
+| Deployment         | one run per comment whose message key starts with `deployment-` (not `-check-`), same status rule                                                                                                                                           |
+| Code Quality       | one run per MegaLinter comment (`<!-- megalinter:` or its title). The simulators post none, so it is only exercised by the CI section                                                                                                       |
 | Deployment Actions | every cell of the "Status by org" table of the Deployment Actions comment is a status of the CLI (action id, org branch); the cells of the target branch are the pills of the modal; the list of a story equals the ids of its actions file |
 
 It prints one line per Pull Request, with a note for a Pull Request merged into a major branch with no
