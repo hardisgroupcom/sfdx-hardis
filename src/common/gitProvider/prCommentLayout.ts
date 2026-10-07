@@ -23,6 +23,9 @@ export type PrCommentLayoutOptions = {
   prNumber?: number | null;
   // A successful validation that the merge job can release with Quick Deploy
   quickDeployReusable?: boolean;
+  // What the source branch of the Pull Request is, to say how to merge it
+  sourceBranch?: string;
+  sourceBranchKind?: 'majorBranch' | 'promotionBranch' | 'retrofitBranch' | 'backpromoteBranch' | 'userStoryBranch';
 };
 
 type ActionPhase = 'pre-deploy' | 'post-deploy';
@@ -103,7 +106,10 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   if (status === 'valid') {
     if (options.checkOnly) {
       verdict = nothingToDeploy ? `✅ Ready to merge into ${target}: no metadata to deploy` : `✅ Ready to merge into ${target}`;
-      next = nothingToDeploy ? '' : `The deployment was simulated in the ${target} org: nothing was changed there.`;
+      next = [
+        nothingToDeploy ? '' : `The deployment was simulated in the ${target} org: nothing was changed there.`,
+        buildMergeAdvice(options),
+      ].filter((text) => text !== '').join('\n\n');
     } else {
       verdict = nothingToDeploy ? `✅ Nothing to deploy to ${target}` : `✅ Deployed to ${target}`;
       next = '';
@@ -133,6 +139,26 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   // A short note explaining an empty deployment ("No metadata to deploy: the package.xml is empty...")
   const note = prData.deployErrorsMarkdownBody && !prData.deployErrorsMarkdownBody.startsWith('## ') ? prData.deployErrorsMarkdownBody.trim() : '';
   return [`### ${verdict}`, [next, note].filter((text) => text !== '').join(' ')].filter((line) => line !== '').join('\n\n');
+}
+
+// How to merge the Pull Request once it is green. A User Story is squashed into one commit; a major
+// branch, a promotion branch or a retrofit branch is merged with a merge commit: squashing them
+// would replace the commits of the User Stories they carry, which later promotions, cherry-picks
+// and release notes rely on.
+function buildMergeAdvice(options: PrCommentLayoutOptions): string {
+  const source = options.sourceBranch ? `\`${options.sourceBranch}\`` : 'this branch';
+  switch (options.sourceBranchKind) {
+    case 'userStoryBranch':
+      return `**How to merge:** use **Squash and merge**, so the User Story arrives as one commit.`;
+    case 'majorBranch':
+      return `**How to merge:** use a **merge commit**, never squash: ${source} carries the commits of several User Stories, and the next promotions need them.`;
+    case 'promotionBranch':
+      return `**How to merge:** use a **merge commit**, never squash: the promotion branch carries the commits of the User Stories it promotes.`;
+    case 'retrofitBranch':
+      return `**How to merge:** use a **merge commit**, never squash: a retrofit brings back commits of another major branch, which must stay as they are.`;
+    default:
+      return '';
+  }
 }
 
 // Every deployment error is an Apex class under the coverage Salesforce requires: the tests ran,

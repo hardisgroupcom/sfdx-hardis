@@ -28,6 +28,8 @@ import {
   upsertNavInDescription,
 } from "./prCommentNav.js";
 import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./prRunSummary.js";
+import { classifyBackpromoteCurrentBranch } from "../utils/backpromoteRules.js";
+import { listMajorOrgs } from "../utils/orgConfigUtils.js";
 import type { PrePostCommand } from "../actionsProvider/actionsProvider.js";
 import type { Ticket } from "../ticketProvider/index.js";
 // Enable with NODE_DEBUG=sfdxhardis
@@ -253,11 +255,19 @@ export abstract class GitProvider {
       const quickDeployReusable = checkOnly === true && !!globalThis.pullRequestDeploymentId && prData.deployStatus === "valid"
         && prData.checkTestLevel !== "NoTestRun"
         && (process.env.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false';
+      // A validation says how to merge: squash a User Story, keep the commits of a major, promotion
+      // or retrofit branch
+      const sourceBranch = checkOnly === true ? prInfoForLayout?.sourceBranch || '' : '';
+      const sourceBranchKind = sourceBranch
+        ? classifyBackpromoteCurrentBranch(sourceBranch, (await listMajorOrgs()).map((org) => org.branchName))
+        : undefined;
       const sections = buildDeploymentPrCommentSections(prData, {
         checkOnly: checkOnly === true,
         targetBranch,
         prNumber: prInfoForLayout?.idNumber,
         quickDeployReusable,
+        sourceBranch,
+        sourceBranchKind,
       });
       const fitted = fitPrCommentSections(sections, gitProvider.getMaxPullRequestCommentLength() - PR_COMMENT_FRAME_RESERVE, gitProvider.getMaxPullRequestCommentLength().toLocaleString('en-US'));
       if (fitted.shortened) {

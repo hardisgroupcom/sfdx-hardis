@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#pull-request-comments) open on a verdict and a short table of checks, say whether the metadata was deployed, fold the details, and stay under the size limit of each git provider.
+- [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#pull-request-comments) open on a verdict and a short table of checks, say whether the metadata was deployed and how to merge, fold the details, and stay under the size limit of each git provider.
 - Deployment errors show in Pull Request comments again when the Salesforce CLI prints warnings next to its result, instead of "There has been an issue parsing errors".
 
 ## [8.15.0] 2026-10-07

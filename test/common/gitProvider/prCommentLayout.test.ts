@@ -229,6 +229,19 @@ describe('Pull Request comment layout', () => {
     expect(body).to.contain('#### ❌ Apex code coverage');
   });
 
+  it('says how to merge a green validation: squash a User Story, keep the commits of the others', () => {
+    const advice = (sourceBranchKind: any, sourceBranch = 'features/US-014-panels') =>
+      render({ status: 'valid' }, true, { sourceBranch, sourceBranchKind });
+    expect(advice('userStoryBranch')).to.contain('**How to merge:** use **Squash and merge**');
+    expect(advice('majorBranch', 'integration')).to.contain('**How to merge:** use a **merge commit**, never squash: `integration` carries');
+    expect(advice('promotionBranch')).to.contain('use a **merge commit**, never squash: the promotion branch');
+    expect(advice('retrofitBranch')).to.contain('use a **merge commit**, never squash: a retrofit');
+    expect(advice('backpromoteBranch')).to.not.contain('How to merge');
+    // Only a green validation: a deployment or a red validation gives no advice
+    expect(render({ status: 'invalid', errorCount: 1 }, true, { sourceBranchKind: 'userStoryBranch' })).to.not.contain('How to merge');
+    expect(render({ status: 'valid' }, false, { sourceBranchKind: 'userStoryBranch' })).to.not.contain('How to merge');
+  });
+
   it('writes skip reasons for people', () => {
     expect(humanActionReason(command({ result: { statusCode: 'skipped', skippedCode: 'context-deployment-only' } }))).to.equal('Runs after the merge only');
     expect(humanActionReason(command({ result: { statusCode: 'skipped', skippedCode: 'branch-not-targeted' } }), 'uat')).to.equal('Not meant for uat');
