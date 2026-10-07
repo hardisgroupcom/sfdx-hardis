@@ -29,17 +29,17 @@ ___
 
 ## Counts
 
-| Section                                                                             | Checks                            | OK  | FAIL |
-|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |
-| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |
-| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |
-| 6bis: backpromote B0 to B16, C1 to C4                                               | 63                                | 63  | 0    |
-| 4ter: single Pull Request window (gl-12, gl-13)                                     | 47 + 11 merge requests            | 58  | 0    |
+| Section                                                                             | Checks                             | OK  | FAIL |
+|-------------------------------------------------------------------------------------|------------------------------------|-----|------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                 | 42  | 0    |
+| 6: edge cases, groups g1 to g6                                                      | 47                                 | 47  | 0    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                 | 21  | 0    |
+| 6sexies: identical actions, I1 to I10                                               | 24                                 | 24  | 0    |
+| 6bis: backpromote B0 to B16, C1 to C4                                               | 63                                 | 63  | 0    |
+| 4ter: single Pull Request window (gl-12, gl-13)                                     | 47 + 11 merge requests             | 58  | 0    |
 | 5bis: Pull Request comment audit                                                    | 1108 checks over 53 merge requests | all | 0    |
-| 7bis: single place in the diagram                                                   | 1                                 | 1   | 0    |
-| 7ter: flag-off A/B                                                                  | not run                           |     |      |
+| 7bis: single place in the diagram                                                   | 1                                  | 1   | 0    |
+| 7ter: flag-off A/B                                                                  | not run                            |     |      |
 
 No failure, first time through.
 

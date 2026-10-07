@@ -29,23 +29,23 @@ ___
 
 ## Counts
 
-| Section                                                                                   | Checks                            | OK                   | FAIL                     |
-|-------------------------------------------------------------------------------------------|-----------------------------------|----------------------|--------------------------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline       | 42                                | 42                   | 0                        |
-| 6: edge cases, groups g1 to g6                                                            | 47                                | 47                   | 0                        |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                        | 21                                | 21                   | 0                        |
-| 6sexies: identical actions, I1 to I10                                                     | 24                                | 24                   | 0                        |
-| 6bis: backpromote B0 to B16, C1 to C4                                                     | 63                                | 63                   | 0                        |
-| 6quinquies on the beta image (-35), W0 to W9                                              | 19                                | 19 (W0 see below)    | 0                        |
-| 6quinquies with the #2307 branch linked (-36), W0 to W9                                   | 19                                | 19                   | 0                        |
-| 4ter: single Pull Request window, simulated jobs (-33, -34)                               | 47 + 11 Pull Requests             | 58                   | 0                        |
-| 4ter: single Pull Request window, real CI jobs, beta (-35)                                | 7 Pull Requests                   | see "Defect"         | every comment hidden     |
-| 4ter: single Pull Request window, real CI jobs, #2307 build (-36)                         | 7 Pull Requests                   | 7                    | 0                        |
-| 5bis: comment audit of the real CI comments with #2307 (-36)                              | 265 checks over 9 Pull Requests   | all                  | 0                        |
-| 5bis: Pull Request comment audit (-33)                                                    | 1108 checks over 53 Pull Requests | all                  | 0                        |
-| 5ter: action state read from the provider (#1)                                            | 1                                 | 1                    | 0                        |
-| 7bis: single place in the diagram                                                         | 1                                 | 1                    | 0                        |
-| 7ter: flag-off A/B                                                                        | not run                           |                      |                          |
+| Section                                                                             | Checks                            | OK                | FAIL                 |
+|-------------------------------------------------------------------------------------|-----------------------------------|-------------------|----------------------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42                | 0                    |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 47                | 0                    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21                | 0                    |
+| 6sexies: identical actions, I1 to I10                                               | 24                                | 24                | 0                    |
+| 6bis: backpromote B0 to B16, C1 to C4                                               | 63                                | 63                | 0                    |
+| 6quinquies on the beta image (-35), W0 to W9                                        | 19                                | 19 (W0 see below) | 0                    |
+| 6quinquies with the #2307 branch linked (-36), W0 to W9                             | 19                                | 19                | 0                    |
+| 4ter: single Pull Request window, simulated jobs (-33, -34)                         | 47 + 11 Pull Requests             | 58                | 0                    |
+| 4ter: single Pull Request window, real CI jobs, beta (-35)                          | 7 Pull Requests                   | see "Defect"      | every comment hidden |
+| 4ter: single Pull Request window, real CI jobs, #2307 build (-36)                   | 7 Pull Requests                   | 7                 | 0                    |
+| 5bis: comment audit of the real CI comments with #2307 (-36)                        | 265 checks over 9 Pull Requests   | all               | 0                    |
+| 5bis: Pull Request comment audit (-33)                                              | 1108 checks over 53 Pull Requests | all               | 0                    |
+| 5ter: action state read from the provider (#1)                                      | 1                                 | 1                 | 0                    |
+| 7bis: single place in the diagram                                                   | 1                                 | 1                 | 0                    |
+| 7ter: flag-off A/B                                                                  | not run                           |                   |                      |
 
 W0 on -35 first said FAIL: the new image mode asserted `sfdx-hardis 8.14.1-beta...` while the log has
 color codes between the name and the version. The job did run
@@ -63,10 +63,10 @@ extension's own `completePullRequestsWithActions`) and compares them with the co
 On the simulated jobs (-33) everything matched. On the real GitHub Actions jobs (-35), **no**
 validation or deployment comment was ever listed in the window, merged or not:
 
-| Pull Request (-35)     | Comments on GitHub                     | Validation / Deployment tabs, beta | Same, #2307 branch                     |
-|------------------------|----------------------------------------|------------------------------------|----------------------------------------|
-| #1 story, merged       | validation valid, deployment invalid   | nothing                            | validation valid, deployment invalid   |
-| #5 promotion, merged   | validation valid, deployment valid     | nothing                            | validation valid, deployment valid     |
+| Pull Request (-35)   | Comments on GitHub                   | Validation / Deployment tabs, beta | Same, #2307 branch                   |
+|----------------------|--------------------------------------|------------------------------------|--------------------------------------|
+| #1 story, merged     | validation valid, deployment invalid | nothing                            | validation valid, deployment invalid |
+| #5 promotion, merged | validation valid, deployment valid   | nothing                            | validation valid, deployment valid   |
 
 Cause: the comment kind is read from its message key, which holds the CI job name, and a GitHub
 Actions workflow is named `Simulate Deployment (sfdx-hardis)`. `prCommentNav.ts` read the key with
@@ -90,12 +90,12 @@ ___
 
 ## Single Pull Request window, section 4ter
 
-| Repository | Pull Requests | Result                                                                                                                                                                                                                         |
-|------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Repository | Pull Requests | Result                                                                                                                                                                                                                                           |
+|------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | -33        | 47            | 47 OK after one checker fix (a `⬜` cell, "not run in this org branch yet", has no status: correct). 19 show validation and deployment, 2 validation only, 1 a failed deployment, 24 have no comment because the scripts merge them without a job |
-| -34        | 11            | 11 OK: backpromote stories, merged into integration, never deployed to a major branch                                                                                                                                          |
-| -35        | 7             | the comments of real jobs never reach the window: the #2307 defect                                                                                                                                                             |
-| -36        | 7             | 7 OK with the #2307 build: every comment real jobs wrote is listed with its status, the open Renovate Pull Request included                                                                                                     |
+| -34        | 11            | 11 OK: backpromote stories, merged into integration, never deployed to a major branch                                                                                                                                                            |
+| -35        | 7             | the comments of real jobs never reach the window: the #2307 defect                                                                                                                                                                               |
+| -36        | 7             | 7 OK with the #2307 build: every comment real jobs wrote is listed with its status, the open Renovate Pull Request included                                                                                                                      |
 
 For every Pull Request the action list of the window equals the ids of its actions file, and every
 done or failed cell of the "Status by org branch" table is a status of the window. Code Quality is
@@ -141,14 +141,14 @@ ___
 
 ## Timings (local, `bin/run.js`)
 
-| Kind            | Calls | Median (s) | Worst (s) | Worst call               |
-|-----------------|-------|------------|-----------|--------------------------|
-| check           | 27    | 34.0       | 73.3      | `check-pr1`              |
-| deploy          | 22    | 37.3       | 111.4     | `deploy-integration-pr3` |
-| promote         | 25    | 15.5       | 40.2      | `promotion-integration-uat` |
-| list-candidates | 4     | 10.4       | 11.4      | `edge-octopus-promotion-side` |
-| backpromote plan| 16    | 12.6       | 19.0      | `bp-plan-diff`           |
-| backpromote run | 16    | 20.5       | 37.0      | `bp-run-refresh`         |
+| Kind             | Calls | Median (s) | Worst (s) | Worst call                    |
+|------------------|-------|------------|-----------|-------------------------------|
+| check            | 27    | 34.0       | 73.3      | `check-pr1`                   |
+| deploy           | 22    | 37.3       | 111.4     | `deploy-integration-pr3`      |
+| promote          | 25    | 15.5       | 40.2      | `promotion-integration-uat`   |
+| list-candidates  | 4     | 10.4       | 11.4      | `edge-octopus-promotion-side` |
+| backpromote plan | 16    | 12.6       | 19.0      | `bp-plan-diff`                |
+| backpromote run  | 16    | 20.5       | 37.0      | `bp-run-refresh`              |
 
 Section 4 took 31 minutes, section 6 13, 6quater 7, 6sexies 10, backpromote 14 (setup excluded),
 each CI section about 40 minutes on the image (no link step) and 75 with the link step.
