@@ -14,6 +14,23 @@ import { uxLog, execCommand } from "../utils/index.js";
 import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';
 
 
+// The two lines every generated page starts with. Whoever writes in a page sets the second one
+// to TRUE, and the next generation leaves that page alone.
+export const DOC_PROTECTION_HEADER_LINES = [
+  '<!-- This file is auto-generated. if you do not want it to be overwritten, set TRUE in the line below -->',
+  '<!-- DO_NOT_OVERWRITE_DOC=FALSE -->',
+];
+
+/** True when a generated page exists and its author marked it DO_NOT_OVERWRITE_DOC=TRUE */
+export function isDocProtected(file: string): boolean {
+  return fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes('DO_NOT_OVERWRITE_DOC=TRUE');
+}
+
+/** The page with the two protection lines on top, unless it already has them */
+export function withDocProtectionHeader(markdown: string): string {
+  return markdown.includes('DO_NOT_OVERWRITE_DOC=') ? markdown : [...DOC_PROTECTION_HEADER_LINES, '', markdown].join('\n');
+}
+
 /**
  * Builds a Set of all known translated values for docMdMenu* and docMdAll* i18n keys
  * across all supported locales. Used to detect and remove stale nav entries in mkdocs.yml

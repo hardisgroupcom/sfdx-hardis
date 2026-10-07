@@ -13,7 +13,7 @@ import { AiProvider } from "../aiProvider/index.js";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { generatePdfFileFromMarkdown } from "../utils/markdownUtils.js";
 import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
-import { includeFromFile } from "../docBuilder/docUtils.js";
+import { includeFromFile, withDocProtectionHeader } from "../docBuilder/docUtils.js";
 import { t } from './i18n.js';
 import { resolveMermaidTheme, type ResolvedMermaidTheme } from "./flowVisualiser/renderConfig.js";
 
@@ -21,6 +21,8 @@ interface FlowDocGenerationOptions {
   collapsedDetails: boolean;
   describeWithAi: boolean;
   flowDependencies: Record<string, string[]>;
+  // Pages of the project documentation start with the DO_NOT_OVERWRITE_DOC lines; a diff written to a temp file does not
+  withProtectionHeader?: boolean;
 }
 
 interface FlowDiffGenerationOptions {
@@ -111,6 +113,9 @@ export async function generateFlowMarkdownFile(
       flowMarkdownDoc += `\n\n## Dependencies\n\n${dependencies.map(dep => `- [${dep}](${dep}.md)`).join("\n")}\n`;
     }
 
+    if (options.withProtectionHeader) {
+      flowMarkdownDoc = withDocProtectionHeader(flowMarkdownDoc);
+    }
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
     uxLog("log", this, c.grey(t('writtenDocumentationTo', { flowName, outputFlowMdFile })));
     return true;

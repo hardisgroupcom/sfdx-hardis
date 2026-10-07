@@ -9,7 +9,7 @@ import sortArray from '../../../common/utils/sortArray.js';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, migrateGtagJsToMkDocsAnalytics, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
+import { buildAllKnownNavLabels, completeAttributesDescriptionWithAi, isDocProtected, withDocProtectionHeader,migrateGtagJsToMkDocsAnalytics, getSearchExcludeLines, indexPageListsPages, isUntouchedGeneratedHomePage, normalizeMkDocsNavTarget, promoteSectionIndexTitle, readMkDocsFile, removeDeadDocumentationLinks, removeEmptySectionIndexPages, replaceInFile, sortDescriptionsByName, sortMkDocsNavItems, stampGeneratedHomePage, writeMkDocsFile } from '../../../common/docBuilder/docUtils.js';
 import { getLargeXmlParser, parseXmlFile } from '../../../common/utils/xmlUtils.js';
 import { bool2emoji, createTempDir, execCommand, execSfdxJson, filterPackageXml, getCurrentGitBranch, sortCrossPlatform, uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS, getBannerMarkdownAndLink, getConfig } from '../../../config/index.js';
@@ -598,11 +598,13 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
             // Reference guide of ApexDocGen: project2markdown writes its own apex/index.md
             continue;
           }
+          const apexDocFile = path.join(apexDocFolder, path.basename(generatedApexDocFile));
+          if (isDocProtected(apexDocFile)) {
+            uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: apexDocFile })));
+            continue;
+          }
           const apexDocContent = await fs.readFile(path.join(tempDir, generatedApexDocFile), "utf8");
-          await fs.writeFile(
-            path.join(apexDocFolder, path.basename(generatedApexDocFile)),
-            DocBuilderApex.flattenApexDocLinks(apexDocContent)
-          );
+          await fs.writeFile(apexDocFile, DocBuilderApex.flattenApexDocLinks(apexDocContent));
         }
         uxLog("log", this, c.grey(t('generatedMarkdownForApexClassesIn', { apexDocFolder })));
       }
@@ -647,7 +649,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       const apexName = path.basename(apexFile, ".cls").replace(".trigger", "");
       const apexContent = await fs.readFile(apexFile, "utf8");
       const mdFile = path.join(this.outputMarkdownRoot, "apex", apexName + ".md");
-      if (fs.existsSync(mdFile)) {
+      if (isDocProtected(mdFile)) {
+        // Somebody wrote in this page: it stays as they left it
+        apexForMenu[apexName] = "apex/" + apexName + ".md";
+        workItems.push({ apexName, apexContent, mdFile, needsAi: false, apexMdContent: "", mermaidClassDiagram: "" });
+      } else if (fs.existsSync(mdFile)) {
         apexForMenu[apexName] = "apex/" + apexName + ".md";
         let apexMdContent = await fs.readFile(mdFile, "utf8");
         // Replace object links
@@ -663,7 +669,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
             insertion += `## ${t('docMdApexCode')}\n\n\`\`\`java\n${apexContent}\n\`\`\`\n\n`;
           }
           const firstHeading = apexMdContent.indexOf("## ");
-          apexMdContent = apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading);
+          apexMdContent = withDocProtectionHeader(apexMdContent.substring(0, firstHeading) + insertion + apexMdContent.substring(firstHeading));
           workItems.push({ apexName, apexContent, mdFile, needsAi: true, apexMdContent, mermaidClassDiagram });
         } else {
           workItems.push({ apexName, apexContent, mdFile, needsAi: false, apexMdContent: "", mermaidClassDiagram: "" });
@@ -673,7 +679,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
         apexForMenu[apexName] = "apex/" + apexName + ".md";
         await fs.ensureDir(path.join(this.outputMarkdownRoot, "apex"));
         const mermaidClassDiagram = DocBuilderApex.buildMermaidClassDiagram(apexName, this.apexDescriptions);
-        let apexMdContent = `# ${apexName}\n\n`;
+        let apexMdContent = withDocProtectionHeader(`# ${apexName}\n\n`);
         if (mermaidClassDiagram) {
           apexMdContent += `${mermaidClassDiagram}\n\n`;
         }
@@ -1808,7 +1814,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
         this.processBuildersForMenu[flowName] = "flows/" + flowName + ".md";
       }
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
-      if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
+      if (isDocProtected(outputFlowMdFile)) {
+        uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: outputFlowMdFile })));
+        flowWorkItems.push({ flowFile, flowName, flowXml, outputFlowMdFile, skip: true });
+      } else if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
         flowSkips.push(flowFile);
         flowWorkItems.push({ flowFile, flowName, flowXml, outputFlowMdFile, skip: true });
       } else {
@@ -1829,7 +1838,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
           return;
         }
         uxLog("log", this, c.grey(t('generatingMarkdownForFlow2', { item: item.flowFile })));
-        const genRes = await generateFlowMarkdownFile(item.flowName, item.flowXml, item.outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps });
+        const genRes = await generateFlowMarkdownFile(item.flowName, item.flowXml, item.outputFlowMdFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: flowDeps, withProtectionHeader: true });
         if (!genRes) {
           flowErrors.push(item.flowFile);
           counter++;
