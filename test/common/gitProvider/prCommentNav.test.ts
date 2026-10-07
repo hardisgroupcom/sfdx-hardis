@@ -105,6 +105,16 @@ describe('Pull Request comment kind detection', () => {
     expect(getPrCommentKind('<!-- sfdx-hardis message-key deployment-deploy_to_uat-42 -->')).to.equal('deployment');
   });
 
+  // GitHub Actions puts the job name in the key, and that name has spaces
+  it('recognizes the comments of a GitHub Actions job whose name has spaces', () => {
+    expect(
+      getPrCommentKind('<!-- sfdx-hardis message-key deployment-check-Simulate Deployment (sfdx-hardis)-1 -->'),
+    ).to.equal('validation');
+    expect(getPrCommentKind('<!-- sfdx-hardis message-key deployment-Process Deployment (sfdx-hardis)-1 -->')).to.equal(
+      'deployment',
+    );
+  });
+
   it('recognizes the deployment actions comment from its state marker', () => {
     expect(getPrCommentKind('<!-- sfdx-hardis deployment-actions-state -->\n## Deployment Actions')).to.equal('actions');
   });
