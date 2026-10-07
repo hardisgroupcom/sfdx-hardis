@@ -13,7 +13,7 @@ import { AiProvider } from "../aiProvider/index.js";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { generatePdfFileFromMarkdown } from "../utils/markdownUtils.js";
 import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
-import { includeFromFile } from "../docBuilder/docUtils.js";
+import { includeFromFile, isDocProtected, withDocProtectionHeader } from "../docBuilder/docUtils.js";
 import { t } from './i18n.js';
 import { resolveMermaidTheme, type ResolvedMermaidTheme } from "./flowVisualiser/renderConfig.js";
 
@@ -21,6 +21,9 @@ interface FlowDocGenerationOptions {
   collapsedDetails: boolean;
   describeWithAi: boolean;
   flowDependencies: Record<string, string[]>;
+  // A page of the project documentation: it starts with the DO_NOT_OVERWRITE_DOC lines, and is left alone when marked
+  // TRUE. A diff written to a temporary file is not one
+  withProtectionHeader?: boolean;
 }
 
 interface FlowDiffGenerationOptions {
@@ -81,6 +84,11 @@ export async function generateFlowMarkdownFile(
   outputFlowMdFile: string,
   options: FlowDocGenerationOptions = { collapsedDetails: true, describeWithAi: true, flowDependencies: {} },
 ): Promise<boolean> {
+  // Here rather than in each command: project2markdown and flow2markdown write the same pages
+  if (options.withProtectionHeader && isDocProtected(outputFlowMdFile)) {
+    uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: outputFlowMdFile })));
+    return true;
+  }
   try {
     const mermaidTheme = await getMermaidTheme();
     const flowDocGenResult = await parseFlow(flowXml, 'mermaid', { outputAsMarkdown: true, collapsedDetails: options.collapsedDetails, mermaidTheme });
@@ -111,6 +119,9 @@ export async function generateFlowMarkdownFile(
       flowMarkdownDoc += `\n\n## Dependencies\n\n${dependencies.map(dep => `- [${dep}](${dep}.md)`).join("\n")}\n`;
     }
 
+    if (options.withProtectionHeader) {
+      flowMarkdownDoc = withDocProtectionHeader(flowMarkdownDoc);
+    }
     await fs.writeFile(outputFlowMdFile, flowMarkdownDoc);
     uxLog("log", this, c.grey(t('writtenDocumentationTo', { flowName, outputFlowMdFile })));
     return true;
@@ -854,7 +865,7 @@ export async function generateHistoryDiffMarkdown(flowFile: string, debugMode: b
 
   // Add link to main flow doc 
   const mainFlowDoc = path.join("docs", "flows", path.basename(flowFile).replace(".flow-meta.xml", ".md"));
-  if (fs.existsSync(mainFlowDoc)) {
+  if (fs.existsSync(mainFlowDoc) && !isDocProtected(mainFlowDoc)) {
     const mainFlowDocContent = await fs.readFile(mainFlowDoc, "utf8");
     const mainFlowDocLink = `[(_View History_)](${path.basename(flowFile).replace(".flow-meta.xml", "-history.md")})`;
     if (mainFlowDocContent.includes("## Flow Diagram") && !mainFlowDocContent.includes(mainFlowDocLink)) {

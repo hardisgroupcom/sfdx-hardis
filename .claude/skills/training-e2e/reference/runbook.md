@@ -281,6 +281,26 @@ Traps that cost earlier runs time:
   learner's copy. Let `init` create the fork, the way a learner's does: it opens the Actions page
   and waits, and the banner is clicked over CDP (a button whose text starts with *I understand my
   workflows*). No beta override, no trap D1.
+- **The beta on the workstation is `echo y | sf plugins install sfdx-hardis@beta`** (2026-10-07):
+  without the `y` the install waits on "isn't signed by Salesforce" and leaves the old version. It
+  follows the `beta` tag; give the user back the release with `sf plugins install sfdx-hardis`.
+- **A deleted fork and a beta override, together** (2026-10-07): `gh repo fork`, click the Actions
+  banner over CDP, `reset-fork.sh`, then the `E2E ONLY` image commit on `main` and the three
+  `training/start-level-*`, and only then `init`. `init` cuts `integration` from the fork's
+  `training/start-level-1`, so the override reaches every job without touching a protected branch.
+- **`Check my work` reads the clone it runs in.** Run `node scripts/training.mjs check` from
+  `$RUN`; from `$COURSE` it reads the shared repository and says the fork has no `integration`.
+- **`simulate --yes` opens the Pull Request and does not merge it**: the merge question defaults to
+  no. Merge with `prflow.sh <pr> squash`, which is the lab's step "or merge it yourself".
+- **The Backpromote panel passes `--from-pull-request` to the run as well as to the plan.** Calling
+  `--auto --run-id <id>` without it is refused with "No backpromote of this sandbox found": that is
+  the harness, not the product.
+- **`action:create --sfdmu-project` takes the workspace name** (`HeliosCrewRefData`), the value
+  the dialog's dropdown shows, not its path.
+- **Setup > Deliverability over CDP**: `/lightning/setup/OrgEmailSettings/home`, a classic form in
+  an iframe whose access level `select` holds *All email* (*Tous les e-mails* on these French
+  orgs); match the option by label. On orgs of a previous walk it is already set, which the lab's
+  fourth line covers.
 - **Lab 3.8 needs an empty repository, and `gh` cannot delete the one of the last run** (no
   `delete_repo` scope). Create another one whose name still contains `monitoring`, and pass it:
   `MONREPO=<login>/sfdx-hardis-training-monitoring-run3 MONRUN=C:/git/training-monitoring-run3 node
