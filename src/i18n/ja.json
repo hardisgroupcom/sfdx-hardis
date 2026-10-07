@@ -501,6 +501,7 @@
   "caSignedConfigureForBranch": "ご自身の CA 署名証明書を使用して、branch {{branchName}} の CI/CD 認証を設定しています。",
   "caSignedManualEcaInstructions": "対象の Salesforce 組織で External Client App を手動で作成してください:\n1. 設定 > External Client App Manager > New External Client App\n2. 基本情報: 名前、API 名（例: sfdxhardis_<branch>）、連絡先メール\n3. API（OAuth 設定を有効化）:\n   - OAuth を有効化\n   - コールバック URL: http://localhost:1717/OauthRedirect\n   - Digital Signature を使用: CA 署名済みの server.crt をアップロード\n   - OAuth スコープ: api, web, refresh_token\n4. 保存後、ポリシーを編集:\n   - 許可されたユーザー: 'Admin approved users are pre-authorized'\n5. プロファイルを管理: CI ユーザーのプロファイル（例: System Administrator）を追加\n6. External Client App の詳細ページから Consumer Key をコピー",
   "caSignedSetCiVariables": "Git プロバイダーで以下の CI/CD 変数を設定してください",
+  "cacheFileUnreadableReset": "sfdx-hardis のキャッシュファイル {{file}} を読み込めませんでした ({{message}})。空のキャッシュにリセットしました。",
   "calculateForAllFlowStates": "すべてのフロー状態について計算する",
   "calculatedNoOverwriteFileInfo": "calculated-package-no-overwrite.xml には、対象組織に既に存在するためデプロイされない項目が一覧表示されます: {{file}}",
   "calculatingPackageXmlDiff": "[{{targetBranch}}] から [{{currentBranch}} - {{commitMessage}}] へのpackage.xmlの差分を計算中",

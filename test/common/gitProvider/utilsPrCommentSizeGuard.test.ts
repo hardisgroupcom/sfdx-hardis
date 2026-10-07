@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { enforceCommentLengthLimit, fitPrCommentSections, truncateCodeBlocks } from '../../../src/common/gitProvider/prCommentSizeGuard.js';
+import { enforceCommentLengthLimit, fitPrCommentSections, truncateCodeBlocks } from '../../../src/common/gitProvider/utilsPrCommentSizeGuard.js';
 import { buildFlowDiffCommentMessage } from '../../../src/common/gitProvider/index.js';
 import { cleanFlowDiffMarkdownForPrComment, getFlowStatusOnlyChange } from '../../../src/common/utils/mermaidUtils.js';
 

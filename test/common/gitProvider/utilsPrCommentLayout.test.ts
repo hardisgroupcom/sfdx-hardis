@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import type { PullRequestData } from '../../../src/common/gitProvider/index.js';
-import { buildDeploymentPrCommentSections, humanActionReason } from '../../../src/common/gitProvider/prCommentLayout.js';
-import { formatShortDate } from '../../../src/common/gitProvider/prCommentDates.js';
+import { buildDeploymentPrCommentSections, humanActionReason } from '../../../src/common/gitProvider/utilsPrCommentLayout.js';
+import { formatShortDate } from '../../../src/common/gitProvider/utilsPrCommentDates.js';
 import { parseManualActionCheckboxes } from '../../../src/common/utils/deploymentActionsStateUtils.js';
-import { fitPrCommentSections } from '../../../src/common/gitProvider/prCommentSizeGuard.js';
+import { fitPrCommentSections } from '../../../src/common/gitProvider/utilsPrCommentSizeGuard.js';
 
 function command(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -148,7 +148,7 @@ describe('Pull Request comment layout', () => {
     expect(deployed({ deploymentMode: 'full', usedQuickDeploy: true })).to.not.contain('| Quick Deploy |');
   });
 
-  it('names status-only Flows on one line', () => {
+  it('treats Flows as metadata like the others: no Flows row nor section', () => {
     const body = render(
       {
         status: 'valid',
@@ -159,12 +159,8 @@ describe('Pull Request comment layout', () => {
       },
       true
     );
-    // Folded under the details, not a row of the table of checks
-    expect(body).to.not.contain('| Flows |');
-    expect(body).to.contain('<summary>🔀 Flows (2)</summary>');
-    expect(body).to.contain('- `Invoice_Flow`: visual diff in a comment below');
-    expect(body).to.contain('- `Legal_Email`: status only, Active → Obsolete');
-    expect(body).to.not.contain('](#');
+    expect(body).to.not.contain('Flows');
+    expect(body).to.not.contain('Legal_Email');
   });
 
   it('says the metadata is in the org when only the coverage check failed after the deployment', () => {

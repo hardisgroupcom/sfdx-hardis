@@ -1110,7 +1110,7 @@ export function getReportedActionStatus(cmd: PrePostCommand): 'success' | 'faile
   return cmd.result?.statusCode as 'success' | 'failed' | 'manual' | 'skipped';
 }
 
-// The Pull Request comment layout (prCommentLayout.ts) renders the actions from these facts
+// The Pull Request comment layout (utilsPrCommentLayout.ts) renders the actions from these facts
 function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], orgBranch?: string) {
   setPullRequestData({ [property === 'commandsPreDeploy' ? 'preDeployActions' : 'postDeployActions']: { commands, orgBranch } });
 }

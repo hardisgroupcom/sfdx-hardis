@@ -501,6 +501,7 @@
   "caSignedConfigureForBranch": "Configuration de l'authentification CI/CD pour la branche {{branchName}} avec votre propre certificat signé par une autorité (CA).",
   "caSignedManualEcaInstructions": "Créez manuellement l'External Client App dans votre org Salesforce cible :\n1. Configuration > External Client App Manager > New External Client App\n2. Informations de base : Nom, API Name (par ex. sfdxhardis_<branch>), Email de contact\n3. API (Enable OAuth Settings) :\n   - Activer OAuth\n   - Callback URL : http://localhost:1717/OauthRedirect\n   - Use Digital Signature : téléversez votre server.crt signé par une autorité (CA)\n   - OAuth Scopes : api, web, refresh_token\n4. Enregistrez, puis Edit Policies :\n   - Permitted Users : 'Admin approved users are pre-authorized'\n5. Manage Profiles : ajoutez le Profil de l'utilisateur CI (par ex. System Administrator)\n6. Copiez la Consumer Key depuis la page de détail de l'External Client App",
   "caSignedSetCiVariables": "Définissez les variables CI/CD suivantes dans votre fournisseur Git",
+  "cacheFileUnreadableReset": "Le fichier de cache sfdx-hardis {{file}} n'a pas pu être lu ({{message}}) : il a été remis à un cache vide.",
   "calculateForAllFlowStates": "Calculer pour tous les états du Flux",
   "calculatedNoOverwriteFileInfo": "calculated-package-no-overwrite.xml liste les éléments qui NE seront PAS déployés, car ils existent déjà dans l'org cible : {{file}}",
   "calculatingPackageXmlDiff": "Calcul du diff package.xml de [{{targetBranch}}] vers [{{currentBranch}} - {{commitMessage}}]",

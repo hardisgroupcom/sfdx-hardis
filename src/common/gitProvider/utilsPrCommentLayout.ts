@@ -1,9 +1,9 @@
 import type { PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { buildManualActionCheckboxMarker } from '../utils/deploymentActionsStateUtils.js';
 import { getTicketCollectionIssues } from '../ticketProvider/ticketProviderRoot.js';
-import { formatShortDate } from './prCommentDates.js';
+import { formatShortDate } from './utilsPrCommentDates.js';
 import type { PrCommentActionsRun, PullRequestData } from './index.js';
-import { PrCommentSection, SHORTENED_CODE_BLOCK_LINES, SHORTENED_LIST_ENTRIES, truncateCodeBlocks, truncateList } from './prCommentSizeGuard.js';
+import { PrCommentSection, SHORTENED_CODE_BLOCK_LINES, SHORTENED_LIST_ENTRIES, truncateCodeBlocks, truncateList } from './utilsPrCommentSizeGuard.js';
 
 /**
  * Layout of the validation and deployment Pull Request comments.
@@ -318,26 +318,6 @@ function describeDeploymentMode(prData: Partial<PullRequestData>): string {
   return mode ? `${mode} deployment` : 'Deployed';
 }
 
-// The Flows of the Pull Request, folded: each changed one has a visual diff comment of its own, a
-// Flow whose only change is its status has none
-function buildFlowsSection(prData: Partial<PullRequestData>): PrCommentSection | null {
-  const changes = prData.flowChanges || [];
-  const truncated = prData.flowDiffMarkdown && (prData.flowDiffMarkdown as any).truncatedNb > 0 ? (prData.flowDiffMarkdown as any).truncatedNb : 0;
-  if (changes.length === 0 && truncated === 0) {
-    return null;
-  }
-  const lines = changes.map((change) =>
-    change.kind === 'diff'
-      ? `- \`${change.name}\`: visual diff in a comment below`
-      : `- \`${change.name}\`: status only, ${change.statusBefore} → ${change.statusAfter}`
-  );
-  if (truncated > 0) {
-    lines.push(`- _… and ${truncated} more Flows, not shown_`);
-  }
-  const count = changes.length + truncated;
-  return { id: 'flows', markdown: folded(`🔀 Flows (${count})`, lines.join('\n')), dropLabel: 'the list of the Flows' };
-}
-
 function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: PhasedCommand[], options: PrCommentLayoutOptions): PrCommentSection[] {
   const sections: PrCommentSection[] = [];
   // Deployment errors and Apex test failures, with their tips
@@ -481,10 +461,6 @@ function buildDetailSections(prData: Partial<PullRequestData>, commands: PhasedC
     const fold = (entries: string[]) => folded(`🧪 Apex test classes (${testClasses.length})`, entries.join('\n'));
     const entries = testClasses.map((testClass) => `- ${testClass}`);
     sections.push({ id: 'test-classes', markdown: fold(entries), shortMarkdown: fold(truncateList(entries, SHORTENED_LIST_ENTRIES)), dropLabel: 'the Apex test classes' });
-  }
-  const flows = buildFlowsSection(prData);
-  if (flows) {
-    sections.push(flows);
   }
   const references = buildReferencesSection(prData, options);
   if (references) {

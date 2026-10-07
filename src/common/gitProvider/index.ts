@@ -9,8 +9,8 @@ import { debuglog } from "util";
 import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { cleanFlowDiffMarkdownForPrComment, removeMermaidLinks } from "../utils/mermaidUtils.js";
-import { buildDeploymentPrCommentSections } from "./prCommentLayout.js";
-import { fitPrCommentSections, PR_COMMENT_FRAME_RESERVE } from "./prCommentSizeGuard.js";
+import { buildDeploymentPrCommentSections } from "./utilsPrCommentLayout.js";
+import { fitPrCommentSections, PR_COMMENT_FRAME_RESERVE } from "./utilsPrCommentSizeGuard.js";
 import { getPullRequestData } from "../utils/gitUtils.js";
 import { t } from '../utils/i18n.js';
 import { SfError } from "@salesforce/core";
@@ -1065,7 +1065,7 @@ export declare type PullRequestData = {
   checkTestLevel?: string;
   // Fix Pull Request created by a coding agent after a failed deployment
   autoFixPullRequestUrl?: string;
-  // Facts read by the layout of the validation and deployment comments (prCommentLayout.ts)
+  // Facts read by the layout of the validation and deployment comments (utilsPrCommentLayout.ts)
   deploymentMetrics?: PrCommentDeploymentMetrics;
   coverage?: { value: number; target: number; status: string };
   testClasses?: string[];

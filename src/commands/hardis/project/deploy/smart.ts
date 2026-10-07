@@ -180,7 +180,7 @@ The validation and deployment Pull Request comments all read the same way:
 - A **verdict** naming the target org: *Ready to merge into integration*, *Cannot merge into integration: 2 deployment errors*, *Deployed to integration, but an action failed after the deployment*... A green validation also says how to merge: **Squash and merge** for a User Story branch, a **merge commit** (never squash) for a major, promotion or retrofit branch.
 - A short table of **checks**: Metadata (what changed, and for a deployment how: Full or Delta deployment, Full or Delta Quick Deploy), Apex tests (coverage, failures, or why none ran), Deployment actions (counts per status), and in a validation whether Quick Deploy can reuse it.
 - What **needs you**: deployment errors with their tips, failed actions with the end of their output, and the manual actions to perform, as checkboxes.
-- The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the Flows, the tickets and the carried Pull Requests.
+- The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the tickets and the carried Pull Requests.
 
 ![Validation Pull Request comment: verdict, checks and the manual action to do before the deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-validation.png)
 
@@ -192,7 +192,7 @@ Each changed Flow gets a comment of its own, with the changed properties first, 
 
 ![Visual git diff comment of a Flow](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-flow-diff.png)
 
-Each comment stays under 50,000 characters (30,000 on Bitbucket). Above that, long outputs and lists are shortened, then the biggest folded sections are left out, and the comment says so. A Flow whose only change is its status (activated or deactivated) gets no visual diff comment: the folded **Flows** section of the validation comment names it.
+Each comment stays under 50,000 characters (30,000 on Bitbucket). Above that, long outputs and lists are shortened, then the biggest folded sections are left out, and the comment says so. A Flow whose only change is its status (activated or deactivated) gets no visual diff comment.
 
 ### Deployment components report
 

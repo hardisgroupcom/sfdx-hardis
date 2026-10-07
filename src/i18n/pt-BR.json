@@ -493,6 +493,7 @@
   "bypassImplementationReport": "Relatório de implementação de bypass:",
   "bypassSourceChoiceLocal": "Usar elementos locais do projeto",
   "bypassSourceChoiceOrg": "Recuperar da org (recomendado)",
+  "cacheFileUnreadableReset": "Não foi possível ler o arquivo de cache do sfdx-hardis {{file}} ({{message}}): ele foi redefinido para um cache vazio.",
   "caSignedConfigurationComplete": "Configuração do certificado assinado por CA concluída para a branch {{branchName}}.",
   "caSignedConfigureForBranch": "Configurando a autenticação CI/CD para a branch {{branchName}} com seu próprio certificado assinado por CA.",
   "caSignedManualEcaInstructions": "Crie o External Client App manualmente na sua org Salesforce de destino:\n1. Setup > External Client App Manager > New External Client App\n2. Basic Information: Nome, API Name (ex.: sfdxhardis_<branch>), E-mail de Contato\n3. API (Enable OAuth Settings):\n   - Habilite OAuth\n   - Callback URL: http://localhost:1717/OauthRedirect\n   - Use Digital Signature: faça upload do seu server.crt assinado por CA\n   - OAuth Scopes: api, web, refresh_token\n4. Salve, depois Edit Policies:\n   - Permitted Users: 'Admin approved users are pre-authorized'\n5. Manage Profiles: adicione o profile do usuário de CI (ex.: System Administrator)\n6. Copie a Consumer Key da página de detalhes do External Client App",

@@ -5,7 +5,7 @@ import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
 import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
-import { enforceCommentLengthLimit } from "./prCommentSizeGuard.js";
+import { enforceCommentLengthLimit } from "./utilsPrCommentSizeGuard.js";
 
 // Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
 // a PR is always updated when it is merged, so its update date cannot be older than the commits

@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import type { ActionResult, PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildActionOutput } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildDeploymentScopeSubjects, getReportedActionStatus, isDeploymentActionsDisabled } from '../../../src/common/utils/prePostCommandUtils.js';
-import { buildDeploymentPrCommentSections } from '../../../src/common/gitProvider/prCommentLayout.js';
+import { buildDeploymentPrCommentSections } from '../../../src/common/gitProvider/utilsPrCommentLayout.js';
 
 function action(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -84,7 +84,7 @@ describe('buildDeploymentScopeSubjects()', () => {
   });
 });
 
-// The deployment actions as the Pull Request comment layout shows them (prCommentLayout.ts)
+// The deployment actions as the Pull Request comment layout shows them (utilsPrCommentLayout.ts)
 function renderActions(commands: PrePostCommand[], checkOnly = false): string {
   return buildDeploymentPrCommentSections(
     { status: 'valid', postDeployActions: { orgBranch: 'integration', commands } },
