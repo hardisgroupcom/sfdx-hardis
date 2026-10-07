@@ -9,10 +9,10 @@ describe('findJsonInString()', () => {
   // The Salesforce CLI can write warnings with braces on stderr, which the deployment error handler
   // appends to stdout: the result must still be read, or the Pull Request comment shows no error
   it('reads the JSON result followed by a warning holding braces', () => {
-    const stdout = JSON.stringify({ status: 1, result: { details: { componentFailures: [{ problem: 'Variable does not exist: taxx {x}' }] } } }, null, 2);
+    const stdout = JSON.stringify({ status: 1, result: { details: { componentFailures: [{ problem: 'Variable does not exist: taxRate {x}' }] } } }, null, 2);
     const stderr = "(node:25348) Error Plugin: @salesforce/cli: could not find package.json with {\n  name: '@oclif/plugin-command-snapshot',\n  type: 'dev'\n}\nmodule: @oclif/core@5.0.0";
     const json = findJsonInString(stdout + stderr);
-    expect(json?.result?.details?.componentFailures?.[0]?.problem).to.equal('Variable does not exist: taxx {x}');
+    expect(json?.result?.details?.componentFailures?.[0]?.problem).to.equal('Variable does not exist: taxRate {x}');
   });
 
   it('returns null when there is no JSON', () => {

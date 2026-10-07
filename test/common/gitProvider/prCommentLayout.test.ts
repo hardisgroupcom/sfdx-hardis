@@ -86,7 +86,7 @@ describe('Pull Request comment layout', () => {
         status: 'invalid',
         deployStatus: 'invalid',
         errorCount: 2,
-        deployErrorsMarkdownBody: '## Deployment errors\n\n🔨 ApexClass Foo: Variable does not exist: Industryy',
+        deployErrorsMarkdownBody: '## Deployment errors\n\n🔨 ApexClass Foo: Variable does not exist: IndustryCode',
       },
       true
     );
