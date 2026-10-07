@@ -192,7 +192,8 @@ export function renderBackpromotesComment(state: BackpromotesCommentState): stri
   for (const sandbox of sandboxes) {
     const rows = state.actionRows
       .filter((row) => row.sandboxName === sandbox.sandboxName && row.orgId === sandbox.orgId)
-      .sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || a.phase.localeCompare(b.phase) || a.label.localeCompare(b.label));
+      // Failures first, then before the deployment ahead of after it, in the order the actions run
+      .sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || (a.phase === b.phase ? 0 : a.phase === 'pre' ? -1 : 1) || a.date.localeCompare(b.date));
     const open = rows.filter((row) => row.status !== 'success');
     const done = rows.filter((row) => row.status === 'success');
     const actionLine = (row: BackpromoteActionRow) =>
