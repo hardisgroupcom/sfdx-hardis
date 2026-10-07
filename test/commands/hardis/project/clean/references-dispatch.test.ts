@@ -4,6 +4,7 @@ import * as path from 'path';
 import fs from '../../../../../src/common/utils/fsUtils.js';
 import CleanReferences from '../../../../../src/commands/hardis/project/clean/references.js';
 import LintAccess from '../../../../../src/commands/hardis/lint/access.js';
+import CleanEmptyItems from '../../../../../src/commands/hardis/project/clean/emptyitems.js';
 import CleanFlowPositions from '../../../../../src/commands/hardis/project/clean/flowpositions.js';
 import CleanListViews from '../../../../../src/commands/hardis/project/clean/listviews.js';
 import CleanMinimizeProfiles from '../../../../../src/commands/hardis/project/clean/minimizeprofiles.js';
@@ -108,6 +109,7 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
     const byValue = new Map(cleaningTypes.map((cleaningType: any) => [cleaningType.value, cleaningType]));
     const expectedClasses: Record<string, any> = {
       checkPermissions: LintAccess,
+      emptyItems: CleanEmptyItems,
       flowPositions: CleanFlowPositions,
       sensitiveMetadatas: CleanSensitiveMetadatas,
       listViewsMine: CleanListViews,
@@ -163,5 +165,38 @@ describe('hardis:project:clean:references in-process cleaning dispatch', () => {
     await CleanReferences.run(['--type', 'systemDebug', '--agent']);
     const apexContent = await fs.readFile(apexPath(), 'utf8');
     expect(apexContent).to.include("// System.debug('hello');");
+  });
+
+  it('passes --delta-from down to the empty items cleaning, which deletes a new empty object and its package.xml member', async () => {
+    const objectDir = path.join(tmpDir, 'force-app', 'main', 'default', 'objects', 'Acme__c');
+    await fs.ensureDir(path.join(objectDir, 'fields'));
+    const objectFile = path.join(objectDir, 'Acme__c.object-meta.xml');
+    const fieldFile = path.join(objectDir, 'fields', 'Flag__c.field-meta.xml');
+    await fs.writeFile(
+      objectFile,
+      '<?xml version="1.0" encoding="UTF-8"?>\n<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"></CustomObject>\n'
+    );
+    await fs.writeFile(
+      fieldFile,
+      '<?xml version="1.0" encoding="UTF-8"?>\n<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Flag__c</fullName></CustomField>\n'
+    );
+    await fs.ensureDir(path.join(tmpDir, 'manifest'));
+    await fs.writeFile(
+      path.join(tmpDir, 'manifest', 'package.xml'),
+      [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+        '<types><members>Acme__c</members><members>Other__c</members><name>CustomObject</name></types>',
+        '<version>65.0</version>',
+        '</Package>',
+      ].join('\n')
+    );
+    // The throwaway project is not in HEAD, so the object file does not exist at the delta start
+    await CleanReferences.run(['--type', 'emptyItems', '--delta-from', 'HEAD', '--agent']);
+    expect(fs.existsSync(objectFile), 'empty object file').to.be.false;
+    expect(fs.existsSync(fieldFile), 'field of the object').to.be.true;
+    const packageXml = await fs.readFile(path.join(tmpDir, 'manifest', 'package.xml'), 'utf8');
+    expect(packageXml).to.not.include('<members>Acme__c</members>');
+    expect(packageXml).to.include('<members>Other__c</members>');
   });
 });

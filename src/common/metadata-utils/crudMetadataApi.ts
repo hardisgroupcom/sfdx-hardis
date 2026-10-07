@@ -30,6 +30,8 @@ export type CrudComponentResult = {
   created?: boolean;
   filePath?: string;
   error?: string;
+  // Entries dropped by --active-only (permissions that grant nothing), only set when > 0.
+  inactiveEntriesRemoved?: number;
 };
 
 export type CrudMetadataOutcome = {
@@ -140,6 +142,39 @@ export function partitionCrudCompatibility<T extends { type: { name: string }; f
   return { supported, skipped };
 }
 
+// Types whose entries are permissions: --active-only drops the ones that grant nothing.
+export const ACTIVE_ONLY_TYPES = ['Profile', 'PermissionSet', 'MutingPermissionSet'];
+
+// Drop the entries of a permission metadata read result whose boolean fields are all false
+// (field access with no read and no edit, class access disabled, app not visible and not default...).
+// Entries without any boolean field are always kept: tab visibilities (Hidden included), layout
+// assignments, login IP ranges and login hours carry a meaning even without a "true" in them.
+// readMetadata may return booleans or "true"/"false" strings, both are handled.
+export function removeInactiveEntries(
+  typeName: string,
+  result: Record<string, any>
+): { result: Record<string, any>; removedCount: number } {
+  if (!ACTIVE_ONLY_TYPES.includes(typeName)) {
+    return { result, removedCount: 0 };
+  }
+  let removedCount = 0;
+  const filtered: Record<string, any> = {};
+  for (const [key, value] of Object.entries(result)) {
+    const isEntryList = Array.isArray(value) || isPlainObject(value);
+    if (!isEntryList) {
+      filtered[key] = value;
+      continue;
+    }
+    const entries = toArray(value);
+    const kept = entries.filter((entry) => !isInactiveEntry(entry));
+    removedCount += entries.length - kept.length;
+    if (kept.length > 0) {
+      filtered[key] = Array.isArray(value) ? kept : kept[0];
+    }
+  }
+  return { result: filtered, removedCount };
+}
+
 // Partition the component set and turn the incompatible components into `skipped` outcome results,
 // while initializing the empty `successes`/`failures` accumulators shared by read and upsert.
 function initCrudOutcome(
@@ -182,6 +217,21 @@ function cleanReadResult(result: Record<string, any>): Record<string, any> {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { fullName, ...rest } = result;
   return rest;
+}
+
+// An entry is inactive when it has at least one boolean field and every boolean field is false.
+function isInactiveEntry(entry: any): boolean {
+  if (!isPlainObject(entry)) {
+    return false;
+  }
+  const booleanValues = Object.values(entry).filter(
+    (v) => v === true || v === false || v === 'true' || v === 'false'
+  );
+  return booleanValues.length > 0 && booleanValues.every((v) => v === false || v === 'false');
+}
+
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function toArray<T>(value: T | T[] | null | undefined): T[] {
@@ -246,6 +296,8 @@ export interface CrudReadOptions {
   chunkSizeOverride?: number | null;
   commandThis: any;
   debug?: boolean;
+  // Drop the permission entries that grant nothing (see removeInactiveEntries)
+  activeOnly?: boolean;
 }
 
 interface MetadataFileSpec {
@@ -254,7 +306,7 @@ interface MetadataFileSpec {
 }
 
 export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudMetadataOutcome> {
-  const { conn, componentSet, outputDir, chunkSizeOverride, commandThis, debug } = options;
+  const { conn, componentSet, outputDir, chunkSizeOverride, commandThis, debug, activeOnly } = options;
   const registry = new RegistryAccess();
 
   // Set aside types the CRUD Metadata API cannot read (Apex, LWC, StaticResource, ...).
@@ -294,8 +346,16 @@ export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudM
           failures.push({ type: typeName, fullName: cmp.fullName, status: 'error', error: t('crudComponentNotFoundInOrg') });
           continue;
         }
-        accumulateMetadataFile(fileSpecs, registry, typeName, cmp.fullName, res);
-        successes.push({ type: typeName, fullName: cmp.fullName, status: 'success' });
+        const { result: readResult, removedCount } = activeOnly
+          ? removeInactiveEntries(typeName, res)
+          : { result: res, removedCount: 0 };
+        accumulateMetadataFile(fileSpecs, registry, typeName, cmp.fullName, readResult);
+        successes.push({
+          type: typeName,
+          fullName: cmp.fullName,
+          status: 'success',
+          ...(removedCount > 0 ? { inactiveEntriesRemoved: removedCount } : {}),
+        });
       }
     }
   }
