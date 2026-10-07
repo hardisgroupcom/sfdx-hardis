@@ -145,14 +145,33 @@ export function partitionCrudCompatibility<T extends { type: { name: string }; f
 // Types whose entries are permissions: --active-only drops the ones that grant nothing.
 export const ACTIVE_ONLY_TYPES = ['Profile', 'PermissionSet', 'MutingPermissionSet'];
 
+// Where a Profile (tabVisibilities) and a Permission Set (tabSettings) keep their tab settings
+const TAB_SETTING_KEYS = ['tabVisibilities', 'tabSettings'];
+
+// Names of the tabs that exist in the org (standard-Account, MyObject__c...), or null when the org
+// can not tell: the tab settings are then all kept.
+export async function listValidTabNames(conn: Connection): Promise<Set<string> | null> {
+  try {
+    const queryResult = await conn.query<{ Name: string }>('SELECT Name FROM TabDefinition');
+    const names = (queryResult.records || []).map((record) => record.Name).filter(Boolean);
+    return names.length > 0 ? new Set(names) : null;
+  } catch {
+    return null;
+  }
+}
+
 // Drop the entries of a permission metadata read result whose boolean fields are all false
 // (field access with no read and no edit, class access disabled, app not visible and not default...).
 // Entries without any boolean field are always kept: tab visibilities (Hidden included), layout
 // assignments, login IP ranges and login hours carry a meaning even without a "true" in them.
 // readMetadata may return booleans or "true"/"false" strings, both are handled.
+// validTabNames, when given, also drops the tab settings of tabs that do not exist: readMetadata returns
+// one for every standard object, tab or not, and the deployment refuses those
+// ("You can't edit tab settings for X, as it's not a valid tab").
 export function removeInactiveEntries(
   typeName: string,
-  result: Record<string, any>
+  result: Record<string, any>,
+  validTabNames: Set<string> | null = null
 ): { result: Record<string, any>; removedCount: number } {
   if (!ACTIVE_ONLY_TYPES.includes(typeName)) {
     return { result, removedCount: 0 };
@@ -160,6 +179,15 @@ export function removeInactiveEntries(
   let removedCount = 0;
   const filtered: Record<string, any> = {};
   for (const [key, value] of Object.entries(result)) {
+    if (validTabNames !== null && TAB_SETTING_KEYS.includes(key)) {
+      const tabEntries = toArray(value);
+      const keptTabs = tabEntries.filter((entry: any) => validTabNames.has(entry?.tab));
+      removedCount += tabEntries.length - keptTabs.length;
+      if (keptTabs.length > 0) {
+        filtered[key] = keptTabs;
+      }
+      continue;
+    }
     const isEntryList = Array.isArray(value) || isPlainObject(value);
     if (!isEntryList) {
       filtered[key] = value;
@@ -308,6 +336,8 @@ interface MetadataFileSpec {
 export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudMetadataOutcome> {
   const { conn, componentSet, outputDir, chunkSizeOverride, commandThis, debug, activeOnly } = options;
   const registry = new RegistryAccess();
+  // Read once, and only when a type that carries tab settings is read with activeOnly
+  let validTabNames: Set<string> | null | undefined;
 
   // Set aside types the CRUD Metadata API cannot read (Apex, LWC, StaticResource, ...).
   const { supported, successes, failures, skippedResults } = initCrudOutcome(componentSet, registry);
@@ -346,8 +376,14 @@ export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudM
           failures.push({ type: typeName, fullName: cmp.fullName, status: 'error', error: t('crudComponentNotFoundInOrg') });
           continue;
         }
+        if (activeOnly && validTabNames === undefined && ACTIVE_ONLY_TYPES.includes(typeName)) {
+          validTabNames = await listValidTabNames(conn);
+          if (validTabNames === null) {
+            uxLog('warning', commandThis, c.yellow(t('crudActiveOnlyTabsNotChecked')));
+          }
+        }
         const { result: readResult, removedCount } = activeOnly
-          ? removeInactiveEntries(typeName, res)
+          ? removeInactiveEntries(typeName, res, validTabNames ?? null)
           : { result: res, removedCount: 0 };
         accumulateMetadataFile(fileSpecs, registry, typeName, cmp.fullName, readResult);
         successes.push({

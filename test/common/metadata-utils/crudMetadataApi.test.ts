@@ -385,3 +385,38 @@ describe('removeInactiveEntries (--active-only)', () => {
     expect(result).to.equal(layout);
   });
 });
+
+describe('removeInactiveEntries with the tabs of the org', () => {
+  const profile = {
+    tabVisibilities: [
+      { tab: 'standard-Account', visibility: 'DefaultOn' },
+      { tab: 'standard-AIPredictionScore', visibility: 'DefaultOn' },
+      { tab: 'Acme__c', visibility: 'Hidden' },
+    ],
+    layoutAssignments: [{ layout: 'Account-Account Layout' }],
+  };
+  const validTabNames = new Set(['standard-Account', 'Acme__c']);
+
+  it('drops the tab settings of tabs that do not exist, and keeps Hidden ones that do', () => {
+    const { result, removedCount } = removeInactiveEntries('Profile', profile, validTabNames);
+    expect(removedCount).to.equal(1);
+    expect(result.tabVisibilities).to.deep.equal([
+      { tab: 'standard-Account', visibility: 'DefaultOn' },
+      { tab: 'Acme__c', visibility: 'Hidden' },
+    ]);
+    expect(result.layoutAssignments).to.deep.equal(profile.layoutAssignments);
+  });
+
+  it('keeps every tab setting when the tabs of the org are not known', () => {
+    const { result, removedCount } = removeInactiveEntries('Profile', profile, null);
+    expect(removedCount).to.equal(0);
+    expect(result.tabVisibilities).to.have.length(3);
+  });
+
+  it('applies to the tabSettings of a Permission Set', () => {
+    const permissionSet = { tabSettings: [{ tab: 'standard-AIPredictionScore', visibility: 'Visible' }] };
+    const { result, removedCount } = removeInactiveEntries('PermissionSet', permissionSet, validTabNames);
+    expect(removedCount).to.equal(1);
+    expect(result).to.not.have.property('tabSettings');
+  });
+});
