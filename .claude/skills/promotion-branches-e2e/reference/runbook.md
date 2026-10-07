@@ -831,8 +831,7 @@ Traps:
 - **`IA_RUN=<n>` replays the section on the same repository** with story branches of their own.
 - The section scripts share their assertion helpers (`record`, `assert_log`, `job`, `cli`,
   `status_check`, `open_story`) through `scripts/section-lib.sh`.
-- **Not run yet**: written on 2026-10-04 with sfdx-hardis#2277. Its first run is pending: fix the
-  runbook or the product with what it finds, as for every other section.
+- Ran green on GitHub and GitLab on 2026-10-04 (twice on GitHub) and again on 2026-10-07.
 
 ## 7. Traps met while writing this
 

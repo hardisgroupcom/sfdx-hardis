@@ -164,6 +164,10 @@ State them again in the report unless you close them:
 - Section 6sexies (identical actions, sfdx-hardis#2271) ran on GitHub and GitLab on 2026-10-04,
   twice on GitHub (`IA_RUN=2`), and W9 ran it through real GitHub Actions. Identical copies of custom
   function actions with outputs, and of actions with a `customUsername`, are unit tested only.
+- The single Pull Request window (section 4ter, since 2026-10-07) is checked through the calls the
+  extension makes, not rendered. Its Code Quality tab is never exercised: nothing in the run posts a
+  MegaLinter comment. The window of a promotion or major-to-major Pull Request is not compared.
+- Azure DevOps has not run since 2026-09-09: the PAT of `.env` answers 401 (2026-10-04 and 2026-10-07).
 - `scripts/promotion-provider.sh` covers GitHub and GitLab only: Azure DevOps and Bitbucket still
   run sections 4 and 6 by hand with their own libraries.
 
