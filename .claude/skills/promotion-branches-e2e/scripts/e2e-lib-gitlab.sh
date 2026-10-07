@@ -91,6 +91,7 @@ gl_check() {
     CI_MERGE_REQUEST_IID="$mr" \
     CI_COMMIT_REF_NAME="refs/merge-requests/$mr/merge" \
     CI_MERGE_REQUEST_TARGET_BRANCH_NAME="$target" \
+    CI_JOB_NAME=check_deploy_to_target_branch_org \
     FORCE_TARGET_BRANCH="$target" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
@@ -101,7 +102,9 @@ gl_check() {
   return $code
 }
 
-# Deployment job: GitLab CI checks out the target branch at the merge commit
+# Deployment job: GitLab CI checks out the target branch at the merge commit. CI_JOB_NAME, here and
+# in gl_check, is the job name of the sfdx-hardis .gitlab-ci.yml template: it goes into the message
+# key of the comments, which the DevOps Pipeline reads back (#2307)
 # Usage: gl_deploy <target branch> <log label>
 gl_deploy() {
   local target="$1" label="$2" code
@@ -111,6 +114,7 @@ gl_deploy() {
   start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME="$target" \
+    CI_JOB_NAME=deploy_to_org \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1

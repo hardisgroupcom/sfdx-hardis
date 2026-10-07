@@ -939,6 +939,15 @@ Traps:
   and read "selecting either takes both" as correct. It is not: promoting one story must carry that
   story only. A run that still sees the grouped row is looking at a regression, not at the runbook.
 
+- **The simulators must name their jobs like the templates do.** The message key of a validation or
+  deployment comment carries the CI job name, and the DevOps Pipeline reads the kind of a comment back
+  from that key. The simulators used to run with no job name (`job` in the key), while GitHub Actions
+  writes `Simulate Deployment (sfdx-hardis)`, spaces included: the key reader stopped at the first
+  space, every real GitHub comment was invisible to the Pull Request window and the navigation line
+  between comments was empty, and only the real CI section could show it (sfdx-hardis #2307,
+  2026-10-07). `e2e_check` / `e2e_deploy` now set `GITHUB_WORKFLOW`, `gl_check` / `gl_deploy`
+  `CI_JOB_NAME`, to the names of the templates. Keep them in step with `defaults/ci`.
+
 ## 7bis. Checking the "one place in the diagram" rule
 
 Two scripts look at the pipeline, and they answer different questions. `check-pipeline.cjs`
