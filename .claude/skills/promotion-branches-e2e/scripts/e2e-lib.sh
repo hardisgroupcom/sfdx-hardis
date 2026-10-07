@@ -62,6 +62,7 @@ e2e_check() {
   e2e_ci_env \
     GITHUB_REF_NAME="$pr/merge" \
     GITHUB_REF="refs/pull/$pr/merge" \
+    GITHUB_WORKFLOW="Simulate Deployment (sfdx-hardis)" \
     FORCE_TARGET_BRANCH="$target" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
@@ -72,7 +73,9 @@ e2e_check() {
   return $code
 }
 
-# Deployment job: GitHub Actions checks out the target branch at the merge commit
+# Deployment job: GitHub Actions checks out the target branch at the merge commit. GITHUB_WORKFLOW, here
+# and in e2e_check, is the name of the sfdx-hardis workflow templates, spaces included: it goes into the
+# message key of the comments, and a key with spaces once hid them all from the DevOps Pipeline (#2307)
 # Usage: e2e_deploy <target branch> <log label>
 e2e_deploy() {
   local target="$1" label="$2" code
@@ -83,6 +86,7 @@ e2e_deploy() {
   e2e_ci_env \
     GITHUB_REF_NAME="$target" \
     GITHUB_REF="refs/heads/$target" \
+    GITHUB_WORKFLOW="Process Deployment (sfdx-hardis)" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1

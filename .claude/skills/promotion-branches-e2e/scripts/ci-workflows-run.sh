@@ -5,6 +5,11 @@
 #
 #   export ORG REPO WORK LOGS DEV API          # REPO, WORK and LOGS NEW, not the ones of section 4
 #   export SFDX_HARDIS_BRANCH=<branch>         # pushed to hardisgroupcom/sfdx-hardis; default: current
+#   export SFDX_HARDIS_IMAGE=ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta   # optional, see below
+#   export SFDX_HARDIS_VERSION=<version>       # with SFDX_HARDIS_BRANCH=-: the version W0 expects
+#
+# SFDX_HARDIS_BRANCH=- with SFDX_HARDIS_IMAGE: no link step, the jobs run the release of that image
+# (a published beta for instance), and W0 asserts the version it prints.
 #   bash ci-workflows-run.sh
 #
 #   W0  the workflows run the linked branch, not the image release
@@ -188,7 +193,11 @@ story_actions feature/E2E-501-ci-gate "$C1" recovery >/dev/null 2>&1
 printf 'export C1="%s"\n' "$C1" >"$LOGS/ci-vars.sh"
 step "C1=#$C1"
 wait_workflow check-deploy.yml "$(head_sha feature/E2E-501-ci-gate)" ci-check-c1
-assert_log W0 ci-check-c1 - "the job runs sfdx-hardis linked from $SFDX_HARDIS_BRANCH" "sf plugins link /tmp/sfdx-hardis" "sfdx-hardis .*\(link\)"
+if [ "$SFDX_HARDIS_BRANCH" = "-" ]; then
+  assert_log W0 ci-check-c1 - "the job runs sfdx-hardis ${SFDX_HARDIS_VERSION:-?} of ${SFDX_HARDIS_IMAGE:-the default image}" "sfdx-hardis .{0,12}${SFDX_HARDIS_VERSION:-NO_VERSION_GIVEN}" "!\(link\)"
+else
+  assert_log W0 ci-check-c1 - "the job runs sfdx-hardis linked from $SFDX_HARDIS_BRANCH" "sf plugins link /tmp/sfdx-hardis" "sfdx-hardis .*\(link\)"
+fi
 assert_log W1 ci-check-c1 1 "the validation stops on the pending pre-deployment manual action" \
   "1 pre-deployment manual action\(s\) not marked as performed in integration" "E2E pre-deploy manual of PR $C1" "!Deployment mode:"
 pr_comments "$C1" ci-comments-c1-gate
