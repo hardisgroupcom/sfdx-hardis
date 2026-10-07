@@ -170,7 +170,8 @@ describe('deploymentComponentsReport', () => {
     expect(markdown.indexOf('| Type |')).to.be.lessThan(markdown.indexOf('</details>'));
     expect(markdown).to.contain('| EmailTemplate | 1 |  |');
     expect(markdown).to.contain('| ListView | 2 | 1 |');
-    expect(markdown).to.contain('/salesforce-devops-config-overwrite/');
+    expect(markdown).to.contain('package-no-overwrite.xml` ([view doc](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/)). The version in the org is kept');
+    expect(markdown).to.not.contain('How package-no-overwrite.xml works');
   });
 
   it('only shows the not overwritten components after a Quick Deploy, which names no component', async () => {

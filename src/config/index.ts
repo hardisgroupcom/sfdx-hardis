@@ -66,10 +66,7 @@ export type PrCommentBannerKey =
   | 'deployment-failure'
   | 'actions-completed'
   | 'actions-pending'
-  | 'actions-error'
-  | 'backpromotes-completed'
-  | 'backpromotes-pending'
-  | 'backpromotes-error';
+  | 'actions-error';
 
 // Validation and deployment comments are only posted once completed, so they carry no pending
 // banner: their only statuses are success and failure. Only the deployment actions comment has a
@@ -82,9 +79,6 @@ const PR_COMMENT_BANNERS: Record<PrCommentBannerKey, { file: string; altTextKey:
   'actions-completed': { file: 'pr-banner-actions-completed.png', altTextKey: 'prBannerActionsCompleted' },
   'actions-pending': { file: 'pr-banner-actions-pending.png', altTextKey: 'prBannerActionsPending' },
   'actions-error': { file: 'pr-banner-actions-error.png', altTextKey: 'prBannerActionsError' },
-  'backpromotes-completed': { file: 'pr-banner-backpromotes-completed.png', altTextKey: 'prBannerBackpromotesCompleted' },
-  'backpromotes-pending': { file: 'pr-banner-backpromotes-pending.png', altTextKey: 'prBannerBackpromotesPending' },
-  'backpromotes-error': { file: 'pr-banner-backpromotes-error.png', altTextKey: 'prBannerBackpromotesError' },
 };
 
 /**

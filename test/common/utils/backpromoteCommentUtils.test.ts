@@ -118,7 +118,9 @@ describe('Backpromotes comment', () => {
 
   it('renders an empty state without a table', () => {
     const body = renderBackpromotesComment(emptyBackpromotesState());
-    expect(body).to.contain('### No sandbox received this Pull Request yet');
+    expect(body).to.contain('### ⤵️ Backpromotes');
+    expect(body).to.contain('**No sandbox received this Pull Request yet**');
+    expect(body).to.not.contain('pr-banner');
     expect(body).to.not.contain('| Sandbox |');
     expect(body).to.not.contain('#### Deployment actions in');
   });

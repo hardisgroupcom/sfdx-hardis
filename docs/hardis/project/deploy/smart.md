@@ -129,7 +129,7 @@ See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesf
 
 The validation and deployment Pull Request comments all read the same way:
 
-- A **verdict** naming the target org: *Ready to merge into integration*, *Cannot merge into integration: 2 deployment errors*, *Deployed to integration, but an action failed after the deployment*...
+- A **verdict** naming the target org: *Ready to merge into integration*, *Cannot merge into integration: 2 deployment errors*, *Deployed to integration, but an action failed after the deployment*... A green validation also says how to merge: **Squash and merge** for a User Story branch, a **merge commit** (never squash) for a major, promotion or retrofit branch.
 - A short table of **checks**: Metadata (deployed or not, and what changed), Apex tests (coverage, failures, or why none ran), Deployment actions (counts per status), Quick Deploy and Flows.
 - What **needs you**: deployment errors with their tips, failed actions with the end of their output, and the manual actions to perform, as checkboxes.
 - The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the tickets and the carried Pull Requests.

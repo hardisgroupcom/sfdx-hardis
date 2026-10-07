@@ -206,13 +206,6 @@ function buildCheckTable(prData: Partial<PullRequestData>, commands: PhasedComma
   if (options.checkOnly && options.quickDeployReusable === true) {
     rows.push(['Quick Deploy', '✅ The merge job can reuse this validation: Apex tests will not run again']);
   }
-  if (!options.checkOnly && prData.usedQuickDeploy === true) {
-    rows.push(['Quick Deploy', '✅ Used: the validation of the Pull Request was deployed as it is']);
-  }
-  const flows = describeFlows(prData);
-  if (flows) {
-    rows.push(['Flows', flows]);
-  }
   return ['| Check | Result |', '|-------|--------|', ...rows.map(([check, result]) => `| ${check} | ${result} |`)].join('\n');
 }
 
@@ -244,10 +237,10 @@ function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLa
     if (prData.metadataOutcome !== 'deployed' && failedTests) {
       return `⚪ Not deployed: the Apex tests failed`;
     }
-    return `✅ Deployed: ${changed} ${changed === 1 ? 'component' : 'components'} changed${split ? ` (${split})` : ''}`;
+    return `✅ ${describeDeploymentMode(prData)}: ${changed} ${changed === 1 ? 'component' : 'components'} changed${split ? ` (${split})` : ''}`;
   }
   if (status === 'valid' || prData.metadataOutcome === 'deployed') {
-    return options.checkOnly ? '✅ Validated' : '✅ Deployed';
+    return options.checkOnly ? '✅ Validated' : `✅ ${describeDeploymentMode(prData)}`;
   }
   return options.checkOnly ? '⚪ Not validated' : '⚪ Not deployed';
 }
@@ -316,25 +309,33 @@ function describeActions(commands: PhasedCommand[], options: PrCommentLayoutOpti
   return parts.join(' · ');
 }
 
-function describeFlows(prData: Partial<PullRequestData>): string {
+// "Delta deployment", "Full deployment", "Delta Quick Deploy" or "Full Quick Deploy"
+function describeDeploymentMode(prData: Partial<PullRequestData>): string {
+  const mode = prData.deploymentMode === 'delta' ? 'Delta' : prData.deploymentMode === 'full' ? 'Full' : '';
+  if (prData.usedQuickDeploy === true) {
+    return mode ? `${mode} Quick Deploy` : 'Quick Deploy';
+  }
+  return mode ? `${mode} deployment` : 'Deployed';
+}
+
+// The Flows of the Pull Request, folded: each changed one has a visual diff comment of its own, a
+// Flow whose only change is its status has none
+function buildFlowsSection(prData: Partial<PullRequestData>): PrCommentSection | null {
   const changes = prData.flowChanges || [];
   const truncated = prData.flowDiffMarkdown && (prData.flowDiffMarkdown as any).truncatedNb > 0 ? (prData.flowDiffMarkdown as any).truncatedNb : 0;
   if (changes.length === 0 && truncated === 0) {
-    return '';
+    return null;
   }
-  const diffs = changes.filter((change) => change.kind === 'diff');
-  const statusOnly = changes.filter((change) => change.kind === 'status-only');
-  const parts: string[] = [];
-  if (diffs.length > 0) {
-    parts.push(`🔀 ${diffs.length} changed: ${diffs.map((change) => change.name).join(', ')} (one comment per Flow below)`);
-  }
-  for (const change of statusOnly) {
-    parts.push(`${change.name}: status only, ${change.statusBefore} → ${change.statusAfter}`);
-  }
+  const lines = changes.map((change) =>
+    change.kind === 'diff'
+      ? `- \`${change.name}\`: visual diff in a comment below`
+      : `- \`${change.name}\`: status only, ${change.statusBefore} → ${change.statusAfter}`
+  );
   if (truncated > 0) {
-    parts.push(`${truncated} more not shown`);
+    lines.push(`- _… and ${truncated} more Flows, not shown_`);
   }
-  return parts.join('<br/>');
+  const count = changes.length + truncated;
+  return { id: 'flows', markdown: folded(`🔀 Flows (${count})`, lines.join('\n')), dropLabel: 'the list of the Flows' };
 }
 
 function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: PhasedCommand[], options: PrCommentLayoutOptions): PrCommentSection[] {
@@ -480,6 +481,10 @@ function buildDetailSections(prData: Partial<PullRequestData>, commands: PhasedC
     const fold = (entries: string[]) => folded(`🧪 Apex test classes (${testClasses.length})`, entries.join('\n'));
     const entries = testClasses.map((testClass) => `- ${testClass}`);
     sections.push({ id: 'test-classes', markdown: fold(entries), shortMarkdown: fold(truncateList(entries, SHORTENED_LIST_ENTRIES)), dropLabel: 'the Apex test classes' });
+  }
+  const flows = buildFlowsSection(prData);
+  if (flows) {
+    sections.push(flows);
   }
   const references = buildReferencesSection(prData, options);
   if (references) {

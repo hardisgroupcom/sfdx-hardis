@@ -1044,6 +1044,8 @@ export declare type PullRequestData = {
   // What Salesforce did with the metadata of a deployment job: 'deployed' as soon as it accepted it,
   // even when a post-deployment action or the code coverage check fails afterwards
   metadataOutcome?: 'deployed' | 'nothing-to-deploy';
+  // Delta deployment (only what the Pull Requests changed) or full deployment of manifest/package.xml
+  deploymentMode?: 'delta' | 'full';
   // Components that changed or failed, counted per metadata type (collapsible table)
   deploymentComponentTypesMarkdownBody?: string;
   // package-no-overwrite.xml components kept in the org or created this once

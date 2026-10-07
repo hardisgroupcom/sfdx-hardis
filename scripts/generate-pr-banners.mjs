@@ -29,7 +29,6 @@ const TYPES = {
   validation: { label: 'Validation', icon: 'search', from: '#00718F', to: '#36BDE8' },
   deployment: { label: 'Deployment', icon: 'cloudUp', from: '#610EED', to: '#0152FF' },
   actions: { label: 'Deployment Actions', icon: 'checklist', from: '#150C33', to: '#4A2AA8' },
-  backpromotes: { label: 'Backpromotes', icon: 'arrowDown', from: '#0B3B5C', to: '#1F7A8C' },
 };
 
 const STATUSES = {
@@ -48,16 +47,12 @@ const VARIANTS = [
   { file: 'pr-banner-actions-completed.png', type: 'actions', status: 'success', text: 'All actions completed' },
   { file: 'pr-banner-actions-pending.png', type: 'actions', status: 'pending', text: 'Manual actions pending' },
   { file: 'pr-banner-actions-error.png', type: 'actions', status: 'failure', text: 'Actions in error' },
-  { file: 'pr-banner-backpromotes-completed.png', type: 'backpromotes', status: 'success', text: 'Sandboxes up to date' },
-  { file: 'pr-banner-backpromotes-pending.png', type: 'backpromotes', status: 'pending', text: 'Manual actions pending' },
-  { file: 'pr-banner-backpromotes-error.png', type: 'backpromotes', status: 'failure', text: 'Actions in error' },
 ];
 
 // Lucide icon paths, drawn as strokes so they stay sharp at any size
 const ICONS = {
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
   cloudUp: '<path d="M12 13v8"/><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="m8 17 4-4 4 4"/>',
-  arrowDown: '<path d="M12 5v14"/><path d="m19 12-7 7-7-7"/>',
   checklist: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   cross: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',

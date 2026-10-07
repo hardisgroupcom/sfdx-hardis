@@ -15,7 +15,6 @@ import { GitProvider } from '../gitProvider/index.js';
 import { retryOnThrottling } from './adaptiveBatch.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
-import { getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 import { formatShortDate } from '../gitProvider/prCommentDates.js';
 
 export const BACKPROMOTES_MARKER = '<!-- sfdx-hardis backpromotes -->';
@@ -160,16 +159,15 @@ export function renderBackpromotesComment(state: BackpromotesCommentState): stri
   lines.push(`${DATA_START}${encodeCommentData(JSON.stringify({ sandboxRows: state.sandboxRows, actionRows: state.actionRows }))}${DATA_END}`);
   const failed = state.actionRows.filter((row) => row.status === 'failed').length;
   const pending = state.actionRows.filter((row) => row.status === 'pending').length;
-  const bannerKey: PrCommentBannerKey = failed > 0 ? 'backpromotes-error' : pending > 0 ? 'backpromotes-pending' : 'backpromotes-completed';
-  const banner = getPrCommentBannerMarkdown(bannerKey, '⤵️ Backpromotes');
-  lines.push(banner === '' ? '## ⤵️ Backpromotes\n' : banner.trimEnd() + '\n');
+  // No banner: this comment is mostly the storage of the backpromote history, read by the CLI
+  lines.push('### ⤵️ Backpromotes', '');
   const sandboxCount = new Set(state.sandboxRows.map((row) => `${row.sandboxName}|${row.orgId}`)).size;
   const verdictParts = [
     sandboxCount === 0 ? 'No sandbox received this Pull Request yet' : `Received by ${sandboxCount} ${sandboxCount === 1 ? 'sandbox' : 'sandboxes'}`,
     failed > 0 ? `❌ ${failed} ${failed === 1 ? 'action' : 'actions'} failed` : '',
     pending > 0 ? `👋 ${pending} to do by hand` : '',
   ].filter((part) => part !== '');
-  lines.push(`### ${verdictParts.join(' · ')}`);
+  lines.push(`**${verdictParts.join(' · ')}**`);
   lines.push('');
   lines.push('_Developer sandboxes that got this Pull Request with `sf hardis:work:backpromote`, and the deployment actions it ran there._');
   lines.push('');

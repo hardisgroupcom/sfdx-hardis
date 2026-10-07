@@ -270,8 +270,9 @@ function setNoMetadataDeploymentSuccess(check: boolean, reason?: string): void {
  * actions and the code coverage check that follow can still fail the job and post the comment, which
  * must then say that the metadata is in the org.
  */
-function recordDeployedMetadataInPrData(deploymentMetrics: DeploymentMetrics, check: boolean): void {
-  const prData: Partial<PullRequestData> = {};
+function recordDeployedMetadataInPrData(deploymentMetrics: DeploymentMetrics, check: boolean, usedQuickDeploy = false): void {
+  // How the metadata reached the org, for the Metadata row of the deployment comment
+  const prData: Partial<PullRequestData> = { deploymentMode: deploymentMetrics.delta ? 'delta' : 'full' };
   if (isComponentChangeDetailComplete(deploymentMetrics)) {
     prData.deploymentMetrics = {
       deployed: deploymentMetrics.componentsDeployed,
@@ -283,6 +284,9 @@ function recordDeployedMetadataInPrData(deploymentMetrics: DeploymentMetrics, ch
   }
   if (!check) {
     prData.metadataOutcome = 'deployed';
+  }
+  if (usedQuickDeploy) {
+    prData.usedQuickDeploy = true;
   }
   setPullRequestData(prData);
 }
@@ -599,7 +603,7 @@ export async function smartDeploy(
             if (quickDeployResultJson) {
               deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
               accumulateComponentChanges(deploymentMetrics, quickDeployResultJson);
-              recordDeployedMetadataInPrData(deploymentMetrics, check);
+              recordDeployedMetadataInPrData(deploymentMetrics, check, true);
               recordDeployResult(quickDeployResultJson, { quickDeploy: true });
               deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
               deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);

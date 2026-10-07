@@ -137,6 +137,17 @@ describe('Pull Request comment layout', () => {
     expect(body).to.not.contain('This one');
   });
 
+  it('says how the metadata was deployed: full or delta, with or without Quick Deploy', () => {
+    const deployed = (extra: Record<string, any>) =>
+      render({ status: 'valid', metadataOutcome: 'deployed', deploymentMetrics: { deployed: 7, created: 1, updated: 6, deleted: 0, unchanged: 0 }, ...extra }, false);
+    expect(deployed({ deploymentMode: 'delta' })).to.contain('| Metadata | ✅ Delta deployment: 7 components changed (1 created, 6 updated) |');
+    expect(deployed({ deploymentMode: 'full' })).to.contain('| Metadata | ✅ Full deployment: 7 components changed');
+    expect(deployed({ deploymentMode: 'delta', usedQuickDeploy: true })).to.contain('| Metadata | ✅ Delta Quick Deploy: 7 components changed');
+    expect(deployed({ deploymentMode: 'full', usedQuickDeploy: true })).to.contain('| Metadata | ✅ Full Quick Deploy: 7 components changed');
+    // Quick Deploy is said on the Metadata row: no row of its own in a deployment comment
+    expect(deployed({ deploymentMode: 'full', usedQuickDeploy: true })).to.not.contain('| Quick Deploy |');
+  });
+
   it('names status-only Flows on one line', () => {
     const body = render(
       {
@@ -148,8 +159,11 @@ describe('Pull Request comment layout', () => {
       },
       true
     );
-    expect(body).to.contain('🔀 1 changed: Invoice_Flow (one comment per Flow below)');
-    expect(body).to.contain('Legal_Email: status only, Active → Obsolete');
+    // Folded under the details, not a row of the table of checks
+    expect(body).to.not.contain('| Flows |');
+    expect(body).to.contain('<summary>🔀 Flows (2)</summary>');
+    expect(body).to.contain('- `Invoice_Flow`: visual diff in a comment below');
+    expect(body).to.contain('- `Legal_Email`: status only, Active → Obsolete');
     expect(body).to.not.contain('](#');
   });
 

@@ -18,7 +18,7 @@ Each changed Flow gets a comment of its own: the properties that changed, with t
 
 ![Visual git diff comment of a Flow](assets/images/screenshot-pr-comment-flow-diff.png)
 
-A Flow whose only change is its status (activated or deactivated) gets no comment: the Flows line of the validation comment names it, with its status before and after.
+A Flow whose only change is its status (activated or deactivated) gets no comment: the folded **Flows** section of the validation comment names it, with its status before and after.
 
 ## Legend
 
