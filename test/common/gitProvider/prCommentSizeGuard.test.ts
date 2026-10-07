@@ -124,6 +124,42 @@ describe('Flow diff comments', () => {
     expect(cleaned.indexOf('<summary>All properties and elements</summary>')).to.be.greaterThan(cleaned.indexOf('```mermaid'));
   });
 
+  it('pairs the removed and added rows of a block, and keeps the AI summary visible', () => {
+    const markdown = [
+      '## Flow Diagram',
+      '',
+      '```mermaid',
+      'flowchart TB',
+      '```',
+      '',
+      '## AI-Generated Differences Summary',
+      '',
+      'The greeting is now longer.',
+      '',
+      '## Flow Nodes Details',
+      '',
+      '### Set_Greeting',
+      '',
+      '|🟥<i>Label</i>|<i>Set greeting</i>|',
+      '|🟥<i>Description</i>|<i>Old</i>|',
+      '|🟩<b>Label</b>|<b>Set the greeting</b>|',
+      '|🟩<b>Description</b>|<b>New</b>|',
+    ].join('\n');
+    const cleaned = cleanFlowDiffMarkdownForPrComment(markdown);
+    expect(cleaned).to.contain('**2 properties changed**');
+    expect(cleaned).to.contain('| Set_Greeting | Label | Set greeting | Set the greeting |');
+    expect(cleaned).to.contain('| Set_Greeting | Description | Old | New |');
+    expect(cleaned.indexOf('The greeting is now longer.')).to.be.lessThan(cleaned.indexOf('<details>'));
+  });
+
+  it('replaces a diagram too large for the comment instead of cutting it', () => {
+    const hugeDiagram = diffMarkdown.replace('flowchart TB', 'flowchart TB\n' + Array.from({ length: 4000 }, (_, i) => `N${i}("Node ${i}")`).join('\n'));
+    const message = buildFlowDiffCommentMessage(hugeDiagram, 'Legal_Email', 20000);
+    expect(message.length).to.be.at.most(20000);
+    expect(message).to.not.contain('```mermaid');
+    expect(message).to.contain('The diagram is too large for a Pull Request comment');
+  });
+
   it('drops the full tables, then the diagram, when the comment is too large', () => {
     const huge = diffMarkdown.replace('|Object|Opportunity|', Array.from({ length: 3000 }, (_, i) => `|Property ${i}|Value ${i}|`).join('\n'));
     const message = buildFlowDiffCommentMessage(huge, 'Legal_Email', 20000);

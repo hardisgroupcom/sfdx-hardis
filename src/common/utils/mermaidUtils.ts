@@ -534,8 +534,10 @@ export function getFlowStatusOnlyChange(flowXmlBefore: string, flowXmlAfter: str
  */
 export function cleanFlowDiffMarkdownForPrComment(markdown: string): string {
   const lines = markdown.split(/\r?\n/);
-  // The full property tables start at the first second-level heading after the diagram
-  let restStart = lines.findIndex((line, index) => /^## /.test(line) && !/^## Flow Diagram/.test(line) && index > lines.findIndex((l) => /```mermaid|!\[/.test(l)));
+  // The full property tables start at the first second-level heading after the diagram. The AI
+  // summary of the differences, written right after the diagram, stays visible above them.
+  const diagramLine = lines.findIndex((l) => /```mermaid|!\[/.test(l));
+  let restStart = lines.findIndex((line, index) => index > diagramLine && /^## /.test(line) && !/^## Flow Diagram/.test(line) && !/^## AI-Generated/.test(line));
   if (restStart < 0) {
     restStart = lines.length;
   }
@@ -560,8 +562,9 @@ export function cleanFlowDiffMarkdownForPrComment(markdown: string): string {
       top.push(line);
       continue;
     }
-    // The label heading repeats the title of the comment, the diagram needs no heading of its own
-    if (/^# /.test(line) || /^## Flow Diagram/.test(line)) {
+    // The label heading repeats the title of the comment, the diagram needs no heading of its own,
+    // and the placeholder of the Flow description is empty in a diff
+    if (/^# /.test(line) || /^## Flow Diagram/.test(line) || line.trim() === '<!-- Flow description -->') {
       continue;
     }
     top.push(line);
@@ -607,9 +610,11 @@ function extractFlowDiffChangedRows(lines: string[]): { where: string; property:
     const property = stripHtml(cells[0]);
     const value = stripHtml(cells.slice(1).join(' '));
     const removed = line.includes('🟥');
-    const previous = rows[rows.length - 1];
-    if (!removed && previous && previous.where === where && previous.property === property && previous.after === '_removed_') {
-      previous.after = value;
+    // The diff lists the removed rows of a block, then the added ones: an added row completes the
+    // removed row of the same property, wherever it sits in the block
+    const removedRow = removed ? undefined : rows.find((row) => row.where === where && row.property === property && row.after === '_removed_');
+    if (removedRow) {
+      removedRow.after = value;
       continue;
     }
     rows.push(removed ? { where, property, before: value, after: '_removed_' } : { where, property, before: '_none_', after: value });

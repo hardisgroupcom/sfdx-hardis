@@ -9,7 +9,7 @@ import { t } from './i18n.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
-import { formatShortDate } from '../gitProvider/prCommentLayout.js';
+import { formatShortDate } from '../gitProvider/prCommentDates.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
 
 // Enable with NODE_DEBUG=sfdxhardis
@@ -740,8 +740,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
       body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
     }
     body += buildMatrixStatusLegend(usedMatrixIcons);
-    const now = new Date().toISOString();
-    body += `\n*Updated ${formatShortDate(now)}, ${now.substring(11, 16)} UTC*\n`;
+    body += `\n*Updated ${formatShortDate(new Date().toISOString(), { withTime: true })}*\n`;
   }
 
   // Details section - one collapsible per unique action, covering all orgs it ran in.
@@ -805,7 +804,8 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
         // Outputs cannot live in a table cell (code blocks do not render there), so they follow the
         // table, one block per org branch that produced some output.
         for (const e of sortedOrgEntries) {
-          if ((e.output || '').trim() !== '') {
+          // The output of a manual action is its instructions, already shown above
+          if ((e.output || '').trim() !== '' && def?.type !== 'manual' && e.status !== 'manual') {
             body += `**Output - ${e.orgBranch}**\n\n`;
             body += '```\n' + truncateOutput(e.output) + '\n```\n\n';
           }
@@ -866,9 +866,9 @@ function getStatusLabel(status: DeploymentActionStateEntry['status']): string {
     case 'success': return 'success';
     case 'failed': return 'failed';
     case 'warning': return 'warning (failed, allowed to fail)';
-    case 'manual': return 'waiting for manual execution';
+    case 'manual': return 'to do by hand';
     case 'skipped': return 'skipped';
-    case 'not-run': return 'not run, a previous action failed';
+    case 'not-run': return 'waits for a failed action';
     case 'moved': return 'moved to another Pull Request';
     default: return 'unknown';
   }

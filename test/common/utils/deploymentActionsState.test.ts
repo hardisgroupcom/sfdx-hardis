@@ -166,7 +166,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(body).to.contain('**Results by org**');
       expect(body).to.contain('| Org branch | Status | Date | Job |');
       expect(body).to.contain('| integration | \u2705 success | 2026-08-14 | [1234](https://ci.example.com/1234) |');
-      expect(body).to.contain('| uat | \ud83d\udc4b waiting for manual execution | 2026-08-15 | [5678](https://ci.example.com/5678) |');
+      expect(body).to.contain('| uat | \ud83d\udc4b to do by hand | 2026-08-15 | [5678](https://ci.example.com/5678) |');
       expect(body).to.contain('**Output - integration**\n\n```\nItems removed: 1\n```');
       expect(body).to.not.contain('**Output - uat**');
       expect(body).to.not.contain('*integration - ');

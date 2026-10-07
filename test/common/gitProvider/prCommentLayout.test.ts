@@ -1,8 +1,10 @@
 import { expect } from 'chai';
 import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import type { PullRequestData } from '../../../src/common/gitProvider/index.js';
-import { buildDeploymentPrCommentSections, formatShortDate, humanActionReason } from '../../../src/common/gitProvider/prCommentLayout.js';
+import { buildDeploymentPrCommentSections, humanActionReason } from '../../../src/common/gitProvider/prCommentLayout.js';
+import { formatShortDate } from '../../../src/common/gitProvider/prCommentDates.js';
 import { parseManualActionCheckboxes } from '../../../src/common/utils/deploymentActionsStateUtils.js';
+import { fitPrCommentSections } from '../../../src/common/gitProvider/prCommentSizeGuard.js';
 
 function command(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {
@@ -53,6 +55,7 @@ describe('Pull Request comment layout', () => {
         status: 'invalid',
         deployStatus: 'valid',
         deploymentMetrics: { deployed: 4, created: 1, updated: 3, deleted: 0, unchanged: 0 },
+        metadataOutcome: 'deployed',
         testsNotRunReason: 'smart-tests',
         postDeployActions: {
           orgBranch: 'integration',
@@ -125,7 +128,6 @@ describe('Pull Request comment layout', () => {
           { idStr: '12', idNumber: 12, title: 'This one' },
           { idStr: '7', idNumber: 7, title: 'Carried', webUrl: 'https://x/7', authorName: 'Mariia' },
         ],
-        commitsSummary: '## Commits summary\n\n- abc',
       },
       true
     );
@@ -133,7 +135,6 @@ describe('Pull Request comment layout', () => {
     expect(body).to.contain('- [PROJ-1](https://jira/PROJ-1) Invoice reminder');
     expect(body).to.contain('- [#7](https://x/7) Carried, by Mariia');
     expect(body).to.not.contain('This one');
-    expect(body).to.not.contain('Commits summary');
   });
 
   it('names status-only Flows on one line', () => {
@@ -150,6 +151,66 @@ describe('Pull Request comment layout', () => {
     expect(body).to.contain('🔀 1 changed: Invoice_Flow (one comment per Flow below)');
     expect(body).to.contain('Legal_Email: status only, Active → Obsolete');
     expect(body).to.not.contain('](#');
+  });
+
+  it('says the metadata is in the org when only the coverage check failed after the deployment', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        deployStatus: 'invalid',
+        metadataOutcome: 'deployed',
+        coverage: { value: 78, target: 80, status: 'invalid' },
+      },
+      false
+    );
+    expect(body).to.contain('### ❌ Deployed to `integration`, but code coverage 78% is under the 80% target');
+    expect(body).to.contain('| Metadata | ✅ Deployed |');
+    expect(body).to.not.contain('is not in the org');
+  });
+
+  it('says nothing was deployed when there was no metadata and an action failed', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        metadataOutcome: 'nothing-to-deploy',
+        postDeployActions: { orgBranch: 'integration', commands: [command({ result: { statusCode: 'failed' } })] },
+      },
+      false
+    );
+    expect(body).to.contain('### ❌ Nothing to deploy to `integration`, but a post-deployment action failed');
+  });
+
+  it('shows how to fix a draft deployment actions file', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        title: '❌ Error: Draft deployment actions file found',
+        blockingIssueMarkdownBody: '#### ❌ Draft deployment actions file\n\nRename .sfdx-hardis.draft.yml into .sfdx-hardis.12.yml.',
+      },
+      true
+    );
+    expect(body).to.contain('### ❌ Cannot merge into `integration`: Draft deployment actions file found');
+    expect(body).to.contain('Rename .sfdx-hardis.draft.yml into .sfdx-hardis.12.yml.');
+  });
+
+  it('keeps the manual actions when hundreds of errors do not fit', () => {
+    const errors = Array.from({ length: 300 }, (_, i) => `<details><summary>⛔ Error ${i}</summary>\n\n${'tip '.repeat(60)}\n<details><summary>🤖 AI</summary>\n\nanswer\n</details>\n</details>\n<br/>\n`).join('');
+    const sections = buildDeploymentPrCommentSections(
+      {
+        status: 'invalid',
+        errorCount: 300,
+        deployErrorsMarkdownBody: `## Deployment errors\n\n${errors}`,
+        preDeployActions: {
+          orgBranch: 'integration',
+          commands: [command({ id: 'gate', label: 'Gate', type: 'manual', when: 'pre-deploy', result: { statusCode: 'manual' } })],
+        },
+      },
+      { checkOnly: true, targetBranch: 'integration', prNumber: 12 }
+    );
+    const fitted = fitPrCommentSections(sections, 46000, '50,000');
+    expect(fitted.markdown.length).to.be.at.most(46000);
+    expect(fitted.markdown).to.contain('… and 290 more in the job log');
+    expect(parseManualActionCheckboxes(fitted.markdown)).to.have.length(1);
   });
 
   it('writes skip reasons for people', () => {

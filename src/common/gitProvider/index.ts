@@ -954,20 +954,21 @@ export abstract class GitProvider {
 export function buildFlowDiffCommentMessage(flowDiffMarkdown: string, flowName: string, budget: number): string {
   const cleaned = cleanFlowDiffMarkdownForPrComment(flowDiffMarkdown);
   const detailsStart = cleaned.indexOf('<details>\n<summary>All properties and elements</summary>');
-  const top = `\`${flowName}\` changed in this Pull Request.\n\n` + (detailsStart >= 0 ? cleaned.substring(0, detailsStart) : cleaned);
+  let top = `\`${flowName}\` changed in this Pull Request.\n\n` + (detailsStart >= 0 ? cleaned.substring(0, detailsStart) : cleaned);
   const details = detailsStart >= 0 ? cleaned.substring(detailsStart) : '';
-  const fitted = fitPrCommentSections(
+  // A diagram cut in the middle is a parse error on the provider: replace it whole when it alone
+  // does not fit
+  if (top.length > budget - 500) {
+    top = top.replace(/```mermaid[\s\S]*?```/, '_The diagram is too large for a Pull Request comment: open the visual git diff of this Flow in VS Code._');
+  }
+  return fitPrCommentSections(
     [
       { id: 'flow-changes', keep: true, markdown: top },
       { id: 'flow-details', markdown: details, dropLabel: 'the full property tables' },
     ],
     budget,
     budget.toLocaleString('en-US'),
-  );
-  if (fitted.markdown.length <= budget) {
-    return fitted.markdown;
-  }
-  return fitted.markdown.replace(/```mermaid[\s\S]*?```/, '_The diagram is too large for a Pull Request comment: open the visual git diff of this Flow in VS Code._');
+  ).markdown;
 }
 
 /**
@@ -1027,8 +1028,12 @@ export declare type PullRequestData = {
   messageKey: string;
   title: string;
   deployErrorsMarkdownBody?: string;
-  // What the deployment really altered in the org: created / updated / deleted / unchanged split
-  deploymentComponentsMarkdownBody?: string;
+  // A problem that stops the job before or after the deployment, with how to fix it (a draft
+  // deployment actions file...)
+  blockingIssueMarkdownBody?: string;
+  // What Salesforce did with the metadata of a deployment job: 'deployed' as soon as it accepted it,
+  // even when a post-deployment action or the code coverage check fails afterwards
+  metadataOutcome?: 'deployed' | 'nothing-to-deploy';
   // Components that changed or failed, counted per metadata type (collapsible table)
   deploymentComponentTypesMarkdownBody?: string;
   // package-no-overwrite.xml components kept in the org or created this once
@@ -1044,7 +1049,6 @@ export declare type PullRequestData = {
   usedQuickDeploy?: boolean;
   // Test level of the validation job, to know if it is reusable by Quick Deploy
   checkTestLevel?: string;
-  commitsSummary?: string;
   // Fix Pull Request created by a coding agent after a failed deployment
   autoFixPullRequestUrl?: string;
   // Facts read by the layout of the validation and deployment comments (prCommentLayout.ts)

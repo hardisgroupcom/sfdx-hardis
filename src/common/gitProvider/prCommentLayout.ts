@@ -1,6 +1,7 @@
 import type { PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { buildManualActionCheckboxMarker } from '../utils/deploymentActionsStateUtils.js';
 import { getTicketCollectionIssues } from '../ticketProvider/ticketProviderRoot.js';
+import { formatShortDate } from './prCommentDates.js';
 import type { PrCommentActionsRun, PullRequestData } from './index.js';
 import { PrCommentSection, SHORTENED_CODE_BLOCK_LINES, SHORTENED_LIST_ENTRIES, truncateCodeBlocks, truncateList } from './prCommentSizeGuard.js';
 
@@ -25,6 +26,9 @@ export type PrCommentLayoutOptions = {
 };
 
 type ActionPhase = 'pre-deploy' | 'post-deploy';
+
+// Number of deployment errors kept when the comment is too large
+const SHORTENED_ERRORS = 10;
 
 type PhasedCommand = { cmd: PrePostCommand; phase: ActionPhase; orgBranch?: string };
 
@@ -71,7 +75,8 @@ export function humanActionReason(cmd: PrePostCommand, orgBranch?: string): stri
       break;
   }
   if (result.statusCode === 'failed' && cmd.allowFailure === true) {
-    return result.skippedReason ? `${result.skippedReason} (allowed to fail)` : 'Allowed to fail';
+    // "failed, allowed to fail" is already the status of the action
+    return result.skippedReason || '';
   }
   if (result.statusCode === 'manual') {
     return 'To do by hand';
@@ -80,17 +85,6 @@ export function humanActionReason(cmd: PrePostCommand, orgBranch?: string): stri
     return result.skippedReason || '';
   }
   return '';
-}
-
-/**
- * "Oct 7" from an ISO date, so a reader does not decode timestamps
- */
-export function formatShortDate(isoDate: string): string {
-  const date = new Date(isoDate);
-  if (isNaN(date.getTime())) {
-    return isoDate;
-  }
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 }
 
 function listPhasedCommands(prData: Partial<PullRequestData>): PhasedCommand[] {
@@ -103,10 +97,7 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   const target = `\`${options.targetBranch || 'the target org'}\``;
   const status = prData.status || prData.deployStatus;
   const failedActions = commands.filter((c) => isBlockingFailure(c.cmd));
-  const nothingToDeploy = (prData.title || '').includes('No metadata to deploy');
-  const deployErrors = prData.errorCount || 0;
-  const testFailures = prData.failedTestsCount || 0;
-  const coverageFailed = prData.coverage?.status === 'invalid';
+  const nothingToDeploy = isNothingToDeploy(prData);
   let verdict: string;
   let next: string;
   if (status === 'valid') {
@@ -119,13 +110,18 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
     }
   } else if (status === 'invalid') {
     const reason = describeFailure(prData, failedActions);
-    const metadataDeployed = !options.checkOnly && prData.deploymentMetrics !== undefined && deployErrors === 0 && testFailures === 0 && !coverageFailed;
     if (options.checkOnly) {
       verdict = `❌ Cannot merge into ${target}: ${reason}`;
       next = 'Fix it, commit and push: the validation runs again.';
-    } else if (metadataDeployed && failedActions.length > 0) {
-      verdict = `❌ Deployed to ${target}, but ${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment`;
-      next = `The org has the new metadata. Rerun or fix the failed ${failedActions.length === 1 ? 'action' : 'actions'} below.`;
+    } else if (prData.metadataOutcome === 'deployed') {
+      // Salesforce accepted the deployment: what failed came after it (an action, the coverage check)
+      verdict = `❌ Deployed to ${target}, but ${failedActions.length > 0 ? `${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment` : reason}`;
+      next = failedActions.length > 0
+        ? `The org has the new metadata. Rerun or fix the failed ${failedActions.length === 1 ? 'action' : 'actions'} below.`
+        : 'The org has the new metadata.';
+    } else if (nothingToDeploy) {
+      verdict = `❌ Nothing to deploy to ${target}, but ${reason}`;
+      next = '';
     } else {
       verdict = `❌ Not deployed to ${target}: ${reason}`;
       next = 'The metadata of this Pull Request is not in the org.';
@@ -137,6 +133,10 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   // A short note explaining an empty deployment ("No metadata to deploy: the package.xml is empty...")
   const note = prData.deployErrorsMarkdownBody && !prData.deployErrorsMarkdownBody.startsWith('## ') ? prData.deployErrorsMarkdownBody.trim() : '';
   return [`### ${verdict}`, [next, note].filter((text) => text !== '').join(' ')].filter((line) => line !== '').join('\n\n');
+}
+
+function isNothingToDeploy(prData: Partial<PullRequestData>): boolean {
+  return prData.metadataOutcome === 'nothing-to-deploy' || (prData.title || '').includes('No metadata to deploy');
 }
 
 function describeFailure(prData: Partial<PullRequestData>, failedActions: PhasedCommand[]): string {
@@ -186,7 +186,7 @@ function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLa
   if (errors > 0) {
     return `❌ ${errors} ${errors === 1 ? 'error' : 'errors'}: nothing was ${options.checkOnly ? 'validated' : 'deployed'}`;
   }
-  if ((prData.title || '').includes('No metadata to deploy')) {
+  if (isNothingToDeploy(prData)) {
     return '✅ Nothing to deploy';
   }
   const metrics = prData.deploymentMetrics;
@@ -202,12 +202,13 @@ function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLa
     if (options.checkOnly) {
       return `${failedTests ? '⚪' : '✅'} ${changed} ${changed === 1 ? 'component' : 'components'} would change${split ? ` (${split})` : ''}, ${metrics.deployed} validated`;
     }
-    if (failedTests) {
+    // A coverage under the target is checked by sfdx-hardis after Salesforce accepted the deployment
+    if (prData.metadataOutcome !== 'deployed' && failedTests) {
       return `⚪ Not deployed: the Apex tests failed`;
     }
     return `✅ Deployed: ${changed} ${changed === 1 ? 'component' : 'components'} changed${split ? ` (${split})` : ''}`;
   }
-  if (status === 'valid') {
+  if (status === 'valid' || prData.metadataOutcome === 'deployed') {
     return options.checkOnly ? '✅ Validated' : '✅ Deployed';
   }
   return options.checkOnly ? '⚪ Not validated' : '⚪ Not deployed';
@@ -305,7 +306,16 @@ function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: Phase
     const headingText = errorsMarkdown.split('\n')[0].replace(/^## /, '').trim();
     const icon = headingText.toLowerCase().includes('test') ? '💥' : '❌';
     const body = errorsMarkdown.split('\n').slice(1).join('\n').trim();
-    sections.push({ id: 'errors', keep: true, markdown: `#### ${icon} ${headingText}\n\n${body}` });
+    sections.push({
+      id: 'errors',
+      keep: true,
+      markdown: `#### ${icon} ${headingText}\n\n${body}`,
+      // Hundreds of errors with their tips would push the manual actions out of the comment
+      shortMarkdown: `#### ${icon} ${headingText}\n\n${keepFirstDetailsBlocks(body, SHORTENED_ERRORS)}`,
+    });
+  }
+  if (prData.blockingIssueMarkdownBody) {
+    sections.push({ id: 'blocking-issue', keep: true, markdown: prData.blockingIssueMarkdownBody });
   }
   if (prData.autoFixPullRequestUrl) {
     sections.push({ id: 'auto-fix', keep: true, markdown: `🤖 **A coding agent created a fix Pull Request:** [View fix Pull Request](${prData.autoFixPullRequestUrl})` });
@@ -440,7 +450,8 @@ function buildActionsDetails(commands: PhasedCommand[], options: PrCommentLayout
   const shown = commands.slice(0, maxRows);
   for (const { cmd, phase, orgBranch } of shown) {
     const reason = humanActionReason(cmd, orgBranch);
-    const result = [statusWords(cmd), reason && reason !== statusWords(cmd) ? reason : ''].filter((part) => part !== '').join(': ');
+    const words = statusWords(cmd);
+    const result = [words, reason && reason.toLowerCase() !== words.toLowerCase() ? reason : ''].filter((part) => part !== '').join(': ');
     lines.push(`| ${statusIcon(cmd)} | ${escapeCell(cmd.label)}${foreignPullRequest(cmd, options)} | ${phase === 'pre-deploy' ? 'before' : 'after'} | ${escapeCell(result)} |`);
   }
   if (commands.length > shown.length) {
@@ -546,6 +557,32 @@ function foreignPullRequest(cmd: PrePostCommand, options: PrCommentLayoutOptions
   return pr.webUrl ? ` (from [#${pr.idStr}](${pr.webUrl}))` : ` (from #${pr.idStr})`;
 }
 
+// The first `count` top-level <details> blocks of a markdown text (one per deployment error), with a
+// line counting the others
+function keepFirstDetailsBlocks(markdown: string, count: number): string {
+  const tags = [...markdown.matchAll(/<details\b|<\/details>/g)];
+  let depth = 0;
+  let closed = 0;
+  let cutAt = -1;
+  for (const tag of tags) {
+    if (tag[0] === '</details>') {
+      depth--;
+      if (depth === 0) {
+        closed++;
+        if (closed === count) {
+          cutAt = (tag.index || 0) + tag[0].length;
+        }
+      }
+    } else {
+      depth++;
+    }
+  }
+  if (cutAt < 0 || closed <= count) {
+    return markdown;
+  }
+  return `${markdown.substring(0, cutAt)}\n\n_… and ${closed - count} more in the job log_`;
+}
+
 function folded(summary: string, content: string): string {
   return `<details>\n<summary>${summary}</summary>\n\n${content.trim()}\n\n</details>`;
 }
@@ -564,7 +601,8 @@ function lastLines(text: string, maxLines: number): string {
 }
 
 function stripLeadingIcons(text: string): string {
-  return text.split('\n')[0].replace(/^[\s\p{Extended_Pictographic}\u{FE0F}\u{200D}]+/u, '').trim();
+  // "❌ Error: Draft deployment actions file found" reads "Draft deployment actions file found"
+  return text.split('\n')[0].replace(/^[\s\p{Extended_Pictographic}\u{FE0F}\u{200D}]+/u, '').replace(/^Error:\s*/i, '').trim();
 }
 
 function escapeInline(text: string): string {

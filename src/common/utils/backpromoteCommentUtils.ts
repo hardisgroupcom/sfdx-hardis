@@ -16,6 +16,7 @@ import { retryOnThrottling } from './adaptiveBatch.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
 import { getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
+import { formatShortDate } from '../gitProvider/prCommentDates.js';
 
 export const BACKPROMOTES_MARKER = '<!-- sfdx-hardis backpromotes -->';
 const DATA_START = '<!-- sfdx-hardis backpromotes-data ';
@@ -142,12 +143,7 @@ function cellText(text: string): string {
 
 // "Sep 12, 18:25 UTC": the hidden data keeps the ISO date
 function shortDate(date: string): string {
-  const parsed = new Date(date || '');
-  if (isNaN(parsed.getTime())) {
-    return (date || '').substring(0, 16).replace('T', ' ');
-  }
-  const day = parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-  return `${day}, ${parsed.toISOString().substring(11, 16)} UTC`;
+  return formatShortDate(date, { withTime: true });
 }
 
 const LEFT_OUT_LABELS: Record<BackpromoteLeftOutReason, string> = {

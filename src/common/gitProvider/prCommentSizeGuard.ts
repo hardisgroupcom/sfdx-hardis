@@ -24,7 +24,8 @@ export type PrCommentSection = {
   markdown: string;
   // Never shortened nor dropped
   keep?: boolean;
-  // Shorter version of the section (lists cut to SHORTENED_LIST_ENTRIES entries), used before dropping it
+  // Shorter version of the section (lists cut to SHORTENED_LIST_ENTRIES entries), used before dropping
+  // it, or for a kept section before cutting the end of the comment
   shortMarkdown?: string;
   // How the section is named in the "left out" notice
   dropLabel?: string;
@@ -77,12 +78,21 @@ export function fitPrCommentSections(sections: PrCommentSection[], budget: numbe
       if (fits()) break;
     }
   }
+  // 4. Kept sections that have a shorter version (the first deployment errors only) use it
+  if (!fits()) {
+    for (const section of current) {
+      if (!section.keep || !section.shortMarkdown) continue;
+      section.markdown = section.shortMarkdown;
+      isShortened = true;
+      if (fits()) break;
+    }
+  }
   let markdown = joinSections(current);
   if (leftOut.length > 0 || isShortened) {
     const what = leftOut.length > 0 ? `${leftOut.join(', ')} left out` : 'long outputs and lists shortened';
     markdown += `\n\n✂️ _Shortened to fit the ${limitLabel} character limit: ${what}. Full details in the job log._`;
   }
-  // 4. Last resort: cut the end of the body, the provider frame (markers) is added after it
+  // 5. Last resort: cut the end of the body, the provider frame (markers) is added after it
   if (markdown.length > budget) {
     markdown = cutMarkdown(markdown, budget);
   }
