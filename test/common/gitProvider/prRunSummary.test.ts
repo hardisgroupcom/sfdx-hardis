@@ -154,6 +154,25 @@ describe('Pull Request run summary', () => {
     expect(runs.map((run) => run.kind)).to.deep.equal(['validation', 'megalinter']);
   });
 
+  // The comments of a GitHub Actions job carry its name, spaces included, in their message key
+  it('lists the runs of a GitHub Actions job whose name has spaces', () => {
+    const runs = parseWorkflowRunsFromComments([
+      {
+        body: `Checked
+
+${encodeRunSummaryMarker({ kind: 'validation', status: 'valid' })}
+<!-- sfdx-hardis message-key deployment-check-Simulate Deployment (sfdx-hardis)-1 -->`,
+      },
+      {
+        body: `Deployed
+
+${encodeRunSummaryMarker({ kind: 'deployment', status: 'invalid' })}
+<!-- sfdx-hardis message-key deployment-Process Deployment (sfdx-hardis)-1 -->`,
+      },
+    ]);
+    expect(runs.map((run) => `${run.kind}:${run.status}`)).to.deep.equal(['validation:valid', 'deployment:invalid']);
+  });
+
   it('reads the placeholder deployment comment as pending', () => {
     const run = parseWorkflowRunFromComment({ body: `## Deployment Results\n\nWaiting for the merge\n\n${DEPLOYMENT_KEY}` });
     expect(run?.status).to.equal('pending');
