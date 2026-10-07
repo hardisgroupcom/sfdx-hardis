@@ -834,21 +834,22 @@ function buildActionsVerdict(
   manual: DeploymentActionStateEntry[],
   total: number
 ): string {
-  const byOrg = (entries: DeploymentActionStateEntry[]) => [...new Set(entries.map((e) => e.orgBranch))].join(', ');
-  const parts: string[] = [];
-  if (failed.length > 0) {
-    parts.push(`❌ ${failed.length} ${failed.length === 1 ? 'action' : 'actions'} failed in ${byOrg(failed)}`);
+  const orgs = [...new Set([...failed, ...stopped, ...manual].map((e) => e.orgBranch))].sort((a, b) => getOrgBranchWeight(a) - getOrgBranchWeight(b));
+  if (orgs.length === 0) {
+    return total > 0 ? '✅ Nothing to do: every deployment action is done or skipped' : '✅ No deployment action yet';
   }
-  if (stopped.length > 0) {
-    parts.push(`⏸️ ${stopped.length} waiting in ${byOrg(stopped)}`);
-  }
-  if (manual.length > 0) {
-    parts.push(`👋 ${manual.length} to do by hand in ${byOrg(manual)}`);
-  }
-  if (parts.length > 0) {
-    return parts.join(' · ');
-  }
-  return total > 0 ? '✅ Nothing to do: every deployment action is done or skipped' : '✅ No deployment action yet';
+  // One group per org: "In integration: ❌ 1 failed · ⏸️ 2 waiting · 👋 1 to do by hand"
+  return orgs
+    .map((org) => {
+      const count = (entries: DeploymentActionStateEntry[]) => entries.filter((e) => e.orgBranch === org).length;
+      const parts = [
+        count(failed) > 0 ? `❌ ${count(failed)} failed` : '',
+        count(stopped) > 0 ? `⏸️ ${count(stopped)} waiting` : '',
+        count(manual) > 0 ? `👋 ${count(manual)} to do by hand` : '',
+      ].filter((part) => part !== '');
+      return `In ${org}: ${parts.join(' · ')}`;
+    })
+    .join(' / ');
 }
 
 // Note of the results table, without the email addresses and Salesforce usernames it may hold:

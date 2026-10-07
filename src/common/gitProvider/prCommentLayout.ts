@@ -368,28 +368,36 @@ function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: Phase
 /**
  * Manual actions to perform in the org, as checkboxes carrying the hidden marker that lets the next
  * sfdx-hardis job record a ticked box as done. Pre-deployment actions are listed in the validation
- * comment, post-deployment ones in the deployment comment. Actions already performed are listed
- * ticked: unticked, the checkbox sync would tick them again on every job.
+ * comment (and in the deployment comment while still to do), post-deployment ones in the deployment
+ * comment. Actions already performed are listed ticked: unticked, the checkbox sync would tick them
+ * again on every job.
  */
 function buildManualActionsChecklist(commands: PhasedCommand[], phase: ActionPhase, options: PrCommentLayoutOptions): string {
-  if ((phase === 'pre-deploy' && !options.checkOnly) || (phase === 'post-deploy' && options.checkOnly)) {
+  // A post-deployment manual action can only be done after the merge. A pre-deployment one is
+  // listed by the validation, and again by the deployment while it is still not done.
+  if (phase === 'post-deploy' && options.checkOnly) {
     return '';
   }
   const isDone = (cmd: PrePostCommand) =>
     cmd.result?.statusCode === 'skipped' &&
     (cmd.result.skippedCode === 'already-run-in-org' || (cmd.result.skippedReason || '').startsWith('runOnlyOnceByOrg: already run'));
+  // The deployment comment repeats a pre-deployment action only while it is still to do
+  const lateReminder = phase === 'pre-deploy' && !options.checkOnly;
   // Failed manual actions (invalid customUsername, auth error...) stay to do
   const manual = commands.filter(
-    (c) => c.cmd.type === 'manual' && (c.cmd.result?.statusCode === 'manual' || c.cmd.result?.statusCode === 'failed' || isDone(c.cmd))
+    (c) => c.cmd.type === 'manual' && (c.cmd.result?.statusCode === 'manual' || c.cmd.result?.statusCode === 'failed' || (isDone(c.cmd) && !lateReminder))
   );
   if (manual.length === 0) {
     return '';
   }
   const orgBranch = manual[0].orgBranch;
+  const org = orgBranch ? `\`${orgBranch}\`` : 'the org';
   const pending = manual.filter((c) => !isDone(c.cmd)).length;
-  const title = phase === 'pre-deploy'
-    ? `#### 👋 To do by hand in ${orgBranch ? `\`${orgBranch}\`` : 'the org'} before the deployment`
-    : `#### 👋 To do by hand in ${orgBranch ? `\`${orgBranch}\`` : 'the org'} after the deployment`;
+  const title = lateReminder
+    ? `#### 👋 Still to do by hand in ${org} (planned before the deployment)`
+    : phase === 'pre-deploy'
+      ? `#### 👋 To do by hand in ${org} before the deployment`
+      : `#### 👋 To do by hand in ${org} after the deployment`;
   const lines = [title, ''];
   for (const { cmd } of manual) {
     // Newlines in a label would break the checklist line and its hidden marker

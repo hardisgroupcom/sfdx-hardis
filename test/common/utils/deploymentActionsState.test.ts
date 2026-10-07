@@ -70,7 +70,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
 
     expect(body).to.contain('| Action | When | integration | uat |');
     expect(body).to.contain('#### Needs you');
-    expect(body).to.contain('### 👋 1 to do by hand in uat');
+    expect(body).to.contain('### In uat: 👋 1 to do by hand');
     expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 when:pre-deploy --> 👋 ');
     expect(body).to.contain('*Legend:');
     expect(body).to.match(/\*Updated [A-Z][a-z]{2} \d{1,2}, \d{2}:\d{2} UTC\*/);
