@@ -27,23 +27,23 @@ text disagreed with what a learner gets**, and fixed issue #93 on the way:
 
 ## Versions under test
 
-| Thing              | Version                                                                                                             |
-|--------------------|---------------------------------------------------------------------------------------------------------------------|
-| sfdx-hardis        | npm `8.14.1-beta202610062235.0` installed with `sf plugins install sfdx-hardis@beta` (= `main` `971ac8925`)         |
-| vscode-sfdx-hardis | `main` at `7dc49a99` (v8.11.0), built from sources (`yarn compile && yarn dev`) for the lab driver                  |
-| Course             | `main` at `b7f5e06`, then branch `fix/training-e2e-2026-10-07`                                                      |
-| CI images          | `sfdx-hardis-ubuntu:beta`, whose config holds `SFDX_HARDIS_VERSION=8.14.1-beta202610062235.0` (pushed 22:50Z)      |
-| Published site     | `main` at `b7f5e06`, the same as the course clone when the walk started                                             |
+| Thing              | Version                                                                                                       |
+|--------------------|---------------------------------------------------------------------------------------------------------------|
+| sfdx-hardis        | npm `8.14.1-beta202610062235.0` installed with `sf plugins install sfdx-hardis@beta` (= `main` `971ac8925`)   |
+| vscode-sfdx-hardis | `main` at `7dc49a99` (v8.11.0), built from sources (`yarn compile && yarn dev`) for the lab driver            |
+| Course             | `main` at `b7f5e06`, then branch `fix/training-e2e-2026-10-07`                                                |
+| CI images          | `sfdx-hardis-ubuntu:beta`, whose config holds `SFDX_HARDIS_VERSION=8.14.1-beta202610062235.0` (pushed 22:50Z) |
+| Published site     | `main` at `b7f5e06`, the same as the course clone when the walk started                                       |
 
 ## Environment
 
-| Item             | State                                                                                                                                                                                        |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Fork             | `nvuillam/sfdx-hardis-training`, deleted since the last walk: recreated with `gh repo fork`, Actions banner clicked over CDP, `reset-fork.sh`, then one `E2E ONLY` beta-image commit on `main` and the three start branches |
-| Orgs             | `helios-dev`, `-integration`, `-uat` (scratch), `helios-preprod`, `helios-prod` (orgfarm Developer Editions): five teardowns clean before the walk, the two Developer Editions re-seeded in Lab 3.1 |
-| Monitoring repo  | `nvuillam/sfdx-hardis-training-monitoring-run4`, new and private, its workflow on the `beta` image (`E2E ONLY` commit on its `main`)                                                        |
-| Learner clone    | `C:/git/training-run`                                                                                                                                                                         |
-| Browser on CDP   | the dedicated `chrome-cdp-training` profile on 9222: its DevTools attach was wedged by two old tabs, closed with `/json/close`                                                               |
+| Item            | State                                                                                                                                                                                                                       |
+|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Fork            | `nvuillam/sfdx-hardis-training`, deleted since the last walk: recreated with `gh repo fork`, Actions banner clicked over CDP, `reset-fork.sh`, then one `E2E ONLY` beta-image commit on `main` and the three start branches |
+| Orgs            | `helios-dev`, `-integration`, `-uat` (scratch), `helios-preprod`, `helios-prod` (orgfarm Developer Editions): five teardowns clean before the walk, the two Developer Editions re-seeded in Lab 3.1                         |
+| Monitoring repo | `nvuillam/sfdx-hardis-training-monitoring-run4`, new and private, its workflow on the `beta` image (`E2E ONLY` commit on its `main`)                                                                                        |
+| Learner clone   | `C:/git/training-run`                                                                                                                                                                                                       |
+| Browser on CDP  | the dedicated `chrome-cdp-training` profile on 9222: its DevTools attach was wedged by two old tabs, closed with `/json/close`                                                                                              |
 
 ## The cheap checks
 
@@ -74,35 +74,35 @@ Fidelity: **1** lab driver (real VS Code panel, real CLI), **2** headless panel 
 `auth.mjs`, `mon.mjs`), **3** direct `sf` / `git` / `gh` / API, **browser** the real Setup page over
 CDP.
 
-| Lab  | Fidelity                                                                                 | A  | B  | C  | Findings |
-|------|------------------------------------------------------------------------------------------|----|----|----|----------|
-| 1.1  | read only                                                                                | ok | -  | ok |          |
-| 1.2  | 1 (`init` on the recreated fork)                                                         | ok | ok | ok |          |
-| 1.3  | 1                                                                                        | ok | ok | ok |          |
-| 1.4  | browser (field wizard, both grants), 3 (record values)                                   | ok | ok | ok |          |
-| 1.5  | 3 (retrieve, staging, commit), 1 (Save / Publish)                                        | ok | ok | ok |          |
-| 1.6  | 3 (`gh pr create`, `prflow.sh`), CI on beta                                              | ok | ok | ok | C2, C3   |
-| 1.7  | 2, browser (field, grant), 3 (list view as metadata)                                     | ok | ok | ok |          |
-| 2.1  | 3 (simulate, merge), 2 (`backpromote --plan` then `--auto`, the panel's calls)          | ok | ok | ok | picture  |
-| 2.2  | browser (field), 3 (flow as XML), 2                                                      | ok | ok | ok |          |
-| 2.3  | browser (Required and its warning), 2, 3 (`action:create`)                               | ok | ok | ok |          |
-| 2.4  | 3 (object, tab, app, grants as metadata), **Create my lab records**, 2 (export), 3      | ok | ok | ok | F1       |
-| 2.5  | 3 (Apex edits), CI                                                                       | ok | ok | ok |          |
-| 2.6  | 3 (profile grant through the API), browser (permission set), 2                           | ok | ok | ok |          |
-| 2.7  | 3 (flows as XML, merge resolution), browser (grant), 2, simulate                         | ok | ok | ok |          |
-| 2.8  | 3 (layout, select-all retrieve), 2 (`resetselection`)                                    | ok | ok | ok |          |
-| 2.9  | 3 (object, flow, grants, records), 2, simulate                                           | ok | ok | ok |          |
-| 3.1  | 3 (branch, protections, config as files), 2 (`auth.mjs` x2), **seed** x2                 | ok | ok | ok |          |
-| 3.2  | simulate x2, 3 (line review comment)                                                     | ok | ok | ok |          |
-| 3.3  | log read, simulate x4, 3 (review, group, `action:run`, `set-status`)                     | ok | ok | ok | T1       |
-| 3.4  | simulate x2, 3 (comment)                                                                 | ok | ok | ok |          |
-| 3.5  | 3 (UAT address, no-overwrite entry), **publish**, `promo.sh`, 2 (notes)                  | ok | ok | ok | T2       |
-| 3.6  | browser (Deliverability x2), `promo.sh` x2, 2 (DORA)                                     | ok | ok | ok |          |
-| 3.7  | simulate, `promo.sh`, 2 (retrofit)                                                       | ok | ok | ok | T3       |
-| 3.8  | 2 (`mon.mjs`), 3 (Run workflow), **publish**, CI on beta                                 | ok | ok | ok |          |
-| 3.9  | 2 (`project2markdown --with-history`), 3 (paragraphs)                                    | ok | ok | ok | C1       |
-| 3.10 | simulate x5, `promo.sh`, 2 (`promotion:create`), 3 (resolution by hand), retrofit        | ok | ok | ok |          |
-| 3.11 | simulate, `promo.sh` x3, 2 (notes, DORA)                                                 | ok | ok | ok |          |
+| Lab  | Fidelity                                                                           | A  | B  | C  | Findings |
+|------|------------------------------------------------------------------------------------|----|----|----|----------|
+| 1.1  | read only                                                                          | ok | -  | ok |          |
+| 1.2  | 1 (`init` on the recreated fork)                                                   | ok | ok | ok |          |
+| 1.3  | 1                                                                                  | ok | ok | ok |          |
+| 1.4  | browser (field wizard, both grants), 3 (record values)                             | ok | ok | ok |          |
+| 1.5  | 3 (retrieve, staging, commit), 1 (Save / Publish)                                  | ok | ok | ok |          |
+| 1.6  | 3 (`gh pr create`, `prflow.sh`), CI on beta                                        | ok | ok | ok | C2, C3   |
+| 1.7  | 2, browser (field, grant), 3 (list view as metadata)                               | ok | ok | ok |          |
+| 2.1  | 3 (simulate, merge), 2 (`backpromote --plan` then `--auto`, the panel's calls)     | ok | ok | ok | picture  |
+| 2.2  | browser (field), 3 (flow as XML), 2                                                | ok | ok | ok |          |
+| 2.3  | browser (Required and its warning), 2, 3 (`action:create`)                         | ok | ok | ok |          |
+| 2.4  | 3 (object, tab, app, grants as metadata), **Create my lab records**, 2 (export), 3 | ok | ok | ok | F1       |
+| 2.5  | 3 (Apex edits), CI                                                                 | ok | ok | ok |          |
+| 2.6  | 3 (profile grant through the API), browser (permission set), 2                     | ok | ok | ok |          |
+| 2.7  | 3 (flows as XML, merge resolution), browser (grant), 2, simulate                   | ok | ok | ok |          |
+| 2.8  | 3 (layout, select-all retrieve), 2 (`resetselection`)                              | ok | ok | ok |          |
+| 2.9  | 3 (object, flow, grants, records), 2, simulate                                     | ok | ok | ok |          |
+| 3.1  | 3 (branch, protections, config as files), 2 (`auth.mjs` x2), **seed** x2           | ok | ok | ok |          |
+| 3.2  | simulate x2, 3 (line review comment)                                               | ok | ok | ok |          |
+| 3.3  | log read, simulate x4, 3 (review, group, `action:run`, `set-status`)               | ok | ok | ok | T1       |
+| 3.4  | simulate x2, 3 (comment)                                                           | ok | ok | ok |          |
+| 3.5  | 3 (UAT address, no-overwrite entry), **publish**, `promo.sh`, 2 (notes)            | ok | ok | ok | T2       |
+| 3.6  | browser (Deliverability x2), `promo.sh` x2, 2 (DORA)                               | ok | ok | ok |          |
+| 3.7  | simulate, `promo.sh`, 2 (retrofit)                                                 | ok | ok | ok | T3       |
+| 3.8  | 2 (`mon.mjs`), 3 (Run workflow), **publish**, CI on beta                           | ok | ok | ok |          |
+| 3.9  | 2 (`project2markdown --with-history`), 3 (paragraphs)                              | ok | ok | ok | C1       |
+| 3.10 | simulate x5, `promo.sh`, 2 (`promotion:create`), 3 (resolution by hand), retrofit  | ok | ok | ok |          |
+| 3.11 | simulate, `promo.sh` x3, 2 (notes, DORA)                                           | ok | ok | ok |          |
 
 What the beta changed for the course, and the course already says: a pending pre-deployment manual
 action no longer stops a validation by default (#2305), and the course turns the stop back on with
