@@ -1042,6 +1042,8 @@ export declare type PullRequestData = {
   // Number of deployment errors and of failing Apex tests, for the run summary of the comment
   errorCount?: number;
   failedTestsCount?: number;
+  // Deployment errors that are Apex classes under the coverage Salesforce requires
+  coverageWarningsCount?: number;
   flowDeletionMarkdownBody?: string;
   // Explains which Pull Requests the deployment actions and Apex test classes were collected from
   deploymentScopeMarkdownBody?: string;

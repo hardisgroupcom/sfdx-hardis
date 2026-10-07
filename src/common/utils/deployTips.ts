@@ -293,6 +293,9 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     status: "valid",
     errorCount: errorsAndTips.length,
     failedTestsCount: failedTests.length,
+    // Salesforce refuses a deployment whose Apex classes are not covered enough: an error of the
+    // tests, not of the metadata
+    coverageWarningsCount: errorsAndTips.filter((err) => err?.tip?.label === "CodeCoverageWarning").length,
   };
   if (errorsAndTips.length > 0) {
     prData.title = options.check ? "❌ Deployment check failure" : "❌ Deployment failure";

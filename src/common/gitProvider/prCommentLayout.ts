@@ -135,11 +135,20 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   return [`### ${verdict}`, [next, note].filter((text) => text !== '').join(' ')].filter((line) => line !== '').join('\n\n');
 }
 
+// Every deployment error is an Apex class under the coverage Salesforce requires: the tests ran,
+// the metadata itself had no error
+function isCoverageRefusal(prData: Partial<PullRequestData>): boolean {
+  return (prData.coverageWarningsCount || 0) > 0 && prData.coverageWarningsCount === (prData.errorCount || 0);
+}
+
 function isNothingToDeploy(prData: Partial<PullRequestData>): boolean {
   return prData.metadataOutcome === 'nothing-to-deploy' || (prData.title || '').includes('No metadata to deploy');
 }
 
 function describeFailure(prData: Partial<PullRequestData>, failedActions: PhasedCommand[]): string {
+  if (isCoverageRefusal(prData)) {
+    return `the Apex code coverage is too low for ${prData.coverageWarningsCount === 1 ? '1 class' : `${prData.coverageWarningsCount} classes`}`;
+  }
   if ((prData.errorCount || 0) > 0) {
     return `${prData.errorCount} deployment ${prData.errorCount === 1 ? 'error' : 'errors'}`;
   }
@@ -183,6 +192,9 @@ function buildCheckTable(prData: Partial<PullRequestData>, commands: PhasedComma
 
 function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLayoutOptions): string {
   const errors = prData.errorCount || 0;
+  if (isCoverageRefusal(prData)) {
+    return `⚪ No component error: Salesforce refused the ${options.checkOnly ? 'validation' : 'deployment'} for the code coverage`;
+  }
   if (errors > 0) {
     return `❌ ${errors} ${errors === 1 ? 'error' : 'errors'}: nothing was ${options.checkOnly ? 'validated' : 'deployed'}`;
   }
@@ -216,6 +228,9 @@ function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLa
 
 function describeApexTests(prData: Partial<PullRequestData>, options: PrCommentLayoutOptions): string {
   const failures = prData.failedTestsCount || 0;
+  if (isCoverageRefusal(prData)) {
+    return `❌ Coverage too low for ${prData.coverageWarningsCount === 1 ? '1 class' : `${prData.coverageWarningsCount} classes`}: see below`;
+  }
   if (failures > 0) {
     return `❌ ${failures} test ${failures === 1 ? 'failure' : 'failures'}`;
   }
@@ -301,7 +316,7 @@ function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: Phase
   // Deployment errors and Apex test failures, with their tips
   const errorsMarkdown = prData.deployErrorsMarkdownBody || '';
   if (errorsMarkdown.startsWith('## ')) {
-    const headingText = errorsMarkdown.split('\n')[0].replace(/^## /, '').trim();
+    const headingText = isCoverageRefusal(prData) ? 'Apex code coverage' : errorsMarkdown.split('\n')[0].replace(/^## /, '').trim();
     const icon = headingText.toLowerCase().includes('test') ? '💥' : '❌';
     const body = errorsMarkdown.split('\n').slice(1).join('\n').trim();
     sections.push({

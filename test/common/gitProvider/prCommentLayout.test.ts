@@ -213,6 +213,22 @@ describe('Pull Request comment layout', () => {
     expect(parseManualActionCheckboxes(fitted.markdown)).to.have.length(1);
   });
 
+  it('reports a coverage refusal on the Apex tests row, not as a metadata error', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        errorCount: 1,
+        coverageWarningsCount: 1,
+        deployErrorsMarkdownBody: '## Deployment errors\n\n<details><summary>⛔ CmtE2EInvoice - Test coverage of selected Apex Class is 66,667%</summary>\n\ntip\n</details>',
+      },
+      true
+    );
+    expect(body).to.contain('### ❌ Cannot merge into `integration`: the Apex code coverage is too low for 1 class');
+    expect(body).to.contain('| Metadata | ⚪ No component error: Salesforce refused the validation for the code coverage |');
+    expect(body).to.contain('| Apex tests | ❌ Coverage too low for 1 class: see below |');
+    expect(body).to.contain('#### ❌ Apex code coverage');
+  });
+
   it('writes skip reasons for people', () => {
     expect(humanActionReason(command({ result: { statusCode: 'skipped', skippedCode: 'context-deployment-only' } }))).to.equal('Runs after the merge only');
     expect(humanActionReason(command({ result: { statusCode: 'skipped', skippedCode: 'branch-not-targeted' } }), 'uat')).to.equal('Not meant for uat');
