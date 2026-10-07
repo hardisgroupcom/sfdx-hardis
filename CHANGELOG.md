@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.15.0] 2026-10-07
+
 - [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) can leave out the Profile and Permission Set entries that grant nothing.
 - [hardis:project:clean:emptyitems](https://sfdx-hardis.cloudity.com/hardis/project/clean/emptyitems/) removes the empty CustomObject files that break deployments, and can run at each User Story save.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): a Flow that can not be deleted after the deployment no longer fails it, and a Flow referenced by another deleted Flow is retried once that Flow is gone.
