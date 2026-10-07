@@ -21,14 +21,32 @@ export const DOC_PROTECTION_HEADER_LINES = [
   '<!-- DO_NOT_OVERWRITE_DOC=FALSE -->',
 ];
 
+// Only the head of a page is read: an Apex page embeds the source of its class, which may well
+// quote these markers, and must not freeze itself or lose its own lines because of it
+const DOC_PROTECTION_HEAD_LENGTH = 1024;
+const DOC_PROTECTED_REGEX = /<!--\s*DO_NOT_OVERWRITE_DOC\s*=\s*TRUE\s*-->/i;
+const DOC_PROTECTION_LINE_REGEX = /<!--\s*DO_NOT_OVERWRITE_DOC\s*=\s*(TRUE|FALSE)\s*-->/i;
+
 /** True when a generated page exists and its author marked it DO_NOT_OVERWRITE_DOC=TRUE */
 export function isDocProtected(file: string): boolean {
-  return fs.existsSync(file) && fs.readFileSync(file, 'utf8').includes('DO_NOT_OVERWRITE_DOC=TRUE');
+  if (!fs.existsSync(file)) {
+    return false;
+  }
+  const head = Buffer.alloc(DOC_PROTECTION_HEAD_LENGTH);
+  const fd = fs.openSync(file, 'r');
+  try {
+    const bytesRead = fs.readSync(fd, head, 0, DOC_PROTECTION_HEAD_LENGTH, 0);
+    return DOC_PROTECTED_REGEX.test(head.toString('utf8', 0, bytesRead));
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 /** The page with the two protection lines on top, unless it already has them */
 export function withDocProtectionHeader(markdown: string): string {
-  return markdown.includes('DO_NOT_OVERWRITE_DOC=') ? markdown : [...DOC_PROTECTION_HEADER_LINES, '', markdown].join('\n');
+  return DOC_PROTECTION_LINE_REGEX.test(markdown.slice(0, DOC_PROTECTION_HEAD_LENGTH))
+    ? markdown
+    : [...DOC_PROTECTION_HEADER_LINES, '', markdown].join('\n');
 }
 
 /**

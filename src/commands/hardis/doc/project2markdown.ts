@@ -599,8 +599,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
             continue;
           }
           const apexDocFile = path.join(apexDocFolder, path.basename(generatedApexDocFile));
+          // Said once per page below, where the triggers are handled too
           if (isDocProtected(apexDocFile)) {
-            uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: apexDocFile })));
             continue;
           }
           const apexDocContent = await fs.readFile(path.join(tempDir, generatedApexDocFile), "utf8");
@@ -651,6 +651,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       const mdFile = path.join(this.outputMarkdownRoot, "apex", apexName + ".md");
       if (isDocProtected(mdFile)) {
         // Somebody wrote in this page: it stays as they left it
+        uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: mdFile })));
         apexForMenu[apexName] = "apex/" + apexName + ".md";
         workItems.push({ apexName, apexContent, mdFile, needsAi: false, apexMdContent: "", mermaidClassDiagram: "" });
       } else if (fs.existsSync(mdFile)) {
@@ -1777,6 +1778,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     const flowErrors: string[] = [];
     const flowWarnings: string[] = [];
     const flowSkips: string[] = [];
+    // Pages their author marked DO_NOT_OVERWRITE_DOC=TRUE: each one is named as it is met
+    const flowProtected: string[] = [];
 
     // List flows dependencies
     const flowDeps: any = {};
@@ -1816,6 +1819,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       const outputFlowMdFile = path.join(this.outputMarkdownRoot, "flows", flowName + ".md");
       if (isDocProtected(outputFlowMdFile)) {
         uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: outputFlowMdFile })));
+        flowProtected.push(flowFile);
         flowWorkItems.push({ flowFile, flowName, flowXml, outputFlowMdFile, skip: true });
       } else if (this.diffOnly && !updatedFlowNames.includes(flowName) && fs.existsSync(outputFlowMdFile)) {
         flowSkips.push(flowFile);
@@ -1904,7 +1908,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     if (flowSkips.length > 0) {
       uxLog("warning", this, c.yellow(t('skippedGenerationForFlowsThatHaveNot', { flowSkips: flowSkips.length, humanDisplay: this.humanDisplay(flowSkips) })));
     }
-    uxLog("success", this, c.green(t('successfullyGeneratedFlowsDocumentation', { flowFiles: flowFiles.length - flowSkips.length - flowWarnings.length - flowErrors.length })));
+    uxLog("success", this, c.green(t('successfullyGeneratedFlowsDocumentation', { flowFiles: flowFiles.length - flowSkips.length - flowProtected.length - flowWarnings.length - flowErrors.length })));
     if (flowWarnings.length > 0) {
       uxLog("warning", this, c.yellow(t('partiallyGeneratedDocumentationMarkdownWithMermaidjsBut', { flowWarnings: flowWarnings.length, humanDisplay: this.humanDisplay(flowWarnings) })));
     }

@@ -42,4 +42,20 @@ describe('documentation page protection', () => {
     assert.equal(isDocProtected(generated), false);
     assert.equal(isDocProtected(path.join(dir, 'missing.md')), false);
   });
+
+  it('accepts the marker typed in lower case', () => {
+    const marked = path.join(dir, 'lower.md');
+    fs.writeFileSync(marked, withDocProtectionHeader('# Page\n').replace('=FALSE', '=true'));
+    assert.equal(isDocProtected(marked), true);
+  });
+
+  // An Apex page embeds the source of its class, which can quote the markers
+  it('only reads the head of a page', () => {
+    const body = '# Class\n\n' + 'x'.repeat(2000) + '\n// <!-- DO_NOT_OVERWRITE_DOC=TRUE -->\n';
+    const page = withDocProtectionHeader(body);
+    assert.match(page.split('\n')[1], /DO_NOT_OVERWRITE_DOC=FALSE/);
+    const file = path.join(dir, 'class.md');
+    fs.writeFileSync(file, page);
+    assert.equal(isDocProtected(file), false);
+  });
 });

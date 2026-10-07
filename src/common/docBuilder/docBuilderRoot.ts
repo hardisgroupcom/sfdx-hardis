@@ -6,7 +6,7 @@ import { AiProvider } from '../aiProvider/index.js';
 import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import fs from '../utils/fsUtils.js';
 import path from 'path';
-import { DOC_PROTECTION_HEADER_LINES, includeFromFile } from './docUtils.js';
+import { DOC_PROTECTION_HEADER_LINES, includeFromFile, isDocProtected } from './docUtils.js';
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { t } from '../utils/i18n.js';
 
@@ -59,12 +59,9 @@ export abstract class DocBuilderRoot {
 
     await fs.ensureDir(path.dirname(this.outputFile));
     let overwriteDoc = true;
-    if (fs.existsSync(this.outputFile)) {
-      const fileContent = await fs.readFile(this.outputFile, "utf8");
-      if (fileContent.includes("DO_NOT_OVERWRITE_DOC=TRUE")) {
-        uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: this.outputFile })));
-        overwriteDoc = false;
-      }
+    if (isDocProtected(this.outputFile)) {
+      uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile: this.outputFile })));
+      overwriteDoc = false;
     }
     if (overwriteDoc) {
       await fs.writeFile(this.outputFile, this.markdownDoc);

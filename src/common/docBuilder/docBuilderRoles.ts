@@ -6,6 +6,7 @@ import c from "chalk";
 import { UtilsAi } from "../aiProvider/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { t } from '../utils/i18n.js';
+import { DOC_PROTECTION_HEADER_LINES, isDocProtected } from './docUtils.js';
 
 export class DocBuilderRoles {
 
@@ -13,9 +14,13 @@ export class DocBuilderRoles {
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_ROLES";
 
   public static async generateMarkdownFileFromRoles(roleDescriptions: any[], outputFile: string) {
+    if (isDocProtected(outputFile)) {
+      uxLog("warning", this, c.yellow(t('theFileIsMarkedAsDonotoverwritedocTrue', { outputFile })));
+      await this.generateJsonTreeFileFromRoles(roleDescriptions);
+      return;
+    }
     const mdLines: string[] = [
-      '<!-- This file is auto-generated. if you do not want it to be overwritten, set TRUE in the line below -->',
-      '<!-- DO_NOT_OVERWRITE_DOC=FALSE -->',
+      ...DOC_PROTECTION_HEADER_LINES,
       '',
       `# ${t('docMdOrganizationRoles')}`,
       '',

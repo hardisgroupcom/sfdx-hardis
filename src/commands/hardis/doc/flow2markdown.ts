@@ -10,6 +10,7 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import { generateFlowMarkdownFile, generateHistoryDiffMarkdown, generateMarkdownFileWithMermaid } from '../../../common/utils/mermaidUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
+import { isDocProtected } from '../../../common/docBuilder/docUtils.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -147,14 +148,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
       uxLog("action", this, c.cyan(t('generatingMarkdownForFlow', { inputFile })));
       const flowXml = (await fs.readFile(inputFile, "utf8")).toString();
-      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {} });
+      const genRes = await generateFlowMarkdownFile(flowName, flowXml, outputFile, { collapsedDetails: false, describeWithAi: true, flowDependencies: {}, withProtectionHeader: true });
       if (!genRes) {
         throw new Error("Error generating markdown file");
       }
       if (this.debugMode) {
         await fs.copyFile(outputFile, outputFile.replace(".md", ".mermaid.md"));
       }
-      const gen2res = await generateMarkdownFileWithMermaid(outputFile, outputFile, null, this.withPdf);
+      // A page its author marked DO_NOT_OVERWRITE_DOC=TRUE was left alone, mermaid blocks included
+      const gen2res = isDocProtected(outputFile) || await generateMarkdownFileWithMermaid(outputFile, outputFile, null, this.withPdf);
       if (!gen2res) {
         throw new Error("Error generating mermaid markdown file");
       }
