@@ -12,6 +12,7 @@
 - Azure DevOps: [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) no longer says the conflict prompt is in the Pull Request description when it was too long to fit there.
 - [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/) stops with an explanation when the git provider refuses to update the Deployment Actions comment, instead of saying the action was recorded.
 - Azure DevOps: a command run outside a pipeline no longer ignores the Pull Requests of its own repository as belonging to another one.
+- Bitbucket: the `--json` output of the commands is no longer preceded by a banner of the Bitbucket client, which kept VS Code from reading it.
 - A damaged sfdx-hardis cache file (`~/.sfdx/.sfdx-hardis-cache.json`) no longer stops the commands: it is reset to an empty cache.
 - Deployment actions declared in the config of a branch whose name holds a slash (like `release/uat`) are found again by [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/) and [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/).
 

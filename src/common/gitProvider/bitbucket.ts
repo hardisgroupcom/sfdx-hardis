@@ -36,7 +36,9 @@ export class BitbucketProvider extends GitProviderRoot {
     const clientOptions = this.email
       ? { auth: { username: this.email, password: this.token } }
       : { auth: { token: this.token } };
-    this.bitbucket = new Bitbucket(clientOptions as any);
+    // notice: false, or the client prints its "BITBUCKET CLOUD API LATEST UPDATES" banner on stdout,
+    // ahead of the document of a --json command: whoever parses it (the VS Code extension) gets nothing
+    this.bitbucket = new Bitbucket({ ...clientOptions, notice: false } as any);
   }
 
   // Same credentials as the bitbucket client, for direct REST calls
