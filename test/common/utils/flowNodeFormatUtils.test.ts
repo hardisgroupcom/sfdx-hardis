@@ -18,8 +18,8 @@ describe('Flow node format - filters', () => {
   it('shows a reference compared with Is Null as the reference, not as False', () => {
     expect(stringifyIsNullValue({ elementReference: '$GlobalConstant.True' }, '', [])).to.equal('True');
     expect(stringifyIsNullValue({ elementReference: '$GlobalConstant.False' }, '', [])).to.equal('False');
-    expect(stringifyIsNullValue({ elementReference: 'noCrew' }, '', [])).to.equal('noCrew');
-    expect(stringifyIsNullValue({ elementReference: 'noCrew' }, '', ['noCrew'])).to.equal('[noCrew](#nocrew)');
+    expect(stringifyIsNullValue({ elementReference: 'crew' }, '', [])).to.equal('crew');
+    expect(stringifyIsNullValue({ elementReference: 'crew' }, '', ['crew'])).to.equal('[crew](#crew)');
     expect(stringifyIsNullValue({ booleanValue: true }, '', [])).to.equal('True');
     expect(stringifyIsNullValue(undefined, '', [])).to.equal('<!-- -->');
   });
