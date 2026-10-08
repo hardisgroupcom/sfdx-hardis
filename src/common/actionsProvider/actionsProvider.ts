@@ -104,7 +104,8 @@ export function buildActionOutput(res: any): string {
     (part) => typeof part === 'string' && part.trim() !== ''
   );
   if (streams.length > 0) {
-    return streams.join('\n').trim();
+    // stdout usually ends with a new line: no blank line between the two streams
+    return streams.map((part) => part.trimEnd()).join('\n').trim();
   }
   return (res?.errorMessage || (res?.error as Error)?.message || '').trim();
 }

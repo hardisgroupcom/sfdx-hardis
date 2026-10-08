@@ -43,6 +43,16 @@ describe('buildActionOutput()', () => {
     expect(buildActionOutput({ status: 1, error: new Error('boom') })).to.equal('boom');
   });
 
+  // A failed command throws the error of child_process.exec, whose message already repeats stderr:
+  // the output is read from its streams, so each line shows once in the Pull Request comment
+  it('reads the streams of a thrown exec error, not its message', () => {
+    const error = Object.assign(new Error('Command failed: node fail.js\nERP answered 503\nConnecting...\nERP answered 503'), {
+      stdout: 'Connecting...\n',
+      stderr: 'ERP answered 503',
+    });
+    expect(buildActionOutput(error)).to.equal('Connecting...\nERP answered 503');
+  });
+
   it('returns an empty string rather than blank lines when there is nothing to report', () => {
     expect(buildActionOutput({ status: 0 })).to.equal('');
     expect(buildActionOutput({ status: 0, stdout: '\n', stderr: '' })).to.equal('');

@@ -420,6 +420,17 @@ tab, the deployment actions, the promotion), and read the rule id with `gh api g
 `branchProtectionRules { databaseId pattern }`. The improved release notes picture of Lab 3.5 is a
 written example: its capture looks for a Pull Request description titled *Promotion 2026-09 to UAT*.
 
+Three more of 2026-10-08, from the outside world rather than the products:
+
+- **GitHub remembers the last merge method of the repository.** A fork that squash-merged once shows
+  "Squash and merge" on the button of the next Pull Request, where a learner's first one reads
+  "Merge pull request". The `github-pr-merge` and `github-pr-merge-squash` captures pick
+  "Create a merge commit" in the menu first (nothing is merged) so the picture is the learner's.
+- **GitHub reorders the checks.** Mega-Linter is now listed above Simulate Deployment, which moved
+  the pills of `github-pr-checks` onto the wrong rows. Check the order against the lab text.
+- **Salesforce restyles Setup.** The Object Manager crop of Lab 1.4 came out cut off: the clip in
+  `labs/_assets/salesforce-captures.json` had to be set again.
+
 ## 5. Level 1, seven labs
 
 The pipeline and the contributor loop. Nothing else in the course works if this level does not.

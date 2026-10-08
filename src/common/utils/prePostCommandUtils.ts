@@ -9,7 +9,7 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, getActionStateEntry, getStateEntriesForPr, DeploymentActionRef, buildIdenticalActionNote } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
-import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { ActionsProvider, PrePostCommand, buildActionOutput } from '../actionsProvider/actionsProvider.js';
 import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
@@ -1090,9 +1090,11 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
     cmd.result = res;
   } catch (e) {
     uxLog("error", this, c.red(`[DeploymentActions] Exception while running action ${cmd.label}: ${(e as Error).message}`));
+    // A failed command throws an error whose message already repeats its stderr (Node) then its
+    // stdout and stderr (execCommand): keep the two streams once, the message when there are none
     cmd.result = {
       statusCode: 'failed',
-      output: (e as Error).message
+      output: buildActionOutput(e) || (e as Error).message
     };
   }
 }
