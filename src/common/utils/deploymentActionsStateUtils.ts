@@ -840,8 +840,8 @@ function buildActionsVerdict(
   if (orgs.length === 0) {
     return total > 0 ? '✅ Nothing to do: every deployment action is done or skipped' : '✅ No deployment action yet';
   }
-  // One group per org: "In integration: ❌ 1 failed · ⏸️ 2 waiting · 👋 1 to do by hand · 🕒 3 run after the merge",
-  // or "In integration: ✅ nothing to do now · 🕒 3 run after the merge"
+  // One group per org: "In integration: ❌ 1 failed · ⏸️ 2 waiting · 👋 1 to do by hand · 🕒 3 after the merge",
+  // or "In integration: ✅ nothing to do now · 🕒 3 after the merge"
   return orgs
     .map((org) => {
       const count = (entries: DeploymentActionStateEntry[]) => entries.filter((e) => e.orgBranch === org).length;
@@ -854,7 +854,7 @@ function buildActionsVerdict(
         parts.push('✅ nothing to do now');
       }
       if (count(afterMerge) > 0) {
-        parts.push(`🕒 ${count(afterMerge)} run after the merge`);
+        parts.push(`🕒 ${count(afterMerge)} after the merge`);
       }
       return `In ${org}: ${parts.join(' · ')}`;
     })

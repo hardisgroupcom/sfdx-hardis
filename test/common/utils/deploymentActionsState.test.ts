@@ -154,7 +154,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
         entry({ actionId: 'action-3', status: 'skipped' }),
         entry({ actionId: 'action-4', status: 'skipped' }),
       ], defs, 42);
-      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 3 run after the merge\n');
+      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 3 after the merge\n');
       expect(body).to.not.contain('Nothing to do:');
       // Nothing to tick: the checklist stays out
       expect(body).to.not.contain('#### Needs you');
@@ -169,7 +169,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
         entry({ actionId: 'action-2', status: 'skipped' }),
         entry({ actionId: 'action-2', orgBranch: 'uat', status: 'skipped' }),
       ], defs, 42);
-      expect(body).to.contain('### In integration: 👋 1 to do by hand · 🕒 1 run after the merge / In uat: ✅ nothing to do now · 🕒 1 run after the merge\n');
+      expect(body).to.contain('### In integration: 👋 1 to do by hand · 🕒 1 after the merge / In uat: ✅ nothing to do now · 🕒 1 after the merge\n');
     });
 
     it('stops counting an action once the deployment job ran it', () => {
