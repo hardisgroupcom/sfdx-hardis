@@ -1124,13 +1124,19 @@ What the first live run proved (2026-10-08, `AZURE_E2E_CI_TOKEN=pat`):
   follows the newer build of the same commit when the one it watches is cancelled.
 - **Drafts get their policy build** like any Pull Request.
 
-Still unproven:
+The system token (`AZURE_E2E_CI_TOKEN=system`, the default of the templates), run on 2026-10-09
+once "Contribute to pull requests" was allowed by hand to `<project> Build Service
+(<organization>)` (the PAT of `.env` cannot grant it, HTTP 401):
 
-- **The system token.** The PAT of `.env` cannot grant the build service its permission (HTTP 401,
-  it needs Security (Manage)), so the run of 2026-10-08 used `AZURE_E2E_CI_TOKEN=pat`. With
-  `system`, the comments of the jobs need "Contribute to pull requests" allowed once by hand to
-  `<project> Build Service (<organization>)`, and W2 then has the PAT user tick a comment of the
-  build service: when the PATCH is refused, `$LOGS/ci-tick-c1.log` says so and it is a finding.
+- W0, W1 and W1b pass: the build service posts the comments.
+- **W2 fails, and it is a finding of the product, not of the harness.** Azure DevOps answers
+  "Only the comment author and project admins can edit a comment" (HTTP 403) to the person who
+  ticks the checkbox of a comment the build service wrote, and to `set-status` run by that person,
+  which has to update the Deployment Actions comment. Before 2026-10-09 `set-status` said "recorded
+  as done" all the same; it now stops with the reason. So with the job token of the templates, the
+  manual action gate can only be closed by a project administrator or with the token of the jobs.
+  The scenario cannot go past W2 in that mode: W3 to W9 are proven with `AZURE_E2E_CI_TOKEN=pat`,
+  where the jobs and the person are the same identity. See the Azure DevOps report for the options.
 
 ### Bitbucket Pipelines
 
@@ -1278,6 +1284,11 @@ Traps:
   and `sf data delete record --sobject ActiveScratchOrg --record-id <id>` frees the slot of a CI org
   whose run is over. Check it before `backpromote-setup.sh`: the setup merges its stories before it
   creates the orgs, so a failure there costs a repository.
+- **The simulators run the TypeScript sources as they are on disk** (`bin/dev.js`). A source file
+  saved half way through a fix, while a section runs, fails the job that starts at that moment with
+  `command hardis:project:deploy:smart not found` and exit code 2 (2026-10-09, check A5 on GitHub).
+  Fix the product between two sections, or make each save a file that compiles, and replay the
+  section of a check that ended with exit 2 (`DA_RUN=2`, `IA_RUN=2`) before calling it a finding.
 - **A workstation short on memory fails jobs in ways that look like product defects.** Each job
   starts several node processes; with under 1 GB free a deployment action as plain as `echo` fails
   with `Command failed` and no output (2026-10-02, the retrofit validation), and the harness may
@@ -1674,6 +1685,24 @@ Traps already met on Bitbucket:
 - **Python on Windows decodes stdin with the system codepage**, as on GitLab: a Pull Request whose
   description carries the emoji of the sfdx-hardis navigation block can break `json.load(sys.stdin)`.
   `bb_pr_field` and `bb_pr_create` (and their Azure DevOps twins) read the bytes as UTF-8.
+- **Bitbucket Cloud displays raw HTML as text.** An HTML comment, a `<details>` block and a `<br/>`
+  show as they are written, and nothing folds. Until 2026-10-09 every sfdx-hardis comment showed
+  its markers, its encoded state and its tags there, which only the visual check of section 5quater
+  could see (the audit reads the source, where they belong). The Bitbucket provider now sends its
+  comments through `toBitbucketMarkup` (`src/common/gitProvider/utilsBitbucketMarkup.ts`): a marker
+  becomes a link with no text, `[](#hardis:<encoded>)`, a folded section becomes a bold title
+  followed by its content, a line break a space. What Bitbucket's markdown does draw, proven by a
+  test comment: a link with no text is an invisible anchor, in a table cell too; a
+  `[//]: # (text)` line disappears; task items are checkboxes, but **disabled**: nobody ticks a
+  manual action in a Bitbucket comment, `set-status` is the only way.
+- **The raw text of a Bitbucket comment holds the hidden markers, not the HTML comments.**
+  `dump_pr_comments` and `check-pr-modal.cjs` give them back as HTML comments, as the CLI does when
+  it reads them (`fromBitbucketMarkup`). Anything new that greps the raw content of a Bitbucket
+  comment for `<!-- sfdx-hardis` finds nothing.
+- **The Bitbucket client prints a banner on stdout, now and then** ("BITBUCKET CLOUD API LATEST
+  UPDATES"), ahead of the document of a `--json` command: `status_check` then fails on "not valid
+  JSON" for one call out of a few. Turned off in the provider (`notice: false`) on 2026-10-09.
+- **A push right after the repository is created can answer 403** for one branch: push again.
 - **A workspace over its user limit is read-only**, with a plain HTTP 402 on push. Nothing in the
   API says so beforehand; the repository can still be created. On 2026-10-08 `sfdxhardistest`
   itself answered it ("the account 'sfdxhardistest' has exceeded its user limit and this repository
