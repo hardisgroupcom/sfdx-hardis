@@ -440,7 +440,21 @@ async function capture(page, item, selector) {
       let result;
       try {
         if (render === 'api') {
-          await page.setContent(apiPage(renderThroughApi(item)), { waitUntil: 'networkidle0', timeout: 60000 });
+          await page.setContent(apiPage(renderThroughApi(item)), { waitUntil: 'domcontentloaded', timeout: 60000 });
+          // GitLab hands images over for its own lazy loader (data-src) and with paths of its
+          // host: give them their address, then wait for them without waiting for the network to
+          // go quiet, which a page of its own never does when one request hangs
+          await page.evaluate(async (base) => {
+            for (const image of document.querySelectorAll('img')) {
+              const source = image.getAttribute('data-src') || image.getAttribute('src') || '';
+              if (source) image.src = source.startsWith('/') && base ? base + source : source;
+            }
+            const pending = [...document.querySelectorAll('img')].filter((image) => !image.complete);
+            await Promise.race([
+              Promise.all(pending.map((image) => new Promise((resolve) => ((image.onload = resolve), (image.onerror = resolve))))),
+              new Promise((resolve) => setTimeout(resolve, 15000)),
+            ]);
+          }, process.env.GL_HOST || '');
           result = await capture(page, item, '#comment');
         } else {
           if (!item.url) throw new Error('no URL for this comment in the dump');
