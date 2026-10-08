@@ -93,7 +93,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
         message: t('pleaseFixUnknownErrors'),
       },
     }))
-    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold("Unknown issue: " + resultJson.result.errorMessage)), ""]);
+    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold(t('unknownDeploymentIssue', { message: resultJson.result.errorMessage }))), ""]);
   }
 
   // Fallback: the command died before Salesforce returned a result (lost connection, CLI error...):
@@ -176,7 +176,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
 }
 
 // Text of a network failure: the connection to Salesforce was lost or could not be opened
-const NETWORK_FAILURE_REGEX = /fetch failed|ConnectTimeoutError|UND_ERR_CONNECT_TIMEOUT|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
+const NETWORK_FAILURE_REGEX = /fetch failed|ConnectTimeoutError|UND_ERR_CONNECT_TIMEOUT|ECONNRESET|ECONNABORTED|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
 
 export function isNetworkFailureText(text: string): boolean {
   return NETWORK_FAILURE_REGEX.test(text || "");

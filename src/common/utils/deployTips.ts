@@ -87,9 +87,10 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
     extractFailedTestsInfoForSfdxCommand(logRaw, failedTests);
   }
   // A command that lost its connection to Salesforce prints no JSON when it was not run with --json:
-  // its only error lines ("Error (TypeError): fetch failed") are the network failure, not a metadata error
+  // its only error lines ("Error (TypeError): fetch failed") are the network failure, not a metadata error.
+  // "read ECONNRESET" also matches the "Network issue" tip: the same failure, reported the same way.
   const onlyNetworkErrors = errorsAndTips.length > 0
-    ? errorsAndTips.every((err) => !err.tip && isNetworkFailureText(err.error.message))
+    ? errorsAndTips.every((err) => (!err.tip || err.tip.label === "Network issue") && isNetworkFailureText(err.error.message))
     : isNetworkFailureText(logRaw);
   if (failedTests.length === 0 && onlyNetworkErrors) {
     const networkErrorLine = logRaw.split(/\r?\n/).find((line) => isNetworkFailureText(line)) || "";

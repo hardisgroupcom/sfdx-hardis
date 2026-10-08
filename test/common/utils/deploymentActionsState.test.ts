@@ -172,6 +172,21 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(body).to.contain('### In integration: 👋 1 to do by hand · 🕒 1 after the merge / In uat: ✅ nothing to do now · 🕒 1 after the merge\n');
     });
 
+    it('reads the project and branch actions recorded in the comment, which no Pull Request file defines', () => {
+      const configDefs = new Map<string, Map<string, ActionDef>>([
+        ['', new Map([['project-action', deployOnlyDef('project-action')]])],
+        ['uat', new Map([['uat-action', deployOnlyDef('uat-action')]])],
+      ]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'project-action', status: 'skipped' }),
+        entry({ actionId: 'uat-action', orgBranch: 'uat', status: 'skipped' }),
+        // A branch definition only counts in its own org
+        entry({ actionId: 'uat-action', status: 'skipped' }),
+      ], new Map(), 42, null, configDefs);
+      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 1 after the merge / In uat: ✅ nothing to do now · 🕒 1 after the merge\n');
+    });
+
     it('stops counting an action once the deployment job ran it', () => {
       const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2')]]);
       const body = buildDeploymentActionsCommentBody([entry({}), entry({ actionId: 'action-2', status: 'success' })], defs, 42);

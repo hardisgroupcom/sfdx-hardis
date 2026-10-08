@@ -193,4 +193,13 @@ Dry-run complete.`;
       expect(errorsAndTips[0].error.message).to.equal('Connection to Salesforce lost: fetch failed');
    });
 
+   it('Reports a reset connection in an output without JSON as one network error, like a fetch failure', async () => {
+      const log = 'Deploying v62.0 metadata to user@example.com using the v62.0 SOAP API.\nError (Error): read ECONNRESET\n';
+      const { errorsAndTips } = await analyzeDeployErrorLogs(log, true, { check: true });
+      expect(errorsAndTips).to.have.length(1);
+      expect(errorsAndTips[0].tip.label).to.equal('NetworkError');
+      expect(errorsAndTips[0].error.message).to.equal('Connection to Salesforce lost: read ECONNRESET');
+      expect(getPullRequestData().networkErrorsCount).to.equal(1);
+   });
+
 });

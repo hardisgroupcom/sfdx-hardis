@@ -166,7 +166,7 @@ function handleConditions(ruleNode: any, allProperties: string[]) {
       conditionId: id,
       leftValueReference: item.leftValueReference,
       operator: stringifyOperator(item.operator),
-      rightValue: item.operator === "IsNull" ? stringifyIsNullValue(item.rightValue) : stringifyValue(item.rightValue, "", allProperties)
+      rightValue: item.operator === "IsNull" ? stringifyIsNullValue(item.rightValue, "", allProperties) : stringifyValue(item.rightValue, "", allProperties)
     };
   });
   delete ruleNode.conditions;
@@ -223,7 +223,7 @@ export function handleFilterItems(flowNode: any, allProperties: string[]): strin
       filterId: id,
       field: item.field,
       operator: stringifyOperator(item.operator),
-      value: item.operator === "IsNull" ? stringifyIsNullValue(item.value) : stringifyValue(item.value, item.field, allProperties)
+      value: item.operator === "IsNull" ? stringifyIsNullValue(item.value, item.field, allProperties) : stringifyValue(item.value, item.field, allProperties)
     };
   });
   delete flowNode.filters;
@@ -335,10 +335,18 @@ export function stringifyOperator(operatorIn): string {
 
 // Is Null False means "is not null", so the value is never hidden. Written True or False,
 // as Flow Builder shows it, rather than the checkbox icons of the other boolean values.
-export function stringifyIsNullValue(valueIn: any): string {
-  const raw = valueIn && typeof valueIn === "object" && valueIn.booleanValue !== undefined ? valueIn.booleanValue : valueIn;
+// A reference (a boolean variable, $GlobalConstant.True) is not a literal: shown like any other value.
+export function stringifyIsNullValue(valueIn: any, field: string, allProperties: string[]): string {
+  const raw = valueIn && typeof valueIn === "object" && valueIn.booleanValue !== undefined
+    ? valueIn.booleanValue
+    : valueIn && typeof valueIn === "object" && typeof valueIn.elementReference === "string" && /^\$GlobalConstant\.(True|False)$/i.test(valueIn.elementReference)
+      ? valueIn.elementReference.split(".")[1]
+      : valueIn;
   if (raw === undefined || raw === null || raw === "") {
     return "<!-- -->";
+  }
+  if (typeof raw === "object" || !["true", "false"].includes(String(raw).toLowerCase())) {
+    return stringifyValue(valueIn, field, allProperties);
   }
   return String(raw).toLowerCase() === "true" ? "True" : "False";
 }

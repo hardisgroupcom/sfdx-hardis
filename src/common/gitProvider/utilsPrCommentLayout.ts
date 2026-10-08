@@ -120,6 +120,7 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
       verdict = `❌ Cannot merge into ${target}: ${reason}`;
       // Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed
       const waitingForManualSteps = (prData.errorCount || 0) === 0 && (prData.failedTestsCount || 0) === 0 && failedActions.length === 0
+        && prData.coverage?.status !== 'invalid' && !prData.blockingIssueMarkdownBody
         && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
       next = waitingForManualSteps
         ? 'Do the steps below in the org, tick their boxes, then run the validation again.'

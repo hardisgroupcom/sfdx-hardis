@@ -169,6 +169,27 @@ async function loadActionDefsFromPrYaml(prNumber: number): Promise<Map<string, A
   return defs;
 }
 
+// Actions of the project config (key '') and of the config of each org branch, by action id. A Pull
+// Request comment records them too, for the Pull Request whose job ran them.
+async function loadConfigActionDefs(orgBranches: string[]): Promise<Map<string, Map<string, ActionDef>>> {
+  const defsByScope = new Map<string, Map<string, ActionDef>>();
+  for (const branch of ['', ...orgBranches.filter((orgBranch) => orgBranch && orgBranch !== DEV_SANDBOXES_ORG_BRANCH)]) {
+    const defs = new Map<string, ActionDef>();
+    try {
+      for (const when of ['pre-deploy', 'post-deploy'] as ActionWhen[]) {
+        const commands = branch === '' ? await readActions('project', when) : await readActions('branch', when, branch);
+        commands.forEach((cmd, index) => {
+          if (cmd.id) defs.set(cmd.id, { ...cmd, when, executionOrder: index });
+        });
+      }
+    } catch (_e) {
+      // A config file that cannot be read gives no definition: its skips are taken as final
+    }
+    defsByScope.set(branch, defs);
+  }
+  return defsByScope;
+}
+
 /**
  * Load deployment actions state from all source PRs.
  * Each PR's "Deployment Actions" comment is read and parsed independently.
@@ -313,7 +334,10 @@ export async function persistDeploymentActionsState(): Promise<void> {
     state.entriesByPr.set(prNumber, mergedEntries);
     // Load action definitions from the PR's YAML file to populate the details section
     const actionDefs = await loadActionDefsFromPrYaml(prNumber);
-    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber, existingBody);
+    // Project and branch actions are recorded in this comment too: their definitions tell the verdict
+    // which skips the deployment job of the merge will run
+    const configActionDefs = await loadConfigActionDefs([...new Set(mergedEntries.map((e) => e.orgBranch))]);
+    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber, existingBody, configActionDefs);
     await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
   }
   state.dirtyPrs.clear();
@@ -655,7 +679,14 @@ function buildActionsNavBlock(previousBody?: string | null): string {
   return wrapPrCommentNav(navLine) + '\n\n';
 }
 
-export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>, prNumber?: number, previousBody?: string | null): string {
+export function buildDeploymentActionsCommentBody(
+  entries: DeploymentActionStateEntry[],
+  actionDefs?: Map<string, ActionDef>,
+  prNumber?: number,
+  previousBody?: string | null,
+  // Actions of the project config ('' key) and of each org branch config, by action id
+  configActionDefs?: Map<string, Map<string, ActionDef>>
+): string {
   // Sort by: org weight (integ → prod), then when (pre-deploy before post-deploy), then execution order
   const sorted = [...entries].sort((a, b) => {
     const weightDiff = getOrgBranchWeight(a.orgBranch) - getOrgBranchWeight(b.orgBranch);
@@ -679,7 +710,10 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   const failedEntries = pipelineEntries.filter((e) => e.status === 'failed');
   const stoppedEntries = pipelineEntries.filter((e) => e.status === 'not-run');
   const pendingManualEntries = pipelineEntries.filter((e) => e.status === 'manual');
-  const afterMergeEntries = pipelineEntries.filter((e) => isLeftForTheDeploymentJob(e, actionDefs?.get(e.actionId)));
+  const afterMergeEntries = pipelineEntries.filter((e) => isLeftForTheDeploymentJob(
+    e,
+    actionDefs?.get(e.actionId) || configActionDefs?.get(e.orgBranch)?.get(e.actionId) || configActionDefs?.get('')?.get(e.actionId)
+  ));
   body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, afterMergeEntries, pipelineEntries.length)}\n\n`;
   if (failedEntries.length + stoppedEntries.length + pendingManualEntries.length > 0) {
     body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;

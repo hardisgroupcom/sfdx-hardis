@@ -136,6 +136,23 @@ describe('Pull Request comment layout', () => {
     expect(body).to.not.contain('commit and push');
   });
 
+  it('still asks for a fix when the coverage also stops a validation waiting for manual steps', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        coverage: { value: 60, target: 75, status: 'invalid' },
+        preDeployActions: {
+          orgBranch: 'integration',
+          commands: [command({ id: 'gate', label: 'Set Email Deliverability', type: 'manual', when: 'pre-deploy', result: { statusCode: 'manual' } })],
+        },
+      },
+      true
+    );
+    expect(body).to.contain('### ❌ Cannot merge into `integration`: code coverage 60% is under the 75% target');
+    expect(body).to.contain('Fix it, commit and push: the validation runs again.');
+    expect(body).to.not.contain('Do the steps below in the org');
+  });
+
   it('lists tickets and carried Pull Requests one per line, never the commits', () => {
     const body = render(
       {
