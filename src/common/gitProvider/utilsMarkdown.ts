@@ -13,13 +13,7 @@ export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
     // Only a component error line ("Error Name problem") gets its name in bold: an "Error " in the
     // middle of a message ("Connect Timeout Error (...)") must stay as it is
     const errorMessage = /^(\| )?Error /.test((err as any)?.error?.message?.trim() || "")
-      ? (err as any)?.error?.message
-        .trim()
-        .replace("| Error ", "")
-        .replace("Error ", "")
-        .replace(" ", "<br/>")
-        .trim()
-        .replace(/(.*)<br\/>/gm, `<b>$1</b> `)
+      ? componentErrorMessageMarkdown((err as any)?.error)
       : (err as any)?.error?.message?.trim() || "WE SHOULD NOT GO THERE: PLEASE DECLARE AN ISSUE";
     // sfdx-hardis tip
     if (err.tip) {
@@ -179,6 +173,18 @@ async function generateFlowDiffMarkdownForPullRequest(
   const markdown = await fs.readFile(markdownFile, "utf8");
   flowDiffMarkdownList.push({ name: flowName, markdown: markdown, markdownFile: outputDiffMdFile });
   return { name: flowName, kind: 'diff' };
+}
+
+// "Error <component name> <problem>": the whole component name in bold, even when it holds a space,
+// like a layout ("Installation__c-Installation Layout"). Without the name, the first word is taken.
+function componentErrorMessageMarkdown(error: any): string {
+  const message = (error?.message || "").trim().replace(/^\| /, "").replace(/^Error /, "").trim();
+  const fullName = (error?.fullName || "").trim();
+  if (fullName && message.startsWith(fullName + " ")) {
+    return `<b>${fullName}</b> ${message.substring(fullName.length).trim()}`;
+  }
+  const firstSpace = message.indexOf(" ");
+  return firstSpace > 0 ? `<b>${message.substring(0, firstSpace)}</b> ${message.substring(firstSpace + 1).trim()}` : message;
 }
 
 function getAiPromptResponseMarkdown(title, message) {
