@@ -303,6 +303,20 @@ describe('Pull Request comment layout', () => {
     expect(render({ ...prData, errorCount: 2 }, true)).to.contain('### ❌ Cannot merge into `integration`: 2 deployment errors');
   });
 
+  it('says once what to do when the note of a promotion branch already says to commit and push', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        title: 'Git conflict markers in the promotion branch',
+        deployErrorsMarkdownBody:
+          'Nothing was deployed: the promotion branch `promotion/uat/preprod/2026-10-08-1345` still contains git conflict markers in 2 file(s). Solve them on the branch, then commit and push: the job runs again from there.',
+      },
+      true
+    );
+    expect(body).to.contain('Nothing was deployed: the promotion branch');
+    expect(body).to.not.contain('Fix it, commit and push');
+  });
+
   it('says how to merge a green validation: squash a User Story, keep the commits of the others', () => {
     const advice = (sourceBranchKind: any, sourceBranch = 'features/US-014-panels') =>
       render({ status: 'valid' }, true, { sourceBranch, sourceBranchKind });

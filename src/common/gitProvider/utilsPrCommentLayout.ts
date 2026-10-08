@@ -149,6 +149,11 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   }
   // A short note explaining an empty deployment ("No metadata to deploy: the package.xml is empty...")
   const note = prData.deployErrorsMarkdownBody && !prData.deployErrorsMarkdownBody.startsWith('## ') ? prData.deployErrorsMarkdownBody.trim() : '';
+  // A note that already says to commit and push (conflict markers of a promotion branch) replaces the
+  // generic "Fix it, commit and push" line, which would say it twice
+  if (note !== '' && /commit and push/i.test(note) && next.startsWith('Fix it, commit and push')) {
+    next = '';
+  }
   return [`### ${verdict}`, [next, note].filter((text) => text !== '').join(' ')].filter((line) => line !== '').join('\n\n');
 }
 
