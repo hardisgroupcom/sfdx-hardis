@@ -118,7 +118,12 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
     const reason = describeFailure(prData, failedActions);
     if (options.checkOnly) {
       verdict = `❌ Cannot merge into ${target}: ${reason}`;
-      next = 'Fix it, commit and push: the validation runs again.';
+      // Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed
+      const waitingForManualSteps = (prData.errorCount || 0) === 0 && (prData.failedTestsCount || 0) === 0 && failedActions.length === 0
+        && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
+      next = waitingForManualSteps
+        ? 'Do the steps below in the org, tick their boxes, then run the validation again.'
+        : 'Fix it, commit and push: the validation runs again.';
     } else if (prData.metadataOutcome === 'deployed') {
       // Salesforce accepted the deployment: what failed came after it (an action, the coverage check)
       verdict = `❌ Deployed to ${target}, but ${failedActions.length > 0 ? `${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment` : reason}`;

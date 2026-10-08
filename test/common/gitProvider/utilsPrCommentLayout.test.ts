@@ -119,6 +119,23 @@ describe('Pull Request comment layout', () => {
     expect(body).to.not.contain('https://x/12');
   });
 
+  it('asks for the manual steps and a new run, not a push, when only they stop the validation', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        title: '❌ Error: Manual actions to perform before the merge',
+        preDeployActions: {
+          orgBranch: 'integration',
+          commands: [command({ id: 'gate', label: 'Set Email Deliverability', type: 'manual', when: 'pre-deploy', result: { statusCode: 'manual' } })],
+        },
+      },
+      true
+    );
+    expect(body).to.contain('### ❌ Cannot merge into `integration`: Manual actions to perform before the merge');
+    expect(body).to.contain('Do the steps below in the org, tick their boxes, then run the validation again.');
+    expect(body).to.not.contain('commit and push');
+  });
+
   it('lists tickets and carried Pull Requests one per line, never the commits', () => {
     const body = render(
       {
