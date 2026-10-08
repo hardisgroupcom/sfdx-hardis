@@ -1056,6 +1056,8 @@ export declare type PullRequestData = {
   failedTestsCount?: number;
   // Deployment errors that are Apex classes under the coverage Salesforce requires
   coverageWarningsCount?: number;
+  // Deployment errors that are a lost connection to Salesforce, not an error of the metadata
+  networkErrorsCount?: number;
   flowDeletionMarkdownBody?: string;
   // Explains which Pull Requests the deployment actions and Apex test classes were collected from
   deploymentScopeMarkdownBody?: string;

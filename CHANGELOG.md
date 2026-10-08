@@ -4,6 +4,7 @@
 
 - [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#pull-request-comments) open on a verdict and a short table of checks, say whether the metadata was deployed and how to merge, fold the details, and stay under the size limit of each git provider.
 - Deployment errors show in Pull Request comments again when the Salesforce CLI prints warnings next to its result, instead of "There has been an issue parsing errors".
+- A deployment stopped by a lost connection to Salesforce says so in the job log and the Pull Request comment, and asks to run the job again instead of reporting a parsing issue.
 - Flow documentation and Flow diff comments show the value of an "Is Null" filter or condition (True or False) instead of leaving it empty, since "Is Null False" means "is not null".
 - A damaged sfdx-hardis cache file (`~/.sfdx/.sfdx-hardis-cache.json`) no longer stops the commands: it is reset to an empty cache.
 

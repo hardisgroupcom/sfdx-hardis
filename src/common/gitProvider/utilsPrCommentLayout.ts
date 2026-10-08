@@ -123,13 +123,19 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
         && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
       next = waitingForManualSteps
         ? 'Do the steps below in the org, tick their boxes, then run the validation again.'
-        : 'Fix it, commit and push: the validation runs again.';
+        : isNetworkFailure(prData)
+          ? 'Nothing points to an error in the metadata: run the validation job again.'
+          : 'Fix it, commit and push: the validation runs again.';
     } else if (prData.metadataOutcome === 'deployed') {
       // Salesforce accepted the deployment: what failed came after it (an action, the coverage check)
       verdict = `❌ Deployed to ${target}, but ${failedActions.length > 0 ? `${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment` : reason}`;
       next = failedActions.length > 0
         ? `The org has the new metadata. Rerun or fix the failed ${failedActions.length === 1 ? 'action' : 'actions'} below.`
         : 'The org has the new metadata.';
+    } else if (isNetworkFailure(prData)) {
+      // The deployment may or may not have reached Salesforce before the connection was lost
+      verdict = `❌ Deployment to ${target} interrupted: ${reason}`;
+      next = 'Nothing points to an error in the metadata: run the deployment job again.';
     } else if (nothingToDeploy) {
       verdict = `❌ Nothing to deploy to ${target}, but ${reason}`;
       next = '';
@@ -173,6 +179,11 @@ function isCoverageRefusal(prData: Partial<PullRequestData>): boolean {
   return (prData.coverageWarningsCount || 0) > 0 && prData.coverageWarningsCount === (prData.errorCount || 0);
 }
 
+// Every deployment error is a lost connection to Salesforce: nothing was proven wrong in the metadata
+function isNetworkFailure(prData: Partial<PullRequestData>): boolean {
+  return (prData.networkErrorsCount || 0) > 0 && prData.networkErrorsCount === (prData.errorCount || 0);
+}
+
 function isNothingToDeploy(prData: Partial<PullRequestData>): boolean {
   return prData.metadataOutcome === 'nothing-to-deploy' || (prData.title || '').includes('No metadata to deploy');
 }
@@ -180,6 +191,9 @@ function isNothingToDeploy(prData: Partial<PullRequestData>): boolean {
 function describeFailure(prData: Partial<PullRequestData>, failedActions: PhasedCommand[]): string {
   if (isCoverageRefusal(prData)) {
     return `the Apex code coverage is too low for ${prData.coverageWarningsCount === 1 ? '1 class' : `${prData.coverageWarningsCount} classes`}`;
+  }
+  if (isNetworkFailure(prData)) {
+    return 'the connection to Salesforce was lost';
   }
   if ((prData.errorCount || 0) > 0) {
     return `${prData.errorCount} deployment ${prData.errorCount === 1 ? 'error' : 'errors'}`;
@@ -219,6 +233,9 @@ function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLa
   const errors = prData.errorCount || 0;
   if (isCoverageRefusal(prData)) {
     return `⚪ No component error: Salesforce refused the ${options.checkOnly ? 'validation' : 'deployment'} for the code coverage`;
+  }
+  if (isNetworkFailure(prData)) {
+    return `⚪ Unknown: the connection to Salesforce was lost during the ${options.checkOnly ? 'validation' : 'deployment'}`;
   }
   if (errors > 0) {
     return `❌ ${errors} ${errors === 1 ? 'error' : 'errors'}: nothing was ${options.checkOnly ? 'validated' : 'deployed'}`;
@@ -284,6 +301,9 @@ function describeApexTests(prData: Partial<PullRequestData>, options: PrCommentL
     default:
       break;
   }
+  if (isNetworkFailure(prData)) {
+    return '⚪ Not run: the connection to Salesforce was lost';
+  }
   if ((prData.errorCount || 0) > 0) {
     return '⚪ Not run: the deployment failed first';
   }
@@ -329,7 +349,11 @@ function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: Phase
   // Deployment errors and Apex test failures, with their tips
   const errorsMarkdown = prData.deployErrorsMarkdownBody || '';
   if (errorsMarkdown.startsWith('## ')) {
-    const headingText = isCoverageRefusal(prData) ? 'Apex code coverage' : errorsMarkdown.split('\n')[0].replace(/^## /, '').trim();
+    const headingText = isCoverageRefusal(prData)
+      ? 'Apex code coverage'
+      : isNetworkFailure(prData)
+        ? 'Connection to Salesforce lost'
+        : errorsMarkdown.split('\n')[0].replace(/^## /, '').trim();
     const icon = headingText.toLowerCase().includes('test') ? '💥' : '❌';
     const body = errorsMarkdown.split('\n').slice(1).join('\n').trim();
     sections.push({

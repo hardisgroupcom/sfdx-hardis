@@ -282,6 +282,27 @@ describe('Pull Request comment layout', () => {
     expect(body).to.contain('#### ❌ Apex code coverage');
   });
 
+  it('reports a lost connection to Salesforce as a network failure, not as a metadata error', () => {
+    const prData: Partial<PullRequestData> = {
+      status: 'invalid',
+      errorCount: 1,
+      networkErrorsCount: 1,
+      deployErrorsMarkdownBody: '## Deployment errors\n\n<details><summary>⛔ Connection to Salesforce lost: Connect Timeout Error (attempted address: orgfarm-xxx.my.salesforce.com:443, timeout: 10000ms) [UND_ERR_CONNECT_TIMEOUT]</summary>\n\ntip\n</details>',
+    };
+    const validation = render(prData, true);
+    expect(validation).to.contain('### ❌ Cannot merge into `integration`: the connection to Salesforce was lost');
+    expect(validation).to.contain('Nothing points to an error in the metadata: run the validation job again.');
+    expect(validation).to.not.contain('Fix it, commit and push');
+    expect(validation).to.contain('| Metadata | ⚪ Unknown: the connection to Salesforce was lost during the validation |');
+    expect(validation).to.contain('| Apex tests | ⚪ Not run: the connection to Salesforce was lost |');
+    expect(validation).to.contain('#### ❌ Connection to Salesforce lost');
+    const deployment = render(prData, false);
+    expect(deployment).to.contain('### ❌ Deployment to `integration` interrupted: the connection to Salesforce was lost');
+    expect(deployment).to.contain('run the deployment job again.');
+    // A network error next to a metadata error stays a deployment error
+    expect(render({ ...prData, errorCount: 2 }, true)).to.contain('### ❌ Cannot merge into `integration`: 2 deployment errors');
+  });
+
   it('says how to merge a green validation: squash a User Story, keep the commits of the others', () => {
     const advice = (sourceBranchKind: any, sourceBranch = 'features/US-014-panels') =>
       render({ status: 'valid' }, true, { sourceBranch, sourceBranchKind });

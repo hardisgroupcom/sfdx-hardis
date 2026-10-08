@@ -10,7 +10,9 @@ import { t } from '../utils/i18n.js';
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
   for (const err of errorsAndTips) {
-    const errorMessage = (err as any)?.error?.message?.trim().includes("Error ")
+    // Only a component error line ("Error Name problem") gets its name in bold: an "Error " in the
+    // middle of a message ("Connect Timeout Error (...)") must stay as it is
+    const errorMessage = /^(\| )?Error /.test((err as any)?.error?.message?.trim() || "")
       ? (err as any)?.error?.message
         .trim()
         .replace("| Error ", "")
