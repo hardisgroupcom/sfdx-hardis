@@ -439,6 +439,7 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+    messageBody = this.enforceHardCommentLimit(messageBody);
 
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[GitHub Integration] ' + t('githubListingPrCommentsAll')));
@@ -762,6 +763,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     const issueNumber = prNumber || this.prNumber;
     if (!issueNumber) return;
     // Paginated like the read side: a Pull Request carrying more comments than one page would get
@@ -803,6 +805,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     if (!commentRef?.ref) return;
     await this.updateIssueComment(commentRef.ref, body);
     uxLog("log", this, c.grey('[GitHub] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));

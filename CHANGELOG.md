@@ -2,6 +2,15 @@
 
 ## [beta] (main)
 
+- [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#pull-request-comments) open on a verdict and a short table of checks, say whether the metadata was deployed and how to merge, fold the details, and stay under the size limit of each git provider.
+- Deployment errors show in Pull Request comments again when the Salesforce CLI prints warnings next to its result, instead of "There has been an issue parsing errors".
+- A deployment stopped by a lost connection to Salesforce says so in the job log and the Pull Request comment, and asks to run the job again instead of reporting a parsing issue.
+- Flow documentation and Flow diff comments show the value of an "Is Null" filter or condition (True or False) instead of leaving it empty, since "Is Null False" means "is not null".
+- A deployment error on a component whose name holds a space, like a page layout, shows the whole name in bold in the Pull Request comment.
+- The Pull Request comments of a failed deployment action name the **Retry** button of the VS Code Deployment Actions tab, the label the extension shows.
+- A damaged sfdx-hardis cache file (`~/.sfdx/.sfdx-hardis-cache.json`) no longer stops the commands: it is reset to an empty cache.
+- Deployment actions declared in the config of a branch whose name holds a slash (like `release/uat`) are found again by [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/) and [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/).
+
 ## [8.15.0] 2026-10-07
 
 - [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) can leave out the Profile and Permission Set entries that grant nothing.

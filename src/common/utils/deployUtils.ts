@@ -260,7 +260,34 @@ function setNoMetadataDeploymentSuccess(check: boolean, reason?: string): void {
     deployErrorsMarkdownBody: (reason || defaultReason) + " " + (check ? "The deployment check succeeded." : "The deployment succeeded."),
     deployStatus: "valid",
     status: "valid",
+    metadataOutcome: "nothing-to-deploy",
   };
+  setPullRequestData(prData);
+}
+
+/**
+ * Tell the Pull Request comment what Salesforce accepted, as soon as it accepted it: the post-deployment
+ * actions and the code coverage check that follow can still fail the job and post the comment, which
+ * must then say that the metadata is in the org.
+ */
+function recordDeployedMetadataInPrData(deploymentMetrics: DeploymentMetrics, check: boolean, usedQuickDeploy = false): void {
+  // How the metadata reached the org, for the Metadata row of the deployment comment
+  const prData: Partial<PullRequestData> = { deploymentMode: deploymentMetrics.delta ? 'delta' : 'full' };
+  if (isComponentChangeDetailComplete(deploymentMetrics)) {
+    prData.deploymentMetrics = {
+      deployed: deploymentMetrics.componentsDeployed,
+      created: deploymentMetrics.componentsCreated,
+      updated: deploymentMetrics.componentsUpdated,
+      deleted: deploymentMetrics.componentsDeleted,
+      unchanged: deploymentMetrics.componentsUnchanged,
+    };
+  }
+  if (!check) {
+    prData.metadataOutcome = 'deployed';
+  }
+  if (usedQuickDeploy) {
+    prData.usedQuickDeploy = true;
+  }
   setPullRequestData(prData);
 }
 
@@ -411,8 +438,8 @@ export async function smartDeploy(
   if (packageXmlIsEmpty && hasEmptyDestructiveChanges && !hasDestructiveChanges) {
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan(t('bothPackageXmlAndDestructiveChangesFiles')));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
@@ -421,8 +448,8 @@ export async function smartDeploy(
   if (packageXmlIsEmpty && !hasDestructiveChanges) {
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, t('noDeploymentOrDestructiveChangesToPerform'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
@@ -448,8 +475,8 @@ export async function smartDeploy(
   } else if (deployXmlCount === 0) {
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("other", this, t('noDeploymentToPerform'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
@@ -576,6 +603,7 @@ export async function smartDeploy(
             if (quickDeployResultJson) {
               deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
               accumulateComponentChanges(deploymentMetrics, quickDeployResultJson);
+              recordDeployedMetadataInPrData(deploymentMetrics, check, true);
               recordDeployResult(quickDeployResultJson, { quickDeploy: true });
               deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
               deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
@@ -699,6 +727,7 @@ export async function smartDeploy(
         if (deployResultJson) {
           deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
           accumulateComponentChanges(deploymentMetrics, deployResultJson);
+          recordDeployedMetadataInPrData(deploymentMetrics, check);
           recordDeployResult(deployResultJson);
           deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
           deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
@@ -756,6 +785,7 @@ export async function smartDeploy(
         // Handle notif message when there is no apex
         const prDataCodeCoverage: Partial<PullRequestData> = {
           ...buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: quickDeploy }),
+          testsNotRunReason: testlevel === 'NoTestRun' ? 'smart-tests' : branchConfig?.skipCodeCoverage === true ? 'coverage-skipped' : 'no-apex',
           codeCoverageMarkdownBody:
             testlevel === 'NoTestRun'
               ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
@@ -811,11 +841,10 @@ export async function smartDeploy(
     }
     messages.push(message);
   }
-  // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   // Nothing was sent to the org because every planned deployment was skipped: report the same
   // success as the paths that detect an empty package.xml before building the deployment plan,
-  // otherwise the Pull Request comment carries no status at all.
+  // otherwise the Pull Request comment carries no status at all. Said before the post-deployment
+  // actions: when one of them fails, the comment it posts must still say nothing was deployed.
   if (shouldReportNoMetadataDeploymentSuccess(processedDeploymentCount, hasDestructiveChanges, getPullRequestData())) {
     uxLog("action", this, c.cyan(t('allDeploymentsSkippedEmptyPackageXml')));
     setNoMetadataDeploymentSuccess(
@@ -823,11 +852,8 @@ export async function smartDeploy(
       "No metadata to deploy: every item of the deployment package was filtered out before the deployment (package-no-overwrite.xml, packageDeployOnChange.xml or a remove-packagexml-items action), so nothing was sent to the target org."
     );
   }
-  // Tell the Pull Request comment how much of the package really moved in the org
-  const componentsMarkdown = buildDeployedComponentsMarkdown(deploymentMetrics, check);
-  if (componentsMarkdown) {
-    setPullRequestData({ deploymentComponentsMarkdownBody: componentsMarkdown });
-  }
+  // Run deployment post commands
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   // Post pull request comment if available
   await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
   elapseEnd('all deployments');
@@ -1944,6 +1970,10 @@ async function updatePullRequestResultCoverage(
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
   } else {
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
+  }
+  prDataCodeCoverage.coverage = { value: orgCoverage, target: orgCoverageTarget, status: coverageStatus };
+  if (options.testClasses) {
+    prDataCodeCoverage.testClasses = options.testClasses.split(' ').filter((testClass) => testClass !== '');
   }
   setPullRequestData(prDataCodeCoverage);
 }

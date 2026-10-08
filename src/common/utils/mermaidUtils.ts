@@ -31,6 +31,8 @@ interface FlowDiffGenerationOptions {
   svgMd: boolean;
   pngMd: boolean;
   debug: boolean;
+  // Return early, without a diff, when only the status of the Flow changed (Pull Request comments)
+  skipStatusOnlyChange?: boolean;
 }
 
 let IS_MERMAID_AVAILABLE: boolean | null = null;
@@ -426,6 +428,18 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
     return result;
   }
 
+  // Activating or deactivating a Flow changes one line: a whole visual diff comment says nothing more
+  if (options.skipStatusOnlyChange === true) {
+    const statusChange = getFlowStatusOnlyChange(flowXmlBefore, flowXmlAfter);
+    if (statusChange) {
+      result.isStatusOnlyChange = true;
+      result.statusBefore = statusChange.before;
+      result.statusAfter = statusChange.after;
+      uxLog("log", this, c.grey(t('flowDiffStatusOnlySkipped', { flowName: flowLabel, before: statusChange.before, after: statusChange.after })));
+      return result;
+    }
+  }
+
   const reportDir = await getReportDirectory();
   await fs.ensureDir(path.join(reportDir, "flow-diff"));
   const diffMdFile = path.join(reportDir, 'flow-diff', `${flowLabel}_${dateHelper().format("YYYYMMDD-hhmmss")}.md`);
@@ -494,6 +508,179 @@ export async function generateFlowVisualGitDiff(flowFile, commitBefore: string, 
     }
   }
   return result;
+}
+
+/**
+ * When two versions of a Flow differ only by their top level status (Active, Draft, Obsolete...),
+ * returns both statuses. Returns null when anything else changed, or when the status did not.
+ */
+export function getFlowStatusOnlyChange(flowXmlBefore: string, flowXmlAfter: string): { before: string; after: string } | null {
+  // The status of the Flow itself is a direct child of <Flow>, indented by 4 spaces in the
+  // retrieved source; a nested element never sits at that level
+  const statusRegex = /^ {4}<status>([^<]*)<\/status>\s*$/m;
+  const before = (flowXmlBefore.match(statusRegex) || [])[1];
+  const after = (flowXmlAfter.match(statusRegex) || [])[1];
+  if (before === undefined || after === undefined || before === after) {
+    return null;
+  }
+  const normalize = (xml: string) => xml.replace(statusRegex, '').replace(/\s+/g, ' ').trim();
+  return normalize(flowXmlBefore) === normalize(flowXmlAfter) ? { before, after } : null;
+}
+
+/**
+ * Turns the visual git diff of a Flow, written for the documentation, into the body of a Pull
+ * Request comment: the changed properties first, then the diagram, then the full tables folded.
+ * The documentation output is left as it is: only Pull Request comments go through this.
+ */
+export function cleanFlowDiffMarkdownForPrComment(markdown: string): string {
+  const lines = markdown.split(/\r?\n/);
+  // The full property tables start at the first second-level heading after the diagram. The AI
+  // summary of the differences, written right after the diagram, stays visible above them.
+  const diagramLine = lines.findIndex((l) => /```mermaid|!\[/.test(l));
+  let restStart = lines.findIndex((line, index) => index > diagramLine && /^## /.test(line) && !/^## Flow Diagram/.test(line) && !/^## AI-Generated/.test(line));
+  if (restStart < 0) {
+    restStart = lines.length;
+  }
+  const top: string[] = [];
+  let inMermaid = false;
+  for (const line of lines.slice(0, restStart)) {
+    if (!inMermaid && /^```mermaid/.test(line)) {
+      inMermaid = true;
+      top.push(line);
+      continue;
+    }
+    if (inMermaid && /^```/.test(line)) {
+      inMermaid = false;
+      top.push(line);
+      continue;
+    }
+    if (inMermaid) {
+      // "If you read this, your Markdown visualizer..." help lines and blank lines
+      if (line.trim() === '' || line.trim().startsWith('%%')) {
+        continue;
+      }
+      top.push(line);
+      continue;
+    }
+    // The label heading repeats the title of the comment, the diagram needs no heading of its own,
+    // and the placeholder of the Flow description is empty in a diff
+    if (/^# /.test(line) || /^## Flow Diagram/.test(line) || line.trim() === '<!-- Flow description -->') {
+      continue;
+    }
+    top.push(line);
+  }
+  const rest = lines
+    .slice(restStart)
+    // The documentation footer: the comment has its own
+    .filter((line) => !line.startsWith('_Documentation generated from branch') && line.trim() !== '___');
+  const changedRows = extractFlowDiffChangedRows(rest);
+  const body: string[] = [];
+  if (changedRows.length > 0) {
+    body.push(`**${changedRows.length} ${changedRows.length === 1 ? 'property' : 'properties'} changed**`, '');
+    body.push('| Where | Property | Before | After |', '|-------|----------|--------|-------|');
+    body.push(...changedRows.map((row) => `| ${row.where} | ${row.property} | ${row.before} | ${row.after} |`), '');
+  }
+  body.push(...removeUnusedMermaidClassDefs(top).join('\n').replace(/\n{3,}/g, '\n\n').trim().split('\n'), '');
+  const restText = rest.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  if (restText !== '') {
+    body.push('<details>', '<summary>All properties and elements</summary>', '', restText, '', '</details>');
+  }
+  return body.join('\n').trim();
+}
+
+// Rows of the documentation tables marked as removed (🟥) or added (🟩) by the visual diff, paired
+// into before / after values
+function extractFlowDiffChangedRows(lines: string[]): { where: string; property: string; before: string; after: string }[] {
+  const rows: { where: string; property: string; before: string; after: string }[] = [];
+  let where = 'Flow';
+  let table = '';
+  // An element the Pull Request adds or removes as a whole is one row, not one row per property
+  let wholeElement: { where: string; change: 'added' | 'removed'; row: { where: string; property: string; before: string; after: string } } | null = null;
+  for (const line of lines) {
+    const heading = line.match(/^(#{2,4}) (.+)$/);
+    if (heading) {
+      const text = cleanFlowDocCell(heading[2]).replace(/\*\*/g, '');
+      if (heading[1].length <= 3) {
+        where = text === 'General Information' ? 'Flow' : text;
+        table = '';
+        wholeElement = null;
+        if (/[🟥🟩]/u.test(heading[2]) && heading[1].length === 3) {
+          const change = heading[2].includes('🟩') ? 'added' : 'removed';
+          const row = { where, property: 'Element', before: change === 'added' ? '_none_' : where, after: change === 'added' ? where : '_removed_' };
+          rows.push(row);
+          wholeElement = { where, change, row };
+        }
+      } else {
+        table = text;
+      }
+      continue;
+    }
+    if (!/^\|.*[🟥🟩].*\|/u.test(line)) {
+      continue;
+    }
+    const cells = line.split('|').slice(1, -1).map(cleanFlowDocCell);
+    if (cells.length < 2) {
+      continue;
+    }
+    if (wholeElement) {
+      // "Element: Mark Warning Sent (Record Update)" rather than its every property
+      if (cells[0] === 'Type' && wholeElement.change === 'added') {
+        wholeElement.row.after = `${wholeElement.where} (${cells.slice(1).join(' ')})`;
+      }
+      continue;
+    }
+    const property = /^\d+$/.test(cells[0]) ? `${table || 'Row'} ${cells[0]}` : cells[0];
+    const value = cells.slice(1).filter((cell) => cell !== '').join(' · ');
+    if (property === '' && value === '') {
+      continue;
+    }
+    const removed = line.includes('🟥');
+    // The diff lists the removed rows of a block, then the added ones: an added row completes the
+    // removed row of the same property, wherever it sits in the block
+    const removedRow = removed ? undefined : rows.find((row) => row.where === where && row.property === property && row.after === '_removed_');
+    if (removedRow) {
+      removedRow.after = value;
+      continue;
+    }
+    rows.push(removed ? { where, property, before: value, after: '_removed_' } : { where, property, before: '_none_', after: value });
+  }
+  return rows.map((row) => ({ ...row, before: escapeFlowDocCell(row.before), after: escapeFlowDocCell(row.after) }));
+}
+
+// The text of a cell of the Flow documentation: its formatting tags, diff markers and in-page links
+// removed. A literal "<" of a formula is kept: only known tags are stripped.
+function cleanFlowDocCell(cell: string): string {
+  return (cell || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<\/?(span|b|i|em|strong|u|font)\b[^>]*>/gi, '')
+    .replace(/[🟥🟩]/gu, '')
+    .replace(/\[([^\]]*)\]\(#[^)]*\)/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// A value written back into a markdown table cell
+function escapeFlowDocCell(value: string): string {
+  return value.replace(/\|/g, '\\|').replace(/</g, '&lt;');
+}
+
+// The diff theme declares a classDef for every class it may use: keep the ones the diagram uses
+function removeUnusedMermaidClassDefs(lines: string[]): string[] {
+  const used = new Set<string>();
+  for (const line of lines) {
+    for (const match of line.matchAll(/:::(\w+)/g)) {
+      used.add(match[1]);
+    }
+    const classStatement = line.match(/^\s*class\s+\S+\s+(\w+)/);
+    if (classStatement) {
+      used.add(classStatement[1]);
+    }
+  }
+  return lines.filter((line) => {
+    const classDef = line.match(/^\s*classDef\s+(\w+)/);
+    return !classDef || used.has(classDef[1]);
+  });
 }
 
 async function getFlowXmlAfter(commitAfter: string, flowFile: any, mermaidTheme?: unknown) {

@@ -6,15 +6,17 @@ import * as path from 'path';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { getCurrentGitBranch, uxLog } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
-import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, buildManualActionCheckboxMarker, getActionStateEntry, getStateEntriesForPr, DeploymentActionRef, buildIdenticalActionNote } from './deploymentActionsStateUtils.js';
+import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, getActionStateEntry, getStateEntriesForPr, DeploymentActionRef, buildIdenticalActionNote } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
-import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { ActionsProvider, PrePostCommand, buildActionOutput } from '../actionsProvider/actionsProvider.js';
 import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
-import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig, normalizeMovedFrom } from './actionUtils.js';
+import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getEffectiveActionContext, getPrIdFromUserConfig, normalizeMovedFrom } from './actionUtils.js';
+// Re-exported: its callers import it from here
+export { getEffectiveActionContext } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import {
   ActionInterpolationError,
@@ -186,12 +188,12 @@ async function executeDeploymentActionsOfPhase(property: 'commandsPreDeploy' | '
   // (pre-deploy callers always pass success: true)
   if (options.success === false) {
     for (const cmd of commands) {
-      cmd.result = { statusCode: "not-run", skippedReason: t('actionNotRunDeploymentFailed') };
+      cmd.result = { statusCode: "not-run", skippedCode: "deployment-failed", skippedReason: t('actionNotRunDeploymentFailed') };
     }
     uxLog("warning", this, c.yellow(
       `[DeploymentActions] ${t('deploymentActionsNotRunDeploymentFailed', { count: commands.length })}`
     ));
-    manageResultMarkdownBody(property, commands, options.checkOnly);
+    manageResultMarkdownBody(property, commands);
     recordExecutedDeploymentActions(commands);
     return;
   }
@@ -272,7 +274,7 @@ async function executeDeploymentActionsOfPhase(property: 'commandsPreDeploy' | '
       break;
     }
   }
-  manageResultMarkdownBody(property, commands, options.checkOnly, orgBranchName);
+  manageResultMarkdownBody(property, commands, orgBranchName);
   // A pre-deployment manual action still waiting in the target org: it has to be performed before
   // the merge. An action already marked as done there was skipped above (runOnlyOnceByOrg)
   if (options.checkOnly && deployWhen === 'pre-deploy') {
@@ -395,6 +397,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: validation-only action (context check-deployment-only), and this is the deployment job`));
     cmd.result = {
       statusCode: "skipped",
+      skippedCode: "context-validation-only",
       skippedReason: "Action context is check-deployment-only but this is the deployment job"
     };
     skipAction = true;
@@ -402,6 +405,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: deployment-only action (context process-deployment-only), and this is the validation job`));
     cmd.result = {
       statusCode: "skipped",
+      skippedCode: "context-deployment-only",
       skippedReason: "Action context is process-deployment-only but this is the validation job"
     };
     skipAction = true;
@@ -536,6 +540,8 @@ export async function markActionsStoppedByFailure(commands: PrePostCommand[], fa
     }
     cmd.result = {
       statusCode: "not-run",
+      skippedCode: "stopped-by-failure",
+      stoppedByLabel: failedCmd.label,
       skippedReason: `Not run because a previous action failed (${failedCmd.label})`,
     };
     stoppedCommands.push(cmd);
@@ -550,14 +556,6 @@ export async function markActionsStoppedByFailure(commands: PrePostCommand[], fa
  */
 export function getRecordedActionStatus(cmd: PrePostCommand): 'success' | 'failed' | 'warning' | 'manual' | 'skipped' {
   return isIdenticalActionCopy(cmd) ? 'success' : getReportedActionStatus(cmd);
-}
-
-/**
- * Context an action really runs in. A run-batch action changes the data of the org: it is a
- * deployment-only action, whatever its context holds.
- */
-export function getEffectiveActionContext(cmd: PrePostCommand): PrePostCommand['context'] {
-  return cmd.type === "run-batch" ? "process-deployment-only" : cmd.context || "all";
 }
 
 /**
@@ -840,20 +838,6 @@ function logActionFailureDetails(cmd: PrePostCommand): void {
 }
 
 /**
- * True when the action was not attempted because the metadata deployment failed.
- */
-function isNotRun(cmd: PrePostCommand): boolean {
-  return cmd.result?.statusCode === "not-run";
-}
-
-/**
- * True when the action result carries something worth displaying (not empty, not blank lines).
- */
-function hasOutput(cmd: PrePostCommand): boolean {
-  return (cmd.result?.output || '').trim() !== '';
-}
-
-/**
  * What the Pull Requests of the scope actually carry, so the scope paragraph only names the
  * subjects that exist. Announcing "Deployment actions and Apex test classes" on a Pull Request
  * that carries neither, or only one of them, describes content the reader will not find.
@@ -892,9 +876,17 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     if (!scopeInfo || scopeInfo.pullRequests.length === 0) {
       return;
     }
-    const prLinks = scopeInfo.pullRequests
-      .map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`))
-      .join(', ');
+    // Listed one per line in a folded section of the comment, never inline: a promotion window can
+    // carry hundreds of Pull Requests
+    setPullRequestData({
+      pullRequestsInScope: scopeInfo.pullRequests.map((pr) => ({
+        idStr: pr.idStr,
+        idNumber: pr.idNumber,
+        title: pr.title,
+        webUrl: pr.webUrl,
+        authorName: pr.authorName,
+      })),
+    });
     // Only name what the Pull Requests of the scope really carry
     const prConfigs = await Promise.all(
       scopeInfo.pullRequests.map((pr) => getPullRequestScopedSfdxHardisConfig(pr).catch(() => null))
@@ -908,13 +900,12 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       // Promotion branch: the stories come from the Pull Request description, say so in both jobs
       const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
       const carried = scopeInfo.pullRequests.filter((pr) => pr.idNumber !== prInfo?.idNumber);
-      const carriedLinks = carried.map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`)).join(', ');
       const branchLabel = prInfo?.sourceBranch ? `\`${prInfo.sourceBranch}\`` : 'this promotion branch';
       if (carried.length === 0) {
         paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch but none of the Pull Requests it declares (\`promotionPullRequests\`) could be used, so only its own deployment actions and Apex test classes ${checkOnly ? 'are' : 'were'} processed.`);
       } else {
         const subjectsSentence = subjects.length > 0 ? `${subjectsLabel} ${checkOnly ? 'are' : 'were'} collected from them` : `They carry no deployment action and no Apex test class`;
-        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description: ${carriedLinks}. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
+        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
       }
       const inheritedMarkdown = buildInheritedBehaviorsMarkdown(promotionDetails.inheritedBehaviors, scopeInfo.pullRequests);
       if (inheritedMarkdown) {
@@ -926,13 +917,14 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     // Stories brought by a promotion Pull Request of the window: say where they come from
     const carriedByPromotion = scopeInfo.pullRequests.filter((pr) => getCarriedBy(pr) !== null);
     if (carriedByPromotion.length > 0) {
-      const items = carriedByPromotion.map((pr) => {
+      // Name the promotion Pull Requests, not every story they carry
+      const promotions = new Map<string, string>();
+      for (const pr of carriedByPromotion) {
         const carriedBy = getCarriedBy(pr)!;
-        const prLink = pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`;
         const promotionLink = carriedBy.webUrl ? `[#${carriedBy.idStr}](${carriedBy.webUrl})` : `#${carriedBy.idStr}`;
-        return `${prLink} (via \`${carriedBy.sourceBranch}\` ${promotionLink})`;
-      });
-      paragraphs.push(`ℹ️ Pull Requests carried by a promotion branch of this window: ${items.join(', ')}.`);
+        promotions.set(carriedBy.idStr, `\`${carriedBy.sourceBranch}\` ${promotionLink}`);
+      }
+      paragraphs.push(`ℹ️ ${carriedByPromotion.length} Pull Request(s) of this window were carried by ${promotions.size === 1 ? 'the promotion branch' : 'the promotion branches'} ${[...promotions.values()].join(', ')}.`);
     }
     const alreadyPromotedMarkdown = buildAlreadyPromotedMarkdown(promotionDetails.alreadyPromoted);
     if (alreadyPromotedMarkdown) {
@@ -942,7 +934,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       if (subjects.length > 0) {
         let collectedSentence = `ℹ️ ${subjectsLabel} are collected from the content of this Pull Request`;
         if (scopeInfo.pullRequests.length > 1) {
-          collectedSentence += ` (${scopeInfo.pullRequests.length} Pull Requests carried: ${prLinks})`;
+          collectedSentence += ` (${scopeInfo.pullRequests.length} Pull Requests)`;
         }
         paragraphs.push(collectedSentence + `.`);
       }
@@ -967,7 +959,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       }
       // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
       // in which case the actions were collected but deliberately not run (see fix #2053)
-      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}.`;
+      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s).`;
       if (subjects.includes('Deployment actions')) {
         collectedSentence += ` Each action keeps its tracked state on its own Pull Request.`;
       }
@@ -1066,16 +1058,16 @@ Please assign it to a Pull Request before proceeding, or delete the file it if y
 
 To assign it, rename .sfdx-hardis.draft.yml into ${suggestedFileName}.
 `;
-    const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
     let prData = getPullRequestData()
     prData = Object.assign(prData, {
       messageKey: prData.messageKey ?? 'deployment',
-      [propertyFormatted]: errorMessage
+      // Shown in the "needs you" part of the comment: how to fix it
+      blockingIssueMarkdownBody: `#### ❌ Draft deployment actions file\n\n${errorMessage.trim()}`,
     });
     // When the deployment already failed, keep its error as the reported one: the draft file is a
     // secondary problem and must not take over the Pull Request comment title.
     if (deploySuccess !== false) {
-      prData = Object.assign(prData, { title: "❌ Error: Draft deployment actions file found" });
+      prData = Object.assign(prData, { title: "❌ Error: Draft deployment actions file found", status: 'invalid' });
     }
     setPullRequestData(prData);
     await GitProvider.managePostPullRequestComment(checkOnly);
@@ -1092,55 +1084,13 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
     cmd.result = res;
   } catch (e) {
     uxLog("error", this, c.red(`[DeploymentActions] Exception while running action ${cmd.label}: ${(e as Error).message}`));
+    // A failed command throws an error whose message already repeats its stderr (Node) then its
+    // stdout and stderr (execCommand): keep the two streams once, the message when there are none
     cmd.result = {
       statusCode: 'failed',
-      output: (e as Error).message
+      output: buildActionOutput(e) || (e as Error).message
     };
   }
-}
-
-function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: boolean, checkOnly: boolean, orgBranch?: string): string {
-  if (isPreDeploy && !checkOnly) {
-    return '';
-  }
-  if (!isPreDeploy && checkOnly) {
-    return '';
-  }
-  // Pending actions render as unticked to-dos. Actions already performed in the org render as
-  // TICKED items: rendering them unticked again would make the next job's checkbox sync re-tick
-  // them in a loop, and would tell the reader to perform an action that is already done.
-  // Actions not run because the deployment failed are not to-dos: nothing was deployed for them
-  // to complete, and they will be listed again during the next successful deployment.
-  // Structured skippedCode first; the wording match remains as a safety net for results built
-  // by an older sfdx-hardis version in the same process chain
-  const isDoneManual = (c: PrePostCommand) =>
-    c.result?.statusCode === "skipped" &&
-    (c.result.skippedCode === "already-run-in-org" || (c.result.skippedReason || '').startsWith("runOnlyOnceByOrg: already run"));
-  // Failed manual actions (invalid customUsername, auth error...) stay in the checklist as
-  // unticked to-dos: the operator still has to perform them.
-  const manualCommands = commands.filter(c => c.type === "manual" &&
-    (c.result?.statusCode === "manual" || c.result?.statusCode === "failed" || isDoneManual(c)));
-  if (manualCommands.length === 0) {
-    return '';
-  }
-  const title = isPreDeploy
-    ? `#### Manual Actions to perform before proceeding with deployment:\n\n`
-    : `#### Manual Actions to perform after deployment:\n\n`;
-  let section = title;
-  for (const cmd of manualCommands) {
-    // Newlines in a label would break the checklist line and its hidden marker
-    const singleLineLabel = (cmd.label || '').replace(/\r?\n/g, ' ');
-    const labelCol = cmd.pullRequest
-      ? `${singleLineLabel} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))`
-      : singleLineLabel;
-    // The hidden marker lets sfdx-hardis detect a ticked checkbox on the next job, record the
-    // action as done for the org branch, and tick it in the other comments where it appears.
-    const marker = orgBranch ? `${buildManualActionCheckboxMarker(cmd.id, orgBranch, cmd.pullRequest?.idNumber || 0, cmd.when)} ` : '';
-    section += `- [${isDoneManual(cmd) ? 'x' : ' '}] ${marker}${labelCol}\n`;
-  }
-  section += `\n*Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.*\n`;
-  section += `\n---\n\n`;
-  return section;
 }
 
 /**
@@ -1156,144 +1106,9 @@ export function getReportedActionStatus(cmd: PrePostCommand): 'success' | 'faile
   return cmd.result?.statusCode as 'success' | 'failed' | 'manual' | 'skipped';
 }
 
-// Status icons of the actions results table, in the order they are listed in the legend
-const ACTION_STATUS_LEGEND: { icon: string; label: string }[] = [
-  { icon: '✅', label: 'success' },
-  { icon: '⚠️', label: 'warning (failed, allowed to fail)' },
-  { icon: '❌', label: 'failed' },
-  { icon: '👋', label: 'waiting for manual execution' },
-  { icon: '⚪', label: 'skipped' },
-  { icon: '⏭️', label: 'not run' },
-  { icon: '❓', label: 'unknown' },
-];
-
-/**
- * Status icon of an action in the results table.
- */
-function getActionStatusIcon(cmd: PrePostCommand): string {
-  return cmd.result?.statusCode === "manual" ?
-    "👋" :
-    cmd.result?.statusCode === "success" ? '✅' :
-      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
-        (cmd.result?.statusCode === "failed") ? '❌' :
-          cmd.result?.statusCode === "skipped" ? '⚪' :
-            cmd.result?.statusCode === "not-run" ? '⏭️' : '❓';
-}
-
-/**
- * Legend of the actions results table, listing only the statuses actually present in it.
- * A legend explaining outcomes that do not appear in the table above it is noise.
- */
-function buildActionStatusLegend(usedIcons: string[]): string {
-  const used = new Set(usedIcons);
-  const parts = ACTION_STATUS_LEGEND.filter((entry) => used.has(entry.icon)).map((entry) => `${entry.icon} ${entry.label}`);
-  return parts.length > 0 ? `\n*Legend: ${parts.join(' · ')}*\n` : '';
-}
-
-/**
- * Build the "Actions Results" markdown section posted in the Pull Request comment.
- * Exported so it can be unit tested without a git provider or a config layer.
- */
-export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, orgBranch?: string): string {
-  let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
-
-  // Add manual actions section
-  const isPreDeploy = property === 'commandsPreDeploy';
-  markdownBody += buildManualActionsSection(commands, isPreDeploy, checkOnly, orgBranch);
-
-  // Count labels so two distinct actions sharing the same label do not look like a duplicated row
-  const labelCounts = new Map<string, number>();
-  for (const cmd of commands) {
-    labelCounts.set(cmd.label, (labelCounts.get(cmd.label) || 0) + 1);
-  }
-  const hasDuplicateLabels = [...labelCounts.values()].some((count) => count > 1);
-
-  // Build markdown table
-  markdownBody += `| <!-- --> | Label | Type | Status | Details |\n`;
-  markdownBody += `|:--------:|-------|------|--------|---------|\n`;
-  const usedStatusIcons: string[] = [];
-  for (const cmd of commands) {
-    const statusIcon = getActionStatusIcon(cmd);
-    usedStatusIcons.push(statusIcon);
-    const statusCol = cmd.result?.statusCode === "manual" ?
-      'waiting for manual execution' :
-      `${getReportedActionStatus(cmd) || 'not run'}`;
-    const detailCol = (cmd.result?.statusCode === "skipped" || cmd.result?.statusCode === "not-run") ?
-      (cmd.result?.skippedReason || '<!-- -->') :
-      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ?
-        (cmd.result.skippedReason ? `${cmd.result.skippedReason} (Allowed to fail)` : "(Allowed to fail)") :
-        (cmd.result?.statusCode === "failed" && cmd.result.skippedReason) ?
-          cmd.result.skippedReason :
-          cmd.result?.statusCode === "manual" ?
-            "Instructions in the details section below" :
-            "See details below";
-    const labelCol = cmd.pullRequest ?
-      `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
-      cmd.label;
-    markdownBody += `| ${statusIcon} | ${labelCol} | ${cmd.type || 'command'} | ${statusCol} | ${detailCol} |\n`;
-  }
-  if (hasDuplicateLabels) {
-    markdownBody += `\n*Some rows share the same label but are distinct actions, each defined on its own Pull Request.*\n`;
-  }
-  markdownBody += buildActionStatusLegend(usedStatusIcons);
-  // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
-  const commandsInResults = commands.filter(c => hasOutput(c) || (c.type === "manual" && !isNotRun(c)));
-  if (commandsInResults.length > 0) {
-    markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
-    for (const cmd of commands) {
-      if (hasOutput(cmd)) {
-        // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
-        // Indicate when output has been truncated
-        const maxOutputLength = 2000;
-        let outputForMarkdown = cmd.result!.output as string;
-        const outputLines = outputForMarkdown.split('\n');
-        if (outputForMarkdown.length > maxOutputLength) {
-          outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
-        }
-        if (outputLines.length > 50) {
-          const last50Lines = outputLines.slice(-50).join('\n');
-          if (last50Lines.length <= maxOutputLength) {
-            outputForMarkdown = last50Lines;
-          }
-        }
-        if (outputForMarkdown.length < (cmd.result!.output as string).length) {
-          outputForMarkdown = `... (output truncated, total length was ${(cmd.result!.output as string).length} characters)\n` + outputForMarkdown;
-        }
-
-        const labelTitle = cmd.pullRequest ?
-          `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
-          cmd.label;
-        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
-        markdownBody += '```\n';
-        markdownBody += outputForMarkdown
-        markdownBody += '\n```\n';
-        markdownBody += '</details>\n';
-      }
-      else if (cmd.type === "manual" && !isNotRun(cmd)) {
-        const labelTitle = cmd.pullRequest ?
-          `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
-          cmd.label;
-        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
-        // Instructions are markdown written by humans: a blockquote keeps their lists, links and
-        // bold text rendered, where a code fence would show them as raw text. Raw HTML tags are
-        // neutralized so an instruction cannot close the enclosing <details> blocks.
-        const instructions = (cmd?.parameters?.instructions || "No instructions provided.") as string;
-        const safeInstructions = instructions.replace(/</g, '&lt;');
-        markdownBody += safeInstructions.split('\n').map((line) => `> ${line}`).join('\n');
-        markdownBody += '\n</details>\n';
-      }
-    }
-    markdownBody += `\n</details>\n`;
-  }
-  return markdownBody;
-}
-
-function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, orgBranch?: string) {
-  const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
-  const prData = {
-    [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly, orgBranch)
-  };
-  setPullRequestData(prData);
+// The Pull Request comment layout (utilsPrCommentLayout.ts) renders the actions from these facts
+function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], orgBranch?: string) {
+  setPullRequestData({ [property === 'commandsPreDeploy' ? 'preDeployActions' : 'postDeployActions']: { commands, orgBranch } });
 }
 
 /**

@@ -4,20 +4,16 @@ import * as path from "path"
 import { MetadataUtils } from "../metadata-utils/index.js";
 import { uxLog } from "../utils/index.js";
 import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
-import { GitProvider } from "./index.js";
+import { GitProvider, PrCommentFlowChange } from "./index.js";
 import { t } from '../utils/i18n.js';
 
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";
   for (const err of errorsAndTips) {
-    const errorMessage = (err as any)?.error?.message?.trim().includes("Error ")
-      ? (err as any)?.error?.message
-        .trim()
-        .replace("| Error ", "")
-        .replace("Error ", "")
-        .replace(" ", "<br/>")
-        .trim()
-        .replace(/(.*)<br\/>/gm, `<b>$1</b> `)
+    // Only a component error line ("Error Name problem") gets its name in bold: an "Error " in the
+    // middle of a message ("Connect Timeout Error (...)") must stay as it is
+    const errorMessage = /^(\| )?Error /.test((err as any)?.error?.message?.trim() || "")
+      ? componentErrorMessageMarkdown((err as any)?.error)
       : (err as any)?.error?.message?.trim() || "WE SHOULD NOT GO THERE: PLEASE DECLARE AN ISSUE";
     // sfdx-hardis tip
     if (err.tip) {
@@ -116,65 +112,79 @@ export async function flowDiffToMarkdownForPullRequest(flowNames: string[], from
   }
   const supportsMermaidInPrMarkdown = await GitProvider.supportsMermaidInPrMarkdown();
   const supportsSvgAttachments = await GitProvider.supportsSvgAttachments();
+  const mode: 'mermaid' | 'svg' | 'png' = supportsMermaidInPrMarkdown ? 'mermaid' : supportsSvgAttachments ? 'svg' : 'png';
   const flowDiffMarkdownList: any = [];
-  let flowDiffFilesSummary = "## Flow changes\n\n";
+  // What changed per Flow, rendered by the layout of the validation comment
+  const flowChanges: PrCommentFlowChange[] = [];
   // Locate every Flow source file in a single pass on the package directories
   const fileMetadataByFlowName = await MetadataUtils.findMetaFilesFromTypeAndNames("Flow", flowNames);
   for (const flowName of flowNames) {
-    flowDiffFilesSummary += `- [${flowName}](#${flowName})\n`;
     const fileMetadata = fileMetadataByFlowName.get(flowName) ?? null;
     if (fileMetadata == null) {
       uxLog("warning", this, c.yellow('[FlowGitDiff] ' + t('flowGitDiffFlowFileNotFound', { flowName })));
       continue;
     }
     try {
-      // Markdown with pure MermaidJS
-      if (supportsMermaidInPrMarkdown) {
-        await generateDiffMarkdownWithMermaid(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
-      }
-      // Markdown with Mermaid converted as SVG
-      else if (supportsSvgAttachments) {
-        await generateDiffMarkdownWithSvg(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
-      }
-      // Markdown with images converted as PNG
-      else {
-        await generateDiffMarkdownWithPng(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName);
+      const flowChange = await generateFlowDiffMarkdownForPullRequest(fileMetadata, fromCommit, toCommit, flowDiffMarkdownList, flowName, mode);
+      if (flowChange) {
+        flowChanges.push(flowChange);
       }
     } catch (e: any) {
       uxLog("warning", this, c.yellow('[FlowGitDiff] ' + t('flowGitDiffUnableToGenerate', { flowName, message: e.message })) + "\n" + c.grey(e.stack));
     }
   }
-  if (truncatedNb > 0) {
-    flowDiffFilesSummary += `\n\n:warning: _${truncatedNb} Flows have been truncated_\n\n`;
-  }
   return {
-    markdownSummary: flowDiffFilesSummary,
-    flowDiffMarkdownList: flowDiffMarkdownList
+    // Kept for compatibility: the layout of the comment now reads flowChanges
+    markdownSummary: "",
+    flowDiffMarkdownList: flowDiffMarkdownList,
+    flowChanges: flowChanges,
+    truncatedNb: truncatedNb,
   }
 }
 
-async function generateDiffMarkdownWithMermaid(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: false, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded) {
-    const flowDiffMarkdownMermaid = await fs.readFile(outputDiffMdFile.replace(".md", ".mermaid.md"), "utf8");
-    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownMermaid, markdownFile: outputDiffMdFile });
+// Markdown with pure MermaidJS, with Mermaid converted as SVG, or with images converted as PNG,
+// depending on what the git provider renders
+async function generateFlowDiffMarkdownForPullRequest(
+  fileMetadata: string,
+  fromCommit: string,
+  toCommit: string,
+  flowDiffMarkdownList: any,
+  flowName: string,
+  mode: 'mermaid' | 'svg' | 'png'
+): Promise<PrCommentFlowChange | null> {
+  const diffResult = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, {
+    mermaidMd: true,
+    svgMd: mode === 'svg',
+    pngMd: mode === 'png',
+    debug: false,
+    skipStatusOnlyChange: true,
+  });
+  if (diffResult.isStatusOnlyChange === true) {
+    return { name: flowName, kind: 'status-only', statusBefore: diffResult.statusBefore, statusAfter: diffResult.statusAfter };
   }
+  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = diffResult;
+  if (!outputDiffMdFile || !hasFlowDiffs || isFlowDeletedOrAdded) {
+    return null;
+  }
+  const markdownFile = mode === 'mermaid' ? outputDiffMdFile.replace(".md", ".mermaid.md") : outputDiffMdFile;
+  if (!fs.existsSync(markdownFile)) {
+    return null;
+  }
+  const markdown = await fs.readFile(markdownFile, "utf8");
+  flowDiffMarkdownList.push({ name: flowName, markdown: markdown, markdownFile: outputDiffMdFile });
+  return { name: flowName, kind: 'diff' };
 }
 
-async function generateDiffMarkdownWithSvg(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: true, pngMd: false, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded && fs.existsSync(outputDiffMdFile)) {
-    const flowDiffMarkdownWithSvg = await fs.readFile(outputDiffMdFile, "utf8");
-    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithSvg, markdownFile: outputDiffMdFile });
+// "Error <component name> <problem>": the whole component name in bold, even when it holds a space,
+// like a layout ("Installation__c-Installation Layout"). Without the name, the first word is taken.
+function componentErrorMessageMarkdown(error: any): string {
+  const message = (error?.message || "").trim().replace(/^\| /, "").replace(/^Error /, "").trim();
+  const fullName = (error?.fullName || "").trim();
+  if (fullName && message.startsWith(fullName + " ")) {
+    return `<b>${fullName}</b> ${message.substring(fullName.length).trim()}`;
   }
-}
-
-async function generateDiffMarkdownWithPng(fileMetadata: string | null, fromCommit: string, toCommit: string, flowDiffMarkdownList: any, flowName: string) {
-  const { outputDiffMdFile, hasFlowDiffs, isFlowDeletedOrAdded } = await generateFlowVisualGitDiff(fileMetadata, fromCommit, toCommit, { mermaidMd: true, svgMd: false, pngMd: true, debug: false });
-  if (outputDiffMdFile && hasFlowDiffs && !isFlowDeletedOrAdded && fs.existsSync(outputDiffMdFile)) {
-    const flowDiffMarkdownWithPng = await fs.readFile(outputDiffMdFile, "utf8");
-    flowDiffMarkdownList.push({ name: flowName, markdown: flowDiffMarkdownWithPng, markdownFile: outputDiffMdFile });
-  }
+  const firstSpace = message.indexOf(" ");
+  return firstSpace > 0 ? `<b>${message.substring(0, firstSpace)}</b> ${message.substring(firstSpace + 1).trim()}` : message;
 }
 
 function getAiPromptResponseMarkdown(title, message) {

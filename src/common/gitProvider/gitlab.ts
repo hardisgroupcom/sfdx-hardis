@@ -444,6 +444,7 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+    messageBody = this.enforceHardCommentLimit(messageBody);
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabListingMrNotes')));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
@@ -847,6 +848,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     const ctx = this.resolveMergeRequestContext(prNumber);
     if (!ctx) return;
     const { projectId, mergeRequestId } = ctx;
@@ -906,6 +908,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     if (!commentRef?.ref?.noteId) return;
     await this.gitlabApi.MergeRequestNotes.edit(commentRef.ref.projectId, commentRef.prNumber, commentRef.ref.noteId, { body });
     uxLog("log", this, c.grey('[GitLab] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));

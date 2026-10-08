@@ -224,16 +224,20 @@ export function buildNoOverwriteMarkdown(
   if (notOverwrittenCount === 0 && createdOnceCount === 0) {
     return '';
   }
-  const lines = ['### 🛡️ Protected metadata (package-no-overwrite.xml)', ''];
+  // One folded block: the verdict of the comment comes first, the protected components are a detail
+  const summaryCount = notOverwrittenCount > 0 ? notOverwrittenCount : createdOnceCount;
+  // The documentation link sits right after the first mention of the file
+  const docLink = `([view doc](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-overwrite/))`;
+  const lines = ['<details>', `<summary>🛡️ Protected by <code>${state.noOverwriteFile}</code> (${summaryCount})</summary>`, ''];
   if (notOverwrittenCount > 0) {
     lines.push(
-      `⚠️ **${countOf(notOverwrittenCount, 'component')} of this Pull Request already ${notOverwrittenCount === 1 ? 'exists' : 'exist'} in the target org and ${check ? 'will not be' : notOverwrittenCount === 1 ? 'was not' : 'were not'} overwritten**, because ${notOverwrittenCount === 1 ? 'it is' : 'they are'} listed in \`${state.noOverwriteFile}\`. The version in the org is kept: such components are maintained manually in the org.`,
+      `⚠️ **${countOf(notOverwrittenCount, 'component')} of this Pull Request already ${notOverwrittenCount === 1 ? 'exists' : 'exist'} in the target org and ${check ? 'will not be' : notOverwrittenCount === 1 ? 'was not' : 'were not'} overwritten**, because ${notOverwrittenCount === 1 ? 'it is' : 'they are'} listed in \`${state.noOverwriteFile}\` ${docLink}. The version in the org is kept: such components are maintained manually in the org.`,
       ''
     );
   }
   if (createdOnceCount > 0) {
     lines.push(
-      `ℹ️ **${countOf(createdOnceCount, 'protected component')} ${check ? (createdOnceCount === 1 ? 'does' : 'do') : 'did'} not exist in the target org yet and ${check ? 'will be' : (createdOnceCount === 1 ? 'was' : 'were')} created.** Later deployments will not overwrite ${createdOnceCount === 1 ? 'it' : 'them'}.`,
+      `ℹ️ **${countOf(createdOnceCount, 'protected component')} ${check ? (createdOnceCount === 1 ? 'does' : 'do') : 'did'} not exist in the target org yet and ${check ? 'will be' : (createdOnceCount === 1 ? 'was' : 'were')} created.** Later deployments will not overwrite ${createdOnceCount === 1 ? 'it' : 'them'}${notOverwrittenCount > 0 ? '' : `: ${createdOnceCount === 1 ? 'it is' : 'they are'} listed in \`${state.noOverwriteFile}\` ${docLink}`}.`,
       ''
     );
   }
@@ -246,15 +250,12 @@ export function buildNoOverwriteMarkdown(
   // how many. The table is there for whoever wants the split per type.
   const typeCount = new Set(protectedRows.filter((row) => columns.some((column) => column.status === row.status)).map((row) => row.type)).size;
   lines.push(
-    '<details>',
-    `<summary>🛡️ <b>Protected components per metadata type (${countOf(typeCount, 'type')})</b></summary>`,
+    `Protected components per metadata type (${countOf(typeCount, 'type')}):`,
     '',
     ...buildCountsPerTypeTable(protectedRows, columns),
     '',
-    '</details>',
-    ''
+    '</details>'
   );
-  lines.push(`[How package-no-overwrite.xml works](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-overwrite/)`);
   return lines.join('\n');
 }
 

@@ -797,6 +797,7 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId && prMessage.skipDeploymentIdMarker !== true) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+    messageBody = this.enforceHardCommentLimit(messageBody);
     // Upload attached images if necessary
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
     // Get Azure Git API
@@ -1296,6 +1297,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
     if (!repositoryId || !pullRequestId) return;
@@ -1365,6 +1367,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (!repositoryId || !commentRef?.ref?.threadId || !commentRef?.ref?.commentId) return;
     const azureGitApi = await this.azureApi.getGitApi();

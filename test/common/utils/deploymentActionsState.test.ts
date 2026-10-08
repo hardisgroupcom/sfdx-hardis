@@ -69,10 +69,11 @@ describe('Deployment Actions state comment (matrix format)', () => {
     const body = buildDeploymentActionsCommentBody(entries, undefined, 42);
 
     expect(body).to.contain('| Action | When | integration | uat |');
-    expect(body).to.contain('### Pending manual actions');
-    expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 when:pre-deploy -->');
+    expect(body).to.contain('#### Needs you');
+    expect(body).to.contain('### In uat: 👋 1 to do by hand');
+    expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 when:pre-deploy --> 👋 ');
     expect(body).to.contain('*Legend:');
-    expect(body).to.contain('*Last updated:');
+    expect(body).to.match(/\*Updated [A-Z][a-z]{2} \d{1,2}, \d{2}:\d{2} UTC\*/);
   });
 
   it('escapes pipes and newlines in labels and round-trips them intact', () => {
@@ -124,6 +125,75 @@ describe('Deployment Actions state comment (matrix format)', () => {
     expect(mixedBody).to.contain('pr-banner-actions-pending');
   });
 
+  describe('verdict line', () => {
+    function deployOnlyDef(id: string, overrides: Partial<ActionDef> = {}): ActionDef {
+      return { id, label: id, type: 'command', command: 'echo hello', context: 'process-deployment-only', when: 'post-deploy', executionOrder: 0, ...overrides };
+    }
+
+    it('says Nothing to do when every action is done or skipped for good', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2', { excludeTargetBranches: ['integration'] })]]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        // A skip with no definition to read cannot be told apart from a final one
+        entry({ actionId: 'action-3', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### ✅ Nothing to do: every deployment action is done or skipped');
+    });
+
+    // Training walk 2026-10-08, O-1: a validation skips the deployment-only actions, which run at the merge
+    it('names the actions a validation left for the deployment job instead of Nothing to do', () => {
+      const defs = new Map<string, ActionDef>([
+        ['action-2', deployOnlyDef('action-2')],
+        ['action-3', deployOnlyDef('action-3', { type: 'run-batch', context: 'all' })],
+        ['action-4', deployOnlyDef('action-4')],
+      ]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        entry({ actionId: 'action-3', status: 'skipped' }),
+        entry({ actionId: 'action-4', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 3 after the merge\n');
+      expect(body).to.not.contain('Nothing to do:');
+      // Nothing to tick: the checklist stays out
+      expect(body).to.not.contain('#### Needs you');
+      // The matrix and its markers do not change
+      expect(parseDeploymentActionsCommentBody(body).filter((e) => e.status === 'skipped')).to.have.length(3);
+    });
+
+    it('adds the actions run after the merge to an org that needs someone', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2')]]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({ status: 'manual' }),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        entry({ actionId: 'action-2', orgBranch: 'uat', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### In integration: 👋 1 to do by hand · 🕒 1 after the merge / In uat: ✅ nothing to do now · 🕒 1 after the merge\n');
+    });
+
+    it('reads the project and branch actions recorded in the comment, which no Pull Request file defines', () => {
+      const configDefs = new Map<string, Map<string, ActionDef>>([
+        ['', new Map([['project-action', deployOnlyDef('project-action')]])],
+        ['uat', new Map([['uat-action', deployOnlyDef('uat-action')]])],
+      ]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'project-action', status: 'skipped' }),
+        entry({ actionId: 'uat-action', orgBranch: 'uat', status: 'skipped' }),
+        // A branch definition only counts in its own org
+        entry({ actionId: 'uat-action', status: 'skipped' }),
+      ], new Map(), 42, null, configDefs);
+      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 1 after the merge / In uat: ✅ nothing to do now · 🕒 1 after the merge\n');
+    });
+
+    it('stops counting an action once the deployment job ran it', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2')]]);
+      const body = buildDeploymentActionsCommentBody([entry({}), entry({ actionId: 'action-2', status: 'success' })], defs, 42);
+      expect(body).to.contain('### ✅ Nothing to do: every deployment action is done or skipped');
+    });
+  });
+
   describe('Action Details section', () => {
     function actionDef(overrides: Partial<ActionDef>): ActionDef {
       return {
@@ -165,7 +235,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(body).to.contain('**Results by org**');
       expect(body).to.contain('| Org branch | Status | Date | Job |');
       expect(body).to.contain('| integration | \u2705 success | 2026-08-14 | [1234](https://ci.example.com/1234) |');
-      expect(body).to.contain('| uat | \ud83d\udc4b waiting for manual execution | 2026-08-15 | [5678](https://ci.example.com/5678) |');
+      expect(body).to.contain('| uat | \ud83d\udc4b to do by hand | 2026-08-15 | [5678](https://ci.example.com/5678) |');
       expect(body).to.contain('**Output - integration**\n\n```\nItems removed: 1\n```');
       expect(body).to.not.contain('**Output - uat**');
       expect(body).to.not.contain('*integration - ');

@@ -43,7 +43,9 @@ export async function getActionConfigFilePath(scope: ActionScope, branch?: strin
     return path.join('config', '.sfdx-hardis.yml');
   }
   if (scope === 'branch') {
-    const branchName = branch || await getCurrentGitBranch({ formatted: true }) || 'main';
+    // A branch name read from git or from a Pull Request target (release/uat) is written in the file
+    // name the way the config loader reads it (release__uat), as getCurrentGitBranch formats it
+    const branchName = (branch || await getCurrentGitBranch({ formatted: true }) || 'main').replace('/', '__');
     return path.join('config', 'branches', `.sfdx-hardis.${branchName}.yml`);
   }
   // scope === 'pr'
@@ -101,6 +103,14 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
  */
 export function normalizeBranchName(name: string): string {
   return String(name || '').trim().toLowerCase().replace(/\//g, '__');
+}
+
+/**
+ * Context an action really runs in. A run-batch action changes the data of the org: it is a
+ * deployment-only action, whatever its context holds.
+ */
+export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context'>): PrePostCommand['context'] {
+  return cmd.type === "run-batch" ? "process-deployment-only" : cmd.context || "all";
 }
 
 /**

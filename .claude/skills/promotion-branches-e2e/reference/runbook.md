@@ -374,13 +374,13 @@ PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK")" DEV="$DEV" EXT="$EXT" 
 # GitLab: PROVIDER=gitlab GL_HOST GL_TOKEN PROJECT_ID instead of REPO
 ```
 
-| Tab                | Expected                                                                                                                                                                                                                                           |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| all three run tabs | the CLI answers, with an array for the Pull Request. No answer, or no entry for it, **hides** the three tabs instead of showing them empty, so a provider read that failed looks like "nothing to show"                                            |
-| Validation         | one run per comment whose message key starts with `deployment-check-`, with the status of its `run-summary` marker when it has one                                                                                                                 |
-| Deployment         | one run per comment whose message key starts with `deployment-` (not `-check-`), same status rule                                                                                                                                                  |
-| Code Quality       | one run per MegaLinter comment (`<!-- megalinter:` or its title). The simulators post none, so it is only exercised by the CI section                                                                                                              |
-| Deployment Actions | every cell of the "Status by org branch" table of the Deployment Actions comment is a status of the CLI (action id, org branch); the cells of the target branch are the pills of the modal; the list of a story equals the ids of its actions file |
+| Tab                | Expected                                                                                                                                                                                                                                    |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| all three run tabs | the CLI answers, with an array for the Pull Request. No answer, or no entry for it, **hides** the three tabs instead of showing them empty, so a provider read that failed looks like "nothing to show"                                     |
+| Validation         | one run per comment whose message key starts with `deployment-check-`, with the status of its `run-summary` marker when it has one                                                                                                          |
+| Deployment         | one run per comment whose message key starts with `deployment-` (not `-check-`), same status rule                                                                                                                                           |
+| Code Quality       | one run per MegaLinter comment (`<!-- megalinter:` or its title). The simulators post none, so it is only exercised by the CI section                                                                                                       |
+| Deployment Actions | every cell of the "Status by org" table of the Deployment Actions comment is a status of the CLI (action id, org branch); the cells of the target branch are the pills of the modal; the list of a story equals the ids of its actions file |
 
 It prints one line per Pull Request, with a note for a Pull Request merged into a major branch with no
 deployment comment at all (a job side gap, not a modal one: section 6sexies merges stories it never
@@ -445,7 +445,7 @@ Check the deployment action state from the git provider too:
 gh api "repos/$REPO/issues/1/comments" --jq '.[] | select(.body | contains("Deployment Actions")) | .body'
 ```
 
-The "Status by org branch" table must have one column per org branch the story reached, and one
+The "Status by org" table must have one column per org branch the story reached, and one
 pending manual checkbox per org branch.
 
 ## 6. Edge cases to run at the end

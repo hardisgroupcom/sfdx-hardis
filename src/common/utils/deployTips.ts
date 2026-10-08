@@ -5,7 +5,7 @@ import { formatTemplate as format } from "./stringUtils.js";
 import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
 import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
-import { analyzeDeployErrorLogsJson } from "./deployTipJson.js";
+import { analyzeDeployErrorLogsJson, buildNetworkErrorAndTip, extractShortNetworkCause, isNetworkFailureText } from "./deployTipJson.js";
 import { PullRequestData } from "../gitProvider/index.js";
 import { setPullRequestData } from "./gitUtils.js";
 import { t } from './i18n.js';
@@ -85,6 +85,18 @@ export async function analyzeDeployErrorLogs(log: string, includeInLog = true, o
   if (failedTests.length === 0) {
     // Legacy sfdx force:source:deploy output
     extractFailedTestsInfoForSfdxCommand(logRaw, failedTests);
+  }
+  // A command that lost its connection to Salesforce prints no JSON when it was not run with --json:
+  // its only error lines ("Error (TypeError): fetch failed") are the network failure, not a metadata error.
+  // "read ECONNRESET" also matches the "Network issue" tip: the same failure, reported the same way.
+  const onlyNetworkErrors = errorsAndTips.length > 0
+    ? errorsAndTips.every((err) => (!err.tip || err.tip.label === "Network issue") && isNetworkFailureText(err.error.message))
+    : isNetworkFailureText(logRaw);
+  if (failedTests.length === 0 && onlyNetworkErrors) {
+    const networkErrorLine = logRaw.split(/\r?\n/).find((line) => isNetworkFailureText(line)) || "";
+    const networkError = buildNetworkErrorAndTip(extractShortNetworkCause(networkErrorLine.trim().replace(/^.*?Error(\s*\([^)]*\))?:\s*/, ""), logRaw));
+    errorsAndTips = [networkError];
+    logResLines.push(c.red(c.bold(networkError.error.message)), c.yellow(networkError.tip.message));
   }
   // Fallback in case we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
@@ -293,6 +305,11 @@ export async function updatePullRequestResult(errorsAndTips: Array<any>, failedT
     status: "valid",
     errorCount: errorsAndTips.length,
     failedTestsCount: failedTests.length,
+    // Salesforce refuses a deployment whose Apex classes are not covered enough: an error of the
+    // tests, not of the metadata
+    coverageWarningsCount: errorsAndTips.filter((err) => err?.tip?.label === "CodeCoverageWarning").length,
+    // The connection to Salesforce was lost: nothing to fix in the metadata, the job must run again
+    networkErrorsCount: errorsAndTips.filter((err) => err?.tip?.label === "NetworkError").length,
   };
   if (errorsAndTips.length > 0) {
     prData.title = options.check ? "❌ Deployment check failure" : "❌ Deployment failure";

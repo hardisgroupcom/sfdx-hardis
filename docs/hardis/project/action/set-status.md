@@ -15,7 +15,7 @@ When an action failed during a deployment job and was then performed by hand, th
 - An action with no status yet in a major branch (or skipped there) can be marked as done ahead of the deployment: before a promotion to preprod, for instance, mark the pre-deployment manual actions you already did there, and the validation and deployment jobs of preprod skip them. The note reads "Marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC, before any deployment to preprod."
 - With `--target-org` set to a developer org (and no `--org-branch`), the action is recorded as done in that org: a row of the "Backpromotes" comment of the Pull Request, for that sandbox and org id, so a backpromote or a run in that org skips it.
 - With `--select-org`, the command asks where the action was done: a major branch where it is not done yet, or a developer org authenticated on this computer. The VS Code Deployment Actions tab uses it for **Mark as done in another org**. A manual action gets the note "Manual action marked as done by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
-- Its checkboxes in the "Failed actions" lists of the Pull Request comments are ticked.
+- Its checkboxes in the "Needs you" list of the Deployment Actions comment, and in the other Pull Request comments that list it, are ticked.
 - Closing an action does not run the actions its failure stopped: run them with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/).
 - Without `--pr` and `--action-id`, it proposes the recent Pull Requests whose actions failed in the org branch, then their failed actions.
 

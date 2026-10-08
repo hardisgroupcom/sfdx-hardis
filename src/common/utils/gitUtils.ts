@@ -525,9 +525,13 @@ export async function buildCheckDeployCommitSummary() {
   try {
     const pullRequestInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     const commitsSummary = await computeCommitsSummary(true, pullRequestInfo);
+    // The comment lists tickets and legacy manual actions, not the commits: they stay in the job log
+    uxLog("other", this, commitsSummary.markdown);
     const prDataCommitsSummary = {
-      commitsSummary: commitsSummary.markdown,
-      flowDiffMarkdown: commitsSummary.flowDiffMarkdown
+      tickets: commitsSummary.tickets,
+      legacyManualActions: commitsSummary.manualActions,
+      flowDiffMarkdown: commitsSummary.flowDiffMarkdown,
+      flowChanges: commitsSummary.flowDiffMarkdown?.flowChanges || [],
     };
     setPullRequestData(prDataCommitsSummary);
   } catch (e3) {

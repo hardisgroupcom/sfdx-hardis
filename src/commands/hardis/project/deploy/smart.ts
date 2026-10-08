@@ -169,13 +169,34 @@ If necessary,you can define the following files:
   - Can be overridden for a branch using .sfdx-hardis.yml property **packageNoOverwritePath** or environment variable PACKAGE_NO_OVERWRITE_PATH (for example, define: \`packageNoOverwritePath: manifest/package-no-overwrite-main.xml\` in config file \`config/.sfdx-hardis.main.yml\`)
 - \`manifest/packageXmlOnChange.xml\`: Every element defined in this file will not be deployed if it already has a similar definition in target org (can be useful for SharingRules for example)
 
-When components of the deployment package are protected by \`package-no-overwrite.xml\`, the Pull Request comment has a **Protected metadata** section counting the components already in the target org that are not overwritten, and the ones created this once, with a collapsed table per metadata type.
+When components of the deployment package are protected by \`package-no-overwrite.xml\`, the Pull Request comment has a folded **Protected by package-no-overwrite.xml** section counting the components already in the target org that are not overwritten, and the ones created this once, with a table per metadata type.
 
 See [Overwrite management documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-overwrite/)
 
+### Pull Request comments
+
+The validation and deployment Pull Request comments all read the same way:
+
+- A **verdict** naming the target org: *Ready to merge into integration*, *Cannot merge into integration: 2 deployment errors*, *Deployed to integration, but an action failed after the deployment*... A green validation also says how to merge: **Squash and merge** for a User Story branch, a **merge commit** (never squash) for a major, promotion or retrofit branch.
+- A short table of **checks**: Metadata (what changed, and for a deployment how: Full or Delta deployment, Full or Delta Quick Deploy), Apex tests (coverage, failures, or why none ran), Deployment actions (counts per status), and in a validation whether Quick Deploy can reuse it.
+- What **needs you**: deployment errors with their tips, failed actions with the end of their output, and the manual actions to perform, as checkboxes.
+- The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the tickets and the carried Pull Requests.
+
+![Validation Pull Request comment: verdict, checks and the manual action to do before the deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-validation.png)
+
+When a post-deployment action fails, the deployment comment says the metadata is in the org, and shows the end of the output of the failed action:
+
+![Deployment Pull Request comment: deployed, but a post-deployment action failed](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-deployment-failed-action.png)
+
+Each changed Flow gets a comment of its own, with the changed properties first, then its diagram:
+
+![Visual git diff comment of a Flow](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-flow-diff.png)
+
+Each comment stays under 50,000 characters (30,000 on Bitbucket). Above that, long outputs and lists are shortened, then the biggest folded sections are left out, and the comment says so. A Flow whose only change is its status (activated or deactivated) gets no visual diff comment.
+
 ### Deployment components report
 
-The validation and deployment Pull Request comments open on the code coverage, right under the deployment status, then count the components the deployment creates, updates, deletes or fails to deploy, with a collapsed table per metadata type. A validation comment calls its counts line **Simulated deployment**. Every table of these comments, Flow deletion included, is collapsed by default.
+The Metadata line of the checks counts the components the deployment creates, updates, deletes or fails to deploy, and a folded table splits them per metadata type.
 
 ![Validation Pull Request comment with the components per metadata type and the protected metadata](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-deployment-components-pr-comment.png)
 

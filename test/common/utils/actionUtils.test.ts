@@ -32,6 +32,11 @@ describe('actionUtils', () => {
       expect(result).to.equal(path.join('config', 'branches', '.sfdx-hardis.integration.yml'));
     });
 
+    it('names the branch config file of a branch with a slash the way the config loader reads it', async () => {
+      const result = await getActionConfigFilePath('branch', 'release/uat');
+      expect(result).to.equal(path.join('config', 'branches', '.sfdx-hardis.release__uat.yml'));
+    });
+
     it('returns PR config path with PR id', async () => {
       const result = await getActionConfigFilePath('pr', undefined, '42');
       expect(result).to.equal(path.join('scripts', 'actions', '.sfdx-hardis.42.yml'));
@@ -78,6 +83,17 @@ describe('actionUtils', () => {
       const actions = await readActions('project', 'post-deploy');
       expect(actions).to.have.lengthOf(1);
       expect(actions[0].id).to.equal('post-1');
+    });
+  });
+
+  describe('readActions of a branch with a slash', () => {
+    it('reads the branch config file the config loader reads for a Pull Request target like release/uat', async () => {
+      const configFile = path.join(ctx.getDir(), 'config', 'branches', '.sfdx-hardis.release__uat.yml');
+      await fs.ensureDir(path.dirname(configFile));
+      await fs.writeFile(configFile, yaml.dump({ commandsPostDeploy: [{ id: 'uat-1', label: 'Uat', type: 'command', command: 'echo uat', context: 'process-deployment-only' }] }));
+
+      const actions = await readActions('branch', 'post-deploy', 'release/uat');
+      expect(actions.map((action) => action.id)).to.deep.equal(['uat-1']);
     });
   });
 

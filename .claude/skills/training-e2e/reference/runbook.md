@@ -249,8 +249,8 @@ Traps that cost earlier runs time:
   set, deleted components included (`showMetadataRetriever.ts` adds the type filter and `LIMIT 2000`).
 - **`hardis:project:action:create --agent` is not the dialog** (2026-09-29). It defaults `--context`
   to `process-deployment-only`; the Deployment Actions editor defaults a new action to `all`. Pass
-  `--context all` for Lab 2.4's manual step, or the check comment has no **Pending manual actions**
-  box to show and tick.
+  `--context all` for Lab 2.4's manual step, or the validation comment has no **To do by hand** checklist
+  with a box to show and tick.
 - **CI logs carry ANSI codes inside words.** `Type RemoteSiteSetting: 1 item(s) skipped` is logged
   as `Type \e[1mRemoteSiteSetting\e[22m: ...`, so a grep for the plain sentence finds nothing and the
   line looks missing. Strip the codes first: `sed 's/\x1b\[[0-9;]*m//g'`.
@@ -295,6 +295,23 @@ Traps that cost earlier runs time:
 - **The Backpromote panel passes `--from-pull-request` to the run as well as to the plan.** Calling
   `--auto --run-id <id>` without it is refused with "No backpromote of this sandbox found": that is
   the harness, not the product.
+- **A headless backpromote needs `GITHUB_TOKEN`** (2026-10-08). The extension hands the command its
+  own GitHub session; from a shell the plan comes back `blocked`. `GITHUB_TOKEN=$(gh auth token)`
+  before the command, and the same for `action:run`, `action:set-status`, `release-notes` and
+  `promotion:create`.
+- **The Training menu at fidelity 2 is a `panel.mjs` that runs `node`, not `sf`** (2026-10-08). The
+  Command Runner of the extension runs `node scripts/training.mjs <verb>` with
+  `SFDX_HARDIS_WEBSOCKET` set, and the questions of **Simulate my teammates**, **Create my lab
+  records** or **Publish my pipeline configuration** then arrive in the panel. A copy of `panel.mjs`
+  that spawns `process.execPath` instead of `sf` does the same headless; pass it
+  `-- scripts/training.mjs simulate`, with the path: `-- simulate` alone fails on *Cannot find
+  module*. Kept in the run folder of 2026-10-08 as `tools/panel-node.mjs`.
+- **The classic field-level security page of a profile no longer answers a CDP script**
+  (2026-10-08): `/setup/layout/flsedit.jsp` timed out on the profile row, and the tabs it left open
+  later wedged the CDP attach. Grant a profile through `FieldPermissions` DML and say so in the
+  report.
+- **Python writes CRLF on Windows.** A script editing a lab or a CLI file must open it with
+  `newline=''`, or the whole file shows as changed.
 - **`action:create --sfdmu-project` takes the workspace name** (`HeliosCrewRefData`), the value
   the dialog's dropdown shows, not its path.
 - **Setup > Deliverability over CDP**: `/lightning/setup/OrgEmailSettings/home`, a classic form in
@@ -420,6 +437,27 @@ tab, the deployment actions, the promotion), and read the rule id with `gh api g
 `branchProtectionRules { databaseId pattern }`. The improved release notes picture of Lab 3.5 is a
 written example: its capture looks for a Pull Request description titled *Promotion 2026-09 to UAT*.
 
+Three more of 2026-10-08, from the outside world rather than the products:
+
+- **GitHub remembers the last merge method of the repository.** A fork that squash-merged once shows
+  "Squash and merge" on the button of the next Pull Request, where a learner's first one reads
+  "Merge pull request". The `github-pr-merge` and `github-pr-merge-squash` captures pick
+  "Create a merge commit" in the menu first (nothing is merged) so the picture is the learner's.
+- **GitHub reorders the checks.** Mega-Linter is now listed above Simulate Deployment, which moved
+  the pills of `github-pr-checks` onto the wrong rows. Check the order against the lab text.
+- **Salesforce restyles Setup.** The Object Manager crop of Lab 1.4 came out cut off: the clip in
+  `labs/_assets/salesforce-captures.json` had to be set again. The validation rule crop of Lab 3.7
+  too (x 12, y 150, 1696 x 850 since 2026-10-08). Take a `--full` capture first, read the
+  coordinates on it, then set the clip and the pills. The Developer Edition orgs speak French, so
+  take Setup pictures in a scratch org whose user is `en_US` (`helios-uat`, `helios-dev`).
+- **`capture-web.mjs` can print nothing and write nothing** (2026-10-08): the first capture after a
+  `url` change came back silent, and `annotate.mjs` then said "all current" over the old picture.
+  Pass `--force`, and read the `<name>.png <url>` line it prints before opening the picture.
+- **Somebody else's script can hold the CDP Chrome** (2026-10-08): a `scripts/xwiki/publish-docs.mjs`
+  of another session had a tab open on 9222, and every `connectOverCDP` hung after *ws connected*,
+  even after that process ended. Closing its tab with `/json/close/<id>` freed the attach. Never
+  kill a process you did not start; wait for it, then close the tab it left.
+
 ## 5. Level 1, seven labs
 
 The pipeline and the contributor loop. Nothing else in the course works if this level does not.
@@ -442,8 +480,10 @@ Level 1 notes that previous runs settled:
   that says otherwise sends the learner into a failure that reads like a broken tool.
 - Lab 1.4 creates the field **not required** on purpose: Salesforce refuses field permissions on a
   universally required field, so a required field would make the permission set step impossible.
-- Lab 1.6's Pull Request is squash merged. Feature Pull Requests are squashed; everything else in
-  this course (promotions, retrofits, config) is merged.
+- Lab 1.6's Pull Request is squash merged. Feature Pull Requests are squashed, and so are the
+  configuration ones (Lab 3.1's `features/US-050-...`, the `config/pipeline-...` branch of **Publish
+  my pipeline configuration**); promotions and retrofits are merged. The **How to merge** line of
+  the green check comment says which, and the lab text must say the same.
 - After rebuilding an org while a Pull Request is open, press **Update branch** before re-running the
   check, or the job replays the old merge ref.
 
@@ -508,6 +548,37 @@ The role split is the point of this level, and it is easy to break by being help
 retrofit the default is `helios-dev` again, which is why Labs 3.6 and 3.11 say to set `helios-prod`
 before the DORA report. Skip that line and the report reads a scratch org with no history
 (2026-09-25).
+
+**`Reset this level` into Level 3 leaves the Level 2 deployment actions behind** (2026-10-08). The
+start branch holds the Level 2 stories as one commit, and their action files keep the numbers of
+the maintainer's Pull Requests (`scripts/actions/.sfdx-hardis.26.yml`, `.28.yml`, `.37.yml`). A
+promotion collects `.sfdx-hardis.<N>.yml` only for the Pull Requests it carries, and no Pull Request
+of the fork has those numbers in the window: the promotion to `uat` comes back green at once, with
+no deliverability checklist, no crew capacity data and no nightly job, in `uat` and in every org
+after it. Lab 3.5 says so in its "If it goes wrong" since then. To walk Labs 3.5, 3.6 and 3.11 as
+written after such a reset, give the actions an owner before the first promotion: one `E2E ONLY`
+Pull Request into `integration` that removes the three files and adds them back as
+`.sfdx-hardis.<its number>.yml` (create the Pull Request first, then commit the file named after
+it), ticks its deliverability box for `integration`, and is merged. Its number is newer than the
+Level 3 stories, so its actions run after theirs: in `uat` the crew capacity batch of US-062's fix
+ran before the crew size backfill and failed on *Required fields are missing: [Crew_Size__c]*.
+Recover as Lab 3.3 teaches (`action:run` the backfill, answering yes to *Run it anyway*, then retry
+the batch with *Run all the next actions*), then re-run the deployment job. A learner who walked
+Level 2 never meets this: their Level 2 Pull Requests are older.
+
+**`auth.mjs` and `mon.mjs` finish in one pass now** (2026-10-08): the first run of Add/Configure Org
+and of Install Org Monitoring no longer stops after switching the default org. When a branch must
+merge into nothing (`main` in Lab 3.1), give `auth.mjs` a target regex that matches no branch name:
+an empty one ticks them all.
+
+**`action:run` asks two questions a learner on the right branch never sees**: *The org is linked to
+branch uat, but you are on branch integration ... Continue?* when the clone is not on the org's
+branch, and *This action was stopped because ... is still failed in uat. Run it anyway?* for an
+action a failure stopped. Both are fair; answer them in the `panel.mjs` rules.
+
+**A Remote Site Setting cannot be edited through the Tooling API**: `sf data update record
+--use-tooling-api -s RemoteProxy` reports nothing and changes nothing. Lab 3.5's test URL in
+`helios-uat` is a metadata deploy of the remote site file from a throwaway project.
 
 **The course and the CLI release in two steps, and the site publishes what `main` of the course
 says.** On 2026-09-26 Lab 3.8 on the course's `main` described the deployment repository question
@@ -591,7 +662,7 @@ in the course), never yet against real orgs in this shape. What a walk has to re
   real promotion Pull Request of the fork: the description with the folded prompt, and the red check
   comment naming the two files. Re-capture them when the Pull Request body or the comment changes.
 - The deployment comment of the release into `main` lists US-057, US-059 and US-061 **twice** in
-  its "Commits summary": once from the squash commits that arrive with the catch-up promotion, once
+  its former "Commits summary" (removed from the comments on 2026-10-07): once from the squash commits that arrive with the catch-up promotion, once
   from their cherry-picked copies on the promotion branch. The Tickets section lists each story
   once. Recorded in the 2026-09-24 report; not a lab failure.
 

@@ -2556,18 +2556,67 @@ export function stripAnsi(str: string) {
 }
 
 export function findJsonInString(inputString: string) {
+  const text = stripAnsi(inputString);
   // Regular expression to match a JSON object
-  const jsonMatch = stripAnsi(inputString).match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  const jsonMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
   if (jsonMatch) {
     try {
       const jsonObject = JSON.parse(jsonMatch[0]); // Extract and parse JSON
       return jsonObject;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      return null;
+      // Text after the JSON can hold braces too: the Salesforce CLI writes warnings such as
+      // "could not find package.json with { name: ... }" on stderr, appended to stdout here
+      return findFirstBalancedJson(text, jsonMatch.index || 0);
     }
   }
   return null;
+}
+
+// The first JSON value starting at or after `start` whose brackets balance, strings taken into
+// account. A few candidate starts only: the deployment output can weigh several MB.
+function findFirstBalancedJson(text: string, start: number): any {
+  let begin = start;
+  for (let attempt = 0; attempt < 20 && begin >= 0; attempt++) {
+    const end = findBalancedJsonEnd(text, begin);
+    if (end > begin) {
+      try {
+        return JSON.parse(text.substring(begin, end + 1));
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        // Not JSON (a warning written like an object): try the next opening bracket
+      }
+    }
+    const next = text.slice(begin + 1).search(/[{[]/);
+    begin = next < 0 ? -1 : begin + 1 + next;
+  }
+  return null;
+}
+
+// Index of the bracket closing the one at `begin`, or -1
+function findBalancedJsonEnd(text: string, begin: number): number {
+  let depth = 0;
+  let inString = false;
+  for (let i = begin; i < text.length; i++) {
+    const char = text[i];
+    if (inString) {
+      if (char === '\\') {
+        i++;
+      } else if (char === '"') {
+        inString = false;
+      }
+    } else if (char === '"') {
+      inString = true;
+    } else if (char === '{' || char === '[') {
+      depth++;
+    } else if (char === '}' || char === ']') {
+      depth--;
+      if (depth === 0) {
+        return i;
+      }
+    }
+  }
+  return -1;
 }
 
 export function replaceJsonInString(inputString: string, jsonObject: any): string {
