@@ -10,31 +10,64 @@
 # running the CLI locally with those variables reproduces a Bitbucket Pipelines job exactly.
 #
 #   ORG           target org username or alias
-#   BB_WORKSPACE  workspace slug, e.g. test-sfdx-hardis-2
+#   BB_WORKSPACE  workspace slug, e.g. sfdxhardistest (always required)
 #   BB_REPO       repository slug of the throwaway test repository
-#   BB_EMAIL      Atlassian account email, empty for a workspace/repository Access Token
-#   BB_TOKEN      Atlassian API token with Bitbucket scopes, or a Bitbucket Access Token
+#   BB_EMAIL      Atlassian account email, empty for a workspace/repository Access Token.
+#                 Defaults to ATLASSIAN_EMAIL when BB_EMAIL is not set at all (set it to "" for an
+#                 Access Token)
+#   BB_TOKEN      Atlassian API token with Bitbucket scopes, or a Bitbucket Access Token.
+#                 Defaults to ATLASSIAN_TOKEN
 #   WORK          local clone
 #   LOGS          folder where each job log is written
 #   DEV           path to bin/dev.js of the sfdx-hardis working copy under test
+#
+# ATLASSIAN_TOKEN and ATLASSIAN_EMAIL are read from the environment, or else from the .env file at the
+# root of the sfdx-hardis working copy (E2E_ENV_FILE to point elsewhere). Nothing prints them.
 #
 # Credentials: an Atlassian API token authenticates as Basic auth with the account email as the
 # username, and it must be an API token WITH SCOPES covering Bitbucket (a classic Atlassian API
 # token answers "API Token provided has no Bitbucket scopes"). A Bitbucket workspace or repository
 # Access Token authenticates as a Bearer token instead: leave BB_EMAIL empty for that one.
 
+# One key of a dotenv file, without printing it: KEY=value, quotes stripped
+# Usage: e2e_dotenv_value <key> <file>
+e2e_dotenv_value() {
+  [ -f "$2" ] || return 0
+  grep -m1 -E "^(export +)?$1=" "$2" | tr -d '\r' | sed -E "s/^(export +)?$1=//; s/^[\"']//; s/[\"']$//"
+}
+E2E_ENV_FILE="${E2E_ENV_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)/.env}"
+ATLASSIAN_TOKEN="${ATLASSIAN_TOKEN:-$(e2e_dotenv_value ATLASSIAN_TOKEN "$E2E_ENV_FILE")}"
+ATLASSIAN_EMAIL="${ATLASSIAN_EMAIL:-$(e2e_dotenv_value ATLASSIAN_EMAIL "$E2E_ENV_FILE")}"
+BB_TOKEN="${BB_TOKEN:-$ATLASSIAN_TOKEN}"
+# unset (not empty) BB_EMAIL takes the Atlassian email: an empty one means a Bearer Access Token
+BB_EMAIL="${BB_EMAIL-$ATLASSIAN_EMAIL}"
+
 : "${ORG:?set ORG to the target org}"
 : "${BB_WORKSPACE:?set BB_WORKSPACE to the workspace slug}"
 : "${BB_REPO:?set BB_REPO to the repository slug}"
-: "${BB_TOKEN:?set BB_TOKEN to a Bitbucket capable token}"
+: "${BB_TOKEN:?set BB_TOKEN (or ATLASSIAN_TOKEN) to a Bitbucket capable token}"
 : "${WORK:?set WORK to the local clone}"
 : "${LOGS:?set LOGS to the log folder}"
 : "${DEV:?set DEV to the path of bin/dev.js}"
-BB_EMAIL="${BB_EMAIL:-}"
+export BB_TOKEN BB_EMAIL
 
 mkdir -p "$LOGS"
 
 BB_API="https://api.bitbucket.org/2.0/repositories/$BB_WORKSPACE/$BB_REPO"
+
+# The remote to clone and push with. Git does not take the account email as user name: an Atlassian
+# API token (BB_EMAIL set) pushes as x-bitbucket-api-token-auth, which is what the Atlassian
+# documentation gives; a workspace or repository Access Token (BB_EMAIL empty) as x-token-auth.
+# BB_GIT_USER overrides it, e.g. BB_GIT_USER=x-token-auth when an API token is refused under the
+# first name.
+# Usage: git remote set-url origin "$(bb_remote_url)"
+bb_remote_url() {
+  local user="${BB_GIT_USER:-}"
+  if [ -z "$user" ]; then
+    if [ -n "$BB_EMAIL" ]; then user=x-bitbucket-api-token-auth; else user=x-token-auth; fi
+  fi
+  echo "https://$user:$BB_TOKEN@bitbucket.org/$BB_WORKSPACE/$BB_REPO.git"
+}
 
 # The Bitbucket Cloud REST API. Basic auth with the account email for an Atlassian API token,
 # Bearer for a workspace or repository Access Token.
@@ -66,7 +99,35 @@ bb_ci_env() {
 # Usage: bb_pr_field <id> <python expression over `d`>
 bb_pr_field() {
   bb_api GET "$BB_API/pullrequests/$1" |
-    python -c "import json,sys; d=json.load(sys.stdin); print($2)"
+    python -c "import json,sys; d=json.loads(sys.stdin.buffer.read().decode('utf-8')); print($2)"
+}
+
+# The head of a branch on the remote, as git itself sees it
+# Usage: bb_remote_head <branch>
+bb_remote_head() {
+  git -C "$WORK" ls-remote origin "refs/heads/$1" | cut -f1
+}
+
+# Wait until the Pull Request API reports a given commit (or the remote head of its source branch)
+# as its source: Bitbucket knows a pushed commit a moment after the push. The API answers a 12
+# character hash. There is no merge ref to wait for (see bb_checkout_pr_merge).
+# Usage: bb_wait_pr_head <id> [sha]
+bb_wait_pr_head() {
+  local id="$1" head="${2:-}" branch got
+  if [ -z "$head" ]; then
+    branch=$(bb_pr_field "$id" "d['source']['branch']['name']")
+    head=$(bb_remote_head "$branch")
+    [ -z "$head" ] && head=$(git -C "$WORK" rev-parse "origin/$branch" 2>/dev/null || git -C "$WORK" rev-parse "$branch")
+  fi
+  for _ in $(seq 1 30); do
+    got=$(bb_pr_field "$id" "d['source']['commit']['hash']")
+    if [ -n "$got" ] && [[ "$head" == "$got"* ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+  echo "PR $id never reported $head as its source commit (last answer: $got)" >&2
+  return 1
 }
 
 # Build the tree a Bitbucket Pipelines pull request job runs on.
@@ -103,7 +164,13 @@ bb_check() {
   local pr="$1" target="$2" label="$3" code
   cd "$WORK" || return 1
   git checkout -q -f --detach HEAD
-  bb_checkout_pr_merge "$pr" || return 1
+  # A checkout that fails says so in the job log, so a missing log is never the only trace of it
+  if ! bb_checkout_pr_merge "$pr" 2>"$LOGS/$label.log"; then
+    cat "$LOGS/$label.log" >&2
+    return 1
+  fi
+  local start
+  start=$(e2e_now_ms)
   bb_ci_env \
     BITBUCKET_PR_ID="$pr" \
     BITBUCKET_BRANCH="pull-requests/$pr/merge" \
@@ -113,6 +180,7 @@ bb_check() {
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" check "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -123,6 +191,8 @@ bb_deploy() {
   local target="$1" label="$2" code
   cd "$WORK" || return 1
   git checkout -q -f "$target" && git pull -q origin "$target"
+  local start
+  start=$(e2e_now_ms)
   bb_ci_env \
     BITBUCKET_BRANCH="$target" \
     CI_COMMIT_REF_NAME="$target" \
@@ -130,6 +200,7 @@ bb_deploy() {
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" deploy "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -141,6 +212,8 @@ bb_promote() {
   shift 3
   cd "$WORK" || return 1
   git checkout -q -f "$source" && git pull -q origin "$source"
+  local start
+  start=$(e2e_now_ms)
   bb_ci_env \
     BITBUCKET_BRANCH="$source" \
     CI_COMMIT_REF_NAME="$source" \
@@ -149,6 +222,7 @@ bb_promote() {
     --source-branch "$source" --pull-requests "$prs" "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" promote "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -160,6 +234,8 @@ bb_release_notes() {
   shift
   cd "$WORK" || return 1
   git checkout -q -f main && git pull -q origin main
+  local start
+  start=$(e2e_now_ms)
   bb_ci_env \
     BITBUCKET_BRANCH=main \
     CI_COMMIT_REF_NAME=main \
@@ -168,6 +244,7 @@ bb_release_notes() {
     --merge-commit "$(git log --merges -1 --format=%H)" --no-pdf --agent "$@" \
     >"$LOGS/$label.log" 2>&1
   code=$?
+  e2e_time_record "$label" release-notes "$start" "$code"
   echo "$label exit=$code log=$LOGS/$label.log"
   return $code
 }
@@ -187,7 +264,7 @@ print(json.dumps({'title': sys.argv[3], 'description': body,
   bb_api POST "$BB_API/pullrequests" -d "$payload" |
     python -c "
 import json, sys
-d = json.load(sys.stdin)
+d = json.loads(sys.stdin.buffer.read().decode('utf-8'))
 if not d.get('id'):
     print('PR CREATION FAILED', json.dumps(d)[:400], file=sys.stderr); sys.exit(1)
 print(d['id'])
@@ -195,22 +272,39 @@ print(d['id'])
 }
 
 # Merge a Pull Request with a real merge commit, never squashing: the -x trailers of the
-# cherry-picks must survive.
+# cherry-picks must survive. Bitbucket can answer 202 and merge in the background, so the state is
+# polled; the merge is asked again when it did not happen, and a merge that went through earlier
+# (its answer lost) counts.
 # Usage: bb_pr_merge <id>
 bb_pr_merge() {
-  local pr="$1" state
-  bb_api POST "$BB_API/pullrequests/$pr/merge" \
-    -d '{"merge_strategy": "merge_commit", "close_source_branch": false}' >/dev/null
-  for _ in $(seq 1 30); do
+  local pr="$1" state answer=""
+  for _ in $(seq 1 3); do
     state=$(bb_pr_field "$pr" "d.get('state')")
     if [ "$state" = "MERGED" ]; then
       echo "merged"
       return 0
     fi
-    sleep 2
+    answer=$(bb_api POST "$BB_API/pullrequests/$pr/merge" \
+      -d '{"merge_strategy": "merge_commit", "close_source_branch": false}')
+    for _ in $(seq 1 30); do
+      state=$(bb_pr_field "$pr" "d.get('state')")
+      if [ "$state" = "MERGED" ]; then
+        echo "merged"
+        return 0
+      fi
+      sleep 2
+    done
+    sleep 5
   done
-  echo "MERGE FAILED for PR $pr, last state $state" >&2
+  echo "MERGE FAILED for PR $pr, last state $state: $(printf '%s' "$answer" | head -c 300)" >&2
   return 1
+}
+
+# Decline a Pull Request (close without merging). Opening a new one between the same two branches
+# later reopens this one instead of creating a new number (runbook section 8ter).
+# Usage: bb_pr_decline <id>
+bb_pr_decline() {
+  bb_api POST "$BB_API/pullrequests/$1/decline" >/dev/null
 }
 
 # The lines worth reading in a job log. Same expression as the GitHub library.
@@ -310,18 +404,10 @@ bp_open() {
   return 1
 }
 
-# Usage: bp_merge <id>
+# Usage: bp_merge <id>. Prints "merged" like the other libraries.
 bp_merge() {
-  local id="$1" branch head short
-  branch=$(bb_pr_field "$id" "d['source']['branch']['name']")
-  head=$(git -C "$WORK" rev-parse "origin/$branch" 2>/dev/null || git -C "$WORK" rev-parse "$branch")
-  short="${head:0:12}"
-  for _ in $(seq 1 30); do
-    [[ "$head" == "$(bb_pr_field "$id" "d['source']['commit']['hash']")"* ]] && break
-    [[ "$(bb_pr_field "$id" "d['source']['commit']['hash']")" == "$short"* ]] && break
-    sleep 2
-  done
-  bb_pr_merge "$id" >/dev/null
+  bb_wait_pr_head "$1" 2>/dev/null
+  bb_pr_merge "$1"
 }
 
 # Backpromote (Beta) helpers, provider agnostic

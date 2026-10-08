@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Runbook section 6, the edge cases, on GitHub or GitLab, after promotion-run.sh. Each group builds on
+# Runbook section 6, the edge cases, on GitHub, GitLab, Azure DevOps or Bitbucket Cloud, after promotion-run.sh. Each group builds on
 # the state the previous one left, so run them in order: bash promotion-edge.sh g1 g2 g3 g4 g5 g6
 #
-#   export PROVIDER=github|gitlab ORG WORK LOGS DEV API EXT EXPECT <the provider library variables>
+#   export PROVIDER=github|gitlab|azure|bitbucket ORG WORK LOGS DEV API EXT EXPECT <the provider library variables>
 #   bash promotion-edge.sh g1 [g2 ...]
 #
 # Appends one line per assertion to $LOGS/results-section6.txt and every number it gets to
@@ -11,7 +11,7 @@
 # shellcheck disable=SC2319
 set -uo pipefail
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${PROVIDER:?set PROVIDER to github or gitlab}"
+: "${PROVIDER:?set PROVIDER to github, gitlab, azure or bitbucket}"
 # shellcheck source=/dev/null
 source "$SCRIPTS_DIR/promotion-provider.sh"
 # shellcheck source=/dev/null
@@ -224,7 +224,7 @@ g3() {
   # Since #2236 a promotion needs the git provider connection: with no token and no gh CLI the
   # command stops before it creates anything, instead of pushing a branch and handing over a link.
   # The "creation refused by a connected provider" path (the link to the creation form) needs a
-  # provider that answers and then refuses, which this harness cannot provoke on GitHub.
+  # provider that answers and then refuses, which this harness cannot provoke on any of the four providers.
   local before_refused
   before_refused=$(git ls-remote --heads origin "promotion/*" | wc -l)
   job 3 p_promote_no_provider uat "$S1" edge-pr-creation-refused
@@ -435,7 +435,8 @@ g6() {
   printf 'Full merge of uat into preprod.\n' >"$BODIES/fullmerge.md"
   FM=$(p_open uat preprod "Full merge of uat into preprod" "$BODIES/fullmerge.md") || return 1
   remember FM "$FM"
-  # Opened just now: GitHub writes refs/pull/<n>/merge a few seconds later
+  # Opened just now: GitHub, GitLab and Azure DevOps write the merge ref a few seconds later (Bitbucket has
+  # none, p_wait_merge_ref waits for its API to report the head)
   p_wait_merge_ref "$FM" >/dev/null 2>&1
   job 3 p_check "$FM" preprod edge-full-merge
   assert_log 52a edge-full-merge 0 "the stories already promoted are named, the others arrive for the first time" \

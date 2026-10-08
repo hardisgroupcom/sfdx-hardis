@@ -120,6 +120,11 @@ if (process.env.PROVIDER_TOKEN) {
     process.exit(2);
   }
   process.env[host.replace(/\./g, "_").toUpperCase() + "_TOKEN"] = process.env.PROVIDER_TOKEN;
+  // The Bitbucket provider of the extension reads <HOST>_BITBUCKET_TOKEN, not <HOST>_TOKEN
+  // (gitProviderBitbucket.ts initialize)
+  if (/bitbucket/i.test(host)) {
+    process.env[host.replace(/\./g, "_").toUpperCase() + "_BITBUCKET_TOKEN"] = process.env.PROVIDER_TOKEN;
+  }
   if (process.env.PROVIDER_EMAIL) {
     process.env[host.replace(/\./g, "_").toUpperCase() + "_BITBUCKET_EMAIL"] =
       process.env.PROVIDER_EMAIL;

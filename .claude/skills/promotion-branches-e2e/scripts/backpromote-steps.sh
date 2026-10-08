@@ -2,7 +2,7 @@
 # Runbook section 6bis, steps B0 to B16 and the comment checks C1 to C4, on any git provider, after
 # backpromote-setup.sh. Prints one line per assertion and a summary, and writes $LOGS/results.txt.
 #
-#   export BP_PROVIDER_LIB=<path to e2e-lib.sh | e2e-lib-gitlab.sh | e2e-lib-azure.sh>
+#   export BP_PROVIDER_LIB=<path to e2e-lib.sh | e2e-lib-gitlab.sh | e2e-lib-azure.sh | e2e-lib-bitbucket.sh>
 #   export <the provider library variables> WORK LOGS DEV API DEVHUB DEVORG DEVORG2 ORG
 #   bash backpromote-steps.sh
 #

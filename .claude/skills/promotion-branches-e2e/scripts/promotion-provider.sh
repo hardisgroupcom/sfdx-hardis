@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Provider neutral names for the job simulators, so promotion-run.sh and promotion-edge.sh run the same
-# steps on GitHub and on GitLab. Source it with PROVIDER set; it sources the provider library.
+# Provider neutral names for the job simulators, so promotion-run.sh, promotion-edge.sh,
+# deployment-actions-run.sh and identical-actions-run.sh run the same steps on GitHub, GitLab, Azure
+# DevOps and Bitbucket Cloud. Source it with PROVIDER=github|gitlab|azure|bitbucket; it sources the
+# provider library (e2e-lib.sh, e2e-lib-gitlab.sh, e2e-lib-azure.sh, e2e-lib-bitbucket.sh), which
+# names the variables it needs.
 #
 #   p_check <number> <target> <label>      validation job of a Pull Request / merge request
 #   p_deploy <target> <label>              deployment job of a major branch
@@ -13,9 +16,21 @@
 #   p_set_body <number> <body file>        replaces the description
 #   p_token                                the provider token
 #   p_cli <args...>                        an sfdx-hardis command run like a person does: provider token, no CI
+#   p_open_number_for_branch <branch>      the newest open Pull Request of a source branch
+#   p_list_candidates <source> <label> [flags]     promotion:list-candidates
+#   p_promote_no_provider <source> <numbers> <label> [flags]   a promotion with no provider token
+#   p_wait_merge_ref <number> [sha]        waits until the provider's view of the Pull Request holds the
+#                                          pushed head (GitHub, GitLab, Azure: the merge ref; Bitbucket,
+#                                          which has none: the source commit of the API)
+#   p_check_edited <number> <target> <label> <shell edit>   validation with the checkout edited first
+#   p_deploy_branch <branch> <label>       deployment job run from any branch
+#   p_pr_modal_check [--prs 1,2] [--json out]   check-pr-modal.cjs with this provider's variables
+#
+# Every one of them is defined for each of the four providers: nothing in the section scripts tests
+# PROVIDER itself.
 
 _P_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-case "${PROVIDER:?set PROVIDER to github or gitlab}" in
+case "${PROVIDER:?set PROVIDER to github, gitlab, azure or bitbucket}" in
 github)
   # shellcheck source=/dev/null
   source "$_P_DIR/e2e-lib.sh"
@@ -124,6 +139,10 @@ github)
     echo "$label exit=$code log=$LOGS/$label.log"
     return $code
   }
+  p_pr_modal_check() {
+    env -u NODE_OPTIONS PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+      node "$_P_DIR/check-pr-modal.cjs" "$@"
+  }
   ;;
 gitlab)
   # shellcheck source=/dev/null
@@ -209,6 +228,216 @@ gitlab)
     code=$?
     echo "$label exit=$code log=$LOGS/$label.log"
     return $code
+  }
+  p_pr_modal_check() {
+    env -u NODE_OPTIONS PROVIDER=gitlab GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" PROJECT_ID="$PROJECT_ID" WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+      node "$_P_DIR/check-pr-modal.cjs" "$@"
+  }
+  ;;
+azure)
+  # shellcheck source=/dev/null
+  source "$_P_DIR/e2e-lib-azure.sh"
+  p_check() { az_check "$@"; }
+  p_deploy() { az_deploy "$@"; }
+  p_promote() { az_promote "$@"; }
+  p_release_notes() { az_release_notes "$@"; }
+  p_token() { echo "$AZ_TOKEN"; }
+  p_cli() { bp_provider_env node "$DEV" "$@"; }
+  p_open() {
+    local id body
+    body="$(cygpath -m "$4" 2>/dev/null || echo "$4")"
+    for _ in $(seq 1 10); do
+      id=$(az_pr_create "$1" "$2" "$3" "$body" 2>"$LOGS/p-open.err")
+      if [[ "$id" =~ ^[0-9]+$ ]]; then
+        echo "$id"
+        return 0
+      fi
+      sleep 3
+    done
+    echo "Pull Request creation failed for $1: $(tail -3 "$LOGS/p-open.err")" >&2
+    return 1
+  }
+  # bp_merge waits until Azure knows the last commit pushed on the source branch, then completes
+  # with noFastForward (a merge commit, never squash)
+  p_merge() { bp_merge "$1"; }
+  p_close() { az_pr_abandon "$1"; }
+  # The full description: the list API truncates it at 400 characters, a single read does not
+  p_body() {
+    az_api GET "$AZ_REPO_API/pullrequests/$1?api-version=7.1" |
+      node -e "let s='';process.stdin.setEncoding('utf8').on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.parse(s).description||''))"
+  }
+  # Azure refuses a description over 4000 characters (runbook section 8bis)
+  p_set_body() {
+    node -e "const fs=require('fs');fs.writeFileSync(process.argv[2],JSON.stringify({description:fs.readFileSync(process.argv[1],'utf8')}))" "$(cygpath -m "$2" 2>/dev/null || echo "$2")" "$(cygpath -m "$2" 2>/dev/null || echo "$2").json"
+    az_api PATCH "$AZ_REPO_API/pullrequests/$1?api-version=7.1" --data-binary "@$(cygpath -m "$2" 2>/dev/null || echo "$2").json" >/dev/null
+  }
+  p_open_number_for_branch() {
+    az_api GET "$AZ_REPO_API/pullrequests?searchCriteria.status=active&searchCriteria.sourceRefName=refs/heads/$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$1")&api-version=7.1" |
+      node -e "let s='';process.stdin.setEncoding('utf8').on('data',d=>s+=d).on('end',()=>{const a=JSON.parse(s).value||[];a.sort((x,y)=>y.pullRequestId-x.pullRequestId);console.log(a.length?a[0].pullRequestId:'')})"
+  }
+  p_list_candidates() {
+    local source="$1" label="$2" code start
+    shift 2
+    cd "$WORK" || return 1
+    git checkout -q -f "$source" && git pull -q origin "$source"
+    start=$(e2e_now_ms)
+    az_ci_env CI_COMMIT_REF_NAME="$source" BUILD_SOURCEBRANCHNAME="$source" CONFIG_BRANCH="$source" node "$DEV" hardis:project:promotion:list-candidates --agent --source-branch "$source" "$@" >"$LOGS/$label.log" 2>&1
+    code=$?
+    e2e_time_record "$label" list-candidates "$start" "$code"
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  # No token in any of the three variables the CLI reads for Azure DevOps
+  p_promote_no_provider() {
+    local source="$1" prs="$2" label="$3" code
+    shift 3
+    cd "$WORK" || return 1
+    git checkout -q -f "$source" && git pull -q origin "$source"
+    env -u NODE_OPTIONS -u SYSTEM_ACCESSTOKEN -u CI_SFDX_HARDIS_AZURE_TOKEN -u AZURE_DEVOPS_EXT_PAT \
+      SYSTEM_COLLECTIONURI="$AZ_COLLECTION" SYSTEM_TEAMPROJECT="$AZ_PROJECT" BUILD_REPOSITORY_ID="$AZ_REPO_ID" BUILD_REPOSITORY_NAME="$AZ_REPO_NAME" \
+      CI_COMMIT_REF_NAME="$source" BUILD_SOURCEBRANCHNAME="$source" CONFIG_BRANCH="$source" \
+      node "$DEV" hardis:project:promotion:create --agent --source-branch "$source" --pull-requests "$prs" "$@" >"$LOGS/$label.log" 2>&1
+    code=$?
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  # refs/pull/<id>/merge is recomputed asynchronously: wait until it holds the remote head of the
+  # source branch (the sha argument of the GitHub version is not needed, the head is read with ls-remote)
+  p_wait_merge_ref() {
+    cd "$WORK" || return 1
+    az_fetch_merge_ref "$1"
+  }
+  p_check_edited() {
+    local pr="$1" target="$2" label="$3" edit="$4" code
+    cd "$WORK" || return 1
+    git checkout -q -f --detach HEAD
+    az_fetch_merge_ref "$pr" "$label" || return 1
+    git checkout -q -f "prmerge-$pr" || return 1
+    eval "$edit"
+    az_ci_env SYSTEM_PULLREQUEST_PULLREQUESTID="$pr" SYSTEM_JOB_DISPLAY_NAME="DeploymentCheck" CI_COMMIT_REF_NAME="refs/pull/$pr/merge" BUILD_SOURCEBRANCHNAME="merge" FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target" node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    code=$?
+    git checkout -q -f -- . 2>/dev/null
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  p_deploy_branch() {
+    local branch="$1" label="$2" code
+    cd "$WORK" || return 1
+    git fetch -q origin "$branch" && git checkout -q -f -B "$branch" "origin/$branch"
+    az_ci_env SYSTEM_JOB_DISPLAY_NAME="Deployment" CI_COMMIT_REF_NAME="$branch" BUILD_SOURCEBRANCHNAME="$branch" node "$DEV" hardis:project:deploy:smart --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    code=$?
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  p_pr_modal_check() {
+    env -u NODE_OPTIONS PROVIDER=azure AZ_ORG="$AZ_ORG" AZ_PROJECT="$AZ_PROJECT" AZ_REPO_ID="$AZ_REPO_ID" AZ_TOKEN="$AZ_TOKEN" \
+      WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+      node "$_P_DIR/check-pr-modal.cjs" "$@"
+  }
+  ;;
+bitbucket)
+  # shellcheck source=/dev/null
+  source "$_P_DIR/e2e-lib-bitbucket.sh"
+  p_check() { bb_check "$@"; }
+  p_deploy() { bb_deploy "$@"; }
+  p_promote() { bb_promote "$@"; }
+  p_release_notes() { bb_release_notes "$@"; }
+  p_token() { echo "$BB_TOKEN"; }
+  p_cli() { bp_provider_env node "$DEV" "$@"; }
+  p_open() {
+    local id body
+    body="$(cygpath -m "$4" 2>/dev/null || echo "$4")"
+    for _ in $(seq 1 10); do
+      id=$(bb_pr_create "$1" "$2" "$3" "$body" 2>"$LOGS/p-open.err")
+      if [[ "$id" =~ ^[0-9]+$ ]]; then
+        echo "$id"
+        return 0
+      fi
+      sleep 3
+    done
+    echo "Pull Request creation failed for $1: $(tail -3 "$LOGS/p-open.err")" >&2
+    return 1
+  }
+  # bp_merge waits until Bitbucket reports the last commit pushed on the source branch, then merges
+  # with merge_strategy merge_commit (never squash)
+  p_merge() { bp_merge "$1"; }
+  p_close() { bb_pr_decline "$1"; }
+  p_body() {
+    bb_api GET "$BB_API/pullrequests/$1" |
+      node -e "let s='';process.stdin.setEncoding('utf8').on('data',d=>s+=d).on('end',()=>process.stdout.write(JSON.parse(s).description||''))"
+  }
+  # The title goes with the description: a PUT is an update of the fields it carries
+  p_set_body() {
+    local file
+    file="$(cygpath -m "$2" 2>/dev/null || echo "$2")"
+    bb_api GET "$BB_API/pullrequests/$1" >"$file.current.json"
+    node -e "const fs=require('fs');const pr=JSON.parse(fs.readFileSync(process.argv[3],'utf8'));fs.writeFileSync(process.argv[2],JSON.stringify({title:pr.title,description:fs.readFileSync(process.argv[1],'utf8')}))" "$file" "$file.json" "$file.current.json"
+    bb_api PUT "$BB_API/pullrequests/$1" --data-binary "@$file.json" >/dev/null
+  }
+  # q= with state inside it: Bitbucket drops the state parameter as soon as q is present (8ter)
+  p_open_number_for_branch() {
+    bb_api GET "$BB_API/pullrequests?pagelen=50&q=$(node -e "console.log(encodeURIComponent('source.branch.name=\"'+process.argv[1]+'\" AND state=\"OPEN\"'))" "$1")" |
+      node -e "let s='';process.stdin.setEncoding('utf8').on('data',d=>s+=d).on('end',()=>{const a=JSON.parse(s).values||[];a.sort((x,y)=>y.id-x.id);console.log(a.length?a[0].id:'')})"
+  }
+  p_list_candidates() {
+    local source="$1" label="$2" code start
+    shift 2
+    cd "$WORK" || return 1
+    git checkout -q -f "$source" && git pull -q origin "$source"
+    start=$(e2e_now_ms)
+    bb_ci_env BITBUCKET_BRANCH="$source" CI_COMMIT_REF_NAME="$source" CONFIG_BRANCH="$source" node "$DEV" hardis:project:promotion:list-candidates --agent --source-branch "$source" "$@" >"$LOGS/$label.log" 2>&1
+    code=$?
+    e2e_time_record "$label" list-candidates "$start" "$code"
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  # Neither of the two variables the CLI picks Bitbucket from
+  p_promote_no_provider() {
+    local source="$1" prs="$2" label="$3" code
+    shift 3
+    cd "$WORK" || return 1
+    git checkout -q -f "$source" && git pull -q origin "$source"
+    env -u NODE_OPTIONS -u CI_SFDX_HARDIS_BITBUCKET_TOKEN -u CI_SFDX_HARDIS_BITBUCKET_EMAIL -u BITBUCKET_WORKSPACE -u BITBUCKET_REPO_SLUG \
+      CI_COMMIT_REF_NAME="$source" CONFIG_BRANCH="$source" \
+      node "$DEV" hardis:project:promotion:create --agent --source-branch "$source" --pull-requests "$prs" "$@" >"$LOGS/$label.log" 2>&1
+    code=$?
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  # No merge ref on Bitbucket: bb_check merges the target into the source itself. What can lag is the
+  # API, which reads the description and the commits of the Pull Request: wait until it reports the
+  # pushed head
+  p_wait_merge_ref() {
+    cd "$WORK" || return 1
+    bb_wait_pr_head "$1" "${2:-}"
+  }
+  p_check_edited() {
+    local pr="$1" target="$2" label="$3" edit="$4" code
+    cd "$WORK" || return 1
+    git checkout -q -f --detach HEAD
+    if ! bb_checkout_pr_merge "$pr" 2>"$LOGS/$label.log"; then
+      return 1
+    fi
+    eval "$edit"
+    bb_ci_env BITBUCKET_PR_ID="$pr" BITBUCKET_BRANCH="pull-requests/$pr/merge" CI_COMMIT_REF_NAME="pull-requests/$pr/merge" FORCE_TARGET_BRANCH="$target" CONFIG_BRANCH="$target" node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    code=$?
+    git checkout -q -f -- . 2>/dev/null
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  p_deploy_branch() {
+    local branch="$1" label="$2" code
+    cd "$WORK" || return 1
+    git fetch -q origin "$branch" && git checkout -q -f -B "$branch" "origin/$branch"
+    bb_ci_env BITBUCKET_BRANCH="$branch" CI_COMMIT_REF_NAME="$branch" node "$DEV" hardis:project:deploy:smart --target-org "$ORG" >"$LOGS/$label.log" 2>&1
+    code=$?
+    echo "$label exit=$code log=$LOGS/$label.log"
+    return $code
+  }
+  p_pr_modal_check() {
+    env -u NODE_OPTIONS PROVIDER=bitbucket BB_WORKSPACE="$BB_WORKSPACE" BB_REPO="$BB_REPO" BB_EMAIL="$BB_EMAIL" BB_TOKEN="$BB_TOKEN" \
+      WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+      node "$_P_DIR/check-pr-modal.cjs" "$@"
   }
   ;;
 *)

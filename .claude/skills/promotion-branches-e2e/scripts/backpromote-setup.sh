@@ -4,7 +4,7 @@
 # integration (so the developer branch is behind, which is what a backpromote is for), and the
 # developer scratch orgs ready with the base project. Writes $LOGS/bp-vars.sh for backpromote-steps.sh.
 #
-#   export BP_PROVIDER_LIB=<path to e2e-lib.sh | e2e-lib-gitlab.sh | e2e-lib-azure.sh>
+#   export BP_PROVIDER_LIB=<path to e2e-lib.sh | e2e-lib-gitlab.sh | e2e-lib-azure.sh | e2e-lib-bitbucket.sh>
 #   export <the provider library variables> WORK LOGS DEV API DEVHUB DEVORG DEVORG2
 #   bash backpromote-setup.sh
 #

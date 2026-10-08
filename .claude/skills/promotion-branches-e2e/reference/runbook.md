@@ -70,8 +70,18 @@ Section 8 holds what is different on GitLab.
 
 On Azure DevOps, source `scripts/e2e-lib-azure.sh`: `az_check`, `az_deploy`, `az_promote`,
 `az_release_notes`, plus `az_pr_create` and `az_pr_merge`, and the merge-ref wait. It needs
-`AZ_ORG`, `AZ_PROJECT`, `AZ_REPO_ID`, `AZ_REPO_NAME` and `AZ_TOKEN`. Section 8bis holds what is
-different on Azure DevOps.
+`AZ_ORG`, `AZ_PROJECT`, `AZ_REPO_NAME`, and `AZ_TOKEN` (default `AZURE_PERSONAL_ACCESS_TOKEN`);
+`AZ_REPO_ID` is read from the API by name when empty. Section 8bis holds what is different on Azure
+DevOps.
+
+On Bitbucket Cloud, source `scripts/e2e-lib-bitbucket.sh`: `bb_check`, `bb_deploy`, `bb_promote`,
+`bb_release_notes`, plus `bb_pr_create`, `bb_pr_merge`, `bb_pr_decline` and `bb_remote_url`. It needs
+`BB_WORKSPACE` and `BB_REPO`; `BB_TOKEN` and `BB_EMAIL` default to `ATLASSIAN_TOKEN` and
+`ATLASSIAN_EMAIL`. Section 8ter holds what is different on Bitbucket.
+
+The scripted sections do not call these names: they call the provider neutral `p_*` functions of
+`scripts/promotion-provider.sh`, which maps them for `PROVIDER=github|gitlab|azure|bitbucket`
+(section 6ter).
 
 Each writes `$LOGS/<label>.log` and echoes the exit code.
 
@@ -372,7 +382,19 @@ repository and compares them with the provider:
 PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK")" DEV="$DEV" EXT="$EXT" \
   node .claude/skills/promotion-branches-e2e/scripts/check-pr-modal.cjs --json "$(cygpath -m "$LOGS")/pr-modal.json"
 # GitLab: PROVIDER=gitlab GL_HOST GL_TOKEN PROJECT_ID instead of REPO
+# Azure DevOps: PROVIDER=azure AZ_ORG AZ_PROJECT AZ_REPO_ID AZ_TOKEN instead of REPO
+# Bitbucket: PROVIDER=bitbucket BB_WORKSPACE BB_REPO BB_EMAIL BB_TOKEN instead of REPO
+# or, with promotion-provider.sh sourced for any of the four:
+p_pr_modal_check --json "$(cygpath -m "$LOGS")/pr-modal.json"
 ```
+
+The comments are read the way the CLI reads them: GitHub issue comments, GitLab notes without the
+system ones, the comments of every Azure DevOps thread (deleted threads and deleted comments left out:
+`getThreads` still returns them), the Bitbucket Pull Request comments (`content.raw`, deleted ones left
+out). The token is passed the way the extension passes it: `GITHUB_TOKEN`,
+`CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN` plus `SYSTEM_ACCESSTOKEN`, or
+`CI_SFDX_HARDIS_BITBUCKET_TOKEN` plus `CI_SFDX_HARDIS_BITBUCKET_EMAIL`, and the CLI finds the
+repository from the git remote.
 
 | Tab                | Expected                                                                                                                                                                                                                                    |
 |--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -506,7 +528,7 @@ for the sandbox; `--from-pull-request` picks another start. The deployment runs 
 It runs after section 4, or on its own right after sections 2 and 3 once the BUILD stream merges of
 section 4 are done (`#1`, `#2`, `#3` merged into `integration`).
 
-### Running it on GitHub, GitLab or Azure DevOps
+### Running it on GitHub, GitLab, Azure DevOps or Bitbucket Cloud
 
 The steps below are scripted, provider agnostic, in `scripts/backpromote-setup.sh` and
 `scripts/backpromote-steps.sh`. Each provider library defines the hooks `bp_provider_env` (the
@@ -517,7 +539,7 @@ variables the CLI reads outside CI), `bp_open` and `bp_merge` (a Pull Request in
 
 ```bash
 # after build-repo.sh and the push of main, integration, uat and preprod to a NEW repository
-export BP_PROVIDER_LIB=".../scripts/e2e-lib.sh"          # or e2e-lib-gitlab.sh, e2e-lib-azure.sh
+export BP_PROVIDER_LIB=".../scripts/e2e-lib.sh"          # or e2e-lib-gitlab.sh, e2e-lib-azure.sh, e2e-lib-bitbucket.sh
 export ORG DEVHUB DEVORG DEVORG2 WORK LOGS DEV API        # plus the variables of that library
 bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # stories, scratch orgs, developer branch
 bash .claude/skills/promotion-branches-e2e/scripts/backpromote-steps.sh   # B0 to B16, C1 to C4, summary
@@ -622,15 +644,27 @@ panel. Say so in the report.
 ## 6ter. Scripted runs and timings
 
 Sections 3, 4 and 4bis are scripted in `scripts/promotion-run.sh`, section 6 in
-`scripts/promotion-edge.sh` (groups `g1` to `g5`, in that order, after `promotion-run.sh`). Both
-run on GitHub and GitLab through `scripts/promotion-provider.sh`, which picks the library with
-`PROVIDER=github|gitlab`:
+`scripts/promotion-edge.sh` (groups `g1` to `g6`, in that order, after `promotion-run.sh`). They,
+`deployment-actions-run.sh` and `identical-actions-run.sh` run on the four providers through
+`scripts/promotion-provider.sh`, which picks the library with `PROVIDER=github|gitlab|azure|bitbucket`:
 
 ```bash
-export PROVIDER=github ORG REPO WORK LOGS EXPECT DEV API EXT   # plus GL_* and PROJECT_* on GitLab
+export PROVIDER=github ORG REPO WORK LOGS EXPECT DEV API EXT   # plus GL_* and PROJECT_* on GitLab,
+                                                               # AZ_* on Azure DevOps (8bis), BB_* on Bitbucket (8ter)
 bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh       # results-section4.txt
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5   # results-section6.txt
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6   # results-section6.txt
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh   # results-section6quater.txt
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh    # results-section6sexies.txt
 ```
+
+The functions the sections call (`p_check`, `p_deploy`, `p_promote`, `p_release_notes`, `p_open`,
+`p_merge`, `p_close`, `p_body`, `p_set_body`, `p_cli`, `p_list_candidates`, `p_promote_no_provider`,
+`p_wait_merge_ref`, `p_check_edited`, `p_deploy_branch`, `p_pr_modal_check`, plus `dump_pr_comments`
+and `pipeline_check` of each library) exist for the four providers, with the same meaning: a merge
+is always a merge commit, `p_open` prints the number, `p_merge` prints `merged` once the provider
+says so. Nothing in the section scripts tests `PROVIDER` itself. The drafts of section 6quater are
+drafts by title (`draft` in it), which every provider reads the same way, so no provider draft API is
+needed.
 
 Every Pull Request number they get is appended to `$LOGS/promo-vars.sh`, so a group can be rerun on
 its own after a fix.
@@ -1111,24 +1145,41 @@ GitHub or GitLab.
 
 ```bash
 export ORG="your.user@example.com"
-export AZ_ORG="yourorg"                    # https://dev.azure.com/<AZ_ORG>/
+export AZ_ORG="nicolasvuillamy"            # https://dev.azure.com/<AZ_ORG>/
 export AZ_PROJECT="tests-sfdx-hardis"      # the team project holding the repository
-export AZ_REPO_NAME="sfdx-hardis-promo-e2e-az-1"
-export AZ_REPO_ID="..."                    # the GUID the creation API answers with
-export AZ_TOKEN="..."                      # PAT: Code read/write, Pull Request threads read/write
-export WORK="/c/tmp/promo-e2e-az" LOGS="/c/tmp/promo-e2e-az-logs"
-export DEV="C:/git/sfdx-hardis/bin/dev.js"
+export AZ_REPO_NAME="sfdx-hardis-promo-e2e-az-7"   # -az-1 to -az-6 exist (2026-10-08)
+# AZ_TOKEN: leave it unset, the library takes AZURE_PERSONAL_ACCESS_TOKEN from the environment, else
+# from C:/git/sfdx-hardis/.env (E2E_ENV_FILE to point elsewhere). PAT: Code read/write, Pull Request
+# threads read/write. AZ_REPO_ID: leave it unset too, it is read by name once the repository exists.
+export WORK="/c/tmp/promo-e2e-az" LOGS="/c/tmp/promo-e2e-az-logs" EXPECT="/c/tmp/promo-e2e-az-expect"
+export DEV="C:/git/sfdx-hardis/bin/dev.js" EXT="C:/git/vscode-sfdx-hardis" API=67.0
+```
+
+Create the repository with the REST API, before sourcing the library (it reads the GUID by name and
+stops when there is none). The token comes from `.env` here too:
+
+```bash
+AZ_TOKEN=$(grep -m1 '^AZURE_PERSONAL_ACCESS_TOKEN=' C:/git/sfdx-hardis/.env | cut -d= -f2- | tr -d '\r"')
+curl -sS -u ":$AZ_TOKEN" -H "Content-Type: application/json" -d '{"name":"'"$AZ_REPO_NAME"'"}' \
+  "https://dev.azure.com/$AZ_ORG/$AZ_PROJECT/_apis/git/repositories?api-version=7.1" -o /dev/null -w "%{http_code}\n"
+unset AZ_TOKEN
 source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-azure.sh
 ```
 
-Create the repository, and read back its GUID, with the REST API:
+Push with the token in the remote URL: `git remote add origin "$(az_remote_url)"` (that is
+`https://azure:$AZ_TOKEN@dev.azure.com/$AZ_ORG/$AZ_PROJECT/_git/$AZ_REPO_NAME`). Then run the scripted
+sections with `PROVIDER=azure` (section 6ter), or follow sections 3 to 7 by hand with `az_check` /
+`az_deploy` / `az_promote` / `az_release_notes`:
 
 ```bash
-curl -sS -u ":$AZ_TOKEN" -H "Content-Type: application/json" -d '{"name":"'"$AZ_REPO_NAME"'"}'   "https://dev.azure.com/$AZ_ORG/$AZ_PROJECT/_apis/git/repositories?api-version=7.1"
+export PROVIDER=azure
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh
+BP_PROVIDER_LIB="$PWD/.claude/skills/promotion-branches-e2e/scripts/e2e-lib-azure.sh" \
+  bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # on its own repository, see 6bis
 ```
-
-Push with the token in the remote URL: `https://azure:$AZ_TOKEN@dev.azure.com/$AZ_ORG/$AZ_PROJECT/_git/$AZ_REPO_NAME`.
-Then follow sections 3 to 7 with `az_check` / `az_deploy` / `az_promote` / `az_release_notes`.
 
 Traps that only bite on Azure DevOps:
 
@@ -1160,31 +1211,61 @@ Traps that only bite on Azure DevOps:
 - `az repos` (the Azure CLI) is not used anywhere: it needs its own login, prints its own
   decorations, and cannot set the completion options the merge needs. Everything goes through
   `curl` with the PAT.
+- **The message key of the comments holds the job name** (`SYSTEM_JOB_DISPLAY_NAME`, #2307). The
+  simulators pass the job names of the sfdx-hardis templates, `DeploymentCheck` for the validation
+  and `Deployment` for the deployment, the way GitHub passes the workflow names and GitLab the job
+  names. With a single fixed name for both, the validation and deployment comments of a Pull Request
+  would only differ by their `deployment-check` / `deployment` prefix.
+- **The mergeability check can outlast a minute** on a busy organization, like on GitLab.
+  `az_pr_merge` waits up to 3 minutes for it, asks the completion again when it did not happen, and
+  takes a Pull Request already `completed` (an earlier answer lost) as merged.
+- **The PAT of `.env` is custom scoped.** On 2026-10-08 it creates and deletes repositories,
+  contributes, creates branches and contributes to Pull Requests; Variable Groups, Service
+  Connections and Graph answer 401, which the run never calls. Force push is allowed only on the
+  repositories its user created: create the test repository with that same PAT, or the `git push -f`
+  of the story branches (`story`, the retrofit) is refused.
+- **`AZ_REPO_ID` is read by name** when it is empty: a sourcing that stops on "could not be read
+  from the API" means the repository does not exist yet, or the PAT cannot read it.
 
 ## 8ter. What is different on Bitbucket Cloud
 
-Exercised live twice on 2026-09-07 and 2026-09-08, on `galerieslafayette/test-prom-e2e`. The
-first workspace tried, `test-sfdx-hardis-2`, is over its user limit: every repository in it is
-read-only and `git push` answers HTTP 402, with nothing in the API to warn you beforehand.
+Exercised live twice on 2026-09-07 and 2026-09-08, on a repository of another workspace reached with
+a repository access token. A workspace over its user limit makes every repository in it read-only:
+`git push` answers HTTP 402, with nothing in the API to warn you beforehand. Since 2026-10-08 the run
+uses the workspace `sfdxhardistest` (project key `TES`) with the Atlassian API token of `.env`.
 
 ```bash
 export ORG="your.user@example.com"
-export BB_WORKSPACE="test-sfdx-hardis-2"
+export BB_WORKSPACE="sfdxhardistest"       # always required, no default
 export BB_REPO="sfdx-hardis-promo-e2e-bb-1"
-export BB_EMAIL="you@example.com"          # empty for a workspace/repository Access Token
-export BB_TOKEN="..."
-export WORK="/c/tmp/promo-e2e-bb" LOGS="/c/tmp/promo-e2e-bb-logs"
-export DEV="C:/git/sfdx-hardis/bin/dev.js"
+# BB_TOKEN and BB_EMAIL: leave them unset, the library takes ATLASSIAN_TOKEN and ATLASSIAN_EMAIL from
+# the environment, else from C:/git/sfdx-hardis/.env (E2E_ENV_FILE to point elsewhere).
+# For a workspace or repository Access Token instead: BB_TOKEN=<it> and BB_EMAIL="" (Bearer auth).
+export WORK="/c/tmp/promo-e2e-bb" LOGS="/c/tmp/promo-e2e-bb-logs" EXPECT="/c/tmp/promo-e2e-bb-expect"
+export DEV="C:/git/sfdx-hardis/bin/dev.js" EXT="C:/git/vscode-sfdx-hardis" API=67.0
 source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-bitbucket.sh
 ```
 
-Create the repository with the REST API (a project key is required in a workspace that has one):
+Create the repository with the REST API (a project key is required in a workspace that has one), then
+push through `bb_remote_url`:
 
 ```bash
-curl -sS -u "$BB_EMAIL:$BB_TOKEN" -X POST -H "Content-Type: application/json"   -d '{"scm":"git","is_private":true,"project":{"key":"TES"}}'   "https://api.bitbucket.org/2.0/repositories/$BB_WORKSPACE/$BB_REPO"
+bb_api POST "$BB_API" -d '{"scm":"git","is_private":true,"project":{"key":"TES"}}' -o /dev/null -w "%{http_code}\n"
+git remote add origin "$(bb_remote_url)"
 ```
 
-Then follow sections 3 to 7 with `bb_check` / `bb_deploy` / `bb_promote` / `bb_release_notes`.
+Then run the scripted sections with `PROVIDER=bitbucket` (section 6ter), or follow sections 3 to 7
+by hand with `bb_check` / `bb_deploy` / `bb_promote` / `bb_release_notes`:
+
+```bash
+export PROVIDER=bitbucket
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh
+BP_PROVIDER_LIB="$PWD/.claude/skills/promotion-branches-e2e/scripts/e2e-lib-bitbucket.sh" \
+  bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # on its own repository, see 6bis
+```
 
 Traps already met on Bitbucket:
 
@@ -1196,7 +1277,17 @@ Traps already met on Bitbucket:
   the email it authenticates as a Bearer token, which is what an Access Token needs.
 - **The REST API and `git push` do not take the same username.** The API wants the Atlassian
   account email; `git push` refuses it (and the `@` also has to be percent-encoded to survive the
-  URL). Use `https://x-token-auth:<token>@bitbucket.org/<workspace>/<repo>.git`.
+  URL). For an Atlassian API token, git takes `x-bitbucket-api-token-auth`, the name the Atlassian
+  documentation gives: `https://x-bitbucket-api-token-auth:<token>@bitbucket.org/<workspace>/<repo>.git`
+  (`git ls-remote` with it answered on 2026-10-08). A workspace or repository Access Token takes
+  `x-token-auth`. `bb_remote_url` picks the first when `BB_EMAIL` is set and the second otherwise;
+  `BB_GIT_USER=x-token-auth` forces the older name if an API token is ever refused under the first.
+- **The extension stores a Bitbucket token as `<HOST>_BITBUCKET_TOKEN`**, not `<HOST>_TOKEN` like the
+  other providers. `check-pipeline.cjs` sets both since 2026-10-08; before that the DevOps Pipeline
+  check found no Bitbucket token at all.
+- **Python on Windows decodes stdin with the system codepage**, as on GitLab: a Pull Request whose
+  description carries the emoji of the sfdx-hardis navigation block can break `json.load(sys.stdin)`.
+  `bb_pr_field` and `bb_pr_create` (and their Azure DevOps twins) read the bytes as UTF-8.
 - **A workspace over its user limit is read-only**, with a plain HTTP 402 on push. Nothing in the
   API says so beforehand; the repository can still be created.
 - Merge with `merge_strategy: merge_commit` and `close_source_branch: false`, never squash, or the
@@ -1207,14 +1298,53 @@ Traps already met on Bitbucket:
   that is what `bb_checkout_pr_merge` reproduces. This is the one place where the Bitbucket harness
   differs in kind from the other three: there is no lazily written ref to wait for, and a merge
   conflict shows up at checkout rather than as a stale tree.
-- **A repository access token is scoped to its repository**, so a rerun cannot create a second one
-  and has to reuse the same repository. Reset it by deleting every branch but `main` and
+- **No merge ref also means nothing for `p_wait_merge_ref` to fetch.** On Bitbucket it waits until
+  the Pull Request API reports the pushed head as its source commit (a 12 character hash), because the
+  CLI reads the Pull Request from that API. `bb_pr_merge` asks the merge again when the state is not
+  `MERGED` after a minute (Bitbucket can answer 202 and merge in the background).
+- **A repository access token is scoped to its repository** (the runs of 2026-09), so a rerun with one
+  cannot create a second repository and has to reuse the same one. The Atlassian API token of `.env`
+  is not scoped to a repository: create a new `sfdx-hardis-promo-e2e-bb-<n>` each run.
+  With a repository access token, reuse the same repository. Reset it by deleting every branch but `main` and
   force-pushing the base project. Two artefacts follow, neither of them a product defect:
   - the Pull Requests of the previous run stay in the repository, so pass `MIN_PR=<first new
     number>` to `check-diagram-bitbucket.cjs` to keep the windows readable, and expect an old
     major-to-major Pull Request to turn up in a deployment scope, matched by its source branch;
   - re-creating a Pull Request between the same two branches **reopens the declined one** of the
     previous run instead of creating a new number.
+
+## 8quater. Proving the Azure DevOps and Bitbucket wiring without creating anything
+
+Before a run, or after a change to a library, these prove the scripts and the tokens with read-only
+calls. None of them creates a repository, a branch, a Pull Request or a comment, and none prints a
+token.
+
+```bash
+cd .claude/skills/promotion-branches-e2e/scripts
+for f in *.sh; do bash -n "$f" || echo "FAIL $f"; done
+for f in *.cjs; do node --check "$f" || echo "FAIL $f"; done
+shellcheck -x -S warning e2e-lib-*.sh promotion-*.sh section-lib.sh deployment-actions-run.sh identical-actions-run.sh backpromote-*.sh
+
+# every p_* function exists for each provider (dummy values: nothing is called)
+for P in github gitlab azure bitbucket; do (
+  export PROVIDER=$P ORG=o REPO=a/b WORK=/tmp/w LOGS=/tmp/l DEV=d PROJECT_ID=1 PROJECT_PATH=a/b GL_HOST=https://x GL_TOKEN=t \
+    AZ_ORG=o AZ_PROJECT=p AZ_REPO_ID=x AZ_REPO_NAME=r AZ_TOKEN=t BB_WORKSPACE=w BB_REPO=r BB_TOKEN=t BB_EMAIL=e
+  source ./promotion-provider.sh
+  for f in p_check p_deploy p_promote p_release_notes p_open p_merge p_close p_body p_set_body p_token p_cli \
+    p_open_number_for_branch p_list_candidates p_promote_no_provider p_wait_merge_ref p_check_edited p_deploy_branch \
+    p_pr_modal_check dump_pr_comments pipeline_check bp_provider_env bp_open bp_merge; do
+    declare -F $f >/dev/null || echo "$P misses $f"; done ); done
+
+# one GET per provider through the libraries' own helpers, the tokens taken from .env
+( export ORG=o WORK=/tmp/w LOGS=/tmp/l DEV=d AZ_ORG=nicolasvuillamy AZ_PROJECT=tests-sfdx-hardis AZ_REPO_NAME=sfdx-hardis-promo-e2e-az-6
+  source ./e2e-lib-azure.sh; az_api GET "${AZ_COLLECTION}_apis/projects?api-version=7.1" -o /dev/null -w "azure %{http_code}\n" )
+( export ORG=o WORK=/tmp/w LOGS=/tmp/l DEV=d BB_WORKSPACE=sfdxhardistest BB_REPO=any
+  source ./e2e-lib-bitbucket.sh; bb_api GET https://api.bitbucket.org/2.0/user -o /dev/null -w "bitbucket %{http_code}\n" )
+```
+
+On 2026-10-08 all of it passed: no syntax error, no shellcheck warning, every function defined for
+the four providers, `200` from both providers, the Azure repository GUID read by name, and
+`git ls-remote "$(bb_remote_url)"` answering on an existing repository of the workspace.
 
 ## 9. Cleaning up
 

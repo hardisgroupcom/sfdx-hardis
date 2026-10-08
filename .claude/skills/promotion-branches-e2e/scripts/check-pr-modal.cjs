@@ -26,6 +26,14 @@
  *   PROVIDER=github REPO=owner/name WORK=<clone> DEV=<sfdx-hardis bin/run.js> EXT=<extension> \
  *     node check-pr-modal.cjs [--prs 1,2,3] [--json out.json]
  *   PROVIDER=gitlab GL_HOST=https://gitlab.example.com GL_TOKEN=... PROJECT_ID=1234 ... (same)
+ *   PROVIDER=azure AZ_ORG=... AZ_PROJECT=... AZ_REPO_ID=<guid> AZ_TOKEN=<PAT> ... (same)
+ *   PROVIDER=bitbucket BB_WORKSPACE=... BB_REPO=... BB_EMAIL=<account email, empty for an Access
+ *     Token> BB_TOKEN=... ... (same)
+ *   or, with the provider library sourced through promotion-provider.sh: p_pr_modal_check [--prs ...]
+ *
+ * The provider comments are read the way the CLI reads them: GitHub issue comments, GitLab notes
+ * (system notes left out), Azure DevOps thread comments (deleted threads and comments left out),
+ * Bitbucket Pull Request comments (content.raw, deleted ones left out).
  *
  * Exit 1 when any Pull Request disagrees. Each CLI start costs 10 to 30 seconds on Windows: a repository
  * of 60 Pull Requests takes about half an hour.
@@ -40,6 +48,27 @@ const DEV = process.env.DEV;
 const EXT = process.env.EXT || 'C:/git/vscode-sfdx-hardis';
 if (!WORK || !DEV) {
   console.error('WORK and DEV are required');
+  process.exit(2);
+}
+// The same fallbacks as e2e-lib-azure.sh and e2e-lib-bitbucket.sh (from the environment only here)
+process.env.AZ_TOKEN = process.env.AZ_TOKEN || process.env.AZURE_PERSONAL_ACCESS_TOKEN || '';
+process.env.BB_TOKEN = process.env.BB_TOKEN || process.env.ATLASSIAN_TOKEN || '';
+if (process.env.BB_EMAIL === undefined) {
+  process.env.BB_EMAIL = process.env.ATLASSIAN_EMAIL || '';
+}
+const REQUIRED = {
+  github: ['REPO'],
+  gitlab: ['GL_HOST', 'GL_TOKEN', 'PROJECT_ID'],
+  azure: ['AZ_ORG', 'AZ_PROJECT', 'AZ_REPO_ID', 'AZ_TOKEN'],
+  bitbucket: ['BB_WORKSPACE', 'BB_REPO', 'BB_TOKEN'],
+}[PROVIDER];
+if (!REQUIRED) {
+  console.error(`unknown PROVIDER ${PROVIDER}: github, gitlab, azure or bitbucket`);
+  process.exit(2);
+}
+const missing = REQUIRED.filter((name) => !process.env[name]);
+if (missing.length) {
+  console.error(`PROVIDER=${PROVIDER} needs ${missing.join(', ')}`);
   process.exit(2);
 }
 const args = process.argv.slice(2);
@@ -79,7 +108,70 @@ function glApi(url) {
   }
   return items;
 }
+// Azure DevOps: Basic auth with an empty user and the PAT, the paging of the REST API ($top/$skip)
+const AZ_REPO_API = PROVIDER === 'azure' ? `https://dev.azure.com/${process.env.AZ_ORG}/${process.env.AZ_PROJECT}/_apis/git/repositories/${process.env.AZ_REPO_ID}` : '';
+function curlJson(url, auth) {
+  const out = execFileSync('curl', ['-sS', ...auth, url], { encoding: 'utf8', maxBuffer: 1 << 28 });
+  try {
+    return JSON.parse(out);
+  } catch {
+    throw new Error(`not JSON from ${url.split('?')[0]}: ${out.slice(0, 200)}`);
+  }
+}
+function azApi(pathAndQuery) {
+  const sep = pathAndQuery.includes('?') ? '&' : '?';
+  return curlJson(`${AZ_REPO_API}/${pathAndQuery}${sep}api-version=7.1`, ['-u', `:${process.env.AZ_TOKEN}`]);
+}
+function azPullRequests() {
+  const items = [];
+  for (let skip = 0; skip < 5000; skip += 500) {
+    const page = azApi(`pullrequests?searchCriteria.status=all&$top=500&$skip=${skip}`).value || [];
+    items.push(...page);
+    if (page.length < 500) {
+      break;
+    }
+  }
+  return items;
+}
+// Bitbucket Cloud: Basic auth with the Atlassian account email for an API token, Bearer for an
+// Access Token (the same rule as the CLI and the extension), and the "next" link for paging
+const BB_API = PROVIDER === 'bitbucket' ? `https://api.bitbucket.org/2.0/repositories/${process.env.BB_WORKSPACE}/${process.env.BB_REPO}` : '';
+function bbAuth() {
+  return process.env.BB_EMAIL ? ['-u', `${process.env.BB_EMAIL}:${process.env.BB_TOKEN}`] : ['-H', `Authorization: Bearer ${process.env.BB_TOKEN}`];
+}
+function bbPaged(url) {
+  const items = [];
+  let next = url;
+  while (next) {
+    const page = curlJson(next, bbAuth());
+    if (!Array.isArray(page.values)) {
+      throw new Error(`Bitbucket answered ${JSON.stringify(page).slice(0, 200)}`);
+    }
+    items.push(...page.values);
+    next = page.next || null;
+  }
+  return items;
+}
 function listPullRequests() {
+  if (PROVIDER === 'azure') {
+    return azPullRequests().map((p) => ({
+      number: p.pullRequestId,
+      state: p.status === 'completed' ? 'merged' : p.status === 'active' ? 'open' : 'closed',
+      sourceBranch: (p.sourceRefName || '').replace('refs/heads/', ''),
+      targetBranch: (p.targetRefName || '').replace('refs/heads/', ''),
+      title: p.title,
+    }));
+  }
+  if (PROVIDER === 'bitbucket') {
+    // Every state named: without it Bitbucket lists the open ones only
+    return bbPaged(`${BB_API}/pullrequests?state=OPEN&state=MERGED&state=DECLINED&state=SUPERSEDED&pagelen=50`).map((p) => ({
+      number: p.id,
+      state: p.state === 'MERGED' ? 'merged' : p.state === 'OPEN' ? 'open' : 'closed',
+      sourceBranch: p.source?.branch?.name || '',
+      targetBranch: p.destination?.branch?.name || '',
+      title: p.title,
+    }));
+  }
   if (PROVIDER === 'github') {
     return ghApi(`repos/${process.env.REPO}/pulls?state=all&per_page=100`).map((p) => ({
       number: p.number,
@@ -98,6 +190,28 @@ function listPullRequests() {
   }));
 }
 function listComments(number) {
+  if (PROVIDER === 'azure') {
+    // AzureDevopsProvider.listPullRequestCommentsByMarker: every comment of every thread, the
+    // deleted threads and the deleted comments left out (getThreads still returns those)
+    const bodies = [];
+    for (const thread of azApi(`pullrequests/${number}/threads`).value || []) {
+      if (thread.isDeleted) {
+        continue;
+      }
+      for (const comment of thread.comments || []) {
+        if (!comment.isDeleted) {
+          bodies.push(comment.content || '');
+        }
+      }
+    }
+    return bodies;
+  }
+  if (PROVIDER === 'bitbucket') {
+    // BitbucketProvider.listPullRequestCommentsByMarker: content.raw, deleted comments left out
+    return bbPaged(`${BB_API}/pullrequests/${number}/comments?pagelen=50`)
+      .filter((c) => !c.deleted)
+      .map((c) => c.content?.raw || '');
+  }
   if (PROVIDER === 'github') {
     return ghApi(`repos/${process.env.REPO}/issues/${number}/comments?per_page=100`).map((c) => c.body || '');
   }
@@ -173,14 +287,25 @@ function stateCells(body) {
 function runActionList(number) {
   const env = { ...process.env };
   for (const k of Object.keys(env)) {
-    if (/^(GITHUB_|CI_|GITLAB_|SYSTEM_|BUILD_|BITBUCKET_|NODE_OPTIONS$|CI$)/.test(k)) {
+    // AZURE_DEVOPS_EXT_PAT and PAT select a provider too: a leftover one would win over the token below
+    if (/^(GITHUB_|CI_|GITLAB_|SYSTEM_|BUILD_|BITBUCKET_|AZURE_DEVOPS_EXT_PAT$|PAT$|NODE_OPTIONS$|CI$)/.test(k)) {
       delete env[k];
     }
   }
+  // What collectProviderCredentialEnvVars of the extension passes, and nothing else: the CLI finds the
+  // repository from the git remote
   if (PROVIDER === 'github') {
     env.GITHUB_TOKEN = execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim();
-  } else {
+  } else if (PROVIDER === 'gitlab') {
     env.CI_SFDX_HARDIS_GITLAB_TOKEN = process.env.GL_TOKEN;
+  } else if (PROVIDER === 'azure') {
+    env.CI_SFDX_HARDIS_AZURE_TOKEN = process.env.AZ_TOKEN;
+    env.SYSTEM_ACCESSTOKEN = process.env.AZ_TOKEN;
+  } else if (PROVIDER === 'bitbucket') {
+    env.CI_SFDX_HARDIS_BITBUCKET_TOKEN = process.env.BB_TOKEN;
+    if (process.env.BB_EMAIL) {
+      env.CI_SFDX_HARDIS_BITBUCKET_EMAIL = process.env.BB_EMAIL;
+    }
   }
   const started = Date.now();
   const res = spawnSync(
