@@ -7,6 +7,7 @@
 - A deployment stopped by a lost connection to Salesforce says so in the job log and the Pull Request comment, and asks to run the job again instead of reporting a parsing issue.
 - Flow documentation and Flow diff comments show the value of an "Is Null" filter or condition (True or False) instead of leaving it empty, since "Is Null False" means "is not null".
 - A deployment error on a component whose name holds a space, like a page layout, shows the whole name in bold in the Pull Request comment.
+- The Pull Request comments of a failed deployment action name the **Retry** button of the VS Code Deployment Actions tab, the label the extension shows.
 - A damaged sfdx-hardis cache file (`~/.sfdx/.sfdx-hardis-cache.json`) no longer stops the commands: it is reset to an empty cache.
 
 ## [8.15.0] 2026-10-07

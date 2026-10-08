@@ -681,7 +681,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   const pendingManualEntries = pipelineEntries.filter((e) => e.status === 'manual');
   body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, pipelineEntries.length)}\n\n`;
   if (failedEntries.length + stoppedEntries.length + pendingManualEntries.length > 0) {
-    body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Run** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;
+    body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;
     body += `#### Needs you\n\n`;
     for (const e of failedEntries) {
       body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ❌ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;

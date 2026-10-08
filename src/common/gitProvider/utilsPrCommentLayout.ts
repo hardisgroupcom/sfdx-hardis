@@ -384,7 +384,7 @@ function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: Phase
         lines.push(codeBlock(lastLines(cmd.result!.output as string, SHORTENED_CODE_BLOCK_LINES)), '');
       }
     }
-    lines.push(`Rerun ${failed.length === 1 ? 'it' : 'them'} with \`sf hardis:project:action:run\`, or with the **Run** button of the Deployment Actions tab of the Pull Request in VS Code.`);
+    lines.push(`Rerun ${failed.length === 1 ? 'it' : 'them'} with \`sf hardis:project:action:run\`, or with the **Retry** button of the Deployment Actions tab of the Pull Request in VS Code.`);
     sections.push({ id: 'failed-actions', keep: true, markdown: lines.join('\n') });
   }
   // Actions stopped by a failed one
