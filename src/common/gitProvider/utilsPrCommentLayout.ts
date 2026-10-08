@@ -519,15 +519,17 @@ function buildReferencesSection(prData: Partial<PullRequestData>, options: PrCom
   });
   const issues = getTicketCollectionIssues();
   const render = (ticketEntries: string[], prEntries: string[]) => {
+    // A header only separates two lists: alone, the list is already named by the summary
+    const bothLists = ticketEntries.length > 0 && prEntries.length > 0;
     const parts: string[] = [];
     if (ticketEntries.length > 0) {
-      parts.push('**Tickets**', '', ...ticketEntries, '');
+      parts.push(...(bothLists ? ['**Tickets**', ''] : []), ...ticketEntries, '');
       if (issues.length > 0) {
         parts.push(`> ⚠️ ${issues[0]}`, '');
       }
     }
     if (prEntries.length > 0) {
-      parts.push('**Pull Requests**', '', ...prEntries);
+      parts.push(...(bothLists ? ['**Pull Requests**', ''] : []), ...prEntries);
     }
     const summary = [
       tickets.length > 0 ? `${tickets.length} ${tickets.length === 1 ? 'ticket' : 'tickets'}` : '',

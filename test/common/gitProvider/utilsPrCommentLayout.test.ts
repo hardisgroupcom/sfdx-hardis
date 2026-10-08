@@ -152,6 +152,32 @@ describe('Pull Request comment layout', () => {
     expect(body).to.contain('- [PROJ-1](https://jira/PROJ-1) Invoice reminder');
     expect(body).to.contain('- [#7](https://x/7) Carried, by Mariia');
     expect(body).to.not.contain('This one');
+    // Two lists in the fold: one short header each
+    expect(body).to.contain('**Tickets**\n\n- [PROJ-1]');
+    expect(body).to.contain('**Pull Requests**\n\n- [#7]');
+  });
+
+  it('does not repeat the summary as a header when the fold holds only one list', () => {
+    const ticketsOnly = render(
+      {
+        status: 'valid',
+        tickets: [{ provider: 'JIRA', id: 'PROJ-1', url: 'https://jira/PROJ-1', subject: 'Invoice reminder', foundOnServer: true }],
+      },
+      true
+    );
+    expect(ticketsOnly).to.contain('<summary>🎫 1 ticket</summary>');
+    expect(ticketsOnly).to.contain('- [PROJ-1](https://jira/PROJ-1) Invoice reminder');
+    expect(ticketsOnly).to.not.contain('**Tickets**');
+    const pullRequestsOnly = render(
+      {
+        status: 'valid',
+        pullRequestsInScope: [{ idStr: '7', idNumber: 7, title: 'Carried', webUrl: 'https://x/7', authorName: 'Mariia' }],
+      },
+      true
+    );
+    expect(pullRequestsOnly).to.contain('<summary>🎫 1 Pull Request</summary>');
+    expect(pullRequestsOnly).to.contain('- [#7](https://x/7) Carried, by Mariia');
+    expect(pullRequestsOnly).to.not.contain('**Pull Requests**');
   });
 
   it('says how the metadata was deployed: full or delta, with or without Quick Deploy', () => {
