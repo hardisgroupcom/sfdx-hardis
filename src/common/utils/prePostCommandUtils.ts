@@ -14,7 +14,9 @@ import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPull
 import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
-import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig, normalizeMovedFrom } from './actionUtils.js';
+import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getEffectiveActionContext, getPrIdFromUserConfig, normalizeMovedFrom } from './actionUtils.js';
+// Re-exported: its callers import it from here
+export { getEffectiveActionContext } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import {
   ActionInterpolationError,
@@ -554,14 +556,6 @@ export async function markActionsStoppedByFailure(commands: PrePostCommand[], fa
  */
 export function getRecordedActionStatus(cmd: PrePostCommand): 'success' | 'failed' | 'warning' | 'manual' | 'skipped' {
   return isIdenticalActionCopy(cmd) ? 'success' : getReportedActionStatus(cmd);
-}
-
-/**
- * Context an action really runs in. A run-batch action changes the data of the org: it is a
- * deployment-only action, whatever its context holds.
- */
-export function getEffectiveActionContext(cmd: PrePostCommand): PrePostCommand['context'] {
-  return cmd.type === "run-batch" ? "process-deployment-only" : cmd.context || "all";
 }
 
 /**

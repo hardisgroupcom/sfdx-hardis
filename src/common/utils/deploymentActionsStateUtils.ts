@@ -3,7 +3,7 @@ import { debuglog } from "util";
 import { GitProvider } from '../gitProvider/index.js';
 import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { readActions } from './actionUtils.js';
+import { evaluateActionBranchFilter, getEffectiveActionContext, readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
@@ -679,7 +679,8 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   const failedEntries = pipelineEntries.filter((e) => e.status === 'failed');
   const stoppedEntries = pipelineEntries.filter((e) => e.status === 'not-run');
   const pendingManualEntries = pipelineEntries.filter((e) => e.status === 'manual');
-  body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, pipelineEntries.length)}\n\n`;
+  const afterMergeEntries = pipelineEntries.filter((e) => isLeftForTheDeploymentJob(e, actionDefs?.get(e.actionId)));
+  body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, afterMergeEntries, pipelineEntries.length)}\n\n`;
   if (failedEntries.length + stoppedEntries.length + pendingManualEntries.length > 0) {
     body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;
     body += `#### Needs you\n\n`;
@@ -832,13 +833,15 @@ function buildActionsVerdict(
   failed: DeploymentActionStateEntry[],
   stopped: DeploymentActionStateEntry[],
   manual: DeploymentActionStateEntry[],
+  afterMerge: DeploymentActionStateEntry[],
   total: number
 ): string {
-  const orgs = [...new Set([...failed, ...stopped, ...manual].map((e) => e.orgBranch))].sort((a, b) => getOrgBranchWeight(a) - getOrgBranchWeight(b));
+  const orgs = [...new Set([...failed, ...stopped, ...manual, ...afterMerge].map((e) => e.orgBranch))].sort((a, b) => getOrgBranchWeight(a) - getOrgBranchWeight(b));
   if (orgs.length === 0) {
     return total > 0 ? '✅ Nothing to do: every deployment action is done or skipped' : '✅ No deployment action yet';
   }
-  // One group per org: "In integration: ❌ 1 failed · ⏸️ 2 waiting · 👋 1 to do by hand"
+  // One group per org: "In integration: ❌ 1 failed · ⏸️ 2 waiting · 👋 1 to do by hand · 🕒 3 run after the merge",
+  // or "In integration: ✅ nothing to do now · 🕒 3 run after the merge"
   return orgs
     .map((org) => {
       const count = (entries: DeploymentActionStateEntry[]) => entries.filter((e) => e.orgBranch === org).length;
@@ -847,9 +850,28 @@ function buildActionsVerdict(
         count(stopped) > 0 ? `⏸️ ${count(stopped)} waiting` : '',
         count(manual) > 0 ? `👋 ${count(manual)} to do by hand` : '',
       ].filter((part) => part !== '');
+      if (parts.length === 0) {
+        parts.push('✅ nothing to do now');
+      }
+      if (count(afterMerge) > 0) {
+        parts.push(`🕒 ${count(afterMerge)} run after the merge`);
+      }
       return `In ${org}: ${parts.join(' · ')}`;
     })
     .join(' / ');
+}
+
+/**
+ * A skip that is not final: the validation job skipped a deployment-only action, which the
+ * deployment job of the merge runs in the same org. Once it ran there, its entry is no longer a skip.
+ */
+function isLeftForTheDeploymentJob(entry: DeploymentActionStateEntry, def: ActionDef | undefined): boolean {
+  if (entry.status !== 'skipped' || !def || getEffectiveActionContext(def) !== 'process-deployment-only') {
+    return false;
+  }
+  // An action whose branch filter leaves this org out never runs there. Pipeline org branches are
+  // major branches, so the branch itself is the only name the filter can match.
+  return evaluateActionBranchFilter(def, [entry.orgBranch]).run !== false;
 }
 
 // Note of the results table, without the email addresses and Salesforce usernames it may hold:

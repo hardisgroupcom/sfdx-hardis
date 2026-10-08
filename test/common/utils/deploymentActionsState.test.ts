@@ -125,6 +125,60 @@ describe('Deployment Actions state comment (matrix format)', () => {
     expect(mixedBody).to.contain('pr-banner-actions-pending');
   });
 
+  describe('verdict line', () => {
+    function deployOnlyDef(id: string, overrides: Partial<ActionDef> = {}): ActionDef {
+      return { id, label: id, type: 'command', command: 'echo hello', context: 'process-deployment-only', when: 'post-deploy', executionOrder: 0, ...overrides };
+    }
+
+    it('says Nothing to do when every action is done or skipped for good', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2', { excludeTargetBranches: ['integration'] })]]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        // A skip with no definition to read cannot be told apart from a final one
+        entry({ actionId: 'action-3', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### ✅ Nothing to do: every deployment action is done or skipped');
+    });
+
+    // Training walk 2026-10-08, O-1: a validation skips the deployment-only actions, which run at the merge
+    it('names the actions a validation left for the deployment job instead of Nothing to do', () => {
+      const defs = new Map<string, ActionDef>([
+        ['action-2', deployOnlyDef('action-2')],
+        ['action-3', deployOnlyDef('action-3', { type: 'run-batch', context: 'all' })],
+        ['action-4', deployOnlyDef('action-4')],
+      ]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        entry({ actionId: 'action-3', status: 'skipped' }),
+        entry({ actionId: 'action-4', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 3 run after the merge\n');
+      expect(body).to.not.contain('Nothing to do:');
+      // Nothing to tick: the checklist stays out
+      expect(body).to.not.contain('#### Needs you');
+      // The matrix and its markers do not change
+      expect(parseDeploymentActionsCommentBody(body).filter((e) => e.status === 'skipped')).to.have.length(3);
+    });
+
+    it('adds the actions run after the merge to an org that needs someone', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2')]]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({ status: 'manual' }),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        entry({ actionId: 'action-2', orgBranch: 'uat', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### In integration: 👋 1 to do by hand · 🕒 1 run after the merge / In uat: ✅ nothing to do now · 🕒 1 run after the merge\n');
+    });
+
+    it('stops counting an action once the deployment job ran it', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2')]]);
+      const body = buildDeploymentActionsCommentBody([entry({}), entry({ actionId: 'action-2', status: 'success' })], defs, 42);
+      expect(body).to.contain('### ✅ Nothing to do: every deployment action is done or skipped');
+    });
+  });
+
   describe('Action Details section', () => {
     function actionDef(overrides: Partial<ActionDef>): ActionDef {
       return {

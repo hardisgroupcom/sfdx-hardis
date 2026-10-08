@@ -104,6 +104,14 @@ export function normalizeBranchName(name: string): string {
 }
 
 /**
+ * Context an action really runs in. A run-batch action changes the data of the org: it is a
+ * deployment-only action, whatever its context holds.
+ */
+export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context'>): PrePostCommand['context'] {
+  return cmd.type === "run-batch" ? "process-deployment-only" : cmd.context || "all";
+}
+
+/**
  * Names an action branch filter may match for the current deployment.
  * The real target branch always counts, so a literal feature branch name still works.
  * A target that is not a declared major branch is a developer sandbox, so it also matches
