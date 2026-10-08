@@ -166,7 +166,7 @@ function handleConditions(ruleNode: any, allProperties: string[]) {
       conditionId: id,
       leftValueReference: item.leftValueReference,
       operator: stringifyOperator(item.operator),
-      rightValue: (item.operator === "IsNull" && item.rightValue === "false") ? "<!-- -->" : stringifyValue(item.rightValue, "", allProperties)
+      rightValue: item.operator === "IsNull" ? stringifyIsNullValue(item.rightValue) : stringifyValue(item.rightValue, "", allProperties)
     };
   });
   delete ruleNode.conditions;
@@ -223,7 +223,7 @@ export function handleFilterItems(flowNode: any, allProperties: string[]): strin
       filterId: id,
       field: item.field,
       operator: stringifyOperator(item.operator),
-      value: item.operator === "IsNull" ? "<!-- -->" : stringifyValue(item.value, item.field, allProperties)
+      value: item.operator === "IsNull" ? stringifyIsNullValue(item.value) : stringifyValue(item.value, item.field, allProperties)
     };
   });
   delete flowNode.filters;
@@ -331,6 +331,16 @@ export function buildCustomMarkdownTable(items: any, fields: string[], title: st
 
 export function stringifyOperator(operatorIn): string {
   return prettifyFieldName(operatorIn);
+}
+
+// Is Null False means "is not null", so the value is never hidden. Written True or False,
+// as Flow Builder shows it, rather than the checkbox icons of the other boolean values.
+export function stringifyIsNullValue(valueIn: any): string {
+  const raw = valueIn && typeof valueIn === "object" && valueIn.booleanValue !== undefined ? valueIn.booleanValue : valueIn;
+  if (raw === undefined || raw === null || raw === "") {
+    return "<!-- -->";
+  }
+  return String(raw).toLowerCase() === "true" ? "True" : "False";
 }
 
 export function stringifyValue(valueIn: any, field: string, allProperties: string[]): string {

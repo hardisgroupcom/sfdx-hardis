@@ -164,7 +164,7 @@ describe('Flow diff comments', () => {
       '',
       '#### Filters (logic: **and**)',
       '',
-      `|🟩${green('2')}|${green('Panels_Required__c')}|${green('Is Null')}|${green('<!-- -->')}|`,
+      `|🟩${green('2')}|${green('Panels_Required__c')}|${green('Is Null')}|${green('False')}|`,
       '',
       '## Formulas',
       '',
@@ -188,7 +188,7 @@ describe('Flow diff comments', () => {
     ].join('\n');
     const cleaned = cleanFlowDiffMarkdownForPrComment(markdown);
     expect(cleaned).to.contain('**4 properties changed**');
-    expect(cleaned).to.contain('| Flow | Filters (logic: and) 2 | _none_ | Panels_Required__c · Is Null |');
+    expect(cleaned).to.contain('| Flow | Filters (logic: and) 2 | _none_ | Panels_Required__c · Is Null · False |');
     expect(cleaned).to.contain('| Formulas | crewTooSmall | Boolean · {!$Record.Crew_Size__c} &lt; 2 · True when fewer than two people are assigned. | Boolean · AND( {!$Record.Crew_Size__c} * 8 &lt; {!$Record.Panels_Required__c} ) · True when eight panels a person do not cover the job |');
     expect(cleaned).to.contain('| Create_Warning_Task | Connector | _none_ | Mark_Warning_Sent |');
     expect(cleaned).to.contain('| Mark_Warning_Sent | Element | _none_ | Mark_Warning_Sent (Record Update) |');
