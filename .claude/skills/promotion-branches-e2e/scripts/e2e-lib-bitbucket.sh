@@ -332,6 +332,12 @@ def paged(url):
         url = page.get('next')
     return values
 
+# sfdx-hardis hides its markers on Bitbucket in links with no text (utilsBitbucketMarkup.ts): the
+# dump gives them back as the HTML comments every checker reads, as the CLI does when it reads them
+def shown(text):
+    import re, urllib.parse
+    return re.sub(r'\[\]\(#hardis:([^)\s]*)\)', lambda m: '<!-- ' + urllib.parse.unquote(m.group(1)) + ' -->', text)
+
 wanted = set(int(a) for a in sys.argv[2:])
 prs = []
 for raw in paged(API + '/pullrequests?state=MERGED&state=OPEN&state=DECLINED&state=SUPERSEDED&pagelen=50'):
@@ -342,13 +348,13 @@ for raw in paged(API + '/pullrequests?state=MERGED&state=OPEN&state=DECLINED&sta
         if c.get('deleted'):
             continue
         comments.append({'id': str(c.get('id')),
-                         'body': ((c.get('content') or {}).get('raw') or ''),
+                         'body': shown(((c.get('content') or {}).get('raw') or '')),
                          'url': (((c.get('links') or {}).get('html') or {}).get('href') or '')})
     prs.append({'number': raw['id'], 'title': raw.get('title') or '',
                 'sourceBranch': (((raw.get('source') or {}).get('branch') or {}).get('name') or ''),
                 'targetBranch': (((raw.get('destination') or {}).get('branch') or {}).get('name') or ''),
                 'state': (raw.get('state') or '').lower(),
-                'description': raw.get('description') or '',
+                'description': shown(raw.get('description') or ''),
                 'comments': comments})
 json.dump({'provider': 'bitbucket', 'prs': prs}, open(sys.argv[1], 'w', encoding='utf-8'), indent=1)
 print('dumped %d Pull Requests to %s' % (len(prs), sys.argv[1]))

@@ -161,8 +161,8 @@ g2() {
   prompt=$(ls -t "$WORK"/hardis-report/promotion-conflicts-prompt-*.md 2>/dev/null | head -1)
   cp "$prompt" "$LOGS/conflict-prompt.md" 2>/dev/null
   p_body "$P5" >"$LOGS/p5-body.md"
-  grep -qi "commit with a message" "$LOGS/conflict-prompt.md" && grep -q "NOTES.md" "$LOGS/conflict-prompt.md" && { grep -qi "<details>" "$LOGS/p5-body.md" || { grep -q "too long for a description on this git provider" "$LOGS/p5-body.md" && grep -aq "too long for a Pull Request description" "$LOGS/edge-conflict-kept.log"; }; }
-  ok_if 29 $? "the prompt asks for a commit message naming each conflicting file, and the description embeds it (or names its file where the provider caps a description, and the job log says so)"
+  grep -qi "commit with a message" "$LOGS/conflict-prompt.md" && grep -q "NOTES.md" "$LOGS/conflict-prompt.md" && { grep -qiE "<details>|[*][*]Prompt for a coding agent" "$LOGS/p5-body.md" || { grep -q "too long for a description on this git provider" "$LOGS/p5-body.md" && grep -aq "too long for a Pull Request description" "$LOGS/edge-conflict-kept.log"; }; }
+  ok_if 29 $? "the prompt asks for a commit message naming each conflicting file, and the description embeds it (folded, or under a bold title on Bitbucket, which folds nothing; or names its file where the provider caps a description, and the job log says so)"
 
   job 3 p_check "$P5" uat edge-marker-guard
   assert_log 31 edge-marker-guard 1 "marker guard: the job fails naming the two files" \

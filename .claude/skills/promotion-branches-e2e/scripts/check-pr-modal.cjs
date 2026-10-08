@@ -210,7 +210,8 @@ function listComments(number) {
     // BitbucketProvider.listPullRequestCommentsByMarker: content.raw, deleted comments left out
     return bbPaged(`${BB_API}/pullrequests/${number}/comments?pagelen=50`)
       .filter((c) => !c.deleted)
-      .map((c) => c.content?.raw || '');
+      // the markers are hidden in links with no text there (utilsBitbucketMarkup.ts)
+      .map((c) => (c.content?.raw || '').replace(/\[\]\(#hardis:([^)\s]*)\)/g, (_m, encoded) => `<!-- ${decodeURIComponent(encoded)} -->`));
   }
   if (PROVIDER === 'github') {
     return ghApi(`repos/${process.env.REPO}/issues/${number}/comments?per_page=100`).map((c) => c.body || '');
