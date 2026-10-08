@@ -169,27 +169,6 @@ async function loadActionDefsFromPrYaml(prNumber: number): Promise<Map<string, A
   return defs;
 }
 
-// Actions of the project config (key '') and of the config of each org branch, by action id. A Pull
-// Request comment records them too, for the Pull Request whose job ran them.
-async function loadConfigActionDefs(orgBranches: string[]): Promise<Map<string, Map<string, ActionDef>>> {
-  const defsByScope = new Map<string, Map<string, ActionDef>>();
-  for (const branch of ['', ...orgBranches.filter((orgBranch) => orgBranch && orgBranch !== DEV_SANDBOXES_ORG_BRANCH)]) {
-    const defs = new Map<string, ActionDef>();
-    try {
-      for (const when of ['pre-deploy', 'post-deploy'] as ActionWhen[]) {
-        const commands = branch === '' ? await readActions('project', when) : await readActions('branch', when, branch);
-        commands.forEach((cmd, index) => {
-          if (cmd.id) defs.set(cmd.id, { ...cmd, when, executionOrder: index });
-        });
-      }
-    } catch (_e) {
-      // A config file that cannot be read gives no definition: its skips are taken as final
-    }
-    defsByScope.set(branch, defs);
-  }
-  return defsByScope;
-}
-
 /**
  * Load deployment actions state from all source PRs.
  * Each PR's "Deployment Actions" comment is read and parsed independently.
@@ -1292,6 +1271,27 @@ function listStateBuckets(ownerPrs: number[]): DeploymentActionStateEntry[][] {
     return [...state.entriesByPr.values()];
   }
   return [...new Set(owners)].map((prNumber) => state.entriesByPr.get(prNumber) || []);
+}
+
+// Actions of the project config (key '') and of the config of each org branch, by action id. A Pull
+// Request comment records them too, for the Pull Request whose job ran them.
+async function loadConfigActionDefs(orgBranches: string[]): Promise<Map<string, Map<string, ActionDef>>> {
+  const defsByScope = new Map<string, Map<string, ActionDef>>();
+  for (const branch of ['', ...orgBranches.filter((orgBranch) => orgBranch && orgBranch !== DEV_SANDBOXES_ORG_BRANCH)]) {
+    const defs = new Map<string, ActionDef>();
+    try {
+      for (const when of ['pre-deploy', 'post-deploy'] as ActionWhen[]) {
+        const commands = branch === '' ? await readActions('project', when) : await readActions('branch', when, branch);
+        commands.forEach((cmd, index) => {
+          if (cmd.id) defs.set(cmd.id, { ...cmd, when, executionOrder: index });
+        });
+      }
+    } catch (_e) {
+      // A config file that cannot be read gives no definition: its skips are taken as final
+    }
+    defsByScope.set(branch, defs);
+  }
+  return defsByScope;
 }
 
 // Augment globalThis types
