@@ -3132,6 +3132,7 @@
   "promotionCreateConflictCommitted": "{{label}} を競合マーカー付きで commit しました: {{files}}。merge する前にブランチ上で解決してください",
   "promotionCreateConflictPrompt": "{{label}} をどうしますか?",
   "promotionCreateConflictPromptFile": "commit 済みの競合をコーディングエージェント（Claude Code、Codex、Copilot など）で解決するためのプロンプトを {{file}} に保存し、Pull Request の説明にも埋め込みました",
+  "promotionCreateConflictPromptFileOnly": "commit 済みの競合をコーディングエージェント（Claude Code、Codex、Copilot など）で解決するためのプロンプトを {{file}} に保存しました。この Git プロバイダーの Pull Request の説明には長すぎるため、説明にはファイル名のみを記載しています",
   "promotionCreateConflictPromptReportTitle": "プロモーションの競合を解決するためのコーディングエージェント向けプロンプト",
   "promotionCreateConflictRemembered": "先に選択した競合の処理を適用します: {{choice}}",
   "promotionCreateConflictSkip": "このユーザーストーリーをプロモーションから外して続行する",

@@ -489,6 +489,90 @@ Run it at the end of the run, and read its findings against what the run did: a 
 a job that ran BEFORE a fix landed keeps its old text until a job touches that Pull Request again,
 and the flag-off passes deliberately run the pre-fix `origin/main` CLI.
 
+## 5quater. Looking at the comments as the provider draws them
+
+The audit of 5bis reads the markdown source of a comment. It cannot see what the provider makes of
+it: a table left as rows of pipes, a `<details>` block printed as text, a checkbox drawn as `[ ]`,
+a banner image that does not load, a table wider than the comment. Each provider has its own
+markdown, and the same source does not draw the same way on the four.
+
+`scripts/check-comments-visual.cjs` opens one comment of every type the run produced, the longest
+of each, takes a picture of it as shown and another one with every folded section opened, and
+compares its DOM with its source:
+
+```bash
+dump_pr_comments "$LOGS/comments.json"
+node .claude/skills/promotion-branches-e2e/scripts/check-comments-visual.cjs \
+  "$(cygpath -m "$LOGS")/comments.json" "$(cygpath -m "$LOGS")/visual"
+# GitHub: REPO in the environment; GitLab: GL_HOST, GL_TOKEN and PROJECT_PATH
+# --per-type 2 for two comments of each type, --only validation for one family
+```
+
+| Type                                   | What it is                                                              |
+|----------------------------------------|-------------------------------------------------------------------------|
+| `validation-success`, `-failed`        | the comment of the validation job, by verdict                           |
+| `...+manual`                           | the same carrying manual actions and their checkboxes (the gate)        |
+| `...+conflict-markers`                 | the validation stopped by the marker guard                              |
+| `deployment-success`, `-failed`        | the comment of the deployment job, with `+manual` too                   |
+| `deployment-actions`, `+manual`        | the Deployment Actions comment and its "Status by org" table            |
+| `backpromotes`                         | the Backpromotes history comment (backpromote repository)               |
+| `code-quality`                         | a MegaLinter comment, when a job posted one                             |
+| `promotion-description`, `+conflicts`  | the description of a promotion Pull Request                             |
+| `other-<message key>`                  | any other sfdx-hardis comment                                           |
+
+A type the run did not produce is not checked: say so in the report (a run with no failed
+validation has no `validation-failed` picture).
+
+How the comment is drawn, by provider:
+
+| Provider        | `--render` | How                                                                                                                              |
+|-----------------|------------|----------------------------------------------------------------------------------------------------------------------------------|
+| Azure DevOps    | `page`     | the real Pull Request page, in a Chrome with remote debugging, logged in. Azure has no markdown API                               |
+| Bitbucket Cloud | `page`     | the same                                                                                                                         |
+| GitHub          | `api`      | the HTML of `POST /markdown` (the renderer of the comments), in a headless Chrome. No session. `--render page` works when logged in |
+| GitLab          | `api`      | the HTML of `POST /api/v4/markdown` with the project, in a headless Chrome. No session                                           |
+
+The Chrome of `--render page` is one started for the test, never the user's own:
+
+```bash
+chrome --remote-debugging-port=9222 --user-data-dir=<a folder of its own> --no-first-run
+```
+
+Then the person logs in to Azure DevOps and Bitbucket in it, once: the profile keeps the sessions.
+The script only opens Pull Request pages of the test repositories and reads them. `E2E_CDP_URL`
+(or `--cdp`) when the port is another one. The window stays open during the run.
+
+Each line is `V | OK / WARN / FAIL | type | Pull Request | picture | what is wrong`. FAIL: the
+comment is not on the page, markdown or HTML source is left as text outside code blocks, fewer
+tables, folded sections or checkboxes drawn than the source holds, an image not loaded. WARN: a
+table or a code block wider than the comment.
+
+**Then read every picture.** The DOM check says the markup was understood, not that the comment
+reads well. In each picture, folded and unfolded:
+
+- the banner image is there and the verdict is the first thing read;
+- every table has its header row, no column is squeezed to one word per line, no cell is empty that
+  should not be;
+- status icons and emoji are drawn, not printed as `:name:`;
+- checkboxes are boxes, on the line of their action;
+- folded sections show their summary line folded, and their content once opened;
+- code and command output sit in a code block, long lines do not push the comment wider;
+- nothing overlaps, nothing is cut at the right edge;
+- the navigation line links the other comments and marks the current one.
+
+Traps:
+
+- **A provider page keeps bars stuck to the top and paints only what its window shows.** The script
+  hides the fixed and sticky elements before the picture and makes the window as tall as the
+  comment: without the first, the top of the comment is covered; without the second, the bottom of
+  a long unfolded comment is blank (Azure DevOps, 2026-10-08).
+- **A comment is found by the words of its source**, among the containers a provider draws
+  comments in (`.markdown-content` on Azure DevOps). Looking for whole sentences fails: a provider
+  splits a sentence across elements and pads its emoji.
+- **`--render api` draws the markup of the provider in a plain frame**, not in its page: it proves
+  the markdown, the tables and the folds, not the width of the real comment column.
+- **Not logged in looks like "comment not found"**: the line names the page that was reached.
+
 ## 5ter. Deployment action state from the git provider
 
 Check the deployment action state from the git provider too:
@@ -1019,25 +1103,34 @@ The ids are in `$LOGS/ci-vars.sh` (`AZ_REPO_NAME`, `AZ_REPO_ID`, `AZ_CHECK_DEF_I
 `AZ_DEPLOY_DEF_ID`). About 20 builds of 8 to 12 minutes, one at a time: count three to four hours,
 and 200 to 250 of the 1800 monthly minutes.
 
-Unproven until the first run:
+What the first live run proved (2026-10-08, `AZURE_E2E_CI_TOKEN=pat`):
 
-- **The preview.** No pipeline existed in the project on 2026-10-08, so the generated YAML was only
-  parsed locally. Step 6 is the first real validation, before any job.
-- **The Build scope of the PAT beyond reading**: creating definitions, editing their variables,
-  cancelling and reading builds.
-- **The free parallel job.** `GET _apis/distributedtask/resourceusage` answers 401 to this PAT, so
-  preflight cannot see it. A build that stays `notStarted` for `CI_WAIT_QUEUE_SECONDS` ends with
-  code 9 and says so.
-- **The link step in a container job.** The agent runs the steps as a user it creates in the
-  container, not as root: `yarn install` in `/tmp` and `sf plugins link` should work, to confirm.
-- **W2 with the system token.** Azure DevOps lets the author of a comment edit it. The checkbox is
-  ticked by the PAT user in a comment of the build service: when the PATCH is refused,
-  `$LOGS/ci-tick-c1.log` says so, W2 fails, and it is a finding (a release manager could not tick it
-  either). Run again with `AZURE_E2E_CI_TOKEN=pat` to prove the rest.
-- **Drafts and the build policy.** If a draft Pull Request gets no automatic build, the re-queue
-  after `CI_WAIT_REQUEUE_SECONDS` starts it.
-- **`pr.sourceSha` in `triggerInfo`.** Without it the script takes the newest build of
-  `refs/pull/<id>/merge`.
+- **The preview** validates both generated files, and the PAT creates definitions, sets their
+  secret variables, cancels and reads builds.
+- **The free parallel job exists**: a build leaves the queue in 6 to 13 seconds and runs 5 to 7
+  minutes, link step included (about 80 seconds of `yarn install`).
+- **A container job does not run as root, and the image keeps the plugins in a folder of root**
+  (`SF_DATA_DIR=/usr/local/lib`): `sf plugins link` answers `EACCES: permission denied, open
+  '/usr/local/lib/package.json'`. The link runs through `sudo`, which the image ships for the
+  Azure agent, with `HOME=/root`: with the HOME of the step user, root creates `~/.sf` and the next
+  `sf` command of the job dies on `EACCES ... .sf/sf-<date>.log`.
+- **`triggerInfo` has no `pr.sourceSha`**, and a policy build runs on the merge commit of
+  `refs/pull/<id>/merge`. The head a build validates is a parent of that merge commit
+  (`GET commits/<sourceVersion>`), which is how `_azci_find_build` matches it.
+- **Azure cancels by itself the build of a previous head** ("canceled by
+  Microsoft.VisualStudio.Services.TFS") when a push or a re-queue of the policy comes: opening a
+  story and pushing its actions file gives two builds, the first one cancelled within seconds. A
+  wait that takes the newest build of the Pull Request reads that cancelled one. `_azci_wait_build`
+  follows the newer build of the same commit when the one it watches is cancelled.
+- **Drafts get their policy build** like any Pull Request.
+
+Still unproven:
+
+- **The system token.** The PAT of `.env` cannot grant the build service its permission (HTTP 401,
+  it needs Security (Manage)), so the run of 2026-10-08 used `AZURE_E2E_CI_TOKEN=pat`. With
+  `system`, the comments of the jobs need "Contribute to pull requests" allowed once by hand to
+  `<project> Build Service (<organization>)`, and W2 then has the PAT user tick a comment of the
+  build service: when the PATCH is refused, `$LOGS/ci-tick-c1.log` says so and it is a finding.
 
 ### Bitbucket Pipelines
 
@@ -1582,7 +1675,12 @@ Traps already met on Bitbucket:
   description carries the emoji of the sfdx-hardis navigation block can break `json.load(sys.stdin)`.
   `bb_pr_field` and `bb_pr_create` (and their Azure DevOps twins) read the bytes as UTF-8.
 - **A workspace over its user limit is read-only**, with a plain HTTP 402 on push. Nothing in the
-  API says so beforehand; the repository can still be created.
+  API says so beforehand; the repository can still be created. On 2026-10-08 `sfdxhardistest`
+  itself answered it ("the account 'sfdxhardistest' has exceeded its user limit and this repository
+  is restricted to read-only access") while the API listed one member, its owner: the limit is a
+  plan setting only the owner sees (Workspace settings > Plan details). No Bitbucket section ran
+  that day. Before a run, push one commit to a scratch branch of an existing repository of the
+  workspace: it is the only check that sees it.
 - Merge with `merge_strategy: merge_commit` and `close_source_branch: false`, never squash, or the
   `-x` trailers of the cherry-picks are lost.
 - **Bitbucket Cloud publishes no merge ref.** Neither `refs/pull-requests/<id>/merge` nor

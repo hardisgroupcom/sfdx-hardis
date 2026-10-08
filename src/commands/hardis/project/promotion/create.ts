@@ -304,7 +304,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
         files: [...new Set(conflicted.flatMap((entry) => entry.files))].join(', ') || '-',
       })));
       // Ready-to-paste prompt for a coding agent, also embedded in the Pull Request description
+      // unless the provider caps its length (Azure DevOps)
       conflictPromptFile = await writeConflictResolutionPrompt({
+        embeddedInDescription: body.includes('</details>'),
         sourceBranch,
         targetBranch,
         branchName,

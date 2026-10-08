@@ -3134,6 +3134,7 @@
   "promotionCreateConflictCommitted": "{{label}} committata con marcatori di conflitto in: {{files}}. Risolvili sul branch prima del merge",
   "promotionCreateConflictPrompt": "Cosa vuoi fare con {{label}}?",
   "promotionCreateConflictPromptFile": "Un prompt per risolvere i conflitti committati con un coding agent (Claude Code, Codex, Copilot...) è salvato in {{file}} e incluso nella descrizione della Pull Request",
+  "promotionCreateConflictPromptFileOnly": "Un prompt per risolvere i conflitti committati con un coding agent (Claude Code, Codex, Copilot...) è salvato in {{file}}. È troppo lungo per la descrizione di una Pull Request su questo provider Git, quindi la descrizione indica solo il file",
   "promotionCreateConflictPromptReportTitle": "Prompt per un coding agent per risolvere i conflitti della promozione",
   "promotionCreateConflictRemembered": "Viene applicata la gestione del conflitto scelta in precedenza: {{choice}}",
   "promotionCreateConflictSkip": "Lasciare questa User Story fuori dalla promozione e continuare",

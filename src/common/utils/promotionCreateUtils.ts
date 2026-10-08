@@ -1642,12 +1642,15 @@ export async function writeConflictResolutionPrompt(options: {
   conflicted: PromotionStory[];
   pullRequestUrl: string | null;
   commandThis: any;
+  // False when the provider caps the description and the prompt was left out of it
+  embeddedInDescription?: boolean;
 }): Promise<string> {
   const prompt = buildConflictResolutionPrompt(options);
   const file = await generateReportPath('promotion-conflicts-prompt', '', { withDate: true, withBranchName: false, fileExtension: 'md' });
   await fs.ensureDir(path.dirname(file));
   await fs.writeFile(file, `${prompt}\n`, 'utf8');
-  uxLog('warning', options.commandThis, c.yellow(t('promotionCreateConflictPromptFile', { file })));
+  const messageKey = options.embeddedInDescription === false ? 'promotionCreateConflictPromptFileOnly' : 'promotionCreateConflictPromptFile';
+  uxLog('warning', options.commandThis, c.yellow(t(messageKey, { file })));
   if (WebSocketClient.isAliveWithLwcUI()) {
     WebSocketClient.sendReportFileMessage(file, t('promotionCreateConflictPromptReportTitle'), 'report');
   }

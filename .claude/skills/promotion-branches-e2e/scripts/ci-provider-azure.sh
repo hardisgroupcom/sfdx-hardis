@@ -348,17 +348,33 @@ ci_pr_head_sha() { _azci_api GET "$AZ_REPO_API/pullrequests/$1?api-version=7.1" 
 
 # The newest build matching a kind, a key and a commit, newer than a build id. Prints "id status".
 # check: the policy build of Pull Request <key> for head <sha>; deploy: the CI build of branch <key>
-# on commit <sha>.
+# on commit <sha>. A policy build runs on the merge commit of refs/pull/<key>/merge and its
+# triggerInfo carries no pr.sourceSha (2026-10-08): the head it validates is a parent of that merge
+# commit, read from the commits API.
 _azci_find_build() {
-  local kind="$1" key="$2" sha="$3" min="$4" url
-  if [ "$kind" = "check" ]; then
-    url="$AZ_PROJECT_URL/_apis/build/builds?definitions=$AZ_CHECK_DEF_ID&reasonFilter=pullRequest&queryOrder=queueTimeDescending&\$top=50&api-version=7.1"
-  else
+  local kind="$1" key="$2" sha="$3" min="$4" url id status version match
+  if [ "$kind" != "check" ]; then
     url="$AZ_PROJECT_URL/_apis/build/builds?definitions=$AZ_DEPLOY_DEF_ID&branchName=refs/heads/$key&queryOrder=queueTimeDescending&\$top=50&api-version=7.1"
+    _azci_api GET "$url" | SHA="$sha" MIN="$min" _azci_json "(()=>{const e=process.env;const b=(d.value||[]).filter(b=>b.id>Number(e.MIN)&&b.sourceVersion===e.SHA).sort((x,y)=>y.id-x.id)[0];return b?b.id+' '+b.status:''})()"
+    return
   fi
-  _azci_api GET "$url" | KIND="$kind" KEY="$key" SHA="$sha" MIN="$min" _azci_json "(()=>{const e=process.env;const b=(d.value||[]).filter(b=>b.id>Number(e.MIN)&&(e.KIND==='check'
-    ?String((b.triggerInfo||{})['pr.number'])===e.KEY&&(((b.triggerInfo||{})['pr.sourceSha']||'')===e.SHA||(!(b.triggerInfo||{})['pr.sourceSha']&&b.sourceBranch==='refs/pull/'+e.KEY+'/merge'))
-    :b.sourceVersion===e.SHA)).sort((x,y)=>y.id-x.id)[0];return b?b.id+' '+b.status:''})()"
+  url="$AZ_PROJECT_URL/_apis/build/builds?definitions=$AZ_CHECK_DEF_ID&reasonFilter=pullRequest&queryOrder=queueTimeDescending&\$top=50&api-version=7.1"
+  while read -r id status version match; do
+    [ -n "$id" ] || continue
+    if [ "$match" = "?" ]; then
+      _azci_merge_has_parent "$version" "$sha" || continue
+    fi
+    echo "$id $status"
+    return
+  done < <(_azci_api GET "$url" | KEY="$key" SHA="$sha" MIN="$min" _azci_json "(d.value||[]).filter(b=>b.id>Number(process.env.MIN)&&String((b.triggerInfo||{})['pr.number'])===process.env.KEY&&(!(b.triggerInfo||{})['pr.sourceSha']||b.triggerInfo['pr.sourceSha']===process.env.SHA)).sort((x,y)=>y.id-x.id).map(b=>b.id+' '+b.status+' '+b.sourceVersion+' '+((b.triggerInfo||{})['pr.sourceSha']?'=':'?')).join(';')" | tr ';' '\n')
+}
+
+# Whether <sha> is a parent of the merge commit a policy build ran on. Kept in a file: the answer
+# never changes for a commit.
+_azci_merge_has_parent() {
+  local cache="$LOGS/.az-parents-$1"
+  [ -s "$cache" ] || _azci_api GET "$AZ_REPO_API/commits/$1?api-version=7.1" | _azci_json "(d.parents||[]).join(' ')" >"$cache"
+  grep -q "$2" "$cache"
 }
 
 # A build of the Pull Request for another head, still queued or running, only costs minutes and the
@@ -400,7 +416,18 @@ _azci_wait_build() {
   echo "real CI" >"$LOGS/$label.mode"
   waited=0
   while true; do
-    status=$(_azci_api GET "$AZ_PROJECT_URL/_apis/build/builds/$id?api-version=7.1" | _azci_json 'd.status')
+    status=$(_azci_api GET "$AZ_PROJECT_URL/_apis/build/builds/$id?api-version=7.1" | _azci_json 'd.status+" "+(d.result||"")')
+    if [ "$status" = "completed canceled" ]; then
+      # Azure cancels a policy build when the policy is queued again: the build to read is the newer one
+      found=$(_azci_find_build "$kind" "$key" "$sha" "$id")
+      if [ -n "$found" ]; then
+        echo "[$(date +%T)] $label: build $id canceled, following build ${found%% *} of the same commit"
+        id="${found%% *}"
+        echo "$id" >"$LOGS/$label.build"
+        continue
+      fi
+    fi
+    status="${status%% *}"
     [ "$status" = "completed" ] && break
     if [ "$status" = "notStarted" ] && [ "$waited" -ge "$CI_WAIT_QUEUE_SECONDS" ]; then break; fi
     if [ "$status" = "inProgress" ] && [ "$waited" -ge $((CI_WAIT_QUEUE_SECONDS + CI_WAIT_JOB_SECONDS)) ]; then break; fi

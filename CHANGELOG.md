@@ -8,6 +8,8 @@
 - Flow documentation and Flow diff comments show the value of an "Is Null" filter or condition (True or False) instead of leaving it empty, since "Is Null False" means "is not null".
 - A deployment error on a component whose name holds a space, like a page layout, shows the whole name in bold in the Pull Request comment.
 - The Pull Request comments of a failed deployment action name the **Retry** button of the VS Code Deployment Actions tab, the label the extension shows.
+- Azure DevOps: the Pull Request window of the DevOps Pipeline shows the Deployment Actions statuses and the validation and deployment results, which stayed empty because the commands run outside a pipeline could not read the Pull Request comments.
+- Azure DevOps: [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) no longer says the conflict prompt is in the Pull Request description when it was too long to fit there.
 - A damaged sfdx-hardis cache file (`~/.sfdx/.sfdx-hardis-cache.json`) no longer stops the commands: it is reset to an empty cache.
 - Deployment actions declared in the config of a branch whose name holds a slash (like `release/uat`) are found again by [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/) and [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/).
 

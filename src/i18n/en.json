@@ -3138,6 +3138,7 @@
   "promotionCreateConflictCommitted": "{{label}} committed with conflict markers in: {{files}}. Solve them on the branch before merging",
   "promotionCreateConflictPrompt": "What do you want to do with {{label}}?",
   "promotionCreateConflictPromptFile": "A prompt to solve the committed conflicts with a coding agent (Claude Code, Codex, Copilot...) is saved in {{file}} and embedded in the Pull Request description",
+  "promotionCreateConflictPromptFileOnly": "A prompt to solve the committed conflicts with a coding agent (Claude Code, Codex, Copilot...) is saved in {{file}}. It is too long for a Pull Request description on this git provider, so the description only names the file",
   "promotionCreateConflictPromptReportTitle": "Prompt for a coding agent to solve the promotion conflicts",
   "promotionCreateConflictRemembered": "Applying the conflict handling chosen earlier: {{choice}}",
   "promotionCreateConflictSkip": "Leave this User Story out of the promotion and continue",

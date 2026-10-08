@@ -60,6 +60,11 @@ const MAJOR_BRANCHES = ['INTEGRATION', 'UAT', 'PREPROD', 'MAIN'];
 const SFDX_HARDIS_REPO = 'https://github.com/hardisgroupcom/sfdx-hardis.git';
 const BITBUCKET_SCHEMA_URL = 'https://api.bitbucket.org/schemas/pipelines-configuration';
 const LINK_MARKER = 'sf plugins link /tmp/sfdx-hardis';
+// An Azure Pipelines container job runs its steps as a user the agent creates, not as root, and the
+// image keeps the plugins in a folder of root (SF_DATA_DIR=/usr/local/lib): the link needs sudo,
+// which the image ships for that agent. HOME is root's for that command: with the HOME of the step
+// user, root creates ~/.sf and the next sf command of the job cannot write its log there
+const AZURE_LINK_PREFIX = 'sudo env "PATH=$PATH" "SF_DATA_DIR=$SF_DATA_DIR" HOME=/root ';
 const image = process.env.SFDX_HARDIS_IMAGE || '';
 
 const { provider, bundle, positional } = parseArgs(process.argv.slice(2));
@@ -259,7 +264,7 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
       ? `      # E2E ONLY: sfdx-hardis of the image ${image}`
       : `      # E2E ONLY: sfdx-hardis built from its branch ${sfdxHardisBranch}`,
     '      - script: |',
-    ...(sfdxHardisBranch === '-' ? ['sf plugins'] : ['set -e', ...linkCommands(sfdxHardisBranch, '')]).map((l) => `          ${l}`),
+    ...(sfdxHardisBranch === '-' ? ['sf plugins'] : ['set -e', ...linkCommands(sfdxHardisBranch, '', { linkPrefix: AZURE_LINK_PREFIX })]).map((l) => `          ${l}`),
     `        displayName: "E2E ONLY - sfdx-hardis ${sfdxHardisBranch === '-' ? 'version' : `from ${sfdxHardisBranch}`}"`,
   ];
   const authLines = MAJOR_BRANCHES.map((b) => `          SFDX_AUTH_URL_${b}: $(SFDX_AUTH_URL_${b})`);
@@ -466,6 +471,7 @@ function writeBitbucket(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
 // project: on GitLab and Bitbucket the link commands and the script share one shell.
 // options.cached: /tmp/sfdx-hardis may come back from a cache, fetch the branch into it then.
 // options.tscPrefix: an environment prefix for tsc (a heap limit on small runners)
+// options.linkPrefix: a prefix for the link command (sudo where the steps do not run as root)
 function linkCommands(sfdxHardisBranch, backTo, options = {}) {
   const clone = `git clone --depth 1 -b ${sfdxHardisBranch} ${SFDX_HARDIS_REPO} /tmp/sfdx-hardis`;
   return [
@@ -475,7 +481,7 @@ function linkCommands(sfdxHardisBranch, backTo, options = {}) {
     'cd /tmp/sfdx-hardis',
     'npx --yes yarn@1.22.22 install --frozen-lockfile --ignore-scripts --network-timeout 600000',
     `${options.tscPrefix || ''}npx tsc -p . --pretty`,
-    LINK_MARKER,
+    `${options.linkPrefix || ''}${LINK_MARKER}`,
     'git log --oneline -1',
     ...(backTo ? [`cd "${backTo}"`] : []),
     'sf plugins',

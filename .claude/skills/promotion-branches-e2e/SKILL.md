@@ -58,6 +58,7 @@ not already, so you know what each assertion is protecting.
 | `scripts/ab-run-azure.sh`                 | The same on Azure DevOps.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `scripts/ab-run-bitbucket.sh`             | The same on Bitbucket Cloud.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `scripts/audit-pr-comments.cjs`           | The Pull Request comment audit, shared by the four providers. Fed by the `dump_pr_comments` of each library.                                                                                                                                                                                                                                                                                                                                                                |
+| `scripts/check-comments-visual.cjs`       | The visual check of the Pull Request comments (section 5quater): one comment of every type the run produced, opened as the provider draws it, pictured folded and unfolded, its DOM compared with its source (tables, folded sections, checkboxes, images, no markdown left as text). Azure DevOps and Bitbucket through a Chrome with remote debugging, logged in; GitHub and GitLab through their markdown API, headless. |
 | `scripts/ab-diff.py`                      | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ## Before starting
@@ -142,6 +143,14 @@ failure cannot be an artefact of the previous run's state.
 5bis. **Audit the Pull Request comments** (runbook section 5bis). The job logs say what the command
    decided; the audit says what the reviewer reads. Four of the defects of 2026-09-08 came from it,
    and none of them was visible in a job log.
+5bis-vis. **Look at the comments as the provider draws them** (runbook section 5quater):
+   `check-comments-visual.cjs <comments.json> <out dir>` on every repository whose Pull Requests carry
+   comments (sections, backpromote, real CI), then **read every picture it wrote**. The audit reads
+   the markdown; only this sees a table left in pipes, a folded section that does not fold or a
+   checkbox drawn as `[ ]`. Azure DevOps and Bitbucket need a Chrome started with
+   `--remote-debugging-port=9222` and a profile of its own, logged in to the provider: ask the user
+   to log in there before the run when they will be away. No Chrome, or not logged in: "not
+   covered" for that provider, never "OK".
 5ter. **Check the DevOps Pipeline before and after every promotion operation**
    (runbook section 4bis): `pipeline_check <label> <expectations.json>`. The job logs and the Pull
    Request comments say nothing about the view the release manager actually reads.
@@ -198,6 +207,17 @@ failure cannot be an artefact of the previous run's state.
   disagrees with the runbook, decide which one is wrong: fix the product, or fix the runbook and
   say so in the report.
 - **Be autonomous.** Do not stop to ask whether to continue.
+- **Start again by yourself after a memory stop.** When a section, a real CI wait or any background
+  command is stopped because the computer is short on memory, do not end the run and do not wait
+  to be asked: read the free memory, wait and read it again while it is short, then go on from the
+  last completed step (`promo-vars.sh`, `bp-vars.sh` and `ci-vars.sh` hold the numbers a rerun
+  needs; a section that cannot be resumed starts again on a new repository). Keep one heavy local
+  run at a time while memory is short, and say in the report what was started again and why.
+- **Commit as you go.** Every fix of the product or of the skill is committed on the branch under
+  test when it is made, and pushed: the real CI jobs clone that branch, so a fix that is not pushed
+  is not in what they run.
+- **Never edit a section script while it runs**: bash reads it as it goes, and the run stops on a
+  syntax error at whatever line the edit moved.
 - **Report honestly.** A check that could not be run is "not covered", never "OK". The report's
   "What this run did not cover" section is not optional.
 - **Update the runbook** whenever you hit a trap that cost you time, so the next run does not.

@@ -317,7 +317,7 @@ ${this.getPipelineVariablesConfig()}
       const pullRequest = await azureGitApi.getPullRequestById(pullRequestId);
       if (pullRequest && pullRequest.targetRefName) {
         // Add references to work items in PR result
-        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId || "", pullRequestId);
+        const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId || "", pullRequestId, azureTeamProject());
         if (!pullRequest.workItemRefs) {
           pullRequest.workItemRefs = pullRequestWorkItemRefs;
         }
@@ -332,14 +332,14 @@ ${this.getPipelineVariablesConfig()}
     const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId || "", {
       targetRefName: `refs/heads/${currentGitBranch}`,
       status: PullRequestStatus.Completed,
-    });
+    }, azureTeamProject());
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter(
       (pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded && this.isPullRequestMatchingCommit(pr, sha),
     );
     if (latestMergedPullRequestOnBranch.length > 0) {
       const pullRequest = latestMergedPullRequestOnBranch[0];
       // Add references to work items in PR result
-      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId || "", pullRequest.pullRequestId || 0);
+      const pullRequestWorkItemRefs = await azureGitApi.getPullRequestWorkItemRefs(repositoryId || "", pullRequest.pullRequestId || 0, azureTeamProject());
       if (!pullRequest.workItemRefs) {
         pullRequest.workItemRefs = pullRequestWorkItemRefs;
       }
@@ -438,7 +438,7 @@ ${this.getPipelineVariablesConfig()}
     const latestPullRequestsOnBranch = await azureGitApi.getPullRequests(repositoryId, {
       targetRefName: `refs/heads/${gitBranch}`,
       status: PullRequestStatus.Completed,
-    });
+    }, azureTeamProject());
     const latestMergedPullRequestOnBranch = latestPullRequestsOnBranch.filter((pr) => pr.mergeStatus === PullRequestAsyncStatus.Succeeded);
     if (latestMergedPullRequestOnBranch.length > 0) {
       // Select the PR whose merge commit matches the commit currently being deployed (HEAD).
@@ -491,7 +491,7 @@ ${this.getPipelineVariablesConfig()}
     deploymentCheckId: string | null,
     latestPullRequest: any,
   ): Promise<string | null> {
-    const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId);
+    const existingThreads = await azureGitApi.getThreads(repositoryId, latestPullRequestId, azureTeamProject());
     // A PR can hold several deployment-id comments, one per pipeline run. The getThreads API has no
     // sort parameter, so we cannot rely on ordering: scan every comment and select the most recent
     // one by date, otherwise QuickDeploy would reuse an outdated validation id.
@@ -808,7 +808,7 @@ ${getBannerMarkdownAndLink()}
     // second deployment comment.
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationListingPrThreads', { pullRequestId })));
     const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);
-    const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    const existingThreads = await azureGitApi.getThreads(repositoryId, pullRequestId, azureTeamProject());
     let existingThreadId: number | null = null;
     let existingThreadCommentId: number | null | undefined = null;
     for (const existingThread of existingThreads) {
@@ -837,12 +837,13 @@ ${getBannerMarkdownAndLink()}
     // the description cannot be fixed after the merge (see isPrDescriptionEditableAfterMerge)
     if (existingThreadId && existingThreadCommentId) {
       uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUpdatingPrThread', { threadId: existingThreadId })));
-      await azureGitApi.updateComment({ content: messageBody }, repositoryId, pullRequestId, existingThreadId, existingThreadCommentId);
+      await azureGitApi.updateComment({ content: messageBody }, repositoryId, pullRequestId, existingThreadId, existingThreadCommentId, azureTeamProject());
       await azureGitApi.updateThread(
         { status: this.pullRequestStatusToAzureThreadStatus(prMessage) },
         repositoryId,
         pullRequestId,
         existingThreadId,
+        azureTeamProject(),
       );
       uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationPostedPrThread', { threadId: existingThreadId })));
       return {
@@ -857,7 +858,7 @@ ${getBannerMarkdownAndLink()}
       comments: [{ content: messageBody }],
       status: this.pullRequestStatusToAzureThreadStatus(prMessage),
     };
-    const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId);
+    const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId, azureTeamProject());
     const prResult: PullRequestMessageResult = {
       posted: (azureEditThreadResult.id || -1) > 0,
       providerResult: azureEditThreadResult,
@@ -1284,7 +1285,7 @@ ${getBannerMarkdownAndLink()}
     const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
     if (!repositoryId || !pullRequestId) return null;
     const azureGitApi = await this.azureApi.getGitApi();
-    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId, azureTeamProject());
     for (const thread of threads) {
       if (thread.isDeleted) continue;
       for (const comment of thread?.comments || []) {
@@ -1302,7 +1303,7 @@ ${getBannerMarkdownAndLink()}
     const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
     if (!repositoryId || !pullRequestId) return;
     const azureGitApi = await this.azureApi.getGitApi();
-    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId, azureTeamProject());
     let existingThreadId: number | null = null;
     let existingCommentId: number | null = null;
     for (const thread of threads) {
@@ -1319,14 +1320,14 @@ ${getBannerMarkdownAndLink()}
       if (existingThreadId) break;
     }
     if (existingThreadId && existingCommentId) {
-      await azureGitApi.updateComment({ content: body }, repositoryId, pullRequestId, existingThreadId, existingCommentId);
+      await azureGitApi.updateComment({ content: body }, repositoryId, pullRequestId, existingThreadId, existingCommentId, azureTeamProject());
       uxLog("log", this, c.grey(`[Azure DevOps] Updated Deployment Actions thread comment on PR #${pullRequestId}`));
     } else {
       const newThread: GitPullRequestCommentThread = {
         comments: [{ content: body }],
         status: CommentThreadStatus.Unknown,
       };
-      await azureGitApi.createThread(newThread, repositoryId, pullRequestId);
+      await azureGitApi.createThread(newThread, repositoryId, pullRequestId, azureTeamProject());
       uxLog("log", this, c.grey(`[Azure DevOps] Created Deployment Actions thread on PR #${pullRequestId}`));
     }
   }
@@ -1336,7 +1337,7 @@ ${getBannerMarkdownAndLink()}
     const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
     if (!repositoryId || !pullRequestId) return [];
     const azureGitApi = await this.azureApi.getGitApi();
-    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId);
+    const threads = await azureGitApi.getThreads(repositoryId, pullRequestId, azureTeamProject());
     const results: PullRequestCommentRef[] = [];
     for (const thread of threads) {
       if (thread.isDeleted) continue;
@@ -1371,7 +1372,15 @@ ${getBannerMarkdownAndLink()}
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (!repositoryId || !commentRef?.ref?.threadId || !commentRef?.ref?.commentId) return;
     const azureGitApi = await this.azureApi.getGitApi();
-    await azureGitApi.updateComment({ content: body }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId);
+    await azureGitApi.updateComment({ content: body }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId, azureTeamProject());
     uxLog("log", this, c.grey('[Azure DevOps] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
+}
+
+// The team project of the repository. In an Azure Pipelines job BUILD_REPOSITORY_ID is a GUID and
+// the API needs nothing else; outside CI (VS Code, a terminal) it is the repository name read from
+// the git remote, and the API then refuses the call without the project ("A project name is
+// required in order to reference a Git repository by name").
+function azureTeamProject(): string | undefined {
+  return process.env.SYSTEM_TEAMPROJECT || undefined;
 }

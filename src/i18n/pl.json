@@ -3134,6 +3134,7 @@
   "promotionCreateConflictCommitted": "{{label}} zacommitowano ze znacznikami konfliktu w: {{files}}. Należy je rozwiązać na branchu przed merge",
   "promotionCreateConflictPrompt": "Co zrobić z {{label}}?",
   "promotionCreateConflictPromptFile": "Prompt do rozwiązania zacommitowanych konfliktów za pomocą agenta kodującego (Claude Code, Codex, Copilot...) został zapisany w {{file}} i osadzony w opisie Pull Request",
+  "promotionCreateConflictPromptFileOnly": "Prompt do rozwiązania zacommitowanych konfliktów za pomocą agenta kodującego (Claude Code, Codex, Copilot...) został zapisany w {{file}}. Jest zbyt długi na opis Pull Request u tego dostawcy Git, dlatego opis podaje tylko nazwę pliku",
   "promotionCreateConflictPromptReportTitle": "Prompt dla agenta kodującego do rozwiązania konfliktów promocji",
   "promotionCreateConflictRemembered": "Zastosowanie wybranej wcześniej obsługi konfliktu: {{choice}}",
   "promotionCreateConflictSkip": "Pominąć tę User Story w promocji i kontynuować",

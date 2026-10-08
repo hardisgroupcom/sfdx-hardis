@@ -3133,6 +3133,7 @@
   "promotionCreateConflictCommitted": "{{label}} mit Konfliktmarkierungen committet in: {{files}}. Lösen Sie sie im Branch vor dem Merge",
   "promotionCreateConflictPrompt": "Was möchten Sie mit {{label}} tun?",
   "promotionCreateConflictPromptFile": "Ein Prompt zum Lösen der committeten Konflikte mit einem Coding-Agenten (Claude Code, Codex, Copilot...) wurde in {{file}} gespeichert und in die Pull-Request-Beschreibung eingebettet",
+  "promotionCreateConflictPromptFileOnly": "Ein Prompt zum Lösen der committeten Konflikte mit einem Coding-Agenten (Claude Code, Codex, Copilot...) wurde in {{file}} gespeichert. Er ist für eine Pull-Request-Beschreibung bei diesem Git-Provider zu lang, daher nennt die Beschreibung nur die Datei",
   "promotionCreateConflictPromptReportTitle": "Prompt für einen Coding-Agenten zum Lösen der Promotion-Konflikte",
   "promotionCreateConflictRemembered": "Die zuvor gewählte Konfliktbehandlung wird angewendet: {{choice}}",
   "promotionCreateConflictSkip": "Diese User Story aus der Promotion herausnehmen und fortfahren",
