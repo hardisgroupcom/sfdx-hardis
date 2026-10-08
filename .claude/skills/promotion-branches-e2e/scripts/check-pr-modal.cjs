@@ -45,7 +45,7 @@ const { execFileSync, spawnSync } = require('child_process');
 const PROVIDER = process.env.PROVIDER || 'github';
 const WORK = process.env.WORK;
 const DEV = process.env.DEV;
-const EXT = process.env.EXT || 'C:/git/vscode-sfdx-hardis';
+const EXT = require('./env-lib.cjs').extDir();
 if (!WORK || !DEV) {
   console.error('WORK and DEV are required');
   process.exit(2);

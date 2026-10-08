@@ -21,15 +21,12 @@
 #   LOGS          folder where each job log is written
 #   DEV           path to bin/dev.js of the sfdx-hardis working copy under test
 
-# One key of a dotenv file, without printing it: KEY=value, quotes stripped
-# Usage: e2e_dotenv_value <key> <file>
-e2e_dotenv_value() {
-  [ -f "$2" ] || return 0
-  grep -m1 -E "^(export +)?$1=" "$2" | tr -d '\r' | sed -E "s/^(export +)?$1=//; s/^[\"']//; s/[\"']$//"
-}
-E2E_ENV_FILE="${E2E_ENV_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)/.env}"
-AZURE_PERSONAL_ACCESS_TOKEN="${AZURE_PERSONAL_ACCESS_TOKEN:-$(e2e_dotenv_value AZURE_PERSONAL_ACCESS_TOKEN "$E2E_ENV_FILE")}"
-AZ_TOKEN="${AZ_TOKEN:-$AZURE_PERSONAL_ACCESS_TOKEN}"
+# Settings from the environment, else .env, else derived (env-lib.sh): ORG defaults to E2E_ORG,
+# AZ_ORG, AZ_PROJECT and AZURE_PERSONAL_ACCESS_TOKEN come from .env when not exported
+# shellcheck source=/dev/null
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env-lib.sh"
+e2e_defaults
+AZ_TOKEN="${AZ_TOKEN:-${AZURE_PERSONAL_ACCESS_TOKEN:-}}"
 
 : "${ORG:?set ORG to the target org}"
 : "${AZ_ORG:?set AZ_ORG to the Azure DevOps organization name}"
@@ -362,7 +359,7 @@ E2E_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Usage: pipeline_check <log label> [expectations file]
 pipeline_check() {
   local label="$1" expect="${2:-}" code
-  env -u NODE_OPTIONS EXT="${EXT:-C:/git/vscode-sfdx-hardis}" WORK="$WORK" PROVIDER_TOKEN="$AZ_TOKEN" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
+  env -u NODE_OPTIONS EXT="$EXT" WORK="$WORK" PROVIDER_TOKEN="$AZ_TOKEN" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
   code=$?
   cat "$LOGS/$label.log"
   echo "$label exit=$code log=$LOGS/$label.log"

@@ -31,6 +31,10 @@ assert_log() {
       grep -aqE -- "$pat" "$LOGS/$label.log" || problems+=" missing [$pat];"
     fi
   done
+  # A real CI job says how it ran ($LOGS/<label>.mode: real CI, or simulated and why)
+  if [ -f "$LOGS/$label.mode" ]; then
+    desc="$desc [$(cat "$LOGS/$label.mode")]"
+  fi
   if [ -z "$problems" ]; then
     record "$id" OK "$label: $desc"
   else

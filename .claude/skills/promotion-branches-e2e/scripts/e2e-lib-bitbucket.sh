@@ -29,18 +29,14 @@
 # token answers "API Token provided has no Bitbucket scopes"). A Bitbucket workspace or repository
 # Access Token authenticates as a Bearer token instead: leave BB_EMAIL empty for that one.
 
-# One key of a dotenv file, without printing it: KEY=value, quotes stripped
-# Usage: e2e_dotenv_value <key> <file>
-e2e_dotenv_value() {
-  [ -f "$2" ] || return 0
-  grep -m1 -E "^(export +)?$1=" "$2" | tr -d '\r' | sed -E "s/^(export +)?$1=//; s/^[\"']//; s/[\"']$//"
-}
-E2E_ENV_FILE="${E2E_ENV_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)/.env}"
-ATLASSIAN_TOKEN="${ATLASSIAN_TOKEN:-$(e2e_dotenv_value ATLASSIAN_TOKEN "$E2E_ENV_FILE")}"
-ATLASSIAN_EMAIL="${ATLASSIAN_EMAIL:-$(e2e_dotenv_value ATLASSIAN_EMAIL "$E2E_ENV_FILE")}"
-BB_TOKEN="${BB_TOKEN:-$ATLASSIAN_TOKEN}"
+# Settings from the environment, else .env, else derived (env-lib.sh): ORG defaults to E2E_ORG,
+# BB_WORKSPACE, ATLASSIAN_TOKEN and ATLASSIAN_EMAIL come from .env when not exported
+# shellcheck source=/dev/null
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env-lib.sh"
+e2e_defaults
+BB_TOKEN="${BB_TOKEN:-${ATLASSIAN_TOKEN:-}}"
 # unset (not empty) BB_EMAIL takes the Atlassian email: an empty one means a Bearer Access Token
-BB_EMAIL="${BB_EMAIL-$ATLASSIAN_EMAIL}"
+BB_EMAIL="${BB_EMAIL-${ATLASSIAN_EMAIL:-}}"
 
 : "${ORG:?set ORG to the target org}"
 : "${BB_WORKSPACE:?set BB_WORKSPACE to the workspace slug}"
@@ -368,7 +364,7 @@ E2E_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Usage: pipeline_check <log label> [expectations file]
 pipeline_check() {
   local label="$1" expect="${2:-}" code
-  env -u NODE_OPTIONS EXT="${EXT:-C:/git/vscode-sfdx-hardis}" WORK="$WORK" PROVIDER_TOKEN="$BB_TOKEN" PROVIDER_EMAIL="${BB_EMAIL:-}" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
+  env -u NODE_OPTIONS EXT="$EXT" WORK="$WORK" PROVIDER_TOKEN="$BB_TOKEN" PROVIDER_EMAIL="${BB_EMAIL:-}" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
   code=$?
   cat "$LOGS/$label.log"
   echo "$label exit=$code log=$LOGS/$label.log"

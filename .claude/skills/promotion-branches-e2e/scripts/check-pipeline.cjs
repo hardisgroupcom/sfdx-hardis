@@ -2,7 +2,7 @@
 // point of the run: the User Stories each branch node lists, its counter bubble, and the open
 // promotion drawn on the arrow between two major branches.
 //
-//   EXT=C:/git/vscode-sfdx-hardis WORK=/c/tmp/promo-e2e \
+//   EXT=<vscode-sfdx-hardis clone, default ../vscode-sfdx-hardis> WORK=<local clone> \
 //     node check-pipeline.cjs <expectations.json> [--dump observed.json]
 //
 // Unlike check-diagram*.cjs, this one fetches nothing of its own: it drives the extension's own
@@ -31,7 +31,7 @@
 const path = require("path");
 const fs = require("fs");
 
-const EXT = process.env.EXT || "C:/git/vscode-sfdx-hardis";
+const EXT = require('./env-lib.cjs').extDir();
 const WORK = process.env.WORK;
 if (!WORK) {
   console.error("WORK must point at the local clone of the test repository");

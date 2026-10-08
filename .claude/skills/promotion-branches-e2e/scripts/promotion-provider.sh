@@ -140,7 +140,7 @@ github)
     return $code
   }
   p_pr_modal_check() {
-    env -u NODE_OPTIONS PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+    env -u NODE_OPTIONS PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="$EXT" \
       node "$_P_DIR/check-pr-modal.cjs" "$@"
   }
   ;;
@@ -230,7 +230,7 @@ gitlab)
     return $code
   }
   p_pr_modal_check() {
-    env -u NODE_OPTIONS PROVIDER=gitlab GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" PROJECT_ID="$PROJECT_ID" WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+    env -u NODE_OPTIONS PROVIDER=gitlab GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" PROJECT_ID="$PROJECT_ID" WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="$EXT" \
       node "$_P_DIR/check-pr-modal.cjs" "$@"
   }
   ;;
@@ -331,7 +331,7 @@ azure)
   }
   p_pr_modal_check() {
     env -u NODE_OPTIONS PROVIDER=azure AZ_ORG="$AZ_ORG" AZ_PROJECT="$AZ_PROJECT" AZ_REPO_ID="$AZ_REPO_ID" AZ_TOKEN="$AZ_TOKEN" \
-      WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+      WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="$EXT" \
       node "$_P_DIR/check-pr-modal.cjs" "$@"
   }
   ;;
@@ -436,7 +436,7 @@ bitbucket)
   }
   p_pr_modal_check() {
     env -u NODE_OPTIONS PROVIDER=bitbucket BB_WORKSPACE="$BB_WORKSPACE" BB_REPO="$BB_REPO" BB_EMAIL="$BB_EMAIL" BB_TOKEN="$BB_TOKEN" \
-      WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="${EXT:-C:/git/vscode-sfdx-hardis}" \
+      WORK="$(cygpath -m "$WORK" 2>/dev/null || echo "$WORK")" DEV="$DEV" EXT="$EXT" \
       node "$_P_DIR/check-pr-modal.cjs" "$@"
   }
   ;;

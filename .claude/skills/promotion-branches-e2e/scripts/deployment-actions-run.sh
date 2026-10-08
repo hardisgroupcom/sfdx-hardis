@@ -20,6 +20,11 @@
 set -uo pipefail
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 : "${PROVIDER:?set PROVIDER to github, gitlab, azure or bitbucket}"
+# Settings from the environment, else .env, else derived: WORK, LOGS and EXPECT default to
+# <OS temp>/promo-e2e-<provider>[-logs|-expect] (env-lib.sh)
+# shellcheck source=/dev/null
+source "$SCRIPTS_DIR/env-lib.sh"
+e2e_defaults "promo-e2e-$PROVIDER"
 # shellcheck source=/dev/null
 source "$SCRIPTS_DIR/promotion-provider.sh"
 # shellcheck source=/dev/null

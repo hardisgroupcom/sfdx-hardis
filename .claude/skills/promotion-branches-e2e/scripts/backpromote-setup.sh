@@ -4,7 +4,7 @@
 # integration (so the developer branch is behind, which is what a backpromote is for), and the
 # developer scratch orgs ready with the base project. Writes $LOGS/bp-vars.sh for backpromote-steps.sh.
 #
-#   export BP_PROVIDER_LIB=<path to e2e-lib.sh | e2e-lib-gitlab.sh | e2e-lib-azure.sh | e2e-lib-bitbucket.sh>
+#   export PROVIDER=github|gitlab|azure|bitbucket   # picks BP_PROVIDER_LIB (or set BP_PROVIDER_LIB)
 #   export <the provider library variables> WORK LOGS DEV API DEVHUB DEVORG DEVORG2
 #   bash backpromote-setup.sh
 #
@@ -12,9 +12,17 @@
 # DEVORG and DEVORG2 are created from DEVHUB when they do not exist, and reset to the base project when
 # they do: a developer Dev Hub creates 6 scratch orgs a day, so the providers share them.
 set -uo pipefail
-: "${BP_PROVIDER_LIB:?set BP_PROVIDER_LIB to the provider library}"
-: "${DEVHUB:?set DEVHUB}" "${DEVORG:?set DEVORG}" "${DEVORG2:?set DEVORG2}"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Settings from the environment, else .env, else derived (env-lib.sh): the repository of this
+# section is its own, WORK and LOGS default to <OS temp>/promo-e2e-bp-<provider>[-logs]
+# shellcheck source=/dev/null
+source "$SCRIPTS_DIR/env-lib.sh"
+e2e_defaults "promo-e2e-bp-${PROVIDER:-github}"
+DEVHUB="${DEVHUB:-$ORG}" DEVORG="${DEVORG:-promo-e2e-dev}" DEVORG2="${DEVORG2:-promo-e2e-dev2}"
+export DEVHUB DEVORG DEVORG2
+case "${PROVIDER:-github}" in github) _bp_lib=e2e-lib.sh ;; *) _bp_lib="e2e-lib-$PROVIDER.sh" ;; esac
+BP_PROVIDER_LIB="${BP_PROVIDER_LIB:-$SCRIPTS_DIR/$_bp_lib}"
+: "${DEVHUB:?set DEVHUB}" "${DEVORG:?set DEVORG}" "${DEVORG2:?set DEVORG2}"
 # shellcheck source=/dev/null
 source "$BP_PROVIDER_LIB"
 # shellcheck source=/dev/null

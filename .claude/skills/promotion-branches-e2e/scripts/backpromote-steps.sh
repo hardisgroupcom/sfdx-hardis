@@ -2,7 +2,7 @@
 # Runbook section 6bis, steps B0 to B16 and the comment checks C1 to C4, on any git provider, after
 # backpromote-setup.sh. Prints one line per assertion and a summary, and writes $LOGS/results.txt.
 #
-#   export BP_PROVIDER_LIB=<path to e2e-lib.sh | e2e-lib-gitlab.sh | e2e-lib-azure.sh | e2e-lib-bitbucket.sh>
+#   export PROVIDER=github|gitlab|azure|bitbucket   # picks BP_PROVIDER_LIB (or set BP_PROVIDER_LIB)
 #   export <the provider library variables> WORK LOGS DEV API DEVHUB DEVORG DEVORG2 ORG
 #   bash backpromote-steps.sh
 #
@@ -11,9 +11,17 @@
 # ok_if reads the exit status of the test on the line above it, which is the point of each check.
 # shellcheck disable=SC2319
 set -uo pipefail
-: "${BP_PROVIDER_LIB:?set BP_PROVIDER_LIB to the provider library}"
-: "${DEVORG:?set DEVORG}" "${DEVORG2:?set DEVORG2}" "${ORG:?set ORG (a production org for B2)}"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Settings from the environment, else .env, else derived (env-lib.sh): the repository of this
+# section is its own, WORK and LOGS default to <OS temp>/promo-e2e-bp-<provider>[-logs]
+# shellcheck source=/dev/null
+source "$SCRIPTS_DIR/env-lib.sh"
+e2e_defaults "promo-e2e-bp-${PROVIDER:-github}"
+DEVHUB="${DEVHUB:-$ORG}" DEVORG="${DEVORG:-promo-e2e-dev}" DEVORG2="${DEVORG2:-promo-e2e-dev2}"
+export DEVHUB DEVORG DEVORG2
+case "${PROVIDER:-github}" in github) _bp_lib=e2e-lib.sh ;; *) _bp_lib="e2e-lib-$PROVIDER.sh" ;; esac
+BP_PROVIDER_LIB="${BP_PROVIDER_LIB:-$SCRIPTS_DIR/$_bp_lib}"
+: "${ORG:?set ORG (a production org for B2)}"
 # shellcheck source=/dev/null
 source "$BP_PROVIDER_LIB"
 # shellcheck source=/dev/null
