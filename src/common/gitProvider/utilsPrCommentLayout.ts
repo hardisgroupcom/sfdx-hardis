@@ -157,6 +157,7 @@ function buildMergeAdvice(options: PrCommentLayoutOptions): string {
     case 'retrofitBranch':
       return `**How to merge:** use a **merge commit**, never squash: a retrofit brings back commits of another major branch, which must stay as they are.`;
     default:
+      // A backpromote branch is never merged: no advice
       return '';
   }
 }
