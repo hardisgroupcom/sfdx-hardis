@@ -1067,6 +1067,7 @@
   "deploymentActionsNoneDefined": "Keine {{actionLabel}} in der Branch-Konfiguration oder in Pull Requests definiert",
   "deploymentActionsNotRunDeploymentFailed": "Metadaten-Deployment fehlgeschlagen: die {{count}} Post-Deployment-Aktionen werden nicht ausgeführt",
   "deploymentActionsScopeError": "Die Erklärung des Deployment-Umfangs konnte nicht erstellt werden: {{message}}",
+  "deploymentActionsStateNotSaved": "Für Pull Request #{{pr}} wurde nichts gespeichert: Der Kommentar Deployment Actions konnte nicht aktualisiert werden ({{message}}). Manche Git-Provider erlauben nur dem Autor eines Kommentars, ihn zu bearbeiten: Führen Sie diesen Befehl mit dem Token aus, das den Kommentar geschrieben hat (dem der CI/CD-Jobs), oder wenden Sie sich an einen Administrator des Projekts.",
   "deploymentAndValidationSummary": "Zusammenfassung der Deployments und Validierungen ({{period}})",
   "deploymentApexTestClassesNotActivated": "Das Feature 'Select Apex Test Classes' ist in diesem Projekt nicht aktiviert. Um es zu aktivieren, fügen Sie 'enableDeploymentApexTestClasses: true' in config/.sfdx-hardis.yml ein.",
   "deploymentCancelledByUser": "Deployment vom Benutzer abgebrochen",

@@ -1068,6 +1068,7 @@
   "deploymentActionsNoneDefined": "No hay {{actionLabel}} definidas en la configuración de la rama o en los pull requests",
   "deploymentActionsNotRunDeploymentFailed": "El despliegue de metadatos falló: las {{count}} acciones post-despliegue no se ejecutarán",
   "deploymentActionsScopeError": "No se ha podido generar la explicación del alcance del despliegue: {{message}}",
+  "deploymentActionsStateNotSaved": "No se ha registrado nada para la Pull Request #{{pr}}: no se ha podido actualizar su comentario Deployment Actions ({{message}}). Algunos proveedores Git solo permiten que el autor de un comentario lo edite: ejecuta este comando con el token que escribió el comentario (el de los jobs de CI/CD) o pídeselo a un administrador del proyecto.",
   "deploymentAndValidationSummary": "Resumen de despliegues y validaciones ({{period}})",
   "deploymentApexTestClassesNotActivated": "La funcionalidad 'Seleccionar clases de test Apex' no está activada en este proyecto. Para activarla, añade 'enableDeploymentApexTestClasses: true' en config/.sfdx-hardis.yml",
   "deploymentCancelledByUser": "Despliegue cancelado por el usuario",

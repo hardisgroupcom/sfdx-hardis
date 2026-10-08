@@ -74,6 +74,37 @@ describe('AzureDevopsProvider calls made with a repository name', () => {
     expect(createCalls[0].slice(1)).to.deep.equal(['acme-repository', 12, 'acme-project']);
   });
 
+  it('takes a Pull Request of the repository named in the git remote as its own', async () => {
+    const provider = buildProvider({
+      getPullRequestById: async (id: number) => ({
+        pullRequestId: id,
+        status: 1,
+        sourceRefName: 'refs/heads/feature/one',
+        targetRefName: 'refs/heads/integration',
+        repository: { id: '0f0e0d0c-1111-2222-3333-444455556666', name: 'Acme-Repository' },
+      }),
+      getPullRequestWorkItemRefs: async () => [],
+    });
+
+    const pullRequest = await provider.getPullRequestById(12);
+
+    expect(pullRequest).to.not.equal(null);
+    expect(pullRequest.targetBranch).to.equal('integration');
+  });
+
+  it('still ignores a Pull Request of another repository of the organization', async () => {
+    const provider = buildProvider({
+      getPullRequestById: async (id: number) => ({
+        pullRequestId: id,
+        status: 1,
+        targetRefName: 'refs/heads/integration',
+        repository: { id: '0f0e0d0c-1111-2222-3333-444455556666', name: 'another-repository' },
+      }),
+    });
+
+    expect(await provider.getPullRequestById(12)).to.equal(null);
+  });
+
   it('updates an existing comment with the team project', async () => {
     const updateCalls: any[][] = [];
     const provider = buildProvider({

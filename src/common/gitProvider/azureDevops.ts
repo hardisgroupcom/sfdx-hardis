@@ -555,8 +555,14 @@ ${this.getPipelineVariablesConfig()}
       // Azure Pull Request ids are unique per organization, not per repository: without this check
       // a number copied from another repository of the same organization would resolve, and its
       // deployment actions and Apex test classes would be run against this project's org.
+      // BUILD_REPOSITORY_ID is a GUID in a pipeline, and the repository name read from the git
+      // remote everywhere else (VS Code, a terminal): the Pull Request is of this repository when
+      // either matches.
       const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
-      if (repositoryId && pullRequest.repository?.id && pullRequest.repository.id !== repositoryId) {
+      const sameRepository =
+        pullRequest.repository?.id === repositoryId ||
+        (pullRequest.repository?.name || "").toLowerCase() === (repositoryId || "").toLowerCase();
+      if (repositoryId && pullRequest.repository?.id && !sameRepository) {
         uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrOtherRepository', { id: pullRequestId })));
         return null;
       }

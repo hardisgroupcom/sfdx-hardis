@@ -1,3 +1,4 @@
+import { SfError } from '@salesforce/core';
 import c from "chalk";
 import { debuglog } from "util";
 import { GitProvider } from '../gitProvider/index.js';
@@ -303,8 +304,9 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
  * or that were missed during the initial load.
  * Action definitions are read from the PR's .sfdx-hardis.PRNB.yml file.
  */
-export async function persistDeploymentActionsState(): Promise<void> {
+export async function persistDeploymentActionsState(options: { failWhenNotSaved?: boolean } = {}): Promise<void> {
   const state = getMultiPrState();
+  const notSaved: { prNumber: number; message: string }[] = [];
   for (const prNumber of state.dirtyPrs) {
     const inMemoryEntries = state.entriesByPr.get(prNumber) || [];
     // Re-read the current PR comment and merge to preserve entries from other org branches
@@ -317,9 +319,17 @@ export async function persistDeploymentActionsState(): Promise<void> {
     // which skips the deployment job of the merge will run
     const configActionDefs = await loadConfigActionDefs([...new Set(mergedEntries.map((e) => e.orgBranch))]);
     const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber, existingBody, configActionDefs);
-    await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
+    const refused = await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
+    if (refused) {
+      notSaved.push({ prNumber, message: refused });
+    }
   }
   state.dirtyPrs.clear();
+  // A command whose whole job is to record a status (set-status) says so instead of reporting a
+  // success nobody will ever read back. A deployment job goes on: its warning is in the log.
+  if (options.failWhenNotSaved && notSaved.length > 0) {
+    throw new SfError(notSaved.map((item) => t('deploymentActionsStateNotSaved', { pr: item.prNumber, message: item.message })).join(' '));
+  }
 }
 
 /**

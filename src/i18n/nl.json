@@ -1068,6 +1068,7 @@
   "deploymentActionsNoneDefined": "Geen {{actionLabel}} gedefinieerd in de branch config of pull requests",
   "deploymentActionsNotRunDeploymentFailed": "Metadata-implementatie mislukt: de {{count}} post-deploy acties worden niet uitgevoerd",
   "deploymentActionsScopeError": "Kon de uitleg over de implementatiescope niet opbouwen: {{message}}",
+  "deploymentActionsStateNotSaved": "Er is niets vastgelegd voor Pull Request #{{pr}}: de opmerking Deployment Actions kon niet worden bijgewerkt ({{message}}). Sommige Git-providers laten alleen de auteur van een opmerking die bewerken: voer deze opdracht uit met het token dat de opmerking heeft geschreven (dat van de CI/CD-jobs), of vraag het aan een beheerder van het project.",
   "deploymentAndValidationSummary": "Samenvatting van deployments en validaties ({{period}})",
   "deploymentApexTestClassesNotActivated": "De functie 'Apex testklassen selecteren' is niet geactiveerd in dit project. Om het te activeren, voeg 'enableDeploymentApexTestClasses: true' toe in config/.sfdx-hardis.yml",
   "deploymentCancelledByUser": "Implementatie geannuleerd door gebruiker",

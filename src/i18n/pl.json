@@ -1068,6 +1068,7 @@
   "deploymentActionsNoneDefined": "Brak {{actionLabel}} zdefiniowanych w konfiguracji branch lub w pull requestach",
   "deploymentActionsNotRunDeploymentFailed": "Wdrożenie metadanych nie powiodło się: {{count}} akcji po wdrożeniu nie zostanie uruchomionych",
   "deploymentActionsScopeError": "Nie udało się zbudować wyjaśnienia zakresu wdrożenia: {{message}}",
+  "deploymentActionsStateNotSaved": "Nic nie zostało zapisane dla Pull Request #{{pr}}: nie udało się zaktualizować komentarza Deployment Actions ({{message}}). Niektórzy dostawcy Git pozwalają edytować komentarz tylko jego autorowi: należy uruchomić to polecenie z tokenem, który zapisał komentarz (tokenem jobów CI/CD), albo zwrócić się do administratora projektu.",
   "deploymentAndValidationSummary": "Podsumowanie wdrożeń i walidacji ({{period}})",
   "deploymentApexTestClassesNotActivated": "Funkcja 'Wybierz klasy testowe Apex' nie jest aktywowana w tym projekcie. Aby ją aktywować, dodaj 'enableDeploymentApexTestClasses: true' do config/.sfdx-hardis.yml",
   "deploymentCancelledByUser": "Wdrożenie anulowane przez użytkownika",

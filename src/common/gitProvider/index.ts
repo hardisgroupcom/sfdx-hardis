@@ -452,15 +452,20 @@ export abstract class GitProvider {
     }
   }
 
-  static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<void> {
+  // Returns the reason the comment could not be written, null when it was (or when no git provider
+  // is connected: nothing to write to). A caller whose only job is to record a status must not say
+  // it did when the provider refused, which Azure DevOps does to anyone but the author of a comment.
+  static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<string | null> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
-      return;
+      return null;
     }
     try {
       await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
+      return null;
     } catch (e) {
       uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+      return (e as Error).message || "unknown error";
     }
   }
 

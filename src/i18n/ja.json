@@ -1066,6 +1066,7 @@
   "deploymentActionsNoneDefined": "branch config または pull request に {{actionLabel}} が定義されていません",
   "deploymentActionsNotRunDeploymentFailed": "メタデータのデプロイが失敗しました。{{count}} 件のデプロイ後アクションは実行されません",
   "deploymentActionsScopeError": "デプロイスコープの説明を作成できませんでした: {{message}}",
+  "deploymentActionsStateNotSaved": "Pull Request #{{pr}} には何も記録されませんでした。Deployment Actions コメントを更新できませんでした（{{message}}）。Git プロバイダーによっては、コメントの作成者だけが編集できます。コメントを書き込んだトークン（CI/CD ジョブのトークン）でこのコマンドを実行するか、プロジェクトの管理者に依頼してください。",
   "deploymentAndValidationSummary": "デプロイと検証のサマリー（{{period}}）",
   "deploymentApexTestClassesNotActivated": "このプロジェクトでは「Apexテストクラスの選択」機能が有効化されていません。有効にするには、config/.sfdx-hardis.yml に 'enableDeploymentApexTestClasses: true' を追加してください。",
   "deploymentCancelledByUser": "デプロイがユーザーによってキャンセルされました",
