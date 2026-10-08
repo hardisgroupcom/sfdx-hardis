@@ -75,9 +75,8 @@ ___
 
 ## What this run did not cover
 
-- **GitLab.** The three GitLab tokens of this workstation (glab config, `.env` files) answer 401, so
-  no `gl-14` run. The GitLab provider read of the new comments was proven earlier on the same branch
-  by `sfdx-hardis-comments-e2e-gl-1` (single Pull Request window 2/2), not by the promotion sections.
+- GitLab is not in this report: it was run the same day on `gl-15` (131/131, single Pull Request
+  window 46/46, audit 1076 checks), see `promotion-branches-e2e-report-gitlab.md`.
 - Azure DevOps and Bitbucket: not run (Bitbucket still needs a new token).
 - 7ter, the flag-off A/B diff: not run. The change is in the comment layout, which the A/B normalises
   out of the job logs, so it would not have said anything about it.
