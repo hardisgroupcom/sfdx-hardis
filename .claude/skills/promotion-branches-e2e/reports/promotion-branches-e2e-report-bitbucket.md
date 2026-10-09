@@ -37,21 +37,21 @@ the helper files into `utils` subfolders and the merge of `main` (four dependenc
 fresh repositories: `sfdx-hardis-promo-e2e-bb-6` (sections), `-bb-5` (backpromote) and
 `-ci-bb-4` (real CI). Everything below it in this report is the night run that found the defects.
 
-| Section                                                            | Checks                            | OK  | FAIL |
-|--------------------------------------------------------------------|-----------------------------------|-----|------|
-| 3, 4 and 4bis                                                      | 42                                | 42  | 0    |
-| 6: edge cases, groups g1 to g6                                     | 47                                | 47  | 0    |
-| 6quater, groups A to D                                             | 21                                | 21  | 0    |
-| 6sexies, I1 to I10                                                 | 24                                | 24  | 0    |
-| 6bis: backpromote B0 to B16, C1 to C4 (bb-5)                       | 63                                | 63  | 0    |
-| 6quinquies: real CI (ci-bb-4), 15 jobs in real CI, 0 simulated     | 21, W8 skipped (GitHub only)      | 21  | 0    |
-| 4ter: single Pull Request window                                   | 51 Pull Requests                  | 51  | 0    |
-| 5bis: comment audit (bb-6)                                         | 1142 checks over 55 Pull Requests | all | 0    |
-| 5bis: comment audit of the real CI comments (ci-bb-4)              | 255 checks over 7 Pull Requests   | all | 0    |
-| 5quater: visual check (bb-6, fixtures included)                    | 12 types                          | 12  | 0    |
-| 5quater: visual check (ci-bb-4, comments of real jobs)             | 8 types                           | 8   | 0    |
-| 5quater: visual check (bb-5, backpromote)                          | 1 type                            | 1   | 0    |
-| 7bis: single place in the diagram                                  | 1                                 | 1   | 0    |
+| Section                                                        | Checks                            | OK  | FAIL |
+|----------------------------------------------------------------|-----------------------------------|-----|------|
+| 3, 4 and 4bis                                                  | 42                                | 42  | 0    |
+| 6: edge cases, groups g1 to g6                                 | 47                                | 47  | 0    |
+| 6quater, groups A to D                                         | 21                                | 21  | 0    |
+| 6sexies, I1 to I10                                             | 24                                | 24  | 0    |
+| 6bis: backpromote B0 to B16, C1 to C4 (bb-5)                   | 63                                | 63  | 0    |
+| 6quinquies: real CI (ci-bb-4), 15 jobs in real CI, 0 simulated | 21, W8 skipped (GitHub only)      | 21  | 0    |
+| 4ter: single Pull Request window                               | 51 Pull Requests                  | 51  | 0    |
+| 5bis: comment audit (bb-6)                                     | 1142 checks over 55 Pull Requests | all | 0    |
+| 5bis: comment audit of the real CI comments (ci-bb-4)          | 255 checks over 7 Pull Requests   | all | 0    |
+| 5quater: visual check (bb-6, fixtures included)                | 12 types                          | 12  | 0    |
+| 5quater: visual check (ci-bb-4, comments of real jobs)         | 8 types                           | 8   | 0    |
+| 5quater: visual check (bb-5, backpromote)                      | 1 type                            | 1   | 0    |
+| 7bis: single place in the diagram                              | 1                                 | 1   | 0    |
 
 Every section green in one pass. The real CI used 67 build minutes; W2 now ticks the comment in the
 format the CLI writes (the box symbol changed in the text Bitbucket holds, the hidden marker left
@@ -65,10 +65,10 @@ restarted from nothing on bb-6, as the skill asks.
 code blocks are drawn; no sentence asks to tick a box any more. The reading found two things the
 rewrite itself caused, fixed and checked on a real comment of bb-6 (Pull Request #54):
 
-| Finding                                                                                                                  | Status |
-|--------------------------------------------------------------------------------------------------------------------------|--------|
-| A list written with line breaks ("- #3 already deployed via ...") was one flat paragraph with literal " - " separators   | fixed: a line break tag is a markdown line break outside a table row |
-| The files under each story of a conflict description were bullets of the same level as the stories                       | fixed: a nested item gets the four spaces Bitbucket nests on |
+| Finding                                                                                                                | Status                                                               |
+|------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| A list written with line breaks ("- #3 already deployed via ...") was one flat paragraph with literal " - " separators | fixed: a line break tag is a markdown line break outside a table row |
+| The files under each story of a conflict description were bullets of the same level as the stories                     | fixed: a nested item gets the four spaces Bitbucket nests on         |
 
 Left open, the same wording and layout points as on the other providers: "To do by hand" over an
 item already done, two Pull Request counts that differ by one, dates wrapping in a five column
@@ -142,23 +142,23 @@ the new markup.
 
 ### Section 6quinquies, real CI on Bitbucket Pipelines (ci-bb-3): 21 OK
 
-| Job                            | Mode    | Result                | Queued | Ran   | Build minutes |
-|--------------------------------|---------|-----------------------|--------|-------|---------------|
-| ci-check-c1                    | real CI | FAILED (expected, W1) | 12 s   | 188 s | 4             |
-| ci-check-c1-rerun              | real CI | SUCCESSFUL            | 14 s   | 257 s | 5             |
-| ci-deploy-integration-c1       | real CI | FAILED (expected, W4) | 13 s   | 269 s | 5             |
-| ci-check-c3                    | real CI | SUCCESSFUL            | 12 s   | 271 s | 5             |
-| ci-deploy-integration-c3       | real CI | SUCCESSFUL            | 12 s   | 245 s | 5             |
-| ci-check-c2-draft              | real CI | SUCCESSFUL            | 11 s   | 267 s | 5             |
-| ci-check-promotion-uat         | real CI | FAILED (expected, W5) | 11 s   | 190 s | 4             |
-| ci-check-promotion-uat-rerun   | real CI | SUCCESSFUL            | 11 s   | 300 s | 5             |
-| ci-deploy-uat-promotion        | real CI | SUCCESSFUL            | 12 s   | 296 s | 5             |
-| ci-check-c5                    | real CI | SUCCESSFUL            | 13 s   | 215 s | 4             |
-| ci-check-c6                    | real CI | SUCCESSFUL            | 13 s   | 228 s | 4             |
-| ci-deploy-integration-c5       | real CI | SUCCESSFUL            | 12 s   | 215 s | 4             |
-| ci-deploy-integration-c6       | real CI | SUCCESSFUL            | 12 s   | 228 s | 4             |
-| ci-check-promotion-identical   | real CI | SUCCESSFUL            | 12 s   | 216 s | 4             |
-| ci-deploy-uat-identical        | real CI | SUCCESSFUL            | 14 s   | 276 s | 5             |
+| Job                          | Mode    | Result                | Queued | Ran   | Build minutes |
+|------------------------------|---------|-----------------------|--------|-------|---------------|
+| ci-check-c1                  | real CI | FAILED (expected, W1) | 12 s   | 188 s | 4             |
+| ci-check-c1-rerun            | real CI | SUCCESSFUL            | 14 s   | 257 s | 5             |
+| ci-deploy-integration-c1     | real CI | FAILED (expected, W4) | 13 s   | 269 s | 5             |
+| ci-check-c3                  | real CI | SUCCESSFUL            | 12 s   | 271 s | 5             |
+| ci-deploy-integration-c3     | real CI | SUCCESSFUL            | 12 s   | 245 s | 5             |
+| ci-check-c2-draft            | real CI | SUCCESSFUL            | 11 s   | 267 s | 5             |
+| ci-check-promotion-uat       | real CI | FAILED (expected, W5) | 11 s   | 190 s | 4             |
+| ci-check-promotion-uat-rerun | real CI | SUCCESSFUL            | 11 s   | 300 s | 5             |
+| ci-deploy-uat-promotion      | real CI | SUCCESSFUL            | 12 s   | 296 s | 5             |
+| ci-check-c5                  | real CI | SUCCESSFUL            | 13 s   | 215 s | 4             |
+| ci-check-c6                  | real CI | SUCCESSFUL            | 13 s   | 228 s | 4             |
+| ci-deploy-integration-c5     | real CI | SUCCESSFUL            | 12 s   | 215 s | 4             |
+| ci-deploy-integration-c6     | real CI | SUCCESSFUL            | 12 s   | 228 s | 4             |
+| ci-check-promotion-identical | real CI | SUCCESSFUL            | 12 s   | 216 s | 4             |
+| ci-deploy-uat-identical      | real CI | SUCCESSFUL            | 14 s   | 276 s | 5             |
 
 **15 jobs in real CI, 0 simulated**, 68 build minutes, plus about 15 for the two attempts that
 were stopped. The fallback to the simulator once the minutes are used up did not run: it is still
@@ -222,16 +222,16 @@ ___
 No markup is left as text, banners and icons are drawn, titled sections keep the long comments
 readable. What the reading found:
 
-| Finding                                                                                                                           | Status                                             |
-|-----------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
-| "Do the steps below in the org, tick their boxes" above "(a box cannot be ticked in a Bitbucket comment)"                         | fixed                                              |
-| "Only the boxes are meant to be edited in this comment" right after the same parenthesis                                          | fixed: "This comment is rewritten by sfdx-hardis: do not edit it." |
-| Lines and tables looking cut at the right edge of the pictures                                                                    | capture, not Bitbucket: the page wraps them (checked on the page itself). The pictures now keep a margin |
-| Backpromotes: "Received by 2 sandboxes · 1 to do by hand" above a table showing "complete" for both sandboxes                     | open, wording: the action to do is listed under its sandbox |
-| Backpromotes: the org id of the Sandbox column breaks over three lines, the empty "Left out" column takes as much room            | open, cosmetic (same table as on Azure DevOps)     |
-| "To do by hand in `uat` before the deployment" heads an item already done                                                         | open, wording (same on every provider)             |
-| The icon column of "Deployment actions of this job" has no header and takes a quarter of the width                                | open, cosmetic                                     |
-| "Rerun a failed action with ..." in a Deployment Actions comment that has no failed action                                        | open, minor                                        |
+| Finding                                                                                                                | Status                                                                                                   |
+|------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| "Do the steps below in the org, tick their boxes" above "(a box cannot be ticked in a Bitbucket comment)"              | fixed                                                                                                    |
+| "Only the boxes are meant to be edited in this comment" right after the same parenthesis                               | fixed: "This comment is rewritten by sfdx-hardis: do not edit it."                                       |
+| Lines and tables looking cut at the right edge of the pictures                                                         | capture, not Bitbucket: the page wraps them (checked on the page itself). The pictures now keep a margin |
+| Backpromotes: "Received by 2 sandboxes · 1 to do by hand" above a table showing "complete" for both sandboxes          | open, wording: the action to do is listed under its sandbox                                              |
+| Backpromotes: the org id of the Sandbox column breaks over three lines, the empty "Left out" column takes as much room | open, cosmetic (same table as on Azure DevOps)                                                           |
+| "To do by hand in `uat` before the deployment" heads an item already done                                              | open, wording (same on every provider)                                                                   |
+| The icon column of "Deployment actions of this job" has no header and takes a quarter of the width                     | open, cosmetic                                                                                           |
+| "Rerun a failed action with ..." in a Deployment Actions comment that has no failed action                             | open, minor                                                                                              |
 
 ___
 

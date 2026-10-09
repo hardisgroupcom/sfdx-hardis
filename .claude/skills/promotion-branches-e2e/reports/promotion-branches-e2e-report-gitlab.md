@@ -21,23 +21,23 @@ ___
 
 ## Counts
 
-| Section                                                                             | Checks                            | OK  | FAIL |
-|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |
-| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |
-| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |
-| 6bis: backpromote B0 to B16, C1 to C4 (gl-17)                                       | 63                                | 63  | 0    |
-| 6quinquies: real CI, W0 to W9, X1, X2 (ci-gl-1)                                     | 21, W8 skipped (GitHub only)      | 21  | 0    |
-| 4ter: single Pull Request window, simulated jobs (gl-16)                            | 47 merge requests                 | 47  | 0    |
-| 4ter: single Pull Request window, real CI jobs (ci-gl-1, X1)                        | 1                                 | 1   | 0    |
+| Section                                                                             | Checks                             | OK  | FAIL |
+|-------------------------------------------------------------------------------------|------------------------------------|-----|------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                 | 42  | 0    |
+| 6: edge cases, groups g1 to g6                                                      | 47                                 | 47  | 0    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                 | 21  | 0    |
+| 6sexies: identical actions, I1 to I10                                               | 24                                 | 24  | 0    |
+| 6bis: backpromote B0 to B16, C1 to C4 (gl-17)                                       | 63                                 | 63  | 0    |
+| 6quinquies: real CI, W0 to W9, X1, X2 (ci-gl-1)                                     | 21, W8 skipped (GitHub only)       | 21  | 0    |
+| 4ter: single Pull Request window, simulated jobs (gl-16)                            | 47 merge requests                  | 47  | 0    |
+| 4ter: single Pull Request window, real CI jobs (ci-gl-1, X1)                        | 1                                  | 1   | 0    |
 | 5bis: comment audit (gl-16)                                                         | 1108 checks over 53 merge requests | all | 0    |
-| 5bis: comment audit of the real CI comments (ci-gl-1)                               | 255 checks over 7 merge requests  | all | 0    |
-| 5quater: visual check of the comments (gl-16, fixtures included)                    | 12 types, 1 warning               | 12  | 0    |
-| 5quater: visual check (gl-17, backpromote)                                          | 1 type                            | 1   | 0    |
-| 5quater: visual check (ci-gl-1, comments of real jobs)                              | 8 types                           | 8   | 0    |
-| 7bis: single place in the diagram (gl-16)                                           | 1                                 | 1   | 0    |
-| 7ter: flag-off A/B                                                                  | not run                           |     |      |
+| 5bis: comment audit of the real CI comments (ci-gl-1)                               | 255 checks over 7 merge requests   | all | 0    |
+| 5quater: visual check of the comments (gl-16, fixtures included)                    | 12 types, 1 warning                | 12  | 0    |
+| 5quater: visual check (gl-17, backpromote)                                          | 1 type                             | 1   | 0    |
+| 5quater: visual check (ci-gl-1, comments of real jobs)                              | 8 types                            | 8   | 0    |
+| 7bis: single place in the diagram (gl-16)                                           | 1                                  | 1   | 0    |
+| 7ter: flag-off A/B                                                                  | not run                            |     |      |
 
 No failure on GitLab, and no product defect specific to it.
 
@@ -77,23 +77,23 @@ First live run. The project access token created by the run is `CI_SFDX_HARDIS_G
 the jobs comment as the project bot and the local commands as the person: W2 and W6 edit notes
 across the two identities, which GitLab allows a Maintainer.
 
-| Job                            | Mode    | Result                | Queued | Ran   |
-|--------------------------------|---------|-----------------------|--------|-------|
-| ci-check-c1                    | real CI | failed (expected, W1) | 2 s    | 252 s |
-| ci-check-c1-rerun              | real CI | success               | 0 s    | 209 s |
-| ci-check-c2-draft              | real CI | success               | 1 s    | 406 s |
-| ci-deploy-integration-c1       | real CI | failed (expected, W4) | 1 s    | 187 s |
-| ci-check-c3                    | real CI | success               | 2 s    | 247 s |
-| ci-deploy-integration-c3       | real CI | success               | 2 s    | 198 s |
-| ci-check-promotion-uat         | real CI | failed (expected, W5) | 2 s    | 238 s |
-| ci-check-promotion-uat-rerun   | real CI | success               | 0 s    | 182 s |
-| ci-deploy-uat-promotion        | real CI | success               | 1 s    | 214 s |
-| ci-check-c5                    | real CI | success               | 1 s    | 264 s |
-| ci-check-c6                    | real CI | success               | 1 s    | 256 s |
-| ci-deploy-integration-c5       | real CI | success               | 1 s    | 212 s |
-| ci-deploy-integration-c6       | real CI | success               | 0 s    | 198 s |
-| ci-check-promotion-identical   | real CI | success               | 1 s    | 196 s |
-| ci-deploy-uat-identical        | real CI | success               | 0 s    | 189 s |
+| Job                          | Mode    | Result                | Queued | Ran   |
+|------------------------------|---------|-----------------------|--------|-------|
+| ci-check-c1                  | real CI | failed (expected, W1) | 2 s    | 252 s |
+| ci-check-c1-rerun            | real CI | success               | 0 s    | 209 s |
+| ci-check-c2-draft            | real CI | success               | 1 s    | 406 s |
+| ci-deploy-integration-c1     | real CI | failed (expected, W4) | 1 s    | 187 s |
+| ci-check-c3                  | real CI | success               | 2 s    | 247 s |
+| ci-deploy-integration-c3     | real CI | success               | 2 s    | 198 s |
+| ci-check-promotion-uat       | real CI | failed (expected, W5) | 2 s    | 238 s |
+| ci-check-promotion-uat-rerun | real CI | success               | 0 s    | 182 s |
+| ci-deploy-uat-promotion      | real CI | success               | 1 s    | 214 s |
+| ci-check-c5                  | real CI | success               | 1 s    | 264 s |
+| ci-check-c6                  | real CI | success               | 1 s    | 256 s |
+| ci-deploy-integration-c5     | real CI | success               | 1 s    | 212 s |
+| ci-deploy-integration-c6     | real CI | success               | 0 s    | 198 s |
+| ci-check-promotion-identical | real CI | success               | 1 s    | 196 s |
+| ci-deploy-uat-identical      | real CI | success               | 0 s    | 189 s |
 
 15 jobs, all real CI, none simulated, about 58 minutes of jobs in 65 minutes of wall clock. The
 group runners take a job at once and run it in three to four minutes, link step included, faster
@@ -101,24 +101,24 @@ than GitHub's or Azure's hosted agents.
 
 What the first run proved, of the list the runbook kept as unproven:
 
-| Unproven before                                                   | Result                                                        |
-|-------------------------------------------------------------------|---------------------------------------------------------------|
-| The runners reach github.com, npm and ghcr.io for the link step   | yes, three to four minutes per job                            |
-| The project access token, and notes edited by the other identity  | W2 (tick by the person in a note of the bot) and W6 pass      |
-| The draft warning (`Draft:` title prefix, `draft: true`)          | W3 and W3a pass                                               |
-| W2 on a retried job                                               | passes: the retry reads the ticked checkbox                   |
-| The CI lint of the generated files                                | valid, `deploy_to_org` selected on a push to a major branch   |
+| Unproven before                                                  | Result                                                      |
+|------------------------------------------------------------------|-------------------------------------------------------------|
+| The runners reach github.com, npm and ghcr.io for the link step  | yes, three to four minutes per job                          |
+| The project access token, and notes edited by the other identity | W2 (tick by the person in a note of the bot) and W6 pass    |
+| The draft warning (`Draft:` title prefix, `draft: true`)         | W3 and W3a pass                                             |
+| W2 on a retried job                                              | passes: the retry reads the ticked checkbox                 |
+| The CI lint of the generated files                               | valid, `deploy_to_org` selected on a push to a major branch |
 
 ### Section 5quater, visual check (new in this run)
 
 GitLab comments are drawn through `POST /api/v4/markdown` with the project, in a headless Chrome:
 the markup is GitLab's, the frame around it is not (see "not covered").
 
-| Repository | Types checked                                                                                                                                                                              | Result          |
-|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| Repository | Types checked                                                                                                                                                                                                                        | Result          |
+|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
 | gl-16      | backpromotes, deployment-actions, deployment-actions+manual, deployment-failed, deployment-success, deployment-success+manual, promotion-description, promotion-description+conflicts, validation-success, validation-success+manual | 9 OK, 1 warning |
-| gl-17      | backpromotes                                                                                                                                                                               | OK              |
-| ci-gl-1    | the eight types the real jobs left                                                                                                                                                         | 8 OK            |
+| gl-17      | backpromotes                                                                                                                                                                                                                         | OK              |
+| ci-gl-1    | the eight types the real jobs left                                                                                                                                                                                                   | 8 OK            |
 
 `visual-fixtures.sh` then left a story with a class that does not compile (!54) and a story stopped
 at the manual action gate (!55), both open: `validation-failed` and `validation-failed+manual` are

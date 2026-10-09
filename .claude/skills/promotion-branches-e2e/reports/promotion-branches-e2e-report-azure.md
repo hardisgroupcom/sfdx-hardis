@@ -28,24 +28,24 @@ ___
 
 ## Counts
 
-| Section                                                                             | Checks                            | OK  | FAIL | Not run |
-|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|---------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |         |
-| 6: edge cases, groups g1 to g6                                                      | 47                                | 46  | 1    |         |
-| 6quater: gate, recovery, set-status ahead, forecast                                 | 17, group D skipped               | 17  | 0    | D       |
-| 6sexies: identical actions, I1 to I10                                               | 20, I7 and I8 skipped             | 20  | 0    | I7, I8  |
-| 6bis: backpromote B0 to B16, C1 to C4 (az-8)                                        | 63                                | 63  | 0    |         |
-| 6quinquies: real CI, W0 to W9, X1, X2 (ci-az-3)                                     | 21, W8 skipped (GitHub only)      | 21  | 0    | W8      |
-| 4ter: single Pull Request window, simulated jobs (az-7)                             | 46 Pull Requests                  | 46  | 0    |         |
-| 4ter: single Pull Request window, real CI jobs (ci-az-3, X1)                        | 1                                 | 1   | 0    |         |
-| 5bis: Pull Request comment audit (az-7)                                             | 1136 checks over 53 Pull Requests | all | 0    |         |
-| 5bis: comment audit of the real CI comments (ci-az-3)                               | 271 checks over 7 Pull Requests   | all | 0    |         |
-| 7bis: single place in the diagram (az-7)                                            | 1                                 | 1   | 0    |         |
+| Section                                                                             | Checks                            | OK  | FAIL | Not run  |
+|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|----------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |          |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 46  | 1    |          |
+| 6quater: gate, recovery, set-status ahead, forecast                                 | 17, group D skipped               | 17  | 0    | D        |
+| 6sexies: identical actions, I1 to I10                                               | 20, I7 and I8 skipped             | 20  | 0    | I7, I8   |
+| 6bis: backpromote B0 to B16, C1 to C4 (az-8)                                        | 63                                | 63  | 0    |          |
+| 6quinquies: real CI, W0 to W9, X1, X2 (ci-az-3)                                     | 21, W8 skipped (GitHub only)      | 21  | 0    | W8       |
+| 4ter: single Pull Request window, simulated jobs (az-7)                             | 46 Pull Requests                  | 46  | 0    |          |
+| 4ter: single Pull Request window, real CI jobs (ci-az-3, X1)                        | 1                                 | 1   | 0    |          |
+| 5bis: Pull Request comment audit (az-7)                                             | 1136 checks over 53 Pull Requests | all | 0    |          |
+| 5bis: comment audit of the real CI comments (ci-az-3)                               | 271 checks over 7 Pull Requests   | all | 0    |          |
+| 7bis: single place in the diagram (az-7)                                            | 1                                 | 1   | 0    |          |
 | 6quinquies again, system token (ci-az-4)                                            | stopped at W2: a product finding  | 4   | 1    | W3 to W9 |
-| 5quater: visual check of the comments (az-7, fixtures included)                     | 11 types                          | 11  | 0    |         |
-| 5quater: visual check (az-8, backpromote)                                           | 1 type, 1 warning                 | 1   | 0    |         |
-| 5quater: visual check (ci-az-3, comments of real jobs)                              | 8 types                           | 8   | 0    |         |
-| 7ter: flag-off A/B                                                                  | not run                           |     |      | all     |
+| 5quater: visual check of the comments (az-7, fixtures included)                     | 11 types                          | 11  | 0    |          |
+| 5quater: visual check (az-8, backpromote)                                           | 1 type, 1 warning                 | 1   | 0    |          |
+| 5quater: visual check (ci-az-3, comments of real jobs)                              | 8 types                           | 8   | 0    |          |
+| 7ter: flag-off A/B                                                                  | not run                           |     |      | all      |
 
 The single FAIL, edge check 29, is a defect of the CLI fixed during the run and replayed green
 (below). The 46 of the Pull Request window are the second pass: the first one was 0 OK out of 46,
@@ -58,15 +58,15 @@ ___
 `integration -> uat -> preprod -> main`, the four branches deployed to the same org,
 `enablePromotionBranches`, delta deployment between major branches, `NoTestRun`.
 
-| Story | Pull Request | Target      | Promotions that carried it                         |
-|-------|--------------|-------------|----------------------------------------------------|
-| S1    | #101         | integration | P1 #109 (integration -> uat)                       |
-| S2    | #102         | integration | none in section 4 (P9 #124 in section 6)           |
+| Story | Pull Request | Target      | Promotions that carried it                           |
+|-------|--------------|-------------|------------------------------------------------------|
+| S1    | #101         | integration | P1 #109 (integration -> uat)                         |
+| S2    | #102         | integration | none in section 4 (P9 #124 in section 6)             |
 | S3    | #103         | integration | P1 #109, P3 #111 (uat -> preprod), P4 #112 (-> main) |
-| S4    | #104         | uat         | P2 #110 (uat -> preprod), P4 #112                  |
-| S5    | #105         | uat         | none                                               |
-| S6    | #106         | preprod     | P4 #112                                            |
-| S7    | #107         | preprod     | P5 #113 (second go-live)                           |
+| S4    | #104         | uat         | P2 #110 (uat -> preprod), P4 #112                    |
+| S5    | #105         | uat         | none                                                 |
+| S6    | #106         | preprod     | P4 #112                                              |
+| S7    | #107         | preprod     | P5 #113 (second go-live)                             |
 
 Retrofit of `main` into `integration`: #114. Pull Request ids are unique per organization, so the
 repository started at #101.
@@ -77,26 +77,26 @@ ___
 
 ### Sections 3, 4 and 4bis (az-7): 42 OK
 
-| What                                                                              | Expected                                                                 | Result |
-|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------|--------|
-| Validation and deployment of S1 to S7                                             | scope = the Pull Request alone, keywords and test classes read           | OK     |
-| P1 to P5: `promotion:create`, validation, merge, deployment                       | declared stories in the scope, inherited keywords, union of test classes | OK     |
-| A story that arrived through a promotion is a candidate of its own (P3)           | rows #101 and #103, one cherry-pick, #103 declared alone                 | OK     |
-| Release notes of the go-live, with and without `--include-promotions`             | User Stories only, then the vehicles next to them                        | OK     |
-| Second go-live (issue #2260)                                                      | S3, S4 and S6 come back in neither preprod nor uat                       | OK     |
-| Retrofit                                                                          | stories named "already deployed through promotion branch(es)"            | OK     |
-| DevOps Pipeline at the six checkpoints of section 4bis                            | windows, arrows and counters as the runbook lists them                   | OK     |
+| What                                                                    | Expected                                                                 | Result |
+|-------------------------------------------------------------------------|--------------------------------------------------------------------------|--------|
+| Validation and deployment of S1 to S7                                   | scope = the Pull Request alone, keywords and test classes read           | OK     |
+| P1 to P5: `promotion:create`, validation, merge, deployment             | declared stories in the scope, inherited keywords, union of test classes | OK     |
+| A story that arrived through a promotion is a candidate of its own (P3) | rows #101 and #103, one cherry-pick, #103 declared alone                 | OK     |
+| Release notes of the go-live, with and without `--include-promotions`   | User Stories only, then the vehicles next to them                        | OK     |
+| Second go-live (issue #2260)                                            | S3, S4 and S6 come back in neither preprod nor uat                       | OK     |
+| Retrofit                                                                | stories named "already deployed through promotion branch(es)"            | OK     |
+| DevOps Pipeline at the six checkpoints of section 4bis                  | windows, arrows and counters as the runbook lists them                   | OK     |
 
 ### Section 6, edge cases (az-7): 46 OK, 1 FAIL
 
-| Group | What                                                                                   | Result |
-|-------|----------------------------------------------------------------------------------------|--------|
-| g1    | already promoted, empty cherry-pick, dirty report folder                               | OK     |
+| Group | What                                                                                                                                   | Result              |
+|-------|----------------------------------------------------------------------------------------------------------------------------------------|---------------------|
+| g1    | already promoted, empty cherry-pick, dirty report folder                                                                               | OK                  |
 | g2    | conflicts (agent default, kept), marker guard and its comment, deployment from a promotion branch, feature off, no provider connection | OK, except check 29 |
-| g3    | hand-named and retargeted branches, supersede, sync merge, unreadable declaration, grouped merge | OK     |
-| g4    | branch merged twice, sync inside a story, conflicts kept for all, back-merge, octopus  | OK     |
-| g5    | restricted and undeclared promotion steps, in the CLI and in the DevOps Pipeline       | OK     |
-| g6    | full merge of uat into preprod after partial promotions                                | OK     |
+| g3    | hand-named and retargeted branches, supersede, sync merge, unreadable declaration, grouped merge                                       | OK                  |
+| g4    | branch merged twice, sync inside a story, conflicts kept for all, back-merge, octopus                                                  | OK                  |
+| g5    | restricted and undeclared promotion steps, in the CLI and in the DevOps Pipeline                                                       | OK                  |
+| g6    | full merge of uat into preprod after partial promotions                                                                                | OK                  |
 
 Check 29 expects the conflict prompt embedded in the description of the promotion. Azure DevOps
 caps a description at 4000 characters, so the description names the prompt file instead: intended.
@@ -128,23 +128,23 @@ action rows.
 
 `AZURE_E2E_CI_TOKEN=pat`: the jobs comment with the PAT.
 
-| Job                            | Mode    | Result    | Queued | Ran   |
-|--------------------------------|---------|-----------|--------|-------|
-| ci-check-c1                    | real CI | failed (expected, W1) | 6 s    | 362 s |
-| ci-check-c1-rerun              | real CI | succeeded | 6 s    | 382 s |
-| ci-check-c2-draft              | real CI | succeeded | 7 s    | 374 s |
-| ci-deploy-integration-c1       | real CI | failed (expected, W4) | 12 s   | 374 s |
-| ci-check-c3                    | real CI | succeeded | 6 s    | 372 s |
-| ci-deploy-integration-c3       | real CI | succeeded | 6 s    | 373 s |
-| ci-check-promotion-uat         | real CI | failed (expected, W5) | 6 s    | 363 s |
-| ci-check-promotion-uat-rerun   | real CI | succeeded | 6 s    | 375 s |
-| ci-deploy-uat-promotion        | real CI | succeeded | 6 s    | 384 s |
-| ci-check-c5                    | real CI | succeeded | 7 s    | 373 s |
-| ci-check-c6                    | real CI | succeeded | 379 s  | 373 s |
-| ci-deploy-integration-c5       | real CI | succeeded | 6 s    | 382 s |
-| ci-deploy-integration-c6       | real CI | succeeded | 7 s    | 395 s |
-| ci-check-promotion-identical   | real CI | succeeded | 6 s    | 374 s |
-| ci-deploy-uat-identical        | real CI | succeeded | 7 s    | 384 s |
+| Job                          | Mode    | Result                | Queued | Ran   |
+|------------------------------|---------|-----------------------|--------|-------|
+| ci-check-c1                  | real CI | failed (expected, W1) | 6 s    | 362 s |
+| ci-check-c1-rerun            | real CI | succeeded             | 6 s    | 382 s |
+| ci-check-c2-draft            | real CI | succeeded             | 7 s    | 374 s |
+| ci-deploy-integration-c1     | real CI | failed (expected, W4) | 12 s   | 374 s |
+| ci-check-c3                  | real CI | succeeded             | 6 s    | 372 s |
+| ci-deploy-integration-c3     | real CI | succeeded             | 6 s    | 373 s |
+| ci-check-promotion-uat       | real CI | failed (expected, W5) | 6 s    | 363 s |
+| ci-check-promotion-uat-rerun | real CI | succeeded             | 6 s    | 375 s |
+| ci-deploy-uat-promotion      | real CI | succeeded             | 6 s    | 384 s |
+| ci-check-c5                  | real CI | succeeded             | 7 s    | 373 s |
+| ci-check-c6                  | real CI | succeeded             | 379 s  | 373 s |
+| ci-deploy-integration-c5     | real CI | succeeded             | 6 s    | 382 s |
+| ci-deploy-integration-c6     | real CI | succeeded             | 7 s    | 395 s |
+| ci-check-promotion-identical | real CI | succeeded             | 6 s    | 374 s |
+| ci-deploy-uat-identical      | real CI | succeeded             | 7 s    | 384 s |
 
 15 jobs, all real CI, none simulated. About 94 build minutes, under two hours of wall clock: the
 single free parallel job only made one build wait (ci-check-c6, behind ci-check-c5).
@@ -213,15 +213,15 @@ ___
 Banners, tables, emoji, checkboxes, folded sections and code blocks are drawn in every picture,
 and no markdown or HTML is left as text. What a reader sees and a check does not:
 
-| Finding                                                                                                                              | Status          |
-|--------------------------------------------------------------------------------------------------------------------------------------|-----------------|
-| Promotion description: "- #116 ..." printed with its dash                                                                            | fixed (5 above) |
-| Backpromotes comment: the six-column table is wider than the comment column of Azure DevOps, "Left out" is cut and "When" wraps on four lines | open            |
-| The fold says "25 Pull Requests", the line under it "collected from 26 Pull Request(s)"                                              | open, minor     |
-| The summary row shows a clock for "3 after the merge", the table under it shows the same actions with the skipped dot                | open, cosmetic  |
-| The Deployment Actions comment has no "Powered by" line: its last table touches the footer banner                                    | open, cosmetic  |
-| "Status by org" and "Results by org" wrap a date as "2026-10-" / "08" in the narrow column of Azure DevOps                           | open, cosmetic  |
-| A gate comment (`validation-failed+manual`) holds its three folded sections closed in the unfolded picture                           | capture: to check by hand |
+| Finding                                                                                                                                       | Status                    |
+|-----------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
+| Promotion description: "- #116 ..." printed with its dash                                                                                     | fixed (5 above)           |
+| Backpromotes comment: the six-column table is wider than the comment column of Azure DevOps, "Left out" is cut and "When" wraps on four lines | open                      |
+| The fold says "25 Pull Requests", the line under it "collected from 26 Pull Request(s)"                                                       | open, minor               |
+| The summary row shows a clock for "3 after the merge", the table under it shows the same actions with the skipped dot                         | open, cosmetic            |
+| The Deployment Actions comment has no "Powered by" line: its last table touches the footer banner                                             | open, cosmetic            |
+| "Status by org" and "Results by org" wrap a date as "2026-10-" / "08" in the narrow column of Azure DevOps                                    | open, cosmetic            |
+| A gate comment (`validation-failed+manual`) holds its three folded sections closed in the unfolded picture                                    | capture: to check by hand |
 
 ### Harness (fixed in the skill)
 

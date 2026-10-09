@@ -165,8 +165,8 @@ _azci_grant_build_service() {
   if [ -z "$descriptor" ]; then
     code="none (the build service was not found in the access control list of the project repositories)"
   else
-  code=$(_azci_call POST "${AZ_COLLECTION}_apis/accesscontrolentries/$AZ_GIT_SECURITY_NAMESPACE?api-version=7.1" "$file" \
-    -d "{\"token\":\"repoV2/$AZ_PROJECT_ID/$AZ_REPO_ID\",\"merge\":true,\"accessControlEntries\":[{\"descriptor\":\"$descriptor\",\"allow\":16388,\"deny\":0}]}")
+    code=$(_azci_call POST "${AZ_COLLECTION}_apis/accesscontrolentries/$AZ_GIT_SECURITY_NAMESPACE?api-version=7.1" "$file" \
+      -d "{\"token\":\"repoV2/$AZ_PROJECT_ID/$AZ_REPO_ID\",\"merge\":true,\"accessControlEntries\":[{\"descriptor\":\"$descriptor\",\"allow\":16388,\"deny\":0}]}")
   fi
   rm -f "$file"
   if [ "$code" = "200" ]; then

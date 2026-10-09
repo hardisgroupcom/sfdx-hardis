@@ -37,7 +37,7 @@ ___
 | 5quater: visual check (-43, backpromote)                                            | 1 type                            | 1   | 0    |
 | 5quater: visual check (ci-1, comments of real jobs)                                 | 8 types                           | 8   | 0    |
 | 7bis: single place in the diagram (-42)                                             | 1                                 | 1   | 0    |
-| 7ter: flag-off A/B against `origin/main` (`0424af86d`), second pair                  | 0 differing lines                 | 1   | 0    |
+| 7ter: flag-off A/B against `origin/main` (`0424af86d`), second pair                 | 0 differing lines                 | 1   | 0    |
 
 Section 6quater first ended with 20 OK and 1 FAIL: check A5 (a draft is only warned) got exit code 2
 and "command hardis:project:deploy:smart not found". The cause was this run, not the product: the
@@ -72,24 +72,24 @@ B0 to B16 and C1 to C4.
 
 ### Section 6quinquies, real CI on GitHub Actions (ci-1): 22 OK
 
-| Job                            | Mode    | Result                 | Queued | Ran   |
-|--------------------------------|---------|------------------------|--------|-------|
-| ci-check-c1                    | real CI | failure (expected, W1) | 0 s    | 317 s |
-| ci-check-c1-rerun              | real CI | success                | 331 s  | 248 s |
-| ci-check-c2-draft              | real CI | success                | 0 s    | 331 s |
-| ci-deploy-integration-c1       | real CI | failure (expected, W4) | 0 s    | 274 s |
-| ci-check-c3                    | real CI | success                | 0 s    | 273 s |
-| ci-deploy-integration-c3       | real CI | success                | 0 s    | 279 s |
-| ci-check-promotion-uat         | real CI | failure (expected, W5) | 0 s    | 245 s |
-| ci-check-promotion-uat-rerun   | real CI | success                | 295 s  | 267 s |
-| ci-deploy-uat-promotion        | real CI | success                | 0 s    | 253 s |
-| ci-check-no-safe-dir           | real CI | failure (expected, W8) | 0 s    | 227 s |
-| ci-check-c5                    | real CI | success                | 0 s    | 341 s |
-| ci-check-c6                    | real CI | success                | 0 s    | 335 s |
-| ci-deploy-integration-c5       | real CI | success                | 0 s    | 283 s |
-| ci-deploy-integration-c6       | real CI | success                | 0 s    | 277 s |
-| ci-check-promotion-identical   | real CI | success                | 0 s    | 274 s |
-| ci-deploy-uat-identical        | real CI | success                | 0 s    | 293 s |
+| Job                          | Mode    | Result                 | Queued | Ran   |
+|------------------------------|---------|------------------------|--------|-------|
+| ci-check-c1                  | real CI | failure (expected, W1) | 0 s    | 317 s |
+| ci-check-c1-rerun            | real CI | success                | 331 s  | 248 s |
+| ci-check-c2-draft            | real CI | success                | 0 s    | 331 s |
+| ci-deploy-integration-c1     | real CI | failure (expected, W4) | 0 s    | 274 s |
+| ci-check-c3                  | real CI | success                | 0 s    | 273 s |
+| ci-deploy-integration-c3     | real CI | success                | 0 s    | 279 s |
+| ci-check-promotion-uat       | real CI | failure (expected, W5) | 0 s    | 245 s |
+| ci-check-promotion-uat-rerun | real CI | success                | 295 s  | 267 s |
+| ci-deploy-uat-promotion      | real CI | success                | 0 s    | 253 s |
+| ci-check-no-safe-dir         | real CI | failure (expected, W8) | 0 s    | 227 s |
+| ci-check-c5                  | real CI | success                | 0 s    | 341 s |
+| ci-check-c6                  | real CI | success                | 0 s    | 335 s |
+| ci-deploy-integration-c5     | real CI | success                | 0 s    | 283 s |
+| ci-deploy-integration-c6     | real CI | success                | 0 s    | 277 s |
+| ci-check-promotion-identical | real CI | success                | 0 s    | 274 s |
+| ci-deploy-uat-identical      | real CI | success                | 0 s    | 293 s |
 
 16 jobs, all real CI, none simulated. The "queued" seconds of the two re-runs are the time of the
 first attempt, which a re-run of the same run id carries. The jobs ran the branch with the fixes of
@@ -107,11 +107,11 @@ the same jobs from the branch, with the fixes of the night, as from main.
 
 GitHub comments are drawn through `POST /markdown` (the renderer of the comments), headless.
 
-| Repository | Types checked                                                                                                                                                                                                     | Result           |
-|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| Repository | Types checked                                                                                                                                                                                                            | Result           |
+|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
 | -42        | backpromotes, deployment-actions, +manual, deployment-failed, deployment-success, +manual, promotion-description, +conflicts, validation-failed, validation-failed+manual, validation-success, validation-success+manual | 11 OK, 1 warning |
-| -43        | backpromotes                                                                                                                                                                                                      | OK               |
-| ci-1       | the eight types the real jobs left                                                                                                                                                                                | 8 OK             |
+| -43        | backpromotes                                                                                                                                                                                                             | OK               |
+| ci-1       | the eight types the real jobs left                                                                                                                                                                                       | 8 OK             |
 
 The warning is the conflict prompt of a promotion description, a code block that scrolls.
 `validation-failed` and `validation-failed+manual` come from `visual-fixtures.sh`, which leaves a
@@ -127,15 +127,15 @@ ___
 
 Nothing that breaks on GitHub. The reading of the pictures found things the checks cannot see:
 
-| Finding                                                                                                                                                                                                                             | Status                                                                 |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| The Backpromotes comment of a story whose actions were run in a developer org with `action:run --dev-org` said "No sandbox received this Pull Request yet · 2 to do by hand" above the list of those actions                       | fixed: "Deployment actions tried in 1 developer org, not backpromoted there yet" |
-| The Tickets fold of the validation comments lists words that are not tickets: `prmerge-57` and `recovery-2`                                                                                                                         | harness for the first (the simulator checks the merge ref out as a branch named `prmerge-<n>`, a real job has no such branch), open for the second: the generic ticket pattern takes any `word-number` of a title, here "E2E-401 S8 recovery-2" |
-| "To do by hand in `uat` before the deployment" heads a box that is already ticked, when the action was marked as done ahead                                                                                                         | open, wording                                                          |
-| The fold says "24 Pull Requests" and the line under it "(25 Pull Requests)" on a major-to-major Pull Request: one of the two counts the Pull Request itself                                                                         | open, minor                                                            |
-| "Results by org" tables with a Note column wrap the date as "2026-10-" / "08"                                                                                                                                                       | open, cosmetic                                                         |
-| The summary row shows a clock for "3 after the merge" while the table under it shows the same actions with the skipped dot                                                                                                          | open, cosmetic                                                         |
-| `validation-failed` comments have no navigation line                                                                                                                                                                                | to confirm: a failed validation is the only comment of its Pull Request |
+| Finding                                                                                                                                                                                                      | Status                                                                                                                                                                                                                                          |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| The Backpromotes comment of a story whose actions were run in a developer org with `action:run --dev-org` said "No sandbox received this Pull Request yet · 2 to do by hand" above the list of those actions | fixed: "Deployment actions tried in 1 developer org, not backpromoted there yet"                                                                                                                                                                |
+| The Tickets fold of the validation comments lists words that are not tickets: `prmerge-57` and `recovery-2`                                                                                                  | harness for the first (the simulator checks the merge ref out as a branch named `prmerge-<n>`, a real job has no such branch), open for the second: the generic ticket pattern takes any `word-number` of a title, here "E2E-401 S8 recovery-2" |
+| "To do by hand in `uat` before the deployment" heads a box that is already ticked, when the action was marked as done ahead                                                                                  | open, wording                                                                                                                                                                                                                                   |
+| The fold says "24 Pull Requests" and the line under it "(25 Pull Requests)" on a major-to-major Pull Request: one of the two counts the Pull Request itself                                                  | open, minor                                                                                                                                                                                                                                     |
+| "Results by org" tables with a Note column wrap the date as "2026-10-" / "08"                                                                                                                                | open, cosmetic                                                                                                                                                                                                                                  |
+| The summary row shows a clock for "3 after the merge" while the table under it shows the same actions with the skipped dot                                                                                   | open, cosmetic                                                                                                                                                                                                                                  |
+| `validation-failed` comments have no navigation line                                                                                                                                                         | to confirm: a failed validation is the only comment of its Pull Request                                                                                                                                                                         |
 
 ___
 

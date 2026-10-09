@@ -43,16 +43,16 @@ Every script and library sources `scripts/env-lib.sh`: a variable comes from the
 from `.env`, else from a default derived from where the skill sits. No path of a computer is written
 anywhere:
 
-| Variable        | Default                                                                                         |
-|-----------------|-------------------------------------------------------------------------------------------------|
-| `ORG`           | `E2E_ORG` of `.env`                                                                             |
-| `DEV`           | `<working copy>/bin/dev.js` (`git rev-parse --show-toplevel` of the skill)                      |
-| `EXT`           | `<working copy>/../vscode-sfdx-hardis`                                                          |
-| `WORK`          | `<temp>/promo-e2e-<provider>`; real CI `promo-e2e-ci-<provider>`; backpromote `promo-e2e-bp-<provider>` |
-| `LOGS`, `EXPECT`| `<WORK>-logs`, `<WORK>-expect`                                                                  |
-| `<temp>`        | `E2E_TMP`, else `TMPDIR`, else `TEMP`, else `/tmp` (through `cygpath -m` on Windows, so bash, node and python read the same path) |
-| `DEVHUB`        | `ORG`; `DEVORG` and `DEVORG2`: `promo-e2e-dev` and `promo-e2e-dev2` (section 6bis)              |
-| `API`           | `67.0`                                                                                          |
+| Variable         | Default                                                                                                                           |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `ORG`            | `E2E_ORG` of `.env`                                                                                                               |
+| `DEV`            | `<working copy>/bin/dev.js` (`git rev-parse --show-toplevel` of the skill)                                                        |
+| `EXT`            | `<working copy>/../vscode-sfdx-hardis`                                                                                            |
+| `WORK`           | `<temp>/promo-e2e-<provider>`; real CI `promo-e2e-ci-<provider>`; backpromote `promo-e2e-bp-<provider>`                           |
+| `LOGS`, `EXPECT` | `<WORK>-logs`, `<WORK>-expect`                                                                                                    |
+| `<temp>`         | `E2E_TMP`, else `TMPDIR`, else `TEMP`, else `/tmp` (through `cygpath -m` on Windows, so bash, node and python read the same path) |
+| `DEVHUB`         | `ORG`; `DEVORG` and `DEVORG2`: `promo-e2e-dev` and `promo-e2e-dev2` (section 6bis)                                                |
+| `API`            | `67.0`                                                                                                                            |
 
 `WORK` must not exist when a run starts: remove the folders of the previous run, or export `WORK` and
 `LOGS`. In a git worktree, `.env` and the extension are looked for next to the main working copy.
@@ -508,29 +508,29 @@ node .claude/skills/promotion-branches-e2e/scripts/check-comments-visual.cjs \
 # --per-type 2 for two comments of each type, --only validation for one family
 ```
 
-| Type                                   | What it is                                                              |
-|----------------------------------------|-------------------------------------------------------------------------|
-| `validation-success`, `-failed`        | the comment of the validation job, by verdict                           |
-| `...+manual`                           | the same carrying manual actions and their checkboxes (the gate)        |
-| `...+conflict-markers`                 | the validation stopped by the marker guard                              |
-| `deployment-success`, `-failed`        | the comment of the deployment job, with `+manual` too                   |
-| `deployment-actions`, `+manual`        | the Deployment Actions comment and its "Status by org" table            |
-| `backpromotes`                         | the Backpromotes history comment (backpromote repository)               |
-| `code-quality`                         | a MegaLinter comment, when a job posted one                             |
-| `promotion-description`, `+conflicts`  | the description of a promotion Pull Request                             |
-| `other-<message key>`                  | any other sfdx-hardis comment                                           |
+| Type                                  | What it is                                                       |
+|---------------------------------------|------------------------------------------------------------------|
+| `validation-success`, `-failed`       | the comment of the validation job, by verdict                    |
+| `...+manual`                          | the same carrying manual actions and their checkboxes (the gate) |
+| `...+conflict-markers`                | the validation stopped by the marker guard                       |
+| `deployment-success`, `-failed`       | the comment of the deployment job, with `+manual` too            |
+| `deployment-actions`, `+manual`       | the Deployment Actions comment and its "Status by org" table     |
+| `backpromotes`                        | the Backpromotes history comment (backpromote repository)        |
+| `code-quality`                        | a MegaLinter comment, when a job posted one                      |
+| `promotion-description`, `+conflicts` | the description of a promotion Pull Request                      |
+| `other-<message key>`                 | any other sfdx-hardis comment                                    |
 
 A type the run did not produce is not checked: say so in the report (a run with no failed
 validation has no `validation-failed` picture).
 
 How the comment is drawn, by provider:
 
-| Provider        | `--render` | How                                                                                                                              |
-|-----------------|------------|----------------------------------------------------------------------------------------------------------------------------------|
-| Azure DevOps    | `page`     | the real Pull Request page, in a Chrome with remote debugging, logged in. Azure has no markdown API                               |
-| Bitbucket Cloud | `page`     | the same                                                                                                                         |
+| Provider        | `--render` | How                                                                                                                                 |
+|-----------------|------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| Azure DevOps    | `page`     | the real Pull Request page, in a Chrome with remote debugging, logged in. Azure has no markdown API                                 |
+| Bitbucket Cloud | `page`     | the same                                                                                                                            |
 | GitHub          | `api`      | the HTML of `POST /markdown` (the renderer of the comments), in a headless Chrome. No session. `--render page` works when logged in |
-| GitLab          | `api`      | the HTML of `POST /api/v4/markdown` with the project, in a headless Chrome. No session                                           |
+| GitLab          | `api`      | the HTML of `POST /api/v4/markdown` with the project, in a headless Chrome. No session                                              |
 
 The Chrome of `--render page` is one started for the test, never the user's own:
 
@@ -866,11 +866,11 @@ specific but the `ci_*` functions of `scripts/ci-provider-<provider>.sh` (create
 wait for a validation or a deployment job, re-run it, tick a checkbox, read the comments). Its
 assertions are the ones of `section-lib.sh`, the same on every provider.
 
-| Provider            | `PROVIDER`  | Status                                                                                                                         |
-|---------------------|-------------|--------------------------------------------------------------------------------------------------------------------------------|
-| GitHub Actions      | `github`    | run live (2026-10-04, 2026-10-07)                                                                                              |
-| GitLab CI           | `gitlab`    | built 2026-10-08, files validated by the CI lint API, never run live yet                                                       |
-| Azure Pipelines     | `azure`     | built 2026-10-08, files checked as YAML only (no pipeline existed in the project to preview against), never run live yet       |
+| Provider            | `PROVIDER`  | Status                                                                                                                                              |
+|---------------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| GitHub Actions      | `github`    | run live (2026-10-04, 2026-10-07)                                                                                                                   |
+| GitLab CI           | `gitlab`    | built 2026-10-08, files validated by the CI lint API, never run live yet                                                                            |
+| Azure Pipelines     | `azure`     | built 2026-10-08, files checked as YAML only (no pipeline existed in the project to preview against), never run live yet                            |
 | Bitbucket Pipelines | `bitbucket` | built 2026-10-08 with a fallback to the job simulator once the build minutes are used up; file valid against Atlassian's schema, never run live yet |
 
 Every job writes how it ran in `$LOGS/<label>.mode` ("real CI", or "simulated (build minutes used
