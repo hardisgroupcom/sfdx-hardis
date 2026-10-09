@@ -15,7 +15,7 @@
     "@langchain/core": "1.2.14",
     "@langchain/google-genai": "2.3.2",
     "@langchain/ollama": "1.3.0",
-    "@langchain/openai": "1.6.0",
+    "@langchain/openai": "1.6.2",
     "@oclif/core": "4.14.0",
     "@openai/codex-sdk": "0.159.3",
     "@salesforce/core": "8.32.6",
