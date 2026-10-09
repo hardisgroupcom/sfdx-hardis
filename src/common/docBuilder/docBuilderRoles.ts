@@ -3,7 +3,7 @@ import fs from '../utils/fsUtils.js';
 import path from "path";
 import { uxLog } from "../utils/index.js";
 import c from "chalk";
-import { UtilsAi } from "../aiProvider/utils.js";
+import { UtilsAi } from "../aiProvider/utils/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { t } from '../utils/i18n.js';
 import { DOC_PROTECTION_HEADER_LINES, isDocProtected } from './docUtils.js';

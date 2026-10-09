@@ -8,7 +8,7 @@ import fs from '../../../common/utils/fsUtils.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { TicketProvider, TicketProviderKey, ticketDetailsProviderKeys } from '../../../common/ticketProvider/index.js';
-import { TicketDetails, renderTicketDetailsMarkdown } from '../../../common/ticketProvider/ticketDetails.js';
+import { TicketDetails, renderTicketDetailsMarkdown } from '../../../common/ticketProvider/utils/ticketDetails.js';
 import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);

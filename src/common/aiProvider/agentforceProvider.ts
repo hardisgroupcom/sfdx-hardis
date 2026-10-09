@@ -5,9 +5,9 @@ import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { Connection } from "@salesforce/core";
-import { UtilsAi } from "./utils.js";
+import { UtilsAi } from "./utils/utils.js";
 import { getEnvVar } from "../../config/index.js";
-import { resolveBooleanFlag } from "./providerConfigUtils.js";
+import { resolveBooleanFlag } from "./utils/providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class AgentforceProvider extends AiProviderRoot {

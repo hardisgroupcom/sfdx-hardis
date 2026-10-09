@@ -9,8 +9,8 @@ import { debuglog } from "util";
 import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { cleanFlowDiffMarkdownForPrComment, removeMermaidLinks } from "../utils/mermaidUtils.js";
-import { buildDeploymentPrCommentSections } from "./utilsPrCommentLayout.js";
-import { fitPrCommentSections, PR_COMMENT_FRAME_RESERVE } from "./utilsPrCommentSizeGuard.js";
+import { buildDeploymentPrCommentSections } from "./utils/utilsPrCommentLayout.js";
+import { fitPrCommentSections, PR_COMMENT_FRAME_RESERVE } from "./utils/utilsPrCommentSizeGuard.js";
 import { getPullRequestData } from "../utils/gitUtils.js";
 import { t } from '../utils/i18n.js';
 import { SfError } from "@salesforce/core";
@@ -26,8 +26,8 @@ import {
   setPrCommentNavLinks,
   SFDX_HARDIS_COMMENT_MARKER,
   upsertNavInDescription,
-} from "./prCommentNav.js";
-import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./prRunSummary.js";
+} from "./utils/prCommentNav.js";
+import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./utils/prRunSummary.js";
 import { classifyBackpromoteCurrentBranch } from "../utils/backpromoteRules.js";
 import { listMajorOrgs } from "../utils/orgConfigUtils.js";
 import type { PrePostCommand } from "../actionsProvider/actionsProvider.js";
@@ -452,15 +452,20 @@ export abstract class GitProvider {
     }
   }
 
-  static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<void> {
+  // Returns the reason the comment could not be written (no git provider connection is one: the
+  // status then lives nowhere), null when it was. A caller whose only job is to record a status must not say
+  // it did when the provider refused, which Azure DevOps does to anyone but the author of a comment.
+  static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<string | null> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
-      return;
+      return t('deploymentActionsNoGitProvider');
     }
     try {
-      await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
+      const written = await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
+      return written ? null : t('deploymentActionsCommentNotResolved');
     } catch (e) {
       uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+      return (e as Error).message || String(e);
     }
   }
 

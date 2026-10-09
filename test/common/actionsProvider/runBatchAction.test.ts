@@ -11,7 +11,7 @@ import {
   normalizeRunBatchParameters,
   resolveRunBatchOptions,
 } from '../../../src/common/actionsProvider/runBatchAction.js';
-import { hasNoVisibleNoArgConstructor } from '../../../src/common/actionsProvider/apexClassActionUtils.js';
+import { hasNoVisibleNoArgConstructor } from '../../../src/common/actionsProvider/utils/apexClassActionUtils.js';
 
 describe('resolveRunBatchOptions', () => {
   it('waits, with a batch size of 200 and a timeout of 60 minutes, by default', () => {

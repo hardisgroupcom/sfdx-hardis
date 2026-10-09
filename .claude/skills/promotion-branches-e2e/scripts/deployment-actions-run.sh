@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Runbook section 6quater on GitHub or GitLab: the deployment action features built on top of the
+# Runbook section 6quater on GitHub, GitLab, Azure DevOps or Bitbucket Cloud: the deployment action features built on top of the
 # promotion pipeline. Run it after promotion-run.sh (and promotion-edge.sh when you run it), on the
 # same repository: it reads $LOGS/promo-vars.sh and adds the stories S8 and S9.
 #
-#   export PROVIDER=github|gitlab ORG WORK LOGS DEV API <the provider library variables>
+#   export PROVIDER=github|gitlab|azure|bitbucket ORG WORK LOGS DEV API <the provider library variables>
 #   export DEV_ORG=<a scratch org or developer sandbox username>   # optional, section D
 #   bash deployment-actions-run.sh
 #
@@ -19,7 +19,12 @@
 # Prints one line per assertion and writes $LOGS/results-section6quater.txt.
 set -uo pipefail
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${PROVIDER:?set PROVIDER to github or gitlab}"
+: "${PROVIDER:?set PROVIDER to github, gitlab, azure or bitbucket}"
+# Settings from the environment, else .env, else derived: WORK, LOGS and EXPECT default to
+# <OS temp>/promo-e2e-<provider>[-logs|-expect] (env-lib.sh)
+# shellcheck source=/dev/null
+source "$SCRIPTS_DIR/env-lib.sh"
+e2e_defaults "promo-e2e-$PROVIDER"
 # shellcheck source=/dev/null
 source "$SCRIPTS_DIR/promotion-provider.sh"
 # shellcheck source=/dev/null

@@ -6,7 +6,7 @@ import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
 import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
-import { convertMarkdownToHtml } from "../notifProvider/markdownToHtml.js";
+import { convertMarkdownToHtml } from "../notifProvider/utils/markdownToHtml.js";
 import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
@@ -26,7 +26,7 @@ import {
   detectManualActions,
   htmlToPlainText,
   newTicketDetails,
-} from "./ticketDetails.js";
+} from "./utils/ticketDetails.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {

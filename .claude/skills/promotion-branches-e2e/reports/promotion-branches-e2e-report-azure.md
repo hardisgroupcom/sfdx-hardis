@@ -1,263 +1,286 @@
-# Promotion branches: end to end test on Azure DevOps
+# Promotion branches, deployment actions and backpromote: end to end test on Azure DevOps
 
-**Date:** 2026-09-09 (supersedes the runs of 2026-09-07 and 2026-09-08)
-**Repository under test:** `nicolasvuillamy/tests-sfdx-hardis/sfdx-hardis-promo-e2e-az-3` (private, created empty for this run)
-**Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, shared with the other providers)
-**sfdx-hardis:** `fix/promotion-split-sync-merges`, `ac317e170` (two fixes landed during the run, see below)
-**vscode-sfdx-hardis:** `fix/config-conflict-markers`, `0fd07cf0`
+**Date:** 2026-10-08 and 2026-10-09 (supersedes the run of 2026-09-09)
+**Why this run:** first run on Azure DevOps of the scripted sections (4, 4bis, 4ter, 6, 6bis,
+6quater, 6sexies), which `promotion-provider.sh` maps to the four providers since 2026-10-08, and
+first run ever of the real CI section (6quinquies) on Azure Pipelines.
 
-Every job below is a real `deploy:smart` against that org, run locally with the Azure Pipelines
-variables set (`SYSTEM_ACCESSTOKEN`, `SYSTEM_COLLECTIONURI`, `SYSTEM_TEAMPROJECT`,
-`BUILD_REPOSITORY_ID`, `SYSTEM_PULLREQUEST_PULLREQUESTID`), which is what the git provider reads.
-Pull Requests are completed with `mergeStrategy: noFastForward`, so the `-x` trailers of the
-cherry-picks survive.
+**Repositories under test** (private, created empty for this run, in
+`nicolasvuillamy/tests-sfdx-hardis`):
 
-Pull Request ids are unique per **organization** on Azure DevOps, so this fresh repository starts at
-**#52**. Nothing in the feature assumes the first story is number 1.
+- sections 4, 4bis, 4ter, 5bis, 6, 6quater, 6sexies and 7bis: `sfdx-hardis-promo-e2e-az-7`
+- backpromote (Beta), section 6bis: `sfdx-hardis-promo-e2e-az-8`
+- real CI with `e2e-updates` linked by `sf plugins link`, section 6quinquies:
+  `sfdx-hardis-promo-e2e-ci-az-3` (pipelines 6 and 7), jobs commenting with the PAT, and
+  `sfdx-hardis-promo-e2e-ci-az-4` (pipelines 8 and 9), jobs commenting with the system token of
+  the templates, once the build service was allowed to contribute to pull requests
 
-This run carries the new **pipeline checkpoints**: six points where what the vscode-sfdx-hardis
-DevOps Pipeline shows is asserted by driving the extension's own `PipelineDataProvider` against the
-real repository.
+`sfdx-hardis-promo-e2e-ci-az-1` and `-ci-az-2` are two real CI attempts stopped after their first
+job: both failed for the harness, not the product (see "What the run found").
 
-___
-
-## The pipeline
-
-`integration` -> `uat` -> `preprod` -> `main`, one org, `enablePromotionBranches: true`,
-`allowedPromotionSteps` with the three steps, delta deployment on, Apex test classes on.
-
-| Story | Pull Request | Branch                    | Target      | Actions                   | Test classes                            | Keyword                  |
-|-------|--------------|---------------------------|-------------|---------------------------|-----------------------------------------|--------------------------|
-| S1    | #52          | `feature/E2E-101-alpha`   | integration | pre command + post manual | `PromoE2EAlphaTest`, `PromoE2EBetaTest` | -                        |
-| S2    | #53          | `feature/E2E-102-beta`    | integration | post command              | -                                       | `NO_DELTA`               |
-| S3    | #54          | `feature/E2E-103-gamma`   | integration | pre command               | `PromoE2EBetaTest`                      | `PURGE_FLOW_VERSIONS`    |
-| S4    | #55          | `feature/E2E-201-delta`   | uat         | pre command + post manual | `PromoE2EAlphaTest`                     | -                        |
-| S5    | #56          | `feature/E2E-202-epsilon` | uat         | post command              | -                                       | -                        |
-| S6    | #57          | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`                      | `FLOW_DELETE_INTERVIEWS` |
-
-S1 declares its two test classes in **two separate yaml blocks** of its description.
-
-Nine more Pull Requests exercise the edge cases: the retrofit (#62), the conflicting pair
-(#63, #64), a hand-named branch (#67), a retargeted promotion (#68), a story carrying a sync merge
-of its own (#70) and its second merge (#71), the ordinary `integration -> uat` sync (#72), the full
-`uat -> preprod` merge (#73) and the major-to-major Pull Request kept open for the flag-off
-comparison (#74).
-
-## The promotions
-
-| Promotion | Pull Request | Branch                                   | Carries       | Outcome                                                                   |
-|-----------|--------------|------------------------------------------|---------------|---------------------------------------------------------------------------|
-| P1        | #58          | `promotion/integration/uat/2026-09-09-1` | #52, #54      | merged, deployed to uat                                                   |
-| P2        | #59          | `promotion/uat/preprod/2026-09-09-1`     | #55           | merged, deployed to preprod                                               |
-| P3        | #60          | `promotion/uat/preprod/2026-09-09-2`     | #54           | merged, deployed to preprod: a story P1 had carried, promoted alone       |
-| P4        | #61          | `promotion/preprod/main/2026-09-09-1`    | #55, #54, #57 | merged, deployed to main, two levels of vehicle under it                  |
-| P5        | -            | `promotion/integration/uat/2026-09-09-2` | #64           | the conflict promotion, **refused for its description length** (defect 2) |
-| P6        | #65          | `promotion/integration/uat/2026-09-09-3` | #64           | the same after the fix: created, markers solved, then superseded          |
-| P7        | #66          | `promotion/integration/uat/2026-09-09-4` | #63           | the supersede run, which closed #65. Left open                            |
-| P8        | #69          | `promotion/uat/preprod/2026-09-09-100`   | #56           | the allowed step of the restricted configuration. Left open               |
+**Salesforce org:** the Developer Edition org of `E2E_ORG` (also the Dev Hub). Scratch orgs
+`promo-e2e-dev` and `promo-e2e-dev2`, reset to the base project by the backpromote setup.
+**sfdx-hardis:** `e2e-updates` at `b62dedf1a` plus the fixes of this run, through `bin/dev.js`. The
+CI jobs link `e2e-updates` as pushed (`b62dedf1a`, W0 asserts the link).
+**vscode-sfdx-hardis:** `e2e-updates` at `dbc7e197`, compiled with `yarn compile`.
 
 ___
 
-## What this run found
+## Counts
 
-Two defects, both Azure specific, both fixed inside the run and proven again afterwards. Both would
-have made the feature unusable on Azure DevOps while looking fine on GitHub and GitLab.
+| Section                                                                             | Checks                            | OK  | FAIL | Not run  |
+|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|----------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |          |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 46  | 1    |          |
+| 6quater: gate, recovery, set-status ahead, forecast                                 | 17, group D skipped               | 17  | 0    | D        |
+| 6sexies: identical actions, I1 to I10                                               | 20, I7 and I8 skipped             | 20  | 0    | I7, I8   |
+| 6bis: backpromote B0 to B16, C1 to C4 (az-8)                                        | 63                                | 63  | 0    |          |
+| 6quinquies: real CI, W0 to W9, X1, X2 (ci-az-3)                                     | 21, W8 skipped (GitHub only)      | 21  | 0    | W8       |
+| 4ter: single Pull Request window, simulated jobs (az-7)                             | 46 Pull Requests                  | 46  | 0    |          |
+| 4ter: single Pull Request window, real CI jobs (ci-az-3, X1)                        | 1                                 | 1   | 0    |          |
+| 5bis: Pull Request comment audit (az-7)                                             | 1136 checks over 53 Pull Requests | all | 0    |          |
+| 5bis: comment audit of the real CI comments (ci-az-3)                               | 271 checks over 7 Pull Requests   | all | 0    |          |
+| 7bis: single place in the diagram (az-7)                                            | 1                                 | 1   | 0    |          |
+| 6quinquies again, system token (ci-az-4)                                            | stopped at W2: a product finding  | 4   | 1    | W3 to W9 |
+| 5quater: visual check of the comments (az-7, fixtures included)                     | 11 types                          | 11  | 0    |          |
+| 5quater: visual check (az-8, backpromote)                                           | 1 type, 1 warning                 | 1   | 0    |          |
+| 5quater: visual check (ci-az-3, comments of real jobs)                              | 8 types                           | 8   | 0    |          |
+| 7ter: flag-off A/B                                                                  | not run                           |     |      | all      |
 
-### 1. A story a promotion carried could not be promoted again
-
-After P1 was merged into `uat`, the candidate table of `uat` showed the two cherry-picked commits
-with **no Pull Request number at all**:
-
-```
-Pull Requests | Title                                                             | Commit
---------------|-------------------------------------------------------------------|--------
--             | Merge pull request 52 from feature/E2E-101-alpha into integration | cdd7a22
--             | Merge pull request 54 from feature/E2E-103-gamma into integration | 2b7db1f
-#55           | S4 delta                                                          | fbfb826
-```
-
-Azure DevOps completing a Pull Request without fast-forward writes
-`Merge pull request 52 from feature/X into integration`: **no `#`**, and the target branch after
-the source. `extractPrNumbersFromMessage` knew GitHub's `Merge pull request #N from owner/branch`,
-GitLab's `See merge request group/repo!N` and Azure's squash form `Merged PR N:`, but not that one;
-`mergedSourceBranches` had the same gap for the branch name.
-
-So on Azure, every commit a promotion had cherry-picked came back as an unnamed row, and the story
-it carried could no longer be selected in the next promotion, which is the whole point of opening
-up a vehicle merge. Both parsers now know the sentence, and the table came back right:
-
-```
-#52           | S1 alpha   | cdd7a22
-#54           | S3 gamma   | 2b7db1f
-#55           | S4 delta   | fbfb826 | promotion/uat/preprod/2026-09-09-1
-```
-
-Two unit tests cover it in `backpromoteUtils.test.ts`.
-
-### 2. A promotion with conflicts could not be opened at all
-
-Assembling the conflict promotion ended with the branch pushed and no Pull Request:
-
-```
-[Azure Integration] Creating pull request from promotion/integration/uat/2026-09-09-2 to uat...
-[Git Provider] Error creating pull request: Invalid argument value.
-Parameter name: A description for a pull request must not be longer than 4000 characters.
-```
-
-Azure DevOps caps a description at 4000 characters, and a promotion whose cherry-picks conflicted
-embeds a ready-to-paste prompt for a coding agent that goes past it. The previous Azure run
-measured 3690 characters and called it close; the prompt has since gained the commit-message rule,
-and it crossed the line.
-
-The fallback did its job (honest reason, branch pushed, one-click creation link), but a release
-manager was left with a pushed branch and nothing to review, on every promotion that conflicts.
-
-Fixed with a provider capability: `getMaxPullRequestDescriptionLength()` returns null by default
-and 4000 on Azure DevOps, and `buildPromotionPullRequestBody` drops the **embedded prompt** when the
-description would not fit, keeping the yaml declaration, the carried table, the conflicting file
-list and a line saying where the prompt is saved. A last-resort tail truncation follows, which
-still leaves the declaration intact because it sits at the top.
-
-Rerun of the same promotion afterwards: Pull Request #65 created, description **1224 characters**,
-declaration present, files named, prompt pointed at rather than embedded. Two unit tests cover it.
-
-### What was already right
-
-The 400-character truncation of the Pull Request **list** API, fixed by a previous run in
-`AzureDevopsProvider.completeTruncatedDescription`, held throughout: every promotion resolved its
-declaration, including the go-live carrying three stories.
+The single FAIL, edge check 29, is a defect of the CLI fixed during the run and replayed green
+(below). The 46 of the Pull Request window are the second pass: the first one was 0 OK out of 46,
+which is the main finding of this run.
 
 ___
 
-## The DevOps Pipeline, before and after every promotion operation
+## Pipeline under test
 
-| Checkpoint              | integration | uat           | preprod   | main          | arrows                                   | Result |
-|-------------------------|-------------|---------------|-----------|---------------|------------------------------------------|--------|
-| `pipeline-before-p1`    | #52,#53,#54 | -             | -         | -             | none                                     | OK     |
-| `pipeline-p1-open`      | #52,#53,#54 | -             | -         | -             | `integration>uat` draws **#58**          | OK     |
-| `pipeline-after-p1`     | #53         | #52, #54      | -         | -             | none                                     | OK     |
-| `pipeline-before-p3`    | #53         | #52, #54, #56 | #55       | -             | none                                     | OK     |
-| `pipeline-after-golive` | #53         | #52, #56      | -         | #54, #55, #57 | none                                     | OK     |
-| `pipeline-final`        | -           | -             | 8 stories | #54, #55, #57 | `integration>uat` #66, `uat>preprod` #69 | OK     |
+`integration -> uat -> preprod -> main`, the four branches deployed to the same org,
+`enablePromotionBranches`, delta deployment between major branches, `NoTestRun`.
 
-The first `pipeline-before-p1` run failed, and was right to: the expectations had been written for
-a point where the three stories were merged, and only their validations had run. Merging them made
-it pass. That is the check doing its job on its first outing.
+| Story | Pull Request | Target      | Promotions that carried it                           |
+|-------|--------------|-------------|------------------------------------------------------|
+| S1    | #101         | integration | P1 #109 (integration -> uat)                         |
+| S2    | #102         | integration | none in section 4 (P9 #124 in section 6)             |
+| S3    | #103         | integration | P1 #109, P3 #111 (uat -> preprod), P4 #112 (-> main) |
+| S4    | #104         | uat         | P2 #110 (uat -> preprod), P4 #112                    |
+| S5    | #105         | uat         | none                                                 |
+| S6    | #106         | preprod     | P4 #112                                              |
+| S7    | #107         | preprod     | P5 #113 (second go-live)                             |
 
-Everything the GitHub and GitLab runs prove holds here against the Azure provider's own fetching:
-an open promotion is drawn on the arrow of its step and takes nothing out of the source branch
-until it is merged; after the merge the stories are listed in the branch they reached and nowhere
-else; what the pipeline lists at `pipeline-before-p3` is exactly what the next `promotion:create`
-offered; and the retargeted promotion (#68) and the hand-named branch (#67) are drawn on no arrow.
-
-Two checks run at every checkpoint with no expectations at all: a Pull Request number is listed in
-one branch and one only, and every counter bubble equals the length of the list under it.
+Retrofit of `main` into `integration`: #114. Pull Request ids are unique per organization, so the
+repository started at #101.
 
 ___
 
-## Test groups
+## Results by group
 
-| Group                                    | Expected                                                                       | Result                                                                                               |
-|------------------------------------------|--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
-| Provider detection                       | Azure picked from the PAT, repository from `BUILD_REPOSITORY_ID`               | OK on every job                                                                                      |
-| Feature branch validation and deployment | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else                  | OK for #52..#57                                                                                      |
-| Two yaml blocks in a description         | the union of both is selected                                                  | OK on #52: `RunSpecifiedTests` with both classes                                                     |
-| `NO_DELTA`                               | `Delta deployment has been disabled`, `Deployment mode: FULL`                  | OK on #53                                                                                            |
-| `PURGE_FLOW_VERSIONS`                    | extra pre-deploy action, skipped in validation, run in deployment              | OK on #54, then on #58 and #60 by inheritance                                                        |
-| Truncated description (previous fix)     | the declaration is read past Azure's 400 character list cut                    | OK: every promotion resolved its declaration                                                         |
-| Merge-ref lag                            | a validation run seconds after a push must not read the previous merge         | OK: `az_check` waits, no stale tree in the whole run                                                 |
-| Asynchronous completion                  | the merge is waited for, never assumed                                         | OK: `az_pr_merge` waits for `completed` + `succeeded` every time                                     |
-| Promotion Pull Request creation          | branch pushed, Pull Request opened with the declaration and the carried table  | OK: #58, #59, #60, #61, #65, #66, #69                                                                |
-| Promotion validation and deployment      | scope = declared + the promotion itself                                        | OK: #58 (`#52, #54, #58`), #59 (`#55, #59`), #60 (`#54, #60`), #61 (`#55, #54, #57, #61`)            |
-| Keyword inheritance                      | only the keywords of the carried stories                                       | OK: #58 inherits `PURGE_FLOW_VERSIONS` from #54 and **not** `NO_DELTA` from #53, left behind         |
-| Test classes of a promotion              | union of the carried Pull Requests, `RunSpecifiedTests`                        | OK on #58 and #61                                                                                    |
-| One candidate row per User Story         | a sync merge and a promotion merged into its target are opened up              | OK after defect 1 was fixed: #52 and #54 are two named rows                                          |
-| Story brought in by a promotion          | promoting `54` carries S3 alone                                                | OK on P3: one cherry-pick, `assembled with 1 User Story(ies): #54`                                   |
-| Two levels of vehicle                    | the stories under an inner promotion are candidates of their own               | OK: from `preprod`, #55, #54 and #57 are offered, never #59, #60 or #61                              |
-| Back-merge from the target branch        | stays a single row                                                             | OK: the retrofit row `#62, #57, #54, #55` is never opened up                                         |
-| Sync merge inside a story                | the candidate lists the story only                                             | OK: #70 alone                                                                                        |
-| Branch merged twice                      | listed once, never once with its number and once as a `-` row                  | OK: #70 and #71, one row each                                                                        |
-| A story offered twice                    | one row per User Story after a sync merge re-delivers a promoted story         | OK: after #72, #52 and #54 appear once each (the `dropOfferedTwice` fix of this cycle)               |
-| Retrofit `main` -> `integration`         | the promotion is expanded, then every already shipped story is named           | OK on #62: `Promotion Pull Request 61 adds 3 carried Pull Request(s)`, then three `already deployed` |
-| Release notes of the go-live             | the User Stories, not the vehicles                                             | OK: 3 Pull Requests (#54, #55, #57); 4 with `--include-promotions`, #61 added                        |
-| Already promoted                         | marked in the table, `--include-already-promoted` named, no branch created     | OK, exit 1                                                                                           |
-| Empty cherry-pick                        | `Nothing to cherry-pick`, no branch, exit 0                                    | OK                                                                                                   |
-| Conflict, agent default                  | promotion undone, both files named                                             | OK on #64: `NOTES.md` and the labels file named                                                      |
-| Conflict outside `force-app`             | the gate still catches it                                                      | OK, `NOTES.md` named in both the conflict and the marker gate                                        |
-| Conflict, kept                           | Pull Request created, prompt saved, description within the provider limit      | OK after defect 2 was fixed: #65, description 1224 characters                                        |
-| Conflict answered once for all           | `Applying the conflict handling chosen earlier`                                | OK through `--on-conflict commit-with-markers`                                                       |
-| Marker guard                             | job fails naming the files **and the validation comment says so**              | OK: 2 files named, and the thread carries the failure banner, the branch, the count and the list     |
-| Marker guard, solved                     | the job passes                                                                 | OK, scope `#64, #65`                                                                                 |
-| Committed conflict prompt report         | the gate ignores it                                                            | OK: the report was committed on the promotion branch and the next validation passed                  |
-| Deployment from a promotion branch       | the job stops naming the branch and the CI setting to fix                      | OK, and `--check` on the same branch still runs                                                      |
-| Feature off                              | one informational line, scope = the Pull Request alone                         | OK on #66                                                                                            |
-| Hand-named branch                        | warning, treated as a feature branch, declaration ignored                      | OK on #67                                                                                            |
-| Retargeted promotion                     | warning naming the mismatch, scope = the Pull Request alone                    | OK on #68: "named for target preprod but its Pull Request targets main"                              |
-| Unreadable declaration                   | warning and skip, not a failure                                                | OK: `#9999 ... was not found: skipped`, the job still passed                                         |
-| Supersede an open promotion              | the open one is abandoned **after** the new one exists                         | OK: #66 created, then #65 closed                                                                     |
-| Restricted `allowedPromotionSteps`       | a forbidden source and a forbidden target are refused, the allowed one works   | OK, all three                                                                                        |
-| `allowedPromotionSteps` not declared     | the command stops, asking for the list and linking to the doc                  | OK                                                                                                   |
-| `promotion:list-candidates`              | the candidate table, creating nothing                                          | OK from `uat` and from `integration`                                                                 |
-| Full merge after a partial promotion     | already promoted stories skipped, the never promoted ones arrive, nothing left | OK on #73, then `No Pull Request merged into uat is waiting for promotion to preprod`                |
-| DevOps Pipeline before and after         | section above                                                                  | OK, six checkpoints                                                                                  |
-| Single place in the diagram              | each number in one branch only                                                 | OK, and the two toggles both raise the counts                                                        |
-| Pull Request comment audit               | consistent comments, navigation and action state                               | **695 checks, zero findings**                                                                        |
-| Flag-off regression                      | `TOTAL DIFFERING LINES: 0`                                                     | **0** on the third pair, see below                                                                   |
+### Sections 3, 4 and 4bis (az-7): 42 OK
 
-### Pull Request comment audit
+| What                                                                    | Expected                                                                 | Result |
+|-------------------------------------------------------------------------|--------------------------------------------------------------------------|--------|
+| Validation and deployment of S1 to S7                                   | scope = the Pull Request alone, keywords and test classes read           | OK     |
+| P1 to P5: `promotion:create`, validation, merge, deployment             | declared stories in the scope, inherited keywords, union of test classes | OK     |
+| A story that arrived through a promotion is a candidate of its own (P3) | rows #101 and #103, one cherry-pick, #103 declared alone                 | OK     |
+| Release notes of the go-live, with and without `--include-promotions`   | User Stories only, then the vehicles next to them                        | OK     |
+| Second go-live (issue #2260)                                            | S3, S4 and S6 come back in neither preprod nor uat                       | OK     |
+| Retrofit                                                                | stories named "already deployed through promotion branch(es)"            | OK     |
+| DevOps Pipeline at the six checkpoints of section 4bis                  | windows, arrows and counters as the runbook lists them                   | OK     |
 
-```
-695 checks over 22 Pull Requests (azure)
-OK: every sfdx-hardis Pull Request comment is consistent
-```
+### Section 6, edge cases (az-7): 46 OK, 1 FAIL
 
-Nothing to report, including the placeholder deployment comment Azure needs because
-`isPrDescriptionEditableAfterMerge()` is false there: the navigation block of every validation
-comment points at a deployment comment that exists.
+| Group | What                                                                                                                                   | Result              |
+|-------|----------------------------------------------------------------------------------------------------------------------------------------|---------------------|
+| g1    | already promoted, empty cherry-pick, dirty report folder                                                                               | OK                  |
+| g2    | conflicts (agent default, kept), marker guard and its comment, deployment from a promotion branch, feature off, no provider connection | OK, except check 29 |
+| g3    | hand-named and retargeted branches, supersede, sync merge, unreadable declaration, grouped merge                                       | OK                  |
+| g4    | branch merged twice, sync inside a story, conflicts kept for all, back-merge, octopus                                                  | OK                  |
+| g5    | restricted and undeclared promotion steps, in the CLI and in the DevOps Pipeline                                                       | OK                  |
+| g6    | full merge of uat into preprod after partial promotions                                                                                | OK                  |
 
-### Flag-off regression
+Check 29 expects the conflict prompt embedded in the description of the promotion. Azure DevOps
+caps a description at 4000 characters, so the description names the prompt file instead: intended.
+The job log however still said "embedded in the Pull Request description". Fixed in the CLI, the
+check now accepts the capped description when the log says so, and a replay on the same repository
+(stories #159 and #160, promotion #161) logs "It is too long for a Pull Request description on this
+git provider, so the description only names the file".
 
-Three pairs were run (`branch`/`main`, `branch2`/`main2`, `branch3`/`main3`). The second pair still
-showed 20 differing lines, all of them the run order rather than the code: the pass that ran first
-deployed the static resource and the second found it unchanged (`Changes: 1 created` against
-`0 created ... 1 unchanged`), and a `git fetch origin uat:uat` that only one of them needed because
-of the local clone's state.
+### Section 6quater, deployment actions (az-7): 17 OK
 
-The third pair, both passes in steady state, is clean:
+Groups A (the gate of validations, `set-status`, the draft), B (failed action, `action:run --next
+all`, refused retry in preprod) and C (marked ahead in uat, forecast, promotion P6 #141). Group D
+(developer org) not run: `DEV_ORG` was not set for this provider.
 
-```
-check-feature-pr67.log: 129 lines vs 129 lines, only in A: 0, only in B: 0
-check-major-pr74.log:    85 lines vs  85 lines, only in A: 0, only in B: 0
-deploy-uat.log:         176 lines vs 176 lines, only in A: 0, only in B: 0
-release-notes.log:       71 lines vs  71 lines, only in A: 0, only in B: 0
-release-notes.md:        36 lines vs  36 lines, only in A: 0, only in B: 0
-TOTAL DIFFERING LINES: 0
-```
+### Section 6sexies, identical actions (az-7): 20 OK
 
-A project on Azure DevOps that does not set `enablePromotionBranches` gets byte for byte the jobs it
-got before, including the two fixes this run landed: both are inside promotion code paths that the
-flag leaves inert.
+I1 to I6, I9 and I10 on stories #143 to #155, promotions PI #151, PD #153 and PV #156. I7 and I8
+(backpromote plan and run of the window) not run: no `DEV_ORG`.
+
+### Section 6bis, backpromote (az-8): 63 OK
+
+B0 to B16 and C1 to C4, first run on Azure DevOps: no token, refused orgs and parent branch, first
+plan, run from S1, manual action confirmed, new story, overwrite, org version kept then offered
+again, agent protocol, panel protocol, deletion, excluded item, dirty tree, refreshed sandbox, scan
+limit, reset. The "Backpromotes" threads carry one comment per Pull Request with their sandbox and
+action rows.
+
+### Section 6quinquies, real CI on Azure Pipelines (ci-az-3): 21 OK
+
+`AZURE_E2E_CI_TOKEN=pat`: the jobs comment with the PAT.
+
+| Job                          | Mode    | Result                | Queued | Ran   |
+|------------------------------|---------|-----------------------|--------|-------|
+| ci-check-c1                  | real CI | failed (expected, W1) | 6 s    | 362 s |
+| ci-check-c1-rerun            | real CI | succeeded             | 6 s    | 382 s |
+| ci-check-c2-draft            | real CI | succeeded             | 7 s    | 374 s |
+| ci-deploy-integration-c1     | real CI | failed (expected, W4) | 12 s   | 374 s |
+| ci-check-c3                  | real CI | succeeded             | 6 s    | 372 s |
+| ci-deploy-integration-c3     | real CI | succeeded             | 6 s    | 373 s |
+| ci-check-promotion-uat       | real CI | failed (expected, W5) | 6 s    | 363 s |
+| ci-check-promotion-uat-rerun | real CI | succeeded             | 6 s    | 375 s |
+| ci-deploy-uat-promotion      | real CI | succeeded             | 6 s    | 384 s |
+| ci-check-c5                  | real CI | succeeded             | 7 s    | 373 s |
+| ci-check-c6                  | real CI | succeeded             | 379 s  | 373 s |
+| ci-deploy-integration-c5     | real CI | succeeded             | 6 s    | 382 s |
+| ci-deploy-integration-c6     | real CI | succeeded             | 7 s    | 395 s |
+| ci-check-promotion-identical | real CI | succeeded             | 6 s    | 374 s |
+| ci-deploy-uat-identical      | real CI | succeeded             | 7 s    | 384 s |
+
+15 jobs, all real CI, none simulated. About 94 build minutes, under two hours of wall clock: the
+single free parallel job only made one build wait (ci-check-c6, behind ci-check-c5).
+
+W0 (the linked branch runs in the container job), W1 and W1b (the gate and its comment), W2 (the
+checkbox ticked through the API, the policy queued again), W3 and W3a (a provider draft is only
+warned), W4, W5, W6, W7, W9 (the same action in two stories runs once in the promotion), X1 (the
+Pull Request window shows the comments of the real jobs) and X2 (the DevOps Pipeline).
+
+___
+
+## What the run found
+
+### Product
+
+1. **The Pull Request window of the DevOps Pipeline was empty on Azure DevOps.** Outside a
+   pipeline, the CLI reads the repository from the git remote, so `BUILD_REPOSITORY_ID` holds a
+   repository name, not a GUID. Fourteen calls of `azureDevops.ts` (`getThreads`,
+   `getPullRequests`, `getPullRequestWorkItemRefs`, `createThread`, `updateComment`,
+   `updateThread`) did not name the team project, and Azure answers "A project name is required in
+   order to reference a Git repository by name". `action:list --with-status --with-workflows`, which
+   the extension runs with the token alone, then returned no status and no run: the Deployment
+   Actions pills and the Validation and Deployment tabs were empty, for every Pull Request. Section
+   4ter: 0 OK out of 46 before the fix, 46 out of 46 after it. Fixed (`azureTeamProject()`), with a
+   unit test (`test/common/gitProvider/azureDevopsTeamProject.test.ts`). The same defect also made
+   `set-status`, the checkbox reader and every comment read fail for a person running the commands
+   from a terminal with a token and no pipeline variables. The extension's own Azure provider
+   already passes the project on its calls: no change there.
+2. **`promotion:create` said the conflict prompt was embedded in the description when it was not.**
+   New message `promotionCreateConflictPromptFileOnly` in the nine locales.
+3. **With the job token of the templates, nobody but a project administrator could close a manual
+   action. Fixed.** The templates give the jobs `$(System.AccessToken)`: the comments are written
+   by "`<project>` Build Service", and Azure DevOps answers "Only the comment author and project
+   admins can edit a comment" (HTTP 403) to anyone else. A contributor could neither tick the
+   checkbox of a manual action nor run `set-status`, which is what **Mark as done** runs in VS
+   Code, and `set-status` said "recorded as done" all the same. The Azure DevOps runs before this
+   one never met it: the jobs and the person shared one PAT.
+   What changed, in `azureDevops.ts` only:
+   - a writer that does not own the Deployment Actions (or Backpromotes) comment **answers in its
+     thread** with an update: one visible line ("Updated outside the pipeline on ... UTC, from VS
+     Code or the command line...") and, hidden, the whole new body;
+   - every reader takes the newest version of the comment, the comment itself or an update;
+   - the next pipeline job, which reads it too, brings its own comment up to date;
+   - an identity updates the version it owns instead of adding one at each change, so a thread
+     holds at most one update per person, and the listings (navigation, runs of the Pull Request
+     window, checkboxes) never return an update;
+   - the comments tell to use the Mark as done button, since a box can still only be ticked by
+     the author of the comment or a project administrator (`utilsAzureDevopsWording.ts`).
+   Proven on real Azure Pipelines with the job token (`sfdx-hardis-promo-e2e-ci-az-5`, Pull
+   Request #167): the tick is refused (HTTP 403), `set-status` answers in the thread, the
+   validation run again by the build service skips the action as "already run in integration" (W2),
+   and the deployment job after the merge skips it too (W4). The picture
+   `azure-deployment-actions-thread-with-update.png` shows the thread: the comment of the build
+   service, up to date, and the update of the contributor under it. That run was stopped after W4:
+   the later steps repeat the same mechanism. On its repository the comment audit (101 checks) and
+   the Pull Request window check pass with the update present. Six unit tests
+   (`azureDevopsCommentVersions.test.ts`), and section 6quater replayed on the four providers
+   after the change: 17 OK and 0 FAIL on each.
+   Between the action of the contributor and the next job, the table of the comment still shows
+   the earlier state: the line of the update is what tells a reader, and the CLI and VS Code read
+   the new state at once.
+4. **A command run outside a pipeline ignored every Pull Request of its own repository** as
+   "belonging to another repository of the organization": `getPullRequestById` compared the
+   repository name read from the git remote with a GUID. `set-status` ahead in the next branch,
+   `action:run` and the carried stories of a promotion could not be resolved from a terminal or
+   VS Code. Fixed, with unit tests.
+5. **List items of a promotion description started with a literal dash** ("- #116 E2E-402
+   conflict two"): Azure DevOps does not make a list item of a line whose text starts with `#`.
+   Found by reading the pictures. The number now follows the title, on every provider.
+
+### Found by reading the pictures (37 read, no broken markup)
+
+Banners, tables, emoji, checkboxes, folded sections and code blocks are drawn in every picture,
+and no markdown or HTML is left as text. What a reader sees and a check does not:
+
+| Finding                                                                                                                                       | Status                    |
+|-----------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
+| Promotion description: "- #116 ..." printed with its dash                                                                                     | fixed (5 above)           |
+| Backpromotes comment: the six-column table is wider than the comment column of Azure DevOps, "Left out" is cut and "When" wraps on four lines | open                      |
+| The fold says "25 Pull Requests", the line under it "collected from 26 Pull Request(s)"                                                       | open, minor               |
+| The summary row shows a clock for "3 after the merge", the table under it shows the same actions with the skipped dot                         | open, cosmetic            |
+| The Deployment Actions comment has no "Powered by" line: its last table touches the footer banner                                             | open, cosmetic            |
+| "Status by org" and "Results by org" wrap a date as "2026-10-" / "08" in the narrow column of Azure DevOps                                    | open, cosmetic            |
+| A gate comment (`validation-failed+manual`) holds its three folded sections closed in the unfolded picture                                    | capture: to check by hand |
+
+### Harness (fixed in the skill)
+
+- **Azure sends no `pr.sourceSha` and cancels the build of a previous head itself.** The wait read
+   the cancelled build of the first push as the job (ci-az-1). `_azci_find_build` now matches a
+   policy build by the parents of its merge commit, and `_azci_wait_build` follows the newer build
+   when the one it watches is cancelled.
+- **The link step failed in the container job**: steps do not run as root and the image keeps the
+   plugins in a folder of root (`EACCES ... /usr/local/lib/package.json`, ci-az-1), then `sudo`
+   with the HOME of the step user left a `~/.sf` owned by root (ci-az-2). The Azure link step runs
+   `sudo env "PATH=$PATH" "SF_DATA_DIR=$SF_DATA_DIR" HOME=/root sf plugins link`. E2E only: a real
+   project never links a plugin in its job.
+- **The PAT cannot grant the build service its permission** (HTTP 401, it needs Security
+   (Manage)): the first complete run used `AZURE_E2E_CI_TOKEN=pat`, and the permission was then
+   allowed by hand for the run with the system token.
+- Editing `promotion-edge.sh` while it ran made bash stop on its last line with a syntax error,
+   after the six groups had completed. Never edit a section script during its run.
+
+The runbook holds these under "Azure Pipelines".
 
 ___
 
 ## What this run did not cover
 
-- **The interactive "commit this and every following conflict" answer.** Exercised through
-  `--on-conflict commit-with-markers`, which walks the same `rememberedChoice` code, and through
-  the unit tests of the prompt answer. The prompt itself needs a terminal the harness does not have.
-- **An octopus merge (three or more parents).** Git resolves the attempts into two-parent merges by
-  fast-forwarding the first side; the guard that leaves such a merge whole stays a unit test.
-- **Azure Pipelines itself.** The jobs are reproduced locally with the Azure Pipelines variables
-  set, which is what the git provider reads.
-- **The pipeline webview by clicking.** Exercised through its own data provider and its unit tests;
-  the mermaid is asserted as text, never rendered.
-- **The four pipeline levels share one Salesforce org**, so deployment action state is keyed by org
-  **branch**, not by distinct orgs.
-- **A description over 4000 characters that is not a conflict prompt.** The truncation branch of
-  `buildPromotionPullRequestBody` is covered by a unit test, not by a live promotion: producing one
-  would need dozens of carried stories.
+- **W5 to W9 with the job token of Azure Pipelines**: the run with the job token was stopped
+  after W4, once the reply in the thread was proven in a validation and in a deployment. The steps
+  after it are proven with the PAT, where the jobs and the person are one identity.
+- **A project administrator ticking a box** of a comment of the build service: the PAT of the test
+  was refused, so it is not known whether an administrator can.
+- **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
+  which cannot be done while other sections use the same working copy. It ran on GitHub at the
+  end of the night (0 differing lines), not on this provider.
+- **Group D of 6quater and I7, I8 of 6sexies** (developer org): `DEV_ORG` not set on this provider.
+  They ran on GitLab the same day.
+- **Step B17** (terminal prompts of backpromote) and `refused-production.json`: not scriptable, no
+  production org in the harness.
+- **The Code Quality tab** of the Pull Request window: no job posts a MegaLinter comment (the
+  MegaLinter job is left out of the Azure checks pipeline to spare the single parallel job).
+- **The window of a promotion or major-to-major Pull Request** is not compared, and nothing is
+  rendered: the DevOps Pipeline is asserted through its data provider and as mermaid text, the
+  Backpromote panel is not clicked.
+- The four pipeline levels share one Salesforce org: deployment action state is keyed by org
+  branch, not by distinct orgs.
+- "Pull Request creation refused" (section 6) is not scripted.
 
-## Suite counts
+___
 
-- sfdx-hardis, the six promotion suites: **122 passing**.
-- vscode-sfdx-hardis, the two promotion suites: **37 passing**.
+## Left behind
+
+Repositories `sfdx-hardis-promo-e2e-az-7`, `-az-8`, `-ci-az-1` to `-ci-az-5`, their
+pipeline definitions (ids 2 to 11) and build policies, in `nicolasvuillamy/tests-sfdx-hardis`.
+Runbook section 9 says how to delete them. Metadata prefixed `PromoE2E` / `E2E_` in the org.
+On az-7, two Pull Requests left open and failed on purpose for the visual check (#165, #166).
+In Project settings > Repositories > Security, the build service keeps the "Contribute to pull
+requests" permission given during the run.

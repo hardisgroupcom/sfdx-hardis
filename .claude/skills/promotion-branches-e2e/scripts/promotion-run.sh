@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Runbook sections 3, 4 and 4bis on GitHub or GitLab: the six User Stories, the BUILD and RUN
+# Runbook sections 3, 4 and 4bis on GitHub, GitLab, Azure DevOps or Bitbucket Cloud: the six User Stories, the BUILD and RUN
 # streams, the four promotions, the release notes and the retrofit, with an assertion on every job
 # log and a DevOps Pipeline check before and after every promotion operation.
 #
-#   export PROVIDER=github|gitlab ORG WORK LOGS DEV API EXT EXPECT <the provider library variables>
+#   export PROVIDER=github|gitlab|azure|bitbucket ORG WORK LOGS DEV API EXT EXPECT <the provider library variables>
 #   bash promotion-run.sh
 #
 # The repository must exist and hold main, integration, uat and preprod (build-repo.sh, pushed).
@@ -11,7 +11,12 @@
 # run gets is appended to $LOGS/promo-vars.sh, so the edge cases of section 6 can pick up from there.
 set -uo pipefail
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${PROVIDER:?set PROVIDER to github or gitlab}"
+: "${PROVIDER:?set PROVIDER to github, gitlab, azure or bitbucket}"
+# Settings from the environment, else .env, else derived: WORK, LOGS and EXPECT default to
+# <OS temp>/promo-e2e-<provider>[-logs|-expect] (env-lib.sh)
+# shellcheck source=/dev/null
+source "$SCRIPTS_DIR/env-lib.sh"
+e2e_defaults "promo-e2e-$PROVIDER"
 : "${EXPECT:?set EXPECT to a folder for the pipeline expectations}"
 # shellcheck source=/dev/null
 source "$SCRIPTS_DIR/promotion-provider.sh"
@@ -317,7 +322,7 @@ RN_DIR=$(ls -td "$WORK"/hardis-report/release-notes/main-* 2>/dev/null | head -1
 RN_FILE=$(ls "$RN_DIR"/release-notes-main-*.md 2>/dev/null | head -1)
 cp "$RN_FILE" "$LOGS/release-notes-plain.md" 2>/dev/null
 assert_log 21 release-notes 0 "release notes generated" "Release notes generated successfully"
-# GitHub writes #N, GitLab !N
+# GitHub, Azure DevOps and Bitbucket write #N, GitLab !N
 rn_has() { grep -qE "[#!]$1([^0-9]|$)" "$2"; }
 rn_numbers() { grep -oE '[#!][0-9]+' "$1" 2>/dev/null | sort -u | tr '\n' ' '; }
 if [ -f "$LOGS/release-notes-plain.md" ] && rn_has "$S3" "$LOGS/release-notes-plain.md" && rn_has "$S4" "$LOGS/release-notes-plain.md" && rn_has "$S6" "$LOGS/release-notes-plain.md" && ! rn_has "$P4" "$LOGS/release-notes-plain.md"; then

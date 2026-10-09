@@ -20,7 +20,7 @@ import {
   htmlToPlainText,
   isSameHost,
   newTicketDetails,
-} from './ticketDetails.js';
+} from './utils/ticketDetails.js';
 
 // A feature reference is a workspace prefix and a number (PROD-12). The prefix starts with a letter,
 // which keeps a date (2026-09) out, and nothing may follow with a dash: PROD-12-3 is a requirement,

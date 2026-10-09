@@ -11,7 +11,7 @@ import { t } from '../utils/i18n.js';
 import { SfError } from "@salesforce/core";
 import { ServiceNowProvider } from "./serviceNowProvider.js";
 import { AhaProvider } from "./ahaProvider.js";
-import { TicketDetails, TicketDetailsOptions } from "./ticketDetails.js";
+import { TicketDetails, TicketDetailsOptions } from "./utils/ticketDetails.js";
 
 export type TicketProviderKey = "jira" | "azure" | "servicenow" | "aha" | "generic";
 

@@ -11,7 +11,7 @@ import {
   TicketDetails,
   TicketDetailsOptions,
   downloadTicketAttachment,
-} from "./ticketDetails.js";
+} from "./utils/ticketDetails.js";
 import { t } from '../utils/i18n.js';
 
 // Issues met while collecting ticket details (ex: expired JIRA token), so the Pull Request

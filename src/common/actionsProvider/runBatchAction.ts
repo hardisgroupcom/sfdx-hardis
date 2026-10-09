@@ -6,7 +6,7 @@ import {
   hasNoVisibleNoArgConstructor,
   parseApexClassName,
   pickApexClassToSchedule,
-} from './apexClassActionUtils.js';
+} from './utils/apexClassActionUtils.js';
 import { createTempDir, execCommand, uxLog } from '../utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../utils/apiUtils.js';
 import { t } from '../utils/i18n.js';

@@ -544,7 +544,7 @@ export async function closeActionByHand(prNumber: number, actionId: string, orgB
     blockedBy: undefined,
   };
   upsertActionInState(closedEntry, prNumber);
-  await persistDeploymentActionsState();
+  await persistDeploymentActionsState({ failWhenNotSaved: true });
   // Tick the checkbox of the action in the other comments still showing it as failed
   try {
     await syncManualActionCheckboxes([prNumber]);
@@ -878,7 +878,7 @@ async function markActionDoneAhead(prNumber: number, actionId: string, orgBranch
     note: buildMarkedDoneAheadNote(orgBranch, entry ? 'skipped' : 'none', gitUserName() || null, sfUsername, new Date(), extraNote),
   };
   upsertActionInState(doneEntry, prNumber);
-  await persistDeploymentActionsState();
+  await persistDeploymentActionsState({ failWhenNotSaved: true });
   return doneEntry;
 }
 

@@ -15,7 +15,7 @@ import { GitProvider } from '../gitProvider/index.js';
 import { retryOnThrottling } from './adaptiveBatch.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
-import { formatShortDate } from '../gitProvider/utilsPrCommentDates.js';
+import { formatShortDate } from '../gitProvider/utils/utilsPrCommentDates.js';
 
 export const BACKPROMOTES_MARKER = '<!-- sfdx-hardis backpromotes -->';
 const DATA_START = '<!-- sfdx-hardis backpromotes-data ';
@@ -162,8 +162,15 @@ export function renderBackpromotesComment(state: BackpromotesCommentState): stri
   // No banner: this comment is mostly the storage of the backpromote history, read by the CLI
   lines.push('### ⤵️ Backpromotes', '');
   const sandboxCount = new Set(state.sandboxRows.map((row) => `${row.sandboxName}|${row.orgId}`)).size;
+  const actionOrgCount = new Set(state.actionRows.map((row) => `${row.sandboxName}|${row.orgId}`)).size;
   const verdictParts = [
-    sandboxCount === 0 ? 'No sandbox received this Pull Request yet' : `Received by ${sandboxCount} ${sandboxCount === 1 ? 'sandbox' : 'sandboxes'}`,
+    sandboxCount > 0
+      ? `Received by ${sandboxCount} ${sandboxCount === 1 ? 'sandbox' : 'sandboxes'}`
+      : actionOrgCount > 0
+        ? // Actions run in a developer org with action:run, without a backpromote: the org got the
+          // actions of the Pull Request, not its metadata
+          `Deployment actions tried in ${actionOrgCount} developer ${actionOrgCount === 1 ? 'org' : 'orgs'}, not backpromoted there yet`
+        : 'No sandbox received this Pull Request yet',
     failed > 0 ? `❌ ${failed} ${failed === 1 ? 'action' : 'actions'} failed` : '',
     pending > 0 ? `👋 ${pending} to do by hand` : '',
   ].filter((part) => part !== '');

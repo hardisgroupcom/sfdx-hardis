@@ -2,13 +2,13 @@ import c from "chalk";
 import { buildPrCreateUrl, encodePrUrlPathBranch, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
+import { GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
-import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
   private api: GithubApiClient;
@@ -762,10 +762,10 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
     body = this.enforceHardCommentLimit(body);
     const issueNumber = prNumber || this.prNumber;
-    if (!issueNumber) return;
+    if (!issueNumber) return false;
     // Paginated like the read side: a Pull Request carrying more comments than one page would get
     // a second marker comment at every run, each one notifying the participants again
     const comments = await this.api.paginate<any>(`${this.repoPath(this.repoOwner || '', this.repoName || '')}/issues/${issueNumber}/comments`, {
@@ -785,6 +785,7 @@ ${getBannerMarkdownAndLink()}
       await this.createIssueComment(issueNumber, body);
       uxLog("log", this, c.grey(`[GitHub] Created Deployment Actions comment on PR #${issueNumber}`));
     }
+    return true;
   }
 
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {

@@ -1,6 +1,8 @@
+import { SfError } from '@salesforce/core';
 import c from "chalk";
 import { debuglog } from "util";
 import { GitProvider } from '../gitProvider/index.js';
+import { ONLY_BOXES_ARE_EDITED, TICK_HINT_FOR_AN_ACTION } from '../gitProvider/utils/utilsPrCommentWording.js';
 import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { evaluateActionBranchFilter, getEffectiveActionContext, readActions } from './actionUtils.js';
@@ -9,8 +11,8 @@ import { t } from './i18n.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
-import { formatShortDate } from '../gitProvider/utilsPrCommentDates.js';
-import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
+import { formatShortDate } from '../gitProvider/utils/utilsPrCommentDates.js';
+import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/utils/prCommentNav.js';
 
 // Enable with NODE_DEBUG=sfdxhardis
 const debug = debuglog("sfdxhardis");
@@ -303,8 +305,9 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
  * or that were missed during the initial load.
  * Action definitions are read from the PR's .sfdx-hardis.PRNB.yml file.
  */
-export async function persistDeploymentActionsState(): Promise<void> {
+export async function persistDeploymentActionsState(options: { failWhenNotSaved?: boolean } = {}): Promise<void> {
   const state = getMultiPrState();
+  const notSaved: { prNumber: number; message: string }[] = [];
   for (const prNumber of state.dirtyPrs) {
     const inMemoryEntries = state.entriesByPr.get(prNumber) || [];
     // Re-read the current PR comment and merge to preserve entries from other org branches
@@ -317,9 +320,17 @@ export async function persistDeploymentActionsState(): Promise<void> {
     // which skips the deployment job of the merge will run
     const configActionDefs = await loadConfigActionDefs([...new Set(mergedEntries.map((e) => e.orgBranch))]);
     const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber, existingBody, configActionDefs);
-    await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
+    const refused = await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
+    if (refused) {
+      notSaved.push({ prNumber, message: refused });
+    }
   }
   state.dirtyPrs.clear();
+  // A command whose whole job is to record a status (set-status) says so instead of reporting a
+  // success nobody will ever read back. A deployment job goes on: its warning is in the log.
+  if (options.failWhenNotSaved && notSaved.length > 0) {
+    throw new SfError(notSaved.map((item) => t('deploymentActionsStateNotSaved', { pr: item.prNumber, message: item.message })).join(' '));
+  }
 }
 
 /**
@@ -427,8 +438,10 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
       if (cell === '' || cell === '\u2b1c') {
         continue; // \u2b1c : not run in this org branch yet
       }
-      // The date lives before the <br/>: the job link URL after it may itself contain a date
-      const cellHead = cell.split('<br/>')[0];
+      // The date lives before the <br/>: the job link URL after it may itself contain a date. A
+      // provider that draws no <br/> gets a space in its place (Bitbucket): the link is then what
+      // follows the first space before a bracket.
+      const cellHead = cell.split(/<br\/>|\s(?=\[)/)[0];
       const dateMatch = cellHead.match(/(\d{4}-\d{2}-\d{2})/);
       const jobLinkMatch = cell.match(/\[([^\]]+)\]\(([^)]+)\)/);
       entries.push({
@@ -695,7 +708,7 @@ export function buildDeploymentActionsCommentBody(
   ));
   body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, afterMergeEntries, pipelineEntries.length)}\n\n`;
   if (failedEntries.length + stoppedEntries.length + pendingManualEntries.length > 0) {
-    body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;
+    body += `${TICK_HINT_FOR_AN_ACTION} Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. ${ONLY_BOXES_ARE_EDITED}\n\n`;
     body += `#### Needs you\n\n`;
     for (const e of failedEntries) {
       body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ❌ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;

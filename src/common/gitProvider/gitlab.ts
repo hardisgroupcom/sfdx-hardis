@@ -8,8 +8,8 @@ import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
-import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./utils/jenkinsUtils.js";
 
 // Oldest commit date of a window, used to bound the merged MRs listing (see
 // getOldestCommitDateWithMargin in gitProviderRoot.ts).
@@ -847,10 +847,10 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
     body = this.enforceHardCommentLimit(body);
     const ctx = this.resolveMergeRequestContext(prNumber);
-    if (!ctx) return;
+    if (!ctx) return false;
     const { projectId, mergeRequestId } = ctx;
     const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
@@ -867,6 +867,7 @@ ${getBannerMarkdownAndLink()}
       await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, body);
       uxLog("log", this, c.grey(`[GitLab] Created Deployment Actions note on MR !${mergeRequestId}`));
     }
+    return true;
   }
 
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {

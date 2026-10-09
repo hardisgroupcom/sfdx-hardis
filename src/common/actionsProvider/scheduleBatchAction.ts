@@ -12,7 +12,7 @@ import {
   hasNoVisibleNoArgConstructor,
   parseApexClassName,
   pickApexClassToSchedule,
-} from './apexClassActionUtils.js';
+} from './utils/apexClassActionUtils.js';
 
 // Moved to apexClassActionUtils.ts, which run-batch shares
 export { HIDDEN_APEX_BODY, parseApexClassName, pickApexClassToSchedule };

@@ -11,7 +11,7 @@ import {
   abortPromotion,
   assertPromotionBranchesEnabled,
   requireGitProviderForPromotion,
-  buildPromotionPullRequestBody,
+  buildPromotionPullRequestDescription,
   buildPromotionPullRequestTitle,
   checkGitCleanForPromotion,
   closeSupersededPromotionPullRequests,
@@ -270,7 +270,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     // prompt gets there: the description is trimmed to fit rather than the Pull Request being
     // refused, which would leave the branch pushed and nothing to review
     const bodyProvider = await GitProvider.getInstance();
-    const body = buildPromotionPullRequestBody({
+    const bodyOptions = {
       sourceBranch,
       targetBranch,
       branchName,
@@ -279,7 +279,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       ticketIds,
       alreadyThere: alreadyThereStories,
       maxLength: bodyProvider?.getMaxPullRequestDescriptionLength() ?? null,
-    });
+    };
+    const { body, promptEmbedded } = buildPromotionPullRequestDescription(bodyOptions);
 
     const result = await pushAndCreatePromotionPullRequest({
       branchName,
@@ -304,7 +305,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
         files: [...new Set(conflicted.flatMap((entry) => entry.files))].join(', ') || '-',
       })));
       // Ready-to-paste prompt for a coding agent, also embedded in the Pull Request description
+      // unless the provider caps its length (Azure DevOps)
       conflictPromptFile = await writeConflictResolutionPrompt({
+        embeddedInDescription: promptEmbedded,
         sourceBranch,
         targetBranch,
         branchName,

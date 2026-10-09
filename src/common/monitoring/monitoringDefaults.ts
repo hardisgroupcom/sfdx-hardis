@@ -13,7 +13,7 @@ import {
   clampThresholdToAvailable,
   getAvailableThresholds,
   isEmailChannelObject,
-} from "../notifProvider/notificationConfig.js";
+} from "../notifProvider/utils/notificationConfig.js";
 import { t } from "../utils/i18n.js";
 
 // Default monitoring commands run by hardis:org:monitor:all.

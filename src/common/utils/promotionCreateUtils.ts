@@ -1462,19 +1462,27 @@ export function buildPromotionPullRequestBody(options: {
   // rather than the Pull Request being refused: it is saved in hardis-report/ either way.
   maxLength?: number | null;
 }): string {
+  return buildPromotionPullRequestDescription(options).body;
+}
+
+/**
+ * The description, and whether it holds the coding agent prompt: the caller tells the user where to
+ * find the prompt, and must not have to guess it from the text.
+ */
+export function buildPromotionPullRequestDescription(options: Parameters<typeof buildPromotionPullRequestBody>[0]): { body: string; promptEmbedded: boolean } {
   const full = renderPromotionPullRequestBody(options, true);
   const maxLength = options.maxLength || null;
   if (!maxLength || full.length <= maxLength) {
-    return full;
+    return { body: full, promptEmbedded: true };
   }
   const withoutPrompt = renderPromotionPullRequestBody(options, false);
   if (withoutPrompt.length <= maxLength) {
-    return withoutPrompt;
+    return { body: withoutPrompt, promptEmbedded: false };
   }
   // Still too long: the yaml block the deployment jobs read sits at the top, so cutting the tail
   // keeps the description usable rather than losing the declaration
   const marker = '\n\n_Description truncated to fit this git provider._';
-  return withoutPrompt.substring(0, Math.max(0, maxLength - marker.length)) + marker;
+  return { body: withoutPrompt.substring(0, Math.max(0, maxLength - marker.length)) + marker, promptEmbedded: false };
 }
 
 /**
@@ -1523,7 +1531,7 @@ function renderPromotionPullRequestBody(
     lines.push('## Committed with conflict markers');
     lines.push('');
     for (const story of conflicted) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
       for (const file of story.conflictFiles || []) {
         lines.push(`  - \`${file}\``);
       }
@@ -1552,7 +1560,7 @@ function renderPromotionPullRequestBody(
     lines.push('## Left out because of cherry-pick conflicts');
     lines.push('');
     for (const story of options.skipped) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
     }
   }
   if ((options.alreadyThere || []).length > 0) {
@@ -1562,7 +1570,7 @@ function renderPromotionPullRequestBody(
     lines.push('Nothing to cherry-pick for those User Stories, their change is already in the target branch. They stay declared above, so their deployment actions and Apex test classes still run in the target org:');
     lines.push('');
     for (const story of options.alreadyThere || []) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
     }
   }
   lines.push('');
@@ -1627,6 +1635,8 @@ export function buildConflictResolutionPrompt(options: {
   return lines.join('\n');
 }
 
+// List items naming a story put its number after its title: Azure DevOps prints the dash of a list
+// item that starts with #.
 function sanitizeCell(text: string): string {
   return (text || '').replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;').trim();
 }
@@ -1642,12 +1652,15 @@ export async function writeConflictResolutionPrompt(options: {
   conflicted: PromotionStory[];
   pullRequestUrl: string | null;
   commandThis: any;
+  // False when the provider caps the description and the prompt was left out of it
+  embeddedInDescription?: boolean;
 }): Promise<string> {
   const prompt = buildConflictResolutionPrompt(options);
   const file = await generateReportPath('promotion-conflicts-prompt', '', { withDate: true, withBranchName: false, fileExtension: 'md' });
   await fs.ensureDir(path.dirname(file));
   await fs.writeFile(file, `${prompt}\n`, 'utf8');
-  uxLog('warning', options.commandThis, c.yellow(t('promotionCreateConflictPromptFile', { file })));
+  const messageKey = options.embeddedInDescription === false ? 'promotionCreateConflictPromptFileOnly' : 'promotionCreateConflictPromptFile';
+  uxLog('warning', options.commandThis, c.yellow(t(messageKey, { file })));
   if (WebSocketClient.isAliveWithLwcUI()) {
     WebSocketClient.sendReportFileMessage(file, t('promotionCreateConflictPromptReportTitle'), 'report');
   }

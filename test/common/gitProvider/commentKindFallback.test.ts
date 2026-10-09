@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import fs from 'fs';
 import path from 'path';
 import '../../../src/common/gitProvider/index.js';
-import { getPrCommentKind, getPrCommentKindFromMessageKey } from '../../../src/common/gitProvider/prCommentNav.js';
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from '../../../src/common/gitProvider/utils/prCommentNav.js';
 
 // An sfdx-hardis comment is found again by the message key written inside it, and that key carries
 // the name of the CI job. Matching on the key alone means that renaming the CI job - or running

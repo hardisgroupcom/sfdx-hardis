@@ -6,11 +6,13 @@ import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResul
 import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { getBannerMarkdownAndLink } from '../../config/index.js';
+import { fromBitbucketMarkup, toBitbucketMarkup } from './utils/utilsBitbucketMarkup.js';
+import { enforceCommentLengthLimit } from './utils/utilsPrCommentSizeGuard.js';
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { httpPost } from '../utils/httpUtils.js';
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
 
 // Oldest commit date of a window, used to bound the merged PRs listing (see
@@ -36,7 +38,9 @@ export class BitbucketProvider extends GitProviderRoot {
     const clientOptions = this.email
       ? { auth: { username: this.email, password: this.token } }
       : { auth: { token: this.token } };
-    this.bitbucket = new Bitbucket(clientOptions as any);
+    // notice: false, or the client prints its "BITBUCKET CLOUD API LATEST UPDATES" banner on stdout,
+    // ahead of the document of a --json command: whoever parses it (the VS Code extension) gets nothing
+    this.bitbucket = new Bitbucket({ ...clientOptions, notice: false } as any);
   }
 
   // Same credentials as the bitbucket client, for direct REST calls
@@ -147,9 +151,11 @@ export class BitbucketProvider extends GitProviderRoot {
     };
   }
 
-  // Bitbucket Cloud escapes raw HTML in comments: an HTML comment is displayed as it is written
+  // Bitbucket Cloud escapes raw HTML in comments: an HTML comment would be displayed as it is
+  // written. Every comment goes out through toBitbucketMarkup, which turns it into a marker nobody
+  // sees, so the answer is yes here as on the other providers.
   public hidesHtmlCommentsInPrComments(): boolean {
-    return false;
+    return true;
   }
 
   // Bitbucket refuses comments over 32,768 characters: the 50,000 cap of the other providers is too high
@@ -408,8 +414,8 @@ export class BitbucketProvider extends GitProviderRoot {
       if (comment?.deleted) {
         continue;
       }
-      if ((comment?.content?.raw || '').includes(`<!-- sfdx-hardis deployment-id `)) {
-        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(comment?.content?.raw || '');
+      if (this.commentText(comment).includes(`<!-- sfdx-hardis deployment-id `)) {
+        const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(this.commentText(comment));
         if (matches) {
           const commentTime = this.getCommentTimestamp(comment);
           if (commentTime >= latestDeploymentTime) {
@@ -812,13 +818,12 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
-    messageBody = this.enforceHardCommentLimit(messageBody);
 
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
 
     const commentBody: any = {
       content: {
-        raw: messageBody,
+        raw: this.sentCommentBody(messageBody),
       },
     };
 
@@ -832,8 +837,7 @@ ${getBannerMarkdownAndLink()}
     let existingCommentId: number | null = null;
     for (const existingComment of existingComments?.data?.values || []) {
       if (
-        existingComment?.content?.raw &&
-        existingComment?.content.raw?.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)
+        this.commentText(existingComment).includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)
       ) {
         existingCommentId = existingComment.id || null;
       }
@@ -897,7 +901,7 @@ ${getBannerMarkdownAndLink()}
       targetBranch: prData?.destination?.branch?.name || '',
       // Note: rendered.*.markup holds the format name ("markdown"), not content, so only raw/html are used as fallbacks
       title: prData?.rendered?.title?.raw || prData?.rendered?.title?.html || prData?.title || '',
-      description: prData?.rendered?.description?.raw || prData?.rendered?.description?.html || (prData as any)?.description || '',
+      description: fromBitbucketMarkup(prData?.rendered?.description?.raw || prData?.rendered?.description?.html || (prData as any)?.description || ''),
       webUrl: prData?.links?.html?.href || '',
       authorName: prData?.author?.display_name || '',
       createdDate: (prData as any)?.created_on || undefined,
@@ -953,7 +957,7 @@ ${getBannerMarkdownAndLink()}
       repo_slug: repoSlug,
       _body: {
         title: request.title,
-        description: request.body,
+        description: toBitbucketMarkup(request.body, 'newDescription'),
         source: { branch: { name: request.sourceBranch } },
         destination: { branch: { name: request.targetBranch } },
       } as any,
@@ -989,7 +993,7 @@ ${getBannerMarkdownAndLink()}
       workspace,
       repo_slug: repoSlug,
       pull_request_id: id,
-      _body: { title, description: body } as any,
+      _body: { title, description: toBitbucketMarkup(body, 'description') } as any,
     });
   }
 
@@ -1010,19 +1014,18 @@ ${getBannerMarkdownAndLink()}
       },
     );
     for (const comment of comments) {
-      if ((comment?.content?.raw || '').includes(marker)) {
-        return comment.content?.raw || null;
+      if (this.commentText(comment).includes(marker)) {
+        return this.commentText(comment) || null;
       }
     }
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
-    body = this.enforceHardCommentLimit(body);
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
-    if (!pullRequestId || !repoSlug || !workspace) return;
+    if (!pullRequestId || !repoSlug || !workspace) return false;
     // Paginated like the read side: a Pull Request carrying more comments than one page would get
     // a second marker comment at every run, each one notifying the participants again
     const comments = await this.fetchAllPages(
@@ -1037,12 +1040,12 @@ ${getBannerMarkdownAndLink()}
     let existingCommentId: number | null = null;
     for (const comment of comments) {
       if (comment?.deleted) continue;
-      if ((comment?.content?.raw || '').includes(marker)) {
+      if (this.commentText(comment).includes(marker)) {
         existingCommentId = comment.id || null;
         break;
       }
     }
-    const commentBody: any = { content: { raw: body } };
+    const commentBody: any = { content: { raw: this.sentCommentBody(body) } };
     if (existingCommentId) {
       await this.bitbucket.repositories.updatePullRequestComment({
         workspace,
@@ -1061,6 +1064,7 @@ ${getBannerMarkdownAndLink()}
       });
       uxLog("log", this, c.grey(`[Bitbucket] Created Deployment Actions comment on PR #${pullRequestId}`));
     }
+    return true;
   }
 
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
@@ -1084,11 +1088,11 @@ ${getBannerMarkdownAndLink()}
       // The API returns deleted comments with deleted=true: a checkbox ticked in a deleted
       // comment must not be honored, and updating such a comment id later would error
       if (comment?.deleted) continue;
-      if ((comment?.content?.raw || '').includes(marker)) {
+      if (this.commentText(comment).includes(marker)) {
         results.push({
           prNumber: pullRequestId,
           ref: comment.id,
-          body: comment.content?.raw || '',
+          body: this.commentText(comment),
           url: comment?.links?.html?.href || '',
           updatedAt: comment?.updated_on || comment?.created_on || '',
         });
@@ -1098,7 +1102,6 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
-    body = this.enforceHardCommentLimit(body);
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     if (!repoSlug || !workspace || !commentRef?.ref) return;
@@ -1107,9 +1110,36 @@ ${getBannerMarkdownAndLink()}
       repo_slug: repoSlug,
       pull_request_id: commentRef.prNumber,
       comment_id: commentRef.ref,
-      _body: { content: { raw: body } } as any,
+      _body: { content: { raw: this.sentCommentBody(body) } } as any,
     });
     uxLog("log", this, c.grey('[Bitbucket] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
+  }
+
+  // The text of a comment as Bitbucket gets it: rewritten for its markdown, within its size limit.
+  // The cut is made on the body as sfdx-hardis wrote it, where the markers to keep at the end are
+  // known, and with less room at each turn until what it becomes fits: the hidden markers are
+  // longer than the HTML comments they stand for.
+  private sentCommentBody(body: string): string {
+    const limit = this.getMaxPullRequestCommentLength();
+    let sent = toBitbucketMarkup(body);
+    let budget = limit;
+    for (let attempt = 0; attempt < 8 && sent.length > limit; attempt++) {
+      budget = Math.max(1000, budget - (sent.length - limit) - 200);
+      sent = toBitbucketMarkup(enforceCommentLengthLimit(body, budget).body);
+    }
+    if (sent.length > limit) {
+      sent = enforceCommentLengthLimit(sent, limit).body;
+    }
+    if (sent.length < toBitbucketMarkup(body).length) {
+      uxLog("warning", this, c.yellow(t('prCommentStillTooLong', { length: body.length, limit, provider: this.getLabel() })));
+    }
+    return sent;
+  }
+
+  // The text of a comment as the rest of sfdx-hardis reads it: with its hidden markers back as
+  // HTML comments (see utilsBitbucketMarkup.ts)
+  private commentText(comment: any): string {
+    return fromBitbucketMarkup(comment?.content?.raw || '');
   }
 
 }

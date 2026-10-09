@@ -239,7 +239,7 @@ describe('Identical actions in a deployment job', () => {
     ActionsProvider.buildActionInstance = async () => new FakeAction();
     GitProvider.getJobUrl = async () => 'https://ci.example.com/job/1';
     GitProvider.tryGetDeploymentActionsCommentBodyForPr = async () => null;
-    GitProvider.tryUpsertDeploymentActionsCommentForPr = async () => undefined;
+    GitProvider.tryUpsertDeploymentActionsCommentForPr = async () => null;
   });
 
   afterEach(() => {

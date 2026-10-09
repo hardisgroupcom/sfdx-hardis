@@ -16,7 +16,7 @@ import {
 import { CONSTANTS, getEnvVar, getLocalizedEnvVar } from '../../../config/index.js';
 import { which } from '../../../common/utils/whichUtils.js';
 import { generateMkDocsHTML } from '../../../common/docBuilder/docUtils.js';
-import { UtilsAi } from '../../../common/aiProvider/utils.js';
+import { UtilsAi } from '../../../common/aiProvider/utils/utils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { t } from '../../../common/utils/i18n.js';
 

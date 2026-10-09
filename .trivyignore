@@ -426,7 +426,7 @@ CVE-2026-19534
 CVE-2026-84961
 
 # https://avd.aquasec.com/nvd/cve-2026-93748
-# http-cache-semantics: information disclosure via the max-stale directive (HIGH), same advisory as GHSA-ch52-4w7c-c8xp in osv-scanner.toml. No fixed release exists (4.2.0, the latest, is affected).
+# http-cache-semantics: information disclosure via the max-stale directive (HIGH), advisory GHSA-ch52-4w7c-c8xp. sfdx-hardis own tree is no longer reported: yarn.lock resolves http-cache-semantics to 4.3.0, so the osv-scanner.toml ignore was removed on 2026-10-09. This entry stays for the 4.2.0 copies that the images may still hold.
 # The flaw lets a client read cached responses of other users from a SHARED cache. Here it is reached through @salesforce/source-deploy-retrieve > got > cacheable-request, a private client-side cache of a single-user CLI process: no response of another user is ever stored in it. Remove once a fixed version ships. Added 2026-10-03.
 CVE-2026-93748
 

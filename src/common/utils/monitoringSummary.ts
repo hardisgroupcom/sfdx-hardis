@@ -1,7 +1,7 @@
 import c from 'chalk';
 import { AiProvider } from '../aiProvider/index.js';
-import { uxLog } from '../utils/index.js';
-import { t } from '../utils/i18n.js';
+import { uxLog } from './index.js';
+import { t } from './i18n.js';
 
 // Slack section blocks reject text over 3000 chars. The prompt asks for <2800; this is a backstop.
 const MONITORING_SUMMARY_MAX_LEN = 2800;

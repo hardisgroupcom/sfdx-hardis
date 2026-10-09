@@ -13,6 +13,11 @@
 #   LOGS  folder where each job log is written
 #   DEV   path to bin/dev.js of the sfdx-hardis working copy under test
 
+# Settings from the environment, else .env, else derived (env-lib.sh): ORG defaults to E2E_ORG
+# shellcheck source=/dev/null
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env-lib.sh"
+e2e_defaults
+
 : "${ORG:?set ORG to the target org}"
 : "${REPO:?set REPO to owner/name of the test repository}"
 : "${WORK:?set WORK to the local clone}"
@@ -216,7 +221,7 @@ E2E_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Usage: pipeline_check <log label> [expectations file]
 pipeline_check() {
   local label="$1" expect="${2:-}" code
-  env -u NODE_OPTIONS EXT="${EXT:-C:/git/vscode-sfdx-hardis}" WORK="$WORK" PROVIDER_TOKEN="$(gh auth token)" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
+  env -u NODE_OPTIONS EXT="$EXT" WORK="$WORK" PROVIDER_TOKEN="$(gh auth token)" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
   code=$?
   cat "$LOGS/$label.log"
   echo "$label exit=$code log=$LOGS/$label.log"

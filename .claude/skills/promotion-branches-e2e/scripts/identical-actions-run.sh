@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Runbook section 6sexies on GitHub or GitLab: identical deployment actions run once per run
+# Runbook section 6sexies on GitHub, GitLab, Azure DevOps or Bitbucket Cloud: identical deployment actions run once per run
 # (issue #2271). Run it after promotion-run.sh, on the same repository: it reads
 # $LOGS/promo-vars.sh and adds eight stories into integration, promoted together to uat.
 #
-#   export PROVIDER=github|gitlab ORG WORK LOGS DEV API <the provider library variables>
+#   export PROVIDER=github|gitlab|azure|bitbucket ORG WORK LOGS DEV API <the provider library variables>
 #   export DEV_ORG=<a scratch org or developer sandbox username>   # optional, group I7
 #   bash identical-actions-run.sh
 #
@@ -29,7 +29,12 @@
 # Prints one line per assertion and writes $LOGS/results-section6sexies.txt.
 set -uo pipefail
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-: "${PROVIDER:?set PROVIDER to github or gitlab}"
+: "${PROVIDER:?set PROVIDER to github, gitlab, azure or bitbucket}"
+# Settings from the environment, else .env, else derived: WORK, LOGS and EXPECT default to
+# <OS temp>/promo-e2e-<provider>[-logs|-expect] (env-lib.sh)
+# shellcheck source=/dev/null
+source "$SCRIPTS_DIR/env-lib.sh"
+e2e_defaults "promo-e2e-$PROVIDER"
 # shellcheck source=/dev/null
 source "$SCRIPTS_DIR/promotion-provider.sh"
 # shellcheck source=/dev/null

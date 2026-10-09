@@ -7,7 +7,7 @@ import path from 'path';
 // resolved in the same order as in production (see gitProviderRoot.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import { GithubProvider } from '../../../src/common/gitProvider/github.js';
-import { GithubApiClient, GithubApiError, getGithubActionsContext } from '../../../src/common/gitProvider/githubApiClient.js';
+import { GithubApiClient, GithubApiError, getGithubActionsContext } from '../../../src/common/gitProvider/utils/githubApiClient.js';
 import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
 
 const ENV_KEYS = [

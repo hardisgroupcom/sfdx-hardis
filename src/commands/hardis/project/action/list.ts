@@ -16,7 +16,7 @@ import { GitProvider } from '../../../../common/gitProvider/index.js';
 import { BackpromoteCommentStore } from '../../../../common/utils/backpromoteCommentUtils.js';
 import { ActionForecastItem, findOpenPromotionPullRequest, forecastAction, markIdenticalForecasts } from '../../../../common/utils/deploymentActionForecastUtils.js';
 import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
-import { parseWorkflowRunsFromComments, PR_COMMENT_HIDDEN_MARKER } from '../../../../common/gitProvider/prRunSummary.js';
+import { parseWorkflowRunsFromComments, PR_COMMENT_HIDDEN_MARKER } from '../../../../common/gitProvider/utils/prRunSummary.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from '../../../../common/utils/adaptiveBatch.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);

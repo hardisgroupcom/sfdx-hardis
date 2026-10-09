@@ -1,7 +1,7 @@
 // Feeds the vscode-sfdx-hardis promotion helpers with the real Pull Requests of the Azure DevOps
 // test repository, and asserts that a Pull Request number appears in a single branch window.
 //
-//   EXT=C:/git/vscode-sfdx-hardis AZ_ORG=... AZ_PROJECT=... AZ_TOKEN=... \
+//   EXT=<vscode-sfdx-hardis clone, default ../vscode-sfdx-hardis> AZ_ORG=... AZ_PROJECT=... AZ_TOKEN=... \
 //     node check-diagram-azure.cjs <repository id or name> [branch,branch,...]
 //
 // The extension must be compiled first (cd $EXT && yarn dev), on the branch under test: this
@@ -10,7 +10,7 @@
 const { execFileSync } = require("child_process");
 const path = require("path");
 
-const EXT = process.env.EXT || "C:/git/vscode-sfdx-hardis";
+const EXT = require('./env-lib.cjs').extDir();
 const HELPERS = path.join(EXT, "out/utils/pipeline/promotionBranchUtils.js");
 let M;
 try {

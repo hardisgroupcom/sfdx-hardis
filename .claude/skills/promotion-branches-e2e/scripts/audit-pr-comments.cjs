@@ -38,7 +38,7 @@ const NAV_END = "<!-- sfdx-hardis nav-end -->";
 // The key holds the CI job name, spaces included on GitHub Actions
 const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (.+?) -->/;
 
-// Same rule as getPrCommentKind in src/common/gitProvider/prCommentNav.ts
+// Same rule as getPrCommentKind in src/common/gitProvider/utils/prCommentNav.ts
 function commentKind(body) {
   if (body.includes(DEPLOYMENT_ACTIONS_MARKER)) return "actions";
   const messageKey = (body.match(MESSAGE_KEY_REGEX) || [])[1] || "";

@@ -24,7 +24,7 @@ import {
 import { getApiVersion, getConfig, getEnvVar, getReportDirectory, setConfig } from '../../config/index.js';
 import { uxLogTableWithReport } from './filesUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
-import { deployCodeCoverageToMarkdown } from '../gitProvider/utilsMarkdown.js';
+import { deployCodeCoverageToMarkdown } from '../gitProvider/utils/utilsMarkdown.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { importData } from './dataUtils.js';
 import { analyzeDeployErrorLogs } from './deployTips.js';

@@ -2,7 +2,7 @@ import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
-import { UtilsNotifs as utilsNotifs } from "./utils.js";
+import { UtilsNotifs as utilsNotifs } from "./utils/utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
 import { GoogleChatProvider } from "./googleChatProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
@@ -10,12 +10,12 @@ import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 import type { NotifMessage } from "./types.js";
 import { t } from '../utils/i18n.js';
-import { writeMonitoringNotifFile } from './monitoringNotifWriter.js';
+import { writeMonitoringNotifFile } from './utils/monitoringNotifWriter.js';
 import {
   getChannelThreshold,
   getEffectiveNotificationConfig,
   severityMeetsThreshold,
-} from "./notificationConfig.js";
+} from "./utils/notificationConfig.js";
 import {
   AnonymizationChannel,
   AnonymizationLevel,

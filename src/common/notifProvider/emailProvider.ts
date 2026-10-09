@@ -2,12 +2,12 @@ import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { getCurrentGitBranch, uxLog } from "../utils/index.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
-import { UtilsNotifs } from "./utils.js";
-import { convertMarkdownToHtml } from "./markdownToHtml.js";
-import { convertMarkdownToPlainText } from "./markdownToPlainText.js";
+import { UtilsNotifs } from "./utils/utils.js";
+import { convertMarkdownToHtml } from "./utils/markdownToHtml.js";
+import { convertMarkdownToPlainText } from "./utils/markdownToPlainText.js";
 import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { EmailMessage, extractEmailSoapErrors, getEmailErrorAdviceKeys, sendEmail } from "../utils/emailUtils.js";
-import { getEffectiveNotificationConfig, getEmailRecipientsConfig } from "./notificationConfig.js";
+import { getEffectiveNotificationConfig, getEmailRecipientsConfig } from "./utils/notificationConfig.js";
 import { t } from "../utils/i18n.js";
 
 export class EmailProvider extends NotifProviderRoot {

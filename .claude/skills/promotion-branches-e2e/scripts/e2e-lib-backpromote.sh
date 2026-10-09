@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Backpromote (Beta) helpers of runbook section 6bis, shared by the GitHub, GitLab and Azure DevOps
+# Backpromote (Beta) helpers of runbook section 6bis, shared by the GitHub, GitLab, Azure DevOps and Bitbucket
 # libraries. Do not source it directly: each provider library defines three hooks, then sources it.
 #
 #   bp_provider_env <command...>     runs a command with the git provider variables the CLI reads
