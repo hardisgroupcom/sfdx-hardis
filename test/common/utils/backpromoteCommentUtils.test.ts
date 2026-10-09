@@ -116,6 +116,19 @@ describe('Backpromotes comment', () => {
     expect(parseBackpromotesComment(`${BACKPROMOTES_MARKER}\n<!-- sfdx-hardis backpromotes-data {not json -->`)).to.deep.equal({ sandboxRows: [], actionRows: [] });
   });
 
+  it('says the actions were tried in a developer org when no backpromote happened there', () => {
+    const body = renderBackpromotesComment({
+      sandboxRows: [],
+      actionRows: [
+        { actionId: 'a1', label: 'Action one', phase: 'post', sandboxName: 'devorg1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'success', user: 'someone' },
+        { actionId: 'a2', label: 'Action two', phase: 'post', sandboxName: 'devorg1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'pending', user: 'someone' },
+      ],
+    } as any);
+
+    expect(body).to.contain('**Deployment actions tried in 1 developer org, not backpromoted there yet · 👋 1 to do by hand**');
+    expect(body).to.not.contain('No sandbox received');
+  });
+
   it('renders an empty state without a table', () => {
     const body = renderBackpromotesComment(emptyBackpromotesState());
     expect(body).to.contain('### ⤵️ Backpromotes');
