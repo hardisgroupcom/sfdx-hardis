@@ -1523,7 +1523,7 @@ function renderPromotionPullRequestBody(
     lines.push('## Committed with conflict markers');
     lines.push('');
     for (const story of conflicted) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
       for (const file of story.conflictFiles || []) {
         lines.push(`  - \`${file}\``);
       }
@@ -1552,7 +1552,7 @@ function renderPromotionPullRequestBody(
     lines.push('## Left out because of cherry-pick conflicts');
     lines.push('');
     for (const story of options.skipped) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
     }
   }
   if ((options.alreadyThere || []).length > 0) {
@@ -1562,7 +1562,7 @@ function renderPromotionPullRequestBody(
     lines.push('Nothing to cherry-pick for those User Stories, their change is already in the target branch. They stay declared above, so their deployment actions and Apex test classes still run in the target org:');
     lines.push('');
     for (const story of options.alreadyThere || []) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
     }
   }
   lines.push('');
@@ -1627,6 +1627,8 @@ export function buildConflictResolutionPrompt(options: {
   return lines.join('\n');
 }
 
+// List items naming a story put its number after its title: Azure DevOps prints the dash of a list
+// item that starts with #.
 function sanitizeCell(text: string): string {
   return (text || '').replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;').trim();
 }
