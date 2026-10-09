@@ -22,7 +22,7 @@ describe('Bitbucket markup of Pull Request comments', () => {
     const sent = toBitbucketMarkup(body);
 
     expect(sent).to.not.match(/[()*_~!'][^\n]*#hardis:[^)]*[(*_~!']/);
-    expect(sent.split('\n')[0]).to.match(/^- ☐ \[\]\(#hardis:[^)\s]+\) Manual step$/);
+    expect(sent.split('\n')[0]).to.match(/^- ☐ \[\]\(#hardis(64)?:[^)\s]+\) Manual step$/);
     expect(fromBitbucketMarkup(sent)).to.equal(body);
   });
 
@@ -74,6 +74,52 @@ describe('Bitbucket markup of Pull Request comments', () => {
     expect(sent).to.contain('sf hardis:project:action:set-status');
     expect(toBitbucketMarkup('Rerun it. Only the boxes are meant to be edited in this comment.')).to.equal('Rerun it. This comment is rewritten by sfdx-hardis: do not edit it.');
     expect(fromBitbucketMarkup(sent)).to.contain('- [ ] To do\n- [x] Done');
+  });
+
+  it('leaves code inside a line as it is', () => {
+    const body = 'The file holds `<br/>`, `<b>x</b>` and `<!-- note -->` in a `<details>` block.<br/>Next line.';
+
+    const sent = toBitbucketMarkup(body);
+
+    expect(sent).to.equal('The file holds `<br/>`, `<b>x</b>` and `<!-- note -->` in a `<details>` block. Next line.');
+  });
+
+  it('does not take a fence opened and closed on one line for the start of a block', () => {
+    const body = '```one line```\n<!-- sfdx-hardis nav-end -->';
+
+    expect(toBitbucketMarkup(body)).to.contain('[](#hardis:sfdx-hardis%20nav-end)');
+  });
+
+  it('carries a JSON marker in base64, which is shorter, and reads it back', () => {
+    const data = JSON.stringify({ sandboxRows: [{ sandboxName: 'devorg1', orgId: '00D000000000001', "status": 'complete' }], actionRows: [] });
+    const body = `Backpromotes\n<!-- sfdx-hardis backpromotes-data ${data} -->\n`;
+
+    const sent = toBitbucketMarkup(body);
+
+    expect(sent).to.match(/\[\]\(#hardis64:[A-Za-z0-9_-]+\)/);
+    expect(sent.length).to.be.lessThan(body.length * 1.5);
+    expect(fromBitbucketMarkup(sent)).to.equal(body);
+  });
+
+  it('only hides its own markers in a description a person wrote', () => {
+    const body = '<!-- sfdx-hardis nav-start -->\n[Validation](https://example.com)\n<!-- sfdx-hardis nav-end -->\n\nMy story.<br/>\n\n- [ ] my own to do\n\n<details><summary>Notes</summary>\n\nmine\n\n</details>\n<!-- my own comment -->';
+
+    const sent = toBitbucketMarkup(body, 'description');
+
+    expect(sent).to.contain('[](#hardis:sfdx-hardis%20nav-start)');
+    expect(sent).to.contain('My story.<br/>\n\n- [ ] my own to do\n\n<details><summary>Notes</summary>');
+    expect(sent).to.contain('<!-- my own comment -->');
+    expect(fromBitbucketMarkup(sent)).to.equal(body);
+  });
+
+  it('rewrites the folded sections of a description it creates, and no task item', () => {
+    const body = '<!-- sfdx-hardis nav-start -->\n<!-- sfdx-hardis nav-end -->\n\n<details>\n<summary>Prompt</summary>\n\ntext\n\n</details>\n\n- [ ] not ours';
+
+    const sent = toBitbucketMarkup(body, 'newDescription');
+
+    expect(sent).to.contain('**Prompt**');
+    expect(sent).to.not.contain('<details>');
+    expect(sent).to.contain('- [ ] not ours');
   });
 
   it('reads a comment written before the hidden markers existed', () => {

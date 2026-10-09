@@ -1462,28 +1462,27 @@ export function buildPromotionPullRequestBody(options: {
   // rather than the Pull Request being refused: it is saved in hardis-report/ either way.
   maxLength?: number | null;
 }): string {
+  return buildPromotionPullRequestDescription(options).body;
+}
+
+/**
+ * The description, and whether it holds the coding agent prompt: the caller tells the user where to
+ * find the prompt, and must not have to guess it from the text.
+ */
+export function buildPromotionPullRequestDescription(options: Parameters<typeof buildPromotionPullRequestBody>[0]): { body: string; promptEmbedded: boolean } {
   const full = renderPromotionPullRequestBody(options, true);
   const maxLength = options.maxLength || null;
   if (!maxLength || full.length <= maxLength) {
-    return full;
+    return { body: full, promptEmbedded: true };
   }
   const withoutPrompt = renderPromotionPullRequestBody(options, false);
   if (withoutPrompt.length <= maxLength) {
-    return withoutPrompt;
+    return { body: withoutPrompt, promptEmbedded: false };
   }
   // Still too long: the yaml block the deployment jobs read sits at the top, so cutting the tail
   // keeps the description usable rather than losing the declaration
   const marker = '\n\n_Description truncated to fit this git provider._';
-  return withoutPrompt.substring(0, Math.max(0, maxLength - marker.length)) + marker;
-}
-
-/**
- * Whether buildPromotionPullRequestBody keeps the coding agent prompt in the description it returns:
- * it does unless the provider caps the length and the prompt does not fit.
- */
-export function promotionBodyEmbedsConflictPrompt(options: Parameters<typeof buildPromotionPullRequestBody>[0]): boolean {
-  const maxLength = options.maxLength || null;
-  return !maxLength || renderPromotionPullRequestBody(options, true).length <= maxLength;
+  return { body: withoutPrompt.substring(0, Math.max(0, maxLength - marker.length)) + marker, promptEmbedded: false };
 }
 
 /**

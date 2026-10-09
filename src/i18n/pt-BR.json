@@ -998,6 +998,8 @@
   "deltaTypeItemsKept": "Tipo {{type}}: {{count}} item(ns) modificado(s) entre os commits comparados, mantido(s) no delta",
   "deployAllCertFilesSavedBeforeRefresh": "Isso realizará o deploy de todos os arquivos e definições de certificado salvos antes da atualização.",
   "deploymentActionSkipped": "Pulando ação {{label}}: {{reason}}",
+  "deploymentActionsCommentNotResolved": "não foi possível determinar a Pull Request ou seu repositório a partir das configurações do provedor Git",
+  "deploymentActionsNoGitProvider": "sem conexão com o provedor Git",
   "deploymentActionsStateNotSaved": "Nada foi registrado para a Pull Request #{{pr}}: o comentário Deployment Actions não pôde ser atualizado ({{message}}). Alguns provedores Git só permitem que o autor de um comentário o edite: execute este comando com o token que escreveu o comentário (o dos jobs de CI/CD) ou peça a um administrador do projeto.",
   "deploymentComponentsReportError": "Não foi possível gravar o relatório de componentes da implantação: {{message}}",
   "deploymentComponentsReportWritten": "Relatório de componentes da implantação: {{count}} componentes listados em {{file}}",

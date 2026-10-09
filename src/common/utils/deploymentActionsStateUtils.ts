@@ -438,8 +438,10 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
       if (cell === '' || cell === '\u2b1c') {
         continue; // \u2b1c : not run in this org branch yet
       }
-      // The date lives before the <br/>: the job link URL after it may itself contain a date
-      const cellHead = cell.split('<br/>')[0];
+      // The date lives before the <br/>: the job link URL after it may itself contain a date. A
+      // provider that draws no <br/> gets a space in its place (Bitbucket): the link is then what
+      // follows the first space before a bracket.
+      const cellHead = cell.split(/<br\/>|\s(?=\[)/)[0];
       const dateMatch = cellHead.match(/(\d{4}-\d{2}-\d{2})/);
       const jobLinkMatch = cell.match(/\[([^\]]+)\]\(([^)]+)\)/);
       entries.push({

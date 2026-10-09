@@ -337,8 +337,12 @@ def paged(url):
 # sfdx-hardis hides its markers on Bitbucket in links with no text (utilsBitbucketMarkup.ts): the
 # dump gives them back as the HTML comments every checker reads, as the CLI does when it reads them
 def shown(text):
-    import re, urllib.parse
-    text = re.sub(r'\[\]\(#hardis:([^)\s]*)\)', lambda m: '<!-- ' + urllib.parse.unquote(m.group(1)) + ' -->', text)
+    import base64, re, urllib.parse
+    def marker(m):
+        if m.group(1):
+            return '<!-- ' + base64.urlsafe_b64decode(m.group(2) + '=' * (-len(m.group(2)) % 4)).decode('utf-8') + ' -->'
+        return '<!-- ' + urllib.parse.unquote(m.group(2)) + ' -->'
+    text = re.sub(r'\[\]\(#hardis(64)?:([^)\s]*)\)', marker, text)
     # a task item is sent with a box symbol, which Bitbucket draws where it draws no checkbox
     return re.sub(r'(?m)^(\s*[-*] )([' + chr(0x2610) + chr(0x2611) + r']) ',
                   lambda m: m.group(1) + ('[x] ' if m.group(2) == chr(0x2611) else '[ ] '), text)

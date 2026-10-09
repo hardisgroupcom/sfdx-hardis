@@ -847,10 +847,10 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
     body = this.enforceHardCommentLimit(body);
     const ctx = this.resolveMergeRequestContext(prNumber);
-    if (!ctx) return;
+    if (!ctx) return false;
     const { projectId, mergeRequestId } = ctx;
     const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
@@ -867,6 +867,7 @@ ${getBannerMarkdownAndLink()}
       await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, body);
       uxLog("log", this, c.grey(`[GitLab] Created Deployment Actions note on MR !${mergeRequestId}`));
     }
+    return true;
   }
 
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {

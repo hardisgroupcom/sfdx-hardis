@@ -387,9 +387,12 @@ export abstract class GitProviderRoot {
     return null;
   }
 
+  // Returns false when nothing was written: the Pull Request or the repository could not be
+  // resolved, or the provider does not implement it
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
     uxLog("other", this, `Method upsertPullRequestCommentByMarker is not implemented yet on ${this.getLabel()} for marker ${marker} body length ${body.length}`);
+    return false;
   }
 
   // Returns ALL the comments of a Pull Request containing the marker, with an opaque

@@ -458,14 +458,14 @@ export abstract class GitProvider {
   static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<string | null> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
-      return "no git provider connection";
+      return t('deploymentActionsNoGitProvider');
     }
     try {
-      await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
-      return null;
+      const written = await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
+      return written ? null : t('deploymentActionsCommentNotResolved');
     } catch (e) {
       uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
-      return (e as Error).message || "unknown error";
+      return (e as Error).message || String(e);
     }
   }
 

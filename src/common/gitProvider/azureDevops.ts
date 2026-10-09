@@ -809,7 +809,8 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId && prMessage.skipDeploymentIdMarker !== true) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
-    messageBody = this.enforceHardCommentLimit(messageBody);
+    // Reworded for Azure DevOps before the cap, so the size guard bounds what is sent
+    messageBody = this.enforceHardCommentLimit(toAzureDevopsWording(messageBody));
     // Upload attached images if necessary
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
     // Get Azure Git API
@@ -849,7 +850,7 @@ ${getBannerMarkdownAndLink()}
     // the description cannot be fixed after the merge (see isPrDescriptionEditableAfterMerge)
     if (existingThreadId && existingThreadCommentId) {
       uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUpdatingPrThread', { threadId: existingThreadId })));
-      await azureGitApi.updateComment({ content: toAzureDevopsWording(messageBody) }, repositoryId, pullRequestId, existingThreadId, existingThreadCommentId, azureTeamProject());
+      await azureGitApi.updateComment({ content: messageBody }, repositoryId, pullRequestId, existingThreadId, existingThreadCommentId, azureTeamProject());
       await azureGitApi.updateThread(
         { status: this.pullRequestStatusToAzureThreadStatus(prMessage) },
         repositoryId,
@@ -867,7 +868,7 @@ ${getBannerMarkdownAndLink()}
     // Create new thread
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationAddingPrThread')));
     const newThreadComment: GitPullRequestCommentThread = {
-      comments: [{ content: toAzureDevopsWording(messageBody) }],
+      comments: [{ content: messageBody }],
       status: this.pullRequestStatusToAzureThreadStatus(prMessage),
     };
     const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId, azureTeamProject());
@@ -1309,11 +1310,11 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
-    body = this.enforceHardCommentLimit(body);
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
+    body = this.enforceHardCommentLimit(toAzureDevopsWording(body));
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     const pullRequestId = prNumber || Number(process.env.SYSTEM_PULLREQUEST_PULLREQUESTID || '');
-    if (!repositoryId || !pullRequestId) return;
+    if (!repositoryId || !pullRequestId) return false;
     const azureGitApi = await this.azureApi.getGitApi();
     const threads = await azureGitApi.getThreads(repositoryId, pullRequestId, azureTeamProject());
     let existingThreadId: number | null = null;
@@ -1332,16 +1333,17 @@ ${getBannerMarkdownAndLink()}
       if (existingThreadId) break;
     }
     if (existingThreadId && existingCommentId) {
-      await azureGitApi.updateComment({ content: toAzureDevopsWording(body) }, repositoryId, pullRequestId, existingThreadId, existingCommentId, azureTeamProject());
+      await azureGitApi.updateComment({ content: body }, repositoryId, pullRequestId, existingThreadId, existingCommentId, azureTeamProject());
       uxLog("log", this, c.grey(`[Azure DevOps] Updated Deployment Actions thread comment on PR #${pullRequestId}`));
     } else {
       const newThread: GitPullRequestCommentThread = {
-        comments: [{ content: toAzureDevopsWording(body) }],
+        comments: [{ content: body }],
         status: CommentThreadStatus.Unknown,
       };
       await azureGitApi.createThread(newThread, repositoryId, pullRequestId, azureTeamProject());
       uxLog("log", this, c.grey(`[Azure DevOps] Created Deployment Actions thread on PR #${pullRequestId}`));
     }
+    return true;
   }
 
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
@@ -1380,11 +1382,11 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
-    body = this.enforceHardCommentLimit(body);
+    body = this.enforceHardCommentLimit(toAzureDevopsWording(body));
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (!repositoryId || !commentRef?.ref?.threadId || !commentRef?.ref?.commentId) return;
     const azureGitApi = await this.azureApi.getGitApi();
-    await azureGitApi.updateComment({ content: toAzureDevopsWording(body) }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId, azureTeamProject());
+    await azureGitApi.updateComment({ content: body }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId, azureTeamProject());
     uxLog("log", this, c.grey('[Azure DevOps] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Bitbucket Cloud comments as sfdx-hardis reads them. The CLI hides its markers there in links with
- * no text, `[](#hardis:<encoded>)`, and sends a task item with a box symbol
+ * no text, `[](#hardis:<percent-encoded>)` or `[](#hardis64:<base64url>)`, and sends a task item with a box symbol
  * (src/common/gitProvider/utils/utilsBitbucketMarkup.ts), because Bitbucket displays an HTML comment as
  * text and draws no checkbox. A script that reads the raw content of a comment gets those: this
  * gives the HTML comments and the task items back, as fromBitbucketMarkup does. It is the one place
@@ -18,9 +18,9 @@ const UNTICKED = '☐';
 const TICKED = '☑';
 
 // Like decodeHiddenMarker of the CLI: a marker that cannot be decoded is kept as it is written
-function decode(encoded) {
+function decode(encoded, base64) {
   try {
-    return decodeURIComponent(encoded);
+    return base64 ? Buffer.from(encoded, 'base64url').toString('utf8') : decodeURIComponent(encoded);
   } catch {
     return encoded;
   }
@@ -28,7 +28,7 @@ function decode(encoded) {
 
 function shown(text) {
   return String(text || '')
-    .replace(/\[\]\(#hardis:([^)\s]*)\)/g, (_match, encoded) => `<!-- ${decode(encoded)} -->`)
+    .replace(/\[\]\(#hardis(64)?:([^)\s]*)\)/g, (_match, base64, encoded) => `<!-- ${decode(encoded, base64 === '64')} -->`)
     .replace(/^(\s*[-*] )([☐☑]) /gm, (_match, bullet, box) => `${bullet}[${box === TICKED ? 'x' : ' '}] `);
 }
 
