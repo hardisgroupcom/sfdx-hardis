@@ -817,7 +817,9 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
-    messageBody = this.enforceHardCommentLimit(messageBody);
+    // Rewritten for Bitbucket before the cap: the hidden markers are longer than the HTML comments
+    // they stand for, and a body cut first could go past the limit of Bitbucket once rewritten
+    messageBody = this.enforceHardCommentLimit(toBitbucketMarkup(messageBody));
 
     messageBody = await this.uploadAndReplaceImageReferences(messageBody, prMessage.sourceFile || "");
 
@@ -1022,7 +1024,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
-    body = this.enforceHardCommentLimit(body);
+    body = this.enforceHardCommentLimit(toBitbucketMarkup(body));
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     const pullRequestId = prNumber || Number(process.env.BITBUCKET_PR_ID || '');
@@ -1102,7 +1104,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
-    body = this.enforceHardCommentLimit(body);
+    body = this.enforceHardCommentLimit(toBitbucketMarkup(body));
     const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     const workspace = process.env.BITBUCKET_WORKSPACE || null;
     if (!repoSlug || !workspace || !commentRef?.ref) return;

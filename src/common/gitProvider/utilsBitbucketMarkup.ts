@@ -1,3 +1,5 @@
+import { rewordTickSentences } from './utilsPrCommentWording.js';
+
 // Bitbucket Cloud escapes raw HTML in comments and descriptions: an HTML comment, a <details> block
 // or a <br/> is displayed as it is written. sfdx-hardis writes its comments once, for every provider,
 // with hidden markers (<!-- ... -->) that carry what the next job reads back, folded sections and
@@ -15,7 +17,8 @@ const HTML_COMMENT_REGEX = /<!--([\s\S]*?)-->/g;
 // deploymentActionsStateUtils.ts write them) name what does work on Bitbucket.
 const TASK_ITEM_REGEX = /^(\s*[-*] )\[([ xX])\] /gm;
 const BOX_ITEM_REGEX = /^(\s*[-*] )([\u2610\u2611]) /gm;
-const TICK_A_BOX_REGEX = /Tick a box once (?:it|the action) is done in the org: the next sfdx-hardis job records it\./g;
+const MARK_THEM_AS_DONE = 'Do the steps below in the org, mark them as done, then run the validation again.';
+const COMMENT_IS_REWRITTEN = 'This comment is rewritten by sfdx-hardis: do not edit it.';
 const NO_BOX_TO_TICK =
   'Once it is done in the org, mark it as done with `sf hardis:project:action:set-status` or the **Mark as done** button of the Deployment Actions tab in VS Code (a box cannot be ticked in a Bitbucket comment).';
 const CODE_FENCE_REGEX = /^\s*(`{3,}|~{3,})/;
@@ -33,12 +36,9 @@ export function toBitbucketMarkup(body: string): string {
     return body;
   }
   return mapOutsideCodeBlocks(body, (text) =>
-    text
+    rewordTickSentences(text, { tickHint: NO_BOX_TO_TICK, tickThenValidateAgain: MARK_THEM_AS_DONE, onlyBoxesAreEdited: COMMENT_IS_REWRITTEN })
       .replace(HTML_COMMENT_REGEX, (_match, content: string) => encodeHiddenMarker(content))
       .replace(TASK_ITEM_REGEX, (_match, bullet: string, state: string) => `${bullet}${state === ' ' ? '\u2610' : '\u2611'} `)
-      .replace(TICK_A_BOX_REGEX, NO_BOX_TO_TICK)
-      .replace('Do the steps below in the org, tick their boxes, then run the validation again.', 'Do the steps below in the org, mark them as done, then run the validation again.')
-      .replace(' Only the boxes are meant to be edited in this comment.', ' This comment is rewritten by sfdx-hardis: do not edit it.')
       .replace(/<summary>([\s\S]*?)<\/summary>/gi, (_match, summary: string) => `\n\n**${plainSummary(summary)}**\n\n`)
       .replace(/<\/?details[^>]*>/gi, '\n')
       .replace(/<br\s*\/?>/gi, ' ')

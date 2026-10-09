@@ -2,6 +2,7 @@ import type { PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { buildManualActionCheckboxMarker } from '../utils/deploymentActionsStateUtils.js';
 import { getTicketCollectionIssues } from '../ticketProvider/ticketProviderRoot.js';
 import { formatShortDate } from './utilsPrCommentDates.js';
+import { TICK_HINT_FOR_A_STEP, TICK_THEN_VALIDATE_AGAIN } from './utilsPrCommentWording.js';
 import type { PrCommentActionsRun, PullRequestData } from './index.js';
 import { PrCommentSection, SHORTENED_CODE_BLOCK_LINES, SHORTENED_LIST_ENTRIES, truncateCodeBlocks, truncateList } from './utilsPrCommentSizeGuard.js';
 
@@ -123,7 +124,7 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
         && prData.coverage?.status !== 'invalid' && !prData.blockingIssueMarkdownBody
         && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
       next = waitingForManualSteps
-        ? 'Do the steps below in the org, tick their boxes, then run the validation again.'
+        ? TICK_THEN_VALIDATE_AGAIN
         : isNetworkFailure(prData)
           ? 'Nothing points to an error in the metadata: run the validation job again.'
           : 'Fix it, commit and push: the validation runs again.';
@@ -468,7 +469,7 @@ function buildManualActionsChecklist(commands: PhasedCommand[], phase: ActionPha
     }
   }
   if (pending > 0) {
-    lines.push('', '_Tick a box once it is done in the org: the next sfdx-hardis job records it._');
+    lines.push('', `_${TICK_HINT_FOR_A_STEP}_`);
   }
   return lines.join('\n');
 }

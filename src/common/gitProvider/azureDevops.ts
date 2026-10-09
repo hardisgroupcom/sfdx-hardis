@@ -560,9 +560,14 @@ ${this.getPipelineVariablesConfig()}
       // remote everywhere else (VS Code, a terminal): the Pull Request is of this repository when
       // either matches.
       const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+      // A name alone is not enough: two team projects of an organization can each hold a repository
+      // of that name, so the project of the Pull Request has to be the one of the git remote too.
+      const pullRequestProject = (pullRequest.repository?.project?.name || "").toLowerCase();
+      const thisProject = (process.env.SYSTEM_TEAMPROJECT || "").toLowerCase();
+      const sameProject = !pullRequestProject || !thisProject || pullRequestProject === thisProject;
       const sameRepository =
         pullRequest.repository?.id === repositoryId ||
-        (pullRequest.repository?.name || "").toLowerCase() === (repositoryId || "").toLowerCase();
+        ((pullRequest.repository?.name || "").toLowerCase() === (repositoryId || "").toLowerCase() && sameProject);
       if (repositoryId && pullRequest.repository?.id && !sameRepository) {
         uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPrOtherRepository', { id: pullRequestId })));
         return null;
@@ -1388,6 +1393,12 @@ ${getBannerMarkdownAndLink()}
 // the API needs nothing else; outside CI (VS Code, a terminal) it is the repository name read from
 // the git remote, and the API then refuses the call without the project ("A project name is
 // required in order to reference a Git repository by name").
+// A GUID needs no project, and must not get one: a pipeline of a team project can build a repository
+// of another, and SYSTEM_TEAMPROJECT is then the project of the pipeline, not of the repository.
 function azureTeamProject(): string | undefined {
+  const repositoryId = process.env.BUILD_REPOSITORY_ID || "";
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(repositoryId)) {
+    return undefined;
+  }
   return process.env.SYSTEM_TEAMPROJECT || undefined;
 }

@@ -2,6 +2,7 @@ import { SfError } from '@salesforce/core';
 import c from "chalk";
 import { debuglog } from "util";
 import { GitProvider } from '../gitProvider/index.js';
+import { ONLY_BOXES_ARE_EDITED, TICK_HINT_FOR_AN_ACTION } from '../gitProvider/utilsPrCommentWording.js';
 import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { evaluateActionBranchFilter, getEffectiveActionContext, readActions } from './actionUtils.js';
@@ -705,7 +706,7 @@ export function buildDeploymentActionsCommentBody(
   ));
   body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, afterMergeEntries, pipelineEntries.length)}\n\n`;
   if (failedEntries.length + stoppedEntries.length + pendingManualEntries.length > 0) {
-    body += `Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. Only the boxes are meant to be edited in this comment.\n\n`;
+    body += `${TICK_HINT_FOR_AN_ACTION} Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. ${ONLY_BOXES_ARE_EDITED}\n\n`;
     body += `#### Needs you\n\n`;
     for (const e of failedEntries) {
       body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ❌ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;

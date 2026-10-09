@@ -105,6 +105,34 @@ describe('AzureDevopsProvider calls made with a repository name', () => {
     expect(await provider.getPullRequestById(12)).to.equal(null);
   });
 
+  it('ignores a Pull Request of a repository of that name in another team project', async () => {
+    const provider = buildProvider({
+      getPullRequestById: async (id: number) => ({
+        pullRequestId: id,
+        status: 1,
+        targetRefName: 'refs/heads/integration',
+        repository: { id: '0f0e0d0c-1111-2222-3333-444455556666', name: 'acme-repository', project: { name: 'another-project' } },
+      }),
+    });
+
+    expect(await provider.getPullRequestById(12)).to.equal(null);
+  });
+
+  it('names no project when the repository is known by its id, as in a pipeline', async () => {
+    process.env.BUILD_REPOSITORY_ID = '0f0e0d0c-1111-2222-3333-444455556666';
+    const calls: any[][] = [];
+    const provider = buildProvider({
+      getThreads: async (...args: any[]) => {
+        calls.push(args);
+        return [];
+      },
+    });
+
+    await provider.getPullRequestCommentByMarker('<!-- marker -->', 12);
+
+    expect(calls).to.deep.equal([['0f0e0d0c-1111-2222-3333-444455556666', 12, undefined]]);
+  });
+
   it('updates an existing comment with the team project', async () => {
     const updateCalls: any[][] = [];
     const provider = buildProvider({

@@ -1478,6 +1478,15 @@ export function buildPromotionPullRequestBody(options: {
 }
 
 /**
+ * Whether buildPromotionPullRequestBody keeps the coding agent prompt in the description it returns:
+ * it does unless the provider caps the length and the prompt does not fit.
+ */
+export function promotionBodyEmbedsConflictPrompt(options: Parameters<typeof buildPromotionPullRequestBody>[0]): boolean {
+  const maxLength = options.maxLength || null;
+  return !maxLength || renderPromotionPullRequestBody(options, true).length <= maxLength;
+}
+
+/**
  * The description itself. `withPrompt` embeds the coding agent prompt for the committed conflicts,
  * which is by far the longest part and the first thing dropped when a provider caps the length.
  */
