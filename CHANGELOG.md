@@ -11,6 +11,7 @@
 - Azure DevOps: the Pull Request window of the DevOps Pipeline shows the Deployment Actions statuses and the validation and deployment results, which stayed empty because the commands run outside a pipeline could not read the Pull Request comments.
 - Azure DevOps: [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) no longer says the conflict prompt is in the Pull Request description when it was too long to fit there.
 - [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/) stops with an explanation when the git provider refuses to update the Deployment Actions comment, instead of saying the action was recorded.
+- Azure DevOps: Pull Request comments tell to mark a manual action as done with the Mark as done button of the VS Code extension, since only the author of a comment or a project administrator can tick its boxes there.
 - Azure DevOps: a command run outside a pipeline no longer ignores the Pull Requests of its own repository as belonging to another one.
 - Bitbucket: [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#pull-request-comments) no longer show HTML tags and technical markers as text: folded sections become titled sections, and the markers are hidden.
 - Bitbucket: the `--json` output of the commands is no longer preceded by a banner of the Bitbucket client, which a program reading that output could not parse.

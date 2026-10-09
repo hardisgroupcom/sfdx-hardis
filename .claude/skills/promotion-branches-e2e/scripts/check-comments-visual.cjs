@@ -421,6 +421,8 @@ async function capture(page, item, selector) {
     });
     result.picture = `${base}.png`;
     await shoot(page, result.picture);
+    // A page can draw the comment again after the window changed size, and lose the mark: find it again
+    await page.evaluate(inspectInPage, { anchors, facts, selector });
     const opened = await page.evaluate(() => {
       const target = document.querySelector('[data-e2e-comment="1"]');
       const folded = [...target.querySelectorAll('details:not([open])')];

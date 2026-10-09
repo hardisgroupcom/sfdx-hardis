@@ -1,4 +1,5 @@
 import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { toAzureDevopsWording } from "./utilsAzureDevopsWording.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from '../utils/fsUtils.js';
@@ -843,7 +844,7 @@ ${getBannerMarkdownAndLink()}
     // the description cannot be fixed after the merge (see isPrDescriptionEditableAfterMerge)
     if (existingThreadId && existingThreadCommentId) {
       uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUpdatingPrThread', { threadId: existingThreadId })));
-      await azureGitApi.updateComment({ content: messageBody }, repositoryId, pullRequestId, existingThreadId, existingThreadCommentId, azureTeamProject());
+      await azureGitApi.updateComment({ content: toAzureDevopsWording(messageBody) }, repositoryId, pullRequestId, existingThreadId, existingThreadCommentId, azureTeamProject());
       await azureGitApi.updateThread(
         { status: this.pullRequestStatusToAzureThreadStatus(prMessage) },
         repositoryId,
@@ -861,7 +862,7 @@ ${getBannerMarkdownAndLink()}
     // Create new thread
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationAddingPrThread')));
     const newThreadComment: GitPullRequestCommentThread = {
-      comments: [{ content: messageBody }],
+      comments: [{ content: toAzureDevopsWording(messageBody) }],
       status: this.pullRequestStatusToAzureThreadStatus(prMessage),
     };
     const azureEditThreadResult = await azureGitApi.createThread(newThreadComment, repositoryId, pullRequestId, azureTeamProject());
@@ -1326,11 +1327,11 @@ ${getBannerMarkdownAndLink()}
       if (existingThreadId) break;
     }
     if (existingThreadId && existingCommentId) {
-      await azureGitApi.updateComment({ content: body }, repositoryId, pullRequestId, existingThreadId, existingCommentId, azureTeamProject());
+      await azureGitApi.updateComment({ content: toAzureDevopsWording(body) }, repositoryId, pullRequestId, existingThreadId, existingCommentId, azureTeamProject());
       uxLog("log", this, c.grey(`[Azure DevOps] Updated Deployment Actions thread comment on PR #${pullRequestId}`));
     } else {
       const newThread: GitPullRequestCommentThread = {
-        comments: [{ content: body }],
+        comments: [{ content: toAzureDevopsWording(body) }],
         status: CommentThreadStatus.Unknown,
       };
       await azureGitApi.createThread(newThread, repositoryId, pullRequestId, azureTeamProject());
@@ -1378,7 +1379,7 @@ ${getBannerMarkdownAndLink()}
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
     if (!repositoryId || !commentRef?.ref?.threadId || !commentRef?.ref?.commentId) return;
     const azureGitApi = await this.azureApi.getGitApi();
-    await azureGitApi.updateComment({ content: body }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId, azureTeamProject());
+    await azureGitApi.updateComment({ content: toAzureDevopsWording(body) }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId, azureTeamProject());
     uxLog("log", this, c.grey('[Azure DevOps] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 }
