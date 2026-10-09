@@ -132,6 +132,14 @@ ci_create_remote() {
     fi
     rm -f "$LOGS/.bb-config.json"
     echo "[$(date +%T)] Pipelines turned on"
+    # Turning Pipelines on starts a branch pipeline for each branch pushed just before: they would
+    # deploy the base project and take build minutes. Stopped before the first story is opened.
+    sleep 10
+    local started
+    for started in $(bb_api GET "$BB_API/pipelines/?sort=-created_on&pagelen=20" | _bbci_json "(d.values||[]).filter(p=>(p.state||{}).name!=='COMPLETED').map(p=>p.uuid).join(' ')"); do
+      bb_api POST "$BB_API/pipelines/$started/stopPipeline" >/dev/null
+      echo "[$(date +%T)] pipeline $started stopped: started when Pipelines was turned on"
+    done
   fi
   for b in INTEGRATION UAT PREPROD MAIN; do
     _bbci_set_variable "SFDX_AUTH_URL_$b" "$auth_url" true || return 1

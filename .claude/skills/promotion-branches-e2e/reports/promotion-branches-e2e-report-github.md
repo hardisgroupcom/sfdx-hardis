@@ -1,31 +1,21 @@
 # Promotion branches, deployment actions and backpromote: end to end test on GitHub
 
-**Date:** 2026-10-08 (supersedes the run of 2026-10-07)
-**Why this run:** sfdx-hardis #2316 rewrites every Pull Request comment the CLI writes (validation,
-deployment, Deployment Actions, Flow diff, Backpromotes) in a new layout: verdict, table of checks,
-"needs you" blocks, folded details. Several commands read those comments back (the checkbox of a
-manual action, `action:list --with-status`, `set-status`, the forecast, the Backpromotes history),
-and the extension reads them for the tabs of its single Pull Request window. This run proves that
-none of them lost anything with the new layout.
+**Date:** 2026-10-09 (supersedes the run of 2026-10-08 on `feat/readable-pr-comments`)
+**Why this run:** the four providers in a row on `e2e-updates`, GitHub last, with the visual check
+of the Pull Request comments added to the skill during the run (section 5quater).
 
-**Repositories under test (private, created empty for this run):**
+**Repositories under test** (private, created empty for this run):
 
-- sections 4, 4ter, 5bis, 6, 6quater, 6sexies and 7bis: `nvuillam/sfdx-hardis-promo-e2e-38`
-- backpromote (Beta), section 6bis: `nvuillam/sfdx-hardis-promo-e2e-40`
-- real CI workflows with `feat/readable-pr-comments` linked by `sf plugins link`, section 6quinquies:
-  `nvuillam/sfdx-hardis-promo-e2e-41`
+- sections 4, 4bis, 4ter, 5bis, 5quater, 6, 6quater, 6sexies and 7bis: `nvuillam/sfdx-hardis-promo-e2e-42`
+- backpromote (Beta), section 6bis: `nvuillam/sfdx-hardis-promo-e2e-43`
+- real CI with `e2e-updates` linked by `sf plugins link`, section 6quinquies:
+  `nvuillam/sfdx-hardis-promo-e2e-ci-1`
 
-Two runs were stopped and started again on a fresh repository, both for the network, not the
-product: `-37` (section 4 step 12, `git fetch` answered "Connection was reset", every later step of
-the section failed after it) and `-39` (step B9, a Salesforce call answered `ConnectTimeoutError`
-after 10 seconds; the steps after it build on its state).
-
-**Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (orgfarm Developer Edition, Dev Hub).
-Scratch orgs `promo-e2e-dev` (also `DEV_ORG` of 6quater) and `promo-e2e-dev2`, reset to the base
-project by the backpromote setup. No other org was touched.
-**sfdx-hardis:** `feat/readable-pr-comments` at `bab772965`, compiled, through `bin/run.js`. CI jobs of
--41 link the same branch (W0 asserts it).
-**vscode-sfdx-hardis:** `feat/readable-pr-comments` at `f91668cc`, compiled with `yarn compile`.
+**Salesforce org:** the Developer Edition org of `E2E_ORG` (also the Dev Hub). Scratch orgs
+`promo-e2e-dev` (also `DEV_ORG` of 6quater and 6sexies) and `promo-e2e-dev2`.
+**sfdx-hardis:** `e2e-updates` with the fixes of the run, through `bin/dev.js`. The CI jobs link the
+branch as pushed (W0).
+**vscode-sfdx-hardis:** `e2e-updates` at `dbc7e197`, compiled with `yarn compile`.
 
 ___
 
@@ -34,52 +24,129 @@ ___
 | Section                                                                             | Checks                            | OK  | FAIL |
 |-------------------------------------------------------------------------------------|-----------------------------------|-----|------|
 | 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |
-| 6: edge cases, groups g1 to g5                                                      | 44                                | 44  | 0    |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org (replay)         | 21                                | 21  | 0    |
 | 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |
-| 6bis: backpromote B0 to B16, C1 to C4 (-40)                                         | 63                                | 63  | 0    |
-| 6quinquies: real CI, W0 to W9 (-41)                                                 | 19                                | 19  | 0    |
-| 4ter: single Pull Request window, simulated jobs (-38)                              | 46 Pull Requests                  | 46  | 0    |
-| 4ter: single Pull Request window, real CI jobs (-41)                                | 7 Pull Requests                   | 7   | 0    |
-| 5bis: Pull Request comment audit (-38)                                              | 1076 checks over 52 Pull Requests | all | 0    |
-| 5bis: comment audit of the real CI comments (-41)                                   | 265 checks over 9 Pull Requests   | all | 0    |
-| 7bis: single place in the diagram (-38)                                             | 1                                 | 1   | 0    |
+| 6bis: backpromote B0 to B16, C1 to C4 (-43)                                         | 63                                | 63  | 0    |
+| 6quinquies: real CI, W0 to W9, X1, X2 (ci-1)                                        | 22                                | 22  | 0    |
+| 4ter: single Pull Request window, simulated jobs (-42)                              | 47 Pull Requests                  | 47  | 0    |
+| 4ter: single Pull Request window, real CI jobs (ci-1, X1)                           | 1                                 | 1   | 0    |
+| 5bis: comment audit (-42)                                                           | 1084 checks over 53 Pull Requests | all | 0    |
+| 5bis: comment audit of the real CI comments (ci-1)                                  | 265 checks over 9 Pull Requests   | all | 0    |
+| 5quater: visual check of the comments (-42, fixtures included)                      | 12 types, 1 warning               | 12  | 0    |
+| 5quater: visual check (-43, backpromote)                                            | 1 type                            | 1   | 0    |
+| 5quater: visual check (ci-1, comments of real jobs)                                 | 8 types                           | 8   | 0    |
+| 7bis: single place in the diagram (-42)                                             | 1                                 | 1   | 0    |
 | 7ter: flag-off A/B                                                                  | not run                           |     |      |
 
-___
-
-## What the new layout had to keep
-
-| Reader                                                                            | Proven by                                          | Result |
-|-----------------------------------------------------------------------------------|----------------------------------------------------|--------|
-| The checkbox of a manual action, ticked in the comment, read by the re-run        | W2 (real CI), 6quater gate                         | OK     |
-| `action:list --with-status` and the forecast, from the Deployment Actions comment | 6quater, 6sexies, W5b, W6c                         | OK     |
-| `set-status` (the Mark as done button), here and ahead in the next branch         | 6quater, W6                                        | OK     |
-| An action shared by two stories run once, the copy recorded as done               | 6sexies, W9, W9b                                   | OK     |
-| The Validation, Deployment and Deployment Actions tabs of the extension           | 4ter on -38 and -41, merged Pull Requests included | OK     |
-| The Backpromotes history (rows per sandbox and per action, a refreshed sandbox)   | C1 to C4                                           | OK     |
+Section 6quater first ended with 20 OK and 1 FAIL: check A5 (a draft is only warned) got exit code 2
+and "command hardis:project:deploy:smart not found". The cause was this run, not the product: the
+jobs execute the TypeScript sources as they are on disk, and a source file was being edited for
+the Azure DevOps fix at that second. Replayed on the same repository with `DA_RUN=2`: 21 OK. The
+runbook now says so under its traps.
 
 ___
 
-## What this run changed in the harness
+## Results by group
 
-- `check-backpromote-comments.cjs` expected the old visible cell `| devorg1 <sub>orgId</sub> |`. The
-  new layout keeps the org id in the hidden data only, and shows it in the visible text when a
-  refreshed sandbox kept its name (two rows, same name, other org id): `devorg1 (00D...)`. The check
-  now follows that rule and also asserts that a single sandbox shows no org id. C1 failed on `-39`
-  for that reason alone, then passed on its saved dump with the new check, then on `-40`.
+### Sections 3, 4 and 4bis (-42): 42 OK
 
-No product defect was found.
+Stories S1 to S7 (#1 to #7), promotions P1 to P5, release notes, second go-live, retrofit, and the
+six DevOps Pipeline checkpoints.
+
+### Section 6, edge cases (-42): 47 OK
+
+Groups g1 to g6.
+
+### Section 6quater, deployment actions (-42): 21 OK on the replay
+
+Groups A, B, C and D (developer org `promo-e2e-dev`).
+
+### Section 6sexies, identical actions (-42): 24 OK
+
+I1 to I10, with the backpromote plan and run of the window (I7, I8).
+
+### Section 6bis, backpromote (-43): 63 OK
+
+B0 to B16 and C1 to C4.
+
+### Section 6quinquies, real CI on GitHub Actions (ci-1): 22 OK
+
+| Job                            | Mode    | Result                 | Queued | Ran   |
+|--------------------------------|---------|------------------------|--------|-------|
+| ci-check-c1                    | real CI | failure (expected, W1) | 0 s    | 317 s |
+| ci-check-c1-rerun              | real CI | success                | 331 s  | 248 s |
+| ci-check-c2-draft              | real CI | success                | 0 s    | 331 s |
+| ci-deploy-integration-c1       | real CI | failure (expected, W4) | 0 s    | 274 s |
+| ci-check-c3                    | real CI | success                | 0 s    | 273 s |
+| ci-deploy-integration-c3       | real CI | success                | 0 s    | 279 s |
+| ci-check-promotion-uat         | real CI | failure (expected, W5) | 0 s    | 245 s |
+| ci-check-promotion-uat-rerun   | real CI | success                | 295 s  | 267 s |
+| ci-deploy-uat-promotion        | real CI | success                | 0 s    | 253 s |
+| ci-check-no-safe-dir           | real CI | failure (expected, W8) | 0 s    | 227 s |
+| ci-check-c5                    | real CI | success                | 0 s    | 341 s |
+| ci-check-c6                    | real CI | success                | 0 s    | 335 s |
+| ci-deploy-integration-c5       | real CI | success                | 0 s    | 283 s |
+| ci-deploy-integration-c6       | real CI | success                | 0 s    | 277 s |
+| ci-check-promotion-identical   | real CI | success                | 0 s    | 274 s |
+| ci-deploy-uat-identical        | real CI | success                | 0 s    | 293 s |
+
+16 jobs, all real CI, none simulated. The "queued" seconds of the two re-runs are the time of the
+first attempt, which a re-run of the same run id carries. The jobs ran the branch with the fixes of
+the night (Azure DevOps and Bitbucket providers, `set-status`): nothing changed for GitHub.
+
+### Section 5quater, visual check (new in this run)
+
+GitHub comments are drawn through `POST /markdown` (the renderer of the comments), headless.
+
+| Repository | Types checked                                                                                                                                                                                                     | Result           |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| -42        | backpromotes, deployment-actions, +manual, deployment-failed, deployment-success, +manual, promotion-description, +conflicts, validation-failed, validation-failed+manual, validation-success, validation-success+manual | 11 OK, 1 warning |
+| -43        | backpromotes                                                                                                                                                                                                      | OK               |
+| ci-1       | the eight types the real jobs left                                                                                                                                                                                | 8 OK             |
+
+The warning is the conflict prompt of a promotion description, a code block that scrolls.
+`validation-failed` and `validation-failed+manual` come from `visual-fixtures.sh`, which leaves a
+story with a class that does not compile and a story stopped at the manual action gate, both open.
+
+Every picture was then read against the checklist of the runbook (25 for -42 and -43). No markup
+is broken: banners, tables, emoji, checkboxes, folds and code blocks are drawn, nothing is left as
+text. What the reading found is about content, below.
+
+___
+
+## What the run found
+
+Nothing that breaks on GitHub. The reading of the pictures found things the checks cannot see:
+
+| Finding                                                                                                                                                                                                                             | Status                                                                 |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
+| The Backpromotes comment of a story whose actions were run in a developer org with `action:run --dev-org` said "No sandbox received this Pull Request yet · 2 to do by hand" above the list of those actions                       | fixed: "Deployment actions tried in 1 developer org, not backpromoted there yet" |
+| The Tickets fold of the validation comments lists words that are not tickets: `prmerge-57` and `recovery-2`                                                                                                                         | harness for the first (the simulator checks the merge ref out as a branch named `prmerge-<n>`, a real job has no such branch), open for the second: the generic ticket pattern takes any `word-number` of a title, here "E2E-401 S8 recovery-2" |
+| "To do by hand in `uat` before the deployment" heads a box that is already ticked, when the action was marked as done ahead                                                                                                         | open, wording                                                          |
+| The fold says "24 Pull Requests" and the line under it "(25 Pull Requests)" on a major-to-major Pull Request: one of the two counts the Pull Request itself                                                                         | open, minor                                                            |
+| "Results by org" tables with a Note column wrap the date as "2026-10-" / "08"                                                                                                                                                       | open, cosmetic                                                         |
+| The summary row shows a clock for "3 after the merge" while the table under it shows the same actions with the skipped dot                                                                                                          | open, cosmetic                                                         |
+| `validation-failed` comments have no navigation line                                                                                                                                                                                | to confirm: a failed validation is the only comment of its Pull Request |
 
 ___
 
 ## What this run did not cover
 
-- GitLab is not in this report: it was run the same day on `gl-15` (131/131, single Pull Request
-  window 46/46, audit 1076 checks), see `promotion-branches-e2e-report-gitlab.md`.
-- Azure DevOps and Bitbucket: not run (Bitbucket still needs a new token).
-- 7ter, the flag-off A/B diff: not run. The change is in the comment layout, which the A/B normalises
-  out of the job logs, so it would not have said anything about it.
-- The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
-  branch, not by distinct orgs.
-- The extension webview DOM is not clicked: 4ter calls the same data functions the window calls.
+- **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
+  which cannot be done while other sections use the same working copy.
+- **The real comment column of GitHub**: the visual check draws GitHub's own HTML in a plain
+  frame. `--render page` with a logged-in Chrome would show the page.
+- **Flow diff and MegaLinter comments**: no story holds a Flow and no job posts a MegaLinter
+  comment. The Code Quality tab of the Pull Request window is not exercised.
+- **Step B17** (terminal prompts of backpromote) and a real production org.
+- The window of a promotion or major-to-major Pull Request is not compared, and nothing of the
+  extension is rendered or clicked.
+- The four pipeline levels share one Salesforce org.
+
+___
+
+## Left behind
+
+`nvuillam/sfdx-hardis-promo-e2e-42`, `-43` and `-ci-1`. The `gh` token has no `delete_repo` scope
+(`gh auth refresh -h github.com -s delete_repo` before `gh repo delete`).

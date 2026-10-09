@@ -68,13 +68,15 @@ bb_remote_url() {
 # The Bitbucket Cloud REST API. Basic auth with the account email for an Atlassian API token,
 # Bearer for a workspace or repository Access Token.
 # Usage: bb_api <method> <url> [curl args...]
+# -g: the uuid of a pipeline comes in braces, which curl would otherwise expand as a set and send
+# without them (every call on a pipeline then answers 404)
 bb_api() {
   local method="$1" url="$2"
   shift 2
   if [ -n "$BB_EMAIL" ]; then
-    curl -sS -u "$BB_EMAIL:$BB_TOKEN" -X "$method" -H "Content-Type: application/json" "$url" "$@"
+    curl -g -sS -u "$BB_EMAIL:$BB_TOKEN" -X "$method" -H "Content-Type: application/json" "$url" "$@"
   else
-    curl -sS -H "Authorization: Bearer $BB_TOKEN" -X "$method" -H "Content-Type: application/json" "$url" "$@"
+    curl -g -sS -H "Authorization: Bearer $BB_TOKEN" -X "$method" -H "Content-Type: application/json" "$url" "$@"
   fi
 }
 
