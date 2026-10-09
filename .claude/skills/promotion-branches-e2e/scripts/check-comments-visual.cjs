@@ -391,6 +391,9 @@ async function shoot(page, file) {
   const margin = 16;
   await page.screenshot({
     path: file,
+    // The window is already as tall as the comment: capturing beyond it would lay the page out again
+    // and the clip would no longer be where the comment is (a page that scrolls in a container of its own)
+    captureBeyondViewport: false,
     clip: { x: Math.max(0, box.x - margin), y: Math.max(0, box.y - margin), width: box.width + 2 * margin, height: box.height + 2 * margin },
   });
 }
