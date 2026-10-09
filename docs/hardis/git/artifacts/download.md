@@ -41,6 +41,16 @@ In agent mode:
 - A `.job-artifacts.json` manifest in the folder records the artifacts extracted, to skip a download that would bring the same files.
 </details>
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
+
+- [Lab 1.6 - Open a Pull Request, pass the deployment check, merge](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-6-pull-request-deployment-check-and-merge/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
