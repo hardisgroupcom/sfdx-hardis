@@ -175,30 +175,37 @@ ___
    already passes the project on its calls: no change there.
 2. **`promotion:create` said the conflict prompt was embedded in the description when it was not.**
    New message `promotionCreateConflictPromptFileOnly` in the nine locales.
-3. **With the job token of the templates, nobody but a project administrator can close a manual
-   action. OPEN, needs a decision.** The templates give the jobs `$(System.AccessToken)`: the
-   comments are written by "`<project>` Build Service". Azure DevOps answers "Only the comment
-   author and project admins can edit a comment" (HTTP 403) to anyone else. Run on ci-az-4:
-   - W0, W1, W1b pass: the build service posts the validation and Deployment Actions comments;
-   - the checkbox of the manual action cannot be ticked by the person (W2 fails);
-   - `set-status`, which is what **Mark as done** runs in VS Code, cannot update the Deployment
-     Actions comment either, and so cannot record anything.
-   The Azure DevOps runs before this one never met it: the jobs and the person shared one PAT.
-   What was fixed: `set-status` reported "recorded as done" for a status it had not written. It now
-   stops with exit 1 and says why (`deploymentActionsStateNotSaved`, nine locales).
-   Decided for now (2026-10-09): the comments written on Azure DevOps tell to use the **Mark as
-   done** button of the Deployment Actions tab in VS Code, or `set-status`, and say that a box can
-   only be ticked by the author of the comment or a project administrator
-   (`utilsAzureDevopsWording.ts`, pictured on Pull Request #166 of az-7). The button runs
-   `set-status`, so it works for the author of the comment and for a project administrator, and
-   stops with the reason above for anyone else.
-   What is left to decide, since it changes where the state lives:
-   - **a reply in the thread** (recommended): anyone who can contribute to a Pull Request can add
-     a comment to an existing thread. A writer that is not the author of the Deployment Actions
-     comment would add its full, merged state as a reply, and every reader would take the newest
-     comment of the thread. One thread, its history visible, no permission to grant;
-   - or document that on Azure DevOps the gate is closed by a project administrator, or by running
-     `set-status` with the token of the jobs.
+3. **With the job token of the templates, nobody but a project administrator could close a manual
+   action. Fixed.** The templates give the jobs `$(System.AccessToken)`: the comments are written
+   by "`<project>` Build Service", and Azure DevOps answers "Only the comment author and project
+   admins can edit a comment" (HTTP 403) to anyone else. A contributor could neither tick the
+   checkbox of a manual action nor run `set-status`, which is what **Mark as done** runs in VS
+   Code, and `set-status` said "recorded as done" all the same. The Azure DevOps runs before this
+   one never met it: the jobs and the person shared one PAT.
+   What changed, in `azureDevops.ts` only:
+   - a writer that does not own the Deployment Actions (or Backpromotes) comment **answers in its
+     thread** with an update: one visible line ("Updated outside the pipeline on ... UTC, from VS
+     Code or the command line...") and, hidden, the whole new body;
+   - every reader takes the newest version of the comment, the comment itself or an update;
+   - the next pipeline job, which reads it too, brings its own comment up to date;
+   - an identity updates the version it owns instead of adding one at each change, so a thread
+     holds at most one update per person, and the listings (navigation, runs of the Pull Request
+     window, checkboxes) never return an update;
+   - the comments tell to use the Mark as done button, since a box can still only be ticked by
+     the author of the comment or a project administrator (`utilsAzureDevopsWording.ts`).
+   Proven on real Azure Pipelines with the job token (`sfdx-hardis-promo-e2e-ci-az-5`, Pull
+   Request #167): the tick is refused (HTTP 403), `set-status` answers in the thread, the
+   validation run again by the build service skips the action as "already run in integration" (W2),
+   and the deployment job after the merge skips it too (W4). The picture
+   `azure-deployment-actions-thread-with-update.png` shows the thread: the comment of the build
+   service, up to date, and the update of the contributor under it. That run was stopped after W4:
+   the later steps repeat the same mechanism. On its repository the comment audit (101 checks) and
+   the Pull Request window check pass with the update present. Six unit tests
+   (`azureDevopsCommentVersions.test.ts`), and section 6quater replayed on the four providers
+   after the change: 17 OK and 0 FAIL on each.
+   Between the action of the contributor and the next job, the table of the comment still shows
+   the earlier state: the line of the update is what tells a reader, and the CLI and VS Code read
+   the new state at once.
 4. **A command run outside a pipeline ignored every Pull Request of its own repository** as
    "belonging to another repository of the organization": `getPullRequestById` compared the
    repository name read from the git remote with a GUID. `set-status` ahead in the next branch,
@@ -246,8 +253,11 @@ ___
 
 ## What this run did not cover
 
-- **W3 to W9 with the system token of Azure Pipelines**: the scenario cannot go past W2 in that
-  mode (finding 3). They are proven with the PAT, where the jobs and the person are one identity.
+- **W5 to W9 with the job token of Azure Pipelines**: the run with the job token was stopped
+  after W4, once the reply in the thread was proven in a validation and in a deployment. The steps
+  after it are proven with the PAT, where the jobs and the person are one identity.
+- **A project administrator ticking a box** of a comment of the build service: the PAT of the test
+  was refused, so it is not known whether an administrator can.
 - **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
   which cannot be done while other sections use the same working copy. It ran on GitHub at the
   end of the night (0 differing lines), not on this provider.
@@ -268,8 +278,8 @@ ___
 
 ## Left behind
 
-Repositories `sfdx-hardis-promo-e2e-az-7`, `-az-8`, `-ci-az-1` to `-ci-az-4`, their
-pipeline definitions (ids 2 to 9) and build policies, in `nicolasvuillamy/tests-sfdx-hardis`.
+Repositories `sfdx-hardis-promo-e2e-az-7`, `-az-8`, `-ci-az-1` to `-ci-az-5`, their
+pipeline definitions (ids 2 to 11) and build policies, in `nicolasvuillamy/tests-sfdx-hardis`.
 Runbook section 9 says how to delete them. Metadata prefixed `PromoE2E` / `E2E_` in the org.
 On az-7, two Pull Requests left open and failed on purpose for the visual check (#165, #166).
 In Project settings > Repositories > Security, the build service keeps the "Contribute to pull

@@ -258,11 +258,12 @@ State them again in the report unless you close them:
   real comment column is only seen on Azure DevOps and Bitbucket, whose pages are opened. The
   pictures have to be read by someone: the DOM check does not judge wording or layout.
 - **Azure DevOps, the job token of the templates.** Only the author of a comment, or a project
-  administrator, can edit it. With `$(System.AccessToken)` the comments belong to the build
-  service: a person cannot tick the checkbox of a manual action, and `set-status` (the Mark as done
-  button) cannot record anything. `set-status` says so since 2026-10-09; the design that would lift
-  it (a reply in the thread, the newest comment wins) is not decided. Until it is, real CI on
-  Azure DevOps is proven past W2 with `AZURE_E2E_CI_TOKEN=pat` only.
+  administrator, can edit it, and with `$(System.AccessToken)` the comments belong to the build
+  service. Since 2026-10-09 a writer that does not own the Deployment Actions comment answers in
+  its thread with an update, and readers take the newest version: `set-status` (the Mark as done
+  button) works for a contributor. Ticking a box is still refused to them. Proven with the job
+  token up to W4 (a validation and a deployment reading the update); W5 to W9 are proven with
+  `AZURE_E2E_CI_TOKEN=pat` only.
 - **Bitbucket Cloud draws no checkbox and folds nothing.** The comments are rewritten for it
   (`utilsBitbucketMarkup.ts`): the gate is closed with `set-status`, never with a tick, and W2
   there edits the text of the comment, which a person can only do in a comment of their own.

@@ -1129,14 +1129,19 @@ once "Contribute to pull requests" was allowed by hand to `<project> Build Servi
 (<organization>)` (the PAT of `.env` cannot grant it, HTTP 401):
 
 - W0, W1 and W1b pass: the build service posts the comments.
-- **W2 fails, and it is a finding of the product, not of the harness.** Azure DevOps answers
-  "Only the comment author and project admins can edit a comment" (HTTP 403) to the person who
-  ticks the checkbox of a comment the build service wrote, and to `set-status` run by that person,
-  which has to update the Deployment Actions comment. Before 2026-10-09 `set-status` said "recorded
-  as done" all the same; it now stops with the reason. So with the job token of the templates, the
-  manual action gate can only be closed by a project administrator or with the token of the jobs.
-  The scenario cannot go past W2 in that mode: W3 to W9 are proven with `AZURE_E2E_CI_TOKEN=pat`,
-  where the jobs and the person are the same identity. See the Azure DevOps report for the options.
+- **A contributor cannot tick a box there.** Azure DevOps answers "Only the comment author and
+  project admins can edit a comment" (HTTP 403) to the person who ticks the checkbox of a comment
+  the build service wrote. `ci_tick_manual_checkbox` then marks the action as done with
+  `set-status`, as the Mark as done button of VS Code does, and `$LOGS/ci-tick-c1.log` says which
+  of the two happened.
+- **`set-status` answers in the thread** of the Deployment Actions comment when that comment
+  belongs to another identity (since 2026-10-09): one visible line, the new body hidden in a
+  `hardis-comment-update` marker. The job run again reads it (W2: "already run in integration"),
+  and so does the deployment job after the merge (W4), which brings the comment of the build
+  service up to date. The dump of the comments holds the update as a comment of its own, without a
+  sfdx-hardis marker: the audit ignores it, and the listings of the CLI never return it.
+- The run of 2026-10-09 with the job token was stopped after W4: W5 to W9 are proven with
+  `AZURE_E2E_CI_TOKEN=pat`, where the jobs and the person are the same identity.
 
 ### Bitbucket Pipelines
 
