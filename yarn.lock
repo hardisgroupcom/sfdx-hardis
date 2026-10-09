@@ -1415,10 +1415,10 @@
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
 
-"@langchain/anthropic@1.5.11":
-  version "1.5.11"
-  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.5.11.tgz#f5801e15ee20b445e979633f7f45efbd9eb3e7b0"
-  integrity sha512-NunWC6u8A/h5VnRk/WvyFkvN3RtdONUWV16u2i/EcEvhtjL2ZhJBPjjSFhm/7vyjtwdTyDhp7Uny75FHB7JXEQ==
+"@langchain/anthropic@1.5.12":
+  version "1.5.12"
+  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.5.12.tgz#558576c00b665961011192b2a558d9f1eb216258"
+  integrity sha512-tVvI94zAtG6isYxBzL7hlbxfbqjmvx/BqBWAov7v+bABKYz3fZHFI2Io1UI5UzU+h/5SuC1qXUV+JxnaqylJJw==
   dependencies:
     "@anthropic-ai/sdk" "^0.122.0"
     zod "^3.25.76 || ^4"
