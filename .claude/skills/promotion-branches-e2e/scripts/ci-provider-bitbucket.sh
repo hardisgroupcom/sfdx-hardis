@@ -134,11 +134,14 @@ ci_create_remote() {
     echo "[$(date +%T)] Pipelines turned on"
     # Turning Pipelines on starts a branch pipeline for each branch pushed just before: they would
     # deploy the base project and take build minutes. Stopped before the first story is opened.
-    sleep 10
-    local started
-    for started in $(bb_api GET "$BB_API/pipelines/?sort=-created_on&pagelen=20" | _bbci_json "(d.values||[]).filter(p=>(p.state||{}).name!=='COMPLETED').map(p=>p.uuid).join(' ')"); do
-      bb_api POST "$BB_API/pipelines/$started/stopPipeline" >/dev/null
-      echo "[$(date +%T)] pipeline $started stopped: started when Pipelines was turned on"
+    # They come one by one over the next half minute (2026-10-09: three of them, 15 seconds apart)
+    local started round
+    for round in 1 2 3 4; do
+      sleep 10
+      for started in $(bb_api GET "$BB_API/pipelines/?sort=-created_on&pagelen=20" | _bbci_json "(d.values||[]).filter(p=>(p.state||{}).name!=='COMPLETED').map(p=>p.uuid).join(' ')"); do
+        bb_api POST "$BB_API/pipelines/$started/stopPipeline" >/dev/null
+        echo "[$(date +%T)] pipeline $started stopped: started when Pipelines was turned on"
+      done
     done
   fi
   for b in INTEGRATION UAT PREPROD MAIN; do

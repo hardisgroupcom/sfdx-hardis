@@ -59,6 +59,8 @@ not already, so you know what each assertion is protecting.
 | `scripts/ab-run-bitbucket.sh`             | The same on Bitbucket Cloud.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `scripts/audit-pr-comments.cjs`           | The Pull Request comment audit, shared by the four providers. Fed by the `dump_pr_comments` of each library.                                                                                                                                                                                                                                                                                                                                                                |
 | `scripts/check-comments-visual.cjs`       | The visual check of the Pull Request comments (section 5quater): one comment of every type the run produced, opened as the provider draws it, pictured folded and unfolded, its DOM compared with its source (tables, folded sections, checkboxes, images, no markdown left as text). Azure DevOps and Bitbucket through a Chrome with remote debugging, logged in; GitHub and GitLab through their markdown API, headless. |
+| `scripts/visual-fixtures.sh`              | Leaves two failed validations open for the visual check, since a green run ends with none: a class that does not compile (`validation-failed`) and a manual action nobody marked as done (`validation-failed+manual`). After `deployment-actions-run.sh`, which turns the gate on. |
+| `scripts/bb-shown.cjs`                    | Bitbucket comments as sfdx-hardis reads them: the markers it hides there in links with no text, and the box symbol of a task item, given back as HTML comments and task items. Used by the Bitbucket real CI readers; the dump and the Pull Request window check do the same inline. |
 | `scripts/ab-diff.py`                      | Normalises two log folders and diffs them: the flag-off regression proof.                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ## Before starting
@@ -128,13 +130,14 @@ failure cannot be an artefact of the previous run's state.
    | 6sexies `identical-actions-run.sh`         | yes    | yes    | yes          | yes             |
    | 6bis `backpromote-setup.sh` / `-steps.sh`  | yes    | yes    | yes          | yes             |
    | 4ter `check-pr-modal.cjs`                  | yes    | yes    | yes          | yes             |
+   | 5quater `check-comments-visual.cjs`        | yes (API) | yes (API) | yes (page) | yes (page)    |
    | 7bis `check-diagram*.cjs`                  | yes    | yes    | yes          | yes             |
    | 6quinquies `ci-workflows-run.sh` (real CI) | yes    | yes    | yes          | yes, then simulated |
 
-   "yes" for Azure DevOps and Bitbucket means scripted and checked for syntax and wiring on
-   2026-10-08, not run live yet; so does "yes" for real CI (6quinquies) on GitLab, Azure DevOps and
-   Bitbucket: see "Known gaps". Bitbucket real CI uses the free build minutes of the workspace, then
-   runs the remaining jobs through the simulator and says so job by job.
+   The four providers ran every row live on 2026-10-08 and 2026-10-09. Bitbucket real CI uses the
+   free build minutes of the workspace, then runs the remaining jobs through the simulator and says
+   so job by job. On Azure DevOps the real CI scenario needs `AZURE_E2E_CI_TOKEN=pat` to go past W2
+   (see "Known gaps").
 
 3. **Build the repository and the stories** (runbook sections 2 and 3).
 4. **Run the pipeline** (runbook section 4), asserting each log as you go with `e2e_grep`. Do not
@@ -145,7 +148,9 @@ failure cannot be an artefact of the previous run's state.
    and none of them was visible in a job log.
 5bis-vis. **Look at the comments as the provider draws them** (runbook section 5quater):
    `check-comments-visual.cjs <comments.json> <out dir>` on every repository whose Pull Requests carry
-   comments (sections, backpromote, real CI), then **read every picture it wrote**. The audit reads
+   comments (sections, backpromote, real CI), after `visual-fixtures.sh` on the sections repository
+   so the failed validations exist, then **read every picture it wrote** (one reviewer agent per
+   provider, given the checklist of the runbook, keeps them out of the main context). The audit reads
    the markdown; only this sees a table left in pipes, a folded section that does not fold or a
    checkbox drawn as `[ ]`. Azure DevOps and Bitbucket need a Chrome started with
    `--remote-debugging-port=9222` and a profile of its own, logged in to the provider: ask the user
@@ -226,59 +231,53 @@ failure cannot be an artefact of the previous run's state.
 
 State them again in the report unless you close them:
 
-- The four providers were all run live on 2026-09-07 and 2026-09-08; GitHub and GitLab again on
-  2026-09-13, with sections 3, 4 and 6 scripted. Bitbucket has not been run since 2026-09-08. Since
-  2026-10-08 the Atlassian API token of `.env` (`ATLASSIAN_TOKEN` / `ATLASSIAN_EMAIL`) is valid in
-  the workspace `sfdxhardistest`: `GET /user`, the workspace repositories, its project `TES` and
-  `git ls-remote` as `x-bitbucket-api-token-auth` answer. Repository creation is still unproven
-  until the next run tries it.
+- The four providers ran every scripted section live on 2026-10-08 and 2026-10-09 (sections 4,
+  4bis, 4ter, 5bis, 5quater, 6, 6bis, 6quater, 6sexies, 6quinquies and 7bis). Azure DevOps and
+  Bitbucket Cloud ran them for the first time then, and each found defects no other provider
+  shows: read their reports before changing a provider.
+- **Section 7ter, the flag-off A/B, has not run since 2026-09-09.** It switches the sfdx-hardis
+  checkout to `origin/main`, so nothing else can use the working copy meanwhile: run it alone, last.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its own data provider (section 4bis), its compiled
   helpers and its unit tests, not by clicking: the mermaid is asserted as text, never rendered.
-- Backpromote (Beta) ran on GitHub and GitLab (2026-09-13). Its Bitbucket and Azure DevOps hooks
-  exist in the libraries but have never run. Its VS Code panel is not clicked: the panel reads the
-  same `--json` documents the run asserts, and its command builder, greying rules and marker watch
-  are unit tested. The terminal prompts of step B17 are only covered when someone answers them by
-  hand. The retry of a comment read after a dropped connection only runs when the provider drops one.
-- Section 6sexies (identical actions, sfdx-hardis#2271) ran on GitHub and GitLab on 2026-10-04,
-  twice on GitHub (`IA_RUN=2`), and W9 ran it through real GitHub Actions. Identical copies of custom
-  function actions with outputs, and of actions with a `customUsername`, are unit tested only.
-- The single Pull Request window (section 4ter, since 2026-10-07) is checked through the calls the
-  extension makes, not rendered. Its Code Quality tab is never exercised: nothing in the run posts a
-  MegaLinter comment. The window of a promotion or major-to-major Pull Request is not compared.
-- Azure DevOps has not run since 2026-09-09. The PAT of `.env` (`AZURE_PERSONAL_ACCESS_TOKEN`)
-  works again on 2026-10-08: it can create and delete repositories, contribute, create branches and
-  contribute to Pull Requests in `nicolasvuillamy/tests-sfdx-hardis`. It is custom scoped, so
-  Variable Groups, Service Connections and Graph answer 401, which the run does not need.
-- Since 2026-10-08 `scripts/promotion-provider.sh` maps the four providers, so sections 4, 4bis,
-  4ter, 6, 6bis, 6quater and 6sexies are scripted on Azure DevOps and Bitbucket too, but none of them
-  has run there yet: the first run on each will find what syntax checks cannot (provider timing,
-  API answers).
-- Section 6quinquies (real CI) ran live on GitHub Actions only. Its GitLab CI side
-  (`ci-provider-gitlab.sh`) was built on 2026-10-08 and checked for syntax, with read-only calls
-  and the CI lint API (the generated files are valid, a push to `main` selects `deploy_to_org`
-  only), but has never run a pipeline: the first run proves the runners (reaching github.com, npm
-  and ghcr.io, the time of the link step), the masking of the auth URL, the project access token
-  and its notes edited by the person running the test, the draft warning and W2 on a retried job.
-  Azure Pipelines (`ci-provider-azure.sh`) and Bitbucket Pipelines (`ci-provider-bitbucket.sh`)
-  were built on 2026-10-08 too and have never run either. Azure: the generated YAML was only parsed
-  locally (no pipeline existed in the project to preview against; the run previews both definitions
-  before its first job); to prove: the Build scope of the PAT, the free parallel job, the link step
-  in a container job, the build service posting Pull Request threads (it had no Contribute to pull
-  requests permission on 2026-10-08; the run tries to grant it), and W2, where the PAT user ticks a
-  comment of the build service (`AZURE_E2E_CI_TOKEN=pat` when Azure refuses). Bitbucket: the file is
-  valid against Atlassian's schema; to prove: the JSON state of a pipeline out of minutes (the
-  fallback reads a `PAUSED` / `HALTED` stage or a minutes message), the cache of the link step,
-  pipelines on a draft. With 50 minutes, most Bitbucket jobs of a run are simulated: say how many.
-  The runbook lists these under "Unproven until the first run" for each provider.
-- Portability (2026-10-08): no path of a computer is left in the scripts, `SKILL.md` or the runbook;
+- Backpromote (Beta): its VS Code panel is not clicked. The panel reads the same `--json`
+  documents the run asserts, and its command builder, greying rules and marker watch are unit
+  tested. The terminal prompts of step B17 are only covered when someone answers them by hand. The
+  retry of a comment read after a dropped connection only runs when the provider drops one.
+  `refused-production.json` needs a real production org, which the harness does not have.
+- Identical copies of custom function actions with outputs, and of actions with a
+  `customUsername`, are unit tested only (section 6sexies).
+- The single Pull Request window (section 4ter) is checked through the calls the extension makes,
+  not rendered. Its Code Quality tab is never exercised: nothing in the run posts a MegaLinter
+  comment. The window of a promotion or major-to-major Pull Request is not compared.
+- **The visual check (section 5quater) only sees the comment types a run leaves.** No story holds
+  a Flow, so the Flow diff comment has never been pictured, nor a MegaLinter comment. GitHub and
+  GitLab are drawn from their markdown API in a plain frame, not in their page: the width of the
+  real comment column is only seen on Azure DevOps and Bitbucket, whose pages are opened. The
+  pictures have to be read by someone: the DOM check does not judge wording or layout.
+- **Azure DevOps, the job token of the templates.** Only the author of a comment, or a project
+  administrator, can edit it. With `$(System.AccessToken)` the comments belong to the build
+  service: a person cannot tick the checkbox of a manual action, and `set-status` (the Mark as done
+  button) cannot record anything. `set-status` says so since 2026-10-09; the design that would lift
+  it (a reply in the thread, the newest comment wins) is not decided. Until it is, real CI on
+  Azure DevOps is proven past W2 with `AZURE_E2E_CI_TOKEN=pat` only.
+- **Bitbucket Cloud draws no checkbox and folds nothing.** The comments are rewritten for it
+  (`utilsBitbucketMarkup.ts`): the gate is closed with `set-status`, never with a tick, and W2
+  there edits the text of the comment, which a person can only do in a comment of their own.
+- Bitbucket Cloud has no merge ref: its validation job merges the target into the source itself,
+  as a `pull-requests:` pipeline does, so a stale-ref defect cannot show there. Its merge job finds
+  the Pull Request through the branch search fallback, since the "Pull Request Commit Links" app is
+  not installed in the test workspace.
+- Bitbucket Pipelines: turning Pipelines on starts branch pipelines for the branches pushed just
+  before, which the run stops. The fallback to the job simulator once the build minutes are used
+  up has only run if the report of the last Bitbucket run says so job by job.
+- Portability: no path of a computer is left in the scripts, `SKILL.md` or the runbook;
   `preflight.sh` passed on Windows (Git Bash). macOS and Linux are untested: the scripts only use
   `cygpath` when it exists, but `date -d` (GitLab project token expiry), `date +%s%3N` (timings) and
-  `sed -i` are GNU forms that macOS needs `coreutils` / `gnu-sed` for.
-- Bitbucket Cloud has no merge ref: its validation job merges the target into the source itself, as
-  a `pull-requests:` pipeline does, so a stale-ref defect cannot show there. Its merge job finds the
-  Pull Request through the branch search fallback, since the "Pull Request Commit Links" app is not
-  installed in the test workspace.
-
-$ARGUMENTS
+  `sed -i` are GNU forms that macOS needs `coreutils` / `gnu-sed` for. `preflight.sh` does not see
+  a Bitbucket workspace made read-only by its plan (HTTP 402 on push): push once to check.
+- A run that edits the product while sections run can fail a job for its own edit (the simulators
+  run the TypeScript sources live), and a workstation short on memory fails jobs with
+  `exited 3221225794` or `getaddrinfo() thread failed to start`: replay the section before calling
+  either a finding.
