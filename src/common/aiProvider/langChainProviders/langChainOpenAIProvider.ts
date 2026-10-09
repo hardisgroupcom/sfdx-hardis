@@ -2,7 +2,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import { AbstractLLMProvider, CodingAgentInfo, CodingAgentOptions, ModelConfig } from "./langChainBaseProvider.js";
 import { getEnvVar } from "../../../config/index.js";
-import { parseDefaultHeaders, shellEscape } from "../providerConfigUtils.js";
+import { parseDefaultHeaders, shellEscape } from "../utils/providerConfigUtils.js";
 
 export class LangChainOpenAIProvider extends AbstractLLMProvider {
   constructor(modelName: string, config: ModelConfig) {

@@ -26,8 +26,8 @@ import {
   setPrCommentNavLinks,
   SFDX_HARDIS_COMMENT_MARKER,
   upsertNavInDescription,
-} from "./prCommentNav.js";
-import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./prRunSummary.js";
+} from "./utils/prCommentNav.js";
+import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./utils/prRunSummary.js";
 import { classifyBackpromoteCurrentBranch } from "../utils/backpromoteRules.js";
 import { listMajorOrgs } from "../utils/orgConfigUtils.js";
 import type { PrePostCommand } from "../actionsProvider/actionsProvider.js";

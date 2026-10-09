@@ -1,4 +1,4 @@
-import { getConfig, getEnvVar } from "../../config/index.js";
+import { getConfig, getEnvVar } from "../../../config/index.js";
 
 interface BooleanFlagOptions {
   envVar: string;

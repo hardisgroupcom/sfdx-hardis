@@ -2,12 +2,12 @@ import c from "chalk";
 import { buildPrCreateUrl, encodePrUrlPathBranch, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { GithubApiClient, getGithubActionsContext } from "./githubApiClient.js";
+import { GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
-import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {

@@ -1,6 +1,6 @@
 import type { NotifSeverity, NotificationConfigEntry } from "../types.js";
 import { getEnvVar } from "../../../config/index.js";
-import { isEmailChannelObject } from "../notificationConfig.js";
+import { isEmailChannelObject } from "./notificationConfig.js";
 
 export class UtilsNotifs {
   public static isSlackAvailable() {

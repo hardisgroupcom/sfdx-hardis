@@ -1,5 +1,5 @@
 import c from 'chalk';
-import { UtilsAi } from "../aiProvider/utils.js";
+import { UtilsAi } from "../aiProvider/utils/utils.js";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from '../aiProvider/promptTemplates.js';
 import { AiProvider } from '../aiProvider/index.js';

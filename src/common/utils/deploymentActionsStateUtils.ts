@@ -12,7 +12,7 @@ import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBa
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
 import { formatShortDate } from '../gitProvider/utils/utilsPrCommentDates.js';
-import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
+import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/utils/prCommentNav.js';
 
 // Enable with NODE_DEBUG=sfdxhardis
 const debug = debuglog("sfdxhardis");

@@ -6,8 +6,8 @@ import {
   markdownFirstLineAsText,
   parseWorkflowRunFromComment,
   parseWorkflowRunsFromComments,
-} from '../../../src/common/gitProvider/prRunSummary.js';
-import { PR_NAV_END, PR_NAV_START } from '../../../src/common/gitProvider/prCommentNav.js';
+} from '../../../../src/common/gitProvider/utils/prRunSummary.js';
+import { PR_NAV_END, PR_NAV_START } from '../../../../src/common/gitProvider/utils/prCommentNav.js';
 
 const VALIDATION_KEY = '<!-- sfdx-hardis message-key deployment-check-check-deployment-128 -->';
 const DEPLOYMENT_KEY = '<!-- sfdx-hardis message-key deployment-process-deployment-128 -->';

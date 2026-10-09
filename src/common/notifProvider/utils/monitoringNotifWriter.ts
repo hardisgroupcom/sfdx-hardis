@@ -1,9 +1,9 @@
-import fs from '../utils/fsUtils.js';
+import fs from '../../utils/fsUtils.js';
 import * as path from 'path';
 import c from 'chalk';
-import { uxLog } from '../utils/index.js';
-import type { NotifMessage } from './types.js';
-import { t } from '../utils/i18n.js';
+import { uxLog } from '../../utils/index.js';
+import type { NotifMessage } from '../types.js';
+import { t } from '../../utils/i18n.js';
 
 /**
  * Write a NotifMessage to a JSON file in the monitoring notifications output directory.

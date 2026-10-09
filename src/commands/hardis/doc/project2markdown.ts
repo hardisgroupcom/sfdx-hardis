@@ -46,7 +46,7 @@ import { DocBuilderWorkflowRule } from '../../../common/docBuilder/docBuilderWor
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../common/utils/gitUtils.js';
 import { PromisePool } from '@supercharge/promise-pool';
-import { UtilsAi } from '../../../common/aiProvider/utils.js';
+import { UtilsAi } from '../../../common/aiProvider/utils/utils.js';
 import ExcelJS from 'exceljs';
 import { t } from '../../../common/utils/i18n.js';
 

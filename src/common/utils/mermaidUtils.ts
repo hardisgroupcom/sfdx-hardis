@@ -10,7 +10,7 @@ import { dateHelper } from './dateHelper.js';
 import { SfError } from "@salesforce/core";
 import { PACKAGE_ROOT_DIR } from "../../settings.js";
 import { AiProvider } from "../aiProvider/index.js";
-import { UtilsAi } from "../aiProvider/utils.js";
+import { UtilsAi } from "../aiProvider/utils/utils.js";
 import { generatePdfFileFromMarkdown } from "./markdownUtils.js";
 import { DocBuilderFlow } from "../docBuilder/docBuilderFlow.js";
 import { includeFromFile, isDocProtected, withDocProtectionHeader } from "../docBuilder/docUtils.js";

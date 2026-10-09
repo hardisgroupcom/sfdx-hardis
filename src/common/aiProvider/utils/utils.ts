@@ -1,9 +1,9 @@
-import { PromptTemplate } from "./promptTemplates.js";
+import { PromptTemplate } from "../promptTemplates.js";
 import path from 'path';
-import fs from '../utils/fsUtils.js';
-import { getLargeXmlParser } from '../utils/xmlUtils.js';
-import { fingerprint32 } from '../utils/farmhashFingerprint.js';
-import { getConfig } from "../../config/index.js";
+import fs from '../../utils/fsUtils.js';
+import { getLargeXmlParser } from '../../utils/xmlUtils.js';
+import { fingerprint32 } from '../../utils/farmhashFingerprint.js';
+import { getConfig } from "../../../config/index.js";
 
 export class UtilsAi {
   public static async getPromptsLanguage(): Promise<string> {

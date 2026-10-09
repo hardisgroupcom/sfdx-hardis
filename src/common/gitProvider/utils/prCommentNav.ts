@@ -10,7 +10,7 @@ providers and the deployment actions state can use it without a circular import.
 themselves are in GitProvider.refreshPullRequestNavigation().
 */
 
-import { getEnvVar } from "../../config/index.js";
+import { getEnvVar } from "../../../config/index.js";
 
 export type PrCommentKind = 'validation' | 'deployment' | 'actions';
 

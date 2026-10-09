@@ -5,8 +5,8 @@
 // It also exposes the GitHub Actions context values that the provider reads
 // (repository, event payload, ref, run id), computed from the same environment
 // variables @actions/github used, so behavior inside GitHub Actions is unchanged.
-import fs from '../utils/fsUtils.js';
-import { createHttpClient, HttpClient, HttpError, HttpRequestConfig, HttpResponse } from '../utils/httpUtils.js';
+import fs from '../../utils/fsUtils.js';
+import { createHttpClient, HttpClient, HttpError, HttpRequestConfig, HttpResponse } from '../../utils/httpUtils.js';
 
 export const GITHUB_DEFAULT_API_URL = 'https://api.github.com';
 export const GITHUB_DEFAULT_SERVER_URL = 'https://github.com';

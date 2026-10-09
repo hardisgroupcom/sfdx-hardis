@@ -10,7 +10,7 @@ import {
   replacePrCommentNavBlock,
   upsertNavInDescription,
   wrapPrCommentNav,
-} from '../../../src/common/gitProvider/prCommentNav.js';
+} from '../../../../src/common/gitProvider/utils/prCommentNav.js';
 
 const LINKS = {
   validation: 'https://git.example.com/pr/42#comment-1',

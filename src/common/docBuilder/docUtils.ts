@@ -8,7 +8,7 @@ import * as yaml from 'js-yaml';
 import { parseDocument as parseYamlDocument, isMap as isYamlMap, isSeq as isYamlSeq } from 'yaml';
 import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
-import { UtilsAi } from "../aiProvider/utils.js";
+import { UtilsAi } from "../aiProvider/utils/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { uxLog, execCommand } from "../utils/index.js";
 import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';

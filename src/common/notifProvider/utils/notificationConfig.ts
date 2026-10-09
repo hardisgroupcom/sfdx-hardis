@@ -1,4 +1,4 @@
-import { getConfig } from "../../config/index.js";
+import { getConfig } from "../../../config/index.js";
 import type {
   EmailChannelConfig,
   EmailChannelObject,
@@ -11,8 +11,8 @@ import type {
   NotifMessageType,
   NotifSeverity,
   Weekday,
-} from "./types.js";
-import { notificationTypesDefault } from "./types.js";
+} from "../types.js";
+import { notificationTypesDefault } from "../types.js";
 
 const WEEKDAY_INDEX: Record<Weekday, number> = {
   sunday: 0,

@@ -31,7 +31,7 @@ Most monitoring commands emit a single notification type whose key matches the c
 
 The user `.sfdx-hardis.yml` has **two independent top-level keys**, each merged by `key` onto its respective defaults list:
 
-- `monitoringCommands:` -- scheduling overrides. `monitor:all` calls `resolveMonitoringCommands(monitoringCommandsDefault, userEntries)` from `src/common/notifProvider/notificationConfig.ts`. Each user entry is shallow-merged on top of the matching default; user-only entries (new keys) are appended as custom commands.
+- `monitoringCommands:` -- scheduling overrides. `monitor:all` calls `resolveMonitoringCommands(monitoringCommandsDefault, userEntries)` from `src/common/notifProvider/utils/notificationConfig.ts`. Each user entry is shallow-merged on top of the matching default; user-only entries (new keys) are appended as custom commands.
 - `notificationConfig:` -- per-notification-type routing overrides. `NotifProvider.postNotifications` calls `getEffectiveNotificationConfig(notifType)` from the same file. It reads `notificationTypesDefault[type].defaults` and merges the user's `notificationConfig[i].notifications` block on top, field-by-field.
 
 Net effect: **fields the user did not set automatically pick up new defaults the next time you ship**. Fields the user explicitly set keep their value (user intent wins).

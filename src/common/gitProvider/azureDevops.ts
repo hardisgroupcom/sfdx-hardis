@@ -8,7 +8,7 @@ import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
-import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';

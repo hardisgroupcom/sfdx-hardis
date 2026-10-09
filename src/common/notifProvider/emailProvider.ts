@@ -7,7 +7,7 @@ import { convertMarkdownToHtml } from "./utils/markdownToHtml.js";
 import { convertMarkdownToPlainText } from "./utils/markdownToPlainText.js";
 import { CONSTANTS, getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { EmailMessage, extractEmailSoapErrors, getEmailErrorAdviceKeys, sendEmail } from "../utils/emailUtils.js";
-import { getEffectiveNotificationConfig, getEmailRecipientsConfig } from "./notificationConfig.js";
+import { getEffectiveNotificationConfig, getEmailRecipientsConfig } from "./utils/notificationConfig.js";
 import { t } from "../utils/i18n.js";
 
 export class EmailProvider extends NotifProviderRoot {
