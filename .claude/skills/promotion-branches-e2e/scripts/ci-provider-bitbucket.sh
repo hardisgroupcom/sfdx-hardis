@@ -219,14 +219,17 @@ ci_rerun() {
 
 # Tick, in every comment of a Pull Request, the checkbox of a manual action for an org branch. The
 # comments of the jobs are written with the token of the person running the test, who can edit them
+# The folder of this file: bb-shown.cjs gives the hidden markers of a Bitbucket comment back
+BBCI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# On Bitbucket nobody ticks a box in a comment (they are drawn disabled): this edits the text of the
+# comment, as a person editing their own comment would
 ci_tick_manual_checkbox() {
   local pr="$1" action="$2" org="$3" ids cid file
-  ids=$(bb_api GET "$BB_API/pullrequests/$pr/comments?pagelen=100" |
-    _bbci_json "(d.values||[]).filter(c=>!c.deleted&&((c.content||{}).raw||'').includes('sfdx-hardis-manual-action id:$action org:$org')).map(c=>c.id).join(' ')")
+  ids=$(bb_api GET "$BB_API/pullrequests/$pr/comments?pagelen=100" | node "$BBCI_DIR/bb-shown.cjs" ids "sfdx-hardis-manual-action id:$action org:$org")
   for cid in $ids; do
     file="$LOGS/comment-$cid.md"
-    bb_api GET "$BB_API/pullrequests/$pr/comments/$cid" |
-      node -e "let s='';process.stdin.setEncoding('utf8').on('data',c=>s+=c).on('end',()=>require('fs').writeFileSync(process.argv[1],(JSON.parse(s).content||{}).raw||''))" "$(_bbci_path "$file")"
+    bb_api GET "$BB_API/pullrequests/$pr/comments/$cid" | node "$BBCI_DIR/bb-shown.cjs" raw >"$file"
     ci_tick_in_file "$file" "$action" "$org" raw
     node -e "const fs=require('fs');const f=process.argv[1];fs.writeFileSync(f,JSON.stringify({content:JSON.parse(fs.readFileSync(f,'utf8'))}))" "$(_bbci_path "$file.json")"
     bb_api PUT "$BB_API/pullrequests/$pr/comments/$cid" --data-binary "@$(_bbci_path "$file.json")" >/dev/null && echo "ticked in comment $cid"
@@ -234,8 +237,7 @@ ci_tick_manual_checkbox() {
 }
 
 ci_pr_comments() {
-  bb_api GET "$BB_API/pullrequests/$1/comments?pagelen=100" |
-    _bbci_json "(d.values||[]).filter(c=>!c.deleted).map(c=>(c.content||{}).raw||'').join('\n')" >"$LOGS/$2.log" 2>&1
+  bb_api GET "$BB_API/pullrequests/$1/comments?pagelen=100" | node "$BBCI_DIR/bb-shown.cjs" all >"$LOGS/$2.log" 2>&1
 }
 
 # The API answers 12 character hashes: the full one comes from the commit endpoint

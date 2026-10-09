@@ -1,6 +1,6 @@
 # Promotion branches, deployment actions and backpromote: end to end test on Azure DevOps
 
-**Date:** 2026-10-08 (supersedes the run of 2026-09-09)
+**Date:** 2026-10-08 and 2026-10-09 (supersedes the run of 2026-09-09)
 **Why this run:** first run on Azure DevOps of the scripted sections (4, 4bis, 4ter, 6, 6bis,
 6quater, 6sexies), which `promotion-provider.sh` maps to the four providers since 2026-10-08, and
 first run ever of the real CI section (6quinquies) on Azure Pipelines.
@@ -11,7 +11,9 @@ first run ever of the real CI section (6quinquies) on Azure Pipelines.
 - sections 4, 4bis, 4ter, 5bis, 6, 6quater, 6sexies and 7bis: `sfdx-hardis-promo-e2e-az-7`
 - backpromote (Beta), section 6bis: `sfdx-hardis-promo-e2e-az-8`
 - real CI with `e2e-updates` linked by `sf plugins link`, section 6quinquies:
-  `sfdx-hardis-promo-e2e-ci-az-3` (pipelines 6 and 7)
+  `sfdx-hardis-promo-e2e-ci-az-3` (pipelines 6 and 7), jobs commenting with the PAT, and
+  `sfdx-hardis-promo-e2e-ci-az-4` (pipelines 8 and 9), jobs commenting with the system token of
+  the templates, once the build service was allowed to contribute to pull requests
 
 `sfdx-hardis-promo-e2e-ci-az-1` and `-ci-az-2` are two real CI attempts stopped after their first
 job: both failed for the harness, not the product (see "What the run found").
@@ -39,6 +41,10 @@ ___
 | 5bis: Pull Request comment audit (az-7)                                             | 1136 checks over 53 Pull Requests | all | 0    |         |
 | 5bis: comment audit of the real CI comments (ci-az-3)                               | 271 checks over 7 Pull Requests   | all | 0    |         |
 | 7bis: single place in the diagram (az-7)                                            | 1                                 | 1   | 0    |         |
+| 6quinquies again, system token (ci-az-4)                                            | stopped at W2: a product finding  | 4   | 1    | W3 to W9 |
+| 5quater: visual check of the comments (az-7, fixtures included)                     | 11 types                          | 11  | 0    |         |
+| 5quater: visual check (az-8, backpromote)                                           | 1 type, 1 warning                 | 1   | 0    |         |
+| 5quater: visual check (ci-az-3, comments of real jobs)                              | 8 types                           | 8   | 0    |         |
 | 7ter: flag-off A/B                                                                  | not run                           |     |      | all     |
 
 The single FAIL, edge check 29, is a defect of the CLI fixed during the run and replayed green
@@ -169,34 +175,73 @@ ___
    already passes the project on its calls: no change there.
 2. **`promotion:create` said the conflict prompt was embedded in the description when it was not.**
    New message `promotionCreateConflictPromptFileOnly` in the nine locales.
+3. **With the job token of the templates, nobody but a project administrator can close a manual
+   action. OPEN, needs a decision.** The templates give the jobs `$(System.AccessToken)`: the
+   comments are written by "`<project>` Build Service". Azure DevOps answers "Only the comment
+   author and project admins can edit a comment" (HTTP 403) to anyone else. Run on ci-az-4:
+   - W0, W1, W1b pass: the build service posts the validation and Deployment Actions comments;
+   - the checkbox of the manual action cannot be ticked by the person (W2 fails);
+   - `set-status`, which is what **Mark as done** runs in VS Code, cannot update the Deployment
+     Actions comment either, and so cannot record anything.
+   The Azure DevOps runs before this one never met it: the jobs and the person shared one PAT.
+   What was fixed: `set-status` reported "recorded as done" for a status it had not written. It now
+   stops with exit 1 and says why (`deploymentActionsStateNotSaved`, nine locales).
+   What is left to decide, since it changes where the state lives:
+   - **a reply in the thread** (recommended): anyone who can contribute to a Pull Request can add
+     a comment to an existing thread. A writer that is not the author of the Deployment Actions
+     comment would add its full, merged state as a reply, and every reader would take the newest
+     comment of the thread. One thread, its history visible, no permission to grant;
+   - or document that on Azure DevOps the gate is closed by a project administrator, or by running
+     `set-status` with the token of the jobs.
+4. **A command run outside a pipeline ignored every Pull Request of its own repository** as
+   "belonging to another repository of the organization": `getPullRequestById` compared the
+   repository name read from the git remote with a GUID. `set-status` ahead in the next branch,
+   `action:run` and the carried stories of a promotion could not be resolved from a terminal or
+   VS Code. Fixed, with unit tests.
+5. **List items of a promotion description started with a literal dash** ("- #116 E2E-402
+   conflict two"): Azure DevOps does not make a list item of a line whose text starts with `#`.
+   Found by reading the pictures. The number now follows the title, on every provider.
+
+### Found by reading the pictures (37 read, no broken markup)
+
+Banners, tables, emoji, checkboxes, folded sections and code blocks are drawn in every picture,
+and no markdown or HTML is left as text. What a reader sees and a check does not:
+
+| Finding                                                                                                                              | Status          |
+|--------------------------------------------------------------------------------------------------------------------------------------|-----------------|
+| Promotion description: "- #116 ..." printed with its dash                                                                            | fixed (5 above) |
+| Backpromotes comment: the six-column table is wider than the comment column of Azure DevOps, "Left out" is cut and "When" wraps on four lines | open            |
+| The fold says "25 Pull Requests", the line under it "collected from 26 Pull Request(s)"                                              | open, minor     |
+| The summary row shows a clock for "3 after the merge", the table under it shows the same actions with the skipped dot                | open, cosmetic  |
+| The Deployment Actions comment has no "Powered by" line: its last table touches the footer banner                                    | open, cosmetic  |
+| "Status by org" and "Results by org" wrap a date as "2026-10-" / "08" in the narrow column of Azure DevOps                           | open, cosmetic  |
+| A gate comment (`validation-failed+manual`) holds its three folded sections closed in the unfolded picture                           | capture: to check by hand |
 
 ### Harness (fixed in the skill)
 
-3. **Azure sends no `pr.sourceSha` and cancels the build of a previous head itself.** The wait read
+- **Azure sends no `pr.sourceSha` and cancels the build of a previous head itself.** The wait read
    the cancelled build of the first push as the job (ci-az-1). `_azci_find_build` now matches a
    policy build by the parents of its merge commit, and `_azci_wait_build` follows the newer build
    when the one it watches is cancelled.
-4. **The link step failed in the container job**: steps do not run as root and the image keeps the
+- **The link step failed in the container job**: steps do not run as root and the image keeps the
    plugins in a folder of root (`EACCES ... /usr/local/lib/package.json`, ci-az-1), then `sudo`
    with the HOME of the step user left a `~/.sf` owned by root (ci-az-2). The Azure link step runs
    `sudo env "PATH=$PATH" "SF_DATA_DIR=$SF_DATA_DIR" HOME=/root sf plugins link`. E2E only: a real
    project never links a plugin in its job.
-5. **The PAT cannot grant the build service its permission** (HTTP 401, it needs Security
-   (Manage)), hence `AZURE_E2E_CI_TOKEN=pat`.
-6. Editing `promotion-edge.sh` while it ran made bash stop on its last line with a syntax error,
+- **The PAT cannot grant the build service its permission** (HTTP 401, it needs Security
+   (Manage)): the first complete run used `AZURE_E2E_CI_TOKEN=pat`, and the permission was then
+   allowed by hand for the run with the system token.
+- Editing `promotion-edge.sh` while it ran made bash stop on its last line with a syntax error,
    after the six groups had completed. Never edit a section script during its run.
 
-The runbook holds 3, 4 and 5 under "Azure Pipelines".
+The runbook holds these under "Azure Pipelines".
 
 ___
 
 ## What this run did not cover
 
-- **The system token of Azure Pipelines** (`AZURE_E2E_CI_TOKEN=system`): the build service has no
-  "Contribute to pull requests" permission in the test project and the PAT cannot grant it. To
-  cover it, allow it once by hand in Project settings > Repositories > Security, then run the CI
-  section with the default token. W2 with a comment of the build service ticked by another user is
-  unproven with it.
+- **W3 to W9 with the system token of Azure Pipelines**: the scenario cannot go past W2 in that
+  mode (finding 3). They are proven with the PAT, where the jobs and the person are one identity.
 - **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
   which cannot be done while other sections use the same working copy.
 - **Group D of 6quater and I7, I8 of 6sexies** (developer org): `DEV_ORG` not set on this provider.
@@ -216,6 +261,9 @@ ___
 
 ## Left behind
 
-Repositories `sfdx-hardis-promo-e2e-az-7`, `-az-8`, `-ci-az-1`, `-ci-az-2`, `-ci-az-3`, their
-pipeline definitions (ids 2 to 7) and build policies, in `nicolasvuillamy/tests-sfdx-hardis`.
+Repositories `sfdx-hardis-promo-e2e-az-7`, `-az-8`, `-ci-az-1` to `-ci-az-4`, their
+pipeline definitions (ids 2 to 9) and build policies, in `nicolasvuillamy/tests-sfdx-hardis`.
 Runbook section 9 says how to delete them. Metadata prefixed `PromoE2E` / `E2E_` in the org.
+On az-7, two Pull Requests left open and failed on purpose for the visual check (#165, #166).
+In Project settings > Repositories > Security, the build service keeps the "Contribute to pull
+requests" permission given during the run.
