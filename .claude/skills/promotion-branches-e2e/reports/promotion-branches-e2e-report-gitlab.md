@@ -33,7 +33,7 @@ ___
 | 4ter: single Pull Request window, real CI jobs (ci-gl-1, X1)                        | 1                                 | 1   | 0    |
 | 5bis: comment audit (gl-16)                                                         | 1108 checks over 53 merge requests | all | 0    |
 | 5bis: comment audit of the real CI comments (ci-gl-1)                               | 255 checks over 7 merge requests  | all | 0    |
-| 5quater: visual check of the comments (gl-16)                                       | 10 types, 1 warning               | 10  | 0    |
+| 5quater: visual check of the comments (gl-16, fixtures included)                    | 12 types, 1 warning               | 12  | 0    |
 | 5quater: visual check (gl-17, backpromote)                                          | 1 type                            | 1   | 0    |
 | 5quater: visual check (ci-gl-1, comments of real jobs)                              | 8 types                           | 8   | 0    |
 | 7bis: single place in the diagram (gl-16)                                           | 1                                 | 1   | 0    |
@@ -120,6 +120,17 @@ the markup is GitLab's, the frame around it is not (see "not covered").
 | gl-17      | backpromotes                                                                                                                                                                               | OK              |
 | ci-gl-1    | the eight types the real jobs left                                                                                                                                                         | 8 OK            |
 
+`visual-fixtures.sh` then left a story with a class that does not compile (!54) and a story stopped
+at the manual action gate (!55), both open: `validation-failed` and `validation-failed+manual` are
+pictured and pass.
+
+Every picture was read against the checklist of the runbook (40 for the three projects). No markup
+is broken; the findings are about content and are the same as on GitHub (see that report): the
+heading "To do by hand" over an action already done, two counts of Pull Requests that differ by
+one on a major-to-major merge request, dates wrapping in tables with a Note column. One is
+specific to GitLab: in a promotion description and in the note of an identical action, `#27` is
+plain text where GitHub links it (a merge request is `!27` for GitLab).
+
 The warning is the conflict prompt of a promotion description: a code block 3112 pixels wide in a
 952 pixel comment. A code block scrolls on GitLab, so it is expected. Tables, folded sections,
 checkboxes, banner images and emoji are all drawn; no markdown is left as text.
@@ -145,9 +156,6 @@ ___
 - **The real comment column of GitLab**: the visual check draws GitLab's own HTML in a plain frame,
   not in the merge request page. It proves tables, folds, checkboxes and images, not the width of
   the real page nor GitLab's own styles. `--render page` with a logged-in Chrome would.
-- **A failed validation as a picture**: the run ends with every validation green, so no
-  `validation-failed` comment was left to look at. `visual-fixtures.sh` leaves two (a deployment
-  error, a manual action gate); see the GitHub and Azure DevOps reports for the providers it ran on.
 - **Flow diff and MegaLinter comments**: no story of the run holds a Flow, and the MegaLinter job
   only pulls its image. The Code Quality tab of the Pull Request window is not exercised either.
 - **No merged results pipelines**: the instance is GitLab CE, a merge request pipeline runs on the
@@ -161,7 +169,8 @@ ___
 
 ## Left behind
 
-Projects `sfdx-hardis-promo-e2e-gl-16` and `-gl-17` in the personal namespace, and
+Projects `sfdx-hardis-promo-e2e-gl-16` (with !54 and !55 left open and failed on purpose) and
+`-gl-17` in the personal namespace, and
 `sfdx-hardis-promo-e2e-ci-gl-1` in the shared group `busalesforce/playground`, with its CI/CD
 variables and its project access token (7 days). Delete the group project when the report has
 been read (runbook section 9).
