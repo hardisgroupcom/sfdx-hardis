@@ -11,8 +11,8 @@ const HIDDEN_MARKER_PREFIX = '#hardis:';
 const HIDDEN_MARKER_REGEX = /\[\]\(#hardis:([^)\s]*)\)/g;
 const HTML_COMMENT_REGEX = /<!--([\s\S]*?)-->/g;
 // Bitbucket Cloud draws a task item as a plain bullet, and nobody can tick it there: the item shows
-// a box symbol instead, and the sentence asking to tick a box (utilsPrCommentLayout.ts and
-// deploymentActionsStateUtils.ts write it) names what does work on Bitbucket.
+// a box symbol instead, and the sentences asking to tick a box (utilsPrCommentLayout.ts and
+// deploymentActionsStateUtils.ts write them) name what does work on Bitbucket.
 const TASK_ITEM_REGEX = /^(\s*[-*] )\[([ xX])\] /gm;
 const BOX_ITEM_REGEX = /^(\s*[-*] )([\u2610\u2611]) /gm;
 const TICK_A_BOX_REGEX = /Tick a box once (?:it|the action) is done in the org: the next sfdx-hardis job records it\./g;
@@ -37,6 +37,7 @@ export function toBitbucketMarkup(body: string): string {
       .replace(HTML_COMMENT_REGEX, (_match, content: string) => encodeHiddenMarker(content))
       .replace(TASK_ITEM_REGEX, (_match, bullet: string, state: string) => `${bullet}${state === ' ' ? '\u2610' : '\u2611'} `)
       .replace(TICK_A_BOX_REGEX, NO_BOX_TO_TICK)
+      .replace('Do the steps below in the org, tick their boxes, then run the validation again.', 'Do the steps below in the org, mark them as done, then run the validation again.')
       .replace(/<summary>([\s\S]*?)<\/summary>/gi, (_match, summary: string) => `\n\n**${plainSummary(summary)}**\n\n`)
       .replace(/<\/?details[^>]*>/gi, '\n')
       .replace(/<br\s*\/?>/gi, ' ')

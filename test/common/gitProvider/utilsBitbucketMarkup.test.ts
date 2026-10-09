@@ -68,6 +68,9 @@ describe('Bitbucket markup of Pull Request comments', () => {
 
     expect(sent).to.contain('- ☐ To do\n- ☑ Done');
     expect(sent).to.not.contain('Tick a box');
+    expect(toBitbucketMarkup('Do the steps below in the org, tick their boxes, then run the validation again.')).to.equal(
+      'Do the steps below in the org, mark them as done, then run the validation again.',
+    );
     expect(sent).to.contain('sf hardis:project:action:set-status');
     expect(fromBitbucketMarkup(sent)).to.contain('- [ ] To do\n- [x] Done');
   });
