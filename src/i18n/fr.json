@@ -3706,6 +3706,7 @@
   "serviceNowProviderAddedTag": "Tag {{tag}} ajouté sur {{count}} enregistrement(s) ServiceNow : {{tickets}}",
   "serviceNowProviderCollectedTicket": "Données collectées pour le ticket {{ticketId}}",
   "serviceNowProviderCollectingTickets": "Tentative de collecte des informations de {{count}} tickets depuis l'instance ServiceNow {{instanceUrl}}...",
+  "serviceNowProviderCommentsDisabled": "Les commentaires de déploiement sur les enregistrements ServiceNow sont désactivés (SERVICENOW_POST_DEPLOYMENT_COMMENTS / serviceNowPostDeploymentComments) : {{count}} enregistrement(s) laissé(s) inchangé(s).",
   "serviceNowProviderErrorAddingTag": "Erreur lors de l'ajout du tag {{tag}} sur {{ticketId}} : {{message}}",
   "serviceNowProviderErrorPostingComment": "Erreur lors de la publication du commentaire sur {{ticketId}} : {{message}}",
   "serviceNowProviderNoSysId": "Impossible de trouver le sys_id de {{ticketId}} : aucun commentaire n'a été publié dessus",

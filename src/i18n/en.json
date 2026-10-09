@@ -3714,6 +3714,7 @@
   "serviceNowProviderErrorPostingComment": "Error while posting comment on {{ticketId}}: {{message}}",
   "serviceNowProviderNoSysId": "Unable to find the sys_id of {{ticketId}}: no comment posted on it",
   "serviceNowProviderPostedComments": "Posted comments in field {{field}} of {{count}} ServiceNow record(s): {{tickets}}",
+  "serviceNowProviderCommentsDisabled": "Deployment comments on ServiceNow records are disabled (SERVICENOW_POST_DEPLOYMENT_COMMENTS / serviceNowPostDeploymentComments): {{count}} record(s) left untouched.",
   "serviceNowProviderPostingComments": "Try to post comments on {{count}} ServiceNow records...",
   "serviceNowProviderRecordNotFound": "No {{table}} record numbered {{ticketId}} was returned by ServiceNow",
   "serviceNowProviderTicketsCollectionFailed": "Could not retrieve details for {{failed}} of {{total}} ServiceNow ticket(s) (first error: {{message}}). Check the ServiceNow credentials and ACLs of the CI job.",

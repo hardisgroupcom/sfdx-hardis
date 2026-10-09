@@ -236,9 +236,14 @@ export class ServiceNowProvider extends TicketProviderRoot {
     return `${instanceUrl}/${table}.do?sysparm_query=number=${number}`;
   }
 
-  /** Link to the record form, once its sys_id is known */
+  /**
+   * Link to the record form, once its sys_id is known.
+   * The form URL is given directly, not wrapped in nav_to.do: the Next Experience UI rewrites
+   * nav_to.do?uri=... into /now/nav/ui/classic/params/target/... and encodes the inner "?" twice,
+   * which lands on "Page not found". A bare form URL is wrapped by both UIs on their own.
+   */
   private static recordUrlBySysId(instanceUrl: string, table: string, sysId: string): string {
-    return `${instanceUrl}/nav_to.do?uri=/${table}.do?sys_id=${sysId}`;
+    return `${instanceUrl}/${table}.do?sys_id=${sysId}`;
   }
 
   private authConfig() {
@@ -552,8 +557,17 @@ export class ServiceNowProvider extends TicketProviderRoot {
     if (serviceNowTickets.length === 0) {
       return tickets;
     }
-    uxLog('action', this, c.cyan('[ServiceNowProvider] ' + t('serviceNowProviderPostingComments', { count: serviceNowTickets.length })));
     const config = await getConfig('project');
+    // Env var wins in both directions, like the deployment tag: a pipeline that must stay read-only
+    // on the tickets (the CI user may not write work notes) keeps the ticket list in the Pull
+    // Request comments and the notifications, and skips the write
+    const postCommentsEnv = getEnvVar('SERVICENOW_POST_DEPLOYMENT_COMMENTS');
+    const postComments = postCommentsEnv ? postCommentsEnv !== 'false' : config?.serviceNowPostDeploymentComments !== false;
+    if (!postComments) {
+      uxLog('log', this, c.grey('[ServiceNowProvider] ' + t('serviceNowProviderCommentsDisabled', { count: serviceNowTickets.length })));
+      return tickets;
+    }
+    uxLog('action', this, c.cyan('[ServiceNowProvider] ' + t('serviceNowProviderPostingComments', { count: serviceNowTickets.length })));
     const commentField = getEnvVar('SERVICENOW_COMMENT_FIELD') || config?.serviceNowCommentField || SERVICENOW_DEFAULT_COMMENT_FIELD;
     // Env var wins in both directions: a pipeline must be able to turn off what .sfdx-hardis.yml turned on
     const addTagEnv = getEnvVar('SERVICENOW_ADD_DEPLOYMENT_TAG');

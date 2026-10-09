@@ -3706,6 +3706,7 @@
   "serviceNowProviderAddedTag": "Tag {{tag}} toegevoegd aan {{count}} ServiceNow-record(s): {{tickets}}",
   "serviceNowProviderCollectedTicket": "Gegevens verzameld voor ticket {{ticketId}}",
   "serviceNowProviderCollectingTickets": "Nu proberen om {{count}} ticketgegevens te verzamelen van ServiceNow-instantie {{instanceUrl}} ...",
+  "serviceNowProviderCommentsDisabled": "Deployment-opmerkingen op ServiceNow-records zijn uitgeschakeld (SERVICENOW_POST_DEPLOYMENT_COMMENTS / serviceNowPostDeploymentComments): {{count}} record(s) ongewijzigd gelaten.",
   "serviceNowProviderErrorAddingTag": "Fout bij het toevoegen van tag {{tag}} aan {{ticketId}}: {{message}}",
   "serviceNowProviderErrorPostingComment": "Fout bij het plaatsen van een opmerking op {{ticketId}}: {{message}}",
   "serviceNowProviderNoSysId": "Kan de sys_id van {{ticketId}} niet vinden: er is geen opmerking op geplaatst",

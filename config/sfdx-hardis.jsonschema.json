@@ -3927,6 +3927,21 @@
         }
       ]
     },
+    "serviceNowPostDeploymentComments": {
+      "$id": "#/properties/serviceNowPostDeploymentComments",
+      "default": true,
+      "description": "Write a work note on the ServiceNow records when they are deployed in a major org. Set it to false when the CI user must stay read-only on the tickets: they are still listed, with their title and status, in the Pull Request comments and the notifications.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
+      "title": "ServiceNow Post Deployment Comments",
+      "type": "boolean",
+      "visible-conditions": [
+        {
+          "property": "ticketingProvider",
+          "operator": "equals",
+          "value": "SERVICENOW"
+        }
+      ]
+    },
     "serviceNowTablePrefixes": {
       "$id": "#/properties/serviceNowTablePrefixes",
       "description": "Additional record number prefixes, and the ServiceNow table each one belongs to, as PREFIX:table,PREFIX:table. Use it to reach the tables of a scoped application.",

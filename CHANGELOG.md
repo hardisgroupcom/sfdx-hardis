@@ -2,6 +2,9 @@
 
 ## [beta] (main)
 
+- ServiceNow: new option to keep the deployment job read-only on the tickets (no work note written), while they stay listed in the Pull Request comments and the notifications.
+- ServiceNow: the ticket links of the Pull Request comments open the record directly, instead of a "Page not found" page on the Next Experience UI.
+
 ## [8.16.0] 2026-10-09
 
 - [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#pull-request-comments):

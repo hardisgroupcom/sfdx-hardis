@@ -3502,6 +3502,7 @@
   "runningOrgLimitsListCommand": "Executando comando de lista de limites da org...",
   "runningTreeExportForCustomSetting": "Executando exportação em árvore para a Configuração Personalizada {{settingName}}...",
   "selectRunBatchMode": "Selecione como o batch é executado",
+  "serviceNowProviderCommentsDisabled": "Os comentários de implantação nos registros do ServiceNow estão desativados (SERVICENOW_POST_DEPLOYMENT_COMMENTS / serviceNowPostDeploymentComments): {{count}} registro(s) não alterado(s).",
   "sObjectsExcludedFromCache": "{{count}} sObjects excluídos do cache",
   "sObjectsRetrieved": "{{count}} sObjects recuperados da org",
   "sObjectsSelectedForAnalysis": "{{count}} SObjects selecionados para análise.",
