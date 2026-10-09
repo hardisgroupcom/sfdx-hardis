@@ -1299,17 +1299,16 @@ ${getBannerMarkdownAndLink()}
     if (!repositoryId || !pullRequestId) return null;
     const azureGitApi = await this.azureApi.getGitApi();
     const threads = await azureGitApi.getThreads(repositoryId, pullRequestId, azureTeamProject());
-    for (const thread of threads) {
-      if (thread.isDeleted) continue;
-      for (const comment of thread?.comments || []) {
-        if ((comment?.content || '').includes(marker)) {
-          return comment.content || null;
-        }
-      }
-    }
-    return null;
+    // The newest version: the comment itself, or an update someone else answered in its thread
+    return listMarkerCommentVersions(threads, marker)[0]?.text ?? null;
   }
 
+  // Azure DevOps lets only the author of a comment, or a project administrator, edit it, and the
+  // comment is most often written by the pipeline (its job token is the project build service). So a
+  // writer first updates the version it owns, the newest first; when it owns none, it answers in
+  // the thread with an update that carries the whole body, hidden under one visible line. Readers
+  // take the newest version, and the next pipeline job, which reads it too, brings the comment
+  // itself up to date.
   public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
     body = this.enforceHardCommentLimit(toAzureDevopsWording(body));
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
@@ -1317,32 +1316,31 @@ ${getBannerMarkdownAndLink()}
     if (!repositoryId || !pullRequestId) return false;
     const azureGitApi = await this.azureApi.getGitApi();
     const threads = await azureGitApi.getThreads(repositoryId, pullRequestId, azureTeamProject());
-    let existingThreadId: number | null = null;
-    let existingCommentId: number | null = null;
-    for (const thread of threads) {
-      if (thread.isDeleted) continue;
-      for (const comment of thread?.comments || []) {
-        // Never update a deleted comment: getThreads returns them inside live threads
-        if (comment?.isDeleted) continue;
-        if ((comment?.content || '').includes(marker)) {
-          existingThreadId = thread.id || null;
-          existingCommentId = comment.id || null;
-          break;
-        }
-      }
-      if (existingThreadId) break;
-    }
-    if (existingThreadId && existingCommentId) {
-      await azureGitApi.updateComment({ content: body }, repositoryId, pullRequestId, existingThreadId, existingCommentId, azureTeamProject());
-      uxLog("log", this, c.grey(`[Azure DevOps] Updated Deployment Actions thread comment on PR #${pullRequestId}`));
-    } else {
+    const versions = listMarkerCommentVersions(threads, marker);
+    if (versions.length === 0) {
       const newThread: GitPullRequestCommentThread = {
         comments: [{ content: body }],
         status: CommentThreadStatus.Unknown,
       };
       await azureGitApi.createThread(newThread, repositoryId, pullRequestId, azureTeamProject());
       uxLog("log", this, c.grey(`[Azure DevOps] Created Deployment Actions thread on PR #${pullRequestId}`));
+      return true;
     }
+    for (const version of versions) {
+      if (!version.threadId || !version.commentId) continue;
+      try {
+        const content = version.isUpdateReply ? buildCommentUpdateReply(body) : body;
+        await azureGitApi.updateComment({ content }, repositoryId, pullRequestId, version.threadId, version.commentId, azureTeamProject());
+        uxLog("log", this, c.grey(`[Azure DevOps] Updated Deployment Actions thread comment on PR #${pullRequestId}`));
+        return true;
+      } catch (e) {
+        if (!isNotCommentAuthorError(e)) {
+          throw e;
+        }
+      }
+    }
+    await azureGitApi.createComment({ content: buildCommentUpdateReply(body) }, repositoryId, pullRequestId, versions[0].threadId, azureTeamProject());
+    uxLog("log", this, c.grey(`[Azure DevOps] Answered the Deployment Actions thread of PR #${pullRequestId} with an update: its comment belongs to another identity`));
     return true;
   }
 
@@ -1359,6 +1357,8 @@ ${getBannerMarkdownAndLink()}
         // getThreads still returns deleted comments inside live threads: a checkbox ticked in a
         // deleted comment must not be honored
         if (comment?.isDeleted) continue;
+        // An update someone answered in a thread is a version of a comment already listed
+        if (isCommentUpdateReply(comment?.content || '')) continue;
         if ((comment?.content || '').includes(marker)) {
           // The URL fragment scrolls the Azure DevOps UI to the comment itself: the anchor of a
           // comment is the Unix timestamp (in seconds) of its publication date
@@ -1403,4 +1403,55 @@ function azureTeamProject(): string | undefined {
     return undefined;
   }
   return process.env.SYSTEM_TEAMPROJECT || undefined;
+}
+
+// What an identity that does not own a comment answers in its thread: one line a reader sees, and
+// the whole new body of the comment, hidden, for sfdx-hardis to read.
+const COMMENT_UPDATE_REPLY_REGEX = /<!-- hardis-comment-update ([A-Za-z0-9_-]+) -->/;
+
+function buildCommentUpdateReply(body: string): string {
+  const when = new Date().toISOString().replace('T', ' ').substring(0, 16);
+  return [
+    `🔄 **Updated outside the pipeline on ${when} UTC**, from VS Code or the command line. sfdx-hardis reads this update, and the next pipeline job brings the comment above up to date.`,
+    '',
+    `<!-- hardis-comment-update ${Buffer.from(body, 'utf8').toString('base64url')} -->`,
+  ].join('\n');
+}
+
+function isCommentUpdateReply(content: string): boolean {
+  return COMMENT_UPDATE_REPLY_REGEX.test(content);
+}
+
+// The versions of the comment holding a marker, newest first: the comment itself and the updates
+// answered in its thread, each with the body it stands for.
+function listMarkerCommentVersions(
+  threads: GitPullRequestCommentThread[],
+  marker: string,
+): { threadId: number; commentId: number; text: string; isUpdateReply: boolean; time: number }[] {
+  const versions: { threadId: number; commentId: number; text: string; isUpdateReply: boolean; time: number }[] = [];
+  for (const thread of threads || []) {
+    if (thread.isDeleted) continue;
+    for (const comment of thread?.comments || []) {
+      // Never read or update a deleted comment: getThreads returns them inside live threads
+      if (comment?.isDeleted) continue;
+      const content = comment.content || '';
+      const encoded = content.match(COMMENT_UPDATE_REPLY_REGEX)?.[1];
+      const text = encoded ? Buffer.from(encoded, 'base64url').toString('utf8') : content;
+      if (!text.includes(marker)) continue;
+      const date = comment.lastUpdatedDate || comment.publishedDate;
+      versions.push({ threadId: thread.id || 0, commentId: comment.id || 0, text, isUpdateReply: !!encoded, time: date ? new Date(date).getTime() : 0 });
+    }
+  }
+  // Newest first; the order of the API (oldest first) is kept between versions of the same time
+  return versions.map((version, index) => ({ version, index })).sort((a, b) => b.version.time - a.version.time || a.index - b.index).map((item) => item.version);
+}
+
+// "Cannot update comment. Only the comment author and project admins can edit a comment."
+function isNotCommentAuthorError(error: unknown): boolean {
+  const failure = error as { statusCode?: number; message?: string; result?: { typeKey?: string } };
+  return (
+    failure?.statusCode === 403 ||
+    failure?.result?.typeKey === 'GitPullRequestCommentCannotBeUpdatedException' ||
+    /only the comment author/i.test(failure?.message || '')
+  );
 }

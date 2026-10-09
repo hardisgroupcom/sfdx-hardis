@@ -305,10 +305,11 @@ _azci_requeue_policy() {
 }
 
 # Tick, in every comment of a Pull Request, the checkbox of a manual action for an org branch.
-# Azure DevOps lets only the author of a comment edit it: with AZURE_E2E_CI_TOKEN=system the comments
-# are the build service's, and the PATCH may be refused (the tick log says so)
+# Azure DevOps lets only the author of a comment, or a project administrator, edit it: with
+# AZURE_E2E_CI_TOKEN=system the comments are the build service's and the PATCH is refused. The action
+# is then marked as done with set-status, which is what a contributor does (the tick log says which)
 ci_tick_manual_checkbox() {
-  local pr="$1" action="$2" org="$3" pairs pair tid cid file code
+  local pr="$1" action="$2" org="$3" pairs pair tid cid file code ticked="" refused=""
   pairs=$(_azci_api GET "$AZ_REPO_API/pullRequests/$pr/threads?api-version=7.1" |
     _azci_json "(d.value||[]).flatMap(t=>(t.comments||[]).filter(c=>!c.isDeleted&&(c.content||'').includes('sfdx-hardis-manual-action id:$action org:$org')).map(c=>t.id+':'+c.id)).join(' ')")
   for pair in $pairs; do
@@ -322,10 +323,20 @@ ci_tick_manual_checkbox() {
       --data-binary "@$(_azci_path "$file.json")")
     if [ "$code" = "200" ]; then
       echo "ticked in thread $tid comment $cid"
+      ticked=yes
     else
-      echo "tick refused in thread $tid comment $cid: HTTP $code (only the author edits a comment; AZURE_E2E_CI_TOKEN=pat posts them as the PAT user)"
+      echo "tick refused in thread $tid comment $cid: HTTP $code (only the author of a comment, or a project administrator, edits it)"
+      refused=yes
     fi
   done
+  # A contributor cannot tick a box of a comment the build service wrote: what works for them is
+  # the Mark as done button of VS Code, which runs set-status. sfdx-hardis then answers in the
+  # thread of the Deployment Actions comment, and the job run again reads that update.
+  if [ -z "$ticked" ] && [ -n "$refused" ]; then
+    echo "no box could be ticked: marking the action as done with set-status, as the Mark as done button does"
+    cli "ci-set-status-$action-$org" "$org" hardis:project:action:set-status --agent --pr "$pr" --action-id "$action" --org-branch "$org" --target-org "$ORG"
+    grep -aE "Answered the Deployment Actions thread|recorded as done|Error" "$LOGS/ci-set-status-$action-$org.log" | head -5
+  fi
 }
 
 ci_pr_comments() {
