@@ -2,7 +2,7 @@ import { SfError } from '@salesforce/core';
 import c from "chalk";
 import { debuglog } from "util";
 import { GitProvider } from '../gitProvider/index.js';
-import { ONLY_BOXES_ARE_EDITED, TICK_HINT_FOR_AN_ACTION } from '../gitProvider/utilsPrCommentWording.js';
+import { ONLY_BOXES_ARE_EDITED, TICK_HINT_FOR_AN_ACTION } from '../gitProvider/utils/utilsPrCommentWording.js';
 import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { evaluateActionBranchFilter, getEffectiveActionContext, readActions } from './actionUtils.js';
@@ -11,7 +11,7 @@ import { t } from './i18n.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
-import { formatShortDate } from '../gitProvider/utilsPrCommentDates.js';
+import { formatShortDate } from '../gitProvider/utils/utilsPrCommentDates.js';
 import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
 
 // Enable with NODE_DEBUG=sfdxhardis

@@ -9,7 +9,7 @@ import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./utils/jenkinsUtils.js";
 
 // Oldest commit date of a window, used to bound the merged MRs listing (see
 // getOldestCommitDateWithMargin in gitProviderRoot.ts).

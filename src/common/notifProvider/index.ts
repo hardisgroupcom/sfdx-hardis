@@ -2,7 +2,7 @@ import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
-import { UtilsNotifs as utilsNotifs } from "./utils.js";
+import { UtilsNotifs as utilsNotifs } from "./utils/utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
 import { GoogleChatProvider } from "./googleChatProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";

@@ -134,7 +134,7 @@ ___
    checkbox was drawn. The comments were close to unreadable, and nothing but the visual check
    could see it: the audit reads the source, where all of that belongs (1072 checks OK on the same
    comments). Visual check before: 1 OK, 8 FAIL.
-   Fixed in `src/common/gitProvider/utilsBitbucketMarkup.ts`, at the door of the Bitbucket
+   Fixed in `src/common/gitProvider/utils/utilsBitbucketMarkup.ts`, at the door of the Bitbucket
    provider, so nothing else in the code changes:
    - a marker becomes a link with no text, `[](#hardis:<encoded>)`, which Bitbucket draws as an
      anchor nobody sees, in a table cell too, and it is given back as an HTML comment when read;

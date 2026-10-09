@@ -11,8 +11,8 @@
 // sub-process is ever spawned on downloaded content.
 import * as path from 'path';
 import sanitizeHtml from 'sanitize-html';
-import fs from '../utils/fsUtils.js';
-import { proxyFetch } from '../utils/httpUtils.js';
+import fs from '../../utils/fsUtils.js';
+import { proxyFetch } from '../../utils/httpUtils.js';
 
 export const TICKET_ATTACHMENT_MAX_BYTES_DEFAULT = 20 * 1024 * 1024; // 20 MB
 /** A comment body longer than this is truncated: a single pasted log must not blow up the payload */

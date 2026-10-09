@@ -2,7 +2,7 @@ import { expect } from 'chai';
 // Load the barrel first: gitProvider modules take part in a pre-existing import cycle, and
 // entering through a leaf module of it throws.
 import '../../../src/common/gitProvider/index.js';
-import { deployErrorsToMarkdown } from '../../../src/common/gitProvider/utilsMarkdown.js';
+import { deployErrorsToMarkdown } from '../../../src/common/gitProvider/utils/utilsMarkdown.js';
 
 describe('deployErrorsToMarkdown component name', () => {
   const tip = { label: 'Custom field not found', docUrl: 'https://example.invalid', message: 'tip' };

@@ -6,10 +6,10 @@ import { fileURLToPath } from 'url';
 import {
   convertMarkdownToSlackBlocks,
   convertMarkdownToSlackMrkdwn,
-} from '../../../src/common/notifProvider/slackMarkdown.js';
+} from '../../../../src/common/notifProvider/utils/slackMarkdown.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const fixturesDir = path.resolve(__dirname, '../../fixtures/slack-markdown');
+const fixturesDir = path.resolve(__dirname, '../../../fixtures/slack-markdown');
 
 describe('convertMarkdownToSlackMrkdwn()', () => {
   it('returns empty string for empty input', () => {

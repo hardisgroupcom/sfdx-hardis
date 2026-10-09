@@ -8,7 +8,7 @@ import { getSearchExcludeLines, SalesforceSetupUrlBuilder } from './docUtils.js'
 import { CONSTANTS, getBannerMarkdownAndLink } from '../../config/index.js';
 import { prettifyFieldName } from '../utils/flowVisualiser/nodeFormatUtils.js';
 import { t } from '../utils/i18n.js';
-import { mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
+import { mdTableCellHtml } from "../gitProvider/utils/utilsMarkdown.js";
 
 export class DocBuilderPackageXML {
 

@@ -1,8 +1,8 @@
 import { expect } from 'chai';
 import * as os from 'os';
 import * as path from 'path';
-import fs from '../../../src/common/utils/fsUtils.js';
-import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
+import fs from '../../../../src/common/utils/fsUtils.js';
+import { setFetchForTests } from '../../../../src/common/utils/httpUtils.js';
 import {
   capText,
   classifyAttachment,
@@ -14,7 +14,7 @@ import {
   renderTicketDetailsMarkdown,
   sanitizeAttachmentFileName,
   TicketAttachment,
-} from '../../../src/common/ticketProvider/ticketDetails.js';
+} from '../../../../src/common/ticketProvider/utils/ticketDetails.js';
 
 function makeAttachment(overrides: Partial<TicketAttachment> = {}): TicketAttachment {
   return {

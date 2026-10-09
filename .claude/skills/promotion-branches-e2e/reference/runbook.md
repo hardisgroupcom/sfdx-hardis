@@ -1689,7 +1689,7 @@ Traps already met on Bitbucket:
   show as they are written, and nothing folds. Until 2026-10-09 every sfdx-hardis comment showed
   its markers, its encoded state and its tags there, which only the visual check of section 5quater
   could see (the audit reads the source, where they belong). The Bitbucket provider now sends its
-  comments through `toBitbucketMarkup` (`src/common/gitProvider/utilsBitbucketMarkup.ts`): a marker
+  comments through `toBitbucketMarkup` (`src/common/gitProvider/utils/utilsBitbucketMarkup.ts`): a marker
   becomes a link with no text, `[](#hardis:<encoded>)`, a folded section becomes a bold title
   followed by its content, a line break a space. What Bitbucket's markdown does draw, proven by a
   test comment: a link with no text is an invisible anchor, in a table cell too; a

@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { enforceCommentLengthLimit, fitPrCommentSections, truncateCodeBlocks } from '../../../src/common/gitProvider/utilsPrCommentSizeGuard.js';
-import { buildFlowDiffCommentMessage } from '../../../src/common/gitProvider/index.js';
-import { cleanFlowDiffMarkdownForPrComment, getFlowStatusOnlyChange } from '../../../src/common/utils/mermaidUtils.js';
+import { enforceCommentLengthLimit, fitPrCommentSections, truncateCodeBlocks } from '../../../../src/common/gitProvider/utils/utilsPrCommentSizeGuard.js';
+import { buildFlowDiffCommentMessage } from '../../../../src/common/gitProvider/index.js';
+import { cleanFlowDiffMarkdownForPrComment, getFlowStatusOnlyChange } from '../../../../src/common/utils/mermaidUtils.js';
 
 const bigList = (count: number) => Array.from({ length: count }, (_, i) => `- [#${i}](https://example.com/pr/${i}) A Pull Request title that is quite long`).join('\n');
 

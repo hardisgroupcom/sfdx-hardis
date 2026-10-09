@@ -20,7 +20,7 @@ import {
   newTicketDetails,
   normalizeText,
   capText,
-} from './ticketDetails.js';
+} from './utils/ticketDetails.js';
 
 // Record number prefix -> ServiceNow table. A record number carries its table, so a ticket id is
 // enough to know where to query, without asking the user.

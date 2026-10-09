@@ -1,5 +1,5 @@
-import type { NotifMessage } from "./types.js";
-import { tMaybe } from "../utils/i18n.js";
+import type { NotifMessage } from "../types.js";
+import { tMaybe } from "../../utils/i18n.js";
 
 /**
  * Generic guard against messages that a messaging platform would reject outright.

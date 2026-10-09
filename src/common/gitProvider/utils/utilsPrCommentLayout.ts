@@ -1,9 +1,9 @@
-import type { PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { buildManualActionCheckboxMarker } from '../utils/deploymentActionsStateUtils.js';
-import { getTicketCollectionIssues } from '../ticketProvider/ticketProviderRoot.js';
+import type { PrePostCommand } from '../../actionsProvider/actionsProvider.js';
+import { buildManualActionCheckboxMarker } from '../../utils/deploymentActionsStateUtils.js';
+import { getTicketCollectionIssues } from '../../ticketProvider/ticketProviderRoot.js';
 import { formatShortDate } from './utilsPrCommentDates.js';
 import { TICK_HINT_FOR_A_STEP, TICK_THEN_VALIDATE_AGAIN } from './utilsPrCommentWording.js';
-import type { PrCommentActionsRun, PullRequestData } from './index.js';
+import type { PrCommentActionsRun, PullRequestData } from '../index.js';
 import { PrCommentSection, SHORTENED_CODE_BLOCK_LINES, SHORTENED_LIST_ENTRIES, truncateCodeBlocks, truncateList } from './utilsPrCommentSizeGuard.js';
 
 /**

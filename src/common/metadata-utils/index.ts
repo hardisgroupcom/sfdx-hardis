@@ -15,7 +15,7 @@ import {
   isGitRepo,
   sortCrossPlatform,
   uxLog,
-} from '../../common/utils/index.js';
+} from '../utils/index.js';
 import { getApiVersion } from '../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';

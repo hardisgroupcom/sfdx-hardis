@@ -1,5 +1,5 @@
 import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
-import { toAzureDevopsWording } from "./utilsAzureDevopsWording.js";
+import { toAzureDevopsWording } from "./utils/utilsAzureDevopsWording.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
 import fs from '../utils/fsUtils.js';
@@ -14,7 +14,7 @@ import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
 
 export class AzureDevopsProvider extends GitProviderRoot {

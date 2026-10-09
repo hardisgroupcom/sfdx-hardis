@@ -24,7 +24,7 @@ import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { Ticket, TicketProvider } from '../ticketProvider/index.js';
 import { getTicketCollectionIssues } from '../ticketProvider/ticketProviderRoot.js';
 import { DefaultLogFields, ListLogLine } from 'simple-git';
-import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utilsMarkdown.js';
+import { flowDiffToMarkdownForPullRequest } from '../gitProvider/utils/utilsMarkdown.js';
 import { MessageAttachment } from '@slack/types';
 import { getBranchMarkdown, getNotificationButtons, getOrgMarkdown } from './notifUtils.js';
 import { NotifProvider, UtilsNotifs } from '../notifProvider/index.js';

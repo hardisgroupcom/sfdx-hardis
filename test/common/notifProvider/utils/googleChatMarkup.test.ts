@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
-import { convertMarkdownToGoogleChatMarkup } from '../../../src/common/notifProvider/googleChatMarkup.js';
+import { convertMarkdownToGoogleChatMarkup } from '../../../../src/common/notifProvider/utils/googleChatMarkup.js';
 
 describe('convertMarkdownToGoogleChatMarkup()', () => {
   it('returns empty string for empty input', () => {

@@ -2,7 +2,7 @@
 import c from "chalk";
 import { getAllTips } from "./deployTipsList.js";
 import { formatTemplate as format } from "./stringUtils.js";
-import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utilsMarkdown.js";
+import { deployErrorsToMarkdown, testFailuresToMarkdown } from "../gitProvider/utils/utilsMarkdown.js";
 import { findJsonInString, stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { analyzeDeployErrorLogsJson, buildNetworkErrorAndTip, extractShortNetworkCause, isNetworkFailureText } from "./deployTipJson.js";

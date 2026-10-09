@@ -3,7 +3,7 @@ import { expect } from 'chai';
 import type { ActionResult, PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildActionOutput } from '../../../src/common/actionsProvider/actionsProvider.js';
 import { buildDeploymentScopeSubjects, getReportedActionStatus, isDeploymentActionsDisabled } from '../../../src/common/utils/prePostCommandUtils.js';
-import { buildDeploymentPrCommentSections } from '../../../src/common/gitProvider/utilsPrCommentLayout.js';
+import { buildDeploymentPrCommentSections } from '../../../src/common/gitProvider/utils/utilsPrCommentLayout.js';
 
 function action(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {

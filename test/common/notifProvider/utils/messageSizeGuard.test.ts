@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
-import type { NotifMessage } from '../../../src/common/notifProvider/types.js';
+import type { NotifMessage } from '../../../../src/common/notifProvider/types.js';
 import {
   applyMessageSizeGuard,
   clampBlockText,
   SizeGuardLimits,
-} from '../../../src/common/notifProvider/messageSizeGuard.js';
+} from '../../../../src/common/notifProvider/utils/messageSizeGuard.js';
 
 const LIMITS: SizeGuardLimits = { maxAttachmentsChars: 200, maxBlockChars: 100, maxBlocks: 10 };
 

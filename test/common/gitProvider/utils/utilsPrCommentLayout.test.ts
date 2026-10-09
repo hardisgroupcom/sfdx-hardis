@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import type { PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
-import type { PullRequestData } from '../../../src/common/gitProvider/index.js';
-import { buildDeploymentPrCommentSections, humanActionReason } from '../../../src/common/gitProvider/utilsPrCommentLayout.js';
-import { formatShortDate } from '../../../src/common/gitProvider/utilsPrCommentDates.js';
-import { parseManualActionCheckboxes } from '../../../src/common/utils/deploymentActionsStateUtils.js';
-import { fitPrCommentSections } from '../../../src/common/gitProvider/utilsPrCommentSizeGuard.js';
+import type { PrePostCommand } from '../../../../src/common/actionsProvider/actionsProvider.js';
+import type { PullRequestData } from '../../../../src/common/gitProvider/index.js';
+import { buildDeploymentPrCommentSections, humanActionReason } from '../../../../src/common/gitProvider/utils/utilsPrCommentLayout.js';
+import { formatShortDate } from '../../../../src/common/gitProvider/utils/utilsPrCommentDates.js';
+import { parseManualActionCheckboxes } from '../../../../src/common/utils/deploymentActionsStateUtils.js';
+import { fitPrCommentSections } from '../../../../src/common/gitProvider/utils/utilsPrCommentSizeGuard.js';
 
 function command(overrides: Partial<PrePostCommand>): PrePostCommand {
   return {

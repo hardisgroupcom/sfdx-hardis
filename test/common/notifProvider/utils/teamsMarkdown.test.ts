@@ -3,10 +3,10 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { convertMarkdownToTeamsMrkdwn } from '../../../src/common/notifProvider/teamsMarkdown.js';
+import { convertMarkdownToTeamsMrkdwn } from '../../../../src/common/notifProvider/utils/teamsMarkdown.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const fixturesDir = path.resolve(__dirname, '../../fixtures/slack-markdown');
+const fixturesDir = path.resolve(__dirname, '../../../fixtures/slack-markdown');
 
 describe('convertMarkdownToTeamsMrkdwn()', () => {
   it('returns empty string for empty input', () => {

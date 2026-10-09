@@ -2,7 +2,7 @@
 /*
  * Bitbucket Cloud comments as sfdx-hardis reads them. The CLI hides its markers there in links with
  * no text, `[](#hardis:<encoded>)`, and sends a task item with a box symbol
- * (src/common/gitProvider/utilsBitbucketMarkup.ts), because Bitbucket displays an HTML comment as
+ * (src/common/gitProvider/utils/utilsBitbucketMarkup.ts), because Bitbucket displays an HTML comment as
  * text and draws no checkbox. A script that reads the raw content of a comment gets those: this
  * gives the HTML comments and the task items back, as fromBitbucketMarkup does. It is the one place
  * of the skill that knows the format: check-pr-modal.cjs requires it.

@@ -6,12 +6,12 @@ import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResul
 import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { getBannerMarkdownAndLink } from '../../config/index.js';
-import { fromBitbucketMarkup, toBitbucketMarkup } from './utilsBitbucketMarkup.js';
+import { fromBitbucketMarkup, toBitbucketMarkup } from './utils/utilsBitbucketMarkup.js';
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { httpPost } from '../utils/httpUtils.js';
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
 
 // Oldest commit date of a window, used to bound the merged PRs listing (see

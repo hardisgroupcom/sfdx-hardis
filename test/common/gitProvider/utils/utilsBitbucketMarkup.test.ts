@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { fromBitbucketMarkup, toBitbucketMarkup } from '../../../src/common/gitProvider/utilsBitbucketMarkup.js';
+import { fromBitbucketMarkup, toBitbucketMarkup } from '../../../../src/common/gitProvider/utils/utilsBitbucketMarkup.js';
 
 // Bitbucket Cloud displays raw HTML as text: comments go out rewritten, and come back with the
 // HTML comments the rest of sfdx-hardis reads.

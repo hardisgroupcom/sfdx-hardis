@@ -1,11 +1,11 @@
 import c from "chalk";
-import fs from '../utils/fsUtils.js';
+import fs from '../../utils/fsUtils.js';
 import * as path from "path"
-import { MetadataUtils } from "../metadata-utils/index.js";
-import { uxLog } from "../utils/index.js";
-import { generateFlowVisualGitDiff } from "../utils/mermaidUtils.js";
-import { GitProvider, PrCommentFlowChange } from "./index.js";
-import { t } from '../utils/i18n.js';
+import { MetadataUtils } from "../../metadata-utils/index.js";
+import { uxLog } from "../../utils/index.js";
+import { generateFlowVisualGitDiff } from "../../utils/mermaidUtils.js";
+import { GitProvider, PrCommentFlowChange } from "../index.js";
+import { t } from '../../utils/i18n.js';
 
 export function deployErrorsToMarkdown(errorsAndTips: Array<any>) {
   let md = "## Deployment errors\n\n";

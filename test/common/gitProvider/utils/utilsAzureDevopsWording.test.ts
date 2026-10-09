@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { toAzureDevopsWording } from '../../../src/common/gitProvider/utilsAzureDevopsWording.js';
+import { toAzureDevopsWording } from '../../../../src/common/gitProvider/utils/utilsAzureDevopsWording.js';
 
 // On Azure DevOps only the author of a comment or a project administrator can tick its boxes: the
 // comments name the Mark as done button of the VS Code extension.

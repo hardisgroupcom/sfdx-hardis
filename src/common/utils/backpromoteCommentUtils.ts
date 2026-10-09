@@ -15,7 +15,7 @@ import { GitProvider } from '../gitProvider/index.js';
 import { retryOnThrottling } from './adaptiveBatch.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
-import { formatShortDate } from '../gitProvider/utilsPrCommentDates.js';
+import { formatShortDate } from '../gitProvider/utils/utilsPrCommentDates.js';
 
 export const BACKPROMOTES_MARKER = '<!-- sfdx-hardis backpromotes -->';
 const DATA_START = '<!-- sfdx-hardis backpromotes-data ';

@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import { mdTableCell, mdTableCellHtml } from '../../../src/common/gitProvider/utilsMarkdown.js';
+import { mdTableCell, mdTableCellHtml } from '../../../src/common/gitProvider/utils/utilsMarkdown.js';
 import { DocBuilderObject } from '../../../src/common/docBuilder/docBuilderObject.js';
 
 /**

@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import { toAzureDevopsWording } from '../../../src/common/gitProvider/utilsAzureDevopsWording.js';
-import { toBitbucketMarkup } from '../../../src/common/gitProvider/utilsBitbucketMarkup.js';
+import { toAzureDevopsWording } from '../../../../src/common/gitProvider/utils/utilsAzureDevopsWording.js';
+import { toBitbucketMarkup } from '../../../../src/common/gitProvider/utils/utilsBitbucketMarkup.js';
 import {
   ONLY_BOXES_ARE_EDITED,
   rewordTickSentences,
   TICK_HINT_FOR_A_STEP,
   TICK_HINT_FOR_AN_ACTION,
   TICK_THEN_VALIDATE_AGAIN,
-} from '../../../src/common/gitProvider/utilsPrCommentWording.js';
+} from '../../../../src/common/gitProvider/utils/utilsPrCommentWording.js';
 
 // The comment builders and the provider rewordings share these sentences: whatever they become,
 // a provider where a box cannot be ticked must not be left asking to tick one.

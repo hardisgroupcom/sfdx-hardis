@@ -8,7 +8,7 @@ import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./jenkinsUtils.js";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
   private api: GithubApiClient;

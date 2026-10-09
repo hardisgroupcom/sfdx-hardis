@@ -1,4 +1,4 @@
-import { removeMarkdown } from "../utils/notifUtils.js";
+import { removeMarkdown } from "../../utils/notifUtils.js";
 
 /**
  * Convert CommonMark / GitHub-flavored Markdown to plain text.

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
-import { convertMarkdownToHtml } from '../../../src/common/notifProvider/markdownToHtml.js';
+import { convertMarkdownToHtml } from '../../../../src/common/notifProvider/utils/markdownToHtml.js';
 
 describe('convertMarkdownToHtml()', () => {
   it('returns empty string for empty input', async () => {
