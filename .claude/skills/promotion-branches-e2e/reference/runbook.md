@@ -1690,7 +1690,7 @@ Traps already met on Bitbucket:
   its markers, its encoded state and its tags there, which only the visual check of section 5quater
   could see (the audit reads the source, where they belong). The Bitbucket provider now sends its
   comments through `toBitbucketMarkup` (`src/common/gitProvider/utils/utilsBitbucketMarkup.ts`): a marker
-  becomes a link with no text, `[](#hardis:<encoded>)`, a folded section becomes a bold title
+  becomes a link with no text, `[](#hardis:<percent-encoded>)` or `[](#hardis64:<base64url>)`, a folded section becomes a bold title
   followed by its content, a line break a space. What Bitbucket's markdown does draw, proven by a
   test comment: a link with no text is an invisible anchor, in a table cell too; a
   `[//]: # (text)` line disappears; task items are checkboxes, but **disabled**: nobody ticks a

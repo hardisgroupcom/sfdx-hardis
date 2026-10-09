@@ -30,6 +30,58 @@ branch as pushed (W0).
 
 ___
 
+## Final run on the sources to release (2026-10-09, morning)
+
+A second complete run on Bitbucket only, after two code reviews of the Pull Request, the move of
+the helper files into `utils` subfolders and the merge of `main` (four dependency updates), on
+fresh repositories: `sfdx-hardis-promo-e2e-bb-6` (sections), `-bb-5` (backpromote) and
+`-ci-bb-4` (real CI). Everything below it in this report is the night run that found the defects.
+
+| Section                                                            | Checks                            | OK  | FAIL |
+|--------------------------------------------------------------------|-----------------------------------|-----|------|
+| 3, 4 and 4bis                                                      | 42                                | 42  | 0    |
+| 6: edge cases, groups g1 to g6                                     | 47                                | 47  | 0    |
+| 6quater, groups A to D                                             | 21                                | 21  | 0    |
+| 6sexies, I1 to I10                                                 | 24                                | 24  | 0    |
+| 6bis: backpromote B0 to B16, C1 to C4 (bb-5)                       | 63                                | 63  | 0    |
+| 6quinquies: real CI (ci-bb-4), 15 jobs in real CI, 0 simulated     | 21, W8 skipped (GitHub only)      | 21  | 0    |
+| 4ter: single Pull Request window                                   | 51 Pull Requests                  | 51  | 0    |
+| 5bis: comment audit (bb-6)                                         | 1142 checks over 55 Pull Requests | all | 0    |
+| 5bis: comment audit of the real CI comments (ci-bb-4)              | 255 checks over 7 Pull Requests   | all | 0    |
+| 5quater: visual check (bb-6, fixtures included)                    | 12 types                          | 12  | 0    |
+| 5quater: visual check (ci-bb-4, comments of real jobs)             | 8 types                           | 8   | 0    |
+| 5quater: visual check (bb-5, backpromote)                          | 1 type                            | 1   | 0    |
+| 7bis: single place in the diagram                                  | 1                                 | 1   | 0    |
+
+Every section green in one pass. The real CI used 67 build minutes; W2 now ticks the comment in the
+format the CLI writes (the box symbol changed in the text Bitbucket holds, the hidden marker left
+next to it), and the re-run on real Bitbucket Pipelines reads it.
+
+The first attempt of the sections, on `sfdx-hardis-promo-e2e-bb-4`, was stopped by the workstation
+running out of memory during section 4 (25 checks OK until then, then one job failed in flight):
+restarted from nothing on bb-6, as the skill asks.
+
+**The pictures, read one by one (21).** No markup is left as text; banners, icons, tables and
+code blocks are drawn; no sentence asks to tick a box any more. The reading found two things the
+rewrite itself caused, fixed and checked on a real comment of bb-6 (Pull Request #54):
+
+| Finding                                                                                                                  | Status |
+|--------------------------------------------------------------------------------------------------------------------------|--------|
+| A list written with line breaks ("- #3 already deployed via ...") was one flat paragraph with literal " - " separators   | fixed: a line break tag is a markdown line break outside a table row |
+| The files under each story of a conflict description were bullets of the same level as the stories                       | fixed: a nested item gets the four spaces Bitbucket nests on |
+
+Left open, the same wording and layout points as on the other providers: "To do by hand" over an
+item already done, two Pull Request counts that differ by one, dates wrapping in a five column
+table, the org of `action:run --dev-org` shown as a bare lowercase id in the Backpromotes comment.
+The instruction text of the test stories ("tick this box once you have read it") is the fixture's,
+not the product's. The coding agent prompt of a conflict description is a code block wider than
+the picture: it scrolls on the page.
+
+Since these two fixes came after the run, the comments of bb-6, bb-5 and ci-bb-4 still show the
+earlier form of those two lists: the proof of the fix is the sample comment and the unit tests.
+
+___
+
 ## Counts
 
 Second pass, on bb-3, unless said otherwise.
@@ -209,7 +261,7 @@ ___
 
 ## Left behind
 
-In the workspace: `sfdx-hardis-promo-e2e-bb-1`, `-bb-2`, `-bb-3`, `-ci-bb-1`, `-ci-bb-2` and `-ci-bb-3`
+In the workspace: `sfdx-hardis-promo-e2e-bb-1` to `-bb-6` (`-bb-4` is the attempt stopped for memory), `-ci-bb-4` (Pipelines off), `-ci-bb-1`, `-ci-bb-2` and `-ci-bb-3`
 (Pipelines turned off on the three; their secured variables hold the org login and the token and
 go with the repositories when they are deleted). On bb-1, one test comment on
 Pull Request #5 ("EXPERIMENT START") that tried what Bitbucket's markdown draws. On bb-3, two
