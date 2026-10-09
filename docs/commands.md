@@ -63,9 +63,10 @@
 
 ## hardis:git
 
-| Command                                                                     | Title                 |
-|:----------------------------------------------------------------------------|:----------------------|
-| [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md) | Extract pull requests |
+| Command                                                                     | Title                  |
+|:----------------------------------------------------------------------------|:-----------------------|
+| [**hardis:git:artifacts:download**](hardis/git/artifacts/download.md)       | Download job artifacts |
+| [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md) | Extract pull requests  |
 
 ## hardis:lint
 

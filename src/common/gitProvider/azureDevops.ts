@@ -1,4 +1,4 @@
-import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { toAzureDevopsWording } from "./utils/utilsAzureDevopsWording.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
@@ -14,6 +14,8 @@ import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
+import { parseAzureBuildUrl } from "./utils/jobUrlUtils.js";
+import { pipeline } from "stream/promises";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
 
@@ -22,6 +24,8 @@ export class AzureDevopsProvider extends GitProviderRoot {
   public serverUrl: string;
   public token: string;
   public attachmentsWorkItemId: number;
+  // Download address of the artifacts listed by listJobArtifacts, by "<build id>/<artifact name>"
+  private artifactDownloadUrls = new Map<string, string>();
   public attachmentsWorkItemTitle: string = process.env.AZURE_ATTACHMENTS_WORK_ITEM_TITLE || 'sfdx-hardis tech attachments'
 
   constructor() {
@@ -1381,6 +1385,56 @@ ${getBannerMarkdownAndLink()}
     return results;
   }
 
+  public supportsJobArtifacts(): boolean {
+    return true;
+  }
+
+  public async listJobArtifacts(jobUrl: string): Promise<JobArtifactsListing> {
+    const build = this.parseOwnBuildUrl(jobUrl);
+    const jobKey = `azure-build-${build.buildId}`;
+    let found: any[] = [];
+    try {
+      const buildApi = await this.azureApi.getBuildApi();
+      found = (await buildApi.getArtifacts(build.teamProject, build.buildId)) || [];
+    } catch (e) {
+      // A build deleted by the retention policy of the project answers 404
+      if ((e as any)?.statusCode === 404) {
+        return { status: 'expired', jobKey, artifacts: [] };
+      }
+      throw e;
+    }
+    for (const artifact of found) {
+      if (artifact.resource?.downloadUrl) {
+        this.artifactDownloadUrls.set(`${build.buildId}/${artifact.name}`, artifact.resource.downloadUrl);
+      }
+    }
+    const artifacts: JobArtifact[] = found.map((artifact) => ({
+      id: String(artifact.id),
+      name: artifact.name || String(artifact.id),
+      sizeBytes: parseInt(artifact.resource?.properties?.artifactsize || '0', 10) || 0,
+      expired: false,
+      // The id of a published artifact changes when it is published again
+      updatedAt: String(artifact.id),
+    }));
+    return { status: artifacts.length === 0 ? 'none' : 'success', jobKey, artifacts };
+  }
+
+  public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
+    const build = this.parseOwnBuildUrl(jobUrl);
+    // The download address the Build API gave for this artifact: a pipeline artifact is served by
+    // another Azure DevOps service, which the zip endpoint of the Build API does not reach
+    const downloadUrl = this.artifactDownloadUrls.get(`${build.buildId}/${artifact.name}`);
+    if (!downloadUrl) {
+      throw new SfError(t('jobArtifactsUrlNotRecognized', { jobUrl }));
+    }
+    const response = await this.azureApi.rest.client.get(downloadUrl);
+    if (response.message.statusCode !== 200) {
+      throw new SfError(`[Azure DevOps] Artifact ${artifact.name} download failed with status ${response.message.statusCode}`);
+    }
+    await fs.ensureDir(path.dirname(targetZipFile));
+    await pipeline(response.message, fs.createWriteStream(targetZipFile));
+  }
+
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
     body = this.enforceHardCommentLimit(toAzureDevopsWording(body));
     const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
@@ -1388,6 +1442,17 @@ ${getBannerMarkdownAndLink()}
     const azureGitApi = await this.azureApi.getGitApi();
     await azureGitApi.updateComment({ content: body }, repositoryId, commentRef.prNumber, commentRef.ref.threadId, commentRef.ref.commentId, azureTeamProject());
     uxLog("log", this, c.grey('[Azure DevOps] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
+  }
+
+  // The build a job URL points to, refused when it is not a build of this project
+  private parseOwnBuildUrl(jobUrl: string): { teamProject: string; buildId: number } {
+    const build = parseAzureBuildUrl(jobUrl);
+    const collectionUri = (this.serverUrl || "").replace(/\/$/, "").toLowerCase();
+    const ownProject = (process.env.SYSTEM_TEAMPROJECT || "").toLowerCase();
+    if (!build || !collectionUri || !ownProject || build.teamProject.toLowerCase() !== ownProject || !build.projectUrl.toLowerCase().startsWith(collectionUri + "/")) {
+      throw new SfError(t('jobArtifactsUrlNotRecognized', { jobUrl }));
+    }
+    return { teamProject: build.teamProject, buildId: build.buildId };
   }
 }
 

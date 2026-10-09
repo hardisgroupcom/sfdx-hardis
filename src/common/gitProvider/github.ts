@@ -1,5 +1,5 @@
 import c from "chalk";
-import { buildPrCreateUrl, encodePrUrlPathBranch, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, encodePrUrlPathBranch, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
@@ -8,6 +8,8 @@ import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
+import { parseGithubRunUrl } from "./utils/jobUrlUtils.js";
+import { SfError } from "@salesforce/core";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 
 export class GithubProvider extends GitProviderRoot {
@@ -805,10 +807,56 @@ ${getBannerMarkdownAndLink()}
     return results;
   }
 
+  public supportsJobArtifacts(): boolean {
+    return true;
+  }
+
+  public async listJobArtifacts(jobUrl: string): Promise<JobArtifactsListing> {
+    const run = this.parseOwnRunUrl(jobUrl);
+    const jobKey = `github-run-${run.runId}`;
+    let found: any[] = [];
+    try {
+      const response = await this.api.get<any>(`${this.repoPath(run.owner, run.repo)}/actions/runs/${run.runId}/artifacts`, { params: { per_page: 100 } });
+      found = Array.isArray(response.data?.artifacts) ? response.data.artifacts : [];
+    } catch (e) {
+      // A run deleted by the retention policy of the repository answers 404
+      if ((e as any)?.status === 404) {
+        return { status: 'expired', jobKey, artifacts: [] };
+      }
+      throw e;
+    }
+    const artifacts: JobArtifact[] = found.map((artifact) => ({
+      id: String(artifact.id),
+      name: artifact.name || String(artifact.id),
+      sizeBytes: artifact.size_in_bytes || 0,
+      expired: artifact.expired === true,
+      updatedAt: artifact.updated_at || artifact.created_at || '',
+    }));
+    if (artifacts.length === 0) {
+      return { status: 'none', jobKey, artifacts };
+    }
+    return { status: artifacts.every((artifact) => artifact.expired) ? 'expired' : 'success', jobKey, artifacts };
+  }
+
+  public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
+    const run = this.parseOwnRunUrl(jobUrl);
+    await this.api.downloadToFile(`${this.repoPath(run.owner, run.repo)}/actions/artifacts/${encodeURIComponent(artifact.id)}/zip`, targetZipFile);
+  }
+
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
     body = this.enforceHardCommentLimit(body);
     if (!commentRef?.ref) return;
     await this.updateIssueComment(commentRef.ref, body);
     uxLog("log", this, c.grey('[GitHub] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
+  }
+
+  // The run a job URL points to, refused when it is not a run of this repository
+  private parseOwnRunUrl(jobUrl: string): { owner: string; repo: string; runId: number } {
+    const run = parseGithubRunUrl(jobUrl);
+    const sameServer = !this.serverUrl || run?.serverUrl.toLowerCase() === this.serverUrl.replace(/\/$/, "").toLowerCase();
+    if (!run || !sameServer || run.owner.toLowerCase() !== (this.repoOwner || "").toLowerCase() || run.repo.toLowerCase() !== (this.repoName || "").toLowerCase()) {
+      throw new SfError(t('jobArtifactsUrlNotRecognized', { jobUrl }));
+    }
+    return { owner: run.owner, repo: run.repo, runId: run.runId };
   }
 }
