@@ -120,8 +120,8 @@ describe('Backpromotes comment', () => {
     const body = renderBackpromotesComment({
       sandboxRows: [],
       actionRows: [
-        { actionId: 'a1', label: 'Action one', phase: 'post', sandboxName: 'devorg1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'success', user: 'someone' },
-        { actionId: 'a2', label: 'Action two', phase: 'post', sandboxName: 'devorg1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'pending', user: 'someone' },
+        { actionId: 'a1', label: 'Action one', phase: 'post', sandboxName: 'dev1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'success', user: 'someone' },
+        { actionId: 'a2', label: 'Action two', phase: 'post', sandboxName: 'dev1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'pending', user: 'someone' },
       ],
     } as any);
 

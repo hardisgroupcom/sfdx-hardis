@@ -9,7 +9,7 @@ import {
   TICK_THEN_VALIDATE_AGAIN,
 } from '../../../../src/common/gitProvider/utils/utilsPrCommentWording.js';
 
-// The comment builders and the provider rewordings share these sentences: whatever they become,
+// The comment builders and the rewording of each provider share these sentences: whatever they become,
 // a provider where a box cannot be ticked must not be left asking to tick one.
 describe('Sentences of the Pull Request comments that ask to tick a box', () => {
   const sentences = [TICK_HINT_FOR_AN_ACTION, TICK_HINT_FOR_A_STEP, TICK_THEN_VALIDATE_AGAIN];

@@ -63,11 +63,6 @@ ignoreUntil = 2026-12-31
 reason = "Added 2026-10-03: no fixed braces release exists (3.0.3, the latest, is affected). Stack exhaustion when braces expands an attacker-supplied deeply nested pattern. braces is only brought by dev tooling (oclif > find-yarn-workspace-root > micromatch, @salesforce/dev-scripts > mocha > chokidar), never by the published plugin, and only expands our own patterns."
 
 [[IgnoredVulns]]
-id = "GHSA-ch52-4w7c-c8xp"
-ignoreUntil = 2026-12-31
-reason = "Added 2026-10-03: no fixed http-cache-semantics release exists (4.2.0, the latest, is affected). The flaw lets a client read cached responses of other users from a SHARED cache. Here it is reached through @salesforce/source-deploy-retrieve > got > cacheable-request, a private client-side cache of a single-user CLI process: no response of another user is ever stored in it, so the path is not reachable."
-
-[[IgnoredVulns]]
 id = "GHSA-hp3w-g68c-fv3c"
 ignoreUntil = 2026-12-31
 reason = "Added 2026-10-06: no fixed sprintf-js release exists. 1.0.3 only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, so no untrusted format string ever reaches sprintf-js."

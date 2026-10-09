@@ -100,7 +100,7 @@ describe('Bitbucket markup of Pull Request comments', () => {
   });
 
   it('carries a JSON marker in base64, which is shorter, and reads it back', () => {
-    const data = JSON.stringify({ sandboxRows: [{ sandboxName: 'devorg1', orgId: '00D000000000001', "status": 'complete' }], actionRows: [] });
+    const data = JSON.stringify({ sandboxRows: [{ sandboxName: 'dev1', orgId: '00D000000000001', "status": 'complete' }], actionRows: [] });
     const body = `Backpromotes\n<!-- sfdx-hardis backpromotes-data ${data} -->\n`;
 
     const sent = toBitbucketMarkup(body);
