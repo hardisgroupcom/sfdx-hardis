@@ -3703,6 +3703,7 @@
   "serviceNowProviderAddedTag": "{{count}} 件の ServiceNow レコードにタグ {{tag}} を追加しました: {{tickets}}",
   "serviceNowProviderCollectedTicket": "チケット {{ticketId}} のデータを収集しました",
   "serviceNowProviderCollectingTickets": "ServiceNow インスタンス {{instanceUrl}} から {{count}} 件のチケット情報の収集を試みています...",
+  "serviceNowProviderCommentsDisabled": "ServiceNow レコードへのデプロイコメントは無効です (SERVICENOW_POST_DEPLOYMENT_COMMENTS / serviceNowPostDeploymentComments): {{count}} 件のレコードは変更されませんでした。",
   "serviceNowProviderErrorAddingTag": "{{ticketId}} にタグ {{tag}} を追加中にエラーが発生しました: {{message}}",
   "serviceNowProviderErrorPostingComment": "{{ticketId}} にコメントを投稿中にエラーが発生しました: {{message}}",
   "serviceNowProviderNoSysId": "{{ticketId}} の sys_id が見つからないため、コメントは投稿されませんでした",

@@ -3706,6 +3706,7 @@
   "serviceNowProviderAddedTag": "Dodano tag {{tag}} do {{count}} rekordu(ów) ServiceNow: {{tickets}}",
   "serviceNowProviderCollectedTicket": "Zebrano dane dla zgłoszenia {{ticketId}}",
   "serviceNowProviderCollectingTickets": "Próba zebrania informacji o {{count}} zgłoszeniach z instancji ServiceNow {{instanceUrl}} ...",
+  "serviceNowProviderCommentsDisabled": "Komentarze wdrożeniowe w rekordach ServiceNow są wyłączone (SERVICENOW_POST_DEPLOYMENT_COMMENTS / serviceNowPostDeploymentComments): pozostawiono bez zmian rekordy: {{count}}.",
   "serviceNowProviderErrorAddingTag": "Błąd podczas dodawania tagu {{tag}} do {{ticketId}}: {{message}}",
   "serviceNowProviderErrorPostingComment": "Błąd podczas publikowania komentarza do {{ticketId}}: {{message}}",
   "serviceNowProviderNoSysId": "Nie można znaleźć sys_id dla {{ticketId}}: nie opublikowano na nim komentarza",

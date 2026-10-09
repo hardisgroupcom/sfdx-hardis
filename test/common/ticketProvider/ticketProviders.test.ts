@@ -483,7 +483,7 @@ describe('ServiceNowProvider deployment comments', () => {
     expect(tickets[0].reporterLabel).to.equal('Bob Durand');
     // The sys_id is kept, so posting the deployment note needs no second lookup
     expect(tickets[0].providerRecordId).to.equal('abc123');
-    expect(tickets[0].url).to.equal('https://acme.service-now.com/nav_to.do?uri=/incident.do?sys_id=abc123');
+    expect(tickets[0].url).to.equal('https://acme.service-now.com/incident.do?sys_id=abc123');
   }));
 
   it('leaves a ticket no record answers for untouched', withEnv(SERVICENOW_ENV, async () => {

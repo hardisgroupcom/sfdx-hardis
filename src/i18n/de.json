@@ -3705,6 +3705,7 @@
   "serviceNowProviderAddedTag": "Tag {{tag}} zu {{count}} ServiceNow-Datensatz/-Datensätze hinzugefügt: {{tickets}}",
   "serviceNowProviderCollectedTicket": "Daten für Ticket {{ticketId}} gesammelt",
   "serviceNowProviderCollectingTickets": "Versuche nun, {{count}} Ticket-Informationen von der ServiceNow-Instanz {{instanceUrl}} abzurufen ...",
+  "serviceNowProviderCommentsDisabled": "Deployment-Kommentare zu ServiceNow-Datensätzen sind deaktiviert (SERVICENOW_POST_DEPLOYMENT_COMMENTS / serviceNowPostDeploymentComments): {{count}} Datensatz/Datensätze unverändert gelassen.",
   "serviceNowProviderErrorAddingTag": "Fehler beim Hinzufügen des Tags {{tag}} zu {{ticketId}}: {{message}}",
   "serviceNowProviderErrorPostingComment": "Fehler beim Posten eines Kommentars zu {{ticketId}}: {{message}}",
   "serviceNowProviderNoSysId": "Die sys_id von {{ticketId}} konnte nicht gefunden werden: Es wurde kein Kommentar dazu gepostet",
