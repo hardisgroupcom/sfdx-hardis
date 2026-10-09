@@ -31,6 +31,8 @@ AZ_TOKEN="${AZ_TOKEN:-${AZURE_PERSONAL_ACCESS_TOKEN:-}}"
 : "${ORG:?set ORG to the target org}"
 : "${AZ_ORG:?set AZ_ORG to the Azure DevOps organization name}"
 : "${AZ_PROJECT:?set AZ_PROJECT to the team project}"
+# The project name as it goes in a URL: a team project can hold a space
+AZ_PROJECT_ENC="$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$AZ_PROJECT")"
 : "${AZ_REPO_NAME:?set AZ_REPO_NAME to the repository name}"
 : "${AZ_TOKEN:?set AZ_TOKEN (or AZURE_PERSONAL_ACCESS_TOKEN) to an Azure DevOps personal access token}"
 : "${WORK:?set WORK to the local clone}"
@@ -42,17 +44,17 @@ mkdir -p "$LOGS"
 AZ_COLLECTION="https://dev.azure.com/$AZ_ORG/"
 # The GUID of the repository, read by name when it was not given (a GET, nothing is created)
 if [ -z "${AZ_REPO_ID:-}" ]; then
-  AZ_REPO_ID=$(curl -sS -u ":$AZ_TOKEN" "${AZ_COLLECTION}${AZ_PROJECT}/_apis/git/repositories/$AZ_REPO_NAME?api-version=7.1" |
+  AZ_REPO_ID=$(curl -sS -u ":$AZ_TOKEN" "${AZ_COLLECTION}${AZ_PROJECT_ENC}/_apis/git/repositories/$AZ_REPO_NAME?api-version=7.1" |
     python -c "import json,sys; print(json.loads(sys.stdin.buffer.read().decode('utf-8')).get('id') or '')" 2>/dev/null)
 fi
 : "${AZ_REPO_ID:?set AZ_REPO_ID to the repository GUID: it could not be read from the API}"
 export AZ_TOKEN AZ_REPO_ID
-AZ_REPO_API="${AZ_COLLECTION}${AZ_PROJECT}/_apis/git/repositories/$AZ_REPO_ID"
+AZ_REPO_API="${AZ_COLLECTION}${AZ_PROJECT_ENC}/_apis/git/repositories/$AZ_REPO_ID"
 
 # The remote to clone and push with: the PAT as the password, any user name
 # Usage: git remote set-url origin "$(az_remote_url)"
 az_remote_url() {
-  echo "https://azure:$AZ_TOKEN@dev.azure.com/$AZ_ORG/$AZ_PROJECT/_git/$AZ_REPO_NAME"
+  echo "https://azure:$AZ_TOKEN@dev.azure.com/$AZ_ORG/$AZ_PROJECT_ENC/_git/$AZ_REPO_NAME"
 }
 
 # The Azure DevOps REST API. `az repos` is not used: it needs the Azure CLI logged in, prints its
@@ -309,7 +311,7 @@ fi
 dump_pr_comments() {
   local out="$1"
   shift
-  AZ_REPO_API="$AZ_REPO_API" AZ_TOKEN="$AZ_TOKEN" AZ_WEB="${AZ_COLLECTION}${AZ_PROJECT}/_git/$AZ_REPO_NAME" python -c "
+  AZ_REPO_API="$AZ_REPO_API" AZ_TOKEN="$AZ_TOKEN" AZ_WEB="${AZ_COLLECTION}${AZ_PROJECT_ENC}/_git/$AZ_REPO_NAME" python -c "
 import json, os, subprocess, sys
 
 API, TOKEN, WEB = os.environ['AZ_REPO_API'], os.environ['AZ_TOKEN'], os.environ['AZ_WEB']

@@ -88,7 +88,7 @@ ci_provider_init() {
   AZ_PROJECT_URL="${AZ_COLLECTION}$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$AZ_PROJECT")"
   export AZ_COLLECTION AZ_PROJECT_URL
 
-  AZ_PROJECT_ID=$(_azci_api GET "${AZ_COLLECTION}_apis/projects/$AZ_PROJECT?api-version=7.1" | _azci_json 'd.id')
+  AZ_PROJECT_ID=$(_azci_api GET "${AZ_COLLECTION}_apis/projects/${AZ_PROJECT_URL##*/}?api-version=7.1" | _azci_json 'd.id')
   if [ -z "$AZ_PROJECT_ID" ]; then
     echo "team project $AZ_PROJECT not found in $AZ_COLLECTION, or the PAT cannot read it" >&2
     return 1
@@ -431,6 +431,8 @@ _azci_wait_build() {
     [ "$status" = "completed" ] && break
     if [ "$status" = "notStarted" ] && [ "$waited" -ge "$CI_WAIT_QUEUE_SECONDS" ]; then break; fi
     if [ "$status" = "inProgress" ] && [ "$waited" -ge $((CI_WAIT_QUEUE_SECONDS + CI_WAIT_JOB_SECONDS)) ]; then break; fi
+    # Any other answer (a call that failed, postponed, cancelling) is waited for as long, no more
+    if [ "$waited" -ge $((CI_WAIT_QUEUE_SECONDS + CI_WAIT_JOB_SECONDS)) ]; then break; fi
     if [ $((waited - last_note)) -ge 300 ]; then
       echo "[$(date +%T)] $label: build $id $status"
       last_note=$waited

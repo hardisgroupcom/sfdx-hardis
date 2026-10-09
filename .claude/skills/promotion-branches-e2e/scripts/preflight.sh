@@ -206,7 +206,7 @@ if wants azure; then
     esac
     if [ "$code" = "200" ]; then
       project_url="$base/$(node -e "console.log(encodeURIComponent(process.argv[1]))" "$AZ_PROJECT")"
-      code=$(http_code "$TMPF" -u ":$token" "$base/_apis/projects/$AZ_PROJECT?api-version=7.1")
+      code=$(http_code "$TMPF" -u ":$token" "$base/_apis/projects/${project_url##*/}?api-version=7.1")
       if [ "$code" = "200" ]; then
         project_id=$(json 'd.id' <"$TMPF")
         ok "team project $AZ_PROJECT ($(json 'd.visibility' <"$TMPF"))"

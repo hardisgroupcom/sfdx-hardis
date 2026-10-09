@@ -46,6 +46,8 @@ const PROVIDER = process.env.PROVIDER || 'github';
 const WORK = process.env.WORK;
 const DEV = process.env.DEV;
 const EXT = require('./env-lib.cjs').extDir();
+// Bitbucket comments hold their markers hidden: one reader for the whole skill
+const { shown: bitbucketShown } = require('./bb-shown.cjs');
 if (!WORK || !DEV) {
   console.error('WORK and DEV are required');
   process.exit(2);
@@ -211,7 +213,7 @@ function listComments(number) {
     return bbPaged(`${BB_API}/pullrequests/${number}/comments?pagelen=50`)
       .filter((c) => !c.deleted)
       // the markers are hidden in links with no text there (utilsBitbucketMarkup.ts)
-      .map((c) => (c.content?.raw || '').replace(/\[\]\(#hardis:([^)\s]*)\)/g, (_m, encoded) => `<!-- ${decodeURIComponent(encoded)} -->`).replace(/^(\s*[-*] )([\u2610\u2611]) /gm, (_m, bullet, box) => `${bullet}[${box === '\u2611' ? 'x' : ' '}] `));
+      .map((c) => bitbucketShown(c.content?.raw));
   }
   if (PROVIDER === 'github') {
     return ghApi(`repos/${process.env.REPO}/issues/${number}/comments?per_page=100`).map((c) => c.body || '');

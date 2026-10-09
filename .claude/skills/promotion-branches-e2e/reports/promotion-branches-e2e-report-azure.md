@@ -186,6 +186,12 @@ ___
    The Azure DevOps runs before this one never met it: the jobs and the person shared one PAT.
    What was fixed: `set-status` reported "recorded as done" for a status it had not written. It now
    stops with exit 1 and says why (`deploymentActionsStateNotSaved`, nine locales).
+   Decided for now (2026-10-09): the comments written on Azure DevOps tell to use the **Mark as
+   done** button of the Deployment Actions tab in VS Code, or `set-status`, and say that a box can
+   only be ticked by the author of the comment or a project administrator
+   (`utilsAzureDevopsWording.ts`, pictured on Pull Request #166 of az-7). The button runs
+   `set-status`, so it works for the author of the comment and for a project administrator, and
+   stops with the reason above for anyone else.
    What is left to decide, since it changes where the state lives:
    - **a reply in the thread** (recommended): anyone who can contribute to a Pull Request can add
      a comment to an existing thread. A writer that is not the author of the Deployment Actions

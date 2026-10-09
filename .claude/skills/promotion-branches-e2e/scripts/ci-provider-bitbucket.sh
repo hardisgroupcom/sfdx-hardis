@@ -225,16 +225,17 @@ ci_rerun() {
 # The folder of this file: bb-shown.cjs gives the hidden markers of a Bitbucket comment back
 BBCI_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# On Bitbucket nobody ticks a box in a comment (they are drawn disabled): this edits the text of the
-# comment, as a person editing their own comment would
+# On Bitbucket nobody clicks a box in a comment: this edits the text of the comment, as a person
+# editing their own comment would, changing the box symbol of the action to the ticked one
 ci_tick_manual_checkbox() {
   local pr="$1" action="$2" org="$3" ids cid file
   ids=$(bb_api GET "$BB_API/pullrequests/$pr/comments?pagelen=100" | node "$BBCI_DIR/bb-shown.cjs" ids "sfdx-hardis-manual-action id:$action org:$org")
   for cid in $ids; do
     file="$LOGS/comment-$cid.md"
-    bb_api GET "$BB_API/pullrequests/$pr/comments/$cid" | node "$BBCI_DIR/bb-shown.cjs" raw >"$file"
-    ci_tick_in_file "$file" "$action" "$org" raw
-    node -e "const fs=require('fs');const f=process.argv[1];fs.writeFileSync(f,JSON.stringify({content:JSON.parse(fs.readFileSync(f,'utf8'))}))" "$(_bbci_path "$file.json")"
+    # The text of the comment as Bitbucket holds it, with the box of the action ticked: the hidden
+    # marker stays next to it, which is the format the CLI writes and reads back
+    bb_api GET "$BB_API/pullrequests/$pr/comments/$cid" | node "$BBCI_DIR/bb-shown.cjs" tick "sfdx-hardis-manual-action id:$action org:$org" >"$file"
+    node -e "const fs=require('fs');fs.writeFileSync(process.argv[2],JSON.stringify({content:{raw:fs.readFileSync(process.argv[1],'utf8')}}))" "$(_bbci_path "$file")" "$(_bbci_path "$file.json")"
     bb_api PUT "$BB_API/pullrequests/$pr/comments/$cid" --data-binary "@$(_bbci_path "$file.json")" >/dev/null && echo "ticked in comment $cid"
   done
 }

@@ -115,6 +115,12 @@ unproven.
 W2 on Bitbucket edits the text of the comment (the item of the manual action goes from to do to
 done), since no box can be ticked there: the re-run reads it and goes on.
 
+After the code review of the Pull Request, W2 was made stricter and proven again on bb-3 with the
+simulator (Pull Request #69): the box symbol of the action is changed to the ticked one in the text
+Bitbucket holds, the hidden marker left next to it, and the validation run again reads it ("confirmed
+as done ... via a Pull Request comment checkbox") and passes. The real CI run above had ticked a
+comment rewritten with its HTML comments, which only proved that comments written before are read.
+
 ___
 
 ## What the run found
