@@ -386,7 +386,13 @@ async function shoot(page, file) {
   await page.setViewport({ width: options.width + 400, height: Math.min(Math.max(1100, height + 400), 12000), deviceScaleFactor: 1 });
   await page.evaluate(() => document.querySelector('[data-e2e-comment="1"]').scrollIntoView({ block: 'start' }));
   await new Promise((resolve) => setTimeout(resolve, 1200));
-  await (await page.$('[data-e2e-comment="1"]')).screenshot({ path: file });
+  // A margin around the comment: a picture cut flush with the text looks like text cut by the page
+  const box = await (await page.$('[data-e2e-comment="1"]')).boundingBox();
+  const margin = 16;
+  await page.screenshot({
+    path: file,
+    clip: { x: Math.max(0, box.x - margin), y: Math.max(0, box.y - margin), width: box.width + 2 * margin, height: box.height + 2 * margin },
+  });
 }
 
 async function capture(page, item, selector) {

@@ -38,6 +38,7 @@ export function toBitbucketMarkup(body: string): string {
       .replace(TASK_ITEM_REGEX, (_match, bullet: string, state: string) => `${bullet}${state === ' ' ? '\u2610' : '\u2611'} `)
       .replace(TICK_A_BOX_REGEX, NO_BOX_TO_TICK)
       .replace('Do the steps below in the org, tick their boxes, then run the validation again.', 'Do the steps below in the org, mark them as done, then run the validation again.')
+      .replace(' Only the boxes are meant to be edited in this comment.', ' This comment is rewritten by sfdx-hardis: do not edit it.')
       .replace(/<summary>([\s\S]*?)<\/summary>/gi, (_match, summary: string) => `\n\n**${plainSummary(summary)}**\n\n`)
       .replace(/<\/?details[^>]*>/gi, '\n')
       .replace(/<br\s*\/?>/gi, ' ')

@@ -72,6 +72,7 @@ describe('Bitbucket markup of Pull Request comments', () => {
       'Do the steps below in the org, mark them as done, then run the validation again.',
     );
     expect(sent).to.contain('sf hardis:project:action:set-status');
+    expect(toBitbucketMarkup('Rerun it. Only the boxes are meant to be edited in this comment.')).to.equal('Rerun it. This comment is rewritten by sfdx-hardis: do not edit it.');
     expect(fromBitbucketMarkup(sent)).to.contain('- [ ] To do\n- [x] Done');
   });
 
