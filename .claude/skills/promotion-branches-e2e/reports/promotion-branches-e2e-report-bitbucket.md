@@ -183,7 +183,8 @@ ___
   workspace no longer runs out during a run. `BB_CI_SIMULATE_ONLY=1` would exercise the simulated
   path, not the detection of a pipeline paused for its minutes.
 - **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
-  which cannot be done while other sections use the same working copy.
+  which cannot be done while other sections use the same working copy. It ran on GitHub at the
+  end of the night (0 differing lines), not on this provider.
 - **Comments on bb-3 written before the last wording fixes** keep their earlier text until a job
   touches their Pull Request: the pictures that count are those of ci-bb-3, of the two fixtures
   and of bb-2.

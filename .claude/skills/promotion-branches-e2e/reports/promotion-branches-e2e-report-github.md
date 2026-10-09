@@ -37,7 +37,7 @@ ___
 | 5quater: visual check (-43, backpromote)                                            | 1 type                            | 1   | 0    |
 | 5quater: visual check (ci-1, comments of real jobs)                                 | 8 types                           | 8   | 0    |
 | 7bis: single place in the diagram (-42)                                             | 1                                 | 1   | 0    |
-| 7ter: flag-off A/B                                                                  | not run                           |     |      |
+| 7ter: flag-off A/B against `origin/main` (`0424af86d`), second pair                  | 0 differing lines                 | 1   | 0    |
 
 Section 6quater first ended with 20 OK and 1 FAIL: check A5 (a draft is only warned) got exit code 2
 and "command hardis:project:deploy:smart not found". The cause was this run, not the product: the
@@ -95,6 +95,14 @@ B0 to B16 and C1 to C4.
 first attempt, which a re-run of the same run id carries. The jobs ran the branch with the fixes of
 the night (Azure DevOps and Bitbucket providers, `set-status`): nothing changed for GitHub.
 
+### Section 7ter, flag-off regression against main (-42)
+
+Run last, alone, since it switches the sfdx-hardis checkout: a feature Pull Request into uat (#59)
+and a uat to preprod Pull Request (#60), left open, validated, then uat deployed and the release
+notes built, with `enablePromotionBranches: false`, by the branch and by `origin/main`, twice. The
+second pair is compared: `TOTAL DIFFERING LINES: 0`. A project that does not use the feature gets
+the same jobs from the branch, with the fixes of the night, as from main.
+
 ### Section 5quater, visual check (new in this run)
 
 GitHub comments are drawn through `POST /markdown` (the renderer of the comments), headless.
@@ -133,8 +141,6 @@ ___
 
 ## What this run did not cover
 
-- **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
-  which cannot be done while other sections use the same working copy.
 - **The real comment column of GitHub**: the visual check draws GitHub's own HTML in a plain
   frame. `--render page` with a logged-in Chrome would show the page.
 - **Flow diff and MegaLinter comments**: no story holds a Flow and no job posts a MegaLinter
@@ -148,5 +154,6 @@ ___
 
 ## Left behind
 
-`nvuillam/sfdx-hardis-promo-e2e-42`, `-43` and `-ci-1`. The `gh` token has no `delete_repo` scope
+`nvuillam/sfdx-hardis-promo-e2e-42` (with #57 and #58 left failed on purpose, #59 and #60 open for
+the A/B), `-43` and `-ci-1`. The `gh` token has no `delete_repo` scope
 (`gh auth refresh -h github.com -s delete_repo` before `gh repo delete`).

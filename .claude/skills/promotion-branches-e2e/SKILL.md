@@ -235,8 +235,9 @@ State them again in the report unless you close them:
   4bis, 4ter, 5bis, 5quater, 6, 6bis, 6quater, 6sexies, 6quinquies and 7bis). Azure DevOps and
   Bitbucket Cloud ran them for the first time then, and each found defects no other provider
   shows: read their reports before changing a provider.
-- **Section 7ter, the flag-off A/B, has not run since 2026-09-09.** It switches the sfdx-hardis
-  checkout to `origin/main`, so nothing else can use the working copy meanwhile: run it alone, last.
+- **Section 7ter, the flag-off A/B, ran on GitHub only on 2026-10-09** (0 differing lines); not on
+  GitLab, Azure DevOps or Bitbucket since 2026-09-09. It switches the sfdx-hardis checkout to
+  `origin/main`, so nothing else can use the working copy meanwhile: run it alone, last.
 - The four pipeline levels share one Salesforce org, so deployment action state is keyed by org
   **branch**, not by distinct orgs.
 - The pipeline webview is exercised through its own data provider (section 4bis), its compiled

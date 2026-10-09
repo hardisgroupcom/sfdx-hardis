@@ -243,7 +243,8 @@ ___
 - **W3 to W9 with the system token of Azure Pipelines**: the scenario cannot go past W2 in that
   mode (finding 3). They are proven with the PAT, where the jobs and the person are one identity.
 - **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
-  which cannot be done while other sections use the same working copy.
+  which cannot be done while other sections use the same working copy. It ran on GitHub at the
+  end of the night (0 differing lines), not on this provider.
 - **Group D of 6quater and I7, I8 of 6sexies** (developer org): `DEV_ORG` not set on this provider.
   They ran on GitLab the same day.
 - **Step B17** (terminal prompts of backpromote) and `refused-production.json`: not scriptable, no

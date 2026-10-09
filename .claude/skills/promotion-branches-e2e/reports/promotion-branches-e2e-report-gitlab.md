@@ -152,7 +152,8 @@ ___
 ## What this run did not cover
 
 - **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
-  which cannot be done while other sections use the same working copy.
+  which cannot be done while other sections use the same working copy. It ran on GitHub at the
+  end of the night (0 differing lines), not on this provider.
 - **The real comment column of GitLab**: the visual check draws GitLab's own HTML in a plain frame,
   not in the merge request page. It proves tables, folds, checkboxes and images, not the width of
   the real page nor GitLab's own styles. `--render page` with a logged-in Chrome would.
