@@ -43,6 +43,15 @@ describe('Bitbucket markup of Pull Request comments', () => {
     expect(sent).to.equal('| Step | 2026-10-08 [1](https://example.com/job/1) |');
   });
 
+  it('keeps a list written with line breaks one item per line, and nests a nested item', () => {
+    const body = 'Already deployed:<br/>- #3 via promotion A<br/>- #4 via promotion B\n\n- Story one (#27)\n  - `NOTES.md`\n  - `labels.xml`';
+
+    const sent = toBitbucketMarkup(body);
+
+    expect(sent).to.contain('Already deployed:  \n- #3 via promotion A  \n- #4 via promotion B');
+    expect(sent).to.contain('- Story one (#27)\n    - `NOTES.md`\n    - `labels.xml`');
+  });
+
   it('leaves code blocks as they are', () => {
     const code = '````\nSolve the conflicts between <!-- markers --> in <details> blocks<br/>\n```xml\n<fullName>A</fullName>\n```\n````';
     const body = `Prompt:\n\n${code}\n\n<!-- sfdx-hardis nav-end -->`;
@@ -81,7 +90,7 @@ describe('Bitbucket markup of Pull Request comments', () => {
 
     const sent = toBitbucketMarkup(body);
 
-    expect(sent).to.equal('The file holds `<br/>`, `<b>x</b>` and `<!-- note -->` in a `<details>` block. Next line.');
+    expect(sent).to.equal('The file holds `<br/>`, `<b>x</b>` and `<!-- note -->` in a `<details>` block.  \nNext line.');
   });
 
   it('does not take a fence opened and closed on one line for the start of a block', () => {

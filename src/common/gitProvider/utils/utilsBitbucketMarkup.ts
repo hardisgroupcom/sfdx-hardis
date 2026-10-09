@@ -42,7 +42,8 @@ const INLINE_CODE_PLACEHOLDER_REGEX = /\uE000(\d+)\uE000/g;
  * Rewrites a comment or a description for Bitbucket Cloud:
  * - an HTML comment becomes a hidden marker;
  * - a folded section becomes its summary in bold followed by its content, since nothing folds there;
- * - a line break tag becomes a space, a bold tag becomes markdown bold;
+ * - a line break tag becomes a space in a table row and a markdown line break elsewhere, a bold tag
+ *   becomes markdown bold, a nested list item gets the indentation Bitbucket nests on;
  * - a task item shows a box symbol, since Bitbucket draws no checkbox and nobody can tick one.
  * Code, in a block or in a line, is left as it is: what it holds is shown as text on every provider.
  * A description gets less of it, see BitbucketMarkupKind.
@@ -66,7 +67,9 @@ export function toBitbucketMarkup(body: string, kind: BitbucketMarkupKind = 'com
     return result
       .replace(/<summary>([\s\S]*?)<\/summary>/gi, (_match, summary: string) => `\n\n**${plainSummary(summary)}**\n\n`)
       .replace(/<\/?details[^>]*>/gi, '\n')
-      .replace(/<br\s*\/?>/gi, ' ')
+      .split('\n')
+      .map(rewriteLine)
+      .join('\n')
       .replace(/<b>([\s\S]*?)<\/b>/gi, (_match, bold: string) => `**${bold.trim()}**`)
       .replace(/\n{3,}/g, '\n\n');
   });
@@ -84,6 +87,16 @@ export function fromBitbucketMarkup(raw: string): string {
   return raw
     .replace(HIDDEN_MARKER_REGEX, (_match, base64: string | undefined, encoded: string) => `<!-- ${decodeHiddenMarker(encoded, base64 === '64')} -->`)
     .replace(BOX_ITEM_REGEX, (_match, bullet: string, box: string) => `${bullet}[${box === '☑' ? 'x' : ' '}] `);
+}
+
+// A line break tag is a space in a table row, where a line cannot break, and a markdown line break
+// anywhere else: a list written with line breaks stays one item per line. A nested list item gets
+// the four spaces Bitbucket needs to nest it (two are enough on the other providers).
+function rewriteLine(line: string): string {
+  if (line.trimStart().startsWith('|')) {
+    return line.replace(/<br\s*\/?>/gi, ' ');
+  }
+  return line.replace(/^ {2}(?=[-*] )/, '    ').replace(/<br\s*\/?>/gi, '  \n');
 }
 
 // Applies a transform to what is not code: fenced blocks are skipped, and code spans inside a line
