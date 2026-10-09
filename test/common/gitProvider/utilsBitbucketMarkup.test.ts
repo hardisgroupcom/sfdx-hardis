@@ -22,7 +22,7 @@ describe('Bitbucket markup of Pull Request comments', () => {
     const sent = toBitbucketMarkup(body);
 
     expect(sent).to.not.match(/[()*_~!'][^\n]*#hardis:[^)]*[(*_~!']/);
-    expect(sent.split('\n')[0]).to.match(/^- \[ \] \[\]\(#hardis:[^)\s]+\) Manual step$/);
+    expect(sent.split('\n')[0]).to.match(/^- ☐ \[\]\(#hardis:[^)\s]+\) Manual step$/);
     expect(fromBitbucketMarkup(sent)).to.equal(body);
   });
 
@@ -59,6 +59,17 @@ describe('Bitbucket markup of Pull Request comments', () => {
     const once = toBitbucketMarkup(body);
 
     expect(toBitbucketMarkup(once)).to.equal(once);
+  });
+
+  it('shows a box symbol for a task item and names what marks an action as done on Bitbucket', () => {
+    const body = 'Tick a box once the action is done in the org: the next sfdx-hardis job records it. Rerun a failed action.\n\n- [ ] To do\n- [x] Done\n';
+
+    const sent = toBitbucketMarkup(body);
+
+    expect(sent).to.contain('- ☐ To do\n- ☑ Done');
+    expect(sent).to.not.contain('Tick a box');
+    expect(sent).to.contain('sf hardis:project:action:set-status');
+    expect(fromBitbucketMarkup(sent)).to.contain('- [ ] To do\n- [x] Done');
   });
 
   it('reads a comment written before the hidden markers existed', () => {

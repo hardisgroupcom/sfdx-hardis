@@ -132,7 +132,18 @@ function descriptionType(pullRequest) {
 function pullRequestUrl(pullRequest) {
   if (pullRequest.url) return pullRequest.url;
   const commentUrl = (pullRequest.comments || []).map((c) => c.url).find(Boolean) || '';
-  return commentUrl.replace(/[?#].*$/, '');
+  if (commentUrl) {
+    return commentUrl.replace(/[?#].*$/, '').replace(/\/_\/diff$/, '');
+  }
+  // A Pull Request without a comment: its address is the one of any other, with its number
+  for (const other of dump.prs || []) {
+    const sample = (other.comments || []).map((c) => c.url).find(Boolean);
+    const match = sample && sample.match(/^(.*\/(?:pull-requests|pullrequest|pull|merge_requests)\/)\d+/);
+    if (match) {
+      return `${match[1]}${pullRequest.number}`;
+    }
+  }
+  return '';
 }
 
 const byType = new Map();
@@ -301,6 +312,8 @@ function inspectInPage(input) {
     .filter((node) => node.scrollWidth > node.clientWidth + 2 || node.getBoundingClientRect().width > element.getBoundingClientRect().width + 2)
     .map((node) => `${node.tagName.toLowerCase()} ${Math.round(Math.max(node.scrollWidth, node.getBoundingClientRect().width))}px in ${width}px`);
   const checkboxes = element.querySelectorAll('input[type="checkbox"], [role="checkbox"], [class*="markdown-checkbox"]:not([class*="container"])').length;
+  // Bitbucket draws no checkbox: sfdx-hardis sends a box symbol there, which counts as one
+  const boxSymbols = ((element.textContent || '').match(/[\u2610\u2611]/g) || []).length;
   return {
     found: true,
     wordsFound: hits + "/" + anchors.length,
@@ -310,7 +323,7 @@ function inspectInPage(input) {
     details: element.querySelectorAll('details').length,
     images: images.length,
     brokenImages,
-    checkboxes,
+    checkboxes: checkboxes + boxSymbols,
     tooWide,
     leaks,
     expected: facts,

@@ -211,7 +211,7 @@ function listComments(number) {
     return bbPaged(`${BB_API}/pullrequests/${number}/comments?pagelen=50`)
       .filter((c) => !c.deleted)
       // the markers are hidden in links with no text there (utilsBitbucketMarkup.ts)
-      .map((c) => (c.content?.raw || '').replace(/\[\]\(#hardis:([^)\s]*)\)/g, (_m, encoded) => `<!-- ${decodeURIComponent(encoded)} -->`));
+      .map((c) => (c.content?.raw || '').replace(/\[\]\(#hardis:([^)\s]*)\)/g, (_m, encoded) => `<!-- ${decodeURIComponent(encoded)} -->`).replace(/^(\s*[-*] )([\u2610\u2611]) /gm, (_m, bullet, box) => `${bullet}[${box === '\u2611' ? 'x' : ' '}] `));
   }
   if (PROVIDER === 'github') {
     return ghApi(`repos/${process.env.REPO}/issues/${number}/comments?per_page=100`).map((c) => c.body || '');

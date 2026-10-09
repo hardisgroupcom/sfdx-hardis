@@ -338,7 +338,10 @@ def paged(url):
 # dump gives them back as the HTML comments every checker reads, as the CLI does when it reads them
 def shown(text):
     import re, urllib.parse
-    return re.sub(r'\[\]\(#hardis:([^)\s]*)\)', lambda m: '<!-- ' + urllib.parse.unquote(m.group(1)) + ' -->', text)
+    text = re.sub(r'\[\]\(#hardis:([^)\s]*)\)', lambda m: '<!-- ' + urllib.parse.unquote(m.group(1)) + ' -->', text)
+    # a task item is sent with a box symbol, which Bitbucket draws where it draws no checkbox
+    return re.sub(r'(?m)^(\s*[-*] )([' + chr(0x2610) + chr(0x2611) + r']) ',
+                  lambda m: m.group(1) + ('[x] ' if m.group(2) == chr(0x2611) else '[ ] '), text)
 
 wanted = set(int(a) for a in sys.argv[2:])
 prs = []

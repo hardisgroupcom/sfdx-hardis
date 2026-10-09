@@ -10,7 +10,11 @@
  *   ... | node bb-shown.cjs ids <needle>    stdin: a page of comments, stdout: ids of those holding <needle>
  *   ... | node bb-shown.cjs raw             stdin: one comment (JSON), stdout: its text
  */
-const shown = (text) => String(text || '').replace(/\[\]\(#hardis:([^)\s]*)\)/g, (_match, encoded) => `<!-- ${decodeURIComponent(encoded)} -->`);
+const shown = (text) =>
+  String(text || '')
+    .replace(/\[\]\(#hardis:([^)\s]*)\)/g, (_match, encoded) => `<!-- ${decodeURIComponent(encoded)} -->`)
+    // a task item is sent with a box symbol, which Bitbucket draws where it draws no checkbox
+    .replace(/^(\s*[-*] )([\u2610\u2611]) /gm, (_match, bullet, box) => `${bullet}[${box === '\u2611' ? 'x' : ' '}] `);
 const [mode, needle] = process.argv.slice(2);
 let input = '';
 process.stdin
