@@ -451,6 +451,8 @@ describe('findPromotionsCarrying() / buildAlreadyPromotedMarkdown()', () => {
     ]);
     expect(markdown).to.contain(`[#482](https://git.example.com/pr/482) already deployed via \`${PROMOTION_BRANCH}\` ([#900](https://git.example.com/pr/900), into \`preprod\` on 2026-09-02)`);
     expect(markdown).to.not.contain('#487');
+    // A list right under its sentence is drawn as one paragraph by Bitbucket
+    expect(markdown).to.contain('already performed:\n\n- [#482]');
     expect(buildAlreadyPromotedMarkdown([{ story: pr({ idNumber: 487 }), promotions: [] }])).to.equal('');
   });
 });
