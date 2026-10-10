@@ -75,14 +75,14 @@ ___
 
 ## What the run found
 
-| Finding                                                                                                                                                              | Status                                   |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
-| The list of Pull Requests already deployed through a promotion branch was written right under its sentence: Bitbucket drew it as one paragraph with literal ` - `    | fixed, `c6ed121b6`, not yet seen on a real comment |
-| A fold says "24 Pull Requests" where the line under it says 25, and 26 against 27: the list leaves out the Pull Request being read                                  | open, wording, same on every provider    |
-| Narrow columns break words: `StaticResourc` / `e` in the Type column of a failed validation, a job id cut in two, dates wrapped when there are three org columns     | open, cosmetic                           |
-| The long lines of the conflicts prompt are cut at the right edge of its code block, with a scrollbar inside the block; `(#27)` in the conflict list is plain text    | open, cosmetic                           |
-| The Backpromotes comment names its org by a lowercase id only: the scratch org has no alias in that test                                                             | open, cosmetic                           |
-| The Backpromotes comment has no banner and no navigation line                                                                                                        | by design (`backpromoteCommentUtils.ts`) |
+| Finding                                                                                                                                                           | Status                                             |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
+| The list of Pull Requests already deployed through a promotion branch was written right under its sentence: Bitbucket drew it as one paragraph with literal ` - ` | fixed, `c6ed121b6`, not yet seen on a real comment |
+| A fold says "24 Pull Requests" where the line under it says 25, and 26 against 27: the list leaves out the Pull Request being read                                | open, wording, same on every provider              |
+| Narrow columns break words: `StaticResourc` / `e` in the Type column of a failed validation, a job id cut in two, dates wrapped when there are three org columns  | open, cosmetic                                     |
+| The long lines of the conflicts prompt are cut at the right edge of its code block, with a scrollbar inside the block; `(#27)` in the conflict list is plain text | open, cosmetic                                     |
+| The Backpromotes comment names its org by a lowercase id only: the scratch org has no alias in that test                                                          | open, cosmetic                                     |
+| The Backpromotes comment has no banner and no navigation line                                                                                                     | by design (`backpromoteCommentUtils.ts`)           |
 
 The fix of the first line is in `buildAlreadyPromotedMarkdown` (`promotionBranchUtils.ts`), with a
 unit test. It was made after the sections of `-bb-7`, and no later job of this run writes that

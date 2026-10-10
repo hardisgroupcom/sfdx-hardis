@@ -84,14 +84,14 @@ ___
 
 ## What the run found
 
-| Finding                                                                                                                                 | Status                                   |
-|-----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
-| `p_wait_merge_ref` gives up after 90 seconds on GitHub and the script goes on with a stale merge ref (checks 32 and 37)                 | test script, see the note under the table |
-| A fold says "26 Pull Requests" where the line under it says "collected from 27", and 24 against 25: the list leaves out the Pull Request being read | open, wording, same as 10-09   |
-| The Backpromotes comment of `-46` names its org by a lowercase id only: the scratch org has no alias in that test                       | open, cosmetic                           |
-| The two "Results by org" tables of the action details are squeezed by a long Note column: the date and the status wrap                  | open, cosmetic                           |
-| `prmerge-16`, the local branch name of the job simulator, is listed as a ticket                                                         | test artifact, not seen on a real CI job |
-| The Backpromotes comment has no banner and no navigation line                                                                           | by design (`backpromoteCommentUtils.ts`) |
+| Finding                                                                                                                                             | Status                                    |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| `p_wait_merge_ref` gives up after 90 seconds on GitHub and the script goes on with a stale merge ref (checks 32 and 37)                             | test script, see the note under the table |
+| A fold says "26 Pull Requests" where the line under it says "collected from 27", and 24 against 25: the list leaves out the Pull Request being read | open, wording, same as 10-09              |
+| The Backpromotes comment of `-46` names its org by a lowercase id only: the scratch org has no alias in that test                                   | open, cosmetic                            |
+| The two "Results by org" tables of the action details are squeezed by a long Note column: the date and the status wrap                              | open, cosmetic                            |
+| `prmerge-16`, the local branch name of the job simulator, is listed as a ticket                                                                     | test artifact, not seen on a real CI job  |
+| The Backpromotes comment has no banner and no navigation line                                                                                       | by design (`backpromoteCommentUtils.ts`)  |
 
 Product fix of the run, found on Bitbucket and pushed as `c6ed121b6`: a blank line before the list
 of Pull Requests already deployed through a promotion branch. On GitHub the list was already

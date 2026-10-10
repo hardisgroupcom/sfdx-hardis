@@ -81,15 +81,15 @@ ___
 
 ## What the run found
 
-| Finding                                                                                                                                             | Status                         |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|
-| `(#189)` at the end of a line of the conflicts description is drawn as `#189 )`: the Azure link rendering takes the closing parenthesis             | open, cosmetic, Azure only     |
-| The sandbox table of the Backpromotes comment has six columns: in a 554px wide comment the last one ("Left out") is past the right edge, Azure scrolls it sideways | open, cosmetic       |
-| Dates wrap in the org columns of "Status by org" when there are three org columns                                                                   | open, cosmetic                 |
-| A fold says "N Pull Requests" where the line under it says N+1: the list leaves out the Pull Request being read, the sentence counts it             | open, wording, same as 10-09   |
-| The extension's Azure provider reads an HTML answer as an error and returns an empty list for the branch (`pipeline-before-p2`)                     | open: a retry would hide a transient answer, not decided |
-| `validation-failed+manual-pr231-open.png` was not unfolded by the capture, so the content of its three sections was not verified by picture         | capture miss                   |
-| The Backpromotes comment has no banner and no navigation line                                                                                       | by design (`backpromoteCommentUtils.ts`) |
+| Finding                                                                                                                                                            | Status                                                   |
+|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+| `(#189)` at the end of a line of the conflicts description is drawn as `#189 )`: the Azure link rendering takes the closing parenthesis                            | open, cosmetic, Azure only                               |
+| The sandbox table of the Backpromotes comment has six columns: in a 554px wide comment the last one ("Left out") is past the right edge, Azure scrolls it sideways | open, cosmetic                                           |
+| Dates wrap in the org columns of "Status by org" when there are three org columns                                                                                  | open, cosmetic                                           |
+| A fold says "N Pull Requests" where the line under it says N+1: the list leaves out the Pull Request being read, the sentence counts it                            | open, wording, same as 10-09                             |
+| The extension's Azure provider reads an HTML answer as an error and returns an empty list for the branch (`pipeline-before-p2`)                                    | open: a retry would hide a transient answer, not decided |
+| `validation-failed+manual-pr231-open.png` was not unfolded by the capture, so the content of its three sections was not verified by picture                        | capture miss                                             |
+| The Backpromotes comment has no banner and no navigation line                                                                                                      | by design (`backpromoteCommentUtils.ts`)                 |
 
 No product defect was fixed from the Azure part of the run.
 

@@ -21,21 +21,21 @@ ___
 
 ## Counts
 
-| Section                                                                             | Checks                            | OK  | FAIL      |
-|-------------------------------------------------------------------------------------|-----------------------------------|-----|-----------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 41  | 1         |
-| 6: edge cases, groups g1 to g6                                                      | 47                                | 46  | 1         |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0         |
-| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0         |
-| Visual fixtures (VE, VG)                                                            | 2                                 | 1   | 1         |
-| 6bis: backpromote B0 to B16, C1 to C4 (`gl-19`)                                     | 63                                | 63  | 0         |
-| 6quinquies: real CI, W0 to W9, X2 (`ci-gl-2`), W8 skipped                           | 20                                | 20  | 0         |
-| 6quinquies: X1, single Pull Request window on real CI comments                      | 1                                 | 0, then 1 by hand | 1 |
-| 4ter: single Pull Request window, simulated jobs (`gl-18`)                          | 49 Pull Requests                  | 49  | 0         |
-| 5bis: comment audit (`gl-18`)                                                       | 1094 checks over 55 Pull Requests |     | 1 finding |
-| 5quater: visual check of the comments (`gl-18`)                                     | 11 types, 1 warning               | 11  | 0         |
-| 5quater: visual check (`gl-19`, backpromote)                                        | 1 type                            | 1   | 0         |
-| 7bis: single place in the diagram (`gl-18`)                                         | 1                                 | 1   | 0         |
+| Section                                                                             | Checks                            | OK                | FAIL      |
+|-------------------------------------------------------------------------------------|-----------------------------------|-------------------|-----------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 41                | 1         |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 46                | 1         |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21                | 0         |
+| 6sexies: identical actions, I1 to I10                                               | 24                                | 24                | 0         |
+| Visual fixtures (VE, VG)                                                            | 2                                 | 1                 | 1         |
+| 6bis: backpromote B0 to B16, C1 to C4 (`gl-19`)                                     | 63                                | 63                | 0         |
+| 6quinquies: real CI, W0 to W9, X2 (`ci-gl-2`), W8 skipped                           | 20                                | 20                | 0         |
+| 6quinquies: X1, single Pull Request window on real CI comments                      | 1                                 | 0, then 1 by hand | 1         |
+| 4ter: single Pull Request window, simulated jobs (`gl-18`)                          | 49 Pull Requests                  | 49                | 0         |
+| 5bis: comment audit (`gl-18`)                                                       | 1094 checks over 55 Pull Requests |                   | 1 finding |
+| 5quater: visual check of the comments (`gl-18`)                                     | 11 types, 1 warning               | 11                | 0         |
+| 5quater: visual check (`gl-19`, backpromote)                                        | 1 type                            | 1                 | 0         |
+| 7bis: single place in the diagram (`gl-18`)                                         | 1                                 | 1                 | 0         |
 
 No SKIP line in sections 6quater and 6sexies: the developer org groups ran.
 
@@ -105,13 +105,13 @@ ___
 
 ## What the run found
 
-| Finding                                                                                                                              | Status                                      |
-|--------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|
-| `gl_fetch_merge_ref` trusts the head reported by the merge request API, which lags after a push: a validation can run on stale content (VG) | fixed in the skill scripts           |
-| `check-pr-modal.cjs` and the section scripts stop or go on silently when `curl` or `git` cannot start                                 | open: no retry added                        |
-| Audit finding on story 1, manual action skipped in `preprod`                                                                          | open, cause not confirmed                   |
-| A fold says "N Pull Requests" where the line under it says N+1                                                                        | open, wording, same on every provider       |
-| The Backpromotes comment has no banner and no navigation line                                                                         | by design (`backpromoteCommentUtils.ts`)    |
+| Finding                                                                                                                                     | Status                                   |
+|---------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| `gl_fetch_merge_ref` trusts the head reported by the merge request API, which lags after a push: a validation can run on stale content (VG) | fixed in the skill scripts               |
+| `check-pr-modal.cjs` and the section scripts stop or go on silently when `curl` or `git` cannot start                                       | open: no retry added                     |
+| Audit finding on story 1, manual action skipped in `preprod`                                                                                | open, cause not confirmed                |
+| A fold says "N Pull Requests" where the line under it says N+1                                                                              | open, wording, same on every provider    |
+| The Backpromotes comment has no banner and no navigation line                                                                               | by design (`backpromoteCommentUtils.ts`) |
 
 No product defect was found on GitLab.
 
