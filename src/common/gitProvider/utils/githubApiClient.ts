@@ -6,7 +6,7 @@
 // (repository, event payload, ref, run id), computed from the same environment
 // variables @actions/github used, so behavior inside GitHub Actions is unchanged.
 import fs from '../../utils/fsUtils.js';
-import { createHttpClient, HttpClient, HttpError, HttpRequestConfig, HttpResponse } from '../../utils/httpUtils.js';
+import { createHttpClient, httpDownloadFile, HttpClient, HttpError, HttpRequestConfig, HttpResponse } from '../../utils/httpUtils.js';
 
 export const GITHUB_DEFAULT_API_URL = 'https://api.github.com';
 export const GITHUB_DEFAULT_SERVER_URL = 'https://github.com';
@@ -98,6 +98,7 @@ export class GithubApiClient {
   public readonly apiUrl: string;
   public readonly graphqlUrl: string;
   private readonly http: HttpClient;
+  private readonly headers: Record<string, string>;
 
   constructor(token: string, options: { apiUrl?: string; graphqlUrl?: string } = {}) {
     this.apiUrl = (options.apiUrl || process.env.GITHUB_API_URL || GITHUB_DEFAULT_API_URL).replace(/\/$/, '');
@@ -110,6 +111,7 @@ export class GithubApiClient {
     if (token) {
       headers.Authorization = `token ${token}`;
     }
+    this.headers = headers;
     this.http = createHttpClient({ baseURL: this.apiUrl, headers });
   }
 
@@ -143,6 +145,19 @@ export class GithubApiClient {
       nextOptions = { headers: options.headers };
     }
     return items;
+  }
+
+  // Binary GET written to a file (the zip of a workflow run artifact)
+  public async downloadToFile(path: string, targetFile: string): Promise<void> {
+    const url = this.buildUrl(path);
+    try {
+      await httpDownloadFile(url, targetFile, { headers: this.headers });
+    } catch (e) {
+      if (e instanceof HttpError) {
+        throw new GithubApiError(e.message, e.status, { status: e.status, statusText: e.response.statusText, data: e.response.data }, { method: 'GET', url });
+      }
+      throw e;
+    }
   }
 
   // Runs a GraphQL query and returns its data, throwing when the API reports errors

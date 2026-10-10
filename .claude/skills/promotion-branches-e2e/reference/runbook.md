@@ -1376,6 +1376,21 @@ Traps:
   4000 characters and the embedded conflict prompt goes past it. The description now drops the
   prompt (it is saved in `hardis-report/` anyway) rather than losing the Pull Request, so a run that
   sees no `<details>` block on an Azure promotion with conflicts is seeing the intended behaviour.
+- **A workstation short on memory fails `git` and `curl`, and the scripts go on.**
+  `getaddrinfo() thread failed to start` appears with about 2 GB of free memory, even with a single
+  chain running. A failed `git fetch` before a job makes the job run on a stale checkout (a scope of
+  1 Pull Request where 27 are expected), a failed `curl` loses a merge request creation and every
+  section after it. Before a run, close what holds the memory, and after it
+  `grep -c getaddrinfo` every output file: one match means the section around it is to replay.
+- **A merge ref wait that times out does not stop the script.** `p_wait_merge_ref` returns 1 and
+  the next job validates the previous merge. On GitHub the ref took more than 90 seconds once
+  (checks 32 and 37 of the run of 2026-10-10); on GitLab the merge request API answered the
+  previous head right after a push (fixture VG). Both waits now take the pushed commit and wait
+  longer. A validation that reports what the last push removed, or misses what it added, is a
+  stale ref before it is a finding: check the branch on the remote.
+- **Log followers outlive a session.** `tail -F ... | grep` started in the background to watch a
+  run is not stopped with the session: 27 were still alive two days later. Use a loop on the output
+  file that ends on a marker line instead.
 - **Running two providers at once exhausts git bash on Windows.** `fork: retry: Resource
   temporarily unavailable` and `dofork: child -1 ... exit code 0xC000026B` come from the shell, not
   from the product: rerun the step, and keep the long A/B passes to one at a time.

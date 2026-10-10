@@ -3,12 +3,15 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
+import { parseGitlabJobUrl } from "./utils/jobUrlUtils.js";
+import { httpDownloadFile, httpGet } from "../utils/httpUtils.js";
+import { SfError } from "@salesforce/core";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./utils/jenkinsUtils.js";
 
 // Oldest commit date of a window, used to bound the merged MRs listing (see
@@ -908,10 +911,64 @@ ${getBannerMarkdownAndLink()}
     return webUrl;
   }
 
+  public supportsJobArtifacts(): boolean {
+    return true;
+  }
+
+  public async listJobArtifacts(jobUrl: string): Promise<JobArtifactsListing> {
+    const jobApiUrl = this.getOwnJobApiUrl(jobUrl);
+    const jobKey = `gitlab-job-${parseGitlabJobUrl(jobUrl)?.jobId}`;
+    let job: any;
+    try {
+      job = (await httpGet<any>(jobApiUrl, { headers: this.jobApiHeaders() })).data;
+    } catch (e) {
+      // A job erased with its pipeline answers 404
+      if ((e as any)?.status === 404) {
+        return { status: 'expired', jobKey, artifacts: [] };
+      }
+      throw e;
+    }
+    const archive = job?.artifacts_file || (job?.artifacts || []).find((file: any) => file?.file_type === 'archive');
+    if (!archive) {
+      // GitLab removes the archive at its expiry date and keeps the date
+      const expireAt = Date.parse(job?.artifacts_expire_at || '');
+      return { status: !isNaN(expireAt) && expireAt < Date.now() ? 'expired' : 'none', jobKey, artifacts: [] };
+    }
+    const artifact: JobArtifact = {
+      id: String(job.id),
+      name: archive.filename || 'artifacts.zip',
+      sizeBytes: archive.size || 0,
+      expired: false,
+      updatedAt: job.finished_at || job.created_at || '',
+    };
+    return { status: 'success', jobKey, artifacts: [artifact] };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
+    await httpDownloadFile(`${this.getOwnJobApiUrl(jobUrl)}/artifacts`, targetZipFile, { headers: this.jobApiHeaders() });
+  }
+
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
     body = this.enforceHardCommentLimit(body);
     if (!commentRef?.ref?.noteId) return;
     await this.gitlabApi.MergeRequestNotes.edit(commentRef.ref.projectId, commentRef.prNumber, commentRef.ref.noteId, { body });
     uxLog("log", this, c.grey('[GitLab] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
+  }
+
+  // API URL of the job a job URL points to, refused when it is not a job of this project. The
+  // host is always the configured one: the token never goes to the host written in the URL.
+  private getOwnJobApiUrl(jobUrl: string): string {
+    const job = parseGitlabJobUrl(jobUrl);
+    const serverUrl = (this.serverUrl || "").replace(/\/$/, "");
+    const ownProjectPath = (process.env.CI_PROJECT_PATH || "").toLowerCase();
+    if (!job || !serverUrl || job.serverUrl.toLowerCase() !== serverUrl.toLowerCase() || !ownProjectPath || job.projectPath.toLowerCase() !== ownProjectPath) {
+      throw new SfError(t('jobArtifactsUrlNotRecognized', { jobUrl }));
+    }
+    return `${serverUrl}/api/v4/projects/${encodeURIComponent(job.projectPath)}/jobs/${job.jobId}`;
+  }
+
+  private jobApiHeaders(): Record<string, string> {
+    return { Authorization: `Bearer ${this.token}` };
   }
 }

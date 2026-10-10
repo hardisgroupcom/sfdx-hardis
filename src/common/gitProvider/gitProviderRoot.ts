@@ -420,6 +420,44 @@ export abstract class GitProviderRoot {
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
     uxLog("other", this, `Method updatePullRequestCommentByRef is not implemented yet on ${this.getLabel()}`);
   }
+
+  // True when the artifacts of a CI job can be listed and downloaded through the API of the provider
+  public supportsJobArtifacts(): boolean {
+    return false;
+  }
+
+  // Artifacts of the job a Pull Request comment links to. Throws when the URL is not a job of
+  // this repository: the token must never be used for another one.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listJobArtifacts(jobUrl: string): Promise<JobArtifactsListing> {
+    return { status: 'unsupported', jobKey: '', artifacts: [] };
+  }
+
+  // Writes the zip of one artifact returned by listJobArtifacts into targetZipFile
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
+    throw new SfError(`Method downloadJobArtifact is not implemented on ${this.getLabel()}`);
+  }
+}
+
+export interface JobArtifact {
+  // Provider-specific id, as a string
+  id: string;
+  name: string;
+  sizeBytes: number;
+  expired: boolean;
+  // Changes when the artifact is replaced (a job run again keeps its URL)
+  updatedAt: string;
+}
+
+// expired: the job had artifacts and the provider deleted them. none: it never published any
+export type JobArtifactsStatus = 'success' | 'expired' | 'none' | 'unsupported';
+
+export interface JobArtifactsListing {
+  status: JobArtifactsStatus;
+  // Folder-safe identifier of the job, for example github-run-123456
+  jobKey: string;
+  artifacts: JobArtifact[];
 }
 
 // Opaque handle on a precise Pull Request comment: `ref` is provider-specific

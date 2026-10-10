@@ -11,12 +11,14 @@ A comment posted before the marker existed is still read: its kind comes from it
 its outcome from its banner. It has no counts, and is flagged as legacy.
 
 The comment MegaLinter posts on the Pull Request is read the same way, as a third kind of run: it
-is not written by sfdx-hardis, so it never carries a run summary, only its outcome and its text.
+is not written by sfdx-hardis, so it never carries a run summary, only its outcome, its text and
+the job its reports link to.
 
 This module holds only pure helpers, with no git provider import, like prCommentNav.ts.
 */
 
 import { getPrCommentKind, PR_NAV_END, PR_NAV_START } from "./prCommentNav.js";
+import { findJobUrlInMarkdown } from "./jobUrlUtils.js";
 
 export type PrRunKind = 'validation' | 'deployment';
 
@@ -203,7 +205,8 @@ function parseMegaLinterComment(comment: { body: string; url?: string; updatedAt
     kind: 'megalinter',
     status,
     targetBranch: '',
-    jobUrl: '',
+    // MegaLinter links its reports to the job that produced them
+    jobUrl: cleanWebUrl(findJobUrlInMarkdown(body)) || '',
     commentUrl: cleanWebUrl(comment.url) || '',
     date: cleanDate(comment.updatedAt) || '',
     quickDeploy: false,

@@ -65,11 +65,13 @@ gl_mr_sha() {
 # merge, and asking for it hands back the stale commit_id while the new one is computed. A job run
 # then validates a tree without the commit that was just pushed, which looks like a product bug and
 # is not one. So the ref is fetched again until it holds the head of the source branch.
-# Usage: gl_fetch_merge_ref <iid>
+# Usage: gl_fetch_merge_ref <iid> [sha of the head just pushed]
 gl_fetch_merge_ref() {
-  local mr="$1" sha
-  sha=$(gl_mr_sha "$mr")
-  for _ in $(seq 1 20); do
+  # the head pushed locally when given: right after a push, the API can still answer the previous
+  # head, and the ref built from it then looks up to date
+  local mr="$1" sha="${2:-}"
+  [ -z "$sha" ] && sha=$(gl_mr_sha "$mr")
+  for _ in $(seq 1 40); do
     curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" \
       "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$mr/merge_ref" >/dev/null
     if git fetch -q origin "+refs/merge-requests/$mr/merge:refs/heads/mrmerge-$mr" 2>/dev/null &&

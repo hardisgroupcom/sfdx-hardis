@@ -15,6 +15,8 @@ During check and deployment jobs, sfdx-hardis writes its detailed reports in the
 
 If your pipeline was generated recently, the artifact upload step is already there. Pipelines created with an older version of sfdx-hardis may miss it: without it, the reports are lost when the job ends, and the `Full deployment JSON: ...` line of the deployment summary points to a file nobody can open.
 
+Once published, the files of a job can be opened without going to the CI server: the **Files** button of the Validation, Code Quality and Deployment tabs of the VS Code Pull Request view lists them, and [`sf hardis:git:artifacts:download`](hardis/git/artifacts/download.md) downloads them from a terminal (GitHub, GitLab and Azure DevOps).
+
 Add the step matching your platform at the end of every job running `sf hardis:project:deploy:smart` (check and deployment jobs), or any other sfdx-hardis command whose reports you want to keep.
 
 ### GitHub Actions

@@ -439,3 +439,13 @@ CVE-2026-93687
 # sprintf-js 1.0.3: an unbounded precision specifier in the format string exhausts memory (DoS, MEDIUM). No fixed release exists.
 # It only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, never in the library code we call. Remove once a fixed version ships. Added 2026-10-06.
 CVE-2026-97058
+
+# https://avd.aquasec.com/nvd/cve-2026-97031 + cve-2026-78667 + cve-2026-78669
+# Go stdlib v1.26.7 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.26.9 / 1.27.2. Three findings from the same batch:
+#   CVE-2026-97031 crypto/tls DoS: a client sending several ECH outer extension references exhausts the memory of a TLS server
+#   CVE-2026-78667 net/http DoS: a Range header with many small ranges burns CPU in FileServer, ServeContent and ServeFile
+#   CVE-2026-78669 net/http DoS: an HTTP/2 peer opening many streams then sending many small SETTINGS frames burns CPU, in a client or a server
+# Same situation as the pebble entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. All three need the binary to hold a network connection; pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so no TLS server, no HTTP file server and no HTTP/2 connection ever exist. Added 2026-10-09.
+CVE-2026-97031
+CVE-2026-78667
+CVE-2026-78669

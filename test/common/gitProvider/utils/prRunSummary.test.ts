@@ -145,6 +145,15 @@ describe('Pull Request run summary', () => {
     expect(linked).to.deep.include({ kind: 'megalinter', status: 'invalid' });
   });
 
+  it('gives the MegaLinter analysis the job its reports link to', () => {
+    const run = parseWorkflowRunFromComment({
+      body: '## [MegaLinter](https://megalinter.io/9.0.1) analysis: Success\n\nSee detailed reports in [MegaLinter artifacts](https://github.com/acme/my-repo/actions/runs/555)\n\n<!-- megalinter: github-comment-reporter -->',
+    });
+    expect(run).to.deep.include({ kind: 'megalinter', jobUrl: 'https://github.com/acme/my-repo/actions/runs/555' });
+    const withoutLink = parseWorkflowRunFromComment({ body: '## [MegaLinter](https://megalinter.io/9.0.1) analysis: Success\n\n<!-- megalinter: github-comment-reporter -->' });
+    expect(withoutLink).to.deep.include({ kind: 'megalinter', jobUrl: '' });
+  });
+
   it('lists the MegaLinter analysis after the runs of sfdx-hardis, and ignores any other comment', () => {
     const runs = parseWorkflowRunsFromComments([
       { body: 'Analysis\n\n<!-- megalinter: gitlab-comment-reporter -->' },
