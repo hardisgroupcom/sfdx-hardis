@@ -1,177 +1,154 @@
 # Promotion branches, deployment actions and backpromote: end to end test on GitLab
 
-**Date:** 2026-10-08 and 2026-10-09 (supersedes the run of 2026-10-08 on `feat/readable-pr-comments`)
-**Why this run:** the four providers in a row on `e2e-updates`, and the first live run of the real
-CI section (6quinquies) on GitLab CI, built the day before and never run.
+**Date:** 2026-10-10 (supersedes the run of 2026-10-09 on `e2e-updates`)
+**Why this run:** regression check of the four providers on `feat/pr-modal-job-artifacts`
+(hardisgroupcom/sfdx-hardis#2327, the download of job artifacts), GitLab third.
 
-**Projects under test** (private, created empty for this run, on `gitlab.hardis-group.com`):
+**Repositories under test** (private, created empty for this run, on the self-hosted GitLab):
 
-- sections 4, 4bis, 4ter, 5bis, 5quater, 6, 6quater, 6sexies and 7bis:
-  `nicolas.vuillamy/sfdx-hardis-promo-e2e-gl-16` (id 4511)
-- backpromote (Beta), section 6bis: `nicolas.vuillamy/sfdx-hardis-promo-e2e-gl-17` (id 4512)
-- real CI with `e2e-updates` linked by `sf plugins link`, section 6quinquies:
-  `busalesforce/playground/sfdx-hardis-promo-e2e-ci-gl-1` (id 4513), whose group runners ran the jobs
+- sections 3, 4, 4bis, 4ter, 5bis, 5quater, 6, 6quater, 6sexies and 7bis:
+  `nicolas.vuillamy/sfdx-hardis-promo-e2e-gl-18`
+- backpromote (Beta), section 6bis: `nicolas.vuillamy/sfdx-hardis-promo-e2e-gl-19`
+- real CI with the branch linked by `sf plugins link`, section 6quinquies:
+  `busalesforce/playground/sfdx-hardis-promo-e2e-ci-gl-2` (runner tag `ubuntu`)
 
 **Salesforce org:** the Developer Edition org of `E2E_ORG` (also the Dev Hub). Scratch orgs
 `promo-e2e-dev` (also `DEV_ORG` of 6quater and 6sexies) and `promo-e2e-dev2`.
-**sfdx-hardis:** `e2e-updates`, through `bin/dev.js`. The CI jobs link the branch as pushed (W0).
-**vscode-sfdx-hardis:** `e2e-updates` at `dbc7e197`, compiled with `yarn compile`.
+**sfdx-hardis:** `feat/pr-modal-job-artifacts` at `a09413f6c`, through `bin/dev.js`.
+**vscode-sfdx-hardis:** `feat/pr-modal-job-artifacts` at `df3691c0`, compiled with `yarn compile`.
 
 ___
 
 ## Counts
 
-| Section                                                                             | Checks                             | OK  | FAIL |
-|-------------------------------------------------------------------------------------|------------------------------------|-----|------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                 | 42  | 0    |
-| 6: edge cases, groups g1 to g6                                                      | 47                                 | 47  | 0    |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                 | 21  | 0    |
-| 6sexies: identical actions, I1 to I10                                               | 24                                 | 24  | 0    |
-| 6bis: backpromote B0 to B16, C1 to C4 (gl-17)                                       | 63                                 | 63  | 0    |
-| 6quinquies: real CI, W0 to W9, X1, X2 (ci-gl-1)                                     | 21, W8 skipped (GitHub only)       | 21  | 0    |
-| 4ter: single Pull Request window, simulated jobs (gl-16)                            | 47 merge requests                  | 47  | 0    |
-| 4ter: single Pull Request window, real CI jobs (ci-gl-1, X1)                        | 1                                  | 1   | 0    |
-| 5bis: comment audit (gl-16)                                                         | 1108 checks over 53 merge requests | all | 0    |
-| 5bis: comment audit of the real CI comments (ci-gl-1)                               | 255 checks over 7 merge requests   | all | 0    |
-| 5quater: visual check of the comments (gl-16, fixtures included)                    | 12 types, 1 warning                | 12  | 0    |
-| 5quater: visual check (gl-17, backpromote)                                          | 1 type                             | 1   | 0    |
-| 5quater: visual check (ci-gl-1, comments of real jobs)                              | 8 types                            | 8   | 0    |
-| 7bis: single place in the diagram (gl-16)                                           | 1                                  | 1   | 0    |
-| 7ter: flag-off A/B                                                                  | not run                            |     |      |
+| Section                                                                             | Checks                            | OK  | FAIL      |
+|-------------------------------------------------------------------------------------|-----------------------------------|-----|-----------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 41  | 1         |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 46  | 1         |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0         |
+| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0         |
+| Visual fixtures (VE, VG)                                                            | 2                                 | 1   | 1         |
+| 6bis: backpromote B0 to B16, C1 to C4 (`gl-19`)                                     | 63                                | 63  | 0         |
+| 6quinquies: real CI, W0 to W9, X2 (`ci-gl-2`), W8 skipped                           | 20                                | 20  | 0         |
+| 6quinquies: X1, single Pull Request window on real CI comments                      | 1                                 | 0, then 1 by hand | 1 |
+| 4ter: single Pull Request window, simulated jobs (`gl-18`)                          | 49 Pull Requests                  | 49  | 0         |
+| 5bis: comment audit (`gl-18`)                                                       | 1094 checks over 55 Pull Requests |     | 1 finding |
+| 5quater: visual check of the comments (`gl-18`)                                     | 11 types, 1 warning               | 11  | 0         |
+| 5quater: visual check (`gl-19`, backpromote)                                        | 1 type                            | 1   | 0         |
+| 7bis: single place in the diagram (`gl-18`)                                         | 1                                 | 1   | 0         |
 
-No failure on GitLab, and no product defect specific to it.
+No SKIP line in sections 6quater and 6sexies: the developer org groups ran.
 
 ___
 
 ## Results by group
 
-### Sections 3, 4 and 4bis (gl-16): 42 OK
+Four of the five failures below have one cause: the workstation was short on memory (about 2 GB
+free), and `git` and `curl` failed with `getaddrinfo() thread failed to start`. The skill lists
+this message as a trap of the computer, to replay before calling it a finding.
 
-Stories S1 to S7 are merge requests !1 to !7, promotions P1 to P5 are !8 to !12, the retrofit is
-!13. Same expectations as the runbook lists: scope of each validation and deployment, inherited
-keywords, union of the test classes, one candidate row per User Story, release notes with and
-without the vehicles, the second go-live of issue #2260, and the six DevOps Pipeline checkpoints.
+### Sections 3, 4 and 4bis (`gl-18`): 41 OK, 1 FAIL
 
-### Section 6, edge cases (gl-16): 47 OK
+`check-pr2`: the `curl` that reads the merge commit of the story failed to start, so the
+validation of story 2 never ran on the right commit.
 
-Groups g1 to g6. Checks 28 and 29 (conflict kept, prompt embedded in the description) pass with the
-prompt in a folded section of the description: GitLab has no cap that drops it, unlike Azure DevOps.
+### Section 6, edge cases: 46 OK, 1 FAIL
 
-### Section 6quater, deployment actions (gl-16): 21 OK
+`52b`, `deploy-preprod-full-merge`: the `git fetch` before the deployment job failed to start.
+The job ran on a stale checkout: its scope is 1 Pull Request (#31), where the same job on Bitbucket
+has 27. So the deployment of the full merge of `uat` into `preprod` was not exercised on GitLab.
 
-Groups A, B, C and D. D ran with `DEV_ORG` set to the scratch org `promo-e2e-dev`: `action:run
---all --dev-org` records the Backpromotes rows, a second run skips what is already done in that
-org, and the org of a major branch is refused.
+### Section 6quater, deployment actions: 21 OK
 
-### Section 6sexies, identical actions (gl-16): 24 OK
+### Section 6sexies, identical actions: 24 OK
 
-I1 to I10, I7 and I8 (the backpromote plan and run of the window) included.
+### Visual fixtures: 1 OK, 1 FAIL
 
-### Section 6bis, backpromote (gl-17): 63 OK
+`VG`: the validation of the manual action fixture passed where it must stop. The log says "No
+Pre-deployment actions defined": the job ran on a merge ref built before the push of the action
+file. Replayed by hand a few minutes later on the same merge request, the validation stops on
+`1 pre-deployment manual action(s) not marked as performed in integration`, as expected.
 
-B0 to B16 and C1 to C4.
+This one is a defect of the test, and it came back on a second repository: `gl_fetch_merge_ref`
+waits for the head that the merge request API reports, and that API can still answer the previous
+head right after a push. The fixture already passes the pushed commit to `p_wait_merge_ref`; the
+GitLab implementation ignored it. Fixed in the skill scripts at the end of this run (see below).
 
-### Section 6quinquies, real CI on GitLab CI (ci-gl-1): 21 OK
+### Section 6bis, backpromote (`gl-19`): 63 OK
 
-First live run. The project access token created by the run is `CI_SFDX_HARDIS_GITLAB_TOKEN`, so
-the jobs comment as the project bot and the local commands as the person: W2 and W6 edit notes
-across the two identities, which GitLab allows a Maintainer.
+### Section 6quinquies, real CI on GitLab CI (`ci-gl-2`): 20 OK, X1 passed on a second run
 
-| Job                          | Mode    | Result                | Queued | Ran   |
-|------------------------------|---------|-----------------------|--------|-------|
-| ci-check-c1                  | real CI | failed (expected, W1) | 2 s    | 252 s |
-| ci-check-c1-rerun            | real CI | success               | 0 s    | 209 s |
-| ci-check-c2-draft            | real CI | success               | 1 s    | 406 s |
-| ci-deploy-integration-c1     | real CI | failed (expected, W4) | 1 s    | 187 s |
-| ci-check-c3                  | real CI | success               | 2 s    | 247 s |
-| ci-deploy-integration-c3     | real CI | success               | 2 s    | 198 s |
-| ci-check-promotion-uat       | real CI | failed (expected, W5) | 2 s    | 238 s |
-| ci-check-promotion-uat-rerun | real CI | success               | 0 s    | 182 s |
-| ci-deploy-uat-promotion      | real CI | success               | 1 s    | 214 s |
-| ci-check-c5                  | real CI | success               | 1 s    | 264 s |
-| ci-check-c6                  | real CI | success               | 1 s    | 256 s |
-| ci-deploy-integration-c5     | real CI | success               | 1 s    | 212 s |
-| ci-deploy-integration-c6     | real CI | success               | 0 s    | 198 s |
-| ci-check-promotion-identical | real CI | success               | 1 s    | 196 s |
-| ci-deploy-uat-identical      | real CI | success               | 0 s    | 189 s |
+15 jobs, all recorded "real CI" in `ci-jobs.tsv`, none simulated. 16 seconds queued and 3534
+seconds run in total, 1 hour 2 minutes of wall clock. W8 is skipped by design (GitHub only).
 
-15 jobs, all real CI, none simulated, about 58 minutes of jobs in 65 minutes of wall clock. The
-group runners take a job at once and run it in three to four minutes, link step included, faster
-than GitHub's or Azure's hosted agents.
+X1 failed in the script: `check-pr-modal.cjs` stopped on the same `curl` thread error while reading
+the notes of merge request 5. Run again by hand on the same repository: 6 OK, 0 FAIL over 6 merge
+requests. X2 passes.
 
-What the first run proved, of the list the runbook kept as unproven:
+### Section 5bis, comment audit: 1 finding
 
-| Unproven before                                                  | Result                                                      |
-|------------------------------------------------------------------|-------------------------------------------------------------|
-| The runners reach github.com, npm and ghcr.io for the link step  | yes, three to four minutes per job                          |
-| The project access token, and notes edited by the other identity | W2 (tick by the person in a note of the bot) and W6 pass    |
-| The draft warning (`Draft:` title prefix, `draft: true`)         | W3 and W3a pass                                             |
-| W2 on a retried job                                              | passes: the retry reads the ticked checkbox                 |
-| The CI lint of the generated files                               | valid, `deploy_to_org` selected on a push to a major branch |
+`#1: manual action e2e-manual-1 is marked skipped in preprod: it left the pending list and can no
+longer be ticked`. The audits of Azure DevOps, Bitbucket and GitHub have no finding on the same
+story. The likely cause is the stale deployment of the full merge above (52b), which is the job
+that deploys `preprod` at that point. **Not confirmed**: the section was not replayed.
 
-### Section 5quater, visual check (new in this run)
+### Section 5quater, visual check
 
-GitLab comments are drawn through `POST /api/v4/markdown` with the project, in a headless Chrome:
-the markup is GitLab's, the frame around it is not (see "not covered").
+11 comment types on `gl-18`. The type `validation-failed+manual` is missing, because VG did not
+produce the comment at the time. One warning: the `pre` block of the conflicts prompt is 3112px
+wide in a 952px description; GitLab scrolls it sideways.
 
-| Repository | Types checked                                                                                                                                                                                                                        | Result          |
-|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------|
-| gl-16      | backpromotes, deployment-actions, deployment-actions+manual, deployment-failed, deployment-success, deployment-success+manual, promotion-description, promotion-description+conflicts, validation-success, validation-success+manual | 9 OK, 1 warning |
-| gl-17      | backpromotes                                                                                                                                                                                                                         | OK              |
-| ci-gl-1    | the eight types the real jobs left                                                                                                                                                                                                   | 8 OK            |
-
-`visual-fixtures.sh` then left a story with a class that does not compile (!54) and a story stopped
-at the manual action gate (!55), both open: `validation-failed` and `validation-failed+manual` are
-pictured and pass.
-
-Every picture was read against the checklist of the runbook (40 for the three projects). No markup
-is broken; the findings are about content and are the same as on GitHub (see that report): the
-heading "To do by hand" over an action already done, two counts of Pull Requests that differ by
-one on a major-to-major merge request, dates wrapping in tables with a Note column. One is
-specific to GitLab: in a promotion description and in the note of an identical action, `#27` is
-plain text where GitHub links it (a merge request is `!27` for GitLab).
-
-The warning is the conflict prompt of a promotion description: a code block 3112 pixels wide in a
-952 pixel comment. A code block scrolls on GitLab, so it is expected. Tables, folded sections,
-checkboxes, banner images and emoji are all drawn; no markdown is left as text.
+The pictures of `gl-18` were **not** read by a reviewer. The 2 of `gl-19` were: no raw markdown or
+HTML, table complete, folds unfolded in the `-open` picture.
 
 ___
 
 ## What the run found
 
-Nothing specific to GitLab. Two things found on the other providers were checked here:
+| Finding                                                                                                                              | Status                                      |
+|--------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------|
+| `gl_fetch_merge_ref` trusts the head reported by the merge request API, which lags after a push: a validation can run on stale content (VG) | fixed in the skill scripts           |
+| `check-pr-modal.cjs` and the section scripts stop or go on silently when `curl` or `git` cannot start                                 | open: no retry added                        |
+| Audit finding on story 1, manual action skipped in `preprod`                                                                          | open, cause not confirmed                   |
+| A fold says "N Pull Requests" where the line under it says N+1                                                                        | open, wording, same on every provider       |
+| The Backpromotes comment has no banner and no navigation line                                                                         | by design (`backpromoteCommentUtils.ts`)    |
 
-- The fix of the Azure DevOps log line (`promotionCreateConflictPromptFileOnly`) leaves the GitLab
-  wording as it was: checks 28 and 29 pass with "embedded in the Pull Request description".
-- The visual check first failed on every GitLab comment but one with "Navigation timeout": GitLab
-  hands images over with `data-src` for its own lazy loader, and the page waited for a network
-  that never went quiet. The script now gives the images their address and waits for them only.
+No product defect was found on GitLab.
 
 ___
 
 ## What this run did not cover
 
-- **Section 7ter, flag-off A/B**: not run. It switches the sfdx-hardis checkout to `origin/main`,
-  which cannot be done while other sections use the same working copy. It ran on GitHub at the
-  end of the night (0 differing lines), not on this provider.
-- **The real comment column of GitLab**: the visual check draws GitLab's own HTML in a plain frame,
-  not in the merge request page. It proves tables, folds, checkboxes and images, not the width of
-  the real page nor GitLab's own styles. `--render page` with a logged-in Chrome would.
-- **Flow diff and MegaLinter comments**: no story of the run holds a Flow, and the MegaLinter job
-  only pulls its image. The Code Quality tab of the Pull Request window is not exercised either.
-- **No merged results pipelines**: the instance is GitLab CE, a merge request pipeline runs on the
-  head of the source branch. The merge-ref lag of the runbook is only met by the local simulators.
-- **Step B17** (terminal prompts of backpromote) and a real production org.
-- The window of a promotion or major-to-major merge request is not compared, and nothing of the
-  extension is rendered or clicked.
-- The four pipeline levels share one Salesforce org.
+- **The three failed checks of the sections and the audit finding were not replayed with
+  success.** A replay on `gl-20` was started while the workstation was still short on memory: the
+  creation of the seventh merge request failed on the same thread error, and every later section
+  had nothing to run on. The user then chose to stop the replays on 2026-10-10. So on GitLab this
+  run does not prove: the validation of story 2 (`check-pr2`), the deployment of a full merge
+  after partial promotions (`52b`), and that the audit finding is a consequence of 52b.
+- **The pictures of `gl-18` were not reviewed**, and the `validation-failed+manual` type was not
+  pictured.
+- **Section 7ter, the flag-off A/B**, runs on GitHub only, and was not run at all in this run.
+- **The visual check and the comment audit of the real CI comments** (`ci-gl-2`) were not run.
+- The known gaps of the skill stay: no Jenkins, no Gitea, no Bitbucket Server, no production org,
+  no real sandbox (scratch orgs stand in for developer sandboxes), VS Code panels are checked
+  through the extension's compiled code and not by clicks.
+
+___
+
+## What was restarted, and why
+
+- X1 of the real CI, by hand, after the `curl` thread error: passes.
+- VG, by hand, on the same merge request: passes.
+- The sections, on `gl-20`: failed at the seventh story on the thread error, abandoned.
+- The background waiters of the session were stopped several times by the low memory of the
+  workstation. The test chains themselves kept running.
 
 ___
 
 ## Left behind
 
-Projects `sfdx-hardis-promo-e2e-gl-16` (with !54 and !55 left open and failed on purpose) and
-`-gl-17` in the personal namespace, and
-`sfdx-hardis-promo-e2e-ci-gl-1` in the shared group `busalesforce/playground`, with its CI/CD
-variables and its project access token (7 days). Delete the group project when the report has
-been read (runbook section 9).
+Projects `nicolas.vuillamy/sfdx-hardis-promo-e2e-gl-18`, `gl-19`, `gl-20` (spoiled: six merge
+requests and two fixtures) and `busalesforce/playground/sfdx-hardis-promo-e2e-ci-gl-2`, with its
+project access token and CI/CD variables. Next free numbers: `gl-21`, `ci-gl-3`. Work folders:
+`%TEMP%/e2e-1010/promo-e2e-gitlab-first*` and `promo-e2e-gitlab-logs-first` (`gl-18`),
+`promo-e2e-gitlab*` (`gl-20`), `promo-e2e-bp-gitlab*`, `promo-e2e-ci-gitlab*`.

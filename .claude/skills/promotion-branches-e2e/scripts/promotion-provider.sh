@@ -105,7 +105,7 @@ github)
     # the head pushed locally when given: the API itself can answer with the previous head for a while
     local pr="$1" sha="${2:-}"
     [ -z "$sha" ] && sha=$(gh api "repos/$REPO/pulls/$pr" --jq .head.sha)
-    for _ in $(seq 1 30); do
+    for _ in $(seq 1 60); do
       if git -C "$WORK" fetch -q origin "+refs/pull/$pr/merge:refs/remotes/origin/prmerge-check-$pr" 2>/dev/null &&
         git -C "$WORK" merge-base --is-ancestor "$sha" "origin/prmerge-check-$pr" 2>/dev/null; then
         return 0
@@ -205,7 +205,7 @@ gitlab)
   }
   p_wait_merge_ref() {
     cd "$WORK" || return 1
-    gl_fetch_merge_ref "$1"
+    gl_fetch_merge_ref "$1" "${2:-}"
   }
   p_check_edited() {
     local mr="$1" target="$2" label="$3" edit="$4" code
