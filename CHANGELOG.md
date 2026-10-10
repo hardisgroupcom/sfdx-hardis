@@ -6,6 +6,7 @@
 - ServiceNow: new option to keep the deployment job read-only on the tickets (no work note written), while they stay listed in the Pull Request comments and the notifications.
 - ServiceNow: the ticket links of the Pull Request comments open the record directly, instead of a "Page not found" page on the Next Experience UI.
 - Bitbucket: the list of Pull Requests already deployed through a promotion branch is drawn as a list in the Pull Request comments, instead of one long paragraph.
+- Doc: the [DevOps Pipeline](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/) guide shows the running jobs and the job durations of the VS Code Pull Request view.
 
 ## [8.16.0] 2026-10-09
 
