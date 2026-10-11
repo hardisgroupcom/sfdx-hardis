@@ -21,6 +21,11 @@ const DAY_MS = 86400000;
 export const DORA_DEPLOYMENT_REPO_TOKEN_VARIABLE = 'SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN';
 // A Pull Request merged in the period can have been created long before it
 const PULL_REQUEST_CREATION_MARGIN_DAYS = 90;
+// Azure DevOps cuts the description of a listed Pull Request at 400 characters. A shorter one is
+// whole: reading it again would not bring a list it does not have
+const POSSIBLY_CUT_DESCRIPTION_LENGTH = 400;
+// A project that wrote hundreds of promotions without their list must not cost a call for each
+const MAX_PROMOTION_DESCRIPTIONS_READ = 30;
 // Jobs listed again at each run: a job running during the last listing has finished since, and a
 // job run again replaces its result
 const CACHE_OVERLAP_DAYS = 2;
@@ -35,6 +40,9 @@ export interface DoraSource {
   repository: string;
   // mergeTargets: undefined when the configuration of the pipeline is not readable from here
   branches: { name: string; level: number; isProduction: boolean; mergeTargets?: string[] }[];
+  // Every major branch of the project, the ones that are not computed included. Empty when the
+  // configuration of the pipeline is not readable from here
+  majorBranches: string[];
 }
 
 interface DoraRunsCache {
@@ -77,6 +85,7 @@ export async function resolveDoraSource(branchesFlag: string | null): Promise<Do
       gitProvider,
       repository: deploymentRepository,
       branches: branchNames.map((name, index) => ({ name, level: index, isProduction: isProduction(name) })),
+      majorBranches: [],
     };
   }
 
@@ -108,6 +117,7 @@ export async function resolveDoraSource(branchesFlag: string | null): Promise<Do
       .map((name) => ({ name, level: levelOf(name), isProduction: isProduction(name), mergeTargets: mergeTargetsOf(name) }))
       // The pipeline order: from the first org a change reaches to production
       .sort((a, b) => a.level - b.level),
+    majorBranches: majorOrgs.map((majorOrg) => majorOrg.branchName).filter(Boolean),
   };
 }
 
@@ -115,6 +125,11 @@ export async function resolveDoraSource(branchesFlag: string | null): Promise<Do
 export function buildDoraPeriod(periodDays: number, compare: boolean, now: Date = new Date()): DoraPeriod {
   const from = new Date(now.getTime() - periodDays * DAY_MS);
   return { from, to: now, previousFrom: compare ? new Date(from.getTime() - periodDays * DAY_MS) : null };
+}
+
+/** Pull Requests merged since this date are all read: a change merged before it cannot be followed through the pipeline */
+export function pipelineTracedFrom(period: DoraPeriod): Date {
+  return new Date((period.previousFrom || period.from).getTime() - PULL_REQUEST_CREATION_MARGIN_DAYS * DAY_MS);
 }
 
 /**
@@ -238,20 +253,28 @@ async function collectRuns(
 // What a promotion Pull Request carries is the list in its description, and a listing can cut a
 // description short (Azure DevOps): the promotions whose list is not there are read one by one
 async function completePromotionDescriptions(gitProvider: GitProviderRoot, pullRequests: CommonPullRequestInfo[]): Promise<CommonPullRequestInfo[]> {
-  return Promise.all(
-    pullRequests.map(async (pullRequest) => {
-      if (!parsePromotionBranchName(pullRequest.sourceBranch || '') || parsePromotionPullRequestIds(pullRequest.description) != null) {
-        return pullRequest;
-      }
-      try {
-        const full = await gitProvider.getPullRequestById(pullRequest.idNumber);
-        return full?.description ? { ...pullRequest, description: full.description } : pullRequest;
-      } catch {
-        // Its changes are then followed as far as the branch before: the report says less, nothing wrong
-        return pullRequest;
-      }
-    }),
-  );
+  const completed: CommonPullRequestInfo[] = [];
+  let read = 0;
+  // One at a time: a burst of calls is what a provider throttles
+  for (const pullRequest of pullRequests) {
+    const mayBeCut =
+      parsePromotionBranchName(pullRequest.sourceBranch || '') != null &&
+      parsePromotionPullRequestIds(pullRequest.description) == null &&
+      (pullRequest.description || '').length >= POSSIBLY_CUT_DESCRIPTION_LENGTH;
+    if (!mayBeCut || read >= MAX_PROMOTION_DESCRIPTIONS_READ) {
+      completed.push(pullRequest);
+      continue;
+    }
+    read++;
+    try {
+      const full = await gitProvider.getPullRequestById(pullRequest.idNumber);
+      completed.push(full?.description ? { ...pullRequest, description: full.description } : pullRequest);
+    } catch {
+      // The pipeline flow then counts it among what it could not follow
+      completed.push(pullRequest);
+    }
+  }
+  return completed;
 }
 
 // Next to the other sfdx-hardis caches of the user. The folder can be moved for tests

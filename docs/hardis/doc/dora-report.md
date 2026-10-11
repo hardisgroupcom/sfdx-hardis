@@ -69,7 +69,8 @@ This command is part of [sfdx-hardis Documentation](https://sfdx-hardis.cloudity
 - Runs of a major branch that no merge triggered (scheduled pipelines, pipelines started through the API, Bitbucket custom pipelines) are not deployments.
 - A job run again on the same commit replaces its previous result on some providers, so a failure fixed by a re-run can disappear from the history.
 - The pipeline flow is rebuilt from the Pull Requests, without reading the git history. A Pull Request from a major branch into the next carries every change that was in its source branch when it was merged. A promotion Pull Request (`promotion/<source>/<target>/...`) carries the Pull Requests its `promotionPullRequests` list declares. A merge from a major branch back into an earlier one carries nothing.
-- A change cherry-picked by hand, or merged more than 90 days before the period, is not followed.
+- A change cherry-picked by hand, or merged more than 90 days before the period, is not followed. A promotion whose list cannot be read, and a change a promotion declares that was not read, are counted in `pipeline.untraced` and said in the report.
+- The pipeline flow needs every branch of a step: `--branches uat,main` on a project where `uat` is merged into `preprod` computes none.
 - The steps are the `mergeTargets` of each major branch. In a monitoring repository, where they cannot be read, the branches of `--branches` follow each other in the order given.
 - The notification keeps the lead time of the Pull Requests of the branch, so the Grafana history stays comparable.
 - The `--json` result holds `pipeline` (stages, steps, time to production, slowest changes), `branches` (metrics, weekly series, failed deployments, slow and hotfix Pull Requests, attention list), `contributors`, and the legacy `metrics`, `supplementary` and `counts` of the production branch.

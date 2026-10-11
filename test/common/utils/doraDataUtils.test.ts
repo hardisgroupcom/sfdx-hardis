@@ -69,6 +69,7 @@ function fakeSource(runs: CommonCiRun[], pullRequests: CommonPullRequestInfo[] |
       { name: 'uat', level: 50, isProduction: false },
       { name: 'main', level: 100, isProduction: true },
     ],
+    majorBranches: ['uat', 'main'],
   };
   return { source, calls };
 }
@@ -120,14 +121,20 @@ describe('doraDataUtils', () => {
 
   it('keeps the Pull Requests merged before the period for the pipeline flow, and reads again a promotion whose list was cut', async () => {
     const list = ['```yaml', 'promotionPullRequests: [1]', '```'].join('\n');
+    // What a listing that cuts descriptions returns: the first 400 characters, the list gone
+    const cut = 'Stories of the week. '.repeat(20).slice(0, 400);
     const { source } = fakeSource(
       [],
       [
         // Merged before the 28 days: not in the metrics of uat, but a change that can be delivered later
         pullRequest(1, 'uat', '2026-08-20T12:00:00Z'),
-        pullRequest(20, 'main', '2026-09-10T12:00:00Z', 'promotion/uat/main/2026-09-10-1000'),
+        { ...pullRequest(20, 'main', '2026-09-10T12:00:00Z', 'promotion/uat/main/2026-09-10-1000'), description: cut },
         { ...pullRequest(21, 'main', '2026-09-12T12:00:00Z', 'promotion/uat/main/2026-09-12-1000'), description: list },
-        pullRequest(22, 'main', '2026-09-14T12:00:00Z', 'promotion/uat/main/2026-09-14-1000'),
+        { ...pullRequest(22, 'main', '2026-09-14T12:00:00Z', 'promotion/uat/main/2026-09-14-1000'), description: cut },
+        // Short and without a list: it is whole, reading it again would bring nothing
+        { ...pullRequest(23, 'main', '2026-09-15T12:00:00Z', 'promotion/uat/main/2026-09-15-1000'), description: 'No list' },
+        // Not a promotion
+        { ...pullRequest(24, 'main', '2026-09-16T12:00:00Z'), description: cut },
       ],
     );
     const readOneByOne: number[] = [];
@@ -149,6 +156,8 @@ describe('doraDataUtils', () => {
       [20, true],
       [21, true],
       [22, false],
+      [23, false],
+      [24, false],
     ]);
   });
 

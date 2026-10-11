@@ -201,28 +201,84 @@ describe('doraPipelineUtils', () => {
     expect(flow.pipeline.stages.map((stage) => stage.waiting.count)).to.deep.equal([0, 0, 0, 0]);
   });
 
-  it('says how many declared changes it could not find', () => {
-    const flow = computePipelineFlow(pipelineInputs([pullRequest(1, 'uat', day(3), day(5)), promotion(20, 'uat', 'preprod', day(10), [1, 999])]), PERIOD)!;
-
-    expect(flow.pipeline.untraced).to.equal(1);
-    expect(stepOf(flow, 'uat', 'preprod').changes).to.equal(1);
-  });
-
-  it('reads a promotion branch without its list, or aimed at another branch, as a change of its own', () => {
+  it('says how many declared changes it could not follow', () => {
     const flow = computePipelineFlow(
       pipelineInputs([
         pullRequest(1, 'uat', day(3), day(5)),
-        promotion(20, 'uat', 'preprod', day(10), [1], { description: 'No list here' }),
-        // Named for preprod, merged into main
-        promotion(21, 'uat', 'preprod', day(11), [1], { targetBranch: 'main' }),
+        merge(10, 'integration', 'uat', day(6)),
+        // 999 was not read, and 10 is a merge between major branches: a promotion carries neither
+        promotion(20, 'uat', 'preprod', day(10), [1, 999, 10]),
       ]),
       PERIOD,
     )!;
 
+    expect(flow.pipeline.untraced).to.equal(2);
+    expect(stepOf(flow, 'uat', 'preprod').changes).to.equal(1);
+  });
+
+  it('never reads a promotion whose list is missing as a change: what it carried is not known', () => {
+    const flow = computePipelineFlow(
+      pipelineInputs([pullRequest(1, 'uat', day(3), day(5)), promotion(20, 'uat', 'preprod', day(10), [1], { description: 'No list here' })]),
+      PERIOD,
+    )!;
+
+    expect(flow.pipeline.untraced).to.equal(1);
+    expect(stageOf(flow, 'preprod').entered).to.equal(0);
+    expect(flow.changeLeadTimes.get('preprod')!.changes).to.equal(0);
     expect(stepOf(flow, 'uat', 'preprod').changes).to.equal(0);
-    expect(stageOf(flow, 'preprod').entered).to.equal(1);
+  });
+
+  it('reads a promotion branch merged into another branch than the one it names as a change of its own', () => {
+    const flow = computePipelineFlow(
+      pipelineInputs([pullRequest(1, 'uat', day(3), day(5)), promotion(21, 'uat', 'preprod', day(11), [1], { targetBranch: 'main' })]),
+      PERIOD,
+    )!;
+
     expect(stageOf(flow, 'main').entered).to.equal(1);
     expect(stageOf(flow, 'uat').waiting.changes.map((change) => change.id)).to.deep.equal(['1']);
+    expect(flow.pipeline.untraced).to.equal(0);
+  });
+
+  it('does not read a merge from a major branch that is not computed as a change', () => {
+    // integration and uat only: the release from preprod is listed with the Pull Requests of nothing computed
+    const inputs = pipelineInputs([pullRequest(1, 'integration', day(3), day(5)), merge(10, 'integration', 'uat', day(8))]).slice(0, 2);
+    inputs[1].mergedPullRequests.push(merge(13, 'main', 'uat', day(9)), merge(14, 'hotfixes', 'uat', day(10)));
+
+    const flow = computePipelineFlow(inputs, PERIOD, { otherMajorBranches: ['preprod', 'main', 'hotfixes'] })!;
+
+    expect(stageOf(flow, 'uat').entered).to.equal(0);
+    expect(flow.changeLeadTimes.get('uat')!.changes).to.equal(1);
+  });
+
+  it('does not follow a change merged before the date the Pull Requests are all read from', () => {
+    const august = (dayOfAugust: number) => new Date(Date.UTC(2026, 7, dayOfAugust, 10)).toISOString();
+    // The merge that carried story 1 further is older than the listing: it would wait for ever
+    const pullRequests = [pullRequest(1, 'uat', august(1), august(2)), pullRequest(2, 'uat', august(20), august(21))];
+
+    const untilNow = computePipelineFlow(pipelineInputs(pullRequests), PERIOD)!;
+    const traced = computePipelineFlow(pipelineInputs(pullRequests), PERIOD, { tracedFrom: new Date(august(10)) })!;
+
+    expect(stageOf(untilNow, 'uat').waiting.changes.map((change) => change.id)).to.deep.equal(['1', '2']);
+    expect(stageOf(traced, 'uat').waiting.changes.map((change) => change.id)).to.deep.equal(['2']);
+  });
+
+  it('counts only the changes whose duration is known', () => {
+    const flow = computePipelineFlow(
+      pipelineInputs([
+        pullRequest(1, 'preprod', day(3), day(5)),
+        // No creation date, and one created after its merge: no duration to measure
+        pullRequest(2, 'preprod', day(3), day(5), { createdDate: undefined }),
+        pullRequest(3, 'preprod', day(20), day(5)),
+        merge(12, 'preprod', 'main', day(9)),
+      ]),
+      PERIOD,
+    )!;
+
+    expect(flow.pipeline.timeToProduction).to.include({ changes: 1, medianDays: 6 });
+    expect(flow.pipeline.weeks.reduce((sum, week) => sum + week.changes, 0)).to.equal(1);
+    expect(flow.pipeline.slowestChanges.map((change) => change.id)).to.deep.equal(['1']);
+    // The step still moved three changes
+    expect(stepOf(flow, 'preprod', 'main').changes).to.equal(3);
   });
 
   it('uses the merge date when no deployment job is known for it', () => {

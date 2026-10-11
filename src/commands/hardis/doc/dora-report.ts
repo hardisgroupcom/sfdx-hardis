@@ -15,7 +15,7 @@ import { DoraBranchResult, DoraReportData, classificationLabel } from "../../../
 import { DoraBranchInput, computeBranchResult, computeContributors } from "../../../common/utils/doraMetricsUtils.js";
 import { computeAttentionItems, computePipelineBacklogItem } from "../../../common/utils/doraAttentionUtils.js";
 import { computePipelineFlow } from "../../../common/utils/doraPipelineUtils.js";
-import { buildDoraPeriod, collectDoraBranchInputs, resolveDoraSource } from "../../../common/utils/doraDataUtils.js";
+import { buildDoraPeriod, collectDoraBranchInputs, pipelineTracedFrom, resolveDoraSource } from "../../../common/utils/doraDataUtils.js";
 import { DORA_LEVEL_EMOJIS, buildDoraMarkdownReport, buildMetricSummaries, expandDetailsSectionsForPdf } from "../../../common/utils/doraMarkdownUtils.js";
 import { CONSTANTS } from "../../../config/index.js";
 import { prepareOrgNotificationContext } from "../../../common/utils/orgNotificationContext.js";
@@ -95,7 +95,8 @@ This command is part of [sfdx-hardis Documentation](${CONSTANTS.DOC_URL_ROOT}/sa
 - Runs of a major branch that no merge triggered (scheduled pipelines, pipelines started through the API, Bitbucket custom pipelines) are not deployments.
 - A job run again on the same commit replaces its previous result on some providers, so a failure fixed by a re-run can disappear from the history.
 - The pipeline flow is rebuilt from the Pull Requests, without reading the git history. A Pull Request from a major branch into the next carries every change that was in its source branch when it was merged. A promotion Pull Request (\`promotion/<source>/<target>/...\`) carries the Pull Requests its \`promotionPullRequests\` list declares. A merge from a major branch back into an earlier one carries nothing.
-- A change cherry-picked by hand, or merged more than 90 days before the period, is not followed.
+- A change cherry-picked by hand, or merged more than 90 days before the period, is not followed. A promotion whose list cannot be read, and a change a promotion declares that was not read, are counted in \`pipeline.untraced\` and said in the report.
+- The pipeline flow needs every branch of a step: \`--branches uat,main\` on a project where \`uat\` is merged into \`preprod\` computes none.
 - The steps are the \`mergeTargets\` of each major branch. In a monitoring repository, where they cannot be read, the branches of \`--branches\` follow each other in the order given.
 - The notification keeps the lead time of the Pull Requests of the branch, so the Grafana history stays comparable.
 - The \`--json\` result holds \`pipeline\` (stages, steps, time to production, slowest changes), \`branches\` (metrics, weekly series, failed deployments, slow and hotfix Pull Requests, attention list), \`contributors\`, and the legacy \`metrics\`, \`supplementary\` and \`counts\` of the production branch.
@@ -211,7 +212,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       return result;
     });
     // 3. Follow the changes from one major branch to the next
-    const flow = computePipelineFlow(inputs, period);
+    const flow = computePipelineFlow(inputs, period, { tracedFrom: pipelineTracedFrom(period), otherMajorBranches: source.majorBranches });
+    if (!flow && inputs.length > 1) {
+      uxLog("log", this, c.grey(`[DORA] ${t("doraReportPipelineNotComputed")}`));
+    }
     for (const branch of branches) {
       branch.metrics.changeLeadTime = flow?.changeLeadTimes.get(branch.name) ?? null;
       const stage = flow?.pipeline.stages.find((candidate) => candidate.branch === branch.name);
@@ -234,7 +238,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       contributors: computeContributors(inputs, period),
     };
     for (const branch of branches) {
-      const summary = buildMetricSummaries(branch).map((metric) => `${metric.name}: ${metric.value}`).join(" | ");
+      // The same lead time as the report: the one of the changes when they were followed
+      const summary = buildMetricSummaries(branch, { changeLeadTime: true }).map((metric) => `${metric.name}: ${metric.value}`).join(" | ");
       uxLog("log", this, c.grey(`[DORA] ${branch.name} - ${summary}`));
     }
     const result: any = { ...data, ...this.buildLegacyResult(branches) };

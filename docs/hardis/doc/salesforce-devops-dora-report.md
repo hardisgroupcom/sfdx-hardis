@@ -64,6 +64,8 @@ How a change is followed:
 - A [promotion](../../salesforce-devops-promotion-branches.md) Pull Request carries the Pull Requests listed in its description.
 - A hotfix merged straight into `preprod` or `main` is counted from that branch. The merge that brings it back to the earlier branches does not send it through the pipeline a second time.
 - A change cherry-picked by hand, or merged more than 90 days before the period, is not followed.
+- A promotion whose list cannot be read, and a change a promotion lists that was not read, are counted apart and said in the report: nothing is guessed.
+- Every branch of a step must be computed. With `--branches uat,main` on a project where `uat` is merged into `preprod`, no pipeline flow is computed.
 
 ---
 

@@ -20,6 +20,15 @@ const DAY_MS = 86400000;
 export const PIPELINE_BACKLOG_DAYS = 30;
 const MAX_LISTED_CHANGES = 10;
 
+export interface DoraPipelineOptions {
+  // Pull Requests merged since this date were all read. A change merged before it is not
+  // followed: the merge that carried it further may not have been read
+  tracedFrom?: Date;
+  // Major branches of the project that are not computed: a Pull Request coming from one of them
+  // moves changes nobody read, it is not a change of its own
+  otherMajorBranches?: string[];
+}
+
 export interface DoraPipelineFlow {
   pipeline: DoraPipelineResult;
   // By branch name
@@ -38,7 +47,10 @@ interface MergedRecord {
   merged: number;
 }
 
-type Vehicle = { kind: 'full'; source: string } | { kind: 'promotion'; declared: number[] } | { kind: 'backMerge' };
+// full: everything its source branch held. promotion: what it declares. opaque: it moves changes,
+// and nothing says which (a merge back to an earlier branch, a merge from a branch that is not
+// computed, a promotion whose list cannot be read)
+type Vehicle = { kind: 'full'; source: string } | { kind: 'promotion'; declared: number[] } | { kind: 'opaque'; unreadPromotion: boolean };
 
 // A change in a branch: when it got there, and when the job that deployed it finished
 interface Stop {
@@ -54,6 +66,13 @@ interface TracedChange {
   entered: string;
   enteredAt: number;
   stops: Map<string, Stop>;
+}
+
+// A change that reached a branch, the date it did, and the days since the creation of its Pull Request
+interface Arrival {
+  change: TracedChange;
+  reachedAt: number;
+  days: number;
 }
 
 /**
@@ -74,25 +93,48 @@ interface TracedChange {
  *
  * Returns null when fewer than two of the branches follow each other in the pipeline.
  */
-export function computePipelineFlow(inputs: DoraBranchInput[], period: DoraPeriod): DoraPipelineFlow | null {
+export function computePipelineFlow(inputs: DoraBranchInput[], period: DoraPeriod, options: DoraPipelineOptions = {}): DoraPipelineFlow | null {
   const links = listPipelineLinks(inputs);
   if (links.length === 0) {
     return null;
   }
   const downstream = buildDownstream(inputs, links);
-  const { changes, untraced } = traceChanges(inputs, downstream, period);
+  const { changes, untraced } = traceChanges(inputs, downstream, period, options);
   const production = inputs.find((input) => input.isProduction) || null;
   const days = Math.max(1, Math.round((period.to.getTime() - period.from.getTime()) / DAY_MS));
   const inCurrent = (date: number) => date >= period.from.getTime() && date < period.to.getTime();
   const inPrevious = (date: number) => period.previousFrom != null && date >= period.previousFrom.getTime() && date < period.from.getTime();
+  // The changes that reached a branch in a window. One without a creation date, or created
+  // after it arrived, has no duration: it is in no count and no median
+  const arrivalsIn = (branch: string, inWindow: (date: number) => boolean): Arrival[] =>
+    changes
+      .filter((change) => change.stops.has(branch))
+      .map((change) => {
+        const reachedAt = effective(change.stops.get(branch)!);
+        return { change, reachedAt, days: (reachedAt - change.created) / DAY_MS };
+      })
+      .filter((arrival) => inWindow(arrival.reachedAt) && Number.isFinite(arrival.days) && arrival.days >= 0);
+  const daysOf = (arrivals: Arrival[]) => arrivals.map((arrival) => arrival.days);
 
-  // Time to production
-  const delivered = production ? changes.filter((change) => change.stops.has(production.name)) : [];
-  const totalDays = (change: TracedChange, branch: string) => (effective(change.stops.get(branch)!) - change.created) / DAY_MS;
-  const deliveredNow = delivered.filter((change) => inCurrent(effective(change.stops.get(production!.name)!)));
-  const deliveredBefore = delivered.filter((change) => inPrevious(effective(change.stops.get(production!.name)!)));
-  const toProduction = distribution(deliveredNow.map((change) => totalDays(change, production!.name)).filter(isValidDuration));
-  const toProductionBefore = distribution(deliveredBefore.map((change) => totalDays(change, production!.name)).filter(isValidDuration));
+  // Lead time of the changes of each branch. The one of production is the time to production
+  const changeLeadTimes = new Map<string, DoraChangeLeadTime>();
+  const arrivalsByBranch = new Map<string, Arrival[]>();
+  for (const input of inputs) {
+    const arrivals = arrivalsIn(input.name, inCurrent);
+    const current = distribution(daysOf(arrivals));
+    arrivalsByBranch.set(input.name, arrivals);
+    changeLeadTimes.set(input.name, {
+      medianDays: current.median,
+      p90Days: current.p90,
+      avgDays: current.avg,
+      level: classifyLeadTime(current.median).level,
+      previousMedianDays: distribution(daysOf(arrivalsIn(input.name, inPrevious))).median,
+      changes: arrivals.length,
+      weeks: buildWeeklyMedians(days, period.to, arrivals).map(({ week, medianDays }) => ({ week, medianDays })),
+    });
+  }
+  const delivered = production ? arrivalsByBranch.get(production.name)! : [];
+  const toProduction = production ? changeLeadTimes.get(production.name)! : null;
 
   // Each step of the pipeline
   const steps: DoraPipelineStep[] = links.map((link) => {
@@ -145,16 +187,14 @@ export function computePipelineFlow(inputs: DoraBranchInput[], period: DoraPerio
     };
   });
 
-  const slowestChanges: DoraPipelineChange[] = deliveredNow
-    .map((change) => ({ change, total: totalDays(change, production!.name) }))
-    .filter((entry) => isValidDuration(entry.total))
-    .sort((a, b) => b.total - a.total)
+  const slowestChanges: DoraPipelineChange[] = [...delivered]
+    .sort((a, b) => b.days - a.days)
     .slice(0, MAX_LISTED_CHANGES)
-    .map((entry) => ({
-      ...pullRequestRef(entry.change.pullRequest),
-      enteredAt: entry.change.entered,
-      totalDays: round1(entry.total),
-      stages: [...entry.change.stops.values()]
+    .map((arrival) => ({
+      ...pullRequestRef(arrival.change.pullRequest),
+      enteredAt: arrival.change.entered,
+      totalDays: round1(arrival.days),
+      stages: [...arrival.change.stops.values()]
         .sort((a, b) => a.arrivedAt - b.arrivedAt)
         .map((stop) => ({
           branch: stop.branch,
@@ -163,40 +203,22 @@ export function computePipelineFlow(inputs: DoraBranchInput[], period: DoraPerio
         })),
     }));
 
-  // Lead time of the changes of each branch
-  const changeLeadTimes = new Map<string, DoraChangeLeadTime>();
-  for (const input of inputs) {
-    const reached = changes.filter((change) => change.stops.has(input.name));
-    const now = reached.filter((change) => inCurrent(effective(change.stops.get(input.name)!)));
-    const before = reached.filter((change) => inPrevious(effective(change.stops.get(input.name)!)));
-    const current = distribution(now.map((change) => totalDays(change, input.name)).filter(isValidDuration));
-    changeLeadTimes.set(input.name, {
-      medianDays: current.median,
-      p90Days: current.p90,
-      avgDays: current.avg,
-      level: classifyLeadTime(current.median).level,
-      previousMedianDays: distribution(before.map((change) => totalDays(change, input.name)).filter(isValidDuration)).median,
-      changes: now.length,
-      weeks: buildWeeklyMedians(days, period.to, now, input.name).map(({ week, medianDays }) => ({ week, medianDays })),
-    });
-  }
-
   return {
     pipeline: {
       stages,
       steps,
-      timeToProduction: production
+      timeToProduction: toProduction
         ? {
-          medianDays: toProduction.median,
-          p90Days: toProduction.p90,
-          avgDays: toProduction.avg,
-          level: classifyLeadTime(toProduction.median).level,
-          previousMedianDays: toProductionBefore.median,
-          changes: deliveredNow.length,
+          medianDays: toProduction.medianDays,
+          p90Days: toProduction.p90Days,
+          avgDays: toProduction.avgDays,
+          level: toProduction.level,
+          previousMedianDays: toProduction.previousMedianDays,
+          changes: toProduction.changes,
         }
         : null,
       bottleneck: measuredSteps.length > 1 && slowestStep ? { from: slowestStep.from, to: slowestStep.to } : null,
-      weeks: production ? buildWeeklyMedians(days, period.to, deliveredNow, production.name) : [],
+      weeks: production ? buildWeeklyMedians(days, period.to, delivered) : [],
       slowestChanges,
       untraced,
     },
@@ -236,8 +258,16 @@ function buildDownstream(inputs: DoraBranchInput[], links: PipelineLink[]): Map<
   return downstream;
 }
 
-function traceChanges(inputs: DoraBranchInput[], downstream: Map<string, Set<string>>, period: DoraPeriod): { changes: TracedChange[]; untraced: number } {
+function traceChanges(
+  inputs: DoraBranchInput[],
+  downstream: Map<string, Set<string>>,
+  period: DoraPeriod,
+  options: DoraPipelineOptions,
+): { changes: TracedChange[]; untraced: number } {
   const names = inputs.map((input) => input.name);
+  const otherMajorBranches = (options.otherMajorBranches || []).filter((branch) => !names.includes(branch));
+  const tracedFrom = options.tracedFrom ? options.tracedFrom.getTime() : Number.NEGATIVE_INFINITY;
+  const reportedFrom = (period.previousFrom || period.from).getTime();
   const records = new Map<number, MergedRecord>();
   for (const input of inputs) {
     for (const pullRequest of input.pipelinePullRequests || input.mergedPullRequests) {
@@ -266,25 +296,31 @@ function traceChanges(inputs: DoraBranchInput[], downstream: Map<string, Set<str
     return deployedAtByRecord.get(record)!;
   };
 
+  let untraced = 0;
   const vehicles = new Map<MergedRecord, Vehicle>();
   const changes = new Map<number, TracedChange>();
   for (const [id, record] of records) {
-    const vehicle = classifyVehicle(record, names, downstream);
+    const vehicle = classifyVehicle(record, names, otherMajorBranches, downstream);
     if (vehicle) {
       vehicles.set(record, vehicle);
+      // What a promotion without a readable list carried is not known: it is said, not guessed
+      if (vehicle.kind === 'opaque' && vehicle.unreadPromotion && record.merged >= reportedFrom) {
+        untraced++;
+      }
       continue;
     }
-    const created = Date.parse(record.pullRequest.createdDate || '');
+    if (record.merged < tracedFrom) {
+      continue;
+    }
     changes.set(id, {
       pullRequest: record.pullRequest,
-      created,
+      created: Date.parse(record.pullRequest.createdDate || ''),
       entered: record.target,
       enteredAt: record.merged,
       stops: new Map([[record.target, { branch: record.target, arrivedAt: record.merged, deployedAt: deployedAtOf(record), viaPromotion: false }]]),
     });
   }
 
-  let untraced = 0;
   const arrive = (change: TracedChange, record: MergedRecord, viaPromotion: boolean) => {
     // The earliest vehicle wins: a full merge after a promotion brings the same change again
     if (!change.stops.has(record.target)) {
@@ -305,7 +341,9 @@ function traceChanges(inputs: DoraBranchInput[], downstream: Map<string, Set<str
         arrive(change, record, true);
       } else if (declaredVehicle?.kind === 'promotion') {
         carryDeclared(declaredVehicle.declared, record, seen);
-      } else if (!declaredRecord && record.merged >= (period.previousFrom || period.from).getTime()) {
+      } else if (record.merged >= reportedFrom) {
+        // Not among the Pull Requests read, merged too long ago to be followed, or a merge
+        // between major branches that a promotion cannot carry
         untraced++;
       }
     }
@@ -328,32 +366,29 @@ function traceChanges(inputs: DoraBranchInput[], downstream: Map<string, Set<str
 }
 
 // What a merged Pull Request moves. undefined: nothing, it is a change of its own
-function classifyVehicle(record: MergedRecord, names: string[], downstream: Map<string, Set<string>>): Vehicle | undefined {
+function classifyVehicle(record: MergedRecord, names: string[], otherMajorBranches: string[], downstream: Map<string, Set<string>>): Vehicle | undefined {
   const sourceBranch = record.pullRequest.sourceBranch || '';
   const promotion = parsePromotionBranchName(sourceBranch);
   if (promotion && promotion.targetBranch === record.target) {
     const declared = parsePromotionPullRequestIds(record.pullRequest.description);
-    if (declared != null) {
-      return { kind: 'promotion', declared };
-    }
+    return declared != null ? { kind: 'promotion', declared } : { kind: 'opaque', unreadPromotion: true };
   }
   if (names.includes(sourceBranch) && sourceBranch !== record.target) {
-    return downstream.get(sourceBranch)?.has(record.target) ? { kind: 'full', source: sourceBranch } : { kind: 'backMerge' };
+    return downstream.get(sourceBranch)?.has(record.target) ? { kind: 'full', source: sourceBranch } : { kind: 'opaque', unreadPromotion: false };
+  }
+  if (otherMajorBranches.includes(sourceBranch)) {
+    return { kind: 'opaque', unreadPromotion: false };
   }
   return undefined;
 }
 
-function buildWeeklyMedians(days: number, to: Date, changes: TracedChange[], branch: string): { week: string; medianDays: number | null; changes: number }[] {
+function buildWeeklyMedians(days: number, to: Date, arrivals: Arrival[]): { week: string; medianDays: number | null; changes: number }[] {
   const weeks = new Map<string, number[]>();
   for (const week of buildWeekLabels(days, to)) {
     weeks.set(week, []);
   }
-  for (const change of changes) {
-    const reached = effective(change.stops.get(branch)!);
-    const total = (reached - change.created) / DAY_MS;
-    if (isValidDuration(total)) {
-      weeks.get(weekKey(new Date(reached)))?.push(total);
-    }
+  for (const arrival of arrivals) {
+    weeks.get(weekKey(new Date(arrival.reachedAt)))?.push(arrival.days);
   }
   return [...weeks.entries()].map(([week, values]) => ({ week, medianDays: values.length > 0 ? round1(median(values)) : null, changes: values.length }));
 }
@@ -372,10 +407,6 @@ function distribution(values: number[]): DoraDistribution {
     p90: round1(percentile(values, 90)),
     avg: round1(values.reduce((sum, value) => sum + value, 0) / values.length),
   };
-}
-
-function isValidDuration(value: number): boolean {
-  return Number.isFinite(value) && value >= 0;
 }
 
 function pullRequestNumber(pullRequest: CommonPullRequestInfo): number {
