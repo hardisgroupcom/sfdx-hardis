@@ -27,6 +27,8 @@ Examples:
 - `NOTIF_EMAIL_ADDRESS=admin@cloudity.com`
 - `NOTIF_EMAIL_ADDRESS=admin@cloudity.com,another.user@cloudity.com,nico@cloudity.com`
 
+An address is not enough to receive every notification: each notification type is sent by email from a severity of its own, and many monitoring checks are **Disabled** or **Error** by default for the email channel, so an org with nothing wrong sends no email. Change it per check in the **Email** column of the Monitoring Config Workbench of the VS Code extension, or with `notificationConfig` in `.sfdx-hardis.yml` (see [Monitoring configuration](salesforce-monitoring-config-home.md#fine-grained-routing-per-notification-type)). When no email arrives, the job log says why: `Skipped email notification for <TYPE> (severity ..., threshold ...)` or `Sent email to ...`.
+
 You can also target additional recipients per branch (`NOTIF_EMAIL_ADDRESS_<BRANCH>`) or per notification type (`NOTIF_EMAIL_ADDRESS_<TYPE>`), e.g. `NOTIF_EMAIL_ADDRESS_AUDIT_TRAIL=security@cloudity.com`.
 
 ## Per notification type recipients (YAML)
@@ -62,4 +64,12 @@ If the emails are not sent, apply the following configuration in the settings of
 
 That's all, you're all set.
 
+<!-- training-links:start -->
 
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
+
+- [Lab 3.8 - Monitor your production org](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-8-monitor-your-production-org/)
+
+<!-- training-links:end -->
