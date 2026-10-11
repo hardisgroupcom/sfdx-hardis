@@ -213,10 +213,11 @@ site build fails on the drift.
 - **Time is read from GitHub, not timed.** A lab ends when its Pull Request is merged and runs from
   the end of the one before, a break over 45 minutes counts for nothing, and Labs 1.1 and 1.2 are
   not measured because the repository only appears when they end. Every figure is a low estimate.
-- **The pages announce what was observed.** The site build writes the median over the estimate of
+- **The pages announce what was observed.** A generator writes the median into the markdown of
   each lab and level, rounded down (five minutes for a lab, a quarter of an hour for a level),
-  with the fastest and the slowest learner next to it. The Statistics page keeps the first
-  estimate in its own column. Details in the Times section of [[training-update]].
+  with the fastest and the slowest learner next to it, and the weekly workflow commits it. The
+  Statistics page keeps the first estimate in its own column. Details in the Times section of
+  [[training-update]].
 - **Receipts refine it.** A receipt keeps the time its lab first passed, so a learner who runs
   Check my work after each lab is measured lab by lab.
 - **The maintainers and the end to end test accounts are left out**, of the statistics and of the

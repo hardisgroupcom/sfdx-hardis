@@ -532,26 +532,33 @@ four places per locale: each `labs/<locale>/level-N/index.md`, `labs/<locale>/in
 `README.md` once. A time changed in English and not in French is the easiest translation drift to
 create and the hardest to notice, because nothing compares numbers across locales.
 
-**Those times are the estimate, and the site announces what learners were observed to take.**
-`scripts/build/site.mjs` writes the observed time over the estimate at every build, in every
+**The pages announce what learners were observed to take, and a generator writes it.**
+`scripts/build/lab-times.mjs` writes the observed time into the markdown under `labs/`, in every
 language, from `stats/course-stats.json`: the `**Time**` line of a lab, the rows and the total of
-a level page, the table of the home page. The rules are in `scripts/stats/lab-times.mjs`:
+a level page, the table of the home page. The weekly `course-stats.yml` commits the result, so a
+change of time is a diff in the lab files. The site is built from that markdown as it is. The
+rules are in `scripts/stats/lab-times.mjs`:
 
 - the median, **rounded down**, to five minutes for a lab and a quarter of an hour for a level;
-- followed by the fastest learner, the slowest, the median and how many they were;
-- a lab fewer than five learners went through keeps its estimate, and so does a level nobody was
-  observed in.
+- followed by the fastest learner, the slowest, the median and how many they were, between two
+  `<!-- observed -->` comments, which is how the next run finds its own sentence;
+- a lab fewer than five learners went through announces its estimate, and so does a level nobody
+  was observed in.
 
-So never edit a time in a lab to follow the figures: the next build does it. Edit one only when
-the lab itself changed, and then it is a new estimate. Three things follow from the patterns the
-build looks for:
+What follows from it:
 
+- **never edit a time in a lab by hand**: the next run overwrites it, and
+  `lab-times.mjs --check` fails the site build on the difference. A new estimate goes in
+  `training-universe.json` (`time` per lab, `duration` per level), which is where the estimates
+  live, then `node scripts/build/lab-times.mjs`;
 - a lab keeps one `**Time**: ~N min` line, and a level page one `**Time**: about N h` line and
-  one `N min` cell per lab row. A page that loses one fails the site build, by name;
+  one `N min` cell per lab row. A page that loses one fails the generator, by name;
 - never write a duration of a level in prose ("it is four hours"): nothing updates a sentence;
-- `training-universe.json` carries the same estimates (`time` per lab, `duration` per level). The
-  universe is what the build reads for the estimate, and what `doc-links.mjs` writes into the
-  product documentation, which therefore shows estimates, not observed times.
+- the generator changes the English page and its translations together, so commit `labs/en/`
+  first, then `node scripts/build/lab-times.mjs --stamp`: it stamps the translations that were
+  current before the run, and only those;
+- `doc-links.mjs` writes the `duration` of the universe into the product documentation, which
+  therefore shows estimates, not observed times.
 
 ## The contributor loop the course teaches
 
