@@ -118,6 +118,40 @@ describe('doraDataUtils', () => {
     expect(main.validationRuns.map((candidate) => candidate.id)).to.deep.equal(['5']);
   });
 
+  it('keeps the Pull Requests merged before the period for the pipeline flow, and reads again a promotion whose list was cut', async () => {
+    const list = ['```yaml', 'promotionPullRequests: [1]', '```'].join('\n');
+    const { source } = fakeSource(
+      [],
+      [
+        // Merged before the 28 days: not in the metrics of uat, but a change that can be delivered later
+        pullRequest(1, 'uat', '2026-08-20T12:00:00Z'),
+        pullRequest(20, 'main', '2026-09-10T12:00:00Z', 'promotion/uat/main/2026-09-10-1000'),
+        { ...pullRequest(21, 'main', '2026-09-12T12:00:00Z', 'promotion/uat/main/2026-09-12-1000'), description: list },
+        pullRequest(22, 'main', '2026-09-14T12:00:00Z', 'promotion/uat/main/2026-09-14-1000'),
+      ],
+    );
+    const readOneByOne: number[] = [];
+    (source.gitProvider as any).getPullRequestById = async (id: number) => {
+      readOneByOne.push(id);
+      if (id === 22) {
+        throw new Error('not readable');
+      }
+      return { ...pullRequest(id, 'main', '2026-09-10T12:00:00Z'), description: list };
+    };
+
+    const [uat, main] = await collectDoraBranchInputs(source, buildDoraPeriod(28, false, NOW), { refresh: false, cacheDir, now: NOW });
+
+    expect(uat.mergedPullRequests).to.deep.equal([]);
+    expect(uat.pipelinePullRequests!.map((candidate) => candidate.idNumber)).to.deep.equal([1]);
+    // Only the promotions without their list are read again, and one that cannot be is kept as listed
+    expect(readOneByOne).to.deep.equal([20, 22]);
+    expect(main.pipelinePullRequests!.map((candidate) => [candidate.idNumber, candidate.description === list])).to.deep.equal([
+      [20, true],
+      [21, true],
+      [22, false],
+    ]);
+  });
+
   it('asks the provider only for the runs newer than the last reading', async () => {
     const runs = [run('1', 'deployment', '2026-09-10T12:00:00Z'), run('2', 'deployment', '2026-09-20T12:00:00Z', { status: 'failed' })];
     const { source, calls } = fakeSource(runs, []);

@@ -36,6 +36,12 @@ export interface DoraBranchInput {
   validationRuns: CommonCiRun[];
   mergedPullRequests: CommonPullRequestInfo[];
   openPullRequests: CommonPullRequestInfo[];
+  // Branches this one is merged into. undefined when the configuration of the pipeline cannot be
+  // read: the branches then follow each other in the order they are given
+  mergeTargets?: string[];
+  // Every merged Pull Request read, the ones merged before the period included: a change delivered
+  // in the period entered the pipeline before it. mergedPullRequests when not given
+  pipelinePullRequests?: CommonPullRequestInfo[];
 }
 
 export interface DoraPeriod {
@@ -86,6 +92,8 @@ export function computeBranchResult(input: DoraBranchInput, period: DoraPeriod):
       level: classifyReworkRate(current.reworkRate).level,
       previousPercent: previous ? previous.reworkRate : null,
     },
+    // Filled from the pipeline flow, which needs the other branches
+    changeLeadTime: null,
   };
   const oldestRun = sortByDate(input.deploymentRuns, (run) => run.finishedAt)[0];
   return {
@@ -165,6 +173,21 @@ export function computeContributors(inputs: DoraBranchInput[], period: DoraPerio
       failedDeployments: entry.failedDeployments,
     }))
     .sort((a, b) => b.pullRequests + b.deploymentsTriggered - (a.pullRequests + a.deploymentsTriggered) || a.name.localeCompare(b.name));
+}
+
+/**
+ * The successful job that deployed the merge of a Pull Request: the one of its merge commit when
+ * the provider tells it, else the first that started after the merge. succeededRuns: the oldest first.
+ */
+export function findDeploymentOfMerge(pullRequest: CommonPullRequestInfo, succeededRuns: CommonCiRun[]): CommonCiRun | undefined {
+  const merged = time(pullRequest.mergedDate);
+  return (
+    succeededRuns.find((run) => isSameCommit(pullRequest.mergeCommitSha, run.commitSha)) ||
+    succeededRuns.find((run) => {
+      const gap = time(run.queuedAt) - merged;
+      return gap >= 0 && gap <= MAX_MERGE_TO_DEPLOYMENT_MS;
+    })
+  );
 }
 
 // Numbers of one branch over one window of time
@@ -252,22 +275,15 @@ function computeWindow(input: DoraBranchInput, from: Date, to: Date) {
   };
 }
 
-// Days from the creation of a Pull Request to the end of the job that deployed it. The job is the
-// one of its merge commit when the provider tells it, else the first that started after the merge.
-// Without any, the merge date ends the lead time: the change is in the branch, its deployment is not known
+// Days from the creation of a Pull Request to the end of the job that deployed it. Without any,
+// the merge date ends the lead time: the change is in the branch, its deployment is not known
 function leadTimeDays(pullRequest: CommonPullRequestInfo, succeededRuns: CommonCiRun[]): number | null {
   const created = time(pullRequest.createdDate);
   const merged = time(pullRequest.mergedDate);
   if (Number.isNaN(created) || Number.isNaN(merged)) {
     return null;
   }
-  const ofMergeCommit = succeededRuns.find((run) => isSameCommit(pullRequest.mergeCommitSha, run.commitSha));
-  const deployment =
-    ofMergeCommit ||
-    succeededRuns.find((run) => {
-      const gap = time(run.queuedAt) - merged;
-      return gap >= 0 && gap <= MAX_MERGE_TO_DEPLOYMENT_MS;
-    });
+  const deployment = findDeploymentOfMerge(pullRequest, succeededRuns);
   const end = deployment ? time(deployment.finishedAt) : merged;
   return end >= created ? (end - created) / DAY_MS : null;
 }

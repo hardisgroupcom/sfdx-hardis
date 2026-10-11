@@ -43,7 +43,27 @@ In VS Code, open the **DORA metrics** panel from the gear menu of the [DevOps Pi
 
 Each metric is classified against DORA benchmarks as **Elite**, **High**, **Medium**, or **Low**, with the same scale for every branch.
 
-Each branch also gets a **needs attention** list: a deployment that is still failing, Pull Requests open for more than 7 days, a failure rate that went up, no deployment for 30 days.
+Each branch also gets a **needs attention** list: a deployment that is still failing, Pull Requests open for more than 7 days, a failure rate that went up, no deployment for 30 days, changes waiting there for more than 30 days.
+
+#### Pipeline flow
+
+A Pull Request that merges `uat` into `preprod` is often opened and merged the same day, while the User Stories it carries were waiting in `uat` for three weeks. When several major branches are computed, sfdx-hardis follows each change from the branch its own Pull Request was merged into until production.
+
+| Metric                 | How it is computed                                                                                             |
+|------------------------|----------------------------------------------------------------------------------------------------------------|
+| **Time to production** | From the creation of the Pull Request of a change to its deployment on the production branch                   |
+| **Wait at each step**  | From the deployment of a change on a branch to its deployment on the next one, for example `uat` to `preprod`  |
+| **Waiting changes**    | Changes that reached a branch and were not carried further, the oldest first                                   |
+| **Longest wait**       | The step of the pipeline where changes wait the longest                                                        |
+
+The **Lead Time for Changes** of each branch is then the one of the changes themselves, from the creation of their Pull Request to their deployment on that branch. The lead time of the Pull Requests merged into the branch is still given below it, and it is the one sent to Grafana.
+
+How a change is followed:
+
+- A Pull Request from a major branch into the next one carries every change that was in its source branch when it was merged.
+- A [promotion](../../salesforce-devops-promotion-branches.md) Pull Request carries the Pull Requests listed in its description.
+- A hotfix merged straight into `preprod` or `main` is counted from that branch. The merge that brings it back to the earlier branches does not send it through the pipeline a second time.
+- A change cherry-picked by hand, or merged more than 90 days before the period, is not followed.
 
 ---
 

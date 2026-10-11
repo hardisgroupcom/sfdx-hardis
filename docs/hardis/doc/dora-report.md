@@ -34,7 +34,14 @@ The command fails when no authenticated git provider is available, or when its t
 
 Each metric is classified against DORA benchmarks as **Elite**, **High**, **Medium**, or **Low**, with the same scale for every branch.
 
-Each branch also gets a **needs attention** list: a deployment that is still failing, Pull Requests open for more than 7 days, a failure rate that went up, no deployment for 30 days.
+Each branch also gets a **needs attention** list: a deployment that is still failing, Pull Requests open for more than 7 days, a failure rate that went up, no deployment for 30 days, changes waiting there for more than 30 days.
+
+**Pipeline flow**, when several major branches are computed:
+
+- **Time to production** - from the creation of the Pull Request of a change to its deployment on the production branch, whatever the number of branches it went through
+- **Wait at each step** (for example `uat` to `preprod`) - from the deployment on a branch to the deployment on the next one, with the step where changes wait the longest
+- **Waiting changes** - what reached a branch and has not been carried further, the oldest first
+- The lead time shown for each branch is then the one of the changes themselves, not the one of the Pull Request that merged a branch into the next
 
 **Which branches:**
 
@@ -61,7 +68,11 @@ This command is part of [sfdx-hardis Documentation](https://sfdx-hardis.cloudity
 - A git provider keeps its job runs for a limited time: with `--compare`, when a branch has no run as old as the period asked for, the report says when its data starts.
 - Runs of a major branch that no merge triggered (scheduled pipelines, pipelines started through the API, Bitbucket custom pipelines) are not deployments.
 - A job run again on the same commit replaces its previous result on some providers, so a failure fixed by a re-run can disappear from the history.
-- The `--json` result holds `branches` (metrics, weekly series, failed deployments, slow and hotfix Pull Requests, attention list), `contributors`, and the legacy `metrics`, `supplementary` and `counts` of the production branch.
+- The pipeline flow is rebuilt from the Pull Requests, without reading the git history. A Pull Request from a major branch into the next carries every change that was in its source branch when it was merged. A promotion Pull Request (`promotion/<source>/<target>/...`) carries the Pull Requests its `promotionPullRequests` list declares. A merge from a major branch back into an earlier one carries nothing.
+- A change cherry-picked by hand, or merged more than 90 days before the period, is not followed.
+- The steps are the `mergeTargets` of each major branch. In a monitoring repository, where they cannot be read, the branches of `--branches` follow each other in the order given.
+- The notification keeps the lead time of the Pull Requests of the branch, so the Grafana history stays comparable.
+- The `--json` result holds `pipeline` (stages, steps, time to production, slowest changes), `branches` (metrics, weekly series, failed deployments, slow and hotfix Pull Requests, attention list), `contributors`, and the legacy `metrics`, `supplementary` and `counts` of the production branch.
 </details>
 
 ### Agent Mode

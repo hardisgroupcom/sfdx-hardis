@@ -1,4 +1,5 @@
-import { DoraAttentionItem, DoraBranchResult } from './doraUtils.js';
+import { DoraAttentionItem, DoraBranchResult, DoraPipelineStage } from './doraUtils.js';
+import { PIPELINE_BACKLOG_DAYS } from './doraPipelineUtils.js';
 import { DoraBranchInput } from './doraMetricsUtils.js';
 import { t } from './i18n.js';
 import { round1 } from './statsUtils.js';
@@ -72,4 +73,24 @@ export function computeAttentionItems(input: DoraBranchInput, result: DoraBranch
     });
   }
   return items;
+}
+
+/** Changes that reached a branch more than 30 days ago and went no further */
+export function computePipelineBacklogItem(stage: DoraPipelineStage): DoraAttentionItem | null {
+  const oldest = stage.waiting.changes[0];
+  if (stage.waiting.staleCount === 0 || !oldest) {
+    return null;
+  }
+  return {
+    code: 'pipelineBacklog',
+    severity: 'warning',
+    message: t('doraAttentionPipelineBacklog', {
+      count: stage.waiting.staleCount,
+      branch: stage.branch,
+      days: PIPELINE_BACKLOG_DAYS,
+      title: oldest.title,
+      oldestDays: Math.floor(oldest.days),
+    }),
+    url: oldest.url || null,
+  };
 }

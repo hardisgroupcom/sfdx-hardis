@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now computed for each major org from the deployment jobs and Pull Requests of the git provider, without any org login.
+- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now computed for each major org from the deployment jobs and Pull Requests of the git provider, without any org login, with the time each change takes to reach production and where it waits.
   - Deployments made outside the CI/CD pipeline are no longer counted, so the numbers of an existing report can change. A git provider token that can read CI jobs is now required.
 - New [hardis:git:artifacts:download](https://sfdx-hardis.cloudity.com/hardis/git/artifacts/download/): download the report files a CI job published as artifacts (GitHub, GitLab, Azure DevOps), also behind the new Files button of the VS Code Pull Request view.
 - ServiceNow: new option to keep the deployment job read-only on the tickets (no work note written), while they stay listed in the Pull Request comments and the notifications.

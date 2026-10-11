@@ -2,7 +2,7 @@ import { CommonPullRequestInfo } from '../gitProvider/index.js';
 import { Ticket } from '../ticketProvider/index.js';
 import { CONSTANTS } from '../../config/index.js';
 import { DoraBranchInput } from './doraMetricsUtils.js';
-import { DoraBranchResult, DoraDistribution, DoraLevel, DoraReportData, classificationLabel } from './doraUtils.js';
+import { DoraBranchResult, DoraDistribution, DoraLevel, DoraPipelineResult, DoraReportData, classificationLabel } from './doraUtils.js';
 import { t } from './i18n.js';
 
 export const DORA_LEVEL_EMOJIS: Record<DoraLevel, string> = { elite: '🟢', high: '🔵', medium: '🟡', low: '🔴', none: '⚪' };
@@ -17,10 +17,17 @@ export interface DoraMetricSummary {
   level: DoraLevel;
 }
 
-/** The five DORA metrics of a branch, named and formatted: the summary tables and the notification use them */
-export function buildMetricSummaries(branch: DoraBranchResult): DoraMetricSummary[] {
+/**
+ * The five DORA metrics of a branch, named and formatted: the summary tables and the notification use them.
+ *
+ * changeLeadTime: the lead time is the one of the changes that reached the branch, when the
+ * pipeline flow gave it. The report shows that one. The notification does not ask for it: what
+ * Grafana has been receiving stays the lead time of the Pull Requests of the branch.
+ */
+export function buildMetricSummaries(branch: DoraBranchResult, options: { changeLeadTime?: boolean } = {}): DoraMetricSummary[] {
   const metrics = branch.metrics;
   const noData = t('doraReportNoData');
+  const leadTime = options.changeLeadTime && metrics.changeLeadTime?.medianDays != null ? metrics.changeLeadTime : metrics.leadTime;
   return [
     {
       key: 'DoraDeploymentFrequency',
@@ -32,9 +39,9 @@ export function buildMetricSummaries(branch: DoraBranchResult): DoraMetricSummar
     {
       key: 'DoraLeadTimeDays',
       name: t('doraReportLeadTime'),
-      value: metrics.leadTime.medianDays == null ? noData : `${t('doraReportDays', { value: metrics.leadTime.medianDays })} (p50)`,
-      rawValue: metrics.leadTime.medianDays,
-      level: metrics.leadTime.level,
+      value: leadTime.medianDays == null ? noData : `${t('doraReportDays', { value: leadTime.medianDays })} (p50)`,
+      rawValue: leadTime.medianDays,
+      level: leadTime.level,
     },
     {
       key: 'DoraChangeFailureRatePercent',
@@ -86,12 +93,16 @@ export function buildDoraMarkdownReport(data: DoraReportData, inputs: DoraBranch
   lines.push(`| ${t('doraReportBranch')} | ${headers.join(' | ')} |`);
   lines.push(`|${'---|'.repeat(headers.length + 1)}`);
   for (const branch of data.branches) {
-    const cells = buildMetricSummaries(branch).map((metric) => `${DORA_LEVEL_EMOJIS[metric.level]} ${metric.value}`);
+    const cells = buildMetricSummaries(branch, { changeLeadTime: true }).map((metric) => `${DORA_LEVEL_EMOJIS[metric.level]} ${metric.value}`);
     lines.push(`| **${branch.name}** | ${cells.join(' | ')} |`);
   }
   lines.push('');
   lines.push('---');
   lines.push('');
+
+  if (data.pipeline) {
+    pushPipelineFlow(lines, data.pipeline);
+  }
 
   for (const branch of data.branches) {
     const input = inputs.find((candidate) => candidate.name === branch.name);
@@ -142,6 +153,69 @@ export function expandDetailsSectionsForPdf(markdown: string): string {
     .replace(/<\/details>/g, '');
 }
 
+// How long a change takes to reach production, and where it waits
+function pushPipelineFlow(lines: string[], pipeline: DoraPipelineResult): void {
+  const daysUnit = t('doraReportDaysUnit');
+  lines.push(`## ${t('doraReportPipelineFlow')}`);
+  lines.push('');
+  lines.push(`_${t('doraReportExplainPipeline')}_`);
+  lines.push('');
+  const toProduction = pipeline.timeToProduction;
+  if (toProduction && toProduction.medianDays != null) {
+    lines.push(
+      `**${t('doraReportTimeToProduction')}**: ${DORA_LEVEL_EMOJIS[toProduction.level]} ${toProduction.medianDays} ${daysUnit} (p50), ${toProduction.p90Days} ${daysUnit} (p90) - ${t('doraReportPipelineChangesCount', { count: toProduction.changes })}`,
+    );
+    lines.push('');
+  }
+  if (pipeline.bottleneck) {
+    lines.push(t('doraReportPipelineBottleneck', { from: pipeline.bottleneck.from, to: pipeline.bottleneck.to }));
+    lines.push('');
+  }
+
+  lines.push(`| ${t('doraReportPipelineStep')} | ${t('doraReportPipelineChanges')} | ${t('doraReportPipelineMedianWait')} | ${t('doraReportP90')} | ${t('doraReportPipelineViaPromotion')} |`);
+  lines.push('|------|---------|-------------|-----|-----------|');
+  for (const step of pipeline.steps) {
+    const wait = step.waitDays.median == null ? '-' : `${step.waitDays.median} ${daysUnit}`;
+    const p90 = step.waitDays.p90 == null ? '-' : `${step.waitDays.p90} ${daysUnit}`;
+    lines.push(`| ${step.from} → ${step.to} | ${step.changes} | ${wait} | ${p90} | ${step.viaPromotion} |`);
+  }
+  lines.push('');
+
+  const waitingStages = pipeline.stages.filter((stage) => stage.waiting.count > 0);
+  if (waitingStages.length > 0) {
+    lines.push(`| ${t('doraReportBranch')} | ${t('doraReportPipelineWaiting')} | ${t('doraReportPipelineOldest')} |`);
+    lines.push('|--------|---------|--------|');
+    for (const stage of waitingStages) {
+      const oldest = stage.waiting.changes[0];
+      const oldestCell = oldest ? `${formatMarkdownLink(sanitizeTableCell(oldest.title) || `#${oldest.id}`, oldest.url)} (${oldest.days} ${daysUnit})` : '-';
+      lines.push(`| ${stage.branch} | ${stage.waiting.count} | ${oldestCell} |`);
+    }
+    lines.push('');
+  }
+
+  if (pipeline.slowestChanges.length > 0) {
+    lines.push(`<details><summary>${t('doraReportPipelineSlowestChanges', { count: pipeline.slowestChanges.length })}</summary>`);
+    lines.push('');
+    lines.push(`| ${t('doraReportPrId')} | ${t('doraReportValue')} | ${t('doraReportAuthor')} | ${t('doraReportTimeToProduction')} | ${t('doraReportPipelineStep')} |`);
+    lines.push('|----|-------|--------|------|------|');
+    for (const change of pipeline.slowestChanges) {
+      const path = change.stages.map((stage) => `${stage.branch} ${(stage.deployedAt || stage.arrivedAt).split('T')[0]}`).join(' → ');
+      lines.push(
+        `| ${formatMarkdownLink(`#${change.id}`, change.url)} | ${sanitizeTableCell(change.title)} | ${sanitizeTableCell(change.author)} | ${change.totalDays} ${daysUnit} | ${path} |`,
+      );
+    }
+    lines.push('');
+    lines.push('</details>');
+    lines.push('');
+  }
+  if (pipeline.untraced > 0) {
+    lines.push(`_${t('doraReportPipelineUntraced', { count: pipeline.untraced })}_`);
+    lines.push('');
+  }
+  lines.push('---');
+  lines.push('');
+}
+
 // The metrics of one branch, with their charts and what explains them
 function pushBranchChapter(lines: string[], branch: DoraBranchResult, data: DoraReportData): void {
   const metrics = branch.metrics;
@@ -156,7 +230,7 @@ function pushBranchChapter(lines: string[], branch: DoraBranchResult, data: Dora
 
   lines.push(`| ${t('doraReportMetric')} | ${t('doraReportValue')} | ${t('doraReportClassification')} |`);
   lines.push('|--------|-------|----------------|');
-  for (const metric of buildMetricSummaries(branch)) {
+  for (const metric of buildMetricSummaries(branch, { changeLeadTime: true })) {
     lines.push(`| ${metric.name} | ${metric.value} | ${DORA_LEVEL_EMOJIS[metric.level]} ${classificationLabel({ level: metric.level })} |`);
   }
   lines.push('');
@@ -203,9 +277,16 @@ function pushBranchChapter(lines: string[], branch: DoraBranchResult, data: Dora
   lines.push('');
   lines.push(`_${t('doraReportExplainLt')}_`);
   lines.push('');
-  if (metrics.leadTime.medianDays != null) {
-    pushDistribution(lines, { median: metrics.leadTime.medianDays, p90: metrics.leadTime.p90Days, avg: metrics.leadTime.avgDays }, t('doraReportDaysUnit'));
-    const leadTimeValues = branch.weeks.map((week) => week.leadTimeMedianDays ?? 0);
+  // The changes themselves when the pipeline flow followed them, else the Pull Requests of the branch
+  const changeLeadTime = metrics.changeLeadTime?.medianDays != null ? metrics.changeLeadTime : null;
+  const leadTime = changeLeadTime || metrics.leadTime;
+  if (leadTime.medianDays != null) {
+    pushDistribution(lines, { median: leadTime.medianDays, p90: leadTime.p90Days, avg: leadTime.avgDays }, t('doraReportDaysUnit'));
+    if (changeLeadTime && metrics.leadTime.medianDays != null) {
+      lines.push(`_${t('doraReportPullRequestLeadTime', { value: metrics.leadTime.medianDays })}_`);
+      lines.push('');
+    }
+    const leadTimeValues = changeLeadTime ? changeLeadTime.weeks.map((week) => week.medianDays ?? 0) : branch.weeks.map((week) => week.leadTimeMedianDays ?? 0);
     lines.push('```mermaid');
     lines.push('xychart-beta');
     lines.push(`  title "${t('doraReportLeadTimeTrend')}"`);

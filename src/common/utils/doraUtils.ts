@@ -25,6 +25,19 @@ export interface DoraBranchMetrics {
   changeFailureRate: { percent: number | null; level: DoraLevel; previousPercent: number | null };
   mttr: { medianHours: number | null; avgHours: number | null; recoveries: number; level: DoraLevel; previousMedianHours: number | null };
   reworkRate: { percent: number | null; level: DoraLevel; previousPercent: number | null };
+  // Lead time of the changes themselves, from the creation of their Pull Request to their
+  // deployment on this branch, whatever brought them there. null when the pipeline is not computed
+  changeLeadTime: DoraChangeLeadTime | null;
+}
+
+export interface DoraChangeLeadTime {
+  medianDays: number | null;
+  p90Days: number | null;
+  avgDays: number | null;
+  level: DoraLevel;
+  previousMedianDays: number | null;
+  changes: number;
+  weeks: { week: string; medianDays: number | null }[];
 }
 
 export interface DoraBranchSupplementary {
@@ -77,7 +90,7 @@ export interface DoraHotfixPullRequest extends DoraPullRequestRef {
   mergedDate: string;
 }
 
-export type DoraAttentionCode = 'deploymentFailing' | 'stalePullRequests' | 'failureRateUp' | 'noRecentDeployment';
+export type DoraAttentionCode = 'deploymentFailing' | 'stalePullRequests' | 'failureRateUp' | 'noRecentDeployment' | 'pipelineBacklog';
 
 export interface DoraAttentionItem {
   code: DoraAttentionCode;
@@ -123,13 +136,78 @@ export interface DoraContributor {
   failedDeployments: number;
 }
 
+// A change waiting in a major branch: it reached it and nothing carried it further
+export interface DoraWaitingChange extends DoraPullRequestRef {
+  since: string;
+  days: number;
+}
+
+export interface DoraPipelineStage {
+  branch: string;
+  isProduction: boolean;
+  // Changes whose own Pull Request was merged into this branch during the period
+  entered: number;
+  waiting: {
+    count: number;
+    // Waiting for more than 30 days
+    staleCount: number;
+    oldestDays: number | null;
+    medianDays: number | null;
+    // The ten oldest
+    changes: DoraWaitingChange[];
+  };
+}
+
+export interface DoraPipelineStep {
+  from: string;
+  to: string;
+  // Changes that reached the target branch during the period, coming from the source branch
+  changes: number;
+  // Among them, the ones a promotion branch carried
+  viaPromotion: number;
+  // Days from the deployment on the source branch to the deployment on the target branch
+  waitDays: DoraDistribution;
+  previousMedianDays: number | null;
+}
+
+export interface DoraPipelineChange extends DoraPullRequestRef {
+  // The branch its Pull Request was merged into
+  enteredAt: string;
+  totalDays: number;
+  stages: { branch: string; arrivedAt: string; deployedAt: string | null }[];
+}
+
+export interface DoraPipelineResult {
+  // In the order of the pipeline
+  stages: DoraPipelineStage[];
+  steps: DoraPipelineStep[];
+  // Creation of the Pull Request of a change, until its deployment on the production branch.
+  // null when no production branch is computed
+  timeToProduction: {
+    medianDays: number | null;
+    p90Days: number | null;
+    avgDays: number | null;
+    level: DoraLevel;
+    previousMedianDays: number | null;
+    changes: number;
+  } | null;
+  // The step changes wait the longest at, when several steps can be compared
+  bottleneck: { from: string; to: string } | null;
+  weeks: { week: string; medianDays: number | null; changes: number }[];
+  // The ten changes delivered in the period that took the longest
+  slowestChanges: DoraPipelineChange[];
+  // Changes a promotion declares that are not among the Pull Requests read
+  untraced: number;
+}
+
 export interface DoraReportData {
   schemaVersion: 2;
   period: { days: number; from: string; to: string; previousFrom: string | null };
   source: { provider: string; repository: string };
   branches: DoraBranchResult[];
-  // Time a change spends between the major branches: not computed yet
-  pipeline: null;
+  // Time a change spends between the major branches. null when fewer than two of the branches
+  // computed follow each other in the pipeline
+  pipeline: DoraPipelineResult | null;
   contributors: DoraContributor[];
 }
 

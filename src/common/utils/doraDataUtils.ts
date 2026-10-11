@@ -14,6 +14,7 @@ import { CommonCiRun, GitProviderRoot } from '../gitProvider/gitProviderRoot.js'
 import { keepNamedDeployments } from '../gitProvider/utils/jobKindUtils.js';
 import { MONITORING_CONFIG_FILE, readDeploymentRepository } from '../monitoring/monitoringDeploymentRepository.js';
 import { DoraBranchInput, DoraPeriod } from './doraMetricsUtils.js';
+import { parsePromotionBranchName, parsePromotionPullRequestIds } from './promotionBranchUtils.js';
 
 const DAY_MS = 86400000;
 // Variable holding a token that can read the deployment repository, when the command runs elsewhere
@@ -32,7 +33,8 @@ const CACHE_RETENTION_DAYS = 800;
 export interface DoraSource {
   gitProvider: GitProviderRoot;
   repository: string;
-  branches: { name: string; level: number; isProduction: boolean }[];
+  // mergeTargets: undefined when the configuration of the pipeline is not readable from here
+  branches: { name: string; level: number; isProduction: boolean; mergeTargets?: string[] }[];
 }
 
 interface DoraRunsCache {
@@ -84,6 +86,10 @@ export async function resolveDoraSource(branchesFlag: string | null): Promise<Do
   }
   const majorOrgs = await listMajorOrgs();
   const levelOf = (name: string) => Number(majorOrgs.find((majorOrg) => majorOrg.branchName === name)?.level) || 0;
+  const mergeTargetsOf = (name: string): string[] => {
+    const mergeTargets = majorOrgs.find((majorOrg) => majorOrg.branchName === name)?.mergeTargets;
+    return Array.isArray(mergeTargets) ? mergeTargets.filter((target) => typeof target === 'string') : [];
+  };
   let branchNames = asked;
   if (branchNames.length === 0 && isCI) {
     const currentBranch = await getCurrentGitBranch();
@@ -99,7 +105,7 @@ export async function resolveDoraSource(branchesFlag: string | null): Promise<Do
     gitProvider,
     repository: (await getGitRepoUrl()) || '',
     branches: branchNames
-      .map((name) => ({ name, level: levelOf(name), isProduction: isProduction(name) }))
+      .map((name) => ({ name, level: levelOf(name), isProduction: isProduction(name), mergeTargets: mergeTargetsOf(name) }))
       // The pipeline order: from the first org a change reaches to production
       .sort((a, b) => a.level - b.level),
   };
@@ -138,6 +144,10 @@ export async function collectDoraBranchInputs(
       listPullRequestsOrThrow(source.gitProvider, { status: 'open', targetBranch: branch.name, withoutComments: true }),
     ]);
     const mergedPullRequests = allPullRequests.filter((pullRequest) => Date.parse(pullRequest.mergedDate || '') >= fetchFrom.getTime());
+    const pipelinePullRequests = await completePromotionDescriptions(
+      source.gitProvider,
+      allPullRequests.filter((pullRequest) => !Number.isNaN(Date.parse(pullRequest.mergedDate || ''))),
+    );
     // A provider that does not say which branch a deployment check is for names its Pull Request,
     // or at least the branch the Pull Request comes from
     const knownPullRequests = [...allPullRequests, ...openPullRequests];
@@ -155,6 +165,7 @@ export async function collectDoraBranchInputs(
       validationRuns: runs.filter((run) => run.kind === 'validation' && isValidationOfBranch(run)),
       mergedPullRequests,
       openPullRequests,
+      pipelinePullRequests,
     });
   }
   return inputs;
@@ -222,6 +233,25 @@ async function collectRuns(
   }
   // Whether an unnamed run is a deployment is decided on everything known about its branch
   return keepNamedDeployments(runs).filter((run) => Date.parse(run.queuedAt) >= fetchFrom.getTime() || Date.parse(run.finishedAt) >= fetchFrom.getTime());
+}
+
+// What a promotion Pull Request carries is the list in its description, and a listing can cut a
+// description short (Azure DevOps): the promotions whose list is not there are read one by one
+async function completePromotionDescriptions(gitProvider: GitProviderRoot, pullRequests: CommonPullRequestInfo[]): Promise<CommonPullRequestInfo[]> {
+  return Promise.all(
+    pullRequests.map(async (pullRequest) => {
+      if (!parsePromotionBranchName(pullRequest.sourceBranch || '') || parsePromotionPullRequestIds(pullRequest.description) != null) {
+        return pullRequest;
+      }
+      try {
+        const full = await gitProvider.getPullRequestById(pullRequest.idNumber);
+        return full?.description ? { ...pullRequest, description: full.description } : pullRequest;
+      } catch {
+        // Its changes are then followed as far as the branch before: the report says less, nothing wrong
+        return pullRequest;
+      }
+    }),
+  );
 }
 
 // Next to the other sfdx-hardis caches of the user. The folder can be moved for tests
