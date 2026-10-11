@@ -107,10 +107,18 @@ export function normalizeBranchName(name: string): string {
 
 /**
  * Context an action really runs in. A run-batch action changes the data of the org: it is a
- * deployment-only action, whatever its context holds.
+ * deployment-only action, whatever its context holds. A manual step to do before the deployment
+ * runs nothing and has to be done before the merge: the validation job always lists it, whatever
+ * its context holds, or a step declared for the deployment job only would never hold the merge.
  */
-export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context'>): PrePostCommand['context'] {
-  return cmd.type === "run-batch" ? "process-deployment-only" : cmd.context || "all";
+export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context' | 'when'>, when?: ActionWhen): PrePostCommand['context'] {
+  if (cmd.type === "run-batch") {
+    return "process-deployment-only";
+  }
+  if (cmd.type === "manual" && (when || cmd.when) === "pre-deploy") {
+    return "all";
+  }
+  return cmd.context || "all";
 }
 
 /**

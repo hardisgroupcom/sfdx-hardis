@@ -587,6 +587,7 @@ Things to know:
 
 - Without `--include-target-branches` or `--exclude-target-branches`, the action runs on every target branch. The virtual name `dev-sandboxes` matches any target that is not a major branch: a developer sandbox reached by a backpromote, or a local deployment from a feature branch.
 - A `run-batch` action only runs in the `process-deployment-only` context, never during a deployment check.
+- A `manual` action declared `pre-deploy` is listed by the deployment check whatever its context, since it has to be done before the merge.
 - For `schedule-batch` and `run-batch`, write a global class of a managed package with its namespace: `ns.ClassName`.
 
 ---
