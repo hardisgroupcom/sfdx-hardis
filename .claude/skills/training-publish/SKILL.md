@@ -215,7 +215,7 @@ site build fails on the drift.
   not measured because the repository only appears when they end. Every figure is a low estimate.
 - **The pages announce what was observed.** A generator writes the median into the markdown of
   each lab and level, rounded down (five minutes for a lab, a quarter of an hour for a level),
-  with the fastest and the slowest learner next to it, and the weekly workflow commits it. The
+  with the median and the fastest plausible time next to it, and the weekly workflow commits it. The
   Statistics page keeps the first estimate in its own column. Details in the Times section of
   [[training-update]].
 - **Receipts refine it.** A receipt keeps the time its lab first passed, so a learner who runs

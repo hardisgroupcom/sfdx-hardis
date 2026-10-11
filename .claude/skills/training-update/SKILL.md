@@ -540,8 +540,10 @@ change of time is a diff in the lab files. The site is built from that markdown 
 rules are in `scripts/stats/lab-times.mjs`:
 
 - the median, **rounded down**, to five minutes for a lab and a quarter of an hour for a level;
-- followed by the fastest learner, the slowest, the median and how many they were, between two
-  `<!-- observed -->` comments, which is how the next run finds its own sentence;
+- followed by the median, how many learners they were and the fastest plausible time, between
+  two `<!-- observed -->` comments, which is how the next run finds its own sentence. The fastest
+  is the first figure of at least five minutes and a quarter of the median, because a smaller
+  one is two labs checked in a row. The slowest is never shown;
 - a lab fewer than five learners went through announces its estimate, and so does a level nobody
   was observed in.
 
@@ -556,7 +558,8 @@ What follows from it:
 - never write a duration of a level in prose ("it is four hours"): nothing updates a sentence;
 - the generator changes the English page and its translations together, so commit `labs/en/`
   first, then `node scripts/build/lab-times.mjs --stamp`: it stamps the translations that were
-  current before the run, and only those;
+  current before the run, and only those. Stamp once the English commit has its final name: a
+  rebase renames it, and a stamp written before names a commit that no longer exists;
 - `doc-links.mjs` writes the `duration` of the universe into the product documentation, which
   therefore shows estimates, not observed times.
 
