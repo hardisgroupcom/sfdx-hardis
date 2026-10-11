@@ -27,7 +27,7 @@ Re-check these once before any publishing session: the Trailhead UI changes.
 | Award a Trailhead badge                                      | **No**           | Cloudity issues its own                                                    |
 | Gate a step behind another                                   | **No**           | Order is a suggestion, so every lab states its own preconditions and reset |
 | Nest a Trailmix inside a Trailmix                            | **No (assumed)** | Each level links the next with a plain Link step                           |
-| Author-side reporting on who completed what                  | **No**           | Completion data comes from the closed claim issues and `badges/`           |
+| Author-side reporting on who completed what                  | **No**           | The course builds its own, from the forks and the claims: see below        |
 | Localize one Trailmix                                        | **No**           | A translated course is a new Trailmix per language                         |
 
 Authoring a real Trailhead badge is not an option: there is no self-serve program, and
@@ -195,6 +195,35 @@ The audit asserts outcomes, never procedures, never verifies org state, and neve
 credentials. Its failure messages are the only support channel a learner has, so each one names
 the lab, what was looked for and where. The rules live in `scripts/verify/rules.mjs`; editing
 them is [[training-update]]'s job.
+
+## Course statistics
+
+A Trailmix reports nothing, so the course counts for itself. `scripts/stats/course-stats.mjs` in the
+training repository reads the forks of the course, the `badge-claim` issues and `badges/`, and
+writes `stats/course-stats.json`: learners who started and completed each level, and the median
+time of the labs next to the time they announce. `course-stats.yml` commits it every Monday, and
+the site builds its Statistics page (`<site>/stats/`) and the totals of the Badges page from it.
+`STATS.md` at the root of the repository is the same page in English, rendered from the same file:
+after changing the words of the page in `i18n/en.json`, run `course-stats.mjs --render`, or the
+site build fails on the drift.
+
+- **The committed file names nobody.** Counts and medians only, and a median appears once five
+  learners are behind it. `--details` writes one row per learner to `hardis-report/course-stats/`,
+  git-ignored, for a maintainer's own machine: never run it in a workflow, never upload it.
+- **Time is read from GitHub, not timed.** A lab ends when its Pull Request is merged and runs from
+  the end of the one before, a break over 45 minutes counts for nothing, and Labs 1.1 and 1.2 are
+  not measured because the repository only appears when they end. Every figure is a low estimate.
+- **The pages announce what was observed.** A generator writes the median into the markdown of
+  each lab and level, rounded down (five minutes for a lab, a quarter of an hour for a level),
+  with the median and the fastest plausible time next to it, and the weekly workflow commits it. The
+  Statistics page keeps the first estimate in its own column. Details in the Times section of
+  [[training-update]].
+- **Receipts refine it.** A receipt keeps the time its lab first passed, so a learner who runs
+  Check my work after each lab is measured lab by lab.
+- **The maintainers and the end to end test accounts are left out**, of the statistics and of the
+  badge totals: `scripts/stats/ignore.json`. Add an account there before it claims a badge.
+- **A level is started when its first branch exists**, and every fork has `integration`, because
+  Set up my training environment is what creates the fork.
 
 ## Translation
 

@@ -33,6 +33,8 @@ have to be regenerated.
 | The command links of Under the hood blocks | inside each lab, between `<!-- command-links:start/end -->`                        | **Yes**, `scripts/build/lab-command-links.mjs`  |
 | The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder       | **Yes**, `scripts/build/site.mjs`, per locale   |
 | The audit rules                            | `scripts/verify/rules.mjs`                                                         | No                                              |
+| Which Pull Request ends which lab          | `scripts/stats/markers.mjs`, read by the course statistics                         | No, follows the branch names of the universe    |
+| The course statistics                      | `stats/course-stats.json`, `STATS.md`                                              | **Yes**, `scripts/stats/course-stats.mjs`       |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                                | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/`   | **Yes**, `scripts/build/mocks.mjs`              |
 | The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs                 | **Yes**, `scripts/build/doc-links.mjs`          |
@@ -221,6 +223,10 @@ node scripts/build/universe.mjs
 It regenerates the backlog, the link map and the manifest, and **fails when a lab mentions a story
 id, an org or a branch the universe does not define**. That check is what stops the labs and the
 screenshots telling two different stories.
+
+A story whose id or branch changes, and a lab that moves to another story, also change
+`scripts/stats/markers.mjs`: it names the Pull Request that ends each lab, and the course
+statistics stop timing a lab whose marker no longer matches, without failing anything.
 
 ## Changing an audit rule
 
@@ -525,6 +531,37 @@ A lab's `**Time**` line and its row in the level index must agree, and the level
 four places per locale: each `labs/<locale>/level-N/index.md`, `labs/<locale>/index.md`, plus
 `README.md` once. A time changed in English and not in French is the easiest translation drift to
 create and the hardest to notice, because nothing compares numbers across locales.
+
+**The pages announce what learners were observed to take, and a generator writes it.**
+`scripts/build/lab-times.mjs` writes the observed time into the markdown under `labs/`, in every
+language, from `stats/course-stats.json`: the `**Time**` line of a lab, the rows and the total of
+a level page, the table of the home page. The weekly `course-stats.yml` commits the result, so a
+change of time is a diff in the lab files. The site is built from that markdown as it is. The
+rules are in `scripts/stats/lab-times.mjs`:
+
+- the median, **rounded down**, to five minutes for a lab and a quarter of an hour for a level;
+- followed by the median, how many learners they were and the fastest plausible time, between
+  two `<!-- observed -->` comments, which is how the next run finds its own sentence. The fastest
+  is the first figure of at least five minutes and a quarter of the median, because a smaller
+  one is two labs checked in a row. The slowest is never shown;
+- a lab fewer than five learners went through announces its estimate, and so does a level nobody
+  was observed in.
+
+What follows from it:
+
+- **never edit a time in a lab by hand**: the next run overwrites it, and
+  `lab-times.mjs --check` fails the site build on the difference. A new estimate goes in
+  `training-universe.json` (`time` per lab, `duration` per level), which is where the estimates
+  live, then `node scripts/build/lab-times.mjs`;
+- a lab keeps one `**Time**: ~N min` line, and a level page one `**Time**: about N h` line and
+  one `N min` cell per lab row. A page that loses one fails the generator, by name;
+- never write a duration of a level in prose ("it is four hours"): nothing updates a sentence;
+- the generator changes the English page and its translations together, so commit `labs/en/`
+  first, then `node scripts/build/lab-times.mjs --stamp`: it stamps the translations that were
+  current before the run, and only those. Stamp once the English commit has its final name: a
+  rebase renames it, and a stamp written before names a commit that no longer exists;
+- `doc-links.mjs` writes the `duration` of the universe into the product documentation, which
+  therefore shows estimates, not observed times.
 
 ## The contributor loop the course teaches
 
