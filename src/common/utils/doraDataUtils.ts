@@ -11,6 +11,7 @@ import { httpStatusOf } from './adaptiveBatch.js';
 import { isProduction, listMajorOrgs } from './orgConfigUtils.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { CommonCiRun, GitProviderRoot } from '../gitProvider/gitProviderRoot.js';
+import { keepNamedDeployments } from '../gitProvider/utils/jobKindUtils.js';
 import { MONITORING_CONFIG_FILE, readDeploymentRepository } from '../monitoring/monitoringDeploymentRepository.js';
 import { DoraBranchInput, DoraPeriod } from './doraMetricsUtils.js';
 
@@ -22,7 +23,9 @@ const PULL_REQUEST_CREATION_MARGIN_DAYS = 90;
 // Jobs listed again at each run: a job running during the last listing has finished since, and a
 // job run again replaces its result
 const CACHE_OVERLAP_DAYS = 2;
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
+// Runs older than the longest period that can be compared with the one before it are forgotten
+const CACHE_RETENTION_DAYS = 800;
 
 // Where DORA data is read: the repository of the current folder, or the deployment repository
 // when the current folder is a monitoring repository
@@ -130,8 +133,10 @@ export async function collectDoraBranchInputs(
   const inputs: DoraBranchInput[] = [];
   for (const branch of source.branches) {
     const pullRequestsFrom = new Date(fetchFrom.getTime() - PULL_REQUEST_CREATION_MARGIN_DAYS * DAY_MS);
-    const allPullRequests = await listPullRequestsOrThrow(source.gitProvider, { targetBranch: branch.name, minDate: pullRequestsFrom });
-    const openPullRequests = await listPullRequestsOrThrow(source.gitProvider, { status: 'open', targetBranch: branch.name });
+    const [allPullRequests, openPullRequests] = await Promise.all([
+      listPullRequestsOrThrow(source.gitProvider, { targetBranch: branch.name, minDate: pullRequestsFrom, withoutComments: true }),
+      listPullRequestsOrThrow(source.gitProvider, { status: 'open', targetBranch: branch.name, withoutComments: true }),
+    ]);
     const mergedPullRequests = allPullRequests.filter((pullRequest) => Date.parse(pullRequest.mergedDate || '') >= fetchFrom.getTime());
     // A provider that does not say which branch a deployment check is for names its Pull Request,
     // or at least the branch the Pull Request comes from
@@ -172,15 +177,21 @@ async function collectRuns(
   now: Date,
   options: { refresh: boolean; cacheDir?: string },
 ): Promise<CommonCiRun[]> {
-  const cacheFile = path.join(options.cacheDir || getDoraCacheRoot(), `${crypto.createHash('sha1').update(source.repository.toLowerCase()).digest('hex')}.json`);
-  const cache = options.refresh ? null : await readRunsCache(cacheFile);
+  // Without the address of the repository nothing says whose runs a cache file holds: no cache then
+  const cacheFile = source.repository
+    ? path.join(options.cacheDir || getDoraCacheRoot(), `${crypto.createHash('sha1').update(source.repository.toLowerCase()).digest('hex')}.json`)
+    : null;
+  const cache = options.refresh || !cacheFile ? null : await readRunsCache(cacheFile);
   // The cache answers when it goes back far enough and knows every branch asked for
   const usable = cache != null && Date.parse(cache.coveredFrom) <= fetchFrom.getTime() && branchNames.every((branch) => cache.branches.includes(branch));
   const minDate = usable ? new Date(Math.max(fetchFrom.getTime(), Date.parse(cache.fetchedUntil) - CACHE_OVERLAP_DAYS * DAY_MS)) : fetchFrom;
 
+  // Every branch of the cache is read again, not only the ones asked for: the cache says one date
+  // up to which it is complete, for all of its branches
+  const fetchedBranches = usable ? cache.branches : branchNames;
   let fresh: CommonCiRun[];
   try {
-    fresh = await source.gitProvider.listCiRuns({ branches: branchNames, minDate, kinds: ['deployment', 'validation'] });
+    fresh = await source.gitProvider.listCiRuns({ branches: fetchedBranches, minDate, kinds: ['deployment', 'validation'] });
   } catch (e) {
     const status = httpStatusOf(e);
     if (status === 401 || status === 403 || status === 404) {
@@ -198,15 +209,19 @@ async function collectRuns(
   for (const run of fresh) {
     runsByKey.set(`${run.kind}:${run.id}`, run);
   }
-  const runs = [...runsByKey.values()];
-  await writeRunsCache(cacheFile, {
-    version: CACHE_VERSION,
-    coveredFrom: usable ? cache.coveredFrom : fetchFrom.toISOString(),
-    fetchedUntil: now.toISOString(),
-    branches: usable ? cache.branches : branchNames,
-    runs,
-  });
-  return runs.filter((run) => Date.parse(run.queuedAt) >= fetchFrom.getTime() || Date.parse(run.finishedAt) >= fetchFrom.getTime());
+  const retainedFrom = now.getTime() - CACHE_RETENTION_DAYS * DAY_MS;
+  const runs = [...runsByKey.values()].filter((run) => !(Date.parse(run.queuedAt) < retainedFrom));
+  if (cacheFile) {
+    await writeRunsCache(cacheFile, {
+      version: CACHE_VERSION,
+      coveredFrom: new Date(Math.max(retainedFrom, Date.parse(usable ? cache.coveredFrom : fetchFrom.toISOString()))).toISOString(),
+      fetchedUntil: now.toISOString(),
+      branches: fetchedBranches,
+      runs,
+    });
+  }
+  // Whether an unnamed run is a deployment is decided on everything known about its branch
+  return keepNamedDeployments(runs).filter((run) => Date.parse(run.queuedAt) >= fetchFrom.getTime() || Date.parse(run.finishedAt) >= fetchFrom.getTime());
 }
 
 // Next to the other sfdx-hardis caches of the user. The folder can be moved for tests
@@ -237,7 +252,7 @@ async function writeRunsCache(cacheFile: string, cache: DoraRunsCache): Promise<
 // "no Pull Request" for a branch that has many
 async function listPullRequestsOrThrow(
   gitProvider: GitProviderRoot,
-  filters: { status?: string; targetBranch?: string; minDate?: Date },
+  filters: { status?: string; targetBranch?: string; minDate?: Date; withoutComments?: boolean },
 ): Promise<CommonPullRequestInfo[]> {
   const pullRequests = await gitProvider.listPullRequests(filters);
   if (pullRequests == null) {

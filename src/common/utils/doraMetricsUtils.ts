@@ -92,7 +92,8 @@ export function computeBranchResult(input: DoraBranchInput, period: DoraPeriod):
     name: input.name,
     level: input.level,
     isProduction: input.isProduction,
-    oldestRunDate: oldestRun ? oldestRun.finishedAt : null,
+    // Without the period before, the reading starts with the period: an older job would not be seen
+    oldestRunDate: oldestRun && period.previousFrom ? oldestRun.finishedAt : null,
     metrics,
     supplementary: {
       deploymentDuration: current.duration,

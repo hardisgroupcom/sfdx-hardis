@@ -161,6 +161,47 @@ describe('doraDataUtils', () => {
     expect(calls.runs[3].branches).to.deep.equal(['uat', 'main', 'preprod']);
   });
 
+  it('reads every branch of the cache again when only one is asked for, so none is left behind', async () => {
+    const runs = [run('1', 'deployment', '2026-09-10T12:00:00Z')];
+    const { source, calls } = fakeSource(runs, []);
+    const period = buildDoraPeriod(30, false, NOW);
+    await collectDoraBranchInputs(source, period, { refresh: false, cacheDir, now: new Date('2026-09-15T12:00:00Z') });
+
+    // A deployment of uat lands, then only main is asked for, then every branch again much later
+    runs.push(run('2', 'deployment', '2026-09-18T12:00:00Z'));
+    const mainOnly = { ...source, branches: [source.branches[1]] };
+    await collectDoraBranchInputs(mainOnly, period, { refresh: false, cacheDir, now: new Date('2026-09-22T12:00:00Z') });
+    const inputs = await collectDoraBranchInputs(source, period, { refresh: false, cacheDir, now: NOW });
+
+    expect(calls.runs[1].branches).to.deep.equal(['uat', 'main']);
+    expect(inputs.find((input) => input.name === 'uat')!.deploymentRuns.map((candidate) => candidate.id).sort()).to.deep.equal(['1', '2']);
+  });
+
+  it('drops the unnamed push runs of a branch once one of its runs is named as a deployment', async () => {
+    const runs = [run('1', 'deployment', '2026-09-10T12:00:00Z')];
+    const { source } = fakeSource(runs, []);
+    const period = buildDoraPeriod(30, false, NOW);
+    await collectDoraBranchInputs(source, period, { refresh: false, cacheDir, now: new Date('2026-09-15T12:00:00Z') });
+    // Much later, the only finished job of the reading is a build job
+    runs.push(run('2', 'deployment', '2026-09-29T12:00:00Z', { name: 'build', unnamed: true }));
+    runs.push(run('3', 'deployment', '2026-09-29T12:00:00Z', { name: 'release', unnamed: true, branch: 'main' }));
+    const inputs = await collectDoraBranchInputs(source, period, { refresh: false, cacheDir, now: NOW });
+
+    expect(inputs.find((input) => input.name === 'uat')!.deploymentRuns.map((candidate) => candidate.id)).to.deep.equal(['1']);
+    // main never had a run named as a deployment: its jobs were renamed
+    expect(inputs.find((input) => input.name === 'main')!.deploymentRuns.map((candidate) => candidate.id)).to.deep.equal(['3']);
+  });
+
+  it('keeps no cache when the repository is not known', async () => {
+    const { source, calls } = fakeSource([run('1', 'deployment', '2026-09-10T12:00:00Z')], []);
+    const period = buildDoraPeriod(30, false, NOW);
+    const anonymous = { ...source, repository: '' };
+    await collectDoraBranchInputs(anonymous, period, { refresh: false, cacheDir, now: NOW });
+    await collectDoraBranchInputs(anonymous, period, { refresh: false, cacheDir, now: NOW });
+    expect(calls.runs.map((filters) => filters.minDate.toISOString())).to.deep.equal([period.from.toISOString(), period.from.toISOString()]);
+    expect(await fs.readdir(cacheDir)).to.deep.equal([]);
+  });
+
   it('fails when the Pull Requests cannot be listed, or when the token cannot read the CI jobs', async () => {
     const period = buildDoraPeriod(30, false, NOW);
     const unreadablePullRequests = fakeSource([], null);

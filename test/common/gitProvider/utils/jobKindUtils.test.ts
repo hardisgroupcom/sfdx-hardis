@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { CiRunCandidate, classifyJobKind, selectCiRuns } from '../../../../src/common/gitProvider/utils/jobKindUtils.js';
+import { CiRunCandidate, classifyJobKind, keepNamedDeployments, selectCiRuns } from '../../../../src/common/gitProvider/utils/jobKindUtils.js';
 
 const candidate = (id: string, name: string, trigger: 'push' | 'pullRequest', branch: string): CiRunCandidate => ({
   id,
@@ -50,7 +50,7 @@ describe('jobKindUtils', () => {
   });
 
   it('counts every unexplained push run of a branch whose jobs were renamed', () => {
-    const runs = selectCiRuns(
+    const selected = selectCiRuns(
       [
         candidate('1', 'Release to org', 'push', 'uat'),
         candidate('2', 'Mega-Linter', 'push', 'uat'),
@@ -60,7 +60,20 @@ describe('jobKindUtils', () => {
       ],
       ['deployment'],
     );
-    expect(runs.map((run) => run.id)).to.deep.equal(['1', '3']);
+    expect(selected.map((run) => [run.id, run.unnamed === true])).to.deep.equal([
+      ['1', true],
+      ['3', false],
+      ['4', true],
+    ]);
+    expect(keepNamedDeployments(selected).map((run) => run.id)).to.deep.equal(['1', '3']);
+  });
+
+  it('decides on every run known for a branch, not on the runs of one reading', () => {
+    // Today main only has a build job finished: its deployment job is still running
+    const today = selectCiRuns([candidate('9', 'build', 'push', 'main')], ['deployment']);
+    const before = selectCiRuns([candidate('3', 'deploy_to_org', 'push', 'main')], ['deployment']);
+    expect(keepNamedDeployments(today).map((run) => run.id)).to.deep.equal(['9']);
+    expect(keepNamedDeployments([...before, ...today]).map((run) => run.id)).to.deep.equal(['3']);
   });
 
   it('returns only the kinds asked for', () => {

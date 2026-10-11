@@ -185,6 +185,17 @@ describe('GithubProvider.listCiRuns', () => {
       expect(() => GitProvider.getInstanceForRepository('https://gitlab.com/acme/sfdx-project.git', options)).to.throw(/SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN/);
     });
 
+    it('refuses to guess the provider of a host that does not name it', () => {
+      // A token was given, or the environment holds the tokens of two providers
+      expect(() => GitProvider.getInstanceForRepository('https://git.acme.com/team/sfdx-project.git', { ...options, token: 'deployment-token' })).to.throw(/git\.acme\.com/);
+      process.env.GITHUB_TOKEN = 'a';
+      process.env.CI_SFDX_HARDIS_GITLAB_TOKEN = 'b';
+      expect(() => GitProvider.getInstanceForRepository('https://git.acme.com/team/sfdx-project.git', options)).to.throw(/git\.acme\.com/);
+      // With the token of one provider only, the host is taken as an instance of that provider
+      delete process.env.CI_SFDX_HARDIS_GITLAB_TOKEN;
+      expect(GitProvider.getInstanceForRepository('https://git.acme.com/team/sfdx-project.git', options)).to.be.instanceOf(GithubProvider);
+    });
+
     it('fails when there is no token at all', () => {
       expect(() => GitProvider.getInstanceForRepository('https://github.com/acme/sfdx-project.git', options)).to.throw(/SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN/);
     });

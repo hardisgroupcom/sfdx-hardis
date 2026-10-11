@@ -1251,8 +1251,9 @@ ${getBannerMarkdownAndLink()}
     if (!filters.kinds.includes('deployment') || target.ref_type !== 'branch' || !filters.branches.includes(target.ref_name)) {
       return null;
     }
-    // A scheduled pipeline runs on a branch without anything having been merged into it
-    if (pipeline?.trigger?.name === 'SCHEDULE' || pipeline?.trigger?.type === 'pipeline_trigger_schedule') {
+    // A scheduled pipeline runs on a branch without anything having been merged into it, and a
+    // custom pipeline is whatever the project made of it (a data load, a one-off script)
+    if (pipeline?.trigger?.name === 'SCHEDULE' || pipeline?.trigger?.type === 'pipeline_trigger_schedule' || target.selector?.type === 'custom') {
       return null;
     }
     return 'push';

@@ -40,9 +40,9 @@ export function classifyJobKind(name: string | undefined | null): JobKind {
  * The deployments and the deployment checks among the finished runs of a repository.
  *
  * - A push run named as a deployment is a deployment.
- * - A project can rename its jobs: when no push run of a branch is named as a deployment, the push
- *   runs of that branch nothing else explains (not a code quality job, not a check) count as its
- *   deployments.
+ * - A project can rename its jobs: the push runs nothing else explains (not a code quality job,
+ *   not a check) are returned as unnamed deployments. keepNamedDeployments then drops them for
+ *   every branch that has a run named as a deployment.
  * - A Pull Request run named as a deployment check is a validation. There is no fallback there: a
  *   Pull Request also runs linters and tests, and counting them would bend the success rate.
  */
@@ -54,14 +54,12 @@ export function selectCiRuns(candidates: CiRunCandidate[], kinds: CiRunKind[]): 
     return { ...run, kind };
   };
   if (kinds.includes('deployment')) {
-    const pushRuns = candidates.filter((candidate) => candidate.trigger === 'push');
-    const branchesWithNamedDeployment = new Set(
-      pushRuns.filter((candidate) => classifyJobKind(candidate.name) === 'deployment').map((candidate) => candidate.branch),
-    );
-    for (const candidate of pushRuns) {
+    for (const candidate of candidates.filter((pushCandidate) => pushCandidate.trigger === 'push')) {
       const kind = classifyJobKind(candidate.name);
-      if (kind === 'deployment' || (kind === 'other' && !branchesWithNamedDeployment.has(candidate.branch))) {
+      if (kind === 'deployment') {
         selected.push(toRun(candidate, 'deployment'));
+      } else if (kind === 'other') {
+        selected.push({ ...toRun(candidate, 'deployment'), unnamed: true });
       }
     }
   }
@@ -73,4 +71,14 @@ export function selectCiRuns(candidates: CiRunCandidate[], kinds: CiRunKind[]): 
     }
   }
   return selected;
+}
+
+/**
+ * Drops the unnamed deployments of the branches that have a run named as a deployment. It must see
+ * every run known for a branch, not the runs of one reading: a single day can hold a build job
+ * whose deployment job is still running.
+ */
+export function keepNamedDeployments(runs: CommonCiRun[]): CommonCiRun[] {
+  const branchesWithNamedDeployment = new Set(runs.filter((run) => run.kind === 'deployment' && !run.unnamed).map((run) => run.branch));
+  return runs.filter((run) => !(run.kind === 'deployment' && run.unnamed && branchesWithNamedDeployment.has(run.branch)));
 }

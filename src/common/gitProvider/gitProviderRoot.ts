@@ -138,7 +138,10 @@ export abstract class GitProviderRoot {
   public async listPullRequests(filters: {
     status?: string,
     targetBranch?: string,
-    minDate?: Date
+    minDate?: Date,
+    // Only what the listing gives: no comment, no completed description. Much faster on a provider
+    // that needs a call per Pull Request for them
+    withoutComments?: boolean
   } = {}): Promise<CommonPullRequestInfo[] | null> {
     uxLog("other", this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
     return null;
@@ -473,6 +476,9 @@ export interface CommonCiRun {
   // deployment: the branch deployed. validation: the target branch of the Pull Request, empty when
   // the provider does not say it (the caller then finds it from pullRequestId or sourceBranch)
   branch: string;
+  // deployment only: the run was triggered by a push to the branch but its job is not named as a
+  // deployment. It counts when no run of the branch is named as one (a project that renamed its jobs)
+  unnamed?: boolean;
   // validation only: provider-native number of the Pull Request, as a string
   pullRequestId?: string;
   // validation only: the branch of the Pull Request, when the provider names neither its target

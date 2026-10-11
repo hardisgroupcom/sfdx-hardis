@@ -395,6 +395,35 @@ describe('AzureDevopsProvider.listCiRuns', () => {
     expect(error?.message).to.contain('timeline unavailable');
   });
 
+  it('lists every page of the Pull Requests, without a call per Pull Request, when comments are not wanted', async () => {
+    const calls: any[][] = [];
+    const page = (from: number, count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        pullRequestId: from + index,
+        title: `PR ${from + index}`,
+        sourceRefName: 'refs/heads/feature/a',
+        targetRefName: 'refs/heads/integration',
+        repository: { id: REPOSITORY_GUID },
+      }));
+    const { provider } = buildProvider(async () => [], {
+      getPullRequests: async (...args: any[]) => {
+        calls.push(args);
+        return args[4] === 0 ? page(1, 100) : page(101, 30);
+      },
+      getThreads: async () => {
+        throw new Error('no thread must be read');
+      },
+    });
+
+    const pullRequests = await provider.listPullRequests({ targetBranch: 'integration', withoutComments: true });
+
+    expect(pullRequests.length).to.equal(130);
+    expect(calls.map((args) => [args[4], args[5]])).to.deep.equal([
+      [0, 100],
+      [100, 100],
+    ]);
+  });
+
   it('throws when the repository cannot be found, or the Git API fails', async () => {
     const notFound = buildProvider(async () => [], { getRepository: async () => null });
     const failing = buildProvider(async () => [], {

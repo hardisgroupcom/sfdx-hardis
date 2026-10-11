@@ -187,6 +187,21 @@ describe('BitbucketProvider.listCiRuns', () => {
     ]);
   });
 
+  it('leaves out the scheduled and the custom pipelines of a branch', async () => {
+    const provider = newProvider();
+    const custom = branchPipeline(3, 'main', 'SUCCESSFUL', '2026-09-13T10:00:00Z', { trigger: { name: 'MANUAL', type: 'pipeline_trigger_manual' } });
+    custom.target = { ...custom.target, selector: { type: 'custom', pattern: 'load-data' } } as any;
+    stubClient(provider as any, [[
+      custom,
+      branchPipeline(2, 'main', 'SUCCESSFUL', '2026-09-12T10:00:00Z', { trigger: { name: 'SCHEDULE', type: 'pipeline_trigger_schedule' } }),
+      branchPipeline(1, 'main', 'SUCCESSFUL', '2026-09-11T10:00:00Z'),
+    ]], Object.fromEntries([1, 2, 3].map((n) => [`{pipeline-${n}}`, [step('Deploy to major org', 'SUCCESSFUL', '2026-09-11T10:01:00Z')]])));
+
+    const runs = await provider.listCiRuns({ branches: ['main'], minDate: MIN_DATE, kinds: ALL_KINDS });
+
+    expect(runs.map((run) => run.id)).to.deep.equal(['{pipeline-1}']);
+  });
+
   it('maps the results, and leaves out what did not finish', async () => {
     const provider = newProvider();
     const running = { ...branchPipeline(7, 'main', '', '2026-09-17T10:00:00Z'), state: { name: 'IN_PROGRESS' } };

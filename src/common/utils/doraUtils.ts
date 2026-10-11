@@ -102,7 +102,8 @@ export interface DoraBranchResult {
   name: string;
   level: number;
   isProduction: boolean;
-  // Oldest deployment job the git provider returned: later than the start of the period when it keeps less
+  // Oldest deployment job of the period and of the one before it: later than the start of the
+  // period when the git provider has nothing older. null when the period before was not read
   oldestRunDate: string | null;
   metrics: DoraBranchMetrics;
   supplementary: DoraBranchSupplementary;

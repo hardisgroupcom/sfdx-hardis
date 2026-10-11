@@ -282,6 +282,16 @@ describe('GitlabProvider.listCiRuns', () => {
     });
   });
 
+  it('leaves out the pipelines of a branch that no merge triggered', async () => {
+    const provider = new GitlabProvider(REPOSITORY);
+    const withSource = (id: number, source: string) => rawJob(id, 'deploy_to_org', 'main', { pipeline: { id: id * 10, ref: 'main', source } });
+    stubClient(provider as any, [[withSource(5, 'push'), withSource(4, 'web'), withSource(3, 'schedule'), withSource(2, 'api'), withSource(1, 'trigger')]]);
+
+    const runs = await provider.listCiRuns({ branches: ['main'], minDate: MIN_DATE, kinds: ['deployment', 'validation'] });
+
+    expect(runs.map((run: any) => run.id)).to.deep.equal(['5', '4']);
+  });
+
   it('returns only the kinds asked for', async () => {
     await withEnv({}, async () => {
       const provider = new GitlabProvider(REPOSITORY);

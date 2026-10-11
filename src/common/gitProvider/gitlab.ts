@@ -1044,6 +1044,12 @@ ${getBannerMarkdownAndLink()}
       if (isMergeRequest ? !withValidations : !withDeployments) {
         continue;
       }
+      // A scheduled pipeline, or one started through the API or by another pipeline, runs on a
+      // branch without anything having been merged into it. "web" is a run started by hand
+      const pipelineSource = job.pipeline?.source;
+      if (!isMergeRequest && pipelineSource && pipelineSource !== "push" && pipelineSource !== "web") {
+        continue;
+      }
       candidates.push({
         id: String(job.id),
         name: job.name || "",

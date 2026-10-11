@@ -769,8 +769,12 @@ export abstract class GitProvider {
       bitbucket: process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || "",
     };
     const typesWithToken = (Object.keys(environmentTokens) as GitProviderType[]).filter((type) => environmentTokens[type] !== "");
-    // A self-managed host does not name its product: it is then taken as the provider of the current repository
-    const providerType = GitProvider.getProviderTypeFromRemoteUrl(remoteUrl) || typesWithToken[0] || null;
+    // A self-managed host does not name its product: it is then taken as the provider of the
+    // current repository, when the environment holds the token of one provider only
+    const providerType = GitProvider.getProviderTypeFromRemoteUrl(remoteUrl) || (typesWithToken.length === 1 ? typesWithToken[0] : null);
+    if (!providerType && (options.token || typesWithToken.length > 1)) {
+      throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: remoteUrl, provider: "GitHub, GitLab, Azure DevOps or Bitbucket" }));
+    }
     const token = options.token || (providerType ? environmentTokens[providerType] : "");
     if (!providerType || !token) {
       if (providerType && typesWithToken.length > 0) {

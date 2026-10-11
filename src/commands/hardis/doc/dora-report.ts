@@ -83,7 +83,8 @@ This command is part of [sfdx-hardis Documentation](${CONSTANTS.DOC_URL_ROOT}/sa
 - A run is a deployment or a deployment check according to the name of its job (\`Process Deployment\`, \`deploy_to_org\`, \`Deployment\`, \`Deploy to major org\`, and their check counterparts). When a project renamed its jobs and no run of a branch is named as a deployment, every run triggered by a push to that branch counts.
 - Token scopes: \`Actions: Read\` on GitHub, \`read_api\` on GitLab, \`Build: Read\` on Azure DevOps, \`pipeline\` on Bitbucket.
 - Finished runs do not change: they are kept in \`~/.sfdx/sfdx-hardis-cache/dora\`, and only the runs newer than the last reading are asked to the provider. \`--refresh\` reads everything again.
-- A git provider keeps its job runs for a limited time: when a branch has no run as old as the period asked for, the report says when its data starts.
+- A git provider keeps its job runs for a limited time: with \`--compare\`, when a branch has no run as old as the period asked for, the report says when its data starts.
+- Runs of a major branch that no merge triggered (scheduled pipelines, pipelines started through the API, Bitbucket custom pipelines) are not deployments.
 - A job run again on the same commit replaces its previous result on some providers, so a failure fixed by a re-run can disappear from the history.
 - The \`--json\` result holds \`branches\` (metrics, weekly series, failed deployments, slow and hotfix Pull Requests, attention list), \`contributors\`, and the legacy \`metrics\`, \`supplementary\` and \`counts\` of the production branch.
 </details>
@@ -222,6 +223,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     // 3. Markdown report, and its PDF when asked for
     uxLog("action", this, c.cyan(t("doraReportGeneratingMarkdown")));
     const tickets = await this.fetchTicketData(inputs);
+    result.counts.tickets = tickets.length;
     const markdown = buildDoraMarkdownReport(data, inputs, tickets);
     const outputFile = flags.outputfile || "";
     const reportDate = new Date().toISOString().split("T")[0];

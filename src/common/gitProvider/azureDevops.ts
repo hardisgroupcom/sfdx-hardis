@@ -392,7 +392,8 @@ ${this.getPipelineVariablesConfig()}
     status?: string,
     pullRequestStatus?: "open" | "merged" | "abandoned",
     targetBranch?: string,
-    minDate?: Date
+    minDate?: Date,
+    withoutComments?: boolean
   } = {}): Promise<CommonPullRequestInfo[] | null> {
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
@@ -432,6 +433,19 @@ ${this.getPipelineVariablesConfig()}
     // Process request
     uxLog("action", this, c.cyan(t('callingAzureApiToListPullRequests')));
     uxLog("log", this, c.grey(t('constraint', { JSON: JSON.stringify(queryConstraint, null, 2) })));
+
+    if (filters.withoutComments) {
+      // The API serves the listing by pages: all of them, or the oldest Pull Requests of the period are lost
+      const listed: GitPullRequest[] = [];
+      for (let skip = 0; ; skip += AzureDevopsProvider.PULL_REQUESTS_PAGE_SIZE) {
+        const page = (await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject, undefined, skip, AzureDevopsProvider.PULL_REQUESTS_PAGE_SIZE)) || [];
+        listed.push(...page);
+        if (page.length < AzureDevopsProvider.PULL_REQUESTS_PAGE_SIZE) {
+          break;
+        }
+      }
+      return listed.map((pullRequest) => this.completePullRequestInfo(pullRequest));
+    }
 
     // List pull requests
     const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
@@ -1500,6 +1514,8 @@ ${getBannerMarkdownAndLink()}
   private static readonly PUSH_BUILD_REASONS = [BuildReason.IndividualCI, BuildReason.BatchedCI, BuildReason.Manual];
 
   private static readonly BUILDS_PAGE_SIZE = 1000;
+
+  private static readonly PULL_REQUESTS_PAGE_SIZE = 100;
 
   // Build API getBuilds: the completed builds of this repository finished since minDate, oldest
   // first. azure-devops-node-api does not return the continuation token of the REST API (it comes
