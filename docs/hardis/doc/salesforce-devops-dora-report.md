@@ -49,12 +49,12 @@ Each branch also gets a **needs attention** list: a deployment that is still fai
 
 A Pull Request that merges `uat` into `preprod` is often opened and merged the same day, while the User Stories it carries were waiting in `uat` for three weeks. When several major branches are computed, sfdx-hardis follows each change from the branch its own Pull Request was merged into until production.
 
-| Metric                 | How it is computed                                                                                             |
-|------------------------|----------------------------------------------------------------------------------------------------------------|
-| **Time to production** | From the creation of the Pull Request of a change to its deployment on the production branch                   |
-| **Wait at each step**  | From the deployment of a change on a branch to its deployment on the next one, for example `uat` to `preprod`  |
-| **Waiting changes**    | Changes that reached a branch and were not carried further, the oldest first                                   |
-| **Longest wait**       | The step of the pipeline where changes wait the longest                                                        |
+| Metric                 | How it is computed                                                                                            |
+|------------------------|---------------------------------------------------------------------------------------------------------------|
+| **Time to production** | From the creation of the Pull Request of a change to its deployment on the production branch                  |
+| **Wait at each step**  | From the deployment of a change on a branch to its deployment on the next one, for example `uat` to `preprod` |
+| **Waiting changes**    | Changes that reached a branch and were not carried further, the oldest first                                  |
+| **Longest wait**       | The step of the pipeline where changes wait the longest                                                       |
 
 The **Lead Time for Changes** of each branch is then the one of the changes themselves, from the creation of their Pull Request to their deployment on that branch. The lead time of the Pull Requests merged into the branch is still given below it, and it is the one sent to Grafana.
 
