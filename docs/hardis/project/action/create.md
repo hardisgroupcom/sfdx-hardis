@@ -47,6 +47,8 @@ A `run-batch` action runs a `Database.Batchable` Apex class once, before or afte
 
 A run-batch action only runs in the `process-deployment-only` context, never during a deployment check.
 
+A manual action declared `pre-deploy` is always stored with the `all` context: it has to be done before the merge, so the deployment check lists it too.
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:

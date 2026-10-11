@@ -2188,8 +2188,13 @@ export async function generateSSLCertificate(
       commandThis,
       c.yellow(
         t(
-          // The monitoring command writes the two references in the GitHub workflow itself
-          storeCertificateInVariable ? 'ifYouAreUsingGithubOrAzureWithClientCert' : options.usageType === 'monitoring' ? 'monitoringGithubReferencesAddedByCommand' : 'ifYouAreUsingGithubOrAzure',
+          // hardis:org:configure:monitoring writes the two references in the GitHub workflow itself.
+          // hardis:project:configure:auth --usage monitoring does not: it keeps the manual instruction.
+          storeCertificateInVariable
+            ? 'ifYouAreUsingGithubOrAzureWithClientCert'
+            : options.workflowReferencesWrittenByCommand === true
+              ? 'monitoringGithubReferencesAddedByCommand'
+              : 'ifYouAreUsingGithubOrAzure',
           { clientIdStringRaw, clientKeyStringRaw, clientCertStringRaw }
         )
       )

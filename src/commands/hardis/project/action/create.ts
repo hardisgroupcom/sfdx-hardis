@@ -76,6 +76,8 @@ A \`run-batch\` action runs a \`Database.Batchable\` Apex class once, before or 
 
 A run-batch action only runs in the \`process-deployment-only\` context, never during a deployment check.
 
+A manual action declared \`pre-deploy\` is always stored with the \`all\` context: it has to be done before the merge, so the deployment check lists it too.
+
 ### Agent Mode
 
 Supports non-interactive execution with \`--agent\`:
@@ -323,8 +325,13 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     // remove-packagexml-items must also run during deployment checks, so it defaults to all contexts
     const defaultContext = functionDefaults?.context
       || (type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only');
-    // run-batch only runs in one context: there is nothing to ask
-    const context = (flags.context || (!agentMode && !isCI && type !== 'run-batch' ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
+    // run-batch only runs in one context: there is nothing to ask. Neither for a manual step to do
+    // before the deployment: the validation job lists it whatever its context, so it is stored as
+    // what it does, and a --context passed for it is not kept.
+    const manualBeforeDeployment = type === 'manual' && when === 'pre-deploy';
+    const context = (manualBeforeDeployment
+      ? 'all'
+      : flags.context || (!agentMode && !isCI && type !== 'run-batch' ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
     let allowFailure = flags['allow-failure'] === true ? true : functionDefaults?.allowFailure === true;

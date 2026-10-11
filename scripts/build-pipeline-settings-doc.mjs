@@ -288,28 +288,39 @@ function writePills(pills) {
       text = removeEntry(text, key);
     }
   }
-  const end = text.lastIndexOf("}", text.lastIndexOf("}") - 1);
+  // The closing brace of "images", wherever that key sits in the file
+  const end = closingBrace(text, text.indexOf("{", text.indexOf('"images"')));
+  const tail = text.slice(end + 1);
   const head = text.slice(0, end).replace(/\s+$/, "");
+  const separator = head.endsWith("{") ? "" : ",";
   const entries = Object.entries(pills).map(([key, value]) => {
     const body = JSON.stringify(value, null, 2).replace(/\n/g, "\n    ");
     return `    ${JSON.stringify(key)}: ${body}`;
   });
-  text = `${head},\n${entries.join(",\n")}\n  }\n}\n`;
+  text = `${head}${separator}\n${entries.join(",\n")}\n  }${tail}`;
   JSON.parse(text);
   fs.writeFileSync(SPEC, text.replace(/\n/g, eol), "utf8");
   console.log(`written ${Object.keys(pills).length} image(s) of pills in ${path.relative(ROOT, SPEC)}`);
 }
 
-// Removes "key": { ... } and the comma that came before it
+// Removes "key": { ... } with one of the commas around it: the one after it when it has one (a
+// first or middle entry), else the one before it (the last entry)
 function removeEntry(text, key) {
   const start = text.indexOf(`${JSON.stringify(key)}: {`);
-  let depth = 0;
-  let index = text.indexOf("{", start);
-  for (; index < text.length; index++) {
-    if (text[index] === "{") depth++;
-    if (text[index] === "}" && --depth === 0) break;
+  const after = text.slice(closingBrace(text, text.indexOf("{", start)) + 1);
+  const before = text.slice(0, start);
+  if (after.trimStart().startsWith(",")) {
+    return before + after.trimStart().slice(1).trimStart();
   }
-  const before = text.slice(0, start).replace(/,\s*$/, "");
-  const after = text.slice(index + 1);
-  return after.trimStart().startsWith(",") ? `${before},${after.trimStart().slice(1)}` : before + after;
+  return before.replace(/,\s*$/, "") + after;
+}
+
+// Index of the brace closing the one at `open`. The file holds no brace inside a string.
+function closingBrace(text, open) {
+  let depth = 0;
+  for (let index = open; index < text.length; index++) {
+    if (text[index] === "{") depth++;
+    if (text[index] === "}" && --depth === 0) return index;
+  }
+  throw new Error("unbalanced braces in the pill spec");
 }

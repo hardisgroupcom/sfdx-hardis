@@ -40,6 +40,7 @@ Required in agent mode:
 - Changing `--type` clears old type-specific parameters and requires new ones.
 - `--move-to-pr` requires `--scope pr` and the number of the original Pull Request in `--pr-id`. When the action is not in its YAML file, it is read from the description of the Pull Request through the git provider API.
 - A `run-batch` action is updated with `--class-name`, `--run-mode`, `--batch-size`, `--wait-timeout` and `--success-even-if-batch-errors`. It only runs in the `process-deployment-only` context.
+- A `manual` action declared `pre-deploy` is always stored with the `all` context.
 </details>
 
 <!-- training-links:start -->
