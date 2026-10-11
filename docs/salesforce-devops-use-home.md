@@ -11,7 +11,7 @@ This guide is for everyone who makes changes in Salesforce on a CI/CD project: a
 <!-- training-callout:start -->
 
 !!! tip "Learn by doing"
-    Level 1 - Contributor basics of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 7 labs, about 2 h. [Start Level 1](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/)
+    Level 1 - Contributor basics of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 7 labs, about 2 h 15. [Start Level 1](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/)
 
 <!-- training-callout:end -->
 

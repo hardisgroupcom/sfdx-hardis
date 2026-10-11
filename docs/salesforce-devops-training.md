@@ -24,7 +24,7 @@ It is free and open source, like sfdx-hardis.
 
 #### [Level 1 - Contributor basics](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/)
 
-From your first User Story to a merged Pull Request. 7 labs, about 2 h.
+From your first User Story to a merged Pull Request. 7 labs, about 2 h 15.
 
 - [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
 - [Lab 1.2 - Create your Dev Hub, scratch orgs and CI/CD pipeline](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/)
@@ -50,7 +50,7 @@ Deployment errors, deployment actions, code quality and merge conflicts. 9 labs,
 
 #### [Level 3 - Release Manager](https://sfdx-hardis-training.github.io/en/level-3-release-manager/)
 
-The pipeline up to production: releases, hotfixes, monitoring. 11 labs, about 7 h 20, after Level 2.
+The pipeline up to production: releases, hotfixes, monitoring. 11 labs, about 6 h 55, after Level 2.
 
 - [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
 - [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)

@@ -532,6 +532,27 @@ four places per locale: each `labs/<locale>/level-N/index.md`, `labs/<locale>/in
 `README.md` once. A time changed in English and not in French is the easiest translation drift to
 create and the hardest to notice, because nothing compares numbers across locales.
 
+**Those times are the estimate, and the site announces what learners were observed to take.**
+`scripts/build/site.mjs` writes the observed time over the estimate at every build, in every
+language, from `stats/course-stats.json`: the `**Time**` line of a lab, the rows and the total of
+a level page, the table of the home page. The rules are in `scripts/stats/lab-times.mjs`:
+
+- the median, **rounded down**, to five minutes for a lab and a quarter of an hour for a level;
+- followed by the fastest learner, the slowest, the median and how many they were;
+- a lab fewer than five learners went through keeps its estimate, and so does a level nobody was
+  observed in.
+
+So never edit a time in a lab to follow the figures: the next build does it. Edit one only when
+the lab itself changed, and then it is a new estimate. Three things follow from the patterns the
+build looks for:
+
+- a lab keeps one `**Time**: ~N min` line, and a level page one `**Time**: about N h` line and
+  one `N min` cell per lab row. A page that loses one fails the site build, by name;
+- never write a duration of a level in prose ("it is four hours"): nothing updates a sentence;
+- `training-universe.json` carries the same estimates (`time` per lab, `duration` per level). The
+  universe is what the build reads for the estimate, and what `doc-links.mjs` writes into the
+  product documentation, which therefore shows estimates, not observed times.
+
 ## The contributor loop the course teaches
 
 **The Metadata Retriever comes before `hardis:work:save`, always.** That is the product's own
