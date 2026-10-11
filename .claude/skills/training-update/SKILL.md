@@ -33,6 +33,8 @@ have to be regenerated.
 | The command links of Under the hood blocks | inside each lab, between `<!-- command-links:start/end -->`                        | **Yes**, `scripts/build/lab-command-links.mjs`  |
 | The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder       | **Yes**, `scripts/build/site.mjs`, per locale   |
 | The audit rules                            | `scripts/verify/rules.mjs`                                                         | No                                              |
+| Which Pull Request ends which lab          | `scripts/stats/markers.mjs`, read by the course statistics                         | No, follows the branch names of the universe    |
+| The course statistics                      | `stats/course-stats.json`                                                          | **Yes**, `scripts/stats/course-stats.mjs`       |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                                | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/`   | **Yes**, `scripts/build/mocks.mjs`              |
 | The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs                 | **Yes**, `scripts/build/doc-links.mjs`          |
@@ -221,6 +223,10 @@ node scripts/build/universe.mjs
 It regenerates the backlog, the link map and the manifest, and **fails when a lab mentions a story
 id, an org or a branch the universe does not define**. That check is what stops the labs and the
 screenshots telling two different stories.
+
+A story whose id or branch changes, and a lab that moves to another story, also change
+`scripts/stats/markers.mjs`: it names the Pull Request that ends each lab, and the course
+statistics stop timing a lab whose marker no longer matches, without failing anything.
 
 ## Changing an audit rule
 
