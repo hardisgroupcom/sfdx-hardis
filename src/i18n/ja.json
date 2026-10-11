@@ -1514,7 +1514,6 @@
   "doraReportNoGitProviderToken": "認証済みのGitプロバイダーが見つかりません。DORAメトリクスは、Gitプロバイダーのデプロイジョブとプルリクエストから取得されます。そのトークン(GITHUB_TOKEN、CI_SFDX_HARDIS_GITLAB_TOKEN、CI_SFDX_HARDIS_AZURE_TOKEN、CI_SFDX_HARDIS_BITBUCKET_TOKEN)を設定するか、VS Code拡張機能からGitプロバイダーに接続してください。",
   "doraReportNoMajorBranch": "メインブランチが見つかりません。sfdx-hardisプロジェクト(config/branches/.sfdx-hardis.*.yml)からコマンドを実行するか、--branchesを使用してください。",
   "doraReportNoRecovery": "未復旧",
-  "doraReportNoTicketProvider": "チケットプロバイダーが設定されていません。デプロイベースのMTTRを使用します。",
   "doraReportNotifSummary": "DORAレポート（{{period}}日間） {{org}}: デプロイ頻度 {{dfValue}}（{{dfLevel}}）、リードタイム {{ltValue}}（{{ltLevel}}）、変更障害率 {{cfrValue}}（{{cfrLevel}}）、MTTR {{mttrValue}}（{{mttrLevel}}）",
   "doraReportP90": "p90",
   "doraReportPendingTime": "デプロイキュー待ち時間",

@@ -1516,7 +1516,6 @@
   "doraReportNoGitProviderToken": "Nessun provider git autenticato trovato: le metriche DORA vengono lette dai job di distribuzione e dalle Pull Request del provider git. Imposta il suo token (GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_AZURE_TOKEN o CI_SFDX_HARDIS_BITBUCKET_TOKEN), oppure connettiti al provider git dall'estensione VS Code.",
   "doraReportNoMajorBranch": "Nessun branch principale trovato: esegui il comando da un progetto sfdx-hardis (config/branches/.sfdx-hardis.*.yml), oppure usa --branches.",
   "doraReportNoRecovery": "Non ripristinato",
-  "doraReportNoTicketProvider": "Nessun provider di ticket configurato. Utilizzo del MTTR basato sulle distribuzioni.",
   "doraReportNotifSummary": "Report DORA ({{period}} giorni) per {{org}}: Frequenza di distribuzione {{dfValue}} ({{dfLevel}}), Tempo di consegna {{ltValue}} ({{ltLevel}}), Tasso di errore {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Tempo di attesa in coda di distribuzione",

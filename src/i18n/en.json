@@ -1520,7 +1520,6 @@
   "doraReportNoGitProviderToken": "No authenticated git provider found: DORA metrics are read from the deployment jobs and the Pull Requests of the git provider. Set its token (GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or CI_SFDX_HARDIS_BITBUCKET_TOKEN), or connect to the git provider from the VS Code extension.",
   "doraReportNoMajorBranch": "No major branch found: run the command from a sfdx-hardis project (config/branches/.sfdx-hardis.*.yml), or use --branches.",
   "doraReportNoRecovery": "Not recovered",
-  "doraReportNoTicketProvider": "No ticket provider configured. Using deployment-based MTTR fallback.",
   "doraReportNotifSummary": "DORA Report ({{period}} days) for {{org}}: Deployment Frequency {{dfValue}} ({{dfLevel}}), Lead Time {{ltValue}} ({{ltLevel}}), Change Failure Rate {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Deployment Queue Time",

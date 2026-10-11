@@ -1516,7 +1516,6 @@
   "doraReportNoGitProviderToken": "Nie znaleziono uwierzytelnionego dostawcy git: metryki DORA są odczytywane z jobów wdrożeniowych i Pull Requestów dostawcy git. Należy ustawić jego token (GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_AZURE_TOKEN lub CI_SFDX_HARDIS_BITBUCKET_TOKEN) albo połączyć się z dostawcą git z poziomu rozszerzenia VS Code.",
   "doraReportNoMajorBranch": "Nie znaleziono głównego brancha: należy uruchomić polecenie z projektu sfdx-hardis (config/branches/.sfdx-hardis.*.yml) lub użyć --branches.",
   "doraReportNoRecovery": "Nie przywrocono",
-  "doraReportNoTicketProvider": "Brak skonfigurowanego dostawcy zgłoszeń. Używanie MTTR opartego na wdrożeniach.",
   "doraReportNotifSummary": "Raport DORA ({{period}} dni) dla {{org}}: Częstotliwość wdrożeń {{dfValue}} ({{dfLevel}}), Czas realizacji {{ltValue}} ({{ltLevel}}), Wskaźnik awaryjności {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Czas oczekiwania w kolejce wdrozenia",

@@ -1496,7 +1496,6 @@
   "doraReportMttr": "Tempo medio de recuperacao",
   "doraReportNoDataAvailable": "Nenhum dado disponivel para esta metrica no periodo selecionado.",
   "doraReportNoRecovery": "Nao recuperado",
-  "doraReportNoTicketProvider": "Nenhum provedor de tickets configurado. Usando MTTR baseado em implantacoes.",
   "doraReportNotifSummary": "Relatorio DORA ({{period}} dias) para {{org}}: Frequencia de implantacao {{dfValue}} ({{dfLevel}}), Tempo de entrega {{ltValue}} ({{ltLevel}}), Taxa de falha {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Tempo de espera na fila de implantacao",

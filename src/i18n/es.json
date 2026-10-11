@@ -1516,7 +1516,6 @@
   "doraReportNoGitProviderToken": "No se encontró ningún proveedor git autenticado: las métricas DORA se leen de los jobs de despliegue y de las Pull Requests del proveedor git. Define su token (GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_AZURE_TOKEN o CI_SFDX_HARDIS_BITBUCKET_TOKEN), o conéctate al proveedor git desde la extensión de VS Code.",
   "doraReportNoMajorBranch": "No se encontró ninguna branch principal: ejecuta el comando desde un proyecto sfdx-hardis (config/branches/.sfdx-hardis.*.yml), o usa --branches.",
   "doraReportNoRecovery": "No recuperado",
-  "doraReportNoTicketProvider": "No hay proveedor de tickets configurado. Usando MTTR basado en despliegues.",
   "doraReportNotifSummary": "Informe DORA ({{period}} dias) para {{org}}: Frecuencia de despliegue {{dfValue}} ({{dfLevel}}), Tiempo de entrega {{ltValue}} ({{ltLevel}}), Tasa de fallos {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Tiempo de espera en cola de despliegue",

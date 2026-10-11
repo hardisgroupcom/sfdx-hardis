@@ -1515,7 +1515,6 @@
   "doraReportNoGitProviderToken": "Kein authentifizierter Git-Provider gefunden: Die DORA-Metriken werden aus den Deployment-Jobs und den Pull Requests des Git-Providers gelesen. Setzen Sie dessen Token (GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_AZURE_TOKEN oder CI_SFDX_HARDIS_BITBUCKET_TOKEN) oder verbinden Sie sich über die VS Code-Erweiterung mit dem Git-Provider.",
   "doraReportNoMajorBranch": "Kein Haupt-Branch gefunden: Führen Sie den Befehl in einem sfdx-hardis-Projekt aus (config/branches/.sfdx-hardis.*.yml) oder verwenden Sie --branches.",
   "doraReportNoRecovery": "Nicht wiederhergestellt",
-  "doraReportNoTicketProvider": "Kein Ticket-Provider konfiguriert. Verwende Deployment-basierte MTTR-Berechnung.",
   "doraReportNotifSummary": "DORA-Bericht ({{period}} Tage) fuer {{org}}: Deployment-Haeufigkeit {{dfValue}} ({{dfLevel}}), Vorlaufzeit {{ltValue}} ({{ltLevel}}), Fehlerrate {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Deployment-Wartezeit",

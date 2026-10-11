@@ -12,6 +12,10 @@ Command: **[sf hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/d
 
 In VS Code, open the **DORA metrics** panel from the gear menu of the [DevOps Pipeline](../../vscode-extension-devops-pipeline.md): one tab per major org, an overview comparing them, and the contributors.
 
+![DORA metrics panel of the VS Code extension, overview of every major org](../../assets/images/dora-metrics-panel.png)
+
+![DORA metrics panel, tab of one major org](../../assets/images/dora-metrics-panel-org.png)
+
 ---
 
 ### What it measures

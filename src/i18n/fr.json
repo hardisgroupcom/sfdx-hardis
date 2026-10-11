@@ -1516,7 +1516,6 @@
   "doraReportNoGitProviderToken": "Aucun fournisseur git authentifié trouvé : les métriques DORA sont lues à partir des jobs de déploiement et des Pull Requests du fournisseur git. Définissez son token (GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_AZURE_TOKEN ou CI_SFDX_HARDIS_BITBUCKET_TOKEN), ou connectez-vous au fournisseur git depuis l'extension VS Code.",
   "doraReportNoMajorBranch": "Aucune branche principale trouvée : lancez la commande depuis un projet sfdx-hardis (config/branches/.sfdx-hardis.*.yml), ou utilisez --branches.",
   "doraReportNoRecovery": "Non retabli",
-  "doraReportNoTicketProvider": "Aucun fournisseur de tickets configure. Utilisation du MTTR base sur les deploiements.",
   "doraReportNotifSummary": "Rapport DORA ({{period}} jours) pour {{org}} : Frequence de deploiement {{dfValue}} ({{dfLevel}}), Delai {{ltValue}} ({{ltLevel}}), Taux d'echec {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Temps d'attente en file de deploiement",

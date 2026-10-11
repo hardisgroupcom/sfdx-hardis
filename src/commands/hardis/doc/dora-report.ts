@@ -310,7 +310,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       }
       return tickets;
     } catch {
-      uxLog("log", this, c.grey(`[DORA] ${t("doraReportNoTicketProvider")}`));
+      // No ticketing configured, or it does not answer: the table only loses its Tickets column content
       return [];
     }
   }

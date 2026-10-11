@@ -1516,7 +1516,6 @@
   "doraReportNoGitProviderToken": "Geen geauthenticeerde git-provider gevonden: DORA-metrieken worden gelezen uit de deployment-jobs en de Pull Requests van de git-provider. Stel het token in (GITHUB_TOKEN, CI_SFDX_HARDIS_GITLAB_TOKEN, CI_SFDX_HARDIS_AZURE_TOKEN of CI_SFDX_HARDIS_BITBUCKET_TOKEN), of maak verbinding met de git-provider vanuit de VS Code-extensie.",
   "doraReportNoMajorBranch": "Geen hoofdbranch gevonden: voer het commando uit vanuit een sfdx-hardis-project (config/branches/.sfdx-hardis.*.yml), of gebruik --branches.",
   "doraReportNoRecovery": "Niet hersteld",
-  "doraReportNoTicketProvider": "Geen ticketprovider geconfigureerd. Implementatie-gebaseerde MTTR wordt gebruikt.",
   "doraReportNotifSummary": "DORA-rapport ({{period}} dagen) voor {{org}}: Implementatiefrequentie {{dfValue}} ({{dfLevel}}), Doorlooptijd {{ltValue}} ({{ltLevel}}), Faalpercentage {{cfrValue}} ({{cfrLevel}}), MTTR {{mttrValue}} ({{mttrLevel}})",
   "doraReportP90": "p90",
   "doraReportPendingTime": "Implementatie-wachttijd",
