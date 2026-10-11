@@ -4,6 +4,7 @@ import * as path from 'path';
 import fs from '../../../src/common/utils/fsUtils.js';
 import { clearOrgApiCache } from '../../../src/common/cache/orgApiCache.js';
 import { isFolderType, listOrgMetadata } from '../../../src/common/utils/metadataListingUtils.js';
+import { restoreProcessEnv } from './envTestHelper.js';
 
 // Fake connection of an org with an Id (so the cache applies), answering listMetadata from a map of type -> components
 function fakeConnection(listings: Record<string, unknown>, queries: any[] = []) {
@@ -38,7 +39,7 @@ describe('metadataListingUtils', () => {
   });
 
   afterEach(async () => {
-    process.env = { ...previousEnv };
+    restoreProcessEnv(previousEnv);
     await clearOrgApiCache();
     await fs.remove(root);
   });

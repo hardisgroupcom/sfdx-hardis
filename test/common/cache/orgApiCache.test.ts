@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import fs from '../../../src/common/utils/fsUtils.js';
 import { clearOrgApiCache, withOrgApiCache } from '../../../src/common/cache/orgApiCache.js';
+import { restoreProcessEnv } from '../utils/envTestHelper.js';
 
 // Fake connection of the given org
 const connectionOf = (orgId?: string) => ({ getAuthInfoFields: () => ({ orgId }) }) as any;
@@ -20,7 +21,7 @@ describe('orgApiCache', () => {
   });
 
   afterEach(async () => {
-    process.env = { ...previousEnv };
+    restoreProcessEnv(previousEnv);
     await fs.remove(root);
   });
 

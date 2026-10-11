@@ -10,6 +10,7 @@ import { GenericTicketingProvider } from '../../../src/common/ticketProvider/gen
 import { JiraProvider } from '../../../src/common/ticketProvider/jiraProvider.js';
 import { ServiceNowProvider } from '../../../src/common/ticketProvider/serviceNowProvider.js';
 import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
+import { restoreProcessEnv } from '../utils/envTestHelper.js';
 
 /** Sets env vars for the duration of one test, and restores whatever was there before */
 function withEnv(vars: Record<string, string>, run: () => Promise<void>): () => Promise<void> {
@@ -601,7 +602,7 @@ describe('GenericTicketingProvider.collectTicketsInfo', () => {
   const envBefore = { ...process.env };
   afterEach(() => {
     setFetchForTests(null);
-    process.env = { ...envBefore };
+    restoreProcessEnv(envBefore);
   });
 
   const ticket = (id: string): Ticket => ({ provider: 'GENERIC', id, url: `https://x.invalid/backlog/${id}/` });
