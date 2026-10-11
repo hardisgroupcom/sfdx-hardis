@@ -99,7 +99,9 @@ describe('git credentials in the credential helper (real git)', function () {
   let repo: string;
   let helper: string;
   let storeFile: string;
-  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  // The environment is always given: a git started without it could read the real one, and write the
+  // global configuration of the machine
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', env: { ...process.env } }).trim();
   const globalHelpers = () => {
     try {
       return git('config', '--global', '--get-all', 'credential.helper').split(/\r?\n/);
@@ -168,7 +170,7 @@ describe('git credentials in the credential helper (real git)', function () {
     // Another repository of the machine finds them too
     const other = path.join(workDir, 'other');
     fs.mkdirSync(other);
-    execFileSync('git', ['init', '-q'], { cwd: other });
+    execFileSync('git', ['init', '-q'], { cwd: other, env: { ...process.env } });
     expect((await readStoredGitCredentials(url, other))?.password).to.equal(credentials.password);
   });
 
