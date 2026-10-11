@@ -27,6 +27,7 @@ export function classifyJobKind(name: string | undefined | null): JobKind {
   if (/mega[\s_-]?linter|quality|\blint/.test(text)) {
     return 'codeQuality';
   }
+  // cspell:ignore simulat validat ment
   if (/simulat|check[\s_-]?deploy|deploy(ment)?[\s_-]?check|validat/.test(text)) {
     return 'validation';
   }
