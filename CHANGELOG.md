@@ -11,6 +11,7 @@
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/): a manual step to do before the deployment now holds the validation of the Pull Request even when it was declared for the deployment job only.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) says the secrets go in the monitoring repository, and explains how to fix a push GitHub refuses for a missing `workflow` scope.
 - [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): the link to the French article, whose site no longer exists, is removed.
+- Doc: new [Pipeline Settings](https://sfdx-hardis.cloudity.com/vscode-extension-pipeline-settings/) page, listing every setting of the VS Code panel tab by tab, with the key it writes in `.sfdx-hardis.yml`.
 - Doc: the [DevOps Pipeline](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/) guide shows the running jobs and the job durations of the VS Code Pull Request view.
 - [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) retries when the network drops during a long test run, no longer reports failed tests with a 0% coverage when the run times out or its results cannot be retrieved, and waits 2 hours by default instead of 1.
 

@@ -1095,6 +1095,448 @@
           "h": 4.3
         }
       ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-deployment.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11,
+          "y": 39.4
+        },
+        {
+          "n": 3,
+          "x": 11,
+          "y": 49.9
+        },
+        {
+          "n": 4,
+          "x": 11,
+          "y": 60.4
+        },
+        {
+          "n": 5,
+          "x": 11,
+          "y": 75.5
+        },
+        {
+          "n": 6,
+          "x": 11,
+          "y": 83.6
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-deployment-2.png": {
+      "pills": [
+        {
+          "n": 3,
+          "x": 11,
+          "y": 8.6
+        },
+        {
+          "n": 4,
+          "x": 11,
+          "y": 19.1
+        },
+        {
+          "n": 5,
+          "x": 11,
+          "y": 34.2
+        },
+        {
+          "n": 6,
+          "x": 11,
+          "y": 42.3
+        },
+        {
+          "n": 7,
+          "x": 11,
+          "y": 52.8
+        },
+        {
+          "n": 8,
+          "x": 11,
+          "y": 61
+        },
+        {
+          "n": 9,
+          "x": 11,
+          "y": 69.1
+        },
+        {
+          "n": 10,
+          "x": 11,
+          "y": 82
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-pre-post-deploy-commands.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 39.3
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-user-stories.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11,
+          "y": 44
+        },
+        {
+          "n": 3,
+          "x": 11,
+          "y": 55.8
+        },
+        {
+          "n": 4,
+          "x": 11,
+          "y": 69.9
+        },
+        {
+          "n": 5,
+          "x": 11,
+          "y": 81.7
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-user-stories-2.png": {
+      "pills": [
+        {
+          "n": 4,
+          "x": 11,
+          "y": 22.5
+        },
+        {
+          "n": 5,
+          "x": 11,
+          "y": 34.3
+        },
+        {
+          "n": 6,
+          "x": 11,
+          "y": 48.4
+        },
+        {
+          "n": 7,
+          "x": 11,
+          "y": 56.5
+        },
+        {
+          "n": 8,
+          "x": 11,
+          "y": 71.6
+        },
+        {
+          "n": 9,
+          "x": 11,
+          "y": 82
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-salesforce-project.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 45.4
+        },
+        {
+          "n": 3,
+          "x": 11.7,
+          "y": 55.9
+        },
+        {
+          "n": 4,
+          "x": 11.7,
+          "y": 68.7
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-ticketing.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 43.9
+        },
+        {
+          "n": 3,
+          "x": 11.7,
+          "y": 52
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-agent.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 43.9
+        },
+        {
+          "n": 3,
+          "x": 11.7,
+          "y": 61.3
+        },
+        {
+          "n": 4,
+          "x": 11.7,
+          "y": 71.7
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-dev-hub.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 39.3
+        },
+        {
+          "n": 3,
+          "x": 11.7,
+          "y": 47.4
+        },
+        {
+          "n": 4,
+          "x": 11.7,
+          "y": 55.5
+        },
+        {
+          "n": 5,
+          "x": 11.7,
+          "y": 65.9
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-security-privacy.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.2,
+          "y": 72.9
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-security-privacy-2.png": {
+      "pills": [
+        {
+          "n": 2,
+          "x": 11.2,
+          "y": 34.4
+        },
+        {
+          "n": 3,
+          "x": 11.2,
+          "y": 56.5
+        },
+        {
+          "n": 4,
+          "x": 11.2,
+          "y": 65.3
+        },
+        {
+          "n": 5,
+          "x": 11.2,
+          "y": 74.1
+        },
+        {
+          "n": 6,
+          "x": 11.2,
+          "y": 82.9
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-danger-zone.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11,
+          "y": 35.8
+        },
+        {
+          "n": 2,
+          "x": 11,
+          "y": 60.2
+        },
+        {
+          "n": 3,
+          "x": 11,
+          "y": 68.3
+        },
+        {
+          "n": 4,
+          "x": 11,
+          "y": 81.1
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-danger-zone-2.png": {
+      "pills": [
+        {
+          "n": 3,
+          "x": 11,
+          "y": 15.8
+        },
+        {
+          "n": 4,
+          "x": 11,
+          "y": 28.6
+        },
+        {
+          "n": 5,
+          "x": 11,
+          "y": 41.3
+        },
+        {
+          "n": 6,
+          "x": 11,
+          "y": 56.4
+        },
+        {
+          "n": 7,
+          "x": 11,
+          "y": 71.5
+        },
+        {
+          "n": 8,
+          "x": 11,
+          "y": 81.9
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-global-other.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 41.6
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-branch-deployment.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 41.6
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-branch-pre-post-deploy-commands.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 39.3
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-branch-agent.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 31.2
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 43.9
+        },
+        {
+          "n": 3,
+          "x": 11.7,
+          "y": 61.3
+        },
+        {
+          "n": 4,
+          "x": 11.7,
+          "y": 71.7
+        }
+      ]
+    },
+    "vscode-guide/pipeline-settings-ref-branch-danger-zone.png": {
+      "pills": [
+        {
+          "n": 1,
+          "x": 11.7,
+          "y": 35.7
+        },
+        {
+          "n": 2,
+          "x": 11.7,
+          "y": 50.8
+        },
+        {
+          "n": 3,
+          "x": 11.7,
+          "y": 65.8
+        },
+        {
+          "n": 4,
+          "x": 11.7,
+          "y": 73.9
+        }
+      ]
     }
   }
 }

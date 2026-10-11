@@ -99,7 +99,7 @@ The deployment actions and the test classes are read from the files of the branc
 
 The gear menu gathers the settings of the project:
 
-- **(1)** opens **Pipeline Settings**, the editor of `.sfdx-hardis.yml`: branches, deployment options, tickets, notifications. See [Configuration](sfdx-hardis-config-file.md).
+- **(1)** opens **Pipeline Settings**, the editor of `.sfdx-hardis.yml`: branches, deployment options, tickets, notifications. [Pipeline Settings](vscode-extension-pipeline-settings.md) lists every setting, tab by tab.
 - **(2)** connects a major branch to its org, so the CI/CD pipeline can deploy there.
 - **(3)** opens the [DORA metrics](hardis/doc/salesforce-devops-dora-report.md) of the pipeline: deployment frequency, lead time, failure rate and recovery time of each major org, read from the deployment jobs and the Pull Requests of the git provider.
 

@@ -126,5 +126,77 @@
   "vscode-guide/pipeline-pr-view-validation.png": {
     "spec": "17f63b379a0f1185",
     "out": "4c4a3b47928ff304"
+  },
+  "vscode-guide/pipeline-settings-ref-global-deployment.png": {
+    "spec": "778272a7b0616912",
+    "out": "cfe12d981b1a64a7"
+  },
+  "vscode-guide/pipeline-settings-ref-global-deployment-2.png": {
+    "spec": "ab7a6f0d4c3e061e",
+    "out": "f3b74550d4ba29f0"
+  },
+  "vscode-guide/pipeline-settings-ref-global-pre-post-deploy-commands.png": {
+    "spec": "47c11286b1c65c30",
+    "out": "4d818cf18be74429"
+  },
+  "vscode-guide/pipeline-settings-ref-global-user-stories.png": {
+    "spec": "c1ca54efb80e0603",
+    "out": "fe876e3df1b10fa2"
+  },
+  "vscode-guide/pipeline-settings-ref-global-user-stories-2.png": {
+    "spec": "9b78af3674dc197e",
+    "out": "c42f89a0ad484fee"
+  },
+  "vscode-guide/pipeline-settings-ref-global-salesforce-project.png": {
+    "spec": "f5aa8336d4a46e02",
+    "out": "e53dbe93d8004172"
+  },
+  "vscode-guide/pipeline-settings-ref-global-ticketing.png": {
+    "spec": "4fc3a11db1285e22",
+    "out": "7b9a4cbdea15fde3"
+  },
+  "vscode-guide/pipeline-settings-ref-global-agent.png": {
+    "spec": "97fc6d0be15b7c04",
+    "out": "5e3109de6b7808ce"
+  },
+  "vscode-guide/pipeline-settings-ref-global-dev-hub.png": {
+    "spec": "601c725e06735f2d",
+    "out": "bd065e156b5986ad"
+  },
+  "vscode-guide/pipeline-settings-ref-global-security-privacy.png": {
+    "spec": "cf5afa567318c99b",
+    "out": "e312c46770c8b0c3"
+  },
+  "vscode-guide/pipeline-settings-ref-global-security-privacy-2.png": {
+    "spec": "0b50261fbca4a495",
+    "out": "ad155393faa45dd6"
+  },
+  "vscode-guide/pipeline-settings-ref-global-danger-zone.png": {
+    "spec": "c0c072b3d45341c3",
+    "out": "447b59ce53192513"
+  },
+  "vscode-guide/pipeline-settings-ref-global-danger-zone-2.png": {
+    "spec": "61f1a34dfb6e7755",
+    "out": "13047df234e4e5f1"
+  },
+  "vscode-guide/pipeline-settings-ref-global-other.png": {
+    "spec": "0fda8ff73ce1391e",
+    "out": "6d928e6febf049e4"
+  },
+  "vscode-guide/pipeline-settings-ref-branch-deployment.png": {
+    "spec": "9580302dee2548a9",
+    "out": "f588d72008498f40"
+  },
+  "vscode-guide/pipeline-settings-ref-branch-pre-post-deploy-commands.png": {
+    "spec": "3e310eceed023176",
+    "out": "0771bb23709b6557"
+  },
+  "vscode-guide/pipeline-settings-ref-branch-agent.png": {
+    "spec": "7e6cabd2fbe58254",
+    "out": "0f391027ee163828"
+  },
+  "vscode-guide/pipeline-settings-ref-branch-danger-zone.png": {
+    "spec": "d0e2f6f2650c9555",
+    "out": "e1e42fcba4a7127c"
   }
 }

@@ -105,6 +105,7 @@ nav:
       - Overview: vscode-extension.md
       - Welcome panel: vscode-extension-welcome.md
       - DevOps Pipeline: vscode-extension-devops-pipeline.md
+      - Pipeline Settings: vscode-extension-pipeline-settings.md
       - Org Monitoring: vscode-extension-org-monitoring.md
       - Command execution: vscode-extension-command-runner.md
       - Orgs Manager: vscode-extension-orgs-manager.md
