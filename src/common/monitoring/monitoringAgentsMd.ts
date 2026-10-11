@@ -6,7 +6,7 @@ import {
   DEFAULT_WEEKLY_DAY,
   getMonitoringDisable,
   resolveMonitoringCommands,
-} from '../notifProvider/notificationConfig.js';
+} from '../notifProvider/utils/notificationConfig.js';
 import type { MonitoringCommandEntry } from '../notifProvider/types.js';
 import { t } from '../utils/i18n.js';
 import { getTitleI18nKey, monitoringCommandsDefault } from './monitoringDefaults.js';

@@ -1,8 +1,8 @@
 import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
-import { UtilsNotifs } from "./utils.js";
-import { convertMarkdownToTeamsMrkdwn } from "./teamsMarkdown.js";
-import { SizeGuardLimits } from "./messageSizeGuard.js";
+import { UtilsNotifs } from "./utils/utils.js";
+import { convertMarkdownToTeamsMrkdwn } from "./utils/teamsMarkdown.js";
+import { SizeGuardLimits } from "./utils/messageSizeGuard.js";
 
 interface AdaptiveCardElement {
   type: string;

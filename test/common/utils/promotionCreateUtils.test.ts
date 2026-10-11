@@ -371,7 +371,7 @@ describe('promotion Pull Request title and body', () => {
     // A pipe in a title must not break the table
     expect(body).to.contain('Story &#124; B');
     expect(body).to.contain('Tickets: PROJ-482, PROJ-487');
-    expect(body).to.contain('## Left out because of cherry-pick conflicts\n\n- #491 Story C');
+    expect(body).to.contain('## Left out because of cherry-pick conflicts\n\n- Story C (#491)');
     expect(body).to.contain('Do not squash this Pull Request');
   });
 
@@ -389,7 +389,7 @@ describe('promotion Pull Request title and body', () => {
     });
     expect(body).to.contain('promotionPullRequests: [482, 487, 491]');
     expect(body).to.contain('Conflicts to solve before merging');
-    expect(body).to.contain('## Committed with conflict markers\n\n- #491 Story C\n  - `force-app/main/default/labels/CustomLabels.labels-meta.xml`');
+    expect(body).to.contain('## Committed with conflict markers\n\n- Story C (#491)\n  - `force-app/main/default/labels/CustomLabels.labels-meta.xml`');
     // A clean story has no conflict files
     expect(stories[0].conflictFiles).to.equal(undefined);
   });
@@ -436,7 +436,7 @@ describe('promotion Pull Request title and body', () => {
       alreadyThere: toStories([toCandidate(group('ddd4444', [{ id: 495, title: 'Story D' }]))]),
     });
     expect(body).to.contain('## Already in `preprod`');
-    expect(body).to.contain('- #495 Story D');
+    expect(body).to.contain('- Story D (#495)');
     // Declared as well: their metadata is already in the target branch, but their deployment
     // actions and Apex test classes still have to run in the target org
     expect(body).to.contain('promotionPullRequests: [482, 487, 495]');

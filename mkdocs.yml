@@ -294,6 +294,7 @@ nav:
           - Jira: salesforce-devops-setup-integration-jira.md
           - Azure Boards: salesforce-devops-setup-integration-azure-boards.md
           - ServiceNow: salesforce-devops-setup-integration-servicenow.md
+          - Aha!: salesforce-devops-setup-integration-aha.md
           - Generic Ticketing: salesforce-devops-setup-integration-generic-ticketing.md
       - Monitoring Backends:
           - Grafana Dashboards: salesforce-monitoring-grafana-v2.md
@@ -450,6 +451,7 @@ nav:
           - lint: hardis/project/lint.md
           - metadata activate-decomposed: hardis/project/metadata/activate-decomposed.md
           - metadata findduplicates: hardis/project/metadata/findduplicates.md
+          - pipeline describe: hardis/project/pipeline/describe.md
           - promotion create: hardis/project/promotion/create.md
           - promotion list-candidates: hardis/project/promotion/list-candidates.md
           - skills import: hardis/project/skills/import.md

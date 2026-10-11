@@ -73,6 +73,8 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
           JIRA_PAT: ${{ secrets.JIRA_PAT }}
+          AHA_HOST: ${{ secrets.AHA_HOST }}
+          AHA_API_KEY: ${{ secrets.AHA_API_KEY }}
           JIRA_TICKET_REGEX: ${{ secrets.JIRA_TICKET_REGEX }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # Uncomment to provide API keys for coding agent auto-fix of deployment errors
@@ -95,6 +97,10 @@ jobs:
           else
             echo "[sfdx-hardis] Skipping coding-agent GitHub auth setup: CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN is not set"
           fi
+          # The job runs in a container, where git runs as another user than the owner of the checkout:
+          # without this, git refuses the repository ("detected dubious ownership") and sfdx-hardis cannot
+          # read which Pull Requests are deployed, so their deployment actions are not run
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check
 

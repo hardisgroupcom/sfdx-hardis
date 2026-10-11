@@ -4,7 +4,7 @@ import { renderJsdocMarkdown } from "../utils/jsdocMarkdown.js";
 import fs from '../utils/fsUtils.js';
 import path from "path";
 import { t } from '../utils/i18n.js';
-import { mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
+import { mdTableCellHtml } from "../gitProvider/utils/utilsMarkdown.js";
 
 export class DocBuilderLwc extends DocBuilderRoot {
 

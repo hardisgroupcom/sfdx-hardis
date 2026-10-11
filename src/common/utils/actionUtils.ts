@@ -43,7 +43,9 @@ export async function getActionConfigFilePath(scope: ActionScope, branch?: strin
     return path.join('config', '.sfdx-hardis.yml');
   }
   if (scope === 'branch') {
-    const branchName = branch || await getCurrentGitBranch({ formatted: true }) || 'main';
+    // A branch name read from git or from a Pull Request target (release/uat) is written in the file
+    // name the way the config loader reads it (release__uat), as getCurrentGitBranch formats it
+    const branchName = (branch || await getCurrentGitBranch({ formatted: true }) || 'main').replace('/', '__');
     return path.join('config', 'branches', `.sfdx-hardis.${branchName}.yml`);
   }
   // scope === 'pr'
@@ -78,7 +80,13 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
   if (fs.existsSync(configFile)) {
     doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
   }
-  doc[configKey] = actions;
+  // The key the actions are stored under already says when they run: readActions sets
+  // "when" on each of them for its callers, and it must not be written back into the file
+  doc[configKey] = actions.map((action) => {
+    const stored: any = { ...action };
+    delete stored.when;
+    return stored;
+  });
   await fs.ensureDir(path.dirname(configFile));
   await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   // A created or updated branch config file changes the major orgs list: drop its cache.
@@ -95,6 +103,14 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
  */
 export function normalizeBranchName(name: string): string {
   return String(name || '').trim().toLowerCase().replace(/\//g, '__');
+}
+
+/**
+ * Context an action really runs in. A run-batch action changes the data of the org: it is a
+ * deployment-only action, whatever its context holds.
+ */
+export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context'>): PrePostCommand['context'] {
+  return cmd.type === "run-batch" ? "process-deployment-only" : cmd.context || "all";
 }
 
 /**
@@ -254,6 +270,9 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
     if (!action.parameters?.cronExpression) {
       errors.push(t('actionValidationNoCronExpression'));
     }
+  } else if (type === 'run-batch') {
+    const { listRunBatchParameterErrors } = await import('../actionsProvider/runBatchAction.js');
+    errors.push(...listRunBatchParameterErrors(action));
   } else if (type === 'remove-packagexml-items') {
     const { findInvalidPackageXmlItems, normalizePackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
     const items = normalizePackageXmlItems(action.parameters?.packageXmlItems);
@@ -273,6 +292,57 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
   }
 
   return errors;
+}
+
+/**
+ * A movedFrom written as a quoted number in YAML ("12") is the number 12: coerced in place
+ */
+export function normalizeMovedFrom(action: Partial<PrePostCommand>): void {
+  if (typeof action.movedFrom === 'string' && /^\d+$/.test((action.movedFrom as string).trim())) {
+    action.movedFrom = parseInt(action.movedFrom as string, 10);
+  }
+}
+
+/**
+ * Validate the movedFrom property of an action: the number of the Pull Request it was moved from.
+ * Only an action of a Pull Request can be moved, and never from its own Pull Request.
+ * Returns an array of error messages (empty if valid).
+ */
+export function validateMovedFrom(action: Partial<PrePostCommand>, scope: ActionScope, prId?: string): string[] {
+  if (action.movedFrom === undefined || action.movedFrom === null) {
+    return [];
+  }
+  normalizeMovedFrom(action);
+  if (!Number.isInteger(action.movedFrom) || action.movedFrom < 1) {
+    return [t('actionValidationMovedFromInvalid', { value: String(action.movedFrom) })];
+  }
+  if (scope !== 'pr') {
+    return [t('actionValidationMovedFromPrScopeOnly')];
+  }
+  if (prId && prId === String(action.movedFrom)) {
+    return [t('actionValidationMovedFromSamePr', { pr: prId })];
+  }
+  return [];
+}
+
+/**
+ * Actions declared in the YAML block of a Pull Request description, for the given phase.
+ * Each one carries its Pull Request, like the actions collected by a deployment job.
+ */
+export async function readPullRequestDescriptionActions(prNumber: number, when: ActionWhen): Promise<PrePostCommand[]> {
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    return [];
+  }
+  const pr = await gitProvider.getPullRequestById(prNumber);
+  if (!pr) {
+    return [];
+  }
+  const { getYamlFromPrDescription } = await import('./pullRequestUtils.js');
+  const config: any = getYamlFromPrDescription(pr) || {};
+  const property = when === 'pre-deploy' ? 'commandsPreDeploy' : 'commandsPostDeploy';
+  const actions: PrePostCommand[] = Array.isArray(config[property]) ? config[property] : [];
+  return actions.map((action) => ({ ...action, when, pullRequest: pr }));
 }
 
 /**
@@ -573,7 +643,7 @@ export async function getPrIdFromUserConfig(): Promise<string | null> {
   }
 }
 
-export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'];
+export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'run-batch', 'remove-packagexml-items'];
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];

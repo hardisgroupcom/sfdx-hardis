@@ -35,9 +35,10 @@ const expectations = EXPECTATIONS_PATH ? JSON.parse(fs.readFileSync(EXPECTATIONS
 const DEPLOYMENT_ACTIONS_MARKER = "<!-- sfdx-hardis deployment-actions-state -->";
 const NAV_START = "<!-- sfdx-hardis nav-start -->";
 const NAV_END = "<!-- sfdx-hardis nav-end -->";
-const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (\S+) -->/;
+// The key holds the CI job name, spaces included on GitHub Actions
+const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (.+?) -->/;
 
-// Same rule as getPrCommentKind in src/common/gitProvider/prCommentNav.ts
+// Same rule as getPrCommentKind in src/common/gitProvider/utils/prCommentNav.ts
 function commentKind(body) {
   if (body.includes(DEPLOYMENT_ACTIONS_MARKER)) return "actions";
   const messageKey = (body.match(MESSAGE_KEY_REGEX) || [])[1] || "";
@@ -187,6 +188,10 @@ for (const pr of dump.prs) {
       cells.forEach((cell, index) => {
         const branch = columns[index];
         if (!branch) return;
+        // The dev-sandboxes column holds the tries of `action:run --dev-org`: information for their
+        // author, never a pending step of the pipeline, so it offers no checkbox on purpose (the
+        // manual actions of a developer org are confirmed per sandbox in the Backpromotes comment)
+        if (branch === 'dev-sandboxes') return;
         const waiting = cell.includes('\u{1F44B}');
         const skipped = cell.includes('\u26AA');
         const hasCheckbox = body.includes(`<!-- sfdx-hardis-manual-action id:${actionId} org:${branch} pr:${pr.number} when:`);
@@ -213,7 +218,7 @@ for (const pr of dump.prs) {
     const seen = new Map();
     for (const id of actionRows) seen.set(id, (seen.get(id) || 0) + 1);
     for (const [id, count] of seen) {
-      // one row in "Status by org branch" plus one in the "Action Details" fold
+      // one row in "Status by org" plus one in the "Action Details" fold
       check(count <= 2, pr.number, `Deployment Actions repeats action ${id} ${count} times`);
     }
   } else if ((expected.manualActions || []).length > 0) {

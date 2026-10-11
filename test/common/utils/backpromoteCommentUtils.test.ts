@@ -80,9 +80,13 @@ describe('Backpromotes comment', () => {
     const state = upsertActionRow(upsertSandboxRow(emptyBackpromotesState(), sandboxRow), actionRow);
     const body = renderBackpromotesComment(state);
     expect(body.startsWith(BACKPROMOTES_MARKER)).to.be.true;
-    expect(body).to.contain('| dev1 <sub>00D5j000000ABCDEAA</sub> | 2026-09-12 10:15 | Sam Lee | integration | :warning: partial |');
+    expect(body).to.contain('| dev1 | integration | Sep 12, 10:15 UTC | Sam Lee | ⚠️ partial |');
+    // Org ids and action ids stay in the hidden data, out of the visible text
+    expect(body.split('\n').slice(2).join('\n')).to.not.contain('00D5j000000ABCDEAA');
+    expect(body).to.not.contain(':warning:');
     expect(body).to.contain('Layout:Case-Case Layout (org version kept)<br/>ApexClass:Legacy (conflict pending)');
-    expect(body).to.contain('| Load discount &#124; thresholds <sub>load-discounts</sub> | post-deploy | dev1 <sub>00D5j000000ABCDEAA</sub> |');
+    expect(body).to.contain('#### Deployment actions in dev1');
+    expect(body).to.contain('| Load discount &#124; thresholds | after |');
     // The hidden data block must not end the HTML comment early
     const dataLine = body.split('\n')[1];
     expect(dataLine.indexOf('-->')).to.equal(dataLine.length - 3);
@@ -112,10 +116,25 @@ describe('Backpromotes comment', () => {
     expect(parseBackpromotesComment(`${BACKPROMOTES_MARKER}\n<!-- sfdx-hardis backpromotes-data {not json -->`)).to.deep.equal({ sandboxRows: [], actionRows: [] });
   });
 
+  it('says the actions were tried in a developer org when no backpromote happened there', () => {
+    const body = renderBackpromotesComment({
+      sandboxRows: [],
+      actionRows: [
+        { actionId: 'a1', label: 'Action one', phase: 'post', sandboxName: 'dev1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'success', user: 'someone' },
+        { actionId: 'a2', label: 'Action two', phase: 'post', sandboxName: 'dev1', orgId: '00D000000000001', date: '2026-10-08T10:00:00.000Z', status: 'pending', user: 'someone' },
+      ],
+    } as any);
+
+    expect(body).to.contain('**Deployment actions tried in 1 developer org, not backpromoted there yet · 👋 1 to do by hand**');
+    expect(body).to.not.contain('No sandbox received');
+  });
+
   it('renders an empty state without a table', () => {
     const body = renderBackpromotesComment(emptyBackpromotesState());
-    expect(body).to.contain('No sandbox received this Pull Request yet.');
+    expect(body).to.contain('### ⤵️ Backpromotes');
+    expect(body).to.contain('**No sandbox received this Pull Request yet**');
+    expect(body).to.not.contain('pr-banner');
     expect(body).to.not.contain('| Sandbox |');
-    expect(body).to.not.contain('Deployment actions run by backpromotes');
+    expect(body).to.not.contain('#### Deployment actions in');
   });
 });

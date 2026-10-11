@@ -14,7 +14,7 @@ import {
   uxLog,
 } from './index.js';
 import { CONSTANTS, getConfig, getEnvVar } from '../../config/index.js';
-import { SfError } from '@salesforce/core';
+import { SfError, StateAggregator } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
@@ -26,8 +26,8 @@ const execAsync = promisify(childExec);
 // Options used by authOrg / authenticateUsingDeviceLogin
 export interface AuthOrgOptions {
   checkAuth?: boolean;
-  /** Alias to give the org being connected. When absent, the user is asked for one
-      after a successful interactive login, with a default built from the instance URL. */
+  /** Alias to give the org being connected. When absent, an interactive login keeps the alias
+      the username already has, or asks the user for one with a default built from the instance URL. */
   alias?: string;
   argv?: string[];
   debug?: boolean;
@@ -100,33 +100,94 @@ export function shortenInstanceUrl(instanceUrl: string): string {
   return shortened;
 }
 
-/* Names the org that was just connected.
+// login.salesforce.com and test.salesforce.com are shared by every org: they give nothing to build an alias from
+export function isGenericLoginUrl(instanceUrl: string | null | undefined): boolean {
+  const host = (instanceUrl || '')
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/.*$/, '')
+    .toLowerCase();
+  return host === '' || host === 'login.salesforce.com' || host === 'test.salesforce.com';
+}
 
-   Called after an interactive web login, which is the only case where nobody has
-   already provided an alias: CI paths always carry one. Without this an org shows
-   up everywhere as its username, and the user has nothing short to type.
+export interface OrgAliasDecision {
+  /** Alias to pass to the login command, when it is already known */
+  alias: string | null;
+  /** When to ask the user for an alias: before the login, after it, or never */
+  ask: 'before' | 'after' | 'never';
+}
+
+/* Decides how an org connected with a web login gets its alias.
+
+   Asking before the login lets "sf org login web --alias" name the org in the same call.
+   It needs a suggestion to offer, so it is only possible when the instance URL is the one
+   of the org. With login.salesforce.com or test.salesforce.com the real instance URL is
+   only known once the login is done: the question comes after, followed by "sf alias set".
 */
-async function nameConnectedOrg(username: string, instanceUrl: string, requestedAlias?: string): Promise<string | null> {
-  if (!username || username === 'err') {
+export function decideOrgAlias(input: {
+  /** Alias the login already carries: --alias, Dev Hub alias, --target-org... */
+  carriedAlias?: string | null;
+  /** Alias the username already has, when the username is known before the login */
+  existingAlias?: string | null;
+  instanceUrl: string;
+  /** False in CI and in agent mode, where nobody can answer */
+  interactive: boolean;
+}): OrgAliasDecision {
+  if (input.carriedAlias) {
+    return { alias: input.carriedAlias, ask: 'never' };
+  }
+  if (input.existingAlias) {
+    return { alias: input.existingAlias, ask: 'never' };
+  }
+  if (!input.interactive) {
+    return { alias: null, ask: 'never' };
+  }
+  return { alias: null, ask: isGenericLoginUrl(input.instanceUrl) ? 'after' : 'before' };
+}
+
+// Alias an already known username has, read from the local SF CLI state (no CLI call)
+export async function getAliasOfUsername(username: string | null | undefined): Promise<string | null> {
+  if (!username) {
     return null;
   }
-  let alias = requestedAlias || null;
-  if (!alias) {
-    if (isCI || isAgentMode()) {
-      return null;
-    }
-    const aliasRes = await prompts({
-      type: 'text',
-      name: 'alias',
-      message: t('whatNameForThisOrg'),
-      description: t('theAliasReplacesTheUsernameEverywhere'),
-      initial: shortenInstanceUrl(instanceUrl),
-    });
-    alias = (aliasRes.alias || '').trim() || null;
+  try {
+    const stateAggregator = await StateAggregator.getInstance();
+    return stateAggregator.aliases.get(username) || null;
+  } catch {
+    return null;
   }
+}
+
+/* Names an org that is already connected.
+
+   Used when the alias could not be given to the login command itself: the login went
+   through login.salesforce.com or test.salesforce.com, or no login happened at all.
+   Without an alias an org shows up everywhere as its username, and the user has nothing
+   short to type.
+*/
+export async function nameConnectedOrg(username: string, instanceUrl: string): Promise<string | null> {
+  if (!username || username === 'err' || isCI || isAgentMode()) {
+    return null;
+  }
+  const alias = await promptOrgAlias(instanceUrl);
   if (!alias) {
     return null;
   }
+  return await setOrgAlias(alias, username);
+}
+
+// Asks for the alias of an org, with a default value built from its instance URL
+export async function promptOrgAlias(instanceUrl: string): Promise<string | null> {
+  const aliasRes = await prompts({
+    type: 'text',
+    name: 'alias',
+    message: t('whatNameForThisOrg'),
+    description: t('theAliasReplacesTheUsernameEverywhere'),
+    initial: shortenInstanceUrl(instanceUrl),
+  });
+  return (aliasRes.alias || '').trim() || null;
+}
+
+export async function setOrgAlias(alias: string, username: string): Promise<string | null> {
   // The VS Code UI hides everything after a prompt until the next action log
   uxLog("action", this, c.cyan(t('namingTheOrg', { alias: alias })));
   const aliasSetRes = await execSfdxJson(`sf alias set ${alias}=${username}`, this, {
@@ -137,6 +198,8 @@ async function nameConnectedOrg(username: string, instanceUrl: string, requested
     uxLog("warning", this, c.yellow(t('couldNotSetOrgAlias', { alias: alias })));
     return null;
   }
+  // Cached org lists still hold the org without its alias
+  await clearCache('sf org list');
   uxLog("success", this, c.green(t('orgIsNowKnownAs', { org: username, alias: alias })));
   return alias;
 }
@@ -255,6 +318,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   }
   // Perform authentication
   let updateSfCliCommandOrg = false;
+  let aliasDecision: OrgAliasDecision = { alias: null, ask: 'never' };
   if (doConnect) {
     let logged = false;
     const config = await getConfig('user');
@@ -416,14 +480,22 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
       }
 
       const configInfoUsr = await getConfig('user');
+      // Name the org with the login command itself whenever the alias can be known before the login
+      aliasDecision = decideOrgAlias({
+        carriedAlias: alias || (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? orgAlias : null),
+        existingAlias: await getAliasOfUsername(options.forceUsername),
+        instanceUrl: instanceUrl,
+        interactive: true,
+      });
+      const loginAlias = aliasDecision.ask === 'before' ? await promptOrgAlias(instanceUrl) : aliasDecision.alias;
       let loginResult: any = null;
+      // Also the action log the VS Code UI needs after the alias prompt
       uxLog("action", this, c.cyan(t('authenticatingUsingWebLogin')));
       const loginCommand =
         'sf org login web' +
-        (alias ? ` --alias ${alias}` : "") +
         (options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
         ` --instance-url ${instanceUrl}` +
-        (!alias && orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
+        (loginAlias ? ` --alias ${loginAlias}` : '');
       const maxWebLoginAttempts = 2;
       for (let attempt = 1; attempt <= maxWebLoginAttempts; attempt++) {
         try {
@@ -491,9 +563,9 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         }
       }
       uxLog("other", this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
-      // Name the org, unless the login already carried an alias
-      if (!alias) {
-        alias = await nameConnectedOrg(username, instanceUrl, options.alias);
+      // Name the org now when its instance URL was not known before the login
+      if (aliasDecision.ask === 'after') {
+        await nameConnectedOrg(username, instanceUrl);
       }
       WebSocketClient.sendRefreshStatusMessage();
       // Assign org to SfCommands

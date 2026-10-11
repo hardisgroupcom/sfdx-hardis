@@ -84,7 +84,7 @@ If the same check has been pending more than **90 minutes** without a state chan
 
 ### 5. Fix the failures (delegate to `pr-fix`)
 
-Spawn the `pr-fix` agent (Opus) via the Agent tool. Pass it the branch, PR number, current HEAD SHA, and the failure list from `pr-watch` (job names, error types, key log lines). `pr-fix` owns the diagnosis, the fix, local validation (`yarn compile` / `yarn lint` / `yarn test:only` / `yarn build:doc`), and the commit + push (including the MegaLinter `--force-with-lease` reconcile and all the git-safety rules).
+Spawn the `pr-fix` agent (Opus) via the Agent tool. Pass it the branch, PR number, current HEAD SHA, and the failure list from `pr-watch` (job names, error types, key log lines). `pr-fix` owns the diagnosis, the fix, local validation (`yarn compile` / `yarn lint` / `yarn test:only` / `yarn build:doc --commands <command id>`), and the commit + push (including the MegaLinter `--force-with-lease` reconcile and all the git-safety rules).
 
 `pr-fix` returns one of:
 

@@ -5,7 +5,7 @@ import c from "chalk";
 import { Codex, type CodexOptions } from "@openai/codex-sdk";
 import { getEnvVar } from "../../config/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
-import { resolveBooleanFlag, parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./providerConfigUtils.js";
+import { resolveBooleanFlag, parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./utils/providerConfigUtils.js";
 import { uxLog } from "../utils/index.js";
 import { AiProviderRoot } from "./aiProviderRoot.js";
 import { AiResponse } from "./index.js";

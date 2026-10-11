@@ -3,7 +3,7 @@
 Read this in full before starting. It holds the decisions that make a run meaningful and the traps
 that cost previous runs hours.
 
-The course is at <https://hardisgroupcom.github.io/sfdx-hardis-training/>: three levels, 27 labs,
+The course is at <https://sfdx-hardis-training.github.io/>: three levels, 27 labs,
 7 + 9 + 11. A full walk of the three is a long session. Level 1 alone is worth running whenever the
 contributor loop changed.
 
@@ -111,6 +111,21 @@ Four things the 2026-09-21 run paid for, driving Salesforce Setup over CDP:
 - **Setup buttons carry assistive text.** The New button's text content is `NewCustom Field`, so an
   exact-text selector finds nothing; `button[title="Custom Field"]` does. The wizard itself is a
   classic form in an iframe, with plain `input[name=...]` controls (`digleft` is Length).
+- **A CDP script whose shell was stopped can stay alive and hold the attach** (2026-10-06). Stopping
+  the background task kills the shell, not always the `node` under it; that `node` keeps its CDP
+  session, and every later `connectOverCDP` hangs after *ws connected*, which looks exactly like a
+  wedged Chrome. Look first: `Get-CimInstance Win32_Process -Filter "Name='node.exe'"` and match
+  your script's name in `CommandLine`. A script of the run must make a freeze visible on its own:
+  log each step with the time, give `connectOverCDP` a `timeout`, arm a watchdog that exits with the
+  name of the stuck step, and end with `process.exit()`, since an attached CDP connection keeps node
+  running after the work is done. Never wait silently on a step longer than its watchdog.
+- **The custom field wizard is a classic form with coded controls** (2026-10-06): the data type
+  radios are `dtype` + a code (`dtypeN` is Number; read the `label[for]` to be sure), **Next** is
+  `input[name=goNext]` with the value `" Next "`, then `MasterLabel`, `digleft` (Length), `Scale`
+  (capital S), `DeveloperName`, `Description`, `InlineHelpText`, and `options_0` is Required. On the
+  Object Settings edit page, a `tr` filtered by the field label also matches the outer layout rows:
+  take the innermost one (`.last()`), which holds exactly two boxes, Read then Edit. Prove a grant
+  by querying `FieldPermissions`, never by the page saving.
 - **Bring the tab to front before a screenshot.** Chrome throttles background tabs hard enough that
   `page.screenshot` times out. And after a long session the DevTools endpoint can wedge: `/json`
   still answers over HTTP while Playwright's attach hangs, and the cure is to close the instance's
@@ -156,6 +171,10 @@ Traps that cost earlier runs time:
   `node scripts/build/start-branches.mjs --check` on the course's `main` says whether they are
   current. Since training PR #36 the course's `start-branches.yml` publishes them on every push to
   `main`; before it, only the monthly check looked, and a push by hand was the release step.
+- **`sf plugins link .` replaces the installed sfdx-hardis, it does not shadow it** (2026-10-06).
+  `sf plugins unlink sfdx-hardis` at the end of a run leaves no sfdx-hardis at all. Put the user's
+  CLI back with `sf plugins install sfdx-hardis` (the `latest` tag): installing `sfdx-hardis@x.y.z`
+  pins that version, and `sf plugins update` then never moves it.
 - **Docker Desktop is usually not running on the workstation.** `docker run ... sf plugins` to read
   the version inside an image fails on the daemon socket. Read the version from the job instead,
   or from the registry timestamps.
@@ -230,8 +249,8 @@ Traps that cost earlier runs time:
   set, deleted components included (`showMetadataRetriever.ts` adds the type filter and `LIMIT 2000`).
 - **`hardis:project:action:create --agent` is not the dialog** (2026-09-29). It defaults `--context`
   to `process-deployment-only`; the Deployment Actions editor defaults a new action to `all`. Pass
-  `--context all` for Lab 2.4's manual step, or the check comment has no **Pending manual actions**
-  box to show and tick.
+  `--context all` for Lab 2.4's manual step, or the validation comment has no **To do by hand** checklist
+  with a box to show and tick.
 - **CI logs carry ANSI codes inside words.** `Type RemoteSiteSetting: 1 item(s) skipped` is logged
   as `Type \e[1mRemoteSiteSetting\e[22m: ...`, so a grep for the plain sentence finds nothing and the
   line looks missing. Strip the codes first: `sed 's/\x1b\[[0-9;]*m//g'`.
@@ -239,6 +258,70 @@ Traps that cost earlier runs time:
   DML then resolves the name to the deleted object and fails on *Invalid object: 01I...*, while
   metadata deploys and Setup use the new one. When a recreated object gives that error, look under
   Deleted Objects: erase the old one, or grant through the Setup page.
+
+- **A promotion stops red until its manual step is done in that org** (2026-10-05, since sfdx-hardis
+  8.13.0). The check of every Pull Request between two major branches fails right after its
+  pre-deployment actions while the deliverability step of US-026 is not marked as done in the target
+  org: `uat` in Lab 3.5, then `preprod` and `main` in Lab 3.6, and again in Lab 3.11. Tick the box
+  and run the check again: `scripts/promo.sh <pr> <targetBranch> tick` does it (the pre-deployment boxes only), merges without a
+  squash and watches the deployment job. `prflow.sh` is the wrong tool for a promotion: it reads the
+  checks of the head commit, and the head of a promotion is a major branch whose own deployment
+  job already passed.
+- **What a previous walk left in an org can make a lab pass where it should fail** (2026-10-05).
+  `helios-integration` still held the Crew Leads public group of the walk before, so the first
+  action of US-062 passed in Lab 3.3 and the lab described a failure nobody saw. The course's
+  teardown removes the group since then. When a lab is built on something being absent, query for
+  it before the lab: `SELECT Id FROM Group WHERE DeveloperName = 'Helios_Crew_Leads'`.
+- **Do not export `MSYS_NO_PATHCONV` for a whole shell.** The CDP scripts need it (`sf org open
+  --path /lightning/...`), and `panel.mjs` dies with it (`spawn C:\WINDOWS\system32\cmd.exe
+  ENOENT`, then `cannot change to '/c/git/training-run'`). Prefix the one command.
+- **`panel.mjs` prints bytes `grep` calls binary.** Filter its output with `grep -a`, or the only
+  line you get is *Binary file (standard input) matches*.
+- **A deleted fork is not a fork to reset.** `reset-fork.sh` now says so and only clones the
+  learner's copy. Let `init` create the fork, the way a learner's does: it opens the Actions page
+  and waits, and the banner is clicked over CDP (a button whose text starts with *I understand my
+  workflows*). No beta override, no trap D1.
+- **The beta on the workstation is `echo y | sf plugins install sfdx-hardis@beta`** (2026-10-07):
+  without the `y` the install waits on "isn't signed by Salesforce" and leaves the old version. It
+  follows the `beta` tag; give the user back the release with `sf plugins install sfdx-hardis`.
+- **A deleted fork and a beta override, together** (2026-10-07): `gh repo fork`, click the Actions
+  banner over CDP, `reset-fork.sh`, then the `E2E ONLY` image commit on `main` and the three
+  `training/start-level-*`, and only then `init`. `init` cuts `integration` from the fork's
+  `training/start-level-1`, so the override reaches every job without touching a protected branch.
+- **`Check my work` reads the clone it runs in.** Run `node scripts/training.mjs check` from
+  `$RUN`; from `$COURSE` it reads the shared repository and says the fork has no `integration`.
+- **`simulate --yes` opens the Pull Request and does not merge it**: the merge question defaults to
+  no. Merge with `prflow.sh <pr> squash`, which is the lab's step "or merge it yourself".
+- **The Backpromote panel passes `--from-pull-request` to the run as well as to the plan.** Calling
+  `--auto --run-id <id>` without it is refused with "No backpromote of this sandbox found": that is
+  the harness, not the product.
+- **A headless backpromote needs `GITHUB_TOKEN`** (2026-10-08). The extension hands the command its
+  own GitHub session; from a shell the plan comes back `blocked`. `GITHUB_TOKEN=$(gh auth token)`
+  before the command, and the same for `action:run`, `action:set-status`, `release-notes` and
+  `promotion:create`.
+- **The Training menu at fidelity 2 is a `panel.mjs` that runs `node`, not `sf`** (2026-10-08). The
+  Command Runner of the extension runs `node scripts/training.mjs <verb>` with
+  `SFDX_HARDIS_WEBSOCKET` set, and the questions of **Simulate my teammates**, **Create my lab
+  records** or **Publish my pipeline configuration** then arrive in the panel. A copy of `panel.mjs`
+  that spawns `process.execPath` instead of `sf` does the same headless; pass it
+  `-- scripts/training.mjs simulate`, with the path: `-- simulate` alone fails on *Cannot find
+  module*. Kept in the run folder of 2026-10-08 as `tools/panel-node.mjs`.
+- **The classic field-level security page of a profile no longer answers a CDP script**
+  (2026-10-08): `/setup/layout/flsedit.jsp` timed out on the profile row, and the tabs it left open
+  later wedged the CDP attach. Grant a profile through `FieldPermissions` DML and say so in the
+  report.
+- **Python writes CRLF on Windows.** A script editing a lab or a CLI file must open it with
+  `newline=''`, or the whole file shows as changed.
+- **`action:create --sfdmu-project` takes the workspace name** (`HeliosCrewRefData`), the value
+  the dialog's dropdown shows, not its path.
+- **Setup > Deliverability over CDP**: `/lightning/setup/OrgEmailSettings/home`, a classic form in
+  an iframe whose access level `select` holds *All email* (*Tous les e-mails* on these French
+  orgs); match the option by label. On orgs of a previous walk it is already set, which the lab's
+  fourth line covers.
+- **Lab 3.8 needs an empty repository, and `gh` cannot delete the one of the last run** (no
+  `delete_repo` scope). Create another one whose name still contains `monitoring`, and pass it:
+  `MONREPO=<login>/sfdx-hardis-training-monitoring-run3 MONRUN=C:/git/training-monitoring-run3 node
+  scripts/mon.mjs`. Point the `github-run-workflow` web capture at it.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
@@ -318,6 +401,63 @@ A stale screenshot is regenerated with the harness, never edited by hand:
 `node scripts/build/shots.mjs --lab 1.4` in the course repository, then the pills. The rules and the
 traps of that harness are in the `training-update` skill; do not rediscover them here.
 
+### When the products were released since the last walk: retake everything, then look at what moved
+
+Reading 140 pictures one by one against a product that changed is how stale ones get through. After
+a release of sfdx-hardis or of the extension, do it the other way round (2026-10-05):
+
+1. `node scripts/build/shots.mjs --all --kind vscode` in the course, on a branch. About twenty
+   minutes, no window on Windows. It retakes every VS Code picture with the extension built from
+   `../vscode-sfdx-hardis`, so pull that clone first.
+2. Compare each raw picture with `git show HEAD:<file>`, pixel by pixel (PIL `ImageChops.difference`,
+   the share of pixels that moved and their bounding box), and write old and new side by side.
+   Everything moves a little when VS Code or the side bar changed, so sort by share and open the
+   side by side sheets from the top: a picture that lost its dialog reads 60%, a re-rendered one 5%.
+3. Open the **annotated** pictures four to a sheet and check each pill against its step. A pill
+   spec is in percentages of the picture, so a panel that gained a row moves every box under it.
+4. Re-pin in `labs/_assets/annotations.json`, redraw with `annotate.mjs`, open again.
+
+Three things that run found, none of which a green harness says:
+
+- **A capture that clicks at a fixed height goes blind when a panel gains a header.** The four
+  action editor pictures showed the list with no dialog, because the Pull Request window gained its
+  path bar and the rows moved up by thirty pixels. Same for the rows the Metadata Retriever picture
+  ticks (`retrieverRows` in `scripts/build/mocks.mjs`).
+- **`.shot-gates.json` does not know every picture.** `shots.mjs` prints them as UNKNOWN and takes
+  nothing: `pipeline-config-user-stories` (gate of the same name, the file the lab uses is its
+  `-top` capture), and the three of the action recovery variant
+  (`SFDX_HARDIS_DOC_SCREENSHOTS_ACTION_RECOVERY=true` plus two click points nobody recorded).
+- **`shots.mjs` leaves the extension on its tsc build.** Run `yarn dev` in the extension before the
+  next lab driver run, or every `sf` call costs 38 seconds again.
+
+The GitHub pictures follow the fork. A new fork means new Pull Request numbers and a new branch
+rule id: point `labs/_assets/web-captures.json` at the Pull Requests of the walk as each lab
+produces them (the check, the comment, the merge box, the failed check, the flow diff, the files
+tab, the deployment actions, the promotion), and read the rule id with `gh api graphql`,
+`branchProtectionRules { databaseId pattern }`. The improved release notes picture of Lab 3.5 is a
+written example: its capture looks for a Pull Request description titled *Promotion 2026-09 to UAT*.
+
+Three more of 2026-10-08, from the outside world rather than the products:
+
+- **GitHub remembers the last merge method of the repository.** A fork that squash-merged once shows
+  "Squash and merge" on the button of the next Pull Request, where a learner's first one reads
+  "Merge pull request". The `github-pr-merge` and `github-pr-merge-squash` captures pick
+  "Create a merge commit" in the menu first (nothing is merged) so the picture is the learner's.
+- **GitHub reorders the checks.** Mega-Linter is now listed above Simulate Deployment, which moved
+  the pills of `github-pr-checks` onto the wrong rows. Check the order against the lab text.
+- **Salesforce restyles Setup.** The Object Manager crop of Lab 1.4 came out cut off: the clip in
+  `labs/_assets/salesforce-captures.json` had to be set again. The validation rule crop of Lab 3.7
+  too (x 12, y 150, 1696 x 850 since 2026-10-08). Take a `--full` capture first, read the
+  coordinates on it, then set the clip and the pills. The Developer Edition orgs speak French, so
+  take Setup pictures in a scratch org whose user is `en_US` (`helios-uat`, `helios-dev`).
+- **`capture-web.mjs` can print nothing and write nothing** (2026-10-08): the first capture after a
+  `url` change came back silent, and `annotate.mjs` then said "all current" over the old picture.
+  Pass `--force`, and read the `<name>.png <url>` line it prints before opening the picture.
+- **Somebody else's script can hold the CDP Chrome** (2026-10-08): a `scripts/xwiki/publish-docs.mjs`
+  of another session had a tab open on 9222, and every `connectOverCDP` hung after *ws connected*,
+  even after that process ended. Closing its tab with `/json/close/<id>` freed the attach. Never
+  kill a process you did not start; wait for it, then close the tab it left.
+
 ## 5. Level 1, seven labs
 
 The pipeline and the contributor loop. Nothing else in the course works if this level does not.
@@ -340,8 +480,10 @@ Level 1 notes that previous runs settled:
   that says otherwise sends the learner into a failure that reads like a broken tool.
 - Lab 1.4 creates the field **not required** on purpose: Salesforce refuses field permissions on a
   universally required field, so a required field would make the permission set step impossible.
-- Lab 1.6's Pull Request is squash merged. Feature Pull Requests are squashed; everything else in
-  this course (promotions, retrofits, config) is merged.
+- Lab 1.6's Pull Request is squash merged. Feature Pull Requests are squashed, and so are the
+  configuration ones (Lab 3.1's `features/US-050-...`, the `config/pipeline-...` branch of **Publish
+  my pipeline configuration**); promotions and retrofits are merged. The **How to merge** line of
+  the green check comment says which, and the lab text must say the same.
 - After rebuilding an org while a Pull Request is open, press **Update branch** before re-running the
   check, or the job replays the old merge ref.
 
@@ -406,6 +548,37 @@ The role split is the point of this level, and it is easy to break by being help
 retrofit the default is `helios-dev` again, which is why Labs 3.6 and 3.11 say to set `helios-prod`
 before the DORA report. Skip that line and the report reads a scratch org with no history
 (2026-09-25).
+
+**`Reset this level` into Level 3 leaves the Level 2 deployment actions behind** (2026-10-08). The
+start branch holds the Level 2 stories as one commit, and their action files keep the numbers of
+the maintainer's Pull Requests (`scripts/actions/.sfdx-hardis.26.yml`, `.28.yml`, `.37.yml`). A
+promotion collects `.sfdx-hardis.<N>.yml` only for the Pull Requests it carries, and no Pull Request
+of the fork has those numbers in the window: the promotion to `uat` comes back green at once, with
+no deliverability checklist, no crew capacity data and no nightly job, in `uat` and in every org
+after it. Lab 3.5 says so in its "If it goes wrong" since then. To walk Labs 3.5, 3.6 and 3.11 as
+written after such a reset, give the actions an owner before the first promotion: one `E2E ONLY`
+Pull Request into `integration` that removes the three files and adds them back as
+`.sfdx-hardis.<its number>.yml` (create the Pull Request first, then commit the file named after
+it), ticks its deliverability box for `integration`, and is merged. Its number is newer than the
+Level 3 stories, so its actions run after theirs: in `uat` the crew capacity batch of US-062's fix
+ran before the crew size backfill and failed on *Required fields are missing: [Crew_Size__c]*.
+Recover as Lab 3.3 teaches (`action:run` the backfill, answering yes to *Run it anyway*, then retry
+the batch with *Run all the next actions*), then re-run the deployment job. A learner who walked
+Level 2 never meets this: their Level 2 Pull Requests are older.
+
+**`auth.mjs` and `mon.mjs` finish in one pass now** (2026-10-08): the first run of Add/Configure Org
+and of Install Org Monitoring no longer stops after switching the default org. When a branch must
+merge into nothing (`main` in Lab 3.1), give `auth.mjs` a target regex that matches no branch name:
+an empty one ticks them all.
+
+**`action:run` asks two questions a learner on the right branch never sees**: *The org is linked to
+branch uat, but you are on branch integration ... Continue?* when the clone is not on the org's
+branch, and *This action was stopped because ... is still failed in uat. Run it anyway?* for an
+action a failure stopped. Both are fair; answer them in the `panel.mjs` rules.
+
+**A Remote Site Setting cannot be edited through the Tooling API**: `sf data update record
+--use-tooling-api -s RemoteProxy` reports nothing and changes nothing. Lab 3.5's test URL in
+`helios-uat` is a metadata deploy of the remote site file from a throwaway project.
 
 **The course and the CLI release in two steps, and the site publishes what `main` of the course
 says.** On 2026-09-26 Lab 3.8 on the course's `main` described the deployment repository question
@@ -489,7 +662,7 @@ in the course), never yet against real orgs in this shape. What a walk has to re
   real promotion Pull Request of the fork: the description with the folded prompt, and the red check
   comment naming the two files. Re-capture them when the Pull Request body or the comment changes.
 - The deployment comment of the release into `main` lists US-057, US-059 and US-061 **twice** in
-  its "Commits summary": once from the squash commits that arrive with the catch-up promotion, once
+  its former "Commits summary" (removed from the comments on 2026-10-07): once from the squash commits that arrive with the catch-up promotion, once
   from their cherry-picked copies on the promotion branch. The Tickets section lists each story
   once. Recorded in the 2026-09-24 report; not a lab failure.
 

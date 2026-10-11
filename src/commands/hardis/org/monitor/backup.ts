@@ -24,6 +24,7 @@ import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUti
 import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitoringAgentsMd.js';
+import { ensureMonitoringMegaLinterConfig, MEGALINTER_CONFIG_FILE } from '../../../../common/monitoring/monitoringMegaLinterConfig.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -87,6 +88,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 After each backup, the command writes an \`AGENTS.md\` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
 
 Only the block between the \`sfdx-hardis-monitoring-agents-start\` and \`sfdx-hardis-monitoring-agents-end\` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A \`CLAUDE.md\` file that imports \`AGENTS.md\` is also created when the repository has none.
+
+## MegaLinter
+
+The MegaLinter job of a monitoring pipeline reports its findings and must not fail because of them. After each backup, the command adds \`DISABLE_ERRORS: true\` to the \`.mega-linter.yml\` of the repository when the key is missing, and creates the file when the repository has none. A \`DISABLE_ERRORS\` key that is already there is never changed: write \`DISABLE_ERRORS: false\` to make the job fail on linter errors.
 
 ## Troubleshooting
 
@@ -450,6 +455,7 @@ In agent mode:
 
     // Written after the notification, so that an update of AGENTS.md is never reported as an org change
     await this.writeAgentsMd();
+    await this.ensureMegaLinterConfig();
 
     // Ask interactively only after backup is done and just before doc generation.
     if (!isCI && !agentMode && !skipDocFlagProvided) {
@@ -554,6 +560,22 @@ In agent mode:
       }
     } catch (e: any) {
       uxLog("warning", this, c.yellow(t('errorWhileWritingMonitoringAgentsMd', { message: e.message })));
+    }
+  }
+
+  // The MegaLinter job of the pipeline pulls the branch after the backup: it reads this file
+  private async ensureMegaLinterConfig() {
+    try {
+      const megaLinterConfigResult = await ensureMonitoringMegaLinterConfig();
+      if (megaLinterConfigResult.status === 'created') {
+        uxLog("action", this, c.cyan(t('monitoringMegaLinterConfigCreated', { file: MEGALINTER_CONFIG_FILE })));
+      } else if (megaLinterConfigResult.status === 'updated') {
+        uxLog("action", this, c.cyan(t('monitoringMegaLinterConfigUpdated', { file: MEGALINTER_CONFIG_FILE })));
+      } else if (megaLinterConfigResult.status === 'unparsable') {
+        uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigUnparsable', { file: MEGALINTER_CONFIG_FILE, message: megaLinterConfigResult.message })));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigNotWritten', { file: MEGALINTER_CONFIG_FILE, message: e.message })));
     }
   }
 

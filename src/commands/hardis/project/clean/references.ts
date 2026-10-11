@@ -18,6 +18,7 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 import LintAccess from '../../lint/access.js';
+import CleanEmptyItems from './emptyitems.js';
 import CleanFlowPositions from './flowpositions.js';
 import CleanListViews from './listviews.js';
 import CleanMinimizeProfiles from './minimizeprofiles.js';
@@ -35,6 +36,7 @@ const CLEANING_TYPES = [
   'dashboards',
   'datadotcom',
   'destructivechanges',
+  'emptyItems',
   'entitlement',
   'flowPositions',
   'listViewsMine',
@@ -56,6 +58,8 @@ type CleaningType = {
   commandClass?: CleaningCommandClass;
   // Set when the sub-command accepts --flows, so the cleaning can be restricted to a subset of Flows
   scopedByFlows?: boolean;
+  // Set when the sub-command accepts --delta-from, so it never deletes a file the next git delta would see as deleted
+  scopedByDeltaFrom?: boolean;
 };
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -99,6 +103,7 @@ The command's technical implementation involves several steps:
 
 - **Configuration Loading:** It reads the project's configuration to determine default cleaning types and user preferences.
 - **Cleaning Type Processing:** For each selected cleaning type, it either executes a dedicated sub-command (e.g., 
+- **Delta scope:** \`--delta-from\` is passed on to the cleanings that delete files (\`emptyItems\`): \`hardis:work:save\` sends the commit its git delta starts from, so a file that already exists there is never deleted (the next delta would turn that deletion into a destructive change).
 - **XML Filtering:** For template-based cleanings, it constructs a temporary JSON configuration file based on predefined templates or user-provided 
 - **Package.xml Cleanup:** It iterates through 
 - **Object Property Removal:** The 
@@ -127,6 +132,9 @@ The command's technical implementation involves several steps:
     }),
     flows: Flags.string({
       description: 'Comma-separated list of Flow API names, to restrict Flow cleanings to those Flows',
+    }),
+    'delta-from': Flags.string({
+      description: 'Git commit the next delta starts from, passed to the cleanings that delete files so they keep the files that already exist there',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -170,6 +178,12 @@ The command's technical implementation involves several steps:
       title: t('cleaningTypeFlowPositions'),
       commandClass: CleanFlowPositions,
       scopedByFlows: true,
+    },
+    {
+      value: 'emptyItems',
+      title: t('cleaningTypeEmptyItems'),
+      commandClass: CleanEmptyItems,
+      scopedByDeltaFrom: true,
     },
     {
       value: 'sensitiveMetadatas',
@@ -220,6 +234,8 @@ The command's technical implementation involves several steps:
   protected configFile: string | null;
   // List of Flow API names to restrict Flow cleanings to. null when the caller did not send any scope
   protected flowNames: string[] | null = null;
+  // Git commit the next delta starts from. null when the caller did not send it
+  protected deltaFrom: string | null = null;
   protected deleteItems: any = {};
 
   public async run(): Promise<AnyJson> {
@@ -229,6 +245,7 @@ The command's technical implementation involves several steps:
     this.cleaningTypes = flags.type ? [flags.type] : [];
     this.configFile = flags.config || null;
     this.flowNames = flags.flows === undefined ? null : flags.flows.split(',').map((flowName: string) => flowName.trim()).filter((flowName: string) => flowName !== '');
+    this.deltaFrom = flags['delta-from'] || null;
     const config = await getConfig('project');
 
     // Config file sent by user
@@ -291,6 +308,9 @@ The command's technical implementation involves several steps:
             continue;
           }
           commandArgs.push('--flows', this.flowNames.join(','));
+        }
+        if (this.deltaFrom !== null && cleaningTypeObj.scopedByDeltaFrom) {
+          commandArgs.push('--delta-from', this.deltaFrom);
         }
         uxLog("action", this, c.cyan(t('runCleaningCommand', { cleaningType: c.bold(cleaningType), cleaningTypeObj: cleaningTypeObj.title })));
         await cleaningTypeObj.commandClass.run(commandArgs, this.config);

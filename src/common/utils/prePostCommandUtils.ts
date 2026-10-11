@@ -5,16 +5,18 @@ import fs from './fsUtils.js';
 import * as path from 'path';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { getCurrentGitBranch, uxLog } from './index.js';
-import { GitProvider } from '../gitProvider/index.js';
-import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, buildManualActionCheckboxMarker } from './deploymentActionsStateUtils.js';
+import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
+import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, getActionStateEntry, getStateEntriesForPr, DeploymentActionRef, buildIdenticalActionNote } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
 import { getPullRequestData, setPullRequestData } from './gitUtils.js';
-import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { ActionsProvider, PrePostCommand, buildActionOutput } from '../actionsProvider/actionsProvider.js';
 import { getPromotionScopeDetails, getPullRequestScopedSfdxHardisConfig, getPullRequestScopeInfo, isSinglePullRequestScope, listAllPullRequestsForCurrentScope } from './pullRequestUtils.js';
 import { buildAlreadyPromotedMarkdown, buildInheritedBehaviorsMarkdown, getCarriedBy, getPromotionBranchConfig, isPromotionPullRequest } from './promotionBranchUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { t } from './i18n.js';
-import { ActionWhen, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getPrIdFromUserConfig } from './actionUtils.js';
+import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, evaluateActionBranchFilter, getEffectiveActionContext, getPrIdFromUserConfig, normalizeMovedFrom } from './actionUtils.js';
+// Re-exported: its callers import it from here
+export { getEffectiveActionContext } from './actionUtils.js';
 import { recordExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import {
   ActionInterpolationError,
@@ -24,6 +26,16 @@ import {
   interpolateActionFields,
 } from './actionInterpolationUtils.js';
 import { PipelineContext, buildPipelineContext, withActionContext } from './pipelineContextUtils.js';
+import {
+  IdenticalActionRun,
+  buildIdenticalCopyResult,
+  buildIdentityKeyFromProvider,
+  findIdenticalActionRun,
+  isIdenticalActionCopy,
+  markIdentitySeen,
+  recordSuccessfulActionRun,
+  resetIdenticalActionRuns,
+} from './deploymentActionIdentityUtils.js';
 
 /**
  * Outputs produced by the actions of the current process, shared between the pre-deploy and the
@@ -39,11 +51,22 @@ const actionSkipReasons: ActionSkipReasons = new Map();
 export function resetActionOutputsRegistry(): void {
   actionOutputsRegistry.clear();
   actionSkipReasons.clear();
+  // Same lifetime: an action that ran in a previous run of the process never stands for one of this run
+  resetIdenticalActionRuns();
 }
 
 /** Exposed for the deployment notification and the tests. */
 export function getActionOutputs(actionId: string): Record<string, any> | undefined {
   return actionOutputsRegistry.get(actionId);
+}
+
+/**
+ * Make the outputs an action persisted the day it ran available again, for an action retried
+ * outside of a deployment job (sf hardis:project:action:run) that consumes them.
+ */
+export function replayActionOutputs(actionId: string, outputs: Record<string, any>): void {
+  actionOutputsRegistry.set(actionId, outputs);
+  actionSkipReasons.delete(actionId);
 }
 
 /**
@@ -64,6 +87,36 @@ export function isDeploymentActionsDisabled(branchConfig: any): boolean {
 }
 
 export async function executePrePostCommands(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
+  if (property === 'commandsPreDeploy') {
+    pendingPreDeployManualActions.length = 0;
+  }
+  // The Pull Requests whose actions run are read from git: a checkout git refuses would skip them
+  await GitProvider.assertGitRepositoryNotRefused();
+  await executeDeploymentActionsOfPhase(property, options);
+  // A validation job stops right after its pre-deployment actions while one of its pre-deployment
+  // manual actions is not done: no point checking a deployment that cannot be merged yet
+  if (property === 'commandsPreDeploy' && options.checkOnly) {
+    await failOnPendingPreDeployManualActions();
+  }
+}
+
+/**
+ * A draft Pull Request: flagged so by its git provider (isDraft), or "draft" anywhere in its title
+ */
+export function isDraftPullRequest(pr: Pick<CommonPullRequestInfo, 'title' | 'isDraft'> | null | undefined): boolean {
+  if (!pr) {
+    return false;
+  }
+  return pr.isDraft === true || /draft/i.test(pr.title || '');
+}
+
+/**
+ * Pre-deployment manual actions of the current validation job that nobody has marked as performed
+ * in the target org branch yet, filled while the pre-deployment actions run
+ */
+const pendingPreDeployManualActions: PrePostCommand[] = [];
+
+async function executeDeploymentActionsOfPhase(property: 'commandsPreDeploy' | 'commandsPostDeploy', options: { success: boolean, checkOnly: boolean, extraCommands?: any[] }) {
   const actionLabel = t(property === 'commandsPreDeploy' ? 'preDeploymentActionsLabel' : 'postDeploymentActionsLabel');
   const branchConfig = await getConfig('branch');
   const deployWhen: ActionWhen = property === 'commandsPreDeploy' ? 'pre-deploy' : 'post-deploy';
@@ -92,6 +145,9 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
       `[DeploymentActions] ${t('deploymentActionsLookupFailed', { actionLabel, message: (e as Error).message })}`
     );
   }
+  // An action moved to a fix Pull Request runs from there only
+  const keptCommands = dropActionsMovedToAnotherPullRequest(commands);
+  commands.splice(0, commands.length, ...keptCommands);
   for (const cmd of commands) {
     cmd.when ??= deployWhen;
   }
@@ -132,12 +188,12 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   // (pre-deploy callers always pass success: true)
   if (options.success === false) {
     for (const cmd of commands) {
-      cmd.result = { statusCode: "not-run", skippedReason: t('actionNotRunDeploymentFailed') };
+      cmd.result = { statusCode: "not-run", skippedCode: "deployment-failed", skippedReason: t('actionNotRunDeploymentFailed') };
     }
     uxLog("warning", this, c.yellow(
       `[DeploymentActions] ${t('deploymentActionsNotRunDeploymentFailed', { count: commands.length })}`
     ));
-    manageResultMarkdownBody(property, commands, options.checkOnly);
+    manageResultMarkdownBody(property, commands);
     recordExecutedDeploymentActions(commands);
     return;
   }
@@ -182,186 +238,52 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
     targetBranch: orgBranchName,
   });
 
+  const runContext: SingleActionRunContext = {
+    checkOnly: options.checkOnly,
+    deployWhen,
+    orgBranchName,
+    currentPrNumber,
+    executionOrder: 0,
+    targetBranchCandidates,
+    hasGitProvider,
+    pipelineContext,
+  };
   for (let cmdIndex = 0; cmdIndex < commands.length; cmdIndex++) {
     const cmd = commands[cmdIndex];
-    // An action defining both branch filter lists is a definition error, not a skip: report every
-    // offending action of the job, and let the failure check after the loop fail the deployment.
-    const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
-    if (branchFilterVerdict.invalid) {
-      cmd.result = { statusCode: "failed", skippedReason: branchFilterVerdict.reason };
-      uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${branchFilterVerdict.reason}`));
-      recordActionProducedNothing(cmd, branchFilterVerdict.reason);
+    const outcome = await runSingleDeploymentAction(cmd, { ...runContext, executionOrder: cmdIndex });
+    // A definition error (both branch filter lists, an unresolved reference, an invalid action) is
+    // reported for every offending action and fails the job at the end, without stopping the others
+    if (outcome === 'definition-error') {
       continue;
-    }
-    cmd.pipelineContext = withActionContext(pipelineContext, cmd);
-    // Resolve ${{ actions.<id>.outputs.<name> }} and ${{ pipeline.<name> }} before anything reads
-    // the action fields, so validity checks and the run itself see the resolved values.
-    const interpolationScope: InterpolationScope = {
-      outputs: actionOutputsRegistry,
-      skipReasons: actionSkipReasons,
-      pipeline: cmd.pipelineContext,
-    };
-    try {
-      interpolateActionFields(cmd, interpolationScope);
-    } catch (e) {
-      if (!(e instanceof ActionInterpolationError)) {
-        throw e;
-      }
-      // A reference that cannot be resolved fails the consuming action: running it with a hole in
-      // its arguments (an empty record id, an empty channel) is worse than stopping here.
-      cmd.result = {
-        statusCode: "failed",
-        skippedCode: "unresolved-reference",
-        skippedReason: e.message,
-      };
-      uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label}: ${e.message}`));
-      recordActionProducedNothing(cmd, e.message);
-      continue;
-    }
-    const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
-    if (!actionsInstance) {
-      // buildActionInstance already set cmd.result and logged the unknown type
-      recordActionProducedNothing(cmd, cmd.result?.skippedReason || t('actionNotRunUnknownType'));
-      continue;
-    }
-    const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
-    if (actionsIssues) {
-      cmd.result = actionsIssues;
-      uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${actionsIssues.skippedReason}`));
-      recordActionProducedNothing(cmd, actionsIssues.skippedReason);
-      continue;
-    }
-    // Determine whether the action should be skipped; use a flag instead of early `continue` so
-    // that skipped outcomes are still recorded in the "Deployment Actions" PR comment below.
-    let skipAction = false;
-
-    // Skip if we are in another context than the requested one
-    const cmdContext = cmd.context || "all";
-    if (cmdContext === "check-deployment-only" && options.checkOnly === false) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: validation-only action (context check-deployment-only), and this is the deployment job`));
-      cmd.result = {
-        statusCode: "skipped",
-        skippedReason: "Action context is check-deployment-only but this is the deployment job"
-      };
-      skipAction = true;
-    } else if (cmdContext === "process-deployment-only" && options.checkOnly === true) {
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: deployment-only action (context process-deployment-only), and this is the validation job`));
-      cmd.result = {
-        statusCode: "skipped",
-        skippedReason: "Action context is process-deployment-only but this is the validation job"
-      };
-      skipAction = true;
-    } else if (branchFilterVerdict.run === false) {
-      // Skipped before the runOnlyOnceByOrg check below, so the action is never recorded as run in
-      // the org and still runs on a later deployment targeting a branch it does apply to.
-      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: ${branchFilterVerdict.reason}`));
-      cmd.result = {
-        statusCode: "skipped",
-        skippedCode: "branch-not-targeted",
-        skippedReason: branchFilterVerdict.reason
-      };
-      skipAction = true;
-    }
-    if (!skipAction) {
-      // true by default, except for action types that must run at every deployment
-      const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false;
-      if (runOnlyOnceByOrg) {
-        const gitProviderInst = await GitProvider.getInstance();
-        if (!gitProviderInst) {
-          uxLog("warning", this, c.yellow(
-            `[DeploymentActions] Skipping ${cmd.label}: runOnlyOnceByOrg requires a git provider to track state. Configure GITHUB_TOKEN / CI_SFDX_HARDIS_GITLAB_TOKEN / SYSTEM_ACCESSTOKEN / CI_SFDX_HARDIS_BITBUCKET_TOKEN.`
-          ));
-          cmd.result = { statusCode: "skipped", skippedReason: "runOnlyOnceByOrg: no git provider configured for state tracking" };
-          skipAction = true;
-        } else {
-          const existingEntry = checkActionInState(cmd.id, orgBranchName);
-          if (existingEntry) {
-            uxLog("action", this, c.grey(
-              `[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: already run in ${orgBranchName} on ${existingEntry.date}`
-            ));
-            cmd.result = {
-              statusCode: "skipped",
-              skippedCode: "already-run-in-org",
-              skippedReason: `runOnlyOnceByOrg: already run in org (${orgBranchName}) on ${existingEntry.date}`
-            };
-            // The action is skipped but its outputs were persisted the day it ran: replay them, so
-            // a later action consuming ${{ actions.<id>.outputs.<name> }} keeps resolving instead
-            // of failing on every deployment after the first.
-            if (existingEntry.outputs && Object.keys(existingEntry.outputs).length > 0) {
-              actionOutputsRegistry.set(cmd.id, existingEntry.outputs);
-              cmd.result.outputs = existingEntry.outputs;
-              uxLog("log", this, c.grey(
-                `[DeploymentActions] ${t('actionOutputsReplayed', { label: cmd.label, names: Object.keys(existingEntry.outputs).join(', ') })}`
-              ));
-            } else {
-              recordActionProducedNothing(cmd, cmd.result.skippedReason);
-            }
-            // If the action label changed, update it in the PR comment.
-            if (existingEntry.actionLabel !== cmd.label) {
-              const sourcePr = cmd.pullRequest?.idNumber || currentPrNumber;
-              upsertActionInState({ ...existingEntry, actionLabel: cmd.label }, sourcePr);
-              await persistDeploymentActionsState();
-            }
-            // Preserve the existing success entry in the PR comment - do not overwrite it with skipped.
-            continue;
-          }
-        }
-      }
-    }
-    if (!skipAction) {
-      // Run command
-      uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${describeActionWithPr(cmd)}`));
-      await executeAction(cmd);
-      // Display the failure details right where they happen, so the reason is next to the failure
-      // in the job log instead of being buried in the PR comment (or lost entirely).
-      if (cmd.result?.statusCode === "failed") {
-        logActionFailureDetails(cmd);
-      }
-    }
-    // Make the outcome of this action available to the ones that follow: either its outputs, or
-    // the reason it produced none so an unresolved reference can say what happened.
-    registerActionOutcome(cmd);
-    // Track executed/manual/skipped actions in the source PR's "Deployment Actions" comment.
-    // Actions are written to their source PR only - not to the current PR for actions from other PRs.
-    // "Already ran" skips (runOnlyOnceByOrg + existing success entry) are excluded via the
-    // early `continue` above to avoid overwriting the existing success record.
-    const sourcePrNumber = cmd.pullRequest?.idNumber || currentPrNumber;
-    const trackableStatuses = ['success', 'failed', 'manual', 'skipped'];
-    if (hasGitProvider && sourcePrNumber > 0 && cmd.result?.statusCode && trackableStatuses.includes(cmd.result.statusCode)) {
-      const { jobId, jobUrl } = await getJobInfoWithUrl();
-      upsertActionInState({
-        actionId: cmd.id,
-        actionLabel: cmd.label,
-        orgBranch: orgBranchName,
-        when: deployWhen,
-        executionOrder: cmdIndex,
-        status: getReportedActionStatus(cmd),
-        jobId,
-        jobUrl,
-        date: new Date().toISOString(),
-        output: cmd.result.output,
-        // Persisted so a runOnlyOnceByOrg action can replay them when it is skipped later.
-        // The masked copy, because this is written into a Pull Request comment.
-        outputs: cmd.result.outputsForDisplay,
-      }, sourcePrNumber);
-      await persistDeploymentActionsState();
     }
     if (cmd.result?.statusCode === "failed" && cmd.allowFailure !== true) {
       uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} failed, stopping execution of further actions.`));
-      // Give the actions that will not run an explicit reason, so the Pull Request comment does not
-      // show a bare "not run" without saying why.
-      for (let notRunIndex = cmdIndex + 1; notRunIndex < commands.length; notRunIndex++) {
-        if (!commands[notRunIndex].result) {
-          commands[notRunIndex].result = {
-            statusCode: "not-run",
-            skippedReason: `Not run because a previous action failed (${cmd.label})`,
-          };
-        }
+      const stoppedCommands = await markActionsStoppedByFailure(commands, cmdIndex, runContext);
+      // Only post-deploy actions can be retried: a pre-deploy failure stops the whole deployment,
+      // and the next one runs them all again
+      if (hasGitProvider && !options.checkOnly && deployWhen === 'post-deploy') {
+        await recordStoppedActions(cmd, stoppedCommands, {
+          orgBranchName,
+          currentPrNumber,
+          deployWhen,
+          // The copies of identical actions left the stopped list: each action keeps its own position
+          executionOrderOf: (stoppedCmd) => commands.indexOf(stoppedCmd),
+          targetBranchCandidates,
+        });
       }
       break;
     }
   }
-  manageResultMarkdownBody(property, commands, options.checkOnly, orgBranchName);
+  manageResultMarkdownBody(property, commands, orgBranchName);
+  // A pre-deployment manual action still waiting in the target org: it has to be performed before
+  // the merge. An action already marked as done there was skipped above (runOnlyOnceByOrg)
+  if (options.checkOnly && deployWhen === 'pre-deploy') {
+    for (const cmd of commands) {
+      if (cmd.type === 'manual' && cmd.result?.statusCode === 'manual') {
+        pendingPreDeployManualActions.push(cmd);
+      }
+    }
+  }
   // Expose the executed actions so the post-deployment notification can report them
   recordExecutedDeploymentActions(commands);
   // Check commands results
@@ -389,18 +311,290 @@ export async function executePrePostCommands(property: 'commandsPreDeploy' | 'co
   }
 }
 
+export interface SingleActionRunContext {
+  checkOnly: boolean;
+  deployWhen: ActionWhen;
+  orgBranchName: string;
+  currentPrNumber: number;
+  executionOrder: number;
+  targetBranchCandidates: string[];
+  hasGitProvider: boolean;
+  pipelineContext: PipelineContext;
+  // Pull Request carrying the action when cmd.pullRequest is not set (sf hardis:project:action:run
+  // reads the definition from the Pull Request files): its state says whether it already ran
+  actionPrNumber?: number;
+  // Written in the state entry when the action runs outside of a deployment job
+  // (sf hardis:project:action:run): who ran it, and from where.
+  note?: string;
+  // The run is recorded outside of the Pull Request comment (a developer org without a Pull Request
+  // yet): the caller checks runOnlyOnceByOrg against that record itself.
+  skipRunOnlyOnceCheck?: boolean;
+}
+
+/**
+ * Run one deployment action and record its outcome: branch filter, interpolation, validity
+ * checks, context and runOnlyOnceByOrg checks, execution, then the Deployment Actions Pull Request
+ * comment state. Used by the deployment jobs (one call per action) and by
+ * sf hardis:project:action:run, so a retried action goes through exactly the same steps.
+ * The outcome is in cmd.result.
+ */
+export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: SingleActionRunContext): Promise<'done' | 'definition-error'> {
+  normalizeMovedFrom(cmd);
+  // An action defining both branch filter lists is a definition error, not a skip: report every
+  // offending action of the job, and let the failure check after the loop fail the deployment.
+  const branchFilterVerdict = evaluateActionBranchFilter(cmd, ctx.targetBranchCandidates);
+  if (branchFilterVerdict.invalid) {
+    cmd.result = { statusCode: "failed", skippedReason: branchFilterVerdict.reason };
+    uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${branchFilterVerdict.reason}`));
+    recordActionProducedNothing(cmd, branchFilterVerdict.reason);
+    return 'definition-error';
+  }
+  cmd.pipelineContext = withActionContext(ctx.pipelineContext, cmd);
+  // Resolve ${{ actions.<id>.outputs.<name> }} and ${{ pipeline.<name> }} before anything reads
+  // the action fields, so validity checks and the run itself see the resolved values.
+  const interpolationScope: InterpolationScope = {
+    outputs: actionOutputsRegistry,
+    skipReasons: actionSkipReasons,
+    pipeline: cmd.pipelineContext,
+  };
+  try {
+    interpolateActionFields(cmd, interpolationScope);
+  } catch (e) {
+    if (!(e instanceof ActionInterpolationError)) {
+      throw e;
+    }
+    // A reference that cannot be resolved fails the consuming action: running it with a hole in
+    // its arguments (an empty record id, an empty channel) is worse than stopping here.
+    cmd.result = {
+      statusCode: "failed",
+      skippedCode: "unresolved-reference",
+      skippedReason: e.message,
+    };
+    uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label}: ${e.message}`));
+    recordActionProducedNothing(cmd, e.message);
+    return 'definition-error';
+  }
+  const actionsInstance = await ActionsProvider.buildActionInstance(cmd);
+  if (!actionsInstance) {
+    // buildActionInstance already set cmd.result and logged the unknown type
+    recordActionProducedNothing(cmd, cmd.result?.skippedReason || t('actionNotRunUnknownType'));
+    return 'definition-error';
+  }
+  const actionsIssues = await actionsInstance.checkValidityIssues(cmd);
+  if (actionsIssues) {
+    cmd.result = actionsIssues;
+    uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${actionsIssues.skippedReason}`));
+    recordActionProducedNothing(cmd, actionsIssues.skippedReason);
+    return 'definition-error';
+  }
+  // Determine whether the action should be skipped; use a flag instead of early `return` so
+  // that skipped outcomes are still recorded in the "Deployment Actions" PR comment below.
+  let skipAction = false;
+
+  // Skip if we are in another context than the requested one
+  const cmdContext = getEffectiveActionContext(cmd);
+  if (cmdContext === "check-deployment-only" && ctx.checkOnly === false) {
+    uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: validation-only action (context check-deployment-only), and this is the deployment job`));
+    cmd.result = {
+      statusCode: "skipped",
+      skippedCode: "context-validation-only",
+      skippedReason: "Action context is check-deployment-only but this is the deployment job"
+    };
+    skipAction = true;
+  } else if (cmdContext === "process-deployment-only" && ctx.checkOnly === true) {
+    uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: deployment-only action (context process-deployment-only), and this is the validation job`));
+    cmd.result = {
+      statusCode: "skipped",
+      skippedCode: "context-deployment-only",
+      skippedReason: "Action context is process-deployment-only but this is the validation job"
+    };
+    skipAction = true;
+  } else if (branchFilterVerdict.run === false) {
+    // Skipped before the runOnlyOnceByOrg check below, so the action is never recorded as run in
+    // the org and still runs on a later deployment targeting a branch it does apply to.
+    uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: ${branchFilterVerdict.reason}`));
+    cmd.result = {
+      statusCode: "skipped",
+      skippedCode: "branch-not-targeted",
+      skippedReason: branchFilterVerdict.reason
+    };
+    skipAction = true;
+  }
+  // The action was moved to a fix Pull Request, which already ran it in this org: the copy left in
+  // this Pull Request (a description cannot be edited after the merge) must not run again, even
+  // when its job is re-run without the fix Pull Request in its scope
+  if (!skipAction) {
+    // In any org branch: once moved, the fix Pull Request carries the action, and the original
+    // definition must not run in an org the fix has not reached yet either
+    const ownerPr = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
+    const movedEntry = ownerPr > 0 ? getStateEntriesForPr(ownerPr).find((e) => e.actionId === cmd.id && e.status === 'moved') || null : null;
+    if (movedEntry?.status === 'moved') {
+      const reason = t('actionSkippedMovedTo', { pr: movedEntry.movedTo || '?' });
+      uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: ${reason}`));
+      cmd.result = { statusCode: "skipped", skippedReason: reason };
+      recordActionProducedNothing(cmd, reason);
+      return 'done';
+    }
+  }
+  if (!skipAction) {
+    // true by default, except for action types that must run at every deployment
+    const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false && ctx.skipRunOnlyOnceCheck !== true;
+    if (runOnlyOnceByOrg) {
+      const gitProviderInst = await GitProvider.getInstance();
+      if (!gitProviderInst) {
+        uxLog("warning", this, c.yellow(
+          `[DeploymentActions] Skipping ${cmd.label}: runOnlyOnceByOrg requires a git provider to track state. Configure GITHUB_TOKEN / CI_SFDX_HARDIS_GITLAB_TOKEN / SYSTEM_ACCESSTOKEN / CI_SFDX_HARDIS_BITBUCKET_TOKEN.`
+        ));
+        cmd.result = { statusCode: "skipped", skippedReason: "runOnlyOnceByOrg: no git provider configured for state tracking" };
+        skipAction = true;
+      } else {
+        const existingEntry = checkActionInState(cmd.id, ctx.orgBranchName, getActionOwnerPrs(cmd, ctx.actionPrNumber));
+        if (existingEntry) {
+          uxLog("action", this, c.grey(
+            `[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: already run in ${ctx.orgBranchName} on ${existingEntry.date}`
+          ));
+          cmd.result = {
+            statusCode: "skipped",
+            skippedCode: "already-run-in-org",
+            skippedReason: `runOnlyOnceByOrg: already run in org (${ctx.orgBranchName}) on ${existingEntry.date}`
+          };
+          // The action is skipped but its outputs were persisted the day it ran: replay them, so
+          // a later action consuming ${{ actions.<id>.outputs.<name> }} keeps resolving instead
+          // of failing on every deployment after the first.
+          if (existingEntry.outputs && Object.keys(existingEntry.outputs).length > 0) {
+            actionOutputsRegistry.set(cmd.id, existingEntry.outputs);
+            cmd.result.outputs = existingEntry.outputs;
+            uxLog("log", this, c.grey(
+              `[DeploymentActions] ${t('actionOutputsReplayed', { label: cmd.label, names: Object.keys(existingEntry.outputs).join(', ') })}`
+            ));
+          } else {
+            recordActionProducedNothing(cmd, cmd.result.skippedReason);
+          }
+          // If the action label changed, update it in the PR comment.
+          if (existingEntry.actionLabel !== cmd.label) {
+            const sourcePr = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
+            upsertActionInState({ ...existingEntry, actionLabel: cmd.label }, sourcePr);
+            await persistDeploymentActionsState();
+          }
+          // Preserve the existing success entry in the PR comment - do not overwrite it with skipped.
+          return 'done';
+        }
+      }
+    }
+  }
+  // An identical action (same type, phase, user and parameters) of another source already succeeded
+  // in this run: its work is in the org, so this one is recorded as done by it instead of running a
+  // second time. An action written twice in one Pull Request, or twice in the config, runs twice.
+  // The key is read before the run: a command action appends --target-org to its command.
+  let identityKey: string | null = null;
+  if (!skipAction) {
+    identityKey = buildIdentityKeyFromProvider(actionsInstance, cmd, ctx.deployWhen);
+    const repeatedInSource = markIdentitySeen(identityKey, getActionSourcePr(cmd, ctx));
+    const identicalRun = repeatedInSource ? null : findIdenticalActionRun(identityKey);
+    if (identicalRun) {
+      applyIdenticalCopy(cmd, identicalRun);
+      skipAction = true;
+    }
+  }
+  if (!skipAction) {
+    // Run command
+    uxLog("action", this, c.cyan(`[DeploymentActions] Running action ${describeActionWithPr(cmd)}`));
+    await executeAction(cmd);
+    // Display the failure details right where they happen, so the reason is next to the failure
+    // in the job log instead of being buried in the PR comment (or lost entirely).
+    if (cmd.result?.statusCode === "failed") {
+      logActionFailureDetails(cmd);
+    }
+    // The identical actions that come later in this run are done by this one
+    if (cmd.result?.statusCode === "success") {
+      recordSuccessfulActionRun(identityKey, buildIdenticalActionRun(cmd, ctx));
+    }
+  }
+  // Make the outcome of this action available to the ones that follow: either its outputs, or
+  // the reason it produced none so an unresolved reference can say what happened.
+  registerActionOutcome(cmd);
+  // Track executed/manual/skipped actions in the source PR's "Deployment Actions" comment.
+  // "Already ran" skips (runOnlyOnceByOrg + existing success entry) are excluded via the
+  // early `return` above to avoid overwriting the existing success record.
+  await recordActionOutcomeInState(cmd, ctx);
+  return 'done';
+}
+
+/**
+ * Mark the actions after a blocking failure. One whose identical action already succeeded in this
+ * run is recorded as done like any copy: it would have been skipped anyway, and its work is in the
+ * org. The others are not run, with the failure as reason, so the Pull Request comment does not show
+ * a bare "not run" without saying why. Returns the stopped ones, which can be retried.
+ * Exported for unit tests.
+ */
+export async function markActionsStoppedByFailure(commands: PrePostCommand[], failedIndex: number, ctx: SingleActionRunContext): Promise<PrePostCommand[]> {
+  const failedCmd = commands[failedIndex];
+  const stoppedCommands: PrePostCommand[] = [];
+  for (let index = failedIndex + 1; index < commands.length; index++) {
+    const cmd = commands[index];
+    if (cmd.result) {
+      continue;
+    }
+    if (await recordIdenticalCopyOfStoppedAction(cmd, { ...ctx, executionOrder: index })) {
+      continue;
+    }
+    cmd.result = {
+      statusCode: "not-run",
+      skippedCode: "stopped-by-failure",
+      stoppedByLabel: failedCmd.label,
+      skippedReason: `Not run because a previous action failed (${failedCmd.label})`,
+    };
+    stoppedCommands.push(cmd);
+  }
+  return stoppedCommands;
+}
+
+/**
+ * Status of an action as written in the state stores (the Deployment Actions comment, the local file
+ * of a draft, the Backpromotes comment). A copy of an identical action of the same run is done there:
+ * the work it describes is in the org.
+ */
+export function getRecordedActionStatus(cmd: PrePostCommand): 'success' | 'failed' | 'warning' | 'manual' | 'skipped' {
+  return isIdenticalActionCopy(cmd) ? 'success' : getReportedActionStatus(cmd);
+}
+
+/**
+ * Remove the actions that were moved to a fix Pull Request from the Pull Request they come from:
+ * the fix Pull Request carries the corrected definition under the same id, and the original one
+ * (still in a merged YAML file or Pull Request description) must not run again.
+ * Exported for unit tests.
+ */
+export function dropActionsMovedToAnotherPullRequest(commands: PrePostCommand[]): PrePostCommand[] {
+  commands.forEach(normalizeMovedFrom);
+  const moved = commands.filter((cmd) => cmd.movedFrom && cmd.movedFrom > 0);
+  if (moved.length === 0) {
+    return commands;
+  }
+  return commands.filter((cmd) => {
+    const replacement = moved.find((m) => m !== cmd && m.id === cmd.id && cmd.pullRequest?.idNumber === m.movedFrom);
+    if (replacement) {
+      uxLog("log", this, c.grey(`[DeploymentActions] ${t('actionMovedSuperseded', { label: cmd.label, oldPr: replacement.movedFrom, newPr: replacement.pullRequest?.idStr || '?' })}`));
+      return false;
+    }
+    return true;
+  });
+}
+
 /**
  * Publish what an action produced to the outputs registry, so later actions can consume it.
- * Only a successful action publishes outputs; anything else records why there are none.
+ * Only a successful action, or the copy of one, publishes outputs; anything else records why there
+ * are none.
  */
 function registerActionOutcome(cmd: PrePostCommand): void {
   const outputs = cmd.result?.outputs;
-  if (cmd.result?.statusCode === 'success' && outputs && Object.keys(outputs).length > 0) {
+  // A copy feeds the references to its own id with what its identical action produced
+  const produced = cmd.result?.statusCode === 'success' || isIdenticalActionCopy(cmd);
+  if (produced && outputs && Object.keys(outputs).length > 0) {
     actionOutputsRegistry.set(cmd.id, outputs);
     actionSkipReasons.delete(cmd.id);
     return;
   }
-  if (cmd.result?.statusCode === 'success') {
+  if (produced) {
     // Succeeded without declaring outputs: referencing one is a configuration mistake, not a skip
     return;
   }
@@ -414,6 +608,210 @@ function registerActionOutcome(cmd: PrePostCommand): void {
  */
 function recordActionProducedNothing(cmd: PrePostCommand, reason?: string): void {
   actionSkipReasons.set(cmd.id, reason || cmd.result?.statusCode || 'not run');
+}
+
+/**
+ * Pull Requests whose state says whether an action already ran in an org: the one carrying it, and
+ * the one it was moved from. None for an action of the branch or project config, whose runs are
+ * recorded on whichever Pull Request each job deployed: every loaded Pull Request is searched.
+ */
+function getActionOwnerPrs(cmd: PrePostCommand, actionPrNumber?: number): number[] {
+  const ownerPr = cmd.pullRequest?.idNumber || actionPrNumber || 0;
+  if (ownerPr <= 0) {
+    return [];
+  }
+  const movedFrom = Number(cmd.movedFrom);
+  return Number.isInteger(movedFrom) && movedFrom > 0 && movedFrom !== ownerPr ? [ownerPr, movedFrom] : [ownerPr];
+}
+
+/** The Pull Request an action comes from, 0 for the branch or project config: its source for identical actions */
+function getActionSourcePr(cmd: PrePostCommand, ctx: SingleActionRunContext): number {
+  return cmd.pullRequest?.idNumber || ctx.actionPrNumber || 0;
+}
+
+function applyIdenticalCopy(cmd: PrePostCommand, identicalRun: IdenticalActionRun): void {
+  cmd.result = buildIdenticalCopyResult(identicalRun);
+  uxLog("action", this, c.grey(`[DeploymentActions] ${t('deploymentActionSkipped', { label: describeActionWithPr(cmd), reason: cmd.result.skippedReason })}`));
+}
+
+/** What a successful action leaves for the identical actions that come after it in the run */
+function buildIdenticalActionRun(cmd: PrePostCommand, ctx: SingleActionRunContext): IdenticalActionRun {
+  return {
+    ref: {
+      actionId: cmd.id,
+      label: cmd.label,
+      pr: getActionSourcePr(cmd, ctx),
+      prUrl: cmd.pullRequest?.webUrl,
+    },
+    outputs: cmd.result?.outputs,
+    outputsForDisplay: cmd.result?.outputsForDisplay,
+  };
+}
+
+/**
+ * Write the outcome of an action in the "Deployment Actions" comment of its source Pull Request.
+ * Actions are written to their source PR only - not to the current PR for actions from other PRs.
+ * A copy of an identical action is written as done, with a note naming the action that did it.
+ */
+async function recordActionOutcomeInState(cmd: PrePostCommand, ctx: SingleActionRunContext): Promise<void> {
+  const sourcePrNumber = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
+  const trackableStatuses = ['success', 'failed', 'manual', 'skipped'];
+  if (!ctx.hasGitProvider || sourcePrNumber <= 0 || !cmd.result?.statusCode || !trackableStatuses.includes(cmd.result.statusCode)) {
+    return;
+  }
+  const identicalCopy = isIdenticalActionCopy(cmd);
+  const { jobId, jobUrl } = await getJobInfoWithUrl();
+  upsertActionInState({
+    actionId: cmd.id,
+    actionLabel: cmd.label,
+    orgBranch: ctx.orgBranchName,
+    when: ctx.deployWhen,
+    executionOrder: ctx.executionOrder,
+    status: getRecordedActionStatus(cmd),
+    jobId,
+    jobUrl,
+    date: new Date().toISOString(),
+    output: cmd.result.output,
+    // Persisted so a runOnlyOnceByOrg action can replay them when it is skipped later.
+    // The masked copy, because this is written into a Pull Request comment.
+    outputs: cmd.result.outputsForDisplay,
+    note: identicalCopy && cmd.result.identicalTo ? buildIdenticalActionNote(cmd.result.identicalTo) : ctx.note,
+  }, sourcePrNumber);
+  // The action was moved from another Pull Request to fix its definition: once the copy has run in
+  // this org (or an identical action did its work), the original row points at it instead of
+  // staying failed forever.
+  if (cmd.movedFrom && cmd.movedFrom > 0 && cmd.movedFrom !== sourcePrNumber && (cmd.result.statusCode !== 'skipped' || identicalCopy) && ctx.orgBranchName !== DEV_SANDBOXES_BRANCH_NAME) {
+    upsertActionInState({
+      actionId: cmd.id,
+      actionLabel: cmd.label,
+      orgBranch: ctx.orgBranchName,
+      when: ctx.deployWhen,
+      executionOrder: ctx.executionOrder,
+      status: 'moved',
+      jobId,
+      jobUrl,
+      date: new Date().toISOString(),
+      movedTo: sourcePrNumber,
+      note: `Moved to #${sourcePrNumber}`,
+    }, cmd.movedFrom);
+  }
+  await persistDeploymentActionsState();
+}
+
+/**
+ * A stopped action whose identical action of another source already succeeded in this run is a
+ * copy, when this job would have run it. Its raw fields are compared: one still holding a ${{ }}
+ * reference stays stopped, as its real values may depend on the actions the failure prevented.
+ */
+async function recordIdenticalCopyOfStoppedAction(cmd: PrePostCommand, ctx: SingleActionRunContext): Promise<boolean> {
+  normalizeMovedFrom(cmd);
+  if (cmd.type === 'manual') {
+    return false;
+  }
+  const provider = await ActionsProvider.buildActionInstance(cmd, { quiet: true });
+  if (!provider || !wouldRunInThisJob(cmd, ctx, provider)) {
+    return false;
+  }
+  const identityKey = buildIdentityKeyFromProvider(provider, cmd, ctx.deployWhen, { refusePlaceholders: true });
+  if (markIdentitySeen(identityKey, getActionSourcePr(cmd, ctx))) {
+    return false;
+  }
+  const identicalRun = findIdenticalActionRun(identityKey);
+  if (!identicalRun) {
+    return false;
+  }
+  applyIdenticalCopy(cmd, identicalRun);
+  registerActionOutcome(cmd);
+  await recordActionOutcomeInState(cmd, ctx);
+  return true;
+}
+
+/**
+ * Whether this job would have run an action it did not reach, with the decisions of
+ * runSingleDeploymentAction: its context and its branch filter let it run, it was not moved to a fix
+ * Pull Request, and runOnlyOnceByOrg does not skip it (done in the org already, or no git provider
+ * to track it). Its validity is not checked again: an action identical to one that succeeded, with
+ * the same parameters and the same user, is valid.
+ */
+function wouldRunInThisJob(cmd: PrePostCommand, ctx: SingleActionRunContext, provider: ActionsProvider): boolean {
+  const context = getEffectiveActionContext(cmd);
+  if ((context === 'check-deployment-only' && !ctx.checkOnly) || (context === 'process-deployment-only' && ctx.checkOnly)) {
+    return false;
+  }
+  const verdict = evaluateActionBranchFilter(cmd, ctx.targetBranchCandidates);
+  if (verdict.invalid || verdict.run === false) {
+    return false;
+  }
+  const ownerPr = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
+  if (ownerPr > 0 && getStateEntriesForPr(ownerPr).some((entry) => entry.actionId === cmd.id && entry.status === 'moved')) {
+    return false;
+  }
+  const runOnlyOnceByOrg = provider.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false && ctx.skipRunOnlyOnceCheck !== true;
+  if (!runOnlyOnceByOrg) {
+    return true;
+  }
+  return ctx.hasGitProvider && !checkActionInState(cmd.id, ctx.orgBranchName, getActionOwnerPrs(cmd, ctx.actionPrNumber));
+}
+
+/**
+ * Record the actions a failure stopped as 'not-run' in their source Pull Request comments, linked to
+ * the failed action, so they can be retried (sf hardis:project:action:run) or closed by hand.
+ * Only the actions that would really have run here are recorded: not the validation-only ones,
+ * not those targeting another branch, not those already performed in this org.
+ */
+async function recordStoppedActions(
+  failedCmd: PrePostCommand,
+  stoppedCommands: PrePostCommand[],
+  ctx: { orgBranchName: string; currentPrNumber: number; deployWhen: ActionWhen; executionOrderOf: (cmd: PrePostCommand) => number; targetBranchCandidates: string[] }
+): Promise<void> {
+  const failedPr = failedCmd.pullRequest?.idNumber || ctx.currentPrNumber;
+  if (failedPr <= 0) {
+    return;
+  }
+  const { jobId, jobUrl } = await getJobInfoWithUrl();
+  const stoppedRefs: DeploymentActionRef[] = [];
+  for (const cmd of stoppedCommands) {
+    const sourcePr = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
+    if (sourcePr <= 0 || getEffectiveActionContext(cmd) === 'check-deployment-only') {
+      continue;
+    }
+    const verdict = evaluateActionBranchFilter(cmd, ctx.targetBranchCandidates);
+    if (verdict.invalid || verdict.run === false || checkActionInState(cmd.id, ctx.orgBranchName, getActionOwnerPrs(cmd))) {
+      continue;
+    }
+    stoppedRefs.push({ pr: sourcePr, actionId: cmd.id });
+    upsertActionInState({
+      actionId: cmd.id,
+      actionLabel: cmd.label,
+      orgBranch: ctx.orgBranchName,
+      when: cmd.when || ctx.deployWhen,
+      executionOrder: ctx.executionOrderOf(cmd),
+      status: 'not-run',
+      jobId,
+      jobUrl,
+      date: new Date().toISOString(),
+      output: cmd.result?.skippedReason,
+      blockedBy: { pr: failedPr, actionId: failedCmd.id },
+    }, sourcePr);
+  }
+  if (stoppedRefs.length === 0) {
+    return;
+  }
+  // An action failing before it runs (invalid definition, unresolved reference) has no entry yet
+  const failedEntry = getActionStateEntry(failedPr, failedCmd.id, ctx.orgBranchName) || {
+    actionId: failedCmd.id,
+    actionLabel: failedCmd.label,
+    orgBranch: ctx.orgBranchName,
+    when: failedCmd.when || ctx.deployWhen,
+    executionOrder: ctx.executionOrderOf(failedCmd),
+    status: 'failed' as const,
+    jobId,
+    jobUrl,
+    date: new Date().toISOString(),
+    output: failedCmd.result?.output || failedCmd.result?.skippedReason,
+  };
+  upsertActionInState({ ...failedEntry, stoppedActions: stoppedRefs }, failedPr);
+  await persistDeploymentActionsState();
 }
 
 /**
@@ -437,20 +835,6 @@ function logActionFailureDetails(cmd: PrePostCommand): void {
   } else {
     uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('actionNoOutputAvailable', { label: cmd.label })}`));
   }
-}
-
-/**
- * True when the action was not attempted because the metadata deployment failed.
- */
-function isNotRun(cmd: PrePostCommand): boolean {
-  return cmd.result?.statusCode === "not-run";
-}
-
-/**
- * True when the action result carries something worth displaying (not empty, not blank lines).
- */
-function hasOutput(cmd: PrePostCommand): boolean {
-  return (cmd.result?.output || '').trim() !== '';
 }
 
 /**
@@ -492,9 +876,17 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     if (!scopeInfo || scopeInfo.pullRequests.length === 0) {
       return;
     }
-    const prLinks = scopeInfo.pullRequests
-      .map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`))
-      .join(', ');
+    // Listed one per line in a folded section of the comment, never inline: a promotion window can
+    // carry hundreds of Pull Requests
+    setPullRequestData({
+      pullRequestsInScope: scopeInfo.pullRequests.map((pr) => ({
+        idStr: pr.idStr,
+        idNumber: pr.idNumber,
+        title: pr.title,
+        webUrl: pr.webUrl,
+        authorName: pr.authorName,
+      })),
+    });
     // Only name what the Pull Requests of the scope really carry
     const prConfigs = await Promise.all(
       scopeInfo.pullRequests.map((pr) => getPullRequestScopedSfdxHardisConfig(pr).catch(() => null))
@@ -508,13 +900,12 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       // Promotion branch: the stories come from the Pull Request description, say so in both jobs
       const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
       const carried = scopeInfo.pullRequests.filter((pr) => pr.idNumber !== prInfo?.idNumber);
-      const carriedLinks = carried.map((pr) => (pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`)).join(', ');
       const branchLabel = prInfo?.sourceBranch ? `\`${prInfo.sourceBranch}\`` : 'this promotion branch';
       if (carried.length === 0) {
         paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch but none of the Pull Requests it declares (\`promotionPullRequests\`) could be used, so only its own deployment actions and Apex test classes ${checkOnly ? 'are' : 'were'} processed.`);
       } else {
         const subjectsSentence = subjects.length > 0 ? `${subjectsLabel} ${checkOnly ? 'are' : 'were'} collected from them` : `They carry no deployment action and no Apex test class`;
-        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description: ${carriedLinks}. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
+        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
       }
       const inheritedMarkdown = buildInheritedBehaviorsMarkdown(promotionDetails.inheritedBehaviors, scopeInfo.pullRequests);
       if (inheritedMarkdown) {
@@ -526,13 +917,14 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
     // Stories brought by a promotion Pull Request of the window: say where they come from
     const carriedByPromotion = scopeInfo.pullRequests.filter((pr) => getCarriedBy(pr) !== null);
     if (carriedByPromotion.length > 0) {
-      const items = carriedByPromotion.map((pr) => {
+      // Name the promotion Pull Requests, not every story they carry
+      const promotions = new Map<string, string>();
+      for (const pr of carriedByPromotion) {
         const carriedBy = getCarriedBy(pr)!;
-        const prLink = pr.webUrl ? `[#${pr.idStr}](${pr.webUrl})` : `#${pr.idStr}`;
         const promotionLink = carriedBy.webUrl ? `[#${carriedBy.idStr}](${carriedBy.webUrl})` : `#${carriedBy.idStr}`;
-        return `${prLink} (via \`${carriedBy.sourceBranch}\` ${promotionLink})`;
-      });
-      paragraphs.push(`ℹ️ Pull Requests carried by a promotion branch of this window: ${items.join(', ')}.`);
+        promotions.set(carriedBy.idStr, `\`${carriedBy.sourceBranch}\` ${promotionLink}`);
+      }
+      paragraphs.push(`ℹ️ ${carriedByPromotion.length} Pull Request(s) of this window were carried by ${promotions.size === 1 ? 'the promotion branch' : 'the promotion branches'} ${[...promotions.values()].join(', ')}.`);
     }
     const alreadyPromotedMarkdown = buildAlreadyPromotedMarkdown(promotionDetails.alreadyPromoted);
     if (alreadyPromotedMarkdown) {
@@ -542,7 +934,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       if (subjects.length > 0) {
         let collectedSentence = `ℹ️ ${subjectsLabel} are collected from the content of this Pull Request`;
         if (scopeInfo.pullRequests.length > 1) {
-          collectedSentence += ` (${scopeInfo.pullRequests.length} Pull Requests carried: ${prLinks})`;
+          collectedSentence += ` (${scopeInfo.pullRequests.length} Pull Requests)`;
         }
         paragraphs.push(collectedSentence + `.`);
       }
@@ -567,7 +959,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       }
       // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
       // in which case the actions were collected but deliberately not run (see fix #2053)
-      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s): ${prLinks}.`;
+      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s).`;
       if (subjects.includes('Deployment actions')) {
         collectedSentence += ` Each action keeps its tracked state on its own Pull Request.`;
       }
@@ -643,6 +1035,11 @@ function collectSourcePrNumbers(commands: PrePostCommand[], currentPrNumber: num
     if (cmd.pullRequest?.idNumber && cmd.pullRequest.idNumber > 0) {
       prNumbers.add(cmd.pullRequest.idNumber);
     }
+    // The Pull Request an action was moved from gets a 'moved' entry: its state must be loaded so
+    // the entry is merged with what it already holds
+    if (cmd.movedFrom && cmd.movedFrom > 0) {
+      prNumbers.add(cmd.movedFrom);
+    }
   }
   return [...prNumbers];
 }
@@ -661,16 +1058,16 @@ Please assign it to a Pull Request before proceeding, or delete the file it if y
 
 To assign it, rename .sfdx-hardis.draft.yml into ${suggestedFileName}.
 `;
-    const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
     let prData = getPullRequestData()
     prData = Object.assign(prData, {
       messageKey: prData.messageKey ?? 'deployment',
-      [propertyFormatted]: errorMessage
+      // Shown in the "needs you" part of the comment: how to fix it
+      blockingIssueMarkdownBody: `#### ❌ Draft deployment actions file\n\n${errorMessage.trim()}`,
     });
     // When the deployment already failed, keep its error as the reported one: the draft file is a
     // secondary problem and must not take over the Pull Request comment title.
     if (deploySuccess !== false) {
-      prData = Object.assign(prData, { title: "❌ Error: Draft deployment actions file found" });
+      prData = Object.assign(prData, { title: "❌ Error: Draft deployment actions file found", status: 'invalid' });
     }
     setPullRequestData(prData);
     await GitProvider.managePostPullRequestComment(checkOnly);
@@ -687,55 +1084,13 @@ async function executeAction(cmd: PrePostCommand): Promise<void> {
     cmd.result = res;
   } catch (e) {
     uxLog("error", this, c.red(`[DeploymentActions] Exception while running action ${cmd.label}: ${(e as Error).message}`));
+    // A failed command throws an error whose message already repeats its stderr (Node) then its
+    // stdout and stderr (execCommand): keep the two streams once, the message when there are none
     cmd.result = {
       statusCode: 'failed',
-      output: (e as Error).message
+      output: buildActionOutput(e) || (e as Error).message
     };
   }
-}
-
-function buildManualActionsSection(commands: PrePostCommand[], isPreDeploy: boolean, checkOnly: boolean, orgBranch?: string): string {
-  if (isPreDeploy && !checkOnly) {
-    return '';
-  }
-  if (!isPreDeploy && checkOnly) {
-    return '';
-  }
-  // Pending actions render as unticked to-dos. Actions already performed in the org render as
-  // TICKED items: rendering them unticked again would make the next job's checkbox sync re-tick
-  // them in a loop, and would tell the reader to perform an action that is already done.
-  // Actions not run because the deployment failed are not to-dos: nothing was deployed for them
-  // to complete, and they will be listed again during the next successful deployment.
-  // Structured skippedCode first; the wording match remains as a safety net for results built
-  // by an older sfdx-hardis version in the same process chain
-  const isDoneManual = (c: PrePostCommand) =>
-    c.result?.statusCode === "skipped" &&
-    (c.result.skippedCode === "already-run-in-org" || (c.result.skippedReason || '').startsWith("runOnlyOnceByOrg: already run"));
-  // Failed manual actions (invalid customUsername, auth error...) stay in the checklist as
-  // unticked to-dos: the operator still has to perform them.
-  const manualCommands = commands.filter(c => c.type === "manual" &&
-    (c.result?.statusCode === "manual" || c.result?.statusCode === "failed" || isDoneManual(c)));
-  if (manualCommands.length === 0) {
-    return '';
-  }
-  const title = isPreDeploy
-    ? `#### Manual Actions to perform before proceeding with deployment:\n\n`
-    : `#### Manual Actions to perform after deployment:\n\n`;
-  let section = title;
-  for (const cmd of manualCommands) {
-    // Newlines in a label would break the checklist line and its hidden marker
-    const singleLineLabel = (cmd.label || '').replace(/\r?\n/g, ' ');
-    const labelCol = cmd.pullRequest
-      ? `${singleLineLabel} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))`
-      : singleLineLabel;
-    // The hidden marker lets sfdx-hardis detect a ticked checkbox on the next job, record the
-    // action as done for the org branch, and tick it in the other comments where it appears.
-    const marker = orgBranch ? `${buildManualActionCheckboxMarker(cmd.id, orgBranch, cmd.pullRequest?.idNumber || 0, cmd.when)} ` : '';
-    section += `- [${isDoneManual(cmd) ? 'x' : ' '}] ${marker}${labelCol}\n`;
-  }
-  section += `\n*Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.*\n`;
-  section += `\n---\n\n`;
-  return section;
 }
 
 /**
@@ -751,142 +1106,46 @@ export function getReportedActionStatus(cmd: PrePostCommand): 'success' | 'faile
   return cmd.result?.statusCode as 'success' | 'failed' | 'manual' | 'skipped';
 }
 
-// Status icons of the actions results table, in the order they are listed in the legend
-const ACTION_STATUS_LEGEND: { icon: string; label: string }[] = [
-  { icon: '✅', label: 'success' },
-  { icon: '⚠️', label: 'warning (failed, allowed to fail)' },
-  { icon: '❌', label: 'failed' },
-  { icon: '👋', label: 'waiting for manual execution' },
-  { icon: '⚪', label: 'skipped' },
-  { icon: '⏭️', label: 'not run' },
-  { icon: '❓', label: 'unknown' },
-];
-
-/**
- * Status icon of an action in the results table.
- */
-function getActionStatusIcon(cmd: PrePostCommand): string {
-  return cmd.result?.statusCode === "manual" ?
-    "👋" :
-    cmd.result?.statusCode === "success" ? '✅' :
-      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ? '⚠️' :
-        (cmd.result?.statusCode === "failed") ? '❌' :
-          cmd.result?.statusCode === "skipped" ? '⚪' :
-            cmd.result?.statusCode === "not-run" ? '⏭️' : '❓';
+// The Pull Request comment layout (utilsPrCommentLayout.ts) renders the actions from these facts
+function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], orgBranch?: string) {
+  setPullRequestData({ [property === 'commandsPreDeploy' ? 'preDeployActions' : 'postDeployActions']: { commands, orgBranch } });
 }
 
 /**
- * Legend of the actions results table, listing only the statuses actually present in it.
- * A legend explaining outcomes that do not appear in the table above it is noise.
+ * Fail a validation job while a pre-deployment manual action is not marked as performed in the
+ * target org branch: it must be done before the merge, and a green validation would let the Pull
+ * Request be merged without it. Not on a draft Pull Request, still being worked on. Off by default:
+ * turned on with failValidationOnPendingManualActions: true.
  */
-function buildActionStatusLegend(usedIcons: string[]): string {
-  const used = new Set(usedIcons);
-  const parts = ACTION_STATUS_LEGEND.filter((entry) => used.has(entry.icon)).map((entry) => `${entry.icon} ${entry.label}`);
-  return parts.length > 0 ? `\n*Legend: ${parts.join(' · ')}*\n` : '';
-}
-
-/**
- * Build the "Actions Results" markdown section posted in the Pull Request comment.
- * Exported so it can be unit tested without a git provider or a config layer.
- */
-export function buildActionsResultMarkdown(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, orgBranch?: string): string {
-  let markdownBody = `### ${property === 'commandsPreDeploy' ? 'Pre-deployment Actions' : 'Post-deployment Actions'} Results\n\n`;
-
-  // Add manual actions section
-  const isPreDeploy = property === 'commandsPreDeploy';
-  markdownBody += buildManualActionsSection(commands, isPreDeploy, checkOnly, orgBranch);
-
-  // Count labels so two distinct actions sharing the same label do not look like a duplicated row
-  const labelCounts = new Map<string, number>();
-  for (const cmd of commands) {
-    labelCounts.set(cmd.label, (labelCounts.get(cmd.label) || 0) + 1);
+async function failOnPendingPreDeployManualActions(): Promise<void> {
+  if (pendingPreDeployManualActions.length === 0) {
+    return;
   }
-  const hasDuplicateLabels = [...labelCounts.values()].some((count) => count > 1);
-
-  // Build markdown table
-  markdownBody += `| <!-- --> | Label | Type | Status | Details |\n`;
-  markdownBody += `|:--------:|-------|------|--------|---------|\n`;
-  const usedStatusIcons: string[] = [];
-  for (const cmd of commands) {
-    const statusIcon = getActionStatusIcon(cmd);
-    usedStatusIcons.push(statusIcon);
-    const statusCol = cmd.result?.statusCode === "manual" ?
-      'waiting for manual execution' :
-      `${getReportedActionStatus(cmd) || 'not run'}`;
-    const detailCol = (cmd.result?.statusCode === "skipped" || cmd.result?.statusCode === "not-run") ?
-      (cmd.result?.skippedReason || '<!-- -->') :
-      (cmd.result?.statusCode === "failed" && cmd.allowFailure === true) ?
-        (cmd.result.skippedReason ? `${cmd.result.skippedReason} (Allowed to fail)` : "(Allowed to fail)") :
-        (cmd.result?.statusCode === "failed" && cmd.result.skippedReason) ?
-          cmd.result.skippedReason :
-          cmd.result?.statusCode === "manual" ?
-            "Instructions in the details section below" :
-            "See details below";
-    const labelCol = cmd.pullRequest ?
-      `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
-      cmd.label;
-    markdownBody += `| ${statusIcon} | ${labelCol} | ${cmd.type || 'command'} | ${statusCol} | ${detailCol} |\n`;
+  const branchConfig = await getConfig('branch');
+  if (branchConfig.failValidationOnPendingManualActions !== true) {
+    uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('pendingManualActionsNotBlocking', { count: pendingPreDeployManualActions.length })}`));
+    return;
   }
-  if (hasDuplicateLabels) {
-    markdownBody += `\n*Some rows share the same label but are distinct actions, each defined on its own Pull Request.*\n`;
+  const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+  const orgBranch = prInfo?.targetBranch || await getCurrentGitBranch() || 'unknown';
+  if (isDraftPullRequest(prInfo)) {
+    uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('pendingManualActionsDraftPullRequest', { count: pendingPreDeployManualActions.length, orgBranch })}`));
+    return;
   }
-  markdownBody += buildActionStatusLegend(usedStatusIcons);
-  // Add details in html <detail> blocks, embedded in a root <details> block to avoid markdown rendering issues
-  const commandsInResults = commands.filter(c => hasOutput(c) || (c.type === "manual" && !isNotRun(c)));
-  if (commandsInResults.length > 0) {
-    markdownBody += `\n<details>\n<summary>Expand to see details for each action</summary>\n\n`;
-    for (const cmd of commands) {
-      if (hasOutput(cmd)) {
-        // Truncate output if too long: Either the last 2000 characters, either the last 50 lines (if they are not more than 2000 characters)
-        // Indicate when output has been truncated
-        const maxOutputLength = 2000;
-        let outputForMarkdown = cmd.result!.output as string;
-        const outputLines = outputForMarkdown.split('\n');
-        if (outputForMarkdown.length > maxOutputLength) {
-          outputForMarkdown = outputForMarkdown.substring(outputForMarkdown.length - maxOutputLength);
-        }
-        if (outputLines.length > 50) {
-          const last50Lines = outputLines.slice(-50).join('\n');
-          if (last50Lines.length <= maxOutputLength) {
-            outputForMarkdown = last50Lines;
-          }
-        }
-        if (outputForMarkdown.length < (cmd.result!.output as string).length) {
-          outputForMarkdown = `... (output truncated, total length was ${(cmd.result!.output as string).length} characters)\n` + outputForMarkdown;
-        }
-
-        const labelTitle = cmd.pullRequest ?
-          `${cmd.label} (${cmd.pullRequest.idStr || "?"})` :
-          cmd.label;
-        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
-        markdownBody += '```\n';
-        markdownBody += outputForMarkdown
-        markdownBody += '\n```\n';
-        markdownBody += '</details>\n';
-      }
-      else if (cmd.type === "manual" && !isNotRun(cmd)) {
-        const labelTitle = cmd.pullRequest ?
-          `${cmd.label} ([${cmd.pullRequest.idStr || "?"}](${cmd.pullRequest.webUrl || ""}))` :
-          cmd.label;
-        markdownBody += `\n<details id="command-${cmd.id}">\n<summary>${labelTitle}</summary>\n\n`;
-        // Instructions are markdown written by humans: a blockquote keeps their lists, links and
-        // bold text rendered, where a code fence would show them as raw text. Raw HTML tags are
-        // neutralized so an instruction cannot close the enclosing <details> blocks.
-        const instructions = (cmd?.parameters?.instructions || "No instructions provided.") as string;
-        const safeInstructions = instructions.replace(/</g, '&lt;');
-        markdownBody += safeInstructions.split('\n').map((line) => `> ${line}`).join('\n');
-        markdownBody += '\n</details>\n';
-      }
-    }
-    markdownBody += `\n</details>\n`;
+  uxLog("error", this, c.red(`[DeploymentActions] ${t('pendingManualActionsBlockValidation', { count: pendingPreDeployManualActions.length, orgBranch })}`));
+  for (const cmd of pendingPreDeployManualActions) {
+    const pr = cmd.pullRequest?.idNumber || prInfo?.idNumber || 0;
+    uxLog("error", this, c.red(`- ${cmd.label} (${pr > 0 ? `#${pr}, ` : ''}id ${cmd.id})`));
+    uxLog("log", this, c.grey(`  sf hardis:project:action:set-status --pr ${pr} --action-id "${cmd.id}" --org-branch ${orgBranch} --status success`));
   }
-  return markdownBody;
-}
-
-function manageResultMarkdownBody(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, orgBranch?: string) {
-  const propertyFormatted = property === 'commandsPreDeploy' ? 'preDeployCommandsResultMarkdownBody' : 'postDeployCommandsResultMarkdownBody';
-  const prData = {
-    [propertyFormatted]: buildActionsResultMarkdown(property, commands, checkOnly, orgBranch)
-  };
+  uxLog("warning", this, c.yellow(`[DeploymentActions] ${t('pendingManualActionsHowToConfirm', { orgBranch })}`));
+  let prData = getPullRequestData();
+  prData = Object.assign(prData, {
+    title: '❌ Error: Manual actions to perform before the merge',
+    messageKey: prData.messageKey ?? 'deployment',
+    status: 'invalid',
+  });
   setPullRequestData(prData);
+  await GitProvider.managePostPullRequestComment(true);
+  throw new SfError(t('pendingManualActionsBlockValidation', { count: pendingPreDeployManualActions.length, orgBranch }));
 }

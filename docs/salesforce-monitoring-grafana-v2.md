@@ -145,7 +145,7 @@ Single-org overview, the hub for one org.
 - Deployment counts, success rates, average duration, validation success rate
 - Deployments per week and per-deployment duration trends
 - **Deployment impact**: how many components each deployment created, updated, deleted, or left untouched (a full deployment sends the whole package.xml, so the number of deployed items is the size of the project, not the size of the release)
-- **DORA metrics** (deployment frequency, lead time, change failure rate, MTTR, rework rate): requires scheduling [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/)
+- **DORA metrics** (deployment frequency, lead time, change failure rate, MTTR, rework rate): requires scheduling [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/), in the deployment pipeline or in the monitoring pipeline. See [Send DORA metrics to Grafana](hardis/doc/salesforce-devops-dora-report.md#send-dora-metrics-to-grafana)
 - Recent deployments list
 
 ### 05 - Security Posture
@@ -227,6 +227,8 @@ The score travels with the `MONITORING_SUMMARY` notification, which reaches mess
 
 The summary also carries a `ChannelsFailed` metric: notification channel failures (expired Slack token, wrong email configuration...) are logged as warnings without failing the monitoring jobs, so chart or alert on `ChannelsFailed_metric` to detect them.
 
+The same goes for the checks: a monitoring job that ran to its end is green even when its checks found issues or could not run. `CommandsFailed_metric` counts those checks: chart it, or alert on it, without watching the pipelines.
+
 ## Import the alerts (optional)
 
 The alert pack lives in [docs/grafana/alerts-v2](https://github.com/hardisgroupcom/sfdx-hardis/tree/main/docs/grafana/alerts-v2):
@@ -276,16 +278,16 @@ Dashboards only display aggregates, counts, and (for detail tables) the pseudony
 
 ## Troubleshooting
 
-| Symptom                                                            | Likely cause                                                                                                                                                                                                          |
-|--------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Everything shows "No data"                                         | `NOTIF_API_METRICS_URL` not configured (Prometheus feeds all trend/average panels), or the datasource variables resolved to the wrong datasource (see [Import the dashboards](#import-the-dashboards))                |
-| Detail tables are empty but stats show values                      | `NOTIF_API_URL` (Loki) not configured, or logs skipped via `NOTIF_API_SKIP_LOGS`                                                                                                                                      |
-| Health score, impacted users, or top failing Apex panels are empty | The monitoring pipeline runs an older sfdx-hardis version: these panels need recently added metrics                                                                                                                   |
-| Health score panel empty on some days                              | Normal: the score is computed on weekly runs only, and panels look back 8 days                                                                                                                                        |
-| DORA panels show "Schedule dora-report"                            | [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) is not scheduled on the monitoring pipeline                                                                                        |
-| Indicator Detail shows the graph and value but no detail rows      | Detail rows come from Loki logs (~30 days retention on Grafana Cloud) while metrics keep 13 months: the last run of that indicator is older than the logs retention. Fix the monitoring job so the command runs again |
-| An org appears twice or values look doubled                        | Not expected in v2 (queries aggregate per org); check that two different monitoring repos are not both pushing with different `SFDX_HARDIS_MONITORING_KEY` values for the same org                                    |
-| Old entries still show readable usernames                          | Anonymization only applies to new entries; older ones keep their values until logs retention expires                                                                                                                  |
+| Symptom                                                            | Likely cause                                                                                                                                                                                                                                                                  |
+|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Everything shows "No data"                                         | `NOTIF_API_METRICS_URL` not configured (Prometheus feeds all trend/average panels), or the datasource variables resolved to the wrong datasource (see [Import the dashboards](#import-the-dashboards))                                                                        |
+| Detail tables are empty but stats show values                      | `NOTIF_API_URL` (Loki) not configured, or logs skipped via `NOTIF_API_SKIP_LOGS`                                                                                                                                                                                              |
+| Health score, impacted users, or top failing Apex panels are empty | The monitoring pipeline runs an older sfdx-hardis version: these panels need recently added metrics                                                                                                                                                                           |
+| Health score panel empty on some days                              | Normal: the score is computed on weekly runs only, and panels look back 8 days                                                                                                                                                                                                |
+| DORA panels show "Schedule dora-report"                            | [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/) ran in neither the deployment pipeline nor the monitoring pipeline in the last 35 days, or it failed: it needs a git provider token that can read the CI jobs of the deployment repository |
+| Indicator Detail shows the graph and value but no detail rows      | Detail rows come from Loki logs (~30 days retention on Grafana Cloud) while metrics keep 13 months: the last run of that indicator is older than the logs retention. Fix the monitoring job so the command runs again                                                         |
+| An org appears twice or values look doubled                        | Not expected in v2 (queries aggregate per org); check that two different monitoring repos are not both pushing with different `SFDX_HARDIS_MONITORING_KEY` values for the same org                                                                                            |
+| Old entries still show readable usernames                          | Anonymization only applies to new entries; older ones keep their values until logs retention expires                                                                                                                                                                          |
 
 ## Contributing
 
@@ -295,8 +297,8 @@ The JSON files are generated: edit [`generator.mjs`](https://github.com/hardisgr
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 3.8 - Monitor your production org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-8-monitor-your-production-org/)
+- [Lab 3.8 - Monitor your production org](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-8-monitor-your-production-org/)
 
 <!-- training-links:end -->

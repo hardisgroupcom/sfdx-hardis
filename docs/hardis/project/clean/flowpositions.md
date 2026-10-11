@@ -59,7 +59,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | agent         | boolean | Run in non-interactive mode for agents and automation                      |           |          |         |
 | debug<br/>-d  | boolean | Activate debug mode (more logs)                                            |           |          |         |
 | files         | option  | Comma-separated list of Flow metadata files to clean, instead of all Flows |           |          |         |
-| flags-dir     | option  | undefined                                                                  |           |          |         |
+| flags-dir     | option  | Import flag values from a directory.                                       |           |          |         |
 | flows         | option  | Comma-separated list of Flow API names to clean, instead of all Flows      |           |          |         |
 | folder<br/>-f | option  | Root folder                                                                | force-app |          |         |
 | json          | boolean | Format output as json.                                                     |           |          |         |

@@ -1,15 +1,18 @@
+import { SfError } from '@salesforce/core';
 import c from "chalk";
 import { debuglog } from "util";
 import { GitProvider } from '../gitProvider/index.js';
+import { ONLY_BOXES_ARE_EDITED, TICK_HINT_FOR_AN_ACTION } from '../gitProvider/utils/utilsPrCommentWording.js';
 import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { readActions } from './actionUtils.js';
+import { evaluateActionBranchFilter, getEffectiveActionContext, readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
 import { gitProviderBatchSizes, mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getBannerMarkdownAndLink, getPrCommentBannerMarkdown, PrCommentBannerKey } from '../../config/index.js';
-import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/prCommentNav.js';
+import { formatShortDate } from '../gitProvider/utils/utilsPrCommentDates.js';
+import { extractPrCommentNavLine, getPrCommentNavLinks, isPrCommentNavEnabled, renderPrCommentNav, wrapPrCommentNav } from '../gitProvider/utils/prCommentNav.js';
 
 // Enable with NODE_DEBUG=sfdxhardis
 const debug = debuglog("sfdxhardis");
@@ -21,6 +24,26 @@ export const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-st
 // Ticking one of these checkboxes records the manual action as done for the org branch.
 export const MANUAL_ACTION_CHECKBOX_MARKER_PREFIX = '<!-- sfdx-hardis-manual-action ';
 
+// Prefix of the hidden marker set on every failed (or stopped) action checklist item. Ticking one
+// of these checkboxes records the action as closed by hand for the org branch.
+export const FAILED_ACTION_CHECKBOX_MARKER_PREFIX = '<!-- sfdx-hardis-failed-action ';
+
+// Reference to an action of a Pull Request, used to link a failed action with the ones it stopped
+export interface DeploymentActionRef {
+  pr: number;
+  actionId: string;
+}
+
+// Org branch of the tries made in a developer org (same value as DEV_SANDBOXES_BRANCH_NAME of
+// actionUtils, not imported to keep this module free of a dependency cycle)
+export const DEV_SANDBOXES_ORG_BRANCH = 'dev-sandboxes';
+
+// What the two checkbox marker prefixes start with, to list the comments holding either in one call
+const CHECKBOX_MARKER_COMMON_PREFIX = '<!-- sfdx-hardis-';
+
+// Hard bound on the stopped actions remembered on a failed entry, to keep the comment size in check
+const MAX_STOPPED_ACTIONS = 50;
+
 export interface DeploymentActionStateEntry {
   actionId: string;
   actionLabel: string;
@@ -31,7 +54,10 @@ export interface DeploymentActionStateEntry {
   // outcome must not read as an error in the comment, but the action did not succeed either.
   // 'pending' is never stored: the release notes of a branch use it for an action with no entry in
   // the org of that branch yet.
-  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped' | 'pending';
+  // 'not-run' is an action stopped because a previous action of the same run failed: it is stored
+  // so it can be retried or closed by hand, and like 'failed' it runs again on the next deployment.
+  // 'moved' is an action whose definition was moved to a fix Pull Request (movedFrom).
+  status: 'success' | 'failed' | 'warning' | 'manual' | 'skipped' | 'pending' | 'not-run' | 'moved';
   jobId: string;
   jobUrl: string;
   date: string;
@@ -39,6 +65,14 @@ export interface DeploymentActionStateEntry {
   // Values a custom function returned. Persisted so a runOnlyOnceByOrg action, skipped on later
   // deployments, can still feed ${{ actions.<id>.outputs.<name> }} references.
   outputs?: Record<string, any>;
+  // Who closed or retried the action by hand, and how. Displayed in the results table.
+  note?: string;
+  // Fix Pull Request the action was moved to ('moved' entries)
+  movedTo?: number;
+  // Failed action that stopped this one ('not-run' entries)
+  blockedBy?: DeploymentActionRef;
+  // Actions this failure stopped, in execution order ('failed' entries)
+  stoppedActions?: DeploymentActionRef[];
   prNumber?: number;
   prUrl?: string;
 }
@@ -181,15 +215,34 @@ export async function loadDeploymentActionsState(sourcePrNumbers: number[]): Pro
 
 /**
  * Check if an action already ran successfully in an org.
- * Searches across ALL loaded PR state buckets.
+ * With ownerPrs, only the state of these Pull Requests is read: a Pull Request action is read from
+ * its own Pull Request and from the one it was moved from (movedFrom keeps the id on purpose), so
+ * two Pull Requests reusing an id (a copied actions file) never see each other's runs.
+ * Without ownerPrs, every loaded Pull Request is searched: an action of the branch or project config
+ * is recorded on whichever Pull Request each job deployed.
  */
-export function checkActionInState(actionId: string, orgBranch: string): DeploymentActionStateEntry | null {
-  const state = getMultiPrState();
-  for (const entries of state.entriesByPr.values()) {
+export function checkActionInState(actionId: string, orgBranch: string, ownerPrs: number[] = []): DeploymentActionStateEntry | null {
+  for (const entries of listStateBuckets(ownerPrs)) {
     const found = entries.find(e => e.actionId === actionId && e.orgBranch.trim() === orgBranch.trim() && e.status === 'success');
     if (found) return found;
   }
   return null;
+}
+
+/**
+ * State entry of an action in an org branch, whatever its status, read from the bucket of the
+ * Pull Request that owns it. The state of that Pull Request must have been loaded first.
+ */
+export function getActionStateEntry(prNumber: number, actionId: string, orgBranch: string): DeploymentActionStateEntry | null {
+  const entries = getMultiPrState().entriesByPr.get(prNumber) || [];
+  return entries.find((e) => e.actionId === actionId && e.orgBranch.trim() === orgBranch.trim()) || null;
+}
+
+/**
+ * All the loaded state entries of a Pull Request (empty when its state was not loaded).
+ */
+export function getStateEntriesForPr(prNumber: number): DeploymentActionStateEntry[] {
+  return [...(getMultiPrState().entriesByPr.get(prNumber) || [])];
 }
 
 /**
@@ -220,6 +273,21 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
   if (idx >= 0 && entry.status === 'skipped' && entries[idx].status !== 'skipped') {
     return;
   }
+  // A stop is not an outcome either: it must not hide an action already performed or waiting for
+  // its manual execution, and a moved action keeps pointing at its fix Pull Request.
+  if (idx >= 0 && entry.status === 'not-run' && ['success', 'manual', 'moved'].includes(entries[idx].status)) {
+    return;
+  }
+  // Moving an action never rewrites history in an org where it already succeeded
+  if (idx >= 0 && entry.status === 'moved' && entries[idx].status === 'success') {
+    return;
+  }
+  // An action failing again, or retried successfully, keeps the list of the actions its first
+  // failure stopped, until a run records a new list: they are still waiting, and a retry of one of
+  // them finds the ones after it through this list.
+  if (idx >= 0 && ['failed', 'success', 'moved'].includes(entry.status) && !entry.stoppedActions && entries[idx].stoppedActions) {
+    entry = { ...entry, stoppedActions: entries[idx].stoppedActions };
+  }
   if (idx >= 0) {
     entries[idx] = entry;
   } else {
@@ -237,8 +305,9 @@ export function upsertActionInState(entry: DeploymentActionStateEntry, sourcePrN
  * or that were missed during the initial load.
  * Action definitions are read from the PR's .sfdx-hardis.PRNB.yml file.
  */
-export async function persistDeploymentActionsState(): Promise<void> {
+export async function persistDeploymentActionsState(options: { failWhenNotSaved?: boolean } = {}): Promise<void> {
   const state = getMultiPrState();
+  const notSaved: { prNumber: number; message: string }[] = [];
   for (const prNumber of state.dirtyPrs) {
     const inMemoryEntries = state.entriesByPr.get(prNumber) || [];
     // Re-read the current PR comment and merge to preserve entries from other org branches
@@ -247,10 +316,21 @@ export async function persistDeploymentActionsState(): Promise<void> {
     state.entriesByPr.set(prNumber, mergedEntries);
     // Load action definitions from the PR's YAML file to populate the details section
     const actionDefs = await loadActionDefsFromPrYaml(prNumber);
-    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber, existingBody);
-    await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
+    // Project and branch actions are recorded in this comment too: their definitions tell the verdict
+    // which skips the deployment job of the merge will run
+    const configActionDefs = await loadConfigActionDefs([...new Set(mergedEntries.map((e) => e.orgBranch))]);
+    const body = buildDeploymentActionsCommentBody(mergedEntries, actionDefs, prNumber, existingBody, configActionDefs);
+    const refused = await GitProvider.tryUpsertDeploymentActionsCommentForPr(prNumber, body);
+    if (refused) {
+      notSaved.push({ prNumber, message: refused });
+    }
   }
   state.dirtyPrs.clear();
+  // A command whose whole job is to record a status (set-status) says so instead of reporting a
+  // success nobody will ever read back. A deployment job goes on: its warning is in the log.
+  if (options.failWhenNotSaved && notSaved.length > 0) {
+    throw new SfError(notSaved.map((item) => t('deploymentActionsStateNotSaved', { pr: item.prNumber, message: item.message })).join(' '));
+  }
 }
 
 /**
@@ -329,7 +409,9 @@ function statusFromIcon(cell: string): DeploymentActionStateEntry['status'] {
     cell.includes('\u274c') ? 'failed' :
       cell.includes('\u26a0') ? 'warning' :
         cell.includes('\ud83d\udc4b') ? 'manual' :
-          cell.includes('\u26aa') ? 'skipped' : 'failed';
+          cell.includes('\u26aa') ? 'skipped' :
+            cell.includes('\u23f8') ? 'not-run' :
+              cell.includes('\u21aa') ? 'moved' : 'failed';
 }
 
 function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentActionStateEntry[] {
@@ -356,8 +438,10 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
       if (cell === '' || cell === '\u2b1c') {
         continue; // \u2b1c : not run in this org branch yet
       }
-      // The date lives before the <br/>: the job link URL after it may itself contain a date
-      const cellHead = cell.split('<br/>')[0];
+      // The date lives before the <br/>: the job link URL after it may itself contain a date. A
+      // provider that draws no <br/> gets a space in its place (Bitbucket): the link is then what
+      // follows the first space before a bracket.
+      const cellHead = cell.split(/<br\/>|\s(?=\[)/)[0];
       const dateMatch = cellHead.match(/(\d{4}-\d{2}-\d{2})/);
       const jobLinkMatch = cell.match(/\[([^\]]+)\]\(([^)]+)\)/);
       entries.push({
@@ -374,6 +458,7 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
         // Replayed to a runOnlyOnceByOrg action skipped on this run, so the actions consuming
         // its outputs keep resolving after the first deployment
         outputs: decodeOutputsMarker(cell),
+        ...decodeMetaMarker(cell),
       });
     }
   }
@@ -407,13 +492,15 @@ function parseLegacyDeploymentActionsCommentBody(body: string): DeploymentAction
   return entries;
 }
 
-// Status icons of the "Status by org branch" matrix, in the order they are listed in the legend
+// Status icons of the "Status by org" matrix, in the order they are listed in the legend
 const MATRIX_STATUS_LEGEND: { icon: string; label: string }[] = [
   { icon: '✅', label: 'done' },              // ✅
   { icon: '❌', label: 'failed' },            // ❌
   { icon: '⚠️', label: 'warning (failed, allowed to fail)' }, // ⚠️
-  { icon: '👋', label: 'waiting for manual execution' }, // 👋
+  { icon: '👋', label: 'to do by hand' }, // 👋
   { icon: '⚪', label: 'skipped' },           // ⚪
+  { icon: '⏸️', label: 'waits for a failed action' }, // ⏸️
+  { icon: '↪️', label: 'moved to another Pull Request' }, // ↪️
   { icon: '❓', label: 'unknown' },           // ❓
   { icon: '⬜', label: 'not run in this org branch yet' },     // ⬜
 ];
@@ -473,6 +560,51 @@ export function decodeOutputsMarker(cell: string): Record<string, any> | undefin
   }
 }
 
+/**
+ * Recovery details of an entry (note, moved to, blocked by, stopped actions), carried inside the
+ * matrix cell as an HTML comment for the same reasons as the outputs marker.
+ */
+const META_MARKER_REGEX = /<!--\s*meta:([A-Za-z0-9+/=]+)\s*-->/;
+
+type DeploymentActionStateMeta = Pick<DeploymentActionStateEntry, 'note' | 'movedTo' | 'blockedBy' | 'stoppedActions'>;
+
+export function encodeMetaMarker(entry: DeploymentActionStateMeta): string {
+  const meta: DeploymentActionStateMeta = {};
+  if (entry.note) meta.note = entry.note;
+  if (entry.movedTo) meta.movedTo = entry.movedTo;
+  if (entry.blockedBy) meta.blockedBy = entry.blockedBy;
+  if (entry.stoppedActions && entry.stoppedActions.length > 0) meta.stoppedActions = entry.stoppedActions.slice(0, MAX_STOPPED_ACTIONS);
+  if (Object.keys(meta).length === 0) {
+    return '';
+  }
+  return `<!-- meta:${Buffer.from(JSON.stringify(meta), 'utf8').toString('base64')} -->`;
+}
+
+export function decodeMetaMarker(cell: string): DeploymentActionStateMeta {
+  const match = META_MARKER_REGEX.exec(cell || '');
+  if (!match) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(Buffer.from(match[1], 'base64').toString('utf8'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+    const meta: DeploymentActionStateMeta = {};
+    if (typeof parsed.note === 'string') meta.note = parsed.note;
+    if (Number.isInteger(parsed.movedTo)) meta.movedTo = parsed.movedTo;
+    if (isActionRef(parsed.blockedBy)) meta.blockedBy = parsed.blockedBy;
+    if (Array.isArray(parsed.stoppedActions)) meta.stoppedActions = parsed.stoppedActions.filter(isActionRef);
+    return meta;
+  } catch (_e) {
+    return {};
+  }
+}
+
+function isActionRef(value: any): value is DeploymentActionRef {
+  return value && typeof value === 'object' && Number.isInteger(value.pr) && typeof value.actionId === 'string';
+}
+
 function getStatusIcon(status: DeploymentActionStateEntry['status']): string {
   switch (status) {
     case 'success': return '\u2705';   // ✅
@@ -480,6 +612,8 @@ function getStatusIcon(status: DeploymentActionStateEntry['status']): string {
     case 'warning': return '\u26a0\ufe0f'; // ⚠️
     case 'manual': return '\ud83d\udc4b'; // 👋
     case 'skipped': return '\u26aa';   // ⚪
+    case 'not-run': return '\u23f8\ufe0f'; // ⏸️
+    case 'moved': return '\u21aa\ufe0f'; // ↪️
     default: return '\u2753';   // ❓
   }
 }
@@ -508,10 +642,13 @@ function getActionsBannerKey(entries: DeploymentActionStateEntry[]): PrCommentBa
   }
   // A 'warning' entry (failed, allowed to fail) did not block the deployment: it must not turn the
   // comment red, so it is not an error here and falls through to pending / completed.
-  if (entries.some((e) => e.status === 'failed')) {
+  // A stopped action is waiting for the failure that stopped it to be solved: same red banner
+  // Tries in a developer org (dev-sandboxes) are information for their author, not a problem of the
+  // pipeline: they never turn the banner red
+  if (entries.some((e) => (e.status === 'failed' || e.status === 'not-run') && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH)) {
     return 'actions-error';
   }
-  if (entries.some((e) => e.status === 'manual')) {
+  if (entries.some((e) => e.status === 'manual' && e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH)) {
     return 'actions-pending';
   }
   return 'actions-completed';
@@ -534,7 +671,14 @@ function buildActionsNavBlock(previousBody?: string | null): string {
   return wrapPrCommentNav(navLine) + '\n\n';
 }
 
-export function buildDeploymentActionsCommentBody(entries: DeploymentActionStateEntry[], actionDefs?: Map<string, ActionDef>, prNumber?: number, previousBody?: string | null): string {
+export function buildDeploymentActionsCommentBody(
+  entries: DeploymentActionStateEntry[],
+  actionDefs?: Map<string, ActionDef>,
+  prNumber?: number,
+  previousBody?: string | null,
+  // Actions of the project config ('' key) and of each org branch config, by action id
+  configActionDefs?: Map<string, Map<string, ActionDef>>
+): string {
   // Sort by: org weight (integ → prod), then when (pre-deploy before post-deploy), then execution order
   const sorted = [...entries].sort((a, b) => {
     const weightDiff = getOrgBranchWeight(a.orgBranch) - getOrgBranchWeight(b.orgBranch);
@@ -550,16 +694,30 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   const bannerMarkdown = getPrCommentBannerMarkdown(getActionsBannerKey(sorted), '🛠️ Deployment Actions');
   const headingMarkdown = bannerMarkdown === '' ? '## 🛠️ Deployment Actions\n\n' : '';
   let body = `${DEPLOYMENT_ACTIONS_MARKER}\n${buildActionsNavBlock(previousBody)}${bannerMarkdown}${headingMarkdown}`;
-  body += `> ⚠️ This section is automatically managed by sfdx-hardis. Do not edit it manually, except to tick a checkbox in the "Pending manual actions" list once you have performed the action.\n\n`;
 
-  // Pending manual actions: a checkable to-do per action still waiting to be performed in an org.
-  // Ticking a box is detected by the next check or deployment job, which records the action as done.
-  const pendingManualEntries = sorted.filter((e) => e.status === 'manual');
-  if (pendingManualEntries.length > 0) {
-    body += `### Pending manual actions\n\n`;
-    body += `Tick a box once the action has been performed in the org: the next sfdx-hardis job will record it as done.\n\n`;
+  // Failed actions, actions stopped by a failure and manual actions still to perform, in one list:
+  // the reader ticks a box once the action is done (or done by hand), and the next check or
+  // deployment job records it. Each line keeps its hidden marker right after the checkbox.
+  const pipelineEntries = sorted.filter((e) => e.orgBranch !== DEV_SANDBOXES_ORG_BRANCH);
+  const failedEntries = pipelineEntries.filter((e) => e.status === 'failed');
+  const stoppedEntries = pipelineEntries.filter((e) => e.status === 'not-run');
+  const pendingManualEntries = pipelineEntries.filter((e) => e.status === 'manual');
+  const afterMergeEntries = pipelineEntries.filter((e) => isLeftForTheDeploymentJob(
+    e,
+    actionDefs?.get(e.actionId) || configActionDefs?.get(e.orgBranch)?.get(e.actionId) || configActionDefs?.get('')?.get(e.actionId)
+  ));
+  body += `### ${buildActionsVerdict(failedEntries, stoppedEntries, pendingManualEntries, afterMergeEntries, pipelineEntries.length)}\n\n`;
+  if (failedEntries.length + stoppedEntries.length + pendingManualEntries.length > 0) {
+    body += `${TICK_HINT_FOR_AN_ACTION} Rerun a failed action with \`sf hardis:project:action:run\` or the **Retry** button of the Deployment Actions tab in VS Code. ${ONLY_BOXES_ARE_EDITED}\n\n`;
+    body += `#### Needs you\n\n`;
+    for (const e of failedEntries) {
+      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ❌ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
+    }
+    for (const e of stoppedEntries) {
+      body += `- [ ] ${buildFailedActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ⏸️ ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
+    }
     for (const e of pendingManualEntries) {
-      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
+      body += `- [ ] ${buildManualActionCheckboxMarker(e.actionId, e.orgBranch, prNumber || 0, e.when)} 👋 ${sanitizeCellText(e.actionLabel)} *(org branch: ${e.orgBranch})*\n`;
     }
     body += `\n`;
   }
@@ -582,7 +740,7 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   }
   const usedMatrixIcons: string[] = [];
   if (branches.length > 0 && matrixActionIds.length > 0) {
-    body += `### Status by org branch\n\n`;
+    body += `#### Status by org\n\n`;
     body += `| Action | When |${branches.map((b) => ` ${b} |`).join('')}\n`;
     body += `|--------|------|${branches.map(() => ':---:|').join('')}\n`;
     for (const actionId of matrixActionIds) {
@@ -598,15 +756,18 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
           return '⬜';
         }
         const dateStr = e.date ? ` ${e.date.substring(0, 10)}` : '';
-        const jobRef = e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
+        // A moved action names the Pull Request it runs from now: the git providers link "#42"
+        const jobRef = e.status === 'moved' && e.movedTo
+          ? `<br/>moved to #${e.movedTo}`
+          : e.jobUrl ? `<br/>[${e.jobId}](${e.jobUrl})` : '';
         const statusIcon = getStatusIcon(e.status);
         usedMatrixIcons.push(statusIcon);
-        return `${statusIcon}${dateStr}${jobRef}${encodeOutputsMarker(e.outputs)}`;
+        return `${statusIcon}${dateStr}${jobRef}${encodeOutputsMarker(e.outputs)}${encodeMetaMarker(e)}`;
       });
       body += `| <!-- actionId:${encodeActionId(actionId)} order:${order} --> ${label} | ${when} |${cells.map((cellContent) => ` ${cellContent} |`).join('')}\n`;
     }
     body += buildMatrixStatusLegend(usedMatrixIcons);
-    body += `\n*Last updated: ${new Date().toISOString().replace('T', ' ').substring(0, 16)} UTC*\n`;
+    body += `\n*Updated ${formatShortDate(new Date().toISOString(), { withTime: true })}*\n`;
   }
 
   // Details section - one collapsible per unique action, covering all orgs it ran in.
@@ -670,7 +831,8 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
         // Outputs cannot live in a table cell (code blocks do not render there), so they follow the
         // table, one block per org branch that produced some output.
         for (const e of sortedOrgEntries) {
-          if ((e.output || '').trim() !== '') {
+          // The output of a manual action is its instructions, already shown above
+          if ((e.output || '').trim() !== '' && def?.type !== 'manual' && e.status !== 'manual') {
             body += `**Output - ${e.orgBranch}**\n\n`;
             body += '```\n' + truncateOutput(e.output) + '\n```\n\n';
           }
@@ -692,6 +854,58 @@ export function buildDeploymentActionsCommentBody(entries: DeploymentActionState
   return body;
 }
 
+// One line telling the state of the actions of the Pull Request across the pipeline orgs
+function buildActionsVerdict(
+  failed: DeploymentActionStateEntry[],
+  stopped: DeploymentActionStateEntry[],
+  manual: DeploymentActionStateEntry[],
+  afterMerge: DeploymentActionStateEntry[],
+  total: number
+): string {
+  const orgs = [...new Set([...failed, ...stopped, ...manual, ...afterMerge].map((e) => e.orgBranch))].sort((a, b) => getOrgBranchWeight(a) - getOrgBranchWeight(b));
+  if (orgs.length === 0) {
+    return total > 0 ? '✅ Nothing to do: every deployment action is done or skipped' : '✅ No deployment action yet';
+  }
+  // One group per org: "In integration: ❌ 1 failed · ⏸️ 2 waiting · 👋 1 to do by hand · 🕒 3 after the merge",
+  // or "In integration: ✅ nothing to do now · 🕒 3 after the merge"
+  return orgs
+    .map((org) => {
+      const count = (entries: DeploymentActionStateEntry[]) => entries.filter((e) => e.orgBranch === org).length;
+      const parts = [
+        count(failed) > 0 ? `❌ ${count(failed)} failed` : '',
+        count(stopped) > 0 ? `⏸️ ${count(stopped)} waiting` : '',
+        count(manual) > 0 ? `👋 ${count(manual)} to do by hand` : '',
+      ].filter((part) => part !== '');
+      if (parts.length === 0) {
+        parts.push('✅ nothing to do now');
+      }
+      if (count(afterMerge) > 0) {
+        parts.push(`🕒 ${count(afterMerge)} after the merge`);
+      }
+      return `In ${org}: ${parts.join(' · ')}`;
+    })
+    .join(' / ');
+}
+
+/**
+ * A skip that is not final: the validation job skipped a deployment-only action, which the
+ * deployment job of the merge runs in the same org. Once it ran there, its entry is no longer a skip.
+ */
+function isLeftForTheDeploymentJob(entry: DeploymentActionStateEntry, def: ActionDef | undefined): boolean {
+  if (entry.status !== 'skipped' || !def || getEffectiveActionContext(def) !== 'process-deployment-only') {
+    return false;
+  }
+  // An action whose branch filter leaves this org out never runs there. Pipeline org branches are
+  // major branches, so the branch itself is the only name the filter can match.
+  return evaluateActionBranchFilter(def, [entry.orgBranch]).run !== false;
+}
+
+// Note of the results table, without the email addresses and Salesforce usernames it may hold:
+// the hidden marker of the matrix keeps the full note
+function displayNote(note: string): string {
+  return note.replace(/ \([^()\s]+@[^()\s]+\)/g, '');
+}
+
 /**
  * Human-readable status of a state entry, for the results table of the details section.
  * Same wording as the matrix legend, so the two tables read alike.
@@ -701,8 +915,10 @@ function getStatusLabel(status: DeploymentActionStateEntry['status']): string {
     case 'success': return 'success';
     case 'failed': return 'failed';
     case 'warning': return 'warning (failed, allowed to fail)';
-    case 'manual': return 'waiting for manual execution';
+    case 'manual': return 'to do by hand';
     case 'skipped': return 'skipped';
+    case 'not-run': return 'waits for a failed action';
+    case 'moved': return 'moved to another Pull Request';
     default: return 'unknown';
   }
 }
@@ -711,14 +927,20 @@ function getStatusLabel(status: DeploymentActionStateEntry['status']): string {
  * Results of an action, one row per org branch it ran in.
  */
 function buildActionResultsTable(entries: DeploymentActionStateEntry[]): string {
+  // The Note column only appears when an entry carries one (closed by hand, run locally, moved)
+  const withNotes = entries.some((e) => (e.note || '').trim() !== '' || e.movedTo);
   let table = `**Results by org**\n\n`;
-  table += `| Org branch | Status | Date | Job |\n`;
-  table += `|------------|--------|------|-----|\n`;
+  table += withNotes ? `| Org branch | Status | Date | Job | Note |\n` : `| Org branch | Status | Date | Job |\n`;
+  table += withNotes ? `|------------|--------|------|-----|------|\n` : `|------------|--------|------|-----|\n`;
   for (const e of entries) {
-    const status = `${getStatusIcon(e.status)} ${getStatusLabel(e.status)}`;
+    const status = e.status === 'moved' && e.movedTo
+      ? `${getStatusIcon(e.status)} moved to #${e.movedTo}`
+      : `${getStatusIcon(e.status)} ${getStatusLabel(e.status)}`;
     const date = e.date ? e.date.substring(0, 10) : '';
     const job = e.jobUrl ? `[${e.jobId}](${e.jobUrl})` : (e.jobId || '');
-    table += `| ${e.orgBranch} | ${status} | ${date} | ${job} |\n`;
+    table += withNotes
+      ? `| ${e.orgBranch} | ${status} | ${date} | ${job} | ${sanitizeCellText(displayNote(e.note || ''))} |\n`
+      : `| ${e.orgBranch} | ${status} | ${date} | ${job} |\n`;
   }
   return table + '\n';
 }
@@ -761,12 +983,18 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
     if (def.parameters?.className) rows.push(['Class name', `\`${def.parameters.className}\``]);
     if (def.parameters?.cronExpression) rows.push(['Cron expression', `\`${def.parameters.cronExpression}\``]);
     if (def.parameters?.jobName) rows.push(['Job name', def.parameters.jobName]);
+  } else if (def.type === 'run-batch') {
+    if (def.parameters?.className) rows.push(['Class name', `\`${def.parameters.className}\``]);
+    rows.push(['Run mode', def.parameters?.runMode === 'no-wait' ? 'no-wait' : 'wait']);
+    if (def.parameters?.batchSize) rows.push(['Batch size', String(def.parameters.batchSize)]);
+    if (def.parameters?.waitTimeoutMinutes) rows.push(['Wait timeout (minutes)', String(def.parameters.waitTimeoutMinutes)]);
+    if (def.parameters?.successEvenIfBatchErrors === true) rows.push(['Success even if batch errors', 'true']);
   } else if (def.type === 'remove-packagexml-items' && Array.isArray(def.parameters?.packageXmlItems)) {
     rows.push(['Package.xml items to remove', def.parameters.packageXmlItems.map((item: string) => `\`${item}\``).join(', ')]);
   }
 
   if (def.parameters) {
-    const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName', 'packageXmlItems']);
+    const knownParams = new Set(['apexScript', 'sfdmuProject', 'communityName', 'instructions', 'className', 'cronExpression', 'jobName', 'packageXmlItems', 'runMode', 'batchSize', 'waitTimeoutMinutes', 'successEvenIfBatchErrors']);
     for (const [k, v] of Object.entries(def.parameters)) {
       if (!knownParams.has(k)) {
         rows.push([k, String(v)]);
@@ -808,6 +1036,78 @@ export function buildManualActionCheckboxMarker(actionId: string, orgBranch: str
   return `${MANUAL_ACTION_CHECKBOX_MARKER_PREFIX}id:${encodeActionId(actionId)} org:${orgBranch} pr:${prNumber || 0}${whenAttr} -->`;
 }
 
+/**
+ * Build the hidden marker set on a failed (or stopped) action checklist item. Same attributes as
+ * the manual action marker, so both kinds go through the same checkbox sync.
+ */
+export function buildFailedActionCheckboxMarker(actionId: string, orgBranch: string, prNumber: number, when?: ActionWhen): string {
+  const whenAttr = when ? ` when:${when}` : '';
+  return `${FAILED_ACTION_CHECKBOX_MARKER_PREFIX}id:${encodeActionId(actionId)} org:${orgBranch} pr:${prNumber || 0}${whenAttr} -->`;
+}
+
+/** "Jane Doe (jane@acme.com)": who did something by hand, as the notes of the comment name them */
+export function formatNoteAuthor(gitUser: string | null, sfUsername: string | null): string {
+  return [gitUser, sfUsername ? `(${sfUsername})` : null].filter(Boolean).join(' ') || 'unknown user';
+}
+
+/**
+ * Note of a failed or stopped action closed by hand by a person, written in the Pull Request
+ * comment (English, like the rest of the comment).
+ * Ex: "Failed in CI, then closed by hand by Jane Doe (jane@acme.com) on 2026-10-03 14:05 UTC."
+ */
+export function buildClosedByHandNote(previousStatus: 'failed' | 'not-run' | 'manual', gitUser: string | null, sfUsername: string | null, date: Date, extraNote?: string): string {
+  const who = formatNoteAuthor(gitUser, sfUsername);
+  const origin = previousStatus === 'not-run' ? 'Not run in CI' : 'Failed in CI';
+  const note = previousStatus === 'manual'
+    ? `Manual action marked as done by ${who} on ${formatNoteDate(date)}.`
+    : `${origin}, then closed by hand by ${who} on ${formatNoteDate(date)}.`;
+  return extraNote && extraNote.trim() !== '' ? `${note} ${extraNote.trim()}` : note;
+}
+
+/**
+ * Note of an action marked as done in an org branch where it never failed: done by hand before any
+ * deployment reached that org (a manual action of the next promotion, for instance), or skipped there.
+ */
+export function buildMarkedDoneAheadNote(orgBranch: string, previousStatus: 'none' | 'skipped', gitUser: string | null, sfUsername: string | null, date: Date, extraNote?: string): string {
+  const who = formatNoteAuthor(gitUser, sfUsername);
+  const note = previousStatus === 'skipped'
+    ? `Skipped in CI, then marked as done by ${who} on ${formatNoteDate(date)}.`
+    : `Marked as done by ${who} on ${formatNoteDate(date)}, before any deployment to ${orgBranch}.`;
+  return extraNote && extraNote.trim() !== '' ? `${note} ${extraNote.trim()}` : note;
+}
+
+/**
+ * Note of a failed or stopped action closed by ticking its checkbox. Git providers do not tell
+ * who ticked a box without extra API calls, so the note names the Pull Request instead.
+ */
+export function buildClosedByCheckboxNote(previousStatus: 'failed' | 'not-run', commentPrNumber: number): string {
+  const origin = previousStatus === 'not-run' ? 'Not run in CI' : 'Failed in CI';
+  return `${origin}, then closed by hand via a checkbox in Pull Request #${commentPrNumber} (detected on ${formatNoteDate(new Date())}).`;
+}
+
+/**
+ * Note of an action retried outside of a deployment job by sf hardis:project:action:run.
+ */
+export function buildRunLocallyNote(gitUser: string | null, sfUsername: string | null, inCi: boolean): string {
+  const who = formatNoteAuthor(gitUser, sfUsername);
+  return inCi
+    ? `Retried by sf hardis:project:action:run as ${who} on ${formatNoteDate(new Date())}.`
+    : `Run locally by ${who} on ${formatNoteDate(new Date())}.`;
+}
+
+/**
+ * Note of an action that an identical action of the same run did (same type, phase, user and
+ * parameters): it is recorded as done in the org without running a second time.
+ */
+export function buildIdenticalActionNote(ref: { label: string; pr: number }): string {
+  const source = ref.pr > 0 ? `of #${ref.pr}` : 'of the branch or project config';
+  return `Not run twice: the identical action "${ref.label}" ${source} ran earlier in the same run.`;
+}
+
+function formatNoteDate(date: Date): string {
+  return `${date.toISOString().replace('T', ' ').substring(0, 16)} UTC`;
+}
+
 export interface ManualActionCheckboxItem {
   actionId: string;
   orgBranch: string;
@@ -815,13 +1115,16 @@ export interface ManualActionCheckboxItem {
   when?: ActionWhen;
   checked: boolean;
   label: string;
+  // 'manual': a manual action performed by hand, 'failed': a failed or stopped action closed by hand
+  kind: 'manual' | 'failed';
 }
 
-// The literal 'sfdx-hardis-manual-action' here MUST stay in sync with MANUAL_ACTION_CHECKBOX_MARKER_PREFIX
-const MANUAL_ACTION_CHECKBOX_REGEX = /^\s*[-*] \[( |x|X)\] <!-- sfdx-hardis-manual-action id:(\S+) org:(\S+) pr:(\d+)(?: when:(pre-deploy|post-deploy))? -->\s*(.*)$/;
+// The literals 'sfdx-hardis-manual-action' and 'sfdx-hardis-failed-action' here MUST stay in sync
+// with MANUAL_ACTION_CHECKBOX_MARKER_PREFIX and FAILED_ACTION_CHECKBOX_MARKER_PREFIX
+const MANUAL_ACTION_CHECKBOX_REGEX = /^\s*[-*] \[( |x|X)\] <!-- sfdx-hardis-(manual|failed)-action id:(\S+) org:(\S+) pr:(\d+)(?: when:(pre-deploy|post-deploy))? -->\s*(.*)$/;
 
 /**
- * Extract the manual action checklist items (ticked or not) from a Pull Request comment body.
+ * Extract the manual and failed action checklist items (ticked or not) from a Pull Request comment body.
  */
 export function parseManualActionCheckboxes(body: string): ManualActionCheckboxItem[] {
   const items: ManualActionCheckboxItem[] = [];
@@ -830,11 +1133,13 @@ export function parseManualActionCheckboxes(body: string): ManualActionCheckboxI
     if (!match) continue;
     items.push({
       checked: match[1].toLowerCase() === 'x',
-      actionId: decodeActionId(match[2]),
-      orgBranch: match[3],
-      prNumber: parseInt(match[4], 10),
-      when: match[5] ? (match[5] as ActionWhen) : undefined,
-      label: unsanitizeCellText((match[6] || '').replace(/\*\(org branch: [^)]*\)\*\s*$/, '').trim()),
+      kind: match[2] as 'manual' | 'failed',
+      actionId: decodeActionId(match[3]),
+      orgBranch: match[4],
+      prNumber: parseInt(match[5], 10),
+      when: match[6] ? (match[6] as ActionWhen) : undefined,
+      // The status icon written before the label (comment layout of 2026-10) is not part of it
+      label: unsanitizeCellText((match[7] || '').replace(/\*\(org branch: [^)]*\)\*\s*$/, '').trim().replace(/^(❌|⏸️|👋|⚠️)\s*/u, '')),
     });
   }
   return items;
@@ -844,11 +1149,12 @@ export function parseManualActionCheckboxes(body: string): ManualActionCheckboxI
  * Tick the checkbox of a manual action in a comment body. Returns the updated body and
  * whether a line was actually changed.
  */
-export function checkManualActionCheckboxInBody(body: string, actionId: string, orgBranch: string): { body: string; changed: boolean } {
+// prNumber: only the checkbox of that Pull Request, when two Pull Requests reuse the same action id
+export function checkManualActionCheckboxInBody(body: string, actionId: string, orgBranch: string, prNumber?: number): { body: string; changed: boolean } {
   let changed = false;
   const lines = body.split('\n').map((line) => {
     const match = line.match(MANUAL_ACTION_CHECKBOX_REGEX);
-    if (match && decodeActionId(match[2]) === actionId && match[3] === orgBranch && match[1] === ' ') {
+    if (match && decodeActionId(match[3]) === actionId && match[4] === orgBranch && match[1] === ' ' && (prNumber === undefined || Number(match[5]) === prNumber)) {
       changed = true;
       // Tick the checkbox itself: the regex accepts both '-' and '*' bullets, and the first
       // '[ ]' of a matched line is always the checkbox
@@ -859,9 +1165,8 @@ export function checkManualActionCheckboxInBody(body: string, actionId: string, 
   return { body: lines.join('\n'), changed };
 }
 
-function findEntryAnyStatus(actionId: string, orgBranch: string | null): DeploymentActionStateEntry | null {
-  const state = getMultiPrState();
-  for (const entries of state.entriesByPr.values()) {
+function findEntryAnyStatus(actionId: string, orgBranch: string | null, ownerPrs: number[] = []): DeploymentActionStateEntry | null {
+  for (const entries of listStateBuckets(ownerPrs)) {
     const found = entries.find((e) => e.actionId === actionId && (orgBranch === null || e.orgBranch.trim() === orgBranch.trim()));
     if (found) return found;
   }
@@ -882,13 +1187,17 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
   }
   const allComments: PullRequestCommentRef[] = [];
   for (const prNum of prsToScan) {
-    const comments = await GitProvider.tryListPullRequestCommentsByMarker(MANUAL_ACTION_CHECKBOX_MARKER_PREFIX, prNum);
+    // One listing for both kinds of checklists: the prefix the two markers share. Listing per
+    // marker would read every comment of the Pull Request twice on every job.
+    const comments = await GitProvider.tryListPullRequestCommentsByMarker(CHECKBOX_MARKER_COMMON_PREFIX, prNum);
     if (comments === null) {
       // Transient listing error: leave the PR unmarked so a later phase or job retries it
       continue;
     }
     state.syncedCheckboxPrs.add(prNum);
-    allComments.push(...comments);
+    allComments.push(...comments.filter((comment) =>
+      comment.body.includes(MANUAL_ACTION_CHECKBOX_MARKER_PREFIX) || comment.body.includes(FAILED_ACTION_CHECKBOX_MARKER_PREFIX)
+    ));
   }
   if (allComments.length === 0) {
     return;
@@ -900,20 +1209,21 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
   for (const comment of allComments) {
     for (const item of parseManualActionCheckboxes(comment.body)) {
       if (!item.checked) continue;
-      const pairKey = `${item.actionId}||${item.orgBranch}`;
+      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
+      const pairKey = `${sourcePr}||${item.actionId}||${item.orgBranch}`;
       if (processedPairs.has(pairKey)) continue;
       processedPairs.add(pairKey);
-      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
       // A comment can carry checkboxes of Pull Requests outside the current scope (the validation
       // comment of a promotion lists the manual actions of every Pull Request it carries). Their
       // state is not loaded with the scope: without this, an already-recorded tick is not found,
       // gets recorded again with today's date and this job, and the source Pull Request's comment
       // is rewritten on every run that scans this comment.
       await loadDeploymentActionsState([sourcePr]);
-      if (checkActionInState(item.actionId, item.orgBranch)) continue; // already recorded as done
-      const base = findEntryAnyStatus(item.actionId, item.orgBranch) || findEntryAnyStatus(item.actionId, null);
+      if (checkActionInState(item.actionId, item.orgBranch, [sourcePr])) continue; // already recorded as done
+      const base = findEntryAnyStatus(item.actionId, item.orgBranch, [sourcePr]) || findEntryAnyStatus(item.actionId, null, [sourcePr]);
       const label = base?.actionLabel || item.label || item.actionId;
       const { jobId, jobUrl } = await getJobInfoWithUrl();
+      const closedFailure = item.kind === 'failed';
       upsertActionInState({
         actionId: item.actionId,
         actionLabel: label,
@@ -924,9 +1234,20 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
         jobId,
         jobUrl,
         date: new Date().toISOString(),
-        output: 'Confirmed as done via a ticked checkbox in a Pull Request comment.',
+        output: closedFailure
+          ? 'Closed by hand via a ticked checkbox in a Pull Request comment.'
+          : 'Confirmed as done via a ticked checkbox in a Pull Request comment.',
+        note: closedFailure
+          ? buildClosedByCheckboxNote(base?.status === 'not-run' ? 'not-run' : 'failed', comment.prNumber)
+          : undefined,
       }, sourcePr);
-      uxLog("action", null, c.cyan(`[DeploymentActions] ${t('manualActionConfirmedViaCheckbox', { label, orgBranch: item.orgBranch })}`));
+      // Two statements, not a ternary of the two keys: on one line, a 32 character key after the
+      // word "Checkbox" matches the box-api-access-token rule of the secret scanners
+      let confirmedMessage = t('manualActionConfirmedViaCheckbox', { label, orgBranch: item.orgBranch });
+      if (closedFailure) {
+        confirmedMessage = t('failedActionConfirmedViaCheckbox', { label, orgBranch: item.orgBranch });
+      }
+      uxLog("action", null, c.cyan(`[DeploymentActions] ${confirmedMessage}`));
       newlyConfirmed++;
     }
   }
@@ -941,8 +1262,9 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
     let updatedBody = comment.body;
     let changed = false;
     for (const item of parseManualActionCheckboxes(updatedBody)) {
-      if (!item.checked && checkActionInState(item.actionId, item.orgBranch)) {
-        const res = checkManualActionCheckboxInBody(updatedBody, item.actionId, item.orgBranch);
+      const sourcePr = item.prNumber > 0 ? item.prNumber : comment.prNumber;
+      if (!item.checked && checkActionInState(item.actionId, item.orgBranch, [sourcePr])) {
+        const res = checkManualActionCheckboxInBody(updatedBody, item.actionId, item.orgBranch, item.prNumber);
         updatedBody = res.body;
         changed = changed || res.changed;
       }
@@ -952,6 +1274,37 @@ export async function syncManualActionCheckboxes(sourcePrNumbers: number[]): Pro
       uxLog("log", null, c.grey(`[DeploymentActions] ${t('manualActionCheckboxPropagated', { pr: comment.prNumber })}`));
     }
   }
+}
+
+/** The state of these Pull Requests, or of every loaded Pull Request when none is given */
+function listStateBuckets(ownerPrs: number[]): DeploymentActionStateEntry[][] {
+  const state = getMultiPrState();
+  const owners = ownerPrs.filter((prNumber) => prNumber > 0);
+  if (owners.length === 0) {
+    return [...state.entriesByPr.values()];
+  }
+  return [...new Set(owners)].map((prNumber) => state.entriesByPr.get(prNumber) || []);
+}
+
+// Actions of the project config (key '') and of the config of each org branch, by action id. A Pull
+// Request comment records them too, for the Pull Request whose job ran them.
+async function loadConfigActionDefs(orgBranches: string[]): Promise<Map<string, Map<string, ActionDef>>> {
+  const defsByScope = new Map<string, Map<string, ActionDef>>();
+  for (const branch of ['', ...orgBranches.filter((orgBranch) => orgBranch && orgBranch !== DEV_SANDBOXES_ORG_BRANCH)]) {
+    const defs = new Map<string, ActionDef>();
+    try {
+      for (const when of ['pre-deploy', 'post-deploy'] as ActionWhen[]) {
+        const commands = branch === '' ? await readActions('project', when) : await readActions('branch', when, branch);
+        commands.forEach((cmd, index) => {
+          if (cmd.id) defs.set(cmd.id, { ...cmd, when, executionOrder: index });
+        });
+      }
+    } catch (_e) {
+      // A config file that cannot be read gives no definition: its skips are taken as final
+    }
+    defsByScope.set(branch, defs);
+  }
+  return defsByScope;
 }
 
 // Augment globalThis types

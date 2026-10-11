@@ -17,6 +17,12 @@ export class ManualAction extends ActionsProvider {
     return null;
   }
 
+  // A manual step runs nothing: each Pull Request keeps its own checkbox
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public getIdentityParameters(_cmd: PrePostCommand): Record<string, any> | null {
+    return null;
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;

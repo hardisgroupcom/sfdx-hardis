@@ -17,6 +17,7 @@ Read this file before answering questions about the org, and answer from the fil
   - `sf hardis:org:test:apex` runs the Apex tests of the org.
   - `sf hardis:org:monitor:all` runs the monitoring checks listed below.
   - MegaLinter scans the retrieved sources for quality and security issues.
+- **A red job is a job that could not run, not a job that found issues.** A job that ran to its end is green: failing Apex tests, a limit close to its maximum, MegaLinter errors, and even a single check that crashed are read in the job log, the notifications, the reports and Grafana. Runs made with an older sfdx-hardis version were red in both cases.
 - **Their results are not stored in the repository.** They are sent as notifications (Slack, Microsoft Teams, email), to an API or a Grafana dashboard when configured, and kept as CI job artifacts (`hardis-report/`, `megalinter-reports/`) for a limited time.
 
 ## Answering questions with git
@@ -163,8 +164,10 @@ Steps run before (`commandsPreDeploy`) or after (`commandsPostDeploy`) a deploym
 
 - For every deployment to a branch: in `config/.sfdx-hardis.yml` or `config/branches/.sfdx-hardis.<branch>.yml`.
 - For one Pull Request: in `scripts/actions/.sfdx-hardis.<Pull Request number>.yml` (`scripts/actions/.sfdx-hardis.draft.yml` before the Pull Request exists). They run when that Pull Request is deployed, and again at each later step of the pipeline.
-- Types: `command`, `apex` (anonymous Apex script), `data` (SFDMU import), `publish-community`, `schedule-batch`, `remove-packagexml-items`, and `manual` (a step a person performs, ticked off in the Pull Request comment when `manualActionsMode: sfdxHardis`; otherwise manual steps are in the file of `manualActionsFileUrl`).
+- Types: `command`, `apex` (anonymous Apex script), `data` (SFDMU import), `publish-community`, `schedule-batch`, `run-batch` (runs an Apex batch once, and can wait for its result), `remove-packagexml-items`, and `manual` (a step a person performs, ticked off in the Pull Request comment when `manualActionsMode: sfdxHardis`; otherwise manual steps are in the file of `manualActionsFileUrl`).
 - `context` says whether it runs during the check, the deployment or both; `runOnlyOnceByOrg` skips it in an org where it already ran.
+- When several Pull Requests of one job carry the same action (same type, phase, user and parameters), it runs once: the rows of the other Pull Requests say done, with a note naming the action that ran.
+- The "Deployment Actions" comment of each Pull Request records, per org, whether an action ran, failed, was stopped by a failure or was moved to a fix Pull Request (`movedFrom`). A failed action can be run again outside of a deployment job (`sf hardis:project:action:run`) or closed by hand (`sf hardis:project:action:set-status`): the note of its row says who did it and when, so an action can have run in the org at a date with no deployment.
 
 So "why is this record, schedule or setting like this in the org?" can have its answer in an action, not in the metadata.
 
@@ -191,6 +194,7 @@ Credentials, in this order:
    - GitLab: `CI_SFDX_HARDIS_GITLAB_TOKEN` or `ACCESS_TOKEN`
    - Azure DevOps: `CI_SFDX_HARDIS_AZURE_TOKEN` or `SYSTEM_ACCESSTOKEN`
    - Bitbucket: `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, with `CI_SFDX_HARDIS_BITBUCKET_EMAIL` when the token is an Atlassian account API token
+   - `SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN`: a token for the deployment repository, set when the token of this repository cannot read it. It is the one `sf hardis:doc:dora-report` uses from the monitoring pipeline
 3. Neither: tell the user which login or which variable is missing, and answer with what git alone shows.
 
 Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deployment branch for the deployment repository, and the current branch for this one:
@@ -211,7 +215,7 @@ Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deplo
   - Pipelines: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pipelines/?sort=-created_on&pagelen=50`, keep the ones whose `target.ref_name` is `<branch>`, then `.../pipelines/<uuid>/steps/` and `.../pipelines/<uuid>/steps/<step uuid>/log`
   - Pull Requests: `https://api.bitbucket.org/2.0/repositories/<workspace>/<repo>/pullrequests?state=MERGED&q=destination.branch.name="<branch>"`
 
-In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
+In the logs of this repository, the job that runs `sf hardis:org:monitor:backup` explains a missing or failed backup, and the job that runs `sf hardis:org:monitor:all` explains a missing check: its end-of-run summary gives each check a status, and a check that is not `success` either found issues or could not run: its own log lines, above the summary, say which. In the deployment repository, the deployment jobs run `sf hardis:project:deploy:smart`.
 
 ## Monitoring results in Grafana
 
@@ -315,12 +319,13 @@ Scores and trends (other names: list them, see above):
 
 - Health score and its sub-scores, computed weekly: `max by (__name__) (last_over_time({__name__=~"HealthScore.*_metric", source="sfdx-hardis", orgIdentifier="acme"}[8d]))`. The reasons are only on the weekly `MONITORING_SUMMARY` line, with a `start` 8 days ago: `{source="sfdx-hardis", orgIdentifier="acme", type="MONITORING_SUMMARY"} |= "healthScoreDetails" | json d="healthScoreDetails" | line_format "{{.d}}" | keep type` with `limit=1`.
 - Metrics the dashboards use: `ApexTestsCodeCoverage_metric`, `Score_metric` and `HighRisk_metric` (Security Health Check), `SuspectMetadataUpdates_metric` (audit trail), `ACTIVE_USERS_CRM_WEEKLY_metric`, `UNUSED_USERS_CRM_6_MONTHS_metric`, `unusedApexClasses_metric`, `MetadatasWithoutDescription_metric`, `AiUsageCreditsTotal_metric`, `deploymentsTotal_metric`, `deploymentSuccessRate_metric`, `DoraLeadTimeDays_metric`.
+- The `Dora*_metric` values (type `DORA_REPORT`) are not read from the org: `sf hardis:doc:dora-report` computes them from the deployment jobs and the Pull Requests of the deployment repository, for the branch `deploymentBranch`. It runs either in the pipeline of the deployment repository or in this monitoring pipeline. No DORA value means the command is scheduled in neither, or that it failed for lack of a token that can read the CI jobs of the deployment repository.
 
 Backups, checks and deployments:
 
 - Did the backup succeed every night, with `$LOKI/query_range` and `step=1d`: `sum by (severity) (count_over_time({source="sfdx-hardis", orgIdentifier="acme", type="BACKUP"}[1d]))`. An `error` point is a failed backup. A day with no point at all had no backup: the job did not run, or it ran with an sfdx-hardis version that sent nothing on failure, and the pipeline logs of this repository say why.
 - Why a backup failed: `{source="sfdx-hardis", orgIdentifier="acme", type="BACKUP", severity="error"} | json e="error" | line_format "{{.e}}" | keep type` gives the error message of each failure.
-- Checks that failed in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones is only in the pipeline logs.
+- Checks that found issues or could not run in the last week: `max(max_over_time(CommandsFailed_metric{source="sfdx-hardis", orgIdentifier="acme"}[7d]))`. Which ones, and which of the two, is only in the pipeline logs.
 - Deployments to this org: `{source="sfdx-hardis", orgIdentifier="acme", type="DEPLOYMENT"} | json t="_title", j="_jobUrl" | line_format "{{.t}} {{.j}}" | keep severity`. The `_logBodyText` of a deployment lists its deployment actions, its commits and the link of its Pull Request.
 
 All the monitored orgs (leave out `orgIdentifier`):
@@ -366,7 +371,7 @@ Any other command against an org counts as a write: do not run it, even when the
 | `.sfdx-hardis.yml` | sfdx-hardis configuration of the branch: monitored org, notification settings, custom `monitoringCommands` and `monitoringDisable`, the `deploymentRepository` (and optional `deploymentBranch`) that deploys to the org, and the `grafanaUrl` (and optional datasource uids) that receives the monitoring results. Never a secret. |
 | `sfdx-project.json` | Salesforce DX project definition, including the API version used for the retrieve. |
 | `.gitlab-ci.yml`, `.github/workflows/`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile` | The monitoring pipeline for each CI/CD platform. Only one of them is used. On GitHub, the workflow lives on the default branch and runs all monitoring branches. |
-| `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. |
+| `.mega-linter.yml`, `.jscpd.json` | MegaLinter and copy-paste detection settings. The backup adds `DISABLE_ERRORS: true` to `.mega-linter.yml` when the key is missing, so that MegaLinter findings do not fail its job, and creates the file when the repository has none. |
 | `THIS_IS_MONITORING`, `DO_NOT_DEPLOY_FROM_THIS_REPO` | Empty marker files: this repository is for monitoring only. |
 
 ## What is not in the backup

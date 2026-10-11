@@ -109,8 +109,8 @@ Next step: [work in your org](salesforce-devops-work-on-user-story.md).
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 1.3 - Start a User Story on its own Git branch](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
+- [Lab 1.3 - Start a User Story on its own Git branch](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
 
 <!-- training-links:end -->

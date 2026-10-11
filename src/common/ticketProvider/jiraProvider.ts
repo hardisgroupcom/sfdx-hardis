@@ -22,7 +22,7 @@ import {
   htmlToPlainText,
   newTicketDetails,
   normalizeText,
-} from "./ticketDetails.js";
+} from "./utils/ticketDetails.js";
 
 // One way of authenticating to JIRA. The client is built lazily, so that a refused credential can
 // be replaced by the next one without paying for the ones that are never used.

@@ -139,21 +139,21 @@ A function declaring no output is free to print whatever it wants.
 
 ### Reuse an output in a later action
 
-Any action running after a function can read what it returned, with `${{ actions.<actionId>.outputs.<name> }}`. This works for every action type, not only for custom functions, and reaches across the deployment: a post-deploy action can read what a pre-deploy action produced.
+Any action running after a function can read what it returned, with `${{ actions.<actionId>.outputs.<name> }}`, where `<actionId>` is the generated id of the action that ran the function. The action editor shows the exact reference to copy. This works for every action type, not only for custom functions, and reaches across the deployment: a post-deploy action can read what a pre-deploy action produced.
 
 ```yaml
 commandsPreDeploy:
-  - id: findAccount
+  - id: eb34eccd-5284-4050-a98d-076c8a5d8559
     label: Find the integration account
     type: findAccount
     parameters:
       name: Acme
 
 commandsPostDeploy:
-  - id: updateAccount
+  - id: 660acd12-4e1f-4cb7-91f6-584e8ba9945d
     label: Flag the account as migrated
     type: command
-    command: sf data update record --sobject Account --record-id ${{ actions.findAccount.outputs.accountId }} --values "Migrated__c=true"
+    command: sf data update record --sobject Account --record-id ${{ actions.eb34eccd-5284-4050-a98d-076c8a5d8559.outputs.accountId }} --values "Migrated__c=true"
 ```
 
 The pipeline variables are available the same way, with `${{ pipeline.targetBranch }}`, `${{ pipeline.prId }}` and the rest.

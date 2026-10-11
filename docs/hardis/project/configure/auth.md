@@ -48,6 +48,16 @@ prompts
 - **WebSocket Communication:** Uses `WebSocketClient` for potential communication with external tools or processes, such as restarting the command in VS Code.
 - **Dependency Check:** Ensures the presence of `openssl` on the system, which is required for SSL certificate generation.
 
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
@@ -58,13 +68,13 @@ prompts
 | debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                                                                                                                                                           |            |          |                               |
 | devhub<br/>-b         | boolean | Configure project DevHub                                                                                                                                                                                                                                  |            |          |                               |
 | external-storage      | boolean | Do not store the encrypted certificate in a file in the repository. Instead, the user is asked to keep it in a password manager and provide it at authentication time. The other secrets (client id, decryption key) are still stored as CI/CD variables. |            |          |                               |
-| flags-dir             | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
+| flags-dir             | option  | Import flag values from a directory.                                                                                                                                                                                                                      |            |          |                               |
 | json                  | boolean | Format output as json.                                                                                                                                                                                                                                    |            |          |                               |
 | name                  | option  | Name of the org-based auth config to create in config/branches (skips Git branch selection and merge targets). Auto-derived from the org domain when --name-type=org-domain.                                                                              |            |          |                               |
 | name-type             | option  | How to name the auth config: git-branch (select an existing Git branch) or org-domain (derive the name from the org domain)                                                                                                                               | git-branch |          |   git-branch<br/>org-domain   |
 | skipauth              | boolean | Skip authentication check when a default username is required                                                                                                                                                                                             |            |          |                               |
-| target-dev-hub<br/>-v | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
-| target-org<br/>-o     | option  | undefined                                                                                                                                                                                                                                                 |            |          |                               |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org.                                                                                                                                                                                                                     |            |          |                               |
+| target-org<br/>-o     | option  | Username or alias of the target org.                                                                                                                                                                                                                      |            |          |                               |
 | usage                 | option  | Usage of the External Client App, used to set its description. With "other", the description is taken from --app-description or prompted                                                                                                                  |    cicd    |          | cicd<br/>monitoring<br/>other |
 | websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                                                 |            |          |                               |
 

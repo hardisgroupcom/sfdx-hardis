@@ -1,8 +1,8 @@
 import { WebhookNotifProviderRoot } from "./webhookNotifProviderRoot.js";
 import type { NotificationChannel, NotifMessage } from "./types.js";
-import { UtilsNotifs } from "./utils.js";
-import { convertMarkdownToGoogleChatMarkup } from "./googleChatMarkup.js";
-import { clampBlockText, SizeGuardLimits } from "./messageSizeGuard.js";
+import { UtilsNotifs } from "./utils/utils.js";
+import { convertMarkdownToGoogleChatMarkup } from "./utils/googleChatMarkup.js";
+import { clampBlockText, SizeGuardLimits } from "./utils/messageSizeGuard.js";
 
 interface CardV2Widget {
   [key: string]: any;

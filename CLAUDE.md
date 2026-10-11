@@ -4,18 +4,19 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 
 ## Quick Reference
 
-| Command                              | Description                                              |
-|--------------------------------------|----------------------------------------------------------|
-| `yarn build`                         | Full build (compile + lint + JSON schema doc via wireit) |
-| `yarn compile`                       | TypeScript compilation only                              |
-| `yarn lint`                          | ESLint on src/ and test/                                 |
-| `yarn test`                          | Full test suite (CI-gated)                               |
-| `yarn test:only`                     | Unit tests only (CI-gated)                               |
-| `yarn test:nuts`                     | Integration tests (long timeout, parallel)               |
-| `yarn format`                        | Prettier on src/test/schemas                             |
-| `yarn clean`                         | sf-clean                                                 |
-| `yarn build:doc`                     | Auto-generate command documentation                      |
-| `./bin/dev.js hardis:<cat>:<action>` | Test a command locally (no build needed)                 |
+| Command                              | Description                                               |
+|--------------------------------------|-----------------------------------------------------------|
+| `yarn build`                         | Full build (compile + lint + JSON schema doc via wireit)  |
+| `yarn compile`                       | TypeScript compilation only                               |
+| `yarn lint`                          | ESLint on src/ and test/                                  |
+| `yarn test`                          | Full test suite (CI-gated)                                |
+| `yarn test:only`                     | Unit tests only (CI-gated)                                |
+| `yarn test:nuts`                     | Integration tests (long timeout, parallel)                |
+| `yarn format`                        | Prettier on src/test/schemas                              |
+| `yarn clean`                         | sf-clean                                                  |
+| `yarn build:doc`                     | Auto-generate command documentation (all commands)        |
+| `yarn build:doc --commands <id>`     | Regenerate the doc of some commands (ids or `*` patterns) |
+| `./bin/dev.js hardis:<cat>:<action>` | Test a command locally (no build needed)                  |
 
 **Package manager**: Yarn only. Do not use npm. Lock file: `yarn.lock`.
 
@@ -52,7 +53,7 @@ Most users run sfdx-hardis through the VS Code extension [vscode-sfdx-hardis](ht
 
 ## Training (sfdx-hardis-training)
 
-The [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/) course walks learners through this product, click by click, with screenshots taken from the real extension. A change here can break a lab silently: the text still reads fine and the click no longer does what it says.
+The [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course walks learners through this product, click by click, with screenshots taken from the real extension. A change here can break a lab silently: the text still reads fine and the click no longer does what it says.
 
 - `training-impact` skill: load it for any change touching a command name or flag, a prompt, `--json` output, a config key, a report file, a doc page URL, an LWC panel, or any behavior a lab walks through. It reads `training-manifest.json` from the sibling clone and names the affected labs.
 - `training-update` skill: load it once `training-impact` says there is an impact. It performs the edits in the sibling training repository, including regenerating the Helios screenshots.
@@ -72,6 +73,12 @@ One Pull Request per repository, cross-linked. Order: CLI, then the extension, t
 - Always continue iterating until the task is complete -- do not ask to continue.
 - Use git bash for Windows formatting when building commands.
 - **NEVER** use em-dashes (—) in anything you generate. (replace them with simple hyphens)
+
+## Method Order
+
+- Order the methods of a class, and the functions of a module, by visibility first: public (exported), then protected, then private (not exported).
+- Inside each visibility group, follow the order they are called: a caller comes before what it calls, and steps of a flow appear in the order they run.
+- This applies to new code and to methods you add to an existing file. Do not reorder a whole existing file in an unrelated change.
 
 ## No AI Attribution
 

@@ -31,8 +31,8 @@ This recording shows how to work on a User Story in a source-tracked sandbox. It
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 1.4 - Build a custom field in your Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-4-build-a-custom-field-in-your-org/)
+- [Lab 1.4 - Build a custom field in your Salesforce org](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-4-build-a-custom-field-in-your-org/)
 
 <!-- training-links:end -->

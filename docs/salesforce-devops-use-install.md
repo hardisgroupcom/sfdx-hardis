@@ -145,8 +145,8 @@ When sfdx-hardis tells you that a new version of a plugin is available, do **not
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
+- [Lab 1.1 - Install VS Code, Git and sfdx-hardis](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-1-install-vs-code-and-sfdx-hardis/)
 
 <!-- training-links:end -->

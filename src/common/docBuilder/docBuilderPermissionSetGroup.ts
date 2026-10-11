@@ -2,7 +2,7 @@ import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import { t } from '../utils/i18n.js';
-import { mdTableCellHtml } from "../gitProvider/utilsMarkdown.js";
+import { mdTableCellHtml } from "../gitProvider/utils/utilsMarkdown.js";
 
 export class DocBuilderPermissionSetGroup extends DocBuilderRoot {
 

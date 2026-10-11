@@ -6,6 +6,7 @@ import { authOrg } from '../utils/authUtils.js';
 import { findUserByUsernameLike } from '../utils/orgUtils.js';
 import { t } from '../utils/i18n.js';
 import type { PipelineContext } from '../utils/pipelineContextUtils.js';
+import type { IdenticalActionRef } from '../utils/deploymentActionIdentityUtils.js';
 
 export type ActionWhen = 'pre-deploy' | 'post-deploy';
 
@@ -17,6 +18,7 @@ export type BuiltInActionType =
   | 'publish-community'
   | 'manual'
   | 'schedule-batch'
+  | 'run-batch'
   | 'remove-packagexml-items';
 
 export interface PrePostCommand {
@@ -32,9 +34,13 @@ export interface PrePostCommand {
     sfdmuProject?: string;   // for 'data' actions
     communityName?: string;  // for 'publish-community' actions
     instructions?: string;   // for 'manual' actions
-    className?: string;      // for 'schedule-batch' actions
+    className?: string;      // for 'schedule-batch' and 'run-batch' actions
     cronExpression?: string;  // for 'schedule-batch' actions
     jobName?: string;        // for 'schedule-batch' actions (optional, defaults to <className>_Schedule)
+    runMode?: 'wait' | 'no-wait'; // for 'run-batch' actions (optional, defaults to wait)
+    batchSize?: number;      // for 'run-batch' actions (optional, defaults to 200)
+    waitTimeoutMinutes?: number; // for 'run-batch' actions in wait mode (optional, defaults to 60)
+    successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     [key: string]: any;
   };
@@ -49,6 +55,9 @@ export interface PrePostCommand {
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
   customUsername?: string;
+  // Pull Request this action was moved from, to fix a definition after its deployment failed.
+  // The action keeps the same id: the copy of the original Pull Request no longer runs.
+  movedFrom?: number;
   // If command comes from a PR, we attach PR info
   pullRequest?: CommonPullRequestInfo;
   result?: ActionResult;
@@ -66,7 +75,12 @@ export type ActionResult = {
   skippedReason?: string;
   // Machine-readable skip cause: skippedReason is user-facing wording that may change,
   // code must branch on this field instead
-  skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference';
+  skippedCode?: 'already-run-in-org' | 'branch-not-targeted' | 'unresolved-reference' | 'identical-action-already-run'
+    | 'context-validation-only' | 'context-deployment-only' | 'stopped-by-failure' | 'deployment-failed';
+  // Label of the failed action that stopped this one (stopped-by-failure)
+  stoppedByLabel?: string;
+  // The action of the same run that already did the work of this one (identical-action-already-run)
+  identicalTo?: IdenticalActionRef;
   // Values a custom function returned on the last line of its stdout, consumable by later actions
   // through ${{ actions.<id>.outputs.<name> }}. Raw, so an action can pass a real value on.
   // Stays in memory for the duration of the run and is never reported as is.
@@ -90,7 +104,8 @@ export function buildActionOutput(res: any): string {
     (part) => typeof part === 'string' && part.trim() !== ''
   );
   if (streams.length > 0) {
-    return streams.join('\n').trim();
+    // stdout usually ends with a new line: no blank line between the two streams
+    return streams.map((part) => part.trimEnd()).join('\n').trim();
   }
   return (res?.errorMessage || (res?.error as Error)?.message || '').trim();
 }
@@ -99,7 +114,9 @@ export abstract class ActionsProvider {
 
   public customUsernameToUse: string | null = null;
 
-  public static async buildActionInstance(cmd: PrePostCommand): Promise<ActionsProvider> {
+  // quiet: an unknown type returns null without logging an error nor writing cmd.result, for the
+  // callers that only read what an action does (identical actions, forecast)
+  public static async buildActionInstance(cmd: PrePostCommand, options: { quiet?: boolean } = {}): Promise<ActionsProvider> {
     let actionInstance: any = null;
     const type = cmd.type || 'command';
     if (type === 'command') {
@@ -126,6 +143,10 @@ export abstract class ActionsProvider {
       const ScheduleBatchAction = await import('./scheduleBatchAction.js');
       actionInstance = new ScheduleBatchAction.ScheduleBatchAction();
     }
+    else if (type === 'run-batch') {
+      const RunBatchAction = await import('./runBatchAction.js');
+      actionInstance = new RunBatchAction.RunBatchAction();
+    }
     else if (type === 'remove-packagexml-items') {
       const RemovePackageXmlItemsAction = await import('./removePackageXmlItemsAction.js');
       actionInstance = new RemovePackageXmlItemsAction.RemovePackageXmlItemsAction();
@@ -138,7 +159,7 @@ export abstract class ActionsProvider {
       if (customFunction) {
         const CustomFunctionActionModule = await import('./customFunctionAction.js');
         actionInstance = new CustomFunctionActionModule.CustomFunctionAction();
-      } else {
+      } else if (!options.quiet) {
         uxLog("error", this, c.yellow(`[DeploymentActions] Action type [${cmd.type}] is not yet implemented for action [${cmd.id}]: ${cmd.label}`));
         cmd.result = {
           statusCode: "failed",
@@ -157,6 +178,16 @@ export abstract class ActionsProvider {
   // (for example actions that only alter the current deployment context, not the org)
   public supportsRunOnlyOnceByOrg(): boolean {
     return true;
+  }
+
+  /**
+   * What the action does, compared to run identical actions once per run: two actions of the same
+   * type and phase, run as the same user, with the same identity parameters, do the same thing.
+   * null for an action that must never be merged with another one.
+   * The parameters as written by default; a type with defaults or paths normalizes them.
+   */
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { ...(cmd.parameters || {}) };
   }
 
   /**

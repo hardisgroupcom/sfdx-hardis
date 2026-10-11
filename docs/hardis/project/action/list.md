@@ -10,12 +10,20 @@
 
 Displays a table of actions for the specified scope and deployment phase, showing position, ID, label, type, and context.
 
+With `--with-status` and `--pr-ids` (Pull Request numbers, or `draft`), it returns instead the status of the actions of these Pull Requests in each org branch, as recorded in their "Deployment Actions" comments: done, failed, not run because a previous action failed, moved to a fix Pull Request, waiting for a manual execution... The VS Code extension reads it to show the status of each action, and to offer **Retry** and **Mark as done** on the failed ones. With `--forecast <branch>` (and `--from-branch <branch>`), it also returns what the next promotion will do with each action in that branch: waiting for someone before the merge, a manual step to do once the promotion is deployed, done already, run by the validation job, run by the deployment job, failed there, not for that branch (branch filter, validation only), or not carried by the open promotion Pull Request, which it also returns. The VS Code Deployment Actions tab shows it in its "Next promotion" mode. When the same job runs an action once for several Pull Requests (same type, phase, user and parameters), the copies keep the job they belong to, with the `identical-action` reason and an `identicalTo` field naming the action that runs.
+
+With `--with-backpromotes`, it also returns the rows of their "Backpromotes" comments: the actions run in each developer org, by sandbox name and org id. The results of actions tried in a developer org without a Pull Request comment, kept in `config/user/deployment-actions/`, are included. Without a git provider token, only those are returned.
+
+With `--with-workflows`, it also returns what the comments of these Pull Requests report: the validation and deployment runs of sfdx-hardis (kind, outcome, target branch, job, date, number of deployment errors and of failing Apex tests) and the analysis of MegaLinter, each with the comment itself as markdown. A run reported by a version of sfdx-hardis older than this flag has its outcome and its comment, without the counts. `--workflow-pr-ids` limits it to some of the Pull Requests; one whose comments could not be read is left out of the result. `artifactsSupported` tells whether the files of these jobs can be fetched with `sf hardis:git:artifacts:download`. The VS Code Pull Request view shows them in its Validation, Code Quality and Deployment tabs.
+
 ### Agent Mode
 
 Supports non-interactive execution with `--agent`:
 
 ```sh
 sf hardis:project:action:list --agent --scope branch --when pre-deploy
+sf hardis:project:action:list --agent --with-status --pr-ids 123,124 --json
+sf hardis:project:action:list --agent --with-status --with-workflows --pr-ids 123 --json
 ```
 
 Required in agent mode:
@@ -32,17 +40,24 @@ Required in agent mode:
 
 ## Parameters
 
-| Name         |  Type   | Description                                                       | Default | Required |          Options           |
-|:-------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
-| agent        | boolean | Run in non-interactive mode for agents and automation             |         |          |                            |
-| branch       | option  | Target branch name (for branch scope, defaults to current branch) |         |          |                            |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                                   |         |          |                            |
-| flags-dir    | option  | undefined                                                         |         |          |                            |
-| json         | boolean | Format output as json.                                            |         |          |                            |
-| pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                 |         |          |                            |
-| scope        | option  | Configuration scope: project, branch, or pr                       |         |          | project<br/>branch<br/>pr  |
-| websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |                            |
-| when         | option  | When to run the action: pre-deploy or post-deploy                 |         |          | pre-deploy<br/>post-deploy |
+| Name              |  Type   | Description                                                                                                                            | Default | Required |          Options           |
+|:------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:--------------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                                                  |         |          |                            |
+| branch            | option  | Target branch name (for branch scope, defaults to current branch)                                                                      |         |          |                            |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                                                        |         |          |                            |
+| flags-dir         | option  | Import flag values from a directory.                                                                                                   |         |          |                            |
+| forecast          | option  | With --with-status, also return what the next promotion to this major branch will do with each action (ex: preprod)                    |         |          |                            |
+| from-branch       | option  | With --forecast, the branch the promotion comes from (ex: uat): finds the open promotion Pull Request and the Pull Requests it carries |         |          |                            |
+| json              | boolean | Format output as json.                                                                                                                 |         |          |                            |
+| pr-id             | option  | Pull request ID (for pr scope, defaults to draft)                                                                                      |         |          |                            |
+| pr-ids            | option  | Comma-separated list of Pull Request numbers, or draft (with --with-status)                                                            |         |          |                            |
+| scope             | option  | Configuration scope: project, branch, or pr                                                                                            |         |          | project<br/>branch<br/>pr  |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                              |         |          |                            |
+| when              | option  | When to run the action: pre-deploy or post-deploy                                                                                      |         |          | pre-deploy<br/>post-deploy |
+| with-backpromotes | boolean | With --with-status, also return the rows of the Backpromotes comments of --pr-ids: the actions run in each developer org               |         |          |                            |
+| with-status       | boolean | Return the status of the actions of --pr-ids in each org branch, read from their Deployment Actions comments                           |         |          |                            |
+| with-workflows    | boolean | With --with-status, also return the validation, deployment and MegaLinter results reported in the comments of --pr-ids                 |         |          |                            |
+| workflow-pr-ids   | option  | With --with-workflows, the Pull Request numbers whose comments are read (defaults to --pr-ids)                                         |         |          |                            |
 
 ## Examples
 
@@ -56,6 +71,10 @@ $ sf hardis:project:action:list --agent --scope branch --when pre-deploy
 
 ```shell
 $ sf hardis:project:action:list --scope project --when post-deploy --json
+```
+
+```shell
+$ sf hardis:project:action:list --agent --with-status --with-workflows --pr-ids 123 --json
 ```
 
 

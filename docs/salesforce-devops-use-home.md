@@ -11,7 +11,7 @@ This guide is for everyone who makes changes in Salesforce on a CI/CD project: a
 <!-- training-callout:start -->
 
 !!! tip "Learn by doing"
-    Level 1 - Contributor basics of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 7 labs, about 2 h. [Start Level 1](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/)
+    Level 1 - Contributor basics of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 7 labs, about 2 h. [Start Level 1](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/)
 
 <!-- training-callout:end -->
 
@@ -81,8 +81,8 @@ This recording shows the complete workflow. It was recorded with the previous in
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
 
-- [Lab 1.7 - Capstone: deliver a User Story on your own](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
+- [Lab 1.7 - Capstone: deliver a User Story on your own](https://sfdx-hardis-training.github.io/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
 
 <!-- training-links:end -->

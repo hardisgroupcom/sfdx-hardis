@@ -6,6 +6,16 @@ import { t } from '../utils/i18n.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import path from 'path';
+import {
+  HIDDEN_APEX_BODY,
+  buildApexClassQuery,
+  hasNoVisibleNoArgConstructor,
+  parseApexClassName,
+  pickApexClassToSchedule,
+} from './utils/apexClassActionUtils.js';
+
+// Moved to apexClassActionUtils.ts, which run-batch shares
+export { HIDDEN_APEX_BODY, parseApexClassName, pickApexClassToSchedule };
 
 export class ScheduleBatchAction extends ActionsProvider {
   public getLabel(): string {
@@ -27,11 +37,22 @@ export class ScheduleBatchAction extends ActionsProvider {
     return null;
   }
 
+  // With its default job name, as run() schedules it
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    const className = String(cmd.parameters?.className || '').trim();
+    return {
+      className,
+      cronExpression: String(cmd.parameters?.cronExpression || '').trim(),
+      jobName: String(cmd.parameters?.jobName || '').trim() || `${className}_Schedule`,
+    };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
 
-    const className = (cmd.parameters?.className as string) || '';
+    // Trimmed once, so the lookup, the job name and the Apex all read the same name
+    const className = ((cmd.parameters?.className as string) || '').trim();
     const cronExpression = (cmd.parameters?.cronExpression as string) || '';
     const jobName = (cmd.parameters?.jobName as string) || `${className}_Schedule`;
     const targetOrgFlag = this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '';
@@ -40,23 +61,35 @@ export class ScheduleBatchAction extends ActionsProvider {
 
     // 1. Verify the Apex class exists and implements Schedulable
     uxLog('log', this, c.grey(`[DeploymentActions] ${t('scheduleBatchVerifyingClass', { className })}`));
-    const classQuery = `SELECT Id, Name, Body FROM ApexClass WHERE Name = '${className.replace(/'/g, "\\'")}' AND ManageableState = 'unmanaged'`;
+    // The class can belong to an installed package: ns.ClassName for a managed one
+    const { namespace, name: classBareName } = parseApexClassName(className);
+    const classQuery = buildApexClassQuery(classBareName, namespace);
     const classResult = await soqlQueryTooling(classQuery, conn);
-    if (!classResult.records || classResult.records.length === 0) {
+    const classRecords = classResult.records || [];
+    const apexClass = pickApexClassToSchedule(classRecords, namespace);
+    if (!apexClass && classRecords.length > 0) {
+      // The name only exists with a namespace: say how to write it rather than "not found"
+      const qualifiedName = `${classRecords[0].NamespacePrefix}.${classRecords[0].Name}`;
+      uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchClassNeedsNamespace', { className, qualifiedName })}`));
+      return { statusCode: 'failed', output: t('scheduleBatchClassNeedsNamespace', { className, qualifiedName }) };
+    }
+    if (!apexClass) {
       uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchClassNotFound', { className })}`));
       return { statusCode: 'failed', output: t('scheduleBatchClassNotFound', { className }) };
     }
-    const apexClass = classResult.records[0];
+    // A managed package shows the signature of its global classes and hides every other class,
+    // and only a global class can be scheduled from outside its package
+    if (apexClass.Body === HIDDEN_APEX_BODY) {
+      uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchClassNotGlobal', { className })}`));
+      return { statusCode: 'failed', output: t('scheduleBatchClassNotGlobal', { className }) };
+    }
     if (!apexClass.Body || !apexClass.Body.includes('Schedulable')) {
       uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchClassNotSchedulable', { className })}`));
       return { statusCode: 'failed', output: t('scheduleBatchClassNotSchedulable', { className }) };
     }
 
     // Check that the class has a public no-arg constructor
-    const noArgCtorPattern = new RegExp(`(private|protected)\\s+${className}\\s*\\(\\s*\\)`, 'i');
-    const paramCtorPattern = new RegExp(`(public|private|protected|global)\\s+${className}\\s*\\([^)]+\\)`, 'i');
-    const hasExplicitNoArgCtor = new RegExp(`(public|global)\\s+${className}\\s*\\(\\s*\\)`, 'i').test(apexClass.Body);
-    if (noArgCtorPattern.test(apexClass.Body) || (paramCtorPattern.test(apexClass.Body) && !hasExplicitNoArgCtor)) {
+    if (hasNoVisibleNoArgConstructor(apexClass.Body, classBareName)) {
       uxLog('error', this, c.red(`[DeploymentActions] ${t('scheduleBatchConstructorNotVisible', { className })}`));
       return { statusCode: 'failed', output: t('scheduleBatchConstructorNotVisible', { className }) };
     }

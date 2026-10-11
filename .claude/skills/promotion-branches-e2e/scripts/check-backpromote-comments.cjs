@@ -66,7 +66,11 @@ for (const pr of dump.prs || []) {
     for (const row of data?.sandboxRows || []) {
       check(`#${pr.number}: sandbox row ${row.sandboxName} is complete`, !!row.sandboxName && !!row.orgId && /^\d{4}-\d{2}-\d{2}T/.test(row.date || ''), JSON.stringify(row));
     }
-    check(`#${pr.number}: the visible table names every sandbox`, (data?.sandboxRows || []).every((row) => comments[0].body.includes(`| ${row.sandboxName} <sub>${row.orgId}</sub> |`)));
+    // The org id only shows when a refreshed sandbox kept its name: two rows, same name, other org id
+    const sandboxRows = data?.sandboxRows || [];
+    const visibleName = (row) => (sandboxRows.some((other) => other.sandboxName === row.sandboxName && other.orgId !== row.orgId) ? `${row.sandboxName} (${row.orgId})` : row.sandboxName);
+    check(`#${pr.number}: the visible table names every sandbox`, sandboxRows.every((row) => comments[0].body.includes(`| ${visibleName(row)} |`)));
+    check(`#${pr.number}: no org id in the visible text of a single sandbox`, sandboxRows.every((row) => visibleName(row) !== row.sandboxName || !comments[0].body.split('-->').slice(-1)[0].includes(row.orgId)));
   }
   byNumber.set(String(pr.number), { comment: comments[0] || null, data });
 }

@@ -23,7 +23,7 @@ The command's technical implementation involves:
 
 - **File Discovery:** It uses `glob` to find all custom field metadata files (`.field-meta.xml`) within your project.
 - **Custom Setting Exclusion:** It first filters out fields belonging to Custom Settings by reading the corresponding object metadata files (`.object-meta.xml`) and checking for the `<customSettingsType>` tag. It also excludes Data Cloud objects (`__dlm`, `__dll`) and managed package fields.
-- **XML Parsing:** For each remaining custom field file, it reads the XML content and parses it using `xml2js` to extract the `fullName` and `description` attributes.
+- **XML Parsing:** For each remaining custom field file, it reads the XML content and parses it to extract the `fullName` and `description` attributes.
 - **Description Check:** It verifies if the `description` attribute is present and not empty for each custom field.
 - **Data Aggregation:** All custom fields found to be missing a description are collected into a list, along with their object and field names.
 - **Report Generation:** It generates a CSV report (`lint-missingattributes.csv`) containing details of all fields with missing descriptions.
@@ -47,11 +47,11 @@ In agent mode, the command runs fully automatically with no interactive prompts.
 |:------------------|:-------:|:----------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent             | boolean | Run in non-interactive mode for agents and automation. Uses default values and skips prompts. |         |          |         |
 | debug<br/>-d      | boolean | Activate debug mode (more logs)                                                               |         |          |         |
-| flags-dir         | option  | undefined                                                                                     |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                          |         |          |         |
 | json              | boolean | Format output as json.                                                                        |         |          |         |
 | outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .csv                             |         |          |         |
 | skipauth          | boolean | Skip authentication check when a default username is required                                 |         |          |         |
-| target-org<br/>-o | option  | undefined                                                                                     |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org.                                                          |         |          |         |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                     |         |          |         |
 
 ## Examples

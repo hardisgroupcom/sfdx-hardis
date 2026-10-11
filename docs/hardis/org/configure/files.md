@@ -34,7 +34,7 @@ The command's technical implementation involves:
 
 - **Template Selection:** It uses `selectTemplate` to present predefined file export templates or a blank option to the user.
 - **Interactive Prompts:** The `promptFilesExportConfiguration` utility is used to gather detailed export settings from the user, such as the SOQL query, file types, and naming conventions.
-- **File System Operations:** Employs `fs-extra` to create the project directory (`files/your-project-name/`) and write the `export.json` configuration file.
+- **File System Operations:** Employs Node.js `fs` to create the project directory (`files/your-project-name/`) and write the `export.json` configuration file.
 - **PascalCase Conversion:** Uses `pascalcase` to format the files export path consistently.
 - **JSON Serialization:** Serializes the collected export configuration into a JSON string and writes it to `export.json`.
 - **WebSocket Communication:** Uses `WebSocketClient.requestOpenFile` to open the generated `export.json` file in VS Code, facilitating immediate configuration.
@@ -46,7 +46,7 @@ The command's technical implementation involves:
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

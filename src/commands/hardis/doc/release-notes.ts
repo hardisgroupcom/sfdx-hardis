@@ -42,7 +42,7 @@ export default class ReleaseNotes extends SfCommand<any> {
 Collects data from multiple sources and generates a comprehensive release notes document:
 
 - **Git Provider** (GitHub, GitLab, Azure DevOps, Bitbucket): merged pull requests, contributors
-- **Ticket Provider** (JIRA, Azure Boards): ticket details, status, assignees
+- **Ticket Provider** (JIRA, Azure Boards, ServiceNow, Aha!): ticket details, status, assignees
 - **sfdx-git-delta**: metadata changes (created, updated, deleted)
 - **Deployment Actions**: manual tasks and automated actions from PR comments
 - **AI Provider** (optional): generates a structured summary of the release
@@ -99,11 +99,11 @@ In agent mode:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
 
-- [Lab 3.5 - Promote to UAT and write the release notes](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
-- [Lab 3.11 - Capstone: run a weekly release cycle](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+- [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
 
 <!-- training-links:end -->
 `;

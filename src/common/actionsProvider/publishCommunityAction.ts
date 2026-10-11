@@ -17,6 +17,10 @@ export class PublishCommunityAction extends ActionsProvider {
     return null;
   }
 
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { communityName: String(cmd.parameters?.communityName || '').trim() };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;

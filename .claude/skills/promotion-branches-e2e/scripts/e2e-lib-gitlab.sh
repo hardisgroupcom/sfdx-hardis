@@ -17,6 +17,11 @@
 #   LOGS          folder where each job log is written
 #   DEV           path to bin/dev.js of the sfdx-hardis working copy under test
 
+# Settings from the environment, else .env, else derived (env-lib.sh): ORG defaults to E2E_ORG
+# shellcheck source=/dev/null
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env-lib.sh"
+e2e_defaults
+
 : "${ORG:?set ORG to the target org}"
 : "${PROJECT_ID:?set PROJECT_ID to the numeric project id}"
 : "${PROJECT_PATH:?set PROJECT_PATH to group/name}"
@@ -60,11 +65,13 @@ gl_mr_sha() {
 # merge, and asking for it hands back the stale commit_id while the new one is computed. A job run
 # then validates a tree without the commit that was just pushed, which looks like a product bug and
 # is not one. So the ref is fetched again until it holds the head of the source branch.
-# Usage: gl_fetch_merge_ref <iid>
+# Usage: gl_fetch_merge_ref <iid> [sha of the head just pushed]
 gl_fetch_merge_ref() {
-  local mr="$1" sha
-  sha=$(gl_mr_sha "$mr")
-  for _ in $(seq 1 20); do
+  # the head pushed locally when given: right after a push, the API can still answer the previous
+  # head, and the ref built from it then looks up to date
+  local mr="$1" sha="${2:-}"
+  [ -z "$sha" ] && sha=$(gl_mr_sha "$mr")
+  for _ in $(seq 1 40); do
     curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" \
       "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$mr/merge_ref" >/dev/null
     if git fetch -q origin "+refs/merge-requests/$mr/merge:refs/heads/mrmerge-$mr" 2>/dev/null &&
@@ -91,6 +98,7 @@ gl_check() {
     CI_MERGE_REQUEST_IID="$mr" \
     CI_COMMIT_REF_NAME="refs/merge-requests/$mr/merge" \
     CI_MERGE_REQUEST_TARGET_BRANCH_NAME="$target" \
+    CI_JOB_NAME=check_deploy_to_target_branch_org \
     FORCE_TARGET_BRANCH="$target" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
@@ -101,7 +109,9 @@ gl_check() {
   return $code
 }
 
-# Deployment job: GitLab CI checks out the target branch at the merge commit
+# Deployment job: GitLab CI checks out the target branch at the merge commit. CI_JOB_NAME, here and
+# in gl_check, is the job name of the sfdx-hardis .gitlab-ci.yml template: it goes into the message
+# key of the comments, which the DevOps Pipeline reads back (#2307)
 # Usage: gl_deploy <target branch> <log label>
 gl_deploy() {
   local target="$1" label="$2" code
@@ -111,6 +121,7 @@ gl_deploy() {
   start=$(e2e_now_ms)
   gl_ci_env \
     CI_COMMIT_REF_NAME="$target" \
+    CI_JOB_NAME=deploy_to_org \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
@@ -182,26 +193,35 @@ print(json.dumps({'source_branch': sys.argv[1], 'target_branch': sys.argv[2], 't
 # GitLab computes mergeability asynchronously and refuses the merge while it is still checking.
 # Usage: gl_mr_merge <iid>
 gl_mr_merge() {
-  local mr="$1" status
+  local mr="$1" status answer
   local url="$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests/$mr"
-  for _ in $(seq 1 30); do
-    status=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$url" |
-      python -c "import json,sys; d=json.load(sys.stdin); print(d.get('detailed_merge_status') or d.get('merge_status'))")
-    case "$status" in
-    checking | unchecked | preparing) sleep 2 ;;
-    *) break ;;
-    esac
+  # GitLab computes the mergeability after every push and refuses the merge until it is done. On a
+  # busy instance that takes more than a minute (2026-10-04: !18 stayed "checking" about 90 seconds,
+  # and section 6sexies lost its promotion), so wait up to 3 minutes, and retry the merge itself
+  for _ in $(seq 1 5); do
+    for _ in $(seq 1 60); do
+      status=$(curl -sS -H "PRIVATE-TOKEN: $GL_TOKEN" "$url" |
+        python -c "import json,sys; d=json.loads(sys.stdin.buffer.read().decode('utf-8')); print('merged' if d.get('state') == 'merged' else (d.get('detailed_merge_status') or d.get('merge_status')))")
+      case "$status" in
+      merged)
+        # an earlier attempt went through though its answer did not say so
+        echo merged
+        return 0
+        ;;
+      checking | unchecked | preparing | approvals_syncing) sleep 3 ;;
+      *) break ;;
+      esac
+    done
+    answer=$(curl -sS -X PUT -H "PRIVATE-TOKEN: $GL_TOKEN" -H "Content-Type: application/json" \
+      -d '{"squash": false, "should_remove_source_branch": false}' "$url/merge")
+    if printf '%s' "$answer" | python -c "import json,sys; sys.exit(0 if json.loads(sys.stdin.buffer.read().decode('utf-8')).get('state') == 'merged' else 1)" 2>/dev/null; then
+      echo merged
+      return 0
+    fi
+    sleep 5
   done
-  curl -sS -X PUT -H "PRIVATE-TOKEN: $GL_TOKEN" -H "Content-Type: application/json" \
-    -d '{"squash": false, "should_remove_source_branch": false}' "$url/merge" |
-    python -c "
-import json, sys
-answer = json.load(sys.stdin)
-if answer.get('state') == 'merged':
-    print('merged')
-else:
-    print('MERGE FAILED', json.dumps(answer)[:300]); sys.exit(1)
-"
+  echo "MERGE FAILED $(printf '%s' "$answer" | head -c 300)"
+  return 1
 }
 
 # Dump the merge requests and their notes in the provider agnostic shape audit-pr-comments.cjs
@@ -256,7 +276,7 @@ E2E_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Usage: pipeline_check <log label> [expectations file]
 pipeline_check() {
   local label="$1" expect="${2:-}" code
-  env -u NODE_OPTIONS EXT="${EXT:-C:/git/vscode-sfdx-hardis}" WORK="$WORK" PROVIDER_TOKEN="$GL_TOKEN" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
+  env -u NODE_OPTIONS EXT="$EXT" WORK="$WORK" PROVIDER_TOKEN="$GL_TOKEN" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
   code=$?
   cat "$LOGS/$label.log"
   echo "$label exit=$code log=$LOGS/$label.log"

@@ -3,13 +3,17 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { buildPrCreateUrl, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
-import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./prCommentNav.js";
-import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./jenkinsUtils.js";
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
+import { parseGitlabJobUrl } from "./utils/jobUrlUtils.js";
+import { CiRunCandidate, selectCiRuns } from "./utils/jobKindUtils.js";
+import { httpDownloadFile, httpGet } from "../utils/httpUtils.js";
+import { SfError } from "@salesforce/core";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./utils/jenkinsUtils.js";
 
 // Oldest commit date of a window, used to bound the merged MRs listing (see
 // getOldestCommitDateWithMargin in gitProviderRoot.ts).
@@ -22,9 +26,25 @@ export class GitlabProvider extends GitProviderRoot {
   private mergeRequestWebUrls: { [key: string]: string } = {};
   public serverUrl: string;
   public token: string;
+  // Numeric id or path with namespace of the project the listings are asked for
+  private projectId: string | null;
 
-  constructor() {
+  constructor(repository?: GitProviderRepositorySettings) {
     super();
+    if (repository) {
+      // Another repository than the one of the current folder: nothing is read from the CI context
+      const parsed = GitlabProvider.parseGitlabRepoUrl(repository.remoteUrl);
+      if (!parsed) {
+        throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: repository.remoteUrl, provider: "GitLab" }));
+      }
+      this.serverUrl = parsed.serverUrl;
+      this.token = repository.token;
+      // The path with namespace identifies the project: the client URL-encodes it in every call
+      this.projectId = parsed.projectPath;
+      this.gitlabApi = GitlabProvider.buildApi(this.serverUrl, this.token);
+      return;
+    }
+    this.projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || null;
     // Gitlab URL is always provided by default CI variables
     this.serverUrl = process.env.CI_SERVER_URL || "";
     // It's better to have a project token defined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
@@ -216,6 +236,10 @@ export class GitlabProvider extends GitProviderRoot {
 
   public getLabel(): string {
     return "sfdx-hardis Gitlab connector";
+  }
+
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$CI_PROJECT_DIR"';
   }
 
   public logAutoFixRemediation(step: "push" | "pr-create"): void {
@@ -440,6 +464,7 @@ ${getBannerMarkdownAndLink()}
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+    messageBody = this.enforceHardCommentLimit(messageBody);
     // Check for existing note from a previous run
     uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabListingMrNotes')));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
@@ -500,14 +525,14 @@ ${getBannerMarkdownAndLink()}
       return null;
     }
 
-    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    const projectId = this.projectId;
     if (!projectId) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired')));
       return null;
     }
 
     try {
-      const state = filters.status === "merged" ? "merged" : filters.status === "open" ? "opened" : "all";
+      const state =filters.status === "merged" ? "merged" : filters.status === "open" ? "opened" : "all";
       const params: any = {
         projectId,
         state,
@@ -532,7 +557,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async getPullRequestById(mrIid: number): Promise<CommonPullRequestInfo | null> {
-    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    const projectId = this.projectId;
     if (!this.gitlabApi || !projectId) {
       return null;
     }
@@ -765,6 +790,8 @@ ${getBannerMarkdownAndLink()}
       createdDate: prData?.created_at || undefined,
       mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || prData?.mergeCommitSha || undefined,
+      // draft since GitLab 13.2, work_in_progress before
+      isDraft: prData?.draft === true || prData?.work_in_progress === true,
       providerInfo: prData,
       customBehaviors: {}
     }
@@ -840,9 +867,10 @@ ${getBannerMarkdownAndLink()}
     return null;
   }
 
-  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<void> {
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
+    body = this.enforceHardCommentLimit(body);
     const ctx = this.resolveMergeRequestContext(prNumber);
-    if (!ctx) return;
+    if (!ctx) return false;
     const { projectId, mergeRequestId } = ctx;
     const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
     let existingNoteId: number | null = null;
@@ -859,6 +887,7 @@ ${getBannerMarkdownAndLink()}
       await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, body);
       uxLog("log", this, c.grey(`[GitLab] Created Deployment Actions note on MR !${mergeRequestId}`));
     }
+    return true;
   }
 
   public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
@@ -874,6 +903,7 @@ ${getBannerMarkdownAndLink()}
           ref: { projectId: ctx.projectId, noteId: note.id },
           body: note.body || '',
           url: mergeRequestUrl ? `${mergeRequestUrl}#note_${note.id}` : '',
+          updatedAt: String(note.updated_at || note.created_at || ''),
         });
       }
     }
@@ -898,9 +928,158 @@ ${getBannerMarkdownAndLink()}
     return webUrl;
   }
 
+  public supportsJobArtifacts(): boolean {
+    return true;
+  }
+
+  public async listJobArtifacts(jobUrl: string): Promise<JobArtifactsListing> {
+    const jobApiUrl = this.getOwnJobApiUrl(jobUrl);
+    const jobKey = `gitlab-job-${parseGitlabJobUrl(jobUrl)?.jobId}`;
+    let job: any;
+    try {
+      job = (await httpGet<any>(jobApiUrl, { headers: this.jobApiHeaders() })).data;
+    } catch (e) {
+      // A job erased with its pipeline answers 404
+      if ((e as any)?.status === 404) {
+        return { status: 'expired', jobKey, artifacts: [] };
+      }
+      throw e;
+    }
+    const archive = job?.artifacts_file || (job?.artifacts || []).find((file: any) => file?.file_type === 'archive');
+    if (!archive) {
+      // GitLab removes the archive at its expiry date and keeps the date
+      const expireAt = Date.parse(job?.artifacts_expire_at || '');
+      return { status: !isNaN(expireAt) && expireAt < Date.now() ? 'expired' : 'none', jobKey, artifacts: [] };
+    }
+    const artifact: JobArtifact = {
+      id: String(job.id),
+      name: archive.filename || 'artifacts.zip',
+      sizeBytes: archive.size || 0,
+      expired: false,
+      updatedAt: job.finished_at || job.created_at || '',
+    };
+    return { status: 'success', jobKey, artifacts: [artifact] };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
+    await httpDownloadFile(`${this.getOwnJobApiUrl(jobUrl)}/artifacts`, targetZipFile, { headers: this.jobApiHeaders() });
+  }
+
   public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
     if (!commentRef?.ref?.noteId) return;
     await this.gitlabApi.MergeRequestNotes.edit(commentRef.ref.projectId, commentRef.prNumber, commentRef.ref.noteId, { body });
     uxLog("log", this, c.grey('[GitLab] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
+  }
+
+  // A job is what GitLab lists, and it carries its name, its dates and its ref: one listing of
+  // the project jobs answers everything, without a call per pipeline
+  public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
+    if (!this.projectId) {
+      throw new SfError('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired'));
+    }
+    const jobs = await this.listFinishedJobsSince(this.projectId, filters.minDate);
+    return selectCiRuns(this.toCiRunCandidates(jobs, filters), filters.kinds);
+  }
+
+  // API URL of the job a job URL points to, refused when it is not a job of this project. The
+  // host is always the configured one: the token never goes to the host written in the URL.
+  private getOwnJobApiUrl(jobUrl: string): string {
+    const job = parseGitlabJobUrl(jobUrl);
+    const serverUrl = (this.serverUrl || "").replace(/\/$/, "");
+    const ownProjectPath = (process.env.CI_PROJECT_PATH || "").toLowerCase();
+    if (!job || !serverUrl || job.serverUrl.toLowerCase() !== serverUrl.toLowerCase() || !ownProjectPath || job.projectPath.toLowerCase() !== ownProjectPath) {
+      throw new SfError(t('jobArtifactsUrlNotRecognized', { jobUrl }));
+    }
+    return `${serverUrl}/api/v4/projects/${encodeURIComponent(job.projectPath)}/jobs/${job.jobId}`;
+  }
+
+  private jobApiHeaders(): Record<string, string> {
+    return { Authorization: `Bearer ${this.token}` };
+  }
+
+  // GET /projects/:id/jobs, finished jobs only. The listing has no date filter and comes newest
+  // first (by job id): the paging stops at the first page that is entirely older than minDate
+  private async listFinishedJobsSince(projectId: string, minDate: Date): Promise<any[]> {
+    const perPage = 100;
+    const minTime = minDate.getTime();
+    const jobs: any[] = [];
+    for (let page = 1; ; page++) {
+      // A page number makes the client return that page alone instead of following the next ones
+      const pageJobs = (await this.gitlabApi.Jobs.all(projectId, {
+        scope: ["success", "failed", "canceled"] as any,
+        perPage,
+        page,
+      })) as any[];
+      // A job without a date is kept: dropping it could hide a deployment
+      const jobsInWindow = pageJobs.filter((job) => !(Date.parse(job?.created_at || "") < minTime));
+      jobs.push(...jobsInWindow);
+      if (pageJobs.length < perPage || jobsInWindow.length === 0) {
+        break;
+      }
+    }
+    return jobs;
+  }
+
+  private toCiRunCandidates(jobs: any[], filters: CiRunFilters): CiRunCandidate[] {
+    const withDeployments = filters.kinds.includes('deployment');
+    const withValidations = filters.kinds.includes('validation');
+    const candidates: CiRunCandidate[] = [];
+    for (const job of jobs) {
+      const status = GitlabProvider.toCiRunStatus(job.status);
+      if (!status) {
+        continue;
+      }
+      const ref = String(job.ref || job.pipeline?.ref || "");
+      // A merge request pipeline runs on refs/merge-requests/<iid>/head, /merge or /train
+      const mergeRequestRef = /^refs\/merge-requests\/(\d+)\//.exec(ref);
+      // The pipeline of a tag is not the deployment of a branch, even when both have the same name
+      if (job.tag === true) {
+        continue;
+      }
+      // A job of another branch than the ones asked for is the one of a merge request too: a
+      // project can run its deployment check on the branch pipeline of the feature branch
+      const isMergeRequest = mergeRequestRef !== null || job.pipeline?.source === "merge_request_event" || !filters.branches.includes(ref);
+      if (isMergeRequest ? !withValidations : !withDeployments) {
+        continue;
+      }
+      // A scheduled pipeline, or one started through the API or by another pipeline, runs on a
+      // branch without anything having been merged into it. "web" is a run started by hand
+      const pipelineSource = job.pipeline?.source;
+      if (!isMergeRequest && pipelineSource && pipelineSource !== "push" && pipelineSource !== "web") {
+        continue;
+      }
+      candidates.push({
+        id: String(job.id),
+        name: job.name || "",
+        trigger: isMergeRequest ? 'pullRequest' : 'push',
+        // The job does not say the target branch of its merge request: the caller finds it from pullRequestId
+        branch: isMergeRequest ? "" : ref,
+        ...(isMergeRequest ? { pullRequestId: mergeRequestRef ? mergeRequestRef[1] : "", sourceBranch: mergeRequestRef ? "" : ref } : {}),
+        status,
+        queuedAt: job.created_at || "",
+        startedAt: job.started_at || job.created_at || "",
+        finishedAt: job.finished_at || "",
+        commitSha: job.commit?.id || job.pipeline?.sha || "",
+        triggeredBy: job.user?.name || job.user?.username || "",
+        webUrl: job.web_url || "",
+      });
+    }
+    return candidates;
+  }
+
+  // Skipped and manual jobs deployed nothing and failed nothing
+  private static toCiRunStatus(status: string | null | undefined): CiRunStatus | null {
+    if (status === "success") {
+      return 'succeeded';
+    }
+    if (status === "failed") {
+      return 'failed';
+    }
+    if (status === "canceled") {
+      return 'canceled';
+    }
+    return null;
   }
 }

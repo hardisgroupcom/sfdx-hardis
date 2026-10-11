@@ -18,21 +18,51 @@ ___
   from it, so no `sf plugins install` is needed.
 - A local vscode-sfdx-hardis working copy on the matching branch, compiled (`yarn compile`), for the
   diagram check of section 7bis.
-- Git bash. On Windows, clear `NODE_OPTIONS` for every CLI call (VS Code sets an inspector
-  bootloader that keeps node alive after the command ends). The library does it for you.
+- Bash: Git Bash on Windows, bash on macOS and Linux. On Windows, clear `NODE_OPTIONS` for every CLI
+  call (VS Code sets an inspector bootloader that keeps node alive after the command ends). The
+  library does it for you.
 
-Set once:
+### On a new computer
+
+Everything the run needs is in this skill and in the `.env` at the root of the sfdx-hardis working
+copy (git-ignored). `reference/env.example` lists every variable, what it is for and where to get it.
+
+1. Copy the `.env` of the computer that already runs the test to the root of the working copy (or
+   copy `reference/env.example` there and fill it).
+2. Do the logins `.env` cannot carry: `gh auth login`, `glab auth login --hostname <GITLAB_E2E_HOST>`,
+   `sf org login web --alias <E2E_ORG>` (and the Dev Hub when it is another org).
+3. `yarn install` in the sfdx-hardis working copy; clone vscode-sfdx-hardis next to it, on the
+   matching branch, then `yarn install && yarn compile` there.
+4. `bash .claude/skills/promotion-branches-e2e/scripts/preflight.sh` (`--provider <p>` for one
+   provider). It is read-only, prints OK / MISSING / WARN per item, and the command that fixes each
+   MISSING. Run it until nothing is MISSING.
+
+### Settings
+
+Every script and library sources `scripts/env-lib.sh`: a variable comes from the environment, else
+from `.env`, else from a default derived from where the skill sits. No path of a computer is written
+anywhere:
+
+| Variable         | Default                                                                                                                           |
+|------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `ORG`            | `E2E_ORG` of `.env`                                                                                                               |
+| `DEV`            | `<working copy>/bin/dev.js` (`git rev-parse --show-toplevel` of the skill)                                                        |
+| `EXT`            | `<working copy>/../vscode-sfdx-hardis`                                                                                            |
+| `WORK`           | `<temp>/promo-e2e-<provider>`; real CI `promo-e2e-ci-<provider>`; backpromote `promo-e2e-bp-<provider>`                           |
+| `LOGS`, `EXPECT` | `<WORK>-logs`, `<WORK>-expect`                                                                                                    |
+| `<temp>`         | `E2E_TMP`, else `TMPDIR`, else `TEMP`, else `/tmp` (through `cygpath -m` on Windows, so bash, node and python read the same path) |
+| `DEVHUB`         | `ORG`; `DEVORG` and `DEVORG2`: `promo-e2e-dev` and `promo-e2e-dev2` (section 6bis)                                                |
+| `API`            | `67.0`                                                                                                                            |
+
+`WORK` must not exist when a run starts: remove the folders of the previous run, or export `WORK` and
+`LOGS`. In a git worktree, `.env` and the extension are looked for next to the main working copy.
+
+For the commands of this runbook typed by hand, load the same settings in the shell first:
 
 ```bash
-export ORG="your.user@example.com"           # target org username or alias
-export REPO="youruser/sfdx-hardis-promo-e2e" # private test repository, always a NEW one
-export WORK="/c/tmp/promo-e2e"               # local clone
-export LOGS="/c/tmp/promo-e2e-logs"
-export DEV="C:/git/sfdx-hardis/bin/dev.js"
-export EXT="C:/git/vscode-sfdx-hardis"       # only for the diagram check
-export DEVHUB="$ORG"                         # Dev Hub for the backpromote scratch org (section 6bis)
-export DEVORG="promo-e2e-dev"                # alias of that scratch org
-export DEVORG2="promo-e2e-dev2"              # a second one, standing for a refreshed sandbox (B16)
+export PROVIDER=github                       # or gitlab, azure, bitbucket
+source .claude/skills/promotion-branches-e2e/scripts/env-lib.sh && e2e_defaults "promo-e2e-$PROVIDER"
+export REPO="youruser/sfdx-hardis-promo-e2e-<n>"   # GitHub: private test repository, always a NEW one
 mkdir -p "$LOGS"
 ```
 
@@ -70,8 +100,18 @@ Section 8 holds what is different on GitLab.
 
 On Azure DevOps, source `scripts/e2e-lib-azure.sh`: `az_check`, `az_deploy`, `az_promote`,
 `az_release_notes`, plus `az_pr_create` and `az_pr_merge`, and the merge-ref wait. It needs
-`AZ_ORG`, `AZ_PROJECT`, `AZ_REPO_ID`, `AZ_REPO_NAME` and `AZ_TOKEN`. Section 8bis holds what is
-different on Azure DevOps.
+`AZ_ORG`, `AZ_PROJECT`, `AZ_REPO_NAME`, and `AZ_TOKEN` (default `AZURE_PERSONAL_ACCESS_TOKEN`);
+`AZ_REPO_ID` is read from the API by name when empty. Section 8bis holds what is different on Azure
+DevOps.
+
+On Bitbucket Cloud, source `scripts/e2e-lib-bitbucket.sh`: `bb_check`, `bb_deploy`, `bb_promote`,
+`bb_release_notes`, plus `bb_pr_create`, `bb_pr_merge`, `bb_pr_decline` and `bb_remote_url`. It needs
+`BB_WORKSPACE` and `BB_REPO`; `BB_TOKEN` and `BB_EMAIL` default to `ATLASSIAN_TOKEN` and
+`ATLASSIAN_EMAIL`. Section 8ter holds what is different on Bitbucket.
+
+The scripted sections do not call these names: they call the provider neutral `p_*` functions of
+`scripts/promotion-provider.sh`, which maps them for `PROVIDER=github|gitlab|azure|bitbucket`
+(section 6ter).
 
 Each writes `$LOGS/<label>.log` and echoes the exit code.
 
@@ -151,14 +191,18 @@ Each story adds **its own static resource** (never a shared file, so unrelated s
 conflict), plus a `scripts/actions/.sfdx-hardis.<PR>.yml` holding its deployment actions. That file
 travels with the cherry-picked commit, which is one of the things being tested.
 
-| Story | Branch                    | Target      | Actions                   | Test classes        | Custom behavior          |
-|-------|---------------------------|-------------|---------------------------|---------------------|--------------------------|
-| S1    | `feature/E2E-101-alpha`   | integration | pre command + post manual | `PromoE2EAlphaTest` | -                        |
-| S2    | `feature/E2E-102-beta`    | integration | post command              | -                   | `NO_DELTA`               |
-| S3    | `feature/E2E-103-gamma`   | integration | pre command               | `PromoE2EBetaTest`  | `PURGE_FLOW_VERSIONS`    |
-| S4    | `feature/E2E-201-delta`   | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
-| S5    | `feature/E2E-202-epsilon` | uat         | post command              | -                   | -                        |
-| S6    | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
+| Story | Branch                       | Target      | Actions                   | Test classes        | Custom behavior          |
+|-------|------------------------------|-------------|---------------------------|---------------------|--------------------------|
+| S1    | `feature/E2E-101-alpha`      | integration | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S2    | `feature/E2E-102-beta`       | integration | post command              | -                   | `NO_DELTA`               |
+| S3    | `feature/E2E-103-gamma`      | integration | pre command               | `PromoE2EBetaTest`  | `PURGE_FLOW_VERSIONS`    |
+| S4    | `feature/E2E-201-delta`      | uat         | pre command + post manual | `PromoE2EAlphaTest` | -                        |
+| S5    | `feature/E2E-202-epsilon`    | uat         | post command              | -                   | -                        |
+| S6    | `feature/E2E-301-hotfix`     | preprod     | pre command + post manual | `PromoE2EBetaTest`  | `FLOW_DELETE_INTERVIEWS` |
+| S7    | `feature/E2E-302-hotfix-two` | preprod     | post command              | -                   | -                        |
+
+S7 exists for the second go-live of section 4: promoted to `main` on its own, it makes the first
+go-live promotion (P4) leave every window, which is the situation of issue #2260.
 
 `scripts/stories.sh` creates the branches and the action files: `story_branch <branch> <target>
 <resource>` then, once the Pull Request exists, `story_actions <branch> <number> <kind>`. Opening
@@ -259,6 +303,18 @@ pipeline_check "pipeline-after-golive" "$EXPECT/after-golive.json"
 e2e_release_notes "release-notes"
 e2e_release_notes "release-notes-all" --include-promotions
 
+# Second go-live: S7 merged into preprod, then P5 = preprod -> main carrying S7 only. P4 is now in
+# no window (main shows the latest go-live, preprod was never merged into main directly), and the
+# stories it carried must stay out of preprod and uat all the same (issue #2260)
+e2e_check 7 preprod "check-pr7-hotfix"
+gh pr merge 7 --repo "$REPO" --merge --delete-branch=false
+e2e_deploy preprod "deploy-preprod-pr7"
+e2e_promote preprod 7 "promotion-preprod-main-two"   # S3, S4 and S6 are skipped as already promoted
+e2e_check <P5> main "check-promotion-main-two"
+gh pr merge <P5> --repo "$REPO" --merge --delete-branch=false
+e2e_deploy main "deploy-main-promotion-two"
+pipeline_check "pipeline-after-second-golive" "$EXPECT/after-second-golive.json"
+
 # Retrofit main into the BUILD stream
 git checkout -q integration && git pull -q origin integration
 git checkout -q -b retrofit/from-main
@@ -286,8 +342,8 @@ reads the counter bubbles and the merge edges back out of the mermaid it produce
 asserts is the diagram itself.
 
 ```bash
-export EXT=C:/git/vscode-sfdx-hardis
-export EXPECT=/c/tmp/promo-e2e-expect          # one small JSON per checkpoint
+# EXT (default ../vscode-sfdx-hardis) and EXPECT (default <WORK>-expect, one small JSON per checkpoint)
+# come from env-lib.sh
 (cd "$EXT" && yarn compile)                    # tsc layout, so the script can require the modules
 pipeline_check "pipeline-before-p1" "$EXPECT/before-p1.json"
 ```
@@ -315,13 +371,14 @@ Three things are asserted at every checkpoint, expectations or not: a Pull Reque
 in one branch and one only, every counter bubble equals the length of the list under it, and the
 diagram parses.
 
-| Checkpoint              | When                                             | What it proves                                                                                                                                                                                  |
-|-------------------------|--------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `pipeline-before-p1`    | after the BUILD stream is merged, before P1      | the stories wait in the branch they were merged into, the downstream branches are empty, and no promotion is drawn on any arrow                                                                 |
-| `pipeline-p1-open`      | after `promotion:create`, before the merge       | the open promotion is drawn **on the `integration -> uat` arrow**, gets no branch node of its own, and takes nothing out of `integration` yet: a promotion only moves a story once it is merged |
-| `pipeline-after-p1`     | after the merge and the deployment               | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                                                                      |
-| `pipeline-before-p3`    | before promoting a story that arrived through P1 | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set                                                 |
-| `pipeline-after-golive` | after the `preprod -> main` promotion is merged  | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                                                                |
+| Checkpoint                     | When                                                        | What it proves                                                                                                                                                                                                                        |
+|--------------------------------|-------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pipeline-before-p1`           | after the BUILD stream is merged, before P1                 | the stories wait in the branch they were merged into, the downstream branches are empty, and no promotion is drawn on any arrow                                                                                                       |
+| `pipeline-p1-open`             | after `promotion:create`, before the merge                  | the open promotion is drawn **on the `integration -> uat` arrow**, gets no branch node of its own, and takes nothing out of `integration` yet: a promotion only moves a story once it is merged                                       |
+| `pipeline-after-p1`            | after the merge and the deployment                          | S1 and S3 are listed in `uat`, gone from `integration`, which keeps S2 alone, and the arrow is empty again                                                                                                                            |
+| `pipeline-before-p3`           | before promoting a story that arrived through P1            | a story a promotion carried is offered by the branch it reached, so what the pipeline lists and what `promotion:create` offers are the same set                                                                                       |
+| `pipeline-after-golive`        | after the `preprod -> main` promotion is merged             | every promoted story is listed in `main`, none of them twice, and the counters of the branches it left went down                                                                                                                      |
+| `pipeline-after-second-golive` | after a second `preprod -> main` promotion carrying S7 only | P4 is in no window any more, and S3, S4, S6 still come back in neither `preprod` nor `uat`: `uat` lists S1 and S5, `main` lists S7. The merged promotions of each step are read from the provider, not from the windows (issue #2260) |
 
 The extension needs its provider token, which it reads from a secret named after the remote host:
 dots replaced by underscores, uppercased, plus `_TOKEN`. On `gitlab.hardis-group.com` that is
@@ -331,6 +388,58 @@ rest of the library is already using.
 
 > The check builds a **cold** cache on every call (an in-memory `Memento`), because a stale answer
 > here would look exactly like the defect being hunted. Do not add a persistent store to it.
+
+## 4ter. What the single Pull Request modal shows, merged Pull Requests included
+
+The DevOps Pipeline opens a modal on one Pull Request with four tabs: **Deployment Actions**,
+**Validation**, **Code Quality** and **Deployment**. A comment can exist on the provider and still not
+show there, and nothing else in this runbook would notice: the job logs and the comment audit (5bis)
+read the provider, never the modal. Merged Pull Requests are the case to watch: the modal of a story
+opened from the branch it reached, weeks after its merge.
+
+The extension reads none of these comments itself. For the three run tabs and the status column of
+Deployment Actions it runs `sf hardis:project:action:list --with-status --pr-ids N --with-workflows
+--workflow-pr-ids N --json`, with **only the provider token** in the environment
+(`collectProviderCredentialEnvVars`: `GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`...; no
+`GITHUB_REPOSITORY`, no `CI_PROJECT_ID`). The action list of Deployment Actions comes from its own
+`completePullRequestsWithActions(..., { fetch: true })`: the actions file of the source branch of an
+open Pull Request, of the target branch of a merged one.
+
+`scripts/check-pr-modal.cjs` makes those same calls for every open and merged Pull Request of the
+repository and compares them with the provider:
+
+```bash
+PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK")" DEV="$DEV" EXT="$EXT" \
+  node .claude/skills/promotion-branches-e2e/scripts/check-pr-modal.cjs --json "$(cygpath -m "$LOGS")/pr-modal.json"
+# GitLab: PROVIDER=gitlab GL_HOST GL_TOKEN PROJECT_ID instead of REPO
+# Azure DevOps: PROVIDER=azure AZ_ORG AZ_PROJECT AZ_REPO_ID AZ_TOKEN instead of REPO
+# Bitbucket: PROVIDER=bitbucket BB_WORKSPACE BB_REPO BB_EMAIL BB_TOKEN instead of REPO
+# or, with promotion-provider.sh sourced for any of the four:
+p_pr_modal_check --json "$(cygpath -m "$LOGS")/pr-modal.json"
+```
+
+The comments are read the way the CLI reads them: GitHub issue comments, GitLab notes without the
+system ones, the comments of every Azure DevOps thread (deleted threads and deleted comments left out:
+`getThreads` still returns them), the Bitbucket Pull Request comments (`content.raw`, deleted ones left
+out). The token is passed the way the extension passes it: `GITHUB_TOKEN`,
+`CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN` plus `SYSTEM_ACCESSTOKEN`, or
+`CI_SFDX_HARDIS_BITBUCKET_TOKEN` plus `CI_SFDX_HARDIS_BITBUCKET_EMAIL`, and the CLI finds the
+repository from the git remote.
+
+| Tab                | Expected                                                                                                                                                                                                                                    |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| all three run tabs | the CLI answers, with an array for the Pull Request. No answer, or no entry for it, **hides** the three tabs instead of showing them empty, so a provider read that failed looks like "nothing to show"                                     |
+| Validation         | one run per comment whose message key starts with `deployment-check-`, with the status of its `run-summary` marker when it has one                                                                                                          |
+| Deployment         | one run per comment whose message key starts with `deployment-` (not `-check-`), same status rule                                                                                                                                           |
+| Code Quality       | one run per MegaLinter comment (`<!-- megalinter:` or its title). The simulators post none, so it is only exercised by the CI section                                                                                                       |
+| Deployment Actions | every cell of the "Status by org" table of the Deployment Actions comment is a status of the CLI (action id, org branch); the cells of the target branch are the pills of the modal; the list of a story equals the ids of its actions file |
+
+It prints one line per Pull Request, with a note for a Pull Request merged into a major branch with no
+deployment comment at all (a job side gap, not a modal one: section 6sexies merges stories it never
+deploys on purpose). One CLI start costs 20 to 40 seconds here, so run it once, at the end of the
+sections that share the repository, and on the CI repository of 6quinquies, whose comments come from
+real jobs. What it does not cover: the rendering of the tabs (the LWC unit tests), and the modal of a
+promotion or major-to-major Pull Request, whose action list is assembled from the stories it carries.
 
 ## 5. What to assert in each log
 
@@ -357,9 +466,9 @@ the 2026-09-08 runs came from. Each `e2e-lib-*.sh` provides `dump_pr_comments`, 
 provider agnostic shape the auditor reads:
 
 ```bash
-dump_pr_comments "C:/tmp/promo-e2e-comments.json"
+dump_pr_comments "$LOGS/comments.json"
 node .claude/skills/promotion-branches-e2e/scripts/audit-pr-comments.cjs \
-  "C:/tmp/promo-e2e-comments.json" "C:/tmp/promo-e2e-expect.json"
+  "$LOGS/comments.json" "$LOGS/comments-expect.json"
 ```
 
 The expectations file is optional and only says what each Pull Request should have reached:
@@ -380,6 +489,90 @@ Run it at the end of the run, and read its findings against what the run did: a 
 a job that ran BEFORE a fix landed keeps its old text until a job touches that Pull Request again,
 and the flag-off passes deliberately run the pre-fix `origin/main` CLI.
 
+## 5quater. Looking at the comments as the provider draws them
+
+The audit of 5bis reads the markdown source of a comment. It cannot see what the provider makes of
+it: a table left as rows of pipes, a `<details>` block printed as text, a checkbox drawn as `[ ]`,
+a banner image that does not load, a table wider than the comment. Each provider has its own
+markdown, and the same source does not draw the same way on the four.
+
+`scripts/check-comments-visual.cjs` opens one comment of every type the run produced, the longest
+of each, takes a picture of it as shown and another one with every folded section opened, and
+compares its DOM with its source:
+
+```bash
+dump_pr_comments "$LOGS/comments.json"
+node .claude/skills/promotion-branches-e2e/scripts/check-comments-visual.cjs \
+  "$(cygpath -m "$LOGS")/comments.json" "$(cygpath -m "$LOGS")/visual"
+# GitHub: REPO in the environment; GitLab: GL_HOST, GL_TOKEN and PROJECT_PATH
+# --per-type 2 for two comments of each type, --only validation for one family
+```
+
+| Type                                  | What it is                                                       |
+|---------------------------------------|------------------------------------------------------------------|
+| `validation-success`, `-failed`       | the comment of the validation job, by verdict                    |
+| `...+manual`                          | the same carrying manual actions and their checkboxes (the gate) |
+| `...+conflict-markers`                | the validation stopped by the marker guard                       |
+| `deployment-success`, `-failed`       | the comment of the deployment job, with `+manual` too            |
+| `deployment-actions`, `+manual`       | the Deployment Actions comment and its "Status by org" table     |
+| `backpromotes`                        | the Backpromotes history comment (backpromote repository)        |
+| `code-quality`                        | a MegaLinter comment, when a job posted one                      |
+| `promotion-description`, `+conflicts` | the description of a promotion Pull Request                      |
+| `other-<message key>`                 | any other sfdx-hardis comment                                    |
+
+A type the run did not produce is not checked: say so in the report (a run with no failed
+validation has no `validation-failed` picture).
+
+How the comment is drawn, by provider:
+
+| Provider        | `--render` | How                                                                                                                                 |
+|-----------------|------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| Azure DevOps    | `page`     | the real Pull Request page, in a Chrome with remote debugging, logged in. Azure has no markdown API                                 |
+| Bitbucket Cloud | `page`     | the same                                                                                                                            |
+| GitHub          | `api`      | the HTML of `POST /markdown` (the renderer of the comments), in a headless Chrome. No session. `--render page` works when logged in |
+| GitLab          | `api`      | the HTML of `POST /api/v4/markdown` with the project, in a headless Chrome. No session                                              |
+
+The Chrome of `--render page` is one started for the test, never the user's own:
+
+```bash
+chrome --remote-debugging-port=9222 --user-data-dir=<a folder of its own> --no-first-run
+```
+
+Then the person logs in to Azure DevOps and Bitbucket in it, once: the profile keeps the sessions.
+The script only opens Pull Request pages of the test repositories and reads them. `E2E_CDP_URL`
+(or `--cdp`) when the port is another one. The window stays open during the run.
+
+Each line is `V | OK / WARN / FAIL | type | Pull Request | picture | what is wrong`. FAIL: the
+comment is not on the page, markdown or HTML source is left as text outside code blocks, fewer
+tables, folded sections or checkboxes drawn than the source holds, an image not loaded. WARN: a
+table or a code block wider than the comment.
+
+**Then read every picture.** The DOM check says the markup was understood, not that the comment
+reads well. In each picture, folded and unfolded:
+
+- the banner image is there and the verdict is the first thing read;
+- every table has its header row, no column is squeezed to one word per line, no cell is empty that
+  should not be;
+- status icons and emoji are drawn, not printed as `:name:`;
+- checkboxes are boxes, on the line of their action;
+- folded sections show their summary line folded, and their content once opened;
+- code and command output sit in a code block, long lines do not push the comment wider;
+- nothing overlaps, nothing is cut at the right edge;
+- the navigation line links the other comments and marks the current one.
+
+Traps:
+
+- **A provider page keeps bars stuck to the top and paints only what its window shows.** The script
+  hides the fixed and sticky elements before the picture and makes the window as tall as the
+  comment: without the first, the top of the comment is covered; without the second, the bottom of
+  a long unfolded comment is blank (Azure DevOps, 2026-10-08).
+- **A comment is found by the words of its source**, among the containers a provider draws
+  comments in (`.markdown-content` on Azure DevOps). Looking for whole sentences fails: a provider
+  splits a sentence across elements and pads its emoji.
+- **`--render api` draws the markup of the provider in a plain frame**, not in its page: it proves
+  the markdown, the tables and the folds, not the width of the real comment column.
+- **Not logged in looks like "comment not found"**: the line names the page that was reached.
+
 ## 5ter. Deployment action state from the git provider
 
 Check the deployment action state from the git provider too:
@@ -388,7 +581,7 @@ Check the deployment action state from the git provider too:
 gh api "repos/$REPO/issues/1/comments" --jq '.[] | select(.body | contains("Deployment Actions")) | .body'
 ```
 
-The "Status by org branch" table must have one column per org branch the story reached, and one
+The "Status by org" table must have one column per org branch the story reached, and one
 pending manual checkbox per org branch.
 
 ## 6. Edge cases to run at the end
@@ -402,7 +595,8 @@ pending manual checkbox per org branch.
 | Conflict, kept                         | same with `--on-conflict commit-with-markers`                                                                                                                                 | Pull Request created, `hardis-report/promotion-conflicts-prompt-*.md` written, prompt embedded in the description                                                                                                                                                                                                                                                                                         |
 | Conflict, kept for all                 | two conflicting stories in the same promotion, no `--on-conflict`, answer "commit this and every following conflict" at the first one                                         | the second conflict is not asked about: the log holds `Applying the conflict handling chosen earlier: commit-with-markers` and both stories are committed with their markers                                                                                                                                                                                                                              |
 | Conflict prompt commit message         | read `hardis-report/promotion-conflicts-prompt-*.md` of the run above                                                                                                         | the prompt asks for a commit message whose body carries one line per conflicting file, naming the story, what the target side had, what the story added and what was kept                                                                                                                                                                                                                                 |
-| Pull Request creation refused          | unset the provider token (or point it at a project the branch is not in) and run `promotion:create`                                                                           | the branch is still pushed, the warning names **the reason the provider gave** (not "no token"), and a link to the provider's own "new Pull Request" form is printed with the source branch, the target branch, the title and the description already filled in (the branches and the title only when the description is too long for a URL)                                                              |
+| No provider connection                 | unset the provider token, take the GitHub CLI off `PATH`, and run `promotion:create`                                                                                          | since #2236 the command stops with exit 1 and "Promotion branches need the git provider connection", before any branch is created or pushed. The scripted case 35 asserts this                                                                                                                                                                                                                            |
+| Pull Request creation refused          | a connected provider that refuses the creation (point the token at a project the branch is not in). Not scripted: the GitHub harness cannot provoke it                        | the branch is still pushed, the warning names **the reason the provider gave** (not "no token"), and a link to the provider's own "new Pull Request" form is printed with the source branch, the target branch, the title and the description already filled in (the branches and the title only when the description is too long for a URL)                                                              |
 | Deployment from a promotion branch     | run `deploy:smart` (no `--check`) with the promotion branch checked out, as a push pipeline of that branch would                                                              | the command stops with an error naming the branch and the CI setting to fix (`DEPLOY_BRANCHES` on GitLab). With `--check` it runs normally, and so does a deployment of the target branch after the merge                                                                                                                                                                                                 |
 | Marker guard                           | validate that Pull Request                                                                                                                                                    | job fails: `still contains git conflict markers in N file(s): ...`, **and the validation comment of the Pull Request says so**: failure banner, branch, count and the list of files to fix. A red job with no comment is a defect                                                                                                                                                                         |
 | Marker guard, solved                   | solve as the prompt says, push, validate again                                                                                                                                | job passes                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -448,7 +642,7 @@ for the sandbox; `--from-pull-request` picks another start. The deployment runs 
 It runs after section 4, or on its own right after sections 2 and 3 once the BUILD stream merges of
 section 4 are done (`#1`, `#2`, `#3` merged into `integration`).
 
-### Running it on GitHub, GitLab or Azure DevOps
+### Running it on GitHub, GitLab, Azure DevOps or Bitbucket Cloud
 
 The steps below are scripted, provider agnostic, in `scripts/backpromote-setup.sh` and
 `scripts/backpromote-steps.sh`. Each provider library defines the hooks `bp_provider_env` (the
@@ -459,8 +653,9 @@ variables the CLI reads outside CI), `bp_open` and `bp_merge` (a Pull Request in
 
 ```bash
 # after build-repo.sh and the push of main, integration, uat and preprod to a NEW repository
-export BP_PROVIDER_LIB=".../scripts/e2e-lib.sh"          # or e2e-lib-gitlab.sh, e2e-lib-azure.sh
-export ORG DEVHUB DEVORG DEVORG2 WORK LOGS DEV API        # plus the variables of that library
+export PROVIDER=github                                    # or gitlab, azure, bitbucket: picks the library (BP_PROVIDER_LIB)
+# plus the repository variables of that library; ORG, DEVHUB, DEVORG, DEVORG2, WORK, LOGS, DEV and
+# API come from .env and env-lib.sh (WORK: <temp>/promo-e2e-bp-<provider>)
 bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # stories, scratch orgs, developer branch
 bash .claude/skills/promotion-branches-e2e/scripts/backpromote-steps.sh   # B0 to B16, C1 to C4, summary
 ```
@@ -486,7 +681,7 @@ call, asserted with `backpromote_check` against `reference/backpromote/<file>`.
 | B0 No token                             | `--plan` and `--auto` with no provider variable                                                                                                                        | `no-token.json`: `blocked` on the `gitProvider` check; the run exits 1 with the same message, before listing anything                                                                                                                                                                                                                                                                        |
 | B1 Org of a major branch                | `targetUsername: <DEVUSER>` added to `config/branches/.sfdx-hardis.uat.yml` (not committed), `--plan`                                                                  | `refused-major-org.json`: `blocked`, check `targetOrg` names `uat`                                                                                                                                                                                                                                                                                                                           |
 | B1c Parent branch not allowed           | `--plan --parent-branch feature/E2E-105-apex`                                                                                                                          | `refused-parent.json`: `blocked`, check `parentBranch` says "not an allowed parent branch" (only `developmentBranch` and `availableTargetBranches`)                                                                                                                                                                                                                                          |
-| B2 Production org                       | `--plan --target-org "$ORG"`                                                                                                                                           | `refused-production.json`: `blocked`, "production"                                                                                                                                                                                                                                                                                                                                           |
+| B2 Developer Edition org                | `--plan --target-org "$ORG"`                                                                                                                                           | `developer-edition.json`: `ok`, org type `developer`. Since #2239 a Developer Edition org is a dev environment and is accepted. `refused-production.json` (`blocked`, "production") still describes a real production org, which this harness does not have: not covered                                                                                                                     |
 | B3 First plan                           | `--plan`, then `--plan --from-pull-request $S1 --run-id <runId>` with `SFDX_HARDIS_PROGRESS_FILE`                                                                      | `plan-first.json`: `ok`, org type `scratch`, `scan.found` false, nothing selected, no window, `S1` `S2` `S3` not backpromoted. `plan-from-s1.json`: window from `S1`, the three resources, the four actions not run yet, every file `missingInOrg`. The progress file holds `history`, `delta`, `retrieve`. The checkout is untouched and clean                                              |
 | B4 Run from S1                          | `--auto --from-pull-request $S1 --run-id <runId>`                                                                                                                      | `run-1.json`: `ok`, 3 deployed, `e2e-pre-S1`, `e2e-post-S2`, `e2e-pre-S3` run, `e2e-manual-S1` pending, nothing excluded, comments on `S1` `S2` `S3`, checkout on `backpromote/integration/devorg1` (original `feature/E2E-401-dev`), branch not pushed (no merge). The org holds `E2E_S1..S3`. C1: each Pull Request has one Backpromotes comment with one complete row and its action rows |
 | B5 Up to date, manual action            | `--plan`, then `--confirm-action e2e-manual-$S1`                                                                                                                       | `plan-up-to-date.json`: `nothingToDo`, `scan.found` true, the three rows set. `confirm.json`: mode `confirm`. C2: the action row of `e2e-manual-S1` is `success` (one row)                                                                                                                                                                                                                   |
@@ -564,15 +759,28 @@ panel. Say so in the report.
 ## 6ter. Scripted runs and timings
 
 Sections 3, 4 and 4bis are scripted in `scripts/promotion-run.sh`, section 6 in
-`scripts/promotion-edge.sh` (groups `g1` to `g5`, in that order, after `promotion-run.sh`). Both
-run on GitHub and GitLab through `scripts/promotion-provider.sh`, which picks the library with
-`PROVIDER=github|gitlab`:
+`scripts/promotion-edge.sh` (groups `g1` to `g6`, in that order, after `promotion-run.sh`). They,
+`deployment-actions-run.sh` and `identical-actions-run.sh` run on the four providers through
+`scripts/promotion-provider.sh`, which picks the library with `PROVIDER=github|gitlab|azure|bitbucket`:
 
 ```bash
-export PROVIDER=github ORG REPO WORK LOGS EXPECT DEV API EXT   # plus GL_* and PROJECT_* on GitLab
+export PROVIDER=github REPO=<owner/name>   # GitLab: PROJECT_ID PROJECT_PATH GL_HOST GL_TOKEN (8),
+                                           # Azure DevOps: AZ_REPO_NAME (8bis), Bitbucket: BB_REPO (8ter)
+# ORG, WORK, LOGS, EXPECT, DEV, API and EXT come from .env and env-lib.sh
 bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh       # results-section4.txt
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5   # results-section6.txt
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6   # results-section6.txt
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh   # results-section6quater.txt
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh    # results-section6sexies.txt
 ```
+
+The functions the sections call (`p_check`, `p_deploy`, `p_promote`, `p_release_notes`, `p_open`,
+`p_merge`, `p_close`, `p_body`, `p_set_body`, `p_cli`, `p_list_candidates`, `p_promote_no_provider`,
+`p_wait_merge_ref`, `p_check_edited`, `p_deploy_branch`, `p_pr_modal_check`, plus `dump_pr_comments`
+and `pipeline_check` of each library) exist for the four providers, with the same meaning: a merge
+is always a merge commit, `p_open` prints the number, `p_merge` prints `merged` once the provider
+says so. Nothing in the section scripts tests `PROVIDER` itself. The drafts of section 6quater are
+drafts by title (`draft` in it), which every provider reads the same way, so no provider draft API is
+needed.
 
 Every Pull Request number they get is appended to `$LOGS/promo-vars.sh`, so a group can be rerun on
 its own after a fix.
@@ -603,6 +811,466 @@ Read the numbers with these in mind:
   after it.
 - Never time two runs at once: they share the CPU, the scratch orgs and the target org.
 
+## 6quater. Deployment actions: gate, recovery, mark as done, forecast
+
+`scripts/deployment-actions-run.sh` runs after `promotion-run.sh` (and `promotion-edge.sh` when you
+run it), on the same repository. It adds two stories, then asserts every job log and, through
+`scripts/check-action-status.cjs`, the JSON of `sf hardis:project:action:list --with-status`:
+
+| Story | Branch                     | Target      | Actions (`story_actions` kind)                                                                                                          |
+|-------|----------------------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| S8    | `feature/E2E-401-recovery` | integration | `recovery`: pre-deploy manual, post-deploy command failing until `e2e-recovery-ok.txt` exists, the command after it, post-deploy manual |
+| S9    | `feature/E2E-402-draft`    | integration | `pre-manual`: a pre-deploy manual action, on a Pull Request with "draft" in its title                                                   |
+
+```bash
+export PROVIDER=github REPO=<owner/name>               # the repository variables of the provider, see 6ter
+export DEV_ORG=<scratch org username>                   # optional: group D
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh   # results-section6quater.txt
+```
+
+| Group | Checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| A     | The validation of S8 **stops** (exit 1) right after its pre-deployment actions, before the deployment check, naming the manual action and the `set-status` command; `set-status --org-branch integration` marks it with a "Manual action marked as done by" note; the validation run again skips it and passes; S9 (draft in the title) only warns                                                                                                                                            |
+| B     | The deployment of S8 fails on the flaky action and records it `failed`, the two after it `not-run`; `action:run --next all` retries it and runs the stopped ones (note "Run locally by"); `set-status` closes the post manual step; in agent mode a retry in `preprod`, where nothing failed, is refused                                                                                                                                                                                      |
+| C     | `set-status --org-branch uat` marks the pre manual action done **ahead** ("before any deployment to uat"); with P6 (integration -> uat, S8 alone) open, `--forecast uat --from-branch integration` names P6, carries S8 and not S2, and forecasts done / runs at deployment / after the merge (post-deployment manual) / not in this promotion; the validation and the deployment of P6 skip the action marked ahead; after the merge the forecast has no promotion and the commands are done |
+| D     | With `DEV_ORG`: `action:run --all --dev-org` in a developer org records `dev-sandboxes` and the Backpromotes rows of S8; a second run skips what is "already done in this org"; `--dev-org` refuses the org of a major branch                                                                                                                                                                                                                                                                 |
+
+Traps:
+
+- **The flaky command reads a file of the working copy**, `e2e-recovery-ok.txt`, untracked on
+  purpose: `git checkout -f` keeps it, so every job after the retry finds it. Delete it to replay B.
+  The script lists it in `.git/info/exclude`: untracked and not excluded, it makes
+  `promotion:create` refuse the working copy as not clean (C2).
+- **The flaky command is one file per story** (`scripts/e2e/flaky-<pr>.cjs`): a shared file is
+  committed by the first story only, and a promotion carrying a later one deploys a command whose
+  script never reached the branch.
+- **The section declares the org of each major branch** (`targetUsername`, `instanceUrl`, one
+  commit on integration), like a real project: without it `--dev-org` cannot tell a major org (D4),
+  and `action:run --org-branch` has nothing to check `--target-org` against.
+- **`DA_RUN=<n>` replays the section on the same repository** with story branches of their own:
+  `DA_RUN=2 bash deployment-actions-run.sh`.
+- **B6 passes `--allow-branch-mismatch`**: in agent mode a retry in preprod from the integration
+  checkout is refused for the branch first, before the check B6 is about.
+- **`p_cli` runs a command the way a person does**, with the provider token and no `CI`: the notes
+  then say "Run locally by", and `--agent` is what keeps the commands from prompting.
+- The Mark as done buttons, Run in another org and the Next promotion switch of the VS Code panel
+  run these same commands (`set-status`, `action:run --select-org`, `action:list --forecast`), but
+  the prompts of `--select-org` are not scripted: only the agent paths are.
+
+## 6quinquies. The same features through real CI jobs (GitHub Actions, GitLab CI, Azure Pipelines, Bitbucket Pipelines)
+
+Every other section runs the CI jobs with the simulators of section 1. This one runs them in the CI
+of the provider, with the CI files a project gets from `defaults/ci`, in a repository of its own.
+`scripts/ci-workflows-run.sh` holds the scenario (W0 to W9, X1, X2) and calls nothing provider
+specific but the `ci_*` functions of `scripts/ci-provider-<provider>.sh` (create the repository,
+wait for a validation or a deployment job, re-run it, tick a checkbox, read the comments). Its
+assertions are the ones of `section-lib.sh`, the same on every provider.
+
+| Provider            | `PROVIDER`  | Status                                                                                                                                              |
+|---------------------|-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| GitHub Actions      | `github`    | run live (2026-10-04, 2026-10-07)                                                                                                                   |
+| GitLab CI           | `gitlab`    | built 2026-10-08, files validated by the CI lint API, never run live yet                                                                            |
+| Azure Pipelines     | `azure`     | built 2026-10-08, files checked as YAML only (no pipeline existed in the project to preview against), never run live yet                            |
+| Bitbucket Pipelines | `bitbucket` | built 2026-10-08 with a fallback to the job simulator once the build minutes are used up; file valid against Atlassian's schema, never run live yet |
+
+Every job writes how it ran in `$LOGS/<label>.mode` ("real CI", or "simulated (build minutes used
+up)" on Bitbucket), each result line carries it in brackets, and `$LOGS/ci-jobs.tsv` lists the jobs
+with the seconds they waited in the queue apart from the seconds they ran. Copy that column into
+the report table: a simulated job proves the CLI, not the CI file.
+
+The start is the same on the four providers, nothing else to export when `.env` is filled:
+
+```bash
+PROVIDER=<github|gitlab|azure|bitbucket> nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh \
+  >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-$PROVIDER.out" 2>&1 & disown
+```
+
+`WORK` and `LOGS` default to `<temp>/promo-e2e-ci-<provider>` and `-logs` (the script stops when
+`WORK` exists), and the repository name is picked one past the highest existing one.
+
+A new provider adds `ci-provider-<provider>.sh` (the interface is in the header of
+`ci-provider-github.sh`) and a writer in `ci-workflows-prepare.cjs`; the scenario does not change.
+
+### GitHub Actions
+
+```bash
+export PROVIDER=github
+export REPO=<owner/name>                   # optional: default <GH_E2E_OWNER or the gh login>/sfdx-hardis-promo-e2e-ci-<n>
+export SFDX_HARDIS_BRANCH=<branch>         # pushed to hardisgroupcom/sfdx-hardis; default: current
+bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh   # results-section6quinquies.txt
+```
+
+To prove a published release (a beta for instance) rather than a branch, run the jobs in its image
+and skip the link step: W0 then asserts the version the job prints.
+
+```bash
+export SFDX_HARDIS_BRANCH=- SFDX_HARDIS_IMAGE=ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta
+export SFDX_HARDIS_VERSION=8.14.1-beta202610062235.0   # npm view sfdx-hardis@beta version
+```
+
+Read the version the image really holds before trusting it: its config blob carries
+`ARG SFDX_HARDIS_VERSION=...` in its history, and an image built before npm served the beta holds
+the previous one.
+
+`scripts/ci-workflows-prepare.cjs` changes two things in `check-deploy.yml` and `process-deploy.yml`:
+a step before the sfdx-hardis one clones the branch, builds it and runs `sf plugins link`, so the
+jobs run the code under test and not the release of the Docker image; and the four
+`SFDX_AUTH_URL_<BRANCH>` secrets, set from `sf org display --verbose` of `ORG`, log in without the
+JWT connected app a real project uses. Actions stay off while the major branches are pushed, so the
+base project is never deployed by CI.
+
+| Check | What                                                                                                                                                                                                                                                                                  |
+|-------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| W0    | The job runs sfdx-hardis linked from the branch (`sf plugins` lists it as `(link)`)                                                                                                                                                                                                   |
+| W1    | The validation of C1 (`recovery` actions) stops on its pre-deployment manual action; the Pull Request comment says why and shows its checkbox                                                                                                                                         |
+| W2    | The checkbox ticked in the comment through the API, **Re-run all jobs**: the job records the action as done and passes                                                                                                                                                                |
+| W3    | C2, opened as a GitHub **draft** with no "draft" in its title, is only warned: the draft flag comes from the provider                                                                                                                                                                 |
+| W4    | The deployment job after the merge: the flaky command fails and stops the next ones, the manual action done is skipped; statuses read back with `action:list`                                                                                                                         |
+| W5    | C3 brings the file the flaky command needs. The promotion integration -> uat (C1, C3) stops in validation until the manual action is done in uat; the forecast says waiting before the merge, after the merge for the post-deployment manual step, runs at deployment for the command |
+| W6    | `set-status --org-branch uat` (what **Mark as done in uat** runs), the validation re-run skips it and passes, the forecast says done                                                                                                                                                  |
+| W7    | The deployment of the promotion runs the commands with the fix that travelled with it; the post-deployment manual step waits in uat                                                                                                                                                   |
+| W8    | A workflow without the `safe.directory` line (a project that copied the templates before it): git refuses the checkout, the job stops and names the line to add                                                                                                                       |
+| W9    | C5 and C6 carry the same post-deployment command (section 6sexies). Each merge into integration is a job of its own and runs its copy; the deployment job of the promotion carrying both to uat runs it once, and C6 is `success` in uat with the "Not run twice" note                |
+| X1    | `p_pr_modal_check` (section 4ter) on the CI repository: the modal tabs show the comments posted by the real jobs, merged Pull Requests included                                                                                                                                       |
+| X2    | `pipeline_check` (section 4bis): uat lists C1, C3, C5 and C6, integration lists nothing (C2 and C4 are closed), no open promotion on the arrows                                                                                                                                       |
+
+W3 also records W3a: the provider itself flags C2 as a draft. W8 is GitHub only (recorded as SKIP
+on GitLab, whose template has no `safe.directory` line to remove).
+
+Traps:
+
+- The login of a CI job reads the org of its branch from `config/branches/.sfdx-hardis.<branch>.yml`:
+  without `targetUsername` (and `instanceUrl`) it stops with "You may have to define
+  targetUsername", which the simulators never show because they pass `--target-org`. The script
+  appends both to the four branch configs.
+- The auth URL comes from `sf org auth show-sfdx-auth-url`: `sf org display --verbose` now prints
+  a redacted placeholder in its place, and secrets set from it make every login fall through to
+  JWT. The script refuses a value that does not start with `force://`.
+- A rerun keeps its run id: `gh run rerun` then wait on the same id, and `gh run view --log` reads
+  the latest attempt.
+- A `pull_request` run is listed under the head commit of the Pull Request, a `push` run under the
+  merge commit: `gh run list --commit` finds both.
+- The link step takes three to four minutes per job (install and `tsc`): the section is about
+  30 runs long with W9, so count 70 to 80 minutes (2026-10-04: 72). It runs on GitHub's runners and
+  outlives the two-hour limit of a tracked background command: launch it with `nohup ... & disown`
+  and wait for its last line with a polling loop.
+
+### GitLab CI
+
+The project is created inside a group whose runners take the jobs: never in a personal namespace,
+which has no runner. The host and the group come from the environment, else from the `.env` of the
+sfdx-hardis working copy (git-ignored):
+
+```bash
+# .env: GITLAB_E2E_HOST=<host>   GITLAB_E2E_GROUP=<group/path>
+export PROVIDER=gitlab
+export SFDX_HARDIS_BRANCH=<branch>             # default: current; or - with SFDX_HARDIS_IMAGE
+# optional: GL_TOKEN (default: glab config get token --host <host>), GITLAB_E2E_PROJECT,
+# GITLAB_E2E_CI_TOKEN=project|user, GITLAB_RUNNER_TAG (default ubuntu),
+# CI_WAIT_APPEAR_SECONDS (600), CI_WAIT_JOB_SECONDS (3600)
+nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-gitlab.out" 2>&1 & disown
+```
+
+What `ci-provider-gitlab.sh` does, in order:
+
+1. Before anything is built (`ci_provider_init`): resolves the group, checks that one of its online
+   runners takes jobs tagged `GITLAB_RUNNER_TAG` (the group runners of the test group carry
+   `ubuntu`, `centos` and `cloudity` and do not take untagged jobs; the template jobs carry
+   `ubuntu`), and picks `sfdx-hardis-promo-e2e-ci-gl-<n>`, one more than the highest of the group.
+2. `ci-workflows-prepare.cjs --provider gitlab` writes `.gitlab-ci.yml` with a `before_script` on
+   `check_deploy_to_target_branch_org`, `check_deploy_to_current_branch_org` and `deploy_to_org`
+   only (clone, build, `sf plugins link`, back to `$CI_PROJECT_DIR`, `sf plugins`), and
+   `.gitlab-ci-config.yml` with `DEPLOY_BRANCHES: /^(integration|uat|preprod|main)$/` (the default
+   regex has no `uat`) and `USE_SCRATCH_ORGS: "false"` (no Dev Hub: the scratch org jobs would
+   fail). `check_quality` stays: its script is `true`, it only pulls the MegaLinter image.
+   `--bundle <file>` also writes both files as one document for the CI lint API.
+3. Creates the private project: merge commits, never squash, merge not blocked by pipelines.
+4. Stores `SFDX_AUTH_URL_INTEGRATION`, `_UAT`, `_PREPROD` and `_MAIN` as project CI/CD variables,
+   **not protected** (a protected variable only reaches pipelines of protected branches, and the
+   validation job runs in the merge request pipeline of a feature branch), masked when GitLab
+   accepts the value, raw (no `$` expansion).
+5. Creates a project access token (api, write_repository, Maintainer, 7 days) and stores it as
+   `CI_SFDX_HARDIS_GITLAB_TOKEN`, the variable `src/common/gitProvider/gitlab.ts` reads first, as
+   a real project does. The commands run locally (set-status, promotion:create, action:list) use
+   `GL_TOKEN`, so notes written by the bot are edited by the person and the other way round, which
+   GitLab allows a Maintainer or Owner. `GITLAB_E2E_CI_TOKEN=user` stores `GL_TOKEN` instead (when
+   the group refuses project access tokens, the script falls back to it on its own and says so).
+6. Pushes `main` and the major branches with `-o ci.skip` (no deployment of the base project), the
+   token in an `http.extraHeader` of the local clone only (the remote URL stays clean for the
+   extension), then lints the CI files through `GET /projects/:id/ci/lint`, include resolved, and
+   stops when they are invalid or select no `deploy_to_org`.
+7. Waits on real pipelines: the validation is the job `check_deploy_to_target_branch_org` of the
+   newest pipeline of `GET /merge_requests/:iid/pipelines` for the head commit, the deployment is
+   `deploy_to_org` of `GET /pipelines?ref=<branch>&sha=<merge commit>&source=push`. W2 and W6 retry
+   the job (`POST /jobs/:id/retry`, the Retry button). Job traces go to `$LOGS/<label>.log`
+   without ANSI colors, carriage returns or `section_start` markers, so the patterns of W0 to W9
+   match as on GitHub. A pipeline that never comes, or ends without the job, writes the reason in
+   the log and exit code 9.
+
+The ids are in `$LOGS/ci-vars.sh` (`PROJECT_ID`, `PROJECT_PATH`, `GL_HOST`, C1 to C6, CP1, CP2):
+source it, then `e2e-lib-gitlab.sh`, to rerun one check by hand. Cleaning it up: section 9.
+
+Expected durations, to confirm on the first run: the link step is three to four minutes on GitHub's
+runners and unknown on the group runners (first pull of the sfdx-hardis image, `yarn install`
+through the corporate network). About 20 jobs: count 70 to 100 minutes, more when the runners are
+busy with other projects. Launch it with `nohup ... & disown`, as on GitHub.
+
+Traps, known before the first run:
+
+- **No merged results pipelines.** The instance is GitLab CE (`GET /version` says
+  `enterprise: false`), so a merge request pipeline is a detached pipeline on the head of the source
+  branch, not on its merge with the target. The merge-ref lag of section 8 does not bite the real
+  jobs; it still bites the local calls of the library.
+- **The draft of GitLab is the title.** There is no draft flag to set apart from the `Draft:`
+  prefix, so W3 cannot prove, as on GitHub, that the flag alone is read: W3a checks that the API
+  says `draft: true`, W3 that the job only warns.
+- **Message keys carry the job name** (#2307): the job names of the template are the ones the
+  simulators set in `CI_JOB_NAME`, so X1 reads the same keys.
+- **Emoji in notes**: the provider file reads every answer through node as UTF-8, never through
+  python on stdin (section 8).
+- **Auto-cancel of redundant pipelines** (on by default, and the jobs are `interruptible`): the
+  pipeline of the first push of a story is cancelled by the push of its actions file. The script
+  waits on the pipeline of the last head, never the first.
+- **Lint a local include.** `POST /projects/:id/ci/lint` with `content` resolves `include: local`
+  against the repository of that project, not against the content: lint the `--bundle` file, or
+  lint the pushed files with `GET /projects/:id/ci/lint`, as the script does.
+
+### Azure Pipelines
+
+Built on 2026-10-08, never run live. The organization has the free tier: one Microsoft-hosted
+parallel job for private projects and 1800 minutes a month, a job stopped at 60 minutes. The builds
+of a run queue one after another, so every wait tolerates the queue.
+
+```bash
+# .env: AZ_ORG=<organization>  AZ_PROJECT=<team project>  AZURE_PERSONAL_ACCESS_TOKEN=<PAT>
+export PROVIDER=azure
+# optional: AZ_REPO_NAME (default sfdx-hardis-promo-e2e-ci-az-<n>), AZURE_E2E_CI_TOKEN=system|pat,
+# CI_WAIT_APPEAR_SECONDS (900), CI_WAIT_QUEUE_SECONDS (10800), CI_WAIT_JOB_SECONDS (3600),
+# CI_WAIT_REQUEUE_SECONDS (300)
+nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-azure.out" 2>&1 & disown
+```
+
+The PAT needs Code (Read, write & manage), Pull Request Threads (Read & write) and Build (Read &
+execute). With Security (Manage) too, the run grants the build service its permission by itself.
+
+What `ci-provider-azure.sh` does, in order:
+
+1. Before anything is built (`ci_provider_init`): reads the project id, checks that
+   `GET _apis/pipelines` answers (the Build scope), picks `sfdx-hardis-promo-e2e-ci-az-<n>`.
+2. `ci-workflows-prepare.cjs --provider azure` writes `azure-pipelines-checks.yml` and
+   `azure-pipelines-deployment.yml` at the root of the repository: the templates plus a step
+   `E2E ONLY - sfdx-hardis from <branch>` before the sfdx-hardis one (`set -e`, clone, build,
+   `sf plugins link`, `sf plugins`), the four `SFDX_AUTH_URL_<BRANCH>: $(SFDX_AUTH_URL_<BRANCH>)`
+   lines in its env block (a secret variable never reaches a script unless it is mapped),
+   `trigger: none` in the checks file, a CI trigger on the four major branches and `pr: none` in
+   the deployment file. These triggers are what the setup comments of the templates ask to set by
+   hand in the UI. The MegaLinter job is left out: with one parallel job it would double the queue
+   and the minutes. The files are parsed back as YAML and checked before the script ends.
+3. Creates the repository, pushes `main` and the major branches. No pipeline exists yet, so nothing
+   runs. The PAT sits in an `http.extraHeader` of the clone, the remote URL stays clean.
+4. The token of the jobs. `AZURE_E2E_CI_TOKEN=system` (default): the templates pass
+   `$(System.AccessToken)` as `SYSTEM_ACCESSTOKEN` and `CI_SFDX_HARDIS_AZURE_TOKEN`
+   (`azureDevops.ts` reads `CI_SFDX_HARDIS_AZURE_TOKEN`, then `SYSTEM_ACCESSTOKEN`, then
+   `AZURE_DEVOPS_EXT_PAT`). That token is the identity `<project> Build Service (<organization>)`,
+   which on 2026-10-08 only has Read and Create tag on the repositories of the test project: it
+   cannot post a Pull Request thread. The script reads its descriptor from the access control list
+   of the project repositories (`Microsoft.TeamFoundation.ServiceIdentity;<id>:Build:<project id>`;
+   the first id is NOT the `instanceId` of `connectionData`) and grants it Contribute and
+   Contribute to pull requests on the new repository
+   (`POST _apis/accesscontrolentries/<Git Repositories namespace>`). When the PAT may not, it says
+   so and goes on: allow it once by hand for all repositories (Project settings > Repositories >
+   Security > that identity > Contribute to pull requests: Allow), and every later repository
+   inherits it. `AZURE_E2E_CI_TOKEN=pat` stores the PAT as the secret variable
+   `CI_SFDX_HARDIS_AZURE_TOKEN` instead and maps it in the YAML: no permission to grant, and the
+   comments are the PAT user's.
+5. Creates the two pipeline definitions (`POST _apis/pipelines`, configuration `yaml`, the path of
+   each file), then puts the four logins on each as secret variables
+   (`PUT _apis/build/definitions/<id>`; the values go through a file removed right after).
+6. Previews both (`POST _apis/pipelines/<id>/preview`, `previewRun: true`): Azure expands the YAML
+   and answers the final document or the error a run would stop on. Nothing is queued.
+7. Creates a build validation policy on `integration`, `uat`, `preprod` and `main`
+   (`POST _apis/policy/configurations`, type `0609b952-...`, not blocking, queued again on a push to
+   the source branch only), so the checks pipeline runs on every Pull Request.
+8. Waits. The validation is the build of the checks definition whose `triggerInfo` names the Pull
+   Request and its head commit (`pr.number`, `pr.sourceSha`); the deployment is the build of the
+   deployment definition on the merge commit. A build of the same Pull Request for an older head is
+   cancelled: it would hold the single parallel job. No build after `CI_WAIT_REQUEUE_SECONDS`: the
+   policy is queued again (`PATCH _apis/policy/evaluations/<id>`), which is also what W2 and W6 do
+   to re-run a validation. Step logs are joined into `$LOGS/<label>.log` without timestamps nor
+   colors. Each line says `queued <n>s, ran <n>s`.
+
+The ids are in `$LOGS/ci-vars.sh` (`AZ_REPO_NAME`, `AZ_REPO_ID`, `AZ_CHECK_DEF_ID`,
+`AZ_DEPLOY_DEF_ID`). About 20 builds of 8 to 12 minutes, one at a time: count three to four hours,
+and 200 to 250 of the 1800 monthly minutes.
+
+What the first live run proved (2026-10-08, `AZURE_E2E_CI_TOKEN=pat`):
+
+- **The preview** validates both generated files, and the PAT creates definitions, sets their
+  secret variables, cancels and reads builds.
+- **The free parallel job exists**: a build leaves the queue in 6 to 13 seconds and runs 5 to 7
+  minutes, link step included (about 80 seconds of `yarn install`).
+- **A container job does not run as root, and the image keeps the plugins in a folder of root**
+  (`SF_DATA_DIR=/usr/local/lib`): `sf plugins link` answers `EACCES: permission denied, open
+  '/usr/local/lib/package.json'`. The link runs through `sudo`, which the image ships for the
+  Azure agent, with `HOME=/root`: with the HOME of the step user, root creates `~/.sf` and the next
+  `sf` command of the job dies on `EACCES ... .sf/sf-<date>.log`.
+- **`triggerInfo` has no `pr.sourceSha`**, and a policy build runs on the merge commit of
+  `refs/pull/<id>/merge`. The head a build validates is a parent of that merge commit
+  (`GET commits/<sourceVersion>`), which is how `_azci_find_build` matches it.
+- **Azure cancels by itself the build of a previous head** ("canceled by
+  Microsoft.VisualStudio.Services.TFS") when a push or a re-queue of the policy comes: opening a
+  story and pushing its actions file gives two builds, the first one cancelled within seconds. A
+  wait that takes the newest build of the Pull Request reads that cancelled one. `_azci_wait_build`
+  follows the newer build of the same commit when the one it watches is cancelled.
+- **Drafts get their policy build** like any Pull Request.
+
+The system token (`AZURE_E2E_CI_TOKEN=system`, the default of the templates), run on 2026-10-09
+once "Contribute to pull requests" was allowed by hand to `<project> Build Service
+(<organization>)` (the PAT of `.env` cannot grant it, HTTP 401):
+
+- W0, W1 and W1b pass: the build service posts the comments.
+- **A contributor cannot tick a box there.** Azure DevOps answers "Only the comment author and
+  project admins can edit a comment" (HTTP 403) to the person who ticks the checkbox of a comment
+  the build service wrote. `ci_tick_manual_checkbox` then marks the action as done with
+  `set-status`, as the Mark as done button of VS Code does, and `$LOGS/ci-tick-c1.log` says which
+  of the two happened.
+- **`set-status` answers in the thread** of the Deployment Actions comment when that comment
+  belongs to another identity (since 2026-10-09): one visible line, the new body hidden in a
+  `hardis-comment-update` marker. The job run again reads it (W2: "already run in integration"),
+  and so does the deployment job after the merge (W4), which brings the comment of the build
+  service up to date. The dump of the comments holds the update as a comment of its own, without a
+  sfdx-hardis marker: the audit ignores it, and the listings of the CLI never return it.
+- The run of 2026-10-09 with the job token was stopped after W4: W5 to W9 are proven with
+  `AZURE_E2E_CI_TOKEN=pat`, where the jobs and the person are the same identity.
+
+### Bitbucket Pipelines
+
+Built on 2026-10-08, never run live. The free plan gives the workspace 50 build minutes a month,
+less than one run (about 20 jobs of 5 to 8 minutes). The decision: use the minutes while there are
+some, then go on with the job simulator.
+
+```bash
+# .env: BB_WORKSPACE=<workspace>  BB_PROJECT_KEY=<key>  ATLASSIAN_TOKEN=<token>  ATLASSIAN_EMAIL=<email>
+export PROVIDER=bitbucket
+# optional: BB_REPO (default sfdx-hardis-promo-e2e-ci-bb-<n>), BB_CI_SIMULATE_ONLY=1,
+# BB_CI_PAUSE_SECONDS (90), CI_WAIT_APPEAR_SECONDS (600), CI_WAIT_REQUEUE_SECONDS (240),
+# CI_WAIT_QUEUE_SECONDS (1800), CI_WAIT_JOB_SECONDS (3600)
+nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-bitbucket.out" 2>&1 & disown
+```
+
+What `ci-provider-bitbucket.sh` does, in order:
+
+1. `ci-workflows-prepare.cjs --provider bitbucket` writes `bitbucket-pipelines.yml`: the template,
+   the link commands before `sf hardis:auth:login` in both steps, in the sfdx-hardis image, with a
+   cache `sfdxhardislink` on `/tmp/sfdx-hardis` (a later step fetches the branch into the cached
+   clone and reuses `node_modules`). The MegaLinter step and its `parallel` block are left out: they
+   would cost minutes on every Pull Request. The file is parsed back, checked, and validated against
+   `https://api.bitbucket.org/schemas/pipelines-configuration` (Atlassian's JSON schema: it catches
+   wrong types, not unknown keys). Bitbucket has no lint API; this happens before the repository
+   exists, so no minute goes to a syntax error.
+2. Creates the private repository in `BB_PROJECT_KEY`, pushes `main` and the major branches while
+   Pipelines is still off (nothing runs), turns Pipelines on (`PUT pipelines_config`), then sets the
+   repository variables: `SFDX_AUTH_URL_<BRANCH>`, `CI_SFDX_HARDIS_BITBUCKET_TOKEN` and
+   `CI_SFDX_HARDIS_BITBUCKET_EMAIL`, all secured (`bitbucket.ts` reads those two names). The token
+   is the one of the person running the test, so the comments of the jobs are theirs and W2 can
+   edit them.
+3. Waits on the pull request pipeline of the head commit (`target.pullrequest.id`,
+   `target.commit.hash`) and on the branch pipeline of the merge commit. A pipeline of the same Pull
+   Request for an older head is stopped at once. W2 and W6 start the pipeline again through
+   `POST pipelines/` with a `pipeline_pullrequest_target`, as the Rerun button does; the same call
+   starts a pipeline that did not come by itself (a draft).
+4. **The fallback.** The minutes are used up when a pipeline stays `PAUSED` or `HALTED` for
+   `BB_CI_PAUSE_SECONDS` (this pipeline file has no deployment environment and no manual step, so
+   nothing else pauses it; Bitbucket then shows "This pipeline was paused because you've reached
+   your monthly minutes quota" and never resumes it on its own), when one ends in `ERROR` with a
+   message about minutes or quota, or when `POST pipelines/` is refused with such a message. The
+   script then stops that pipeline, turns Pipelines off, writes the reason in
+   `$LOGS/bb-minutes-gone`, and runs this job and every later one through `bb_check` / `bb_deploy`
+   of `e2e-lib-bitbucket.sh` on the same Pull Request or branch. The assertions do not change.
+   W0 is recorded SKIP when its job was simulated: the simulator runs the local working copy.
+5. The order. On Bitbucket W3 (the draft) runs after W4, so the minutes go first to what only real
+   CI proves: the gate and its comment (W1), the checkbox and the re-run (W2), the deployment after
+   a merge (W4). With 50 minutes, expect five to seven real jobs.
+
+`BB_CI_SIMULATE_ONLY=1` skips real CI from the start (the minutes are known to be gone): the CI
+file is still checked and pushed, every job is simulated.
+
+Unproven until the first run:
+
+- **The exact state of a pipeline out of minutes.** Atlassian documents the message, not the JSON.
+  The script reads `state.stage.name`; if the pipeline shows another shape (plain `PENDING` with no
+  stage), it waits `CI_WAIT_QUEUE_SECONDS + CI_WAIT_JOB_SECONDS` and ends with code 9: lower
+  `CI_WAIT_QUEUE_SECONDS`, note the JSON of `GET pipelines/<uuid>`, and fix `_bbci_wait_pipeline`.
+- **The cache.** A cache is saved by the first successful step only and is capped at 1 GB: the
+  clone with `node_modules` may be over it, and then every step pays the full link time.
+- **Memory.** A step has 4 GB; `tsc` runs with `--max-old-space-size=3072`.
+- **Pipelines on a draft**, and `target.commit.hash` being the head of the source branch.
+- Creating a repository with this token (see section 8ter), the pipeline scopes of the token.
+
+## 6sexies. Identical deployment actions run once
+
+Issue #2271: when several Pull Requests of one run carry the same action (same type, phase, user and
+parameters), the first one runs and the others are recorded as done by it. `scripts/identical-actions-run.sh`
+runs after `promotion-run.sh`, on the same repository. It adds eight stories into integration, and
+promotes them together to uat (PI). Groups I9 and I10 add three more, promoted on their own (PD, PV):
+
+| Story | Branch                           | Actions (`story_actions` kind)                                            |
+|-------|----------------------------------|---------------------------------------------------------------------------|
+| SA    | `feature/E2E-501-shared-a`       | `identical`: the shared step, after the deployment                        |
+| SB    | `feature/E2E-502-shared-b`       | `identical`                                                               |
+| SW    | `feature/E2E-503-shared-twice`   | `identical-twice`: the shared step, another step, the shared step again   |
+| SP    | `feature/E2E-504-shared-pre`     | `identical-pre`: the shared step, before the deployment                   |
+| SX    | `feature/E2E-505-same-id-a`      | `same-id-a`: the hand-written id `e2e-same-id`, command A                 |
+| SY    | `feature/E2E-506-same-id-b`      | `same-id-b`: the same id, command B                                       |
+| SF    | `feature/E2E-507-flaky`          | `flaky-uat`: a command failing in uat until `e2e-identical-ok.txt` exists |
+| SC    | `feature/E2E-508-shared-c`       | `identical`, after the failure of SF                                      |
+| SD    | `feature/E2E-509-shared-d`       | `identical`, next to the same action in the uat branch config (I9)        |
+| SG    | `feature/E2E-510-shared-check-g` | `identical-check`: the shared step with context `all` (I10)               |
+| SH    | `feature/E2E-511-shared-check-h` | `identical-check` (I10)                                                   |
+
+The shared step is the same command in every story that carries it:
+`node -e "require('fs').appendFileSync('e2e-identical-count.txt','r')"`. The size of
+`e2e-identical-count.txt` is the number of real runs of a job, whatever its log says.
+
+```bash
+export PROVIDER=github ORG REPO WORK LOGS DEV API      # plus GL_* and PROJECT_* on GitLab
+export DEV_ORG=<scratch org username>                   # optional: group I7
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh   # results-section6sexies.txt
+```
+
+| Group | Checks                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| I1    | Only SW is deployed to integration: the deployment of a feature merge carries that Pull Request alone, and its two shared steps both run (2 runs). One Pull Request is one source: an action written twice in it is meant twice                                                                                                                                                                                                         |
+| I2    | PI (integration -> uat) carries the eight stories. `--forecast uat --from-branch integration` gives SB, the first shared step of SW and SC the `identical-action` reason with `identicalTo` SA, and leaves SA, the repeat of SW, SP (other phase) and the two same-id actions on their own                                                                                                                                              |
+| I3    | The validation of PI merges nothing (the actions are deployment-only). Its deployment exits 1 on SF and runs the shared step 3 times (SP before the deployment, SA, the repeat of SW): SB and the first step of SW log `Skipping action ... same action as E2E shared step of PR <SA> (#<SA>), run once for this deployment`, both same-id actions run, and SC, met after the failure, logs the same copy line instead of being stopped |
+| I4    | The copies are `success` in uat with the note `Not run twice: the identical action "..." of #<SA>`, SF is `failed`, the repeat of SW and both same-id actions are `success`                                                                                                                                                                                                                                                             |
+| I5    | `action:run --next all` retries SF in uat once `e2e-identical-ok.txt` exists: `success` with a "Run locally by" note. Nothing waits after it: SC was recorded as a copy, not stopped                                                                                                                                                                                                                                                    |
+| I6    | The deployment of uat run again skips everything as `already run in uat`, the copies included, and runs the shared step 0 times                                                                                                                                                                                                                                                                                                         |
+| I7    | With `DEV_ORG`: the backpromote plan of the window (`--plan --from-pull-request <SA>`) gives every action its own `key`, the two same-id actions included (`<pr>:post:e2e-same-id`), and the same `identicalTo` as the forecast                                                                                                                                                                                                         |
+| I8    | With `DEV_ORG`: the backpromote run of that window (`--auto --run-id <plan>`) gives `actions.byKey` `identical` for SB, the first step of SW and SC, `run` for SA, the repeat of SW, SP and both same-id actions; the shared step runs 3 times, and the copies are `success` rows of the "Backpromotes" comments of SB and SC                                                                                                           |
+| I9    | The shared step written twice in `config/branches/.sfdx-hardis.uat.yml` (committed on uat), and a ninth story SD carrying it, promoted alone (PD). The deployment runs the config actions first: both run (one source), SD logs `same action as E2E shared step of the uat config (branch or project config)`; 2 runs, and SD is `success` in uat with a note naming the config. The config commit is reverted afterwards               |
+| I10   | SG and SH carry the shared step with context `all`, promoted together (PV). The forecast says `runs-at-validation` for both, SH with the `identical-action` reason. The validation job runs it once for SG and logs the copy line for SH (1 run); the deployment job skips both as `already run in uat` (0 runs)                                                                                                                        |
+
+Traps:
+
+- **Creation order, merge order and Pull Request numbers must agree.** The forecast picks the first
+  copy by ascending Pull Request number, the deployment by run order (merge order for a batch,
+  declared order for a promotion). The script creates and merges the stories in the same order, so
+  I2 and I3 name the same first copy. Merge them in another order and I2 fails, while the product
+  is right.
+- **The counter and `e2e-identical-ok.txt` are untracked on purpose**, and listed in
+  `.git/info/exclude`: untracked and not excluded, `promotion:create` refuses the working copy as
+  not clean. Delete `e2e-identical-ok.txt` to replay I3.
+- **SF fails in uat only** (`includeTargetBranches: [uat]`): nothing else deploys it, but a later
+  section that deploys integration with SF in its scope must not fail on it.
+- **Two skip lines, two wordings.** A copy logs `Skipping action <label>: same action as ...`, an
+  action already done in the org logs `Skipping <label>: already run in <branch>`, without
+  "action". The patterns of I3 and I6 differ on purpose.
+- **`IA_RUN=<n>` replays the section on the same repository** with story branches of their own.
+- The section scripts share their assertion helpers (`record`, `assert_log`, `job`, `cli`,
+  `status_check`, `open_story`) through `scripts/section-lib.sh`.
+- Ran green on GitHub and GitLab on 2026-10-04 (twice on GitHub) and again on 2026-10-07.
+
 ## 7. Traps met while writing this
 
 - **The Dev Hub has a daily scratch org signup limit, and it resets at midnight in the org's own
@@ -612,11 +1280,33 @@ Read the numbers with these in mind:
   orgs of the previous run: deleting one does not give a signup back, and the run of section 6bis
   then has no org to deploy to. The Cloudity developer Dev Hub is on `America/Los_Angeles`, so the
   counter resets at 07:00 or 08:00 UTC.
+- **The Dev Hub also caps the ACTIVE scratch orgs, at 3, and the CI of sfdx-hardis uses the same
+  Dev Hub.** Every `tests-org` run of a sfdx-hardis Pull Request leaves a one-day
+  `CI-hardis-nut-shared-*` scratch org behind. Two of them plus the first developer org make the
+  second `sf org create scratch` answer `LIMIT_EXCEEDED ... active scratch org limit`, with
+  `DailyScratchOrgs` still at 6 (2026-10-02). `sf limits api display` shows `ActiveScratchOrgs`
+  remaining; `SELECT Id, SignupUsername, OrgName FROM ActiveScratchOrg` on the Dev Hub names them,
+  and `sf data delete record --sobject ActiveScratchOrg --record-id <id>` frees the slot of a CI org
+  whose run is over. Check it before `backpromote-setup.sh`: the setup merges its stories before it
+  creates the orgs, so a failure there costs a repository.
+- **The simulators run the TypeScript sources as they are on disk** (`bin/dev.js`). A source file
+  saved half way through a fix, while a section runs, fails the job that starts at that moment with
+  `command hardis:project:deploy:smart not found` and exit code 2 (2026-10-09, check A5 on GitHub).
+  Fix the product between two sections, or make each save a file that compiles, and replay the
+  section of a check that ended with exit 2 (`DA_RUN=2`, `IA_RUN=2`) before calling it a finding.
+- **A workstation short on memory fails jobs in ways that look like product defects.** Each job
+  starts several node processes; with under 1 GB free a deployment action as plain as `echo` fails
+  with `Command failed` and no output (2026-10-02, the retrofit validation), and the harness may
+  stop the whole script. Read the free memory before a run, and treat a spawn failure with no
+  output as the machine first.
 - **Section 6bis needs its own repository when section 4 also runs.** `backpromote-setup.sh` creates
   `feature/E2E-101-alpha`, `feature/E2E-102-beta` and `feature/E2E-103-gamma` itself, which are the
   branch names of the User Stories of section 3: run the two halves against two throwaway
   repositories (`-e2e-<n>` for the promotions, `-e2e-<n+1>` for the backpromote), or run 6bis alone
   on a repository built by `build-repo.sh` and pushed, with no stories opened.
+- **`promo-vars.sh` exports short names** (`S1` to `S9`, `SA`, `SP`, `SW`, `PI`, `C1`...). A wrapper
+  that sources it must not keep its own state in such names: `SP` holding a scratch path became the
+  number of a story, and the next command ran `54/run-ab.sh` (2026-10-04).
 - **`NODE_OPTIONS`**: with VS Code's inspector bootloader set, node hangs after the command
   finishes and the job looks stuck. `env -u NODE_OPTIONS` (the library does it).
 - **Fast-forwarding a major branch from a lower one** to propagate a config change ships every
@@ -632,6 +1322,10 @@ Read the numbers with these in mind:
 - **`refs/pull/<N>/merge` lags behind a push.** After pushing a fix to a Pull Request branch, a
   validation job fetched immediately can still run against the previous merge ref and fail on
   something you just fixed. Fetch again a few seconds later before believing the failure.
+- **It does not exist yet right after the Pull Request is opened.** A validation started just after
+  `p_open` failed to fetch it and never ran (check 38 of 2026-10-04: exit 1 and no job log at all).
+  `e2e_check` now retries the fetch for a minute, and writes the reason in the job log when the ref
+  never comes.
 - **So does the head the GitHub API reports.** `GET /pulls/<N>` can answer with the previous
   `head.sha` for several seconds after a push, so waiting until the merge ref contains "the head the
   API gives" returns at once and validates the old tree. Wait on the commit you pushed
@@ -648,7 +1342,10 @@ Read the numbers with these in mind:
 - **The A/B scripts cannot be run from inside the sfdx-hardis working copy.** Section 7ter checks
   out `origin/main`, which takes `.claude/skills/` away with it, and the second half of each pair
   silently runs nothing. Copy `ab-run.sh`, `ab-run-gitlab.sh`, `ab-run-azure.sh`, `ab-diff.py`
-  and the matching `e2e-lib-*.sh` somewhere else first, and call them by absolute path.
+  and the matching `e2e-lib-*.sh`, with `e2e-lib-backpromote.sh` and `env-lib.sh` they source,
+  somewhere else first, and call them by absolute path. Run `e2e_defaults` in the shell before
+  (section 0): it exports `E2E_ROOT` and `E2E_ENV_FILE`, which the copies cannot derive from where
+  they sit.
   `ab-run-azure.sh` and `ab-run-bitbucket.sh` source the library sitting next to them, because
   `bash script.sh` is a child process and does not inherit the functions the caller sourced.
 - **A promotion Pull Request number is not a candidate.** Promotions are vehicles, so `promote
@@ -679,6 +1376,21 @@ Read the numbers with these in mind:
   4000 characters and the embedded conflict prompt goes past it. The description now drops the
   prompt (it is saved in `hardis-report/` anyway) rather than losing the Pull Request, so a run that
   sees no `<details>` block on an Azure promotion with conflicts is seeing the intended behaviour.
+- **A workstation short on memory fails `git` and `curl`, and the scripts go on.**
+  `getaddrinfo() thread failed to start` appears with about 2 GB of free memory, even with a single
+  chain running. A failed `git fetch` before a job makes the job run on a stale checkout (a scope of
+  1 Pull Request where 27 are expected), a failed `curl` loses a merge request creation and every
+  section after it. Before a run, close what holds the memory, and after it
+  `grep -c getaddrinfo` every output file: one match means the section around it is to replay.
+- **A merge ref wait that times out does not stop the script.** `p_wait_merge_ref` returns 1 and
+  the next job validates the previous merge. On GitHub the ref took more than 90 seconds once
+  (checks 32 and 37 of the run of 2026-10-10); on GitLab the merge request API answered the
+  previous head right after a push (fixture VG). Both waits now take the pushed commit and wait
+  longer. A validation that reports what the last push removed, or misses what it added, is a
+  stale ref before it is a finding: check the branch on the remote.
+- **Log followers outlive a session.** `tail -F ... | grep` started in the background to watch a
+  run is not stopped with the session: 27 were still alive two days later. Use a loop on the output
+  file that ends on a marker line instead.
 - **Running two providers at once exhausts git bash on Windows.** `fork: retry: Resource
   temporarily unavailable` and `dofork: child -1 ... exit code 0xC000026B` come from the shell, not
   from the product: rerun the step, and keep the long A/B passes to one at a time.
@@ -686,6 +1398,15 @@ Read the numbers with these in mind:
   merges were opened up expected one row labelled `#3, #1` for a whole `integration -> uat` sync,
   and read "selecting either takes both" as correct. It is not: promoting one story must carry that
   story only. A run that still sees the grouped row is looking at a regression, not at the runbook.
+
+- **The simulators must name their jobs like the templates do.** The message key of a validation or
+  deployment comment carries the CI job name, and the DevOps Pipeline reads the kind of a comment back
+  from that key. The simulators used to run with no job name (`job` in the key), while GitHub Actions
+  writes `Simulate Deployment (sfdx-hardis)`, spaces included: the key reader stopped at the first
+  space, every real GitHub comment was invisible to the Pull Request window and the navigation line
+  between comments was empty, and only the real CI section could show it (sfdx-hardis #2307,
+  2026-10-07). `e2e_check` / `e2e_deploy` now set `GITHUB_WORKFLOW`, `gl_check` / `gl_deploy`
+  `CI_JOB_NAME`, to the names of the templates. Keep them in step with `defaults/ci`.
 
 ## 7bis. Checking the "one place in the diagram" rule
 
@@ -703,8 +1424,7 @@ at the top right of the branch window is on. Open the pipeline in VS Code to see
 extension's own helpers over the real Pull Requests of the test repository:
 
 ```bash
-EXT=C:/git/vscode-sfdx-hardis \
-  node .claude/skills/promotion-branches-e2e/scripts/check-diagram.cjs \
+node .claude/skills/promotion-branches-e2e/scripts/check-diagram.cjs \
   "$REPO" integration,uat,preprod,main
 ```
 
@@ -723,13 +1443,13 @@ The extension must be compiled first (`cd $EXT && yarn compile`), on the branch 
 On Azure DevOps, `check-diagram-azure.cjs` does the same from the Azure DevOps API:
 
 ```bash
-EXT=C:/git/vscode-sfdx-hardis AZ_ORG="$AZ_ORG" AZ_PROJECT="$AZ_PROJECT" AZ_TOKEN="$AZ_TOKEN"   node .claude/skills/promotion-branches-e2e/scripts/check-diagram-azure.cjs   "$AZ_REPO_NAME" integration,uat,preprod,main
+AZ_ORG="$AZ_ORG" AZ_PROJECT="$AZ_PROJECT" AZ_TOKEN="$AZ_TOKEN"   node .claude/skills/promotion-branches-e2e/scripts/check-diagram-azure.cjs   "$AZ_REPO_NAME" integration,uat,preprod,main
 ```
 
 On GitLab, `check-diagram-gitlab.cjs` does the same from the GitLab API:
 
 ```bash
-EXT=C:/git/vscode-sfdx-hardis GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" \
+GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" \
   node .claude/skills/promotion-branches-e2e/scripts/check-diagram-gitlab.cjs \
   "$PROJECT_ID" integration,uat,preprod,main
 ```
@@ -755,7 +1475,7 @@ jobs as before.
 
 ```bash
 export ORG REPO WORK LOGS DEV
-CLI=C:/git/sfdx-hardis
+CLI="$E2E_ROOT"   # the sfdx-hardis working copy, set by env-lib.sh
 AB=.claude/skills/promotion-branches-e2e/scripts
 
 # one open feature Pull Request and one open major-to-major Pull Request are needed (fresh merge refs)
@@ -771,7 +1491,14 @@ PYTHONIOENCODING=utf-8 python "$AB/ab-diff.py" "$LOGS/ab-main2" "$LOGS/ab-branch
 ```
 
 Expected: `TOTAL DIFFERING LINES: 0`, or 1 when a merged branch is named `promotion/...` (the
-informational line saying it is treated as an ordinary feature branch). Anything else is a
+informational line saying it is treated as an ordinary feature branch).
+
+> **The "off" pass must really be off.** `ab-run.sh` checks out each merge ref fresh, and with
+> `core.autocrlf=true` git writes `config/.sfdx-hardis.yml` with CRLF. The flag edit used to match
+> `true$` only, which never matches `true\r`: the "off" pass then ran with the feature on, and both
+> CLIs agreeing proved nothing about a project that does not use the feature. Since 2026-10-04 the
+> four `ab-run*.sh` match the line with or without its `\r` and stop when the flag is not `false`
+> afterwards. Anything else is a
 regression, **unless** it is one of these, which the run of 2026-09-09 met and which are not
 promotion branches behaviour:
 
@@ -796,8 +1523,7 @@ export PROJECT_ID=1234                                    # numeric id of the ne
 export PROJECT_PATH="you/sfdx-hardis-promo-e2e-gl-1"
 export GL_HOST="https://gitlab.example.com"
 export GL_TOKEN="..."                                     # personal access token, api scope
-export WORK="/c/tmp/promo-e2e-gl" LOGS="/c/tmp/promo-e2e-gl-logs"
-export DEV="C:/git/sfdx-hardis/bin/dev.js"
+export PROVIDER=gitlab   # ORG, WORK, LOGS, EXPECT, DEV and EXT: .env and env-lib.sh (<temp>/promo-e2e-gitlab)
 source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-gitlab.sh
 ```
 
@@ -809,6 +1535,8 @@ curl -X PUT -H "PRIVATE-TOKEN: $GL_TOKEN" "$GL_HOST/api/v4/projects/$PROJECT_ID"
 ```
 
 Then follow sections 3 to 7 with `gl_check` / `gl_deploy` / `gl_promote` / `gl_release_notes`.
+The same features run by real GitLab CI jobs, in a project of the group `GITLAB_E2E_GROUP`, are
+section 6quinquies (`PROVIDER=gitlab bash scripts/ci-workflows-run.sh`).
 
 Traps that only bite on GitLab:
 
@@ -819,6 +1547,10 @@ Traps that only bite on GitLab:
   conflict markers "still there" after you solved them. `gl_check` waits until the merge ref
   actually contains the head of the source branch. Never trust a GitLab validation result you got
   within seconds of a push without that wait.
+- **GitLab computes the mergeability after every push, and refuses the merge until it is done.** On
+  2026-10-04 merge request !18 stayed `checking` for about 90 seconds, longer than the minute
+  `gl_mr_merge` used to wait: the merge was refused, section 6sexies promoted seven stories out of
+  eight, and its run was lost. `gl_mr_merge` now waits up to 3 minutes and retries the merge.
 - **Python's `urllib` refuses a corporate CA** that `curl` and node accept. Every API call of the
   GitLab library goes through `curl`; python is only used to build and read JSON.
 - **Python on Windows decodes stdin with the system codepage.** Piping a GitLab API answer into
@@ -839,25 +1571,36 @@ provider code paths that create, find, close and read a promotion Pull Request a
 GitHub or GitLab.
 
 ```bash
-export ORG="your.user@example.com"
-export AZ_ORG="yourorg"                    # https://dev.azure.com/<AZ_ORG>/
-export AZ_PROJECT="tests-sfdx-hardis"      # the team project holding the repository
-export AZ_REPO_NAME="sfdx-hardis-promo-e2e-az-1"
-export AZ_REPO_ID="..."                    # the GUID the creation API answers with
-export AZ_TOKEN="..."                      # PAT: Code read/write, Pull Request threads read/write
-export WORK="/c/tmp/promo-e2e-az" LOGS="/c/tmp/promo-e2e-az-logs"
-export DEV="C:/git/sfdx-hardis/bin/dev.js"
+export AZ_REPO_NAME="sfdx-hardis-promo-e2e-az-7"   # -az-1 to -az-6 exist (2026-10-08)
+# AZ_ORG, AZ_PROJECT and the token (AZURE_PERSONAL_ACCESS_TOKEN) come from the environment, else from
+# .env (E2E_ENV_FILE to point elsewhere). PAT: Code read/write, Pull Request threads read/write.
+# AZ_REPO_ID: leave it unset, it is read by name once the repository exists.
+export PROVIDER=azure    # ORG, WORK, LOGS, EXPECT, DEV, EXT, API: .env and env-lib.sh (<temp>/promo-e2e-azure)
+source .claude/skills/promotion-branches-e2e/scripts/env-lib.sh && e2e_defaults "promo-e2e-$PROVIDER"
+```
+
+Create the repository with the REST API, before sourcing the library (it reads the GUID by name and
+stops when there is none). The token comes from `.env` here too:
+
+```bash
+curl -sS -u ":$AZURE_PERSONAL_ACCESS_TOKEN" -H "Content-Type: application/json" -d '{"name":"'"$AZ_REPO_NAME"'"}' \
+  "https://dev.azure.com/$AZ_ORG/$AZ_PROJECT/_apis/git/repositories?api-version=7.1" -o /dev/null -w "%{http_code}\n"
 source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-azure.sh
 ```
 
-Create the repository, and read back its GUID, with the REST API:
+Push with the token in the remote URL: `git remote add origin "$(az_remote_url)"` (that is
+`https://azure:$AZ_TOKEN@dev.azure.com/$AZ_ORG/$AZ_PROJECT/_git/$AZ_REPO_NAME`). Then run the scripted
+sections with `PROVIDER=azure` (section 6ter), or follow sections 3 to 7 by hand with `az_check` /
+`az_deploy` / `az_promote` / `az_release_notes`:
 
 ```bash
-curl -sS -u ":$AZ_TOKEN" -H "Content-Type: application/json" -d '{"name":"'"$AZ_REPO_NAME"'"}'   "https://dev.azure.com/$AZ_ORG/$AZ_PROJECT/_apis/git/repositories?api-version=7.1"
+export PROVIDER=azure
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # on its own repository, see 6bis
 ```
-
-Push with the token in the remote URL: `https://azure:$AZ_TOKEN@dev.azure.com/$AZ_ORG/$AZ_PROJECT/_git/$AZ_REPO_NAME`.
-Then follow sections 3 to 7 with `az_check` / `az_deploy` / `az_promote` / `az_release_notes`.
 
 Traps that only bite on Azure DevOps:
 
@@ -884,36 +1627,62 @@ Traps that only bite on Azure DevOps:
   is why `isPrDescriptionEditableAfterMerge()` returns false and the deployment comment is created
   as a placeholder by the validation job.
 - **Python on Windows does not resolve the git bash `/tmp` path.** Keep the Pull Request body files
-  under a real Windows path (`C:/tmp/...`), or the description is posted empty and the creation
+  under a real Windows path (`$LOGS` as env-lib.sh sets it is one), or the description is posted empty and the creation
   fails with "Both a source and target reference is required".
 - `az repos` (the Azure CLI) is not used anywhere: it needs its own login, prints its own
   decorations, and cannot set the completion options the merge needs. Everything goes through
   `curl` with the PAT.
+- **The message key of the comments holds the job name** (`SYSTEM_JOB_DISPLAY_NAME`, #2307). The
+  simulators pass the job names of the sfdx-hardis templates, `DeploymentCheck` for the validation
+  and `Deployment` for the deployment, the way GitHub passes the workflow names and GitLab the job
+  names. With a single fixed name for both, the validation and deployment comments of a Pull Request
+  would only differ by their `deployment-check` / `deployment` prefix.
+- **The mergeability check can outlast a minute** on a busy organization, like on GitLab.
+  `az_pr_merge` waits up to 3 minutes for it, asks the completion again when it did not happen, and
+  takes a Pull Request already `completed` (an earlier answer lost) as merged.
+- **The PAT of `.env` is custom scoped.** On 2026-10-08 it creates and deletes repositories,
+  contributes, creates branches and contributes to Pull Requests; Variable Groups, Service
+  Connections and Graph answer 401, which the run never calls. Force push is allowed only on the
+  repositories its user created: create the test repository with that same PAT, or the `git push -f`
+  of the story branches (`story`, the retrofit) is refused.
+- **`AZ_REPO_ID` is read by name** when it is empty: a sourcing that stops on "could not be read
+  from the API" means the repository does not exist yet, or the PAT cannot read it.
 
 ## 8ter. What is different on Bitbucket Cloud
 
-Exercised live twice on 2026-09-07 and 2026-09-08, on `galerieslafayette/test-prom-e2e`. The
-first workspace tried, `test-sfdx-hardis-2`, is over its user limit: every repository in it is
-read-only and `git push` answers HTTP 402, with nothing in the API to warn you beforehand.
+Exercised live twice on 2026-09-07 and 2026-09-08, on a repository of another workspace reached with
+a repository access token. A workspace over its user limit makes every repository in it read-only:
+`git push` answers HTTP 402, with nothing in the API to warn you beforehand. Since 2026-10-08 the run
+uses the workspace `sfdxhardistest` (project key `TES`) with the Atlassian API token of `.env`.
 
 ```bash
-export ORG="your.user@example.com"
-export BB_WORKSPACE="test-sfdx-hardis-2"
 export BB_REPO="sfdx-hardis-promo-e2e-bb-1"
-export BB_EMAIL="you@example.com"          # empty for a workspace/repository Access Token
-export BB_TOKEN="..."
-export WORK="/c/tmp/promo-e2e-bb" LOGS="/c/tmp/promo-e2e-bb-logs"
-export DEV="C:/git/sfdx-hardis/bin/dev.js"
+# BB_WORKSPACE, and the token and email (ATLASSIAN_TOKEN, ATLASSIAN_EMAIL), come from the environment,
+# else from .env (E2E_ENV_FILE to point elsewhere).
+# For a workspace or repository Access Token instead: BB_TOKEN=<it> and BB_EMAIL="" (Bearer auth).
+export PROVIDER=bitbucket   # ORG, WORK, LOGS, EXPECT, DEV, EXT, API: .env and env-lib.sh (<temp>/promo-e2e-bitbucket)
 source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-bitbucket.sh
 ```
 
-Create the repository with the REST API (a project key is required in a workspace that has one):
+Create the repository with the REST API (a project key is required in a workspace that has one), then
+push through `bb_remote_url`:
 
 ```bash
-curl -sS -u "$BB_EMAIL:$BB_TOKEN" -X POST -H "Content-Type: application/json"   -d '{"scm":"git","is_private":true,"project":{"key":"TES"}}'   "https://api.bitbucket.org/2.0/repositories/$BB_WORKSPACE/$BB_REPO"
+bb_api POST "$BB_API" -d '{"scm":"git","is_private":true,"project":{"key":"'"$BB_PROJECT_KEY"'"}}' -o /dev/null -w "%{http_code}\n"
+git remote add origin "$(bb_remote_url)"
 ```
 
-Then follow sections 3 to 7 with `bb_check` / `bb_deploy` / `bb_promote` / `bb_release_notes`.
+Then run the scripted sections with `PROVIDER=bitbucket` (section 6ter), or follow sections 3 to 7
+by hand with `bb_check` / `bb_deploy` / `bb_promote` / `bb_release_notes`:
+
+```bash
+export PROVIDER=bitbucket
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
+bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh
+bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # on its own repository, see 6bis
+```
 
 Traps already met on Bitbucket:
 
@@ -925,9 +1694,42 @@ Traps already met on Bitbucket:
   the email it authenticates as a Bearer token, which is what an Access Token needs.
 - **The REST API and `git push` do not take the same username.** The API wants the Atlassian
   account email; `git push` refuses it (and the `@` also has to be percent-encoded to survive the
-  URL). Use `https://x-token-auth:<token>@bitbucket.org/<workspace>/<repo>.git`.
+  URL). For an Atlassian API token, git takes `x-bitbucket-api-token-auth`, the name the Atlassian
+  documentation gives: `https://x-bitbucket-api-token-auth:<token>@bitbucket.org/<workspace>/<repo>.git`
+  (`git ls-remote` with it answered on 2026-10-08). A workspace or repository Access Token takes
+  `x-token-auth`. `bb_remote_url` picks the first when `BB_EMAIL` is set and the second otherwise;
+  `BB_GIT_USER=x-token-auth` forces the older name if an API token is ever refused under the first.
+- **The extension stores a Bitbucket token as `<HOST>_BITBUCKET_TOKEN`**, not `<HOST>_TOKEN` like the
+  other providers. `check-pipeline.cjs` sets both since 2026-10-08; before that the DevOps Pipeline
+  check found no Bitbucket token at all.
+- **Python on Windows decodes stdin with the system codepage**, as on GitLab: a Pull Request whose
+  description carries the emoji of the sfdx-hardis navigation block can break `json.load(sys.stdin)`.
+  `bb_pr_field` and `bb_pr_create` (and their Azure DevOps twins) read the bytes as UTF-8.
+- **Bitbucket Cloud displays raw HTML as text.** An HTML comment, a `<details>` block and a `<br/>`
+  show as they are written, and nothing folds. Until 2026-10-09 every sfdx-hardis comment showed
+  its markers, its encoded state and its tags there, which only the visual check of section 5quater
+  could see (the audit reads the source, where they belong). The Bitbucket provider now sends its
+  comments through `toBitbucketMarkup` (`src/common/gitProvider/utils/utilsBitbucketMarkup.ts`): a marker
+  becomes a link with no text, `[](#hardis:<percent-encoded>)` or `[](#hardis64:<base64url>)`, a folded section becomes a bold title
+  followed by its content, a line break a space. What Bitbucket's markdown does draw, proven by a
+  test comment: a link with no text is an invisible anchor, in a table cell too; a
+  `[//]: # (text)` line disappears; task items are checkboxes, but **disabled**: nobody ticks a
+  manual action in a Bitbucket comment, `set-status` is the only way.
+- **The raw text of a Bitbucket comment holds the hidden markers, not the HTML comments.**
+  `dump_pr_comments` and `check-pr-modal.cjs` give them back as HTML comments, as the CLI does when
+  it reads them (`fromBitbucketMarkup`). Anything new that greps the raw content of a Bitbucket
+  comment for `<!-- sfdx-hardis` finds nothing.
+- **The Bitbucket client prints a banner on stdout, now and then** ("BITBUCKET CLOUD API LATEST
+  UPDATES"), ahead of the document of a `--json` command: `status_check` then fails on "not valid
+  JSON" for one call out of a few. Turned off in the provider (`notice: false`) on 2026-10-09.
+- **A push right after the repository is created can answer 403** for one branch: push again.
 - **A workspace over its user limit is read-only**, with a plain HTTP 402 on push. Nothing in the
-  API says so beforehand; the repository can still be created.
+  API says so beforehand; the repository can still be created. On 2026-10-08 `sfdxhardistest`
+  itself answered it ("the account 'sfdxhardistest' has exceeded its user limit and this repository
+  is restricted to read-only access") while the API listed one member, its owner: the limit is a
+  plan setting only the owner sees (Workspace settings > Plan details). No Bitbucket section ran
+  that day. Before a run, push one commit to a scratch branch of an existing repository of the
+  workspace: it is the only check that sees it.
 - Merge with `merge_strategy: merge_commit` and `close_source_branch: false`, never squash, or the
   `-x` trailers of the cherry-picks are lost.
 - **Bitbucket Cloud publishes no merge ref.** Neither `refs/pull-requests/<id>/merge` nor
@@ -936,8 +1738,14 @@ Traps already met on Bitbucket:
   that is what `bb_checkout_pr_merge` reproduces. This is the one place where the Bitbucket harness
   differs in kind from the other three: there is no lazily written ref to wait for, and a merge
   conflict shows up at checkout rather than as a stale tree.
-- **A repository access token is scoped to its repository**, so a rerun cannot create a second one
-  and has to reuse the same repository. Reset it by deleting every branch but `main` and
+- **No merge ref also means nothing for `p_wait_merge_ref` to fetch.** On Bitbucket it waits until
+  the Pull Request API reports the pushed head as its source commit (a 12 character hash), because the
+  CLI reads the Pull Request from that API. `bb_pr_merge` asks the merge again when the state is not
+  `MERGED` after a minute (Bitbucket can answer 202 and merge in the background).
+- **A repository access token is scoped to its repository** (the runs of 2026-09), so a rerun with one
+  cannot create a second repository and has to reuse the same one. The Atlassian API token of `.env`
+  is not scoped to a repository: create a new `sfdx-hardis-promo-e2e-bb-<n>` each run.
+  With a repository access token, reuse the same repository. Reset it by deleting every branch but `main` and
   force-pushing the base project. Two artefacts follow, neither of them a product defect:
   - the Pull Requests of the previous run stay in the repository, so pass `MIN_PR=<first new
     number>` to `check-diagram-bitbucket.cjs` to keep the windows readable, and expect an old
@@ -945,9 +1753,57 @@ Traps already met on Bitbucket:
   - re-creating a Pull Request between the same two branches **reopens the declined one** of the
     previous run instead of creating a new number.
 
+## 8quater. Proving the Azure DevOps and Bitbucket wiring without creating anything
+
+Before a run, or after a change to a library, these prove the scripts and the tokens with read-only
+calls. None of them creates a repository, a branch, a Pull Request or a comment, and none prints a
+token.
+
+```bash
+cd .claude/skills/promotion-branches-e2e/scripts
+for f in *.sh; do bash -n "$f" || echo "FAIL $f"; done
+for f in *.cjs; do node --check "$f" || echo "FAIL $f"; done
+shellcheck -x -S warning *.sh
+bash preflight.sh        # tools, working copies, tokens, orgs: read-only, see section 0
+
+# every p_* function exists for each provider (dummy values: nothing is called)
+for P in github gitlab azure bitbucket; do (
+  export PROVIDER=$P ORG=o REPO=a/b WORK=/tmp/w LOGS=/tmp/l DEV=d PROJECT_ID=1 PROJECT_PATH=a/b GL_HOST=https://x GL_TOKEN=t \
+    AZ_ORG=o AZ_PROJECT=p AZ_REPO_ID=x AZ_REPO_NAME=r AZ_TOKEN=t BB_WORKSPACE=w BB_REPO=r BB_TOKEN=t BB_EMAIL=e
+  source ./promotion-provider.sh
+  for f in p_check p_deploy p_promote p_release_notes p_open p_merge p_close p_body p_set_body p_token p_cli \
+    p_open_number_for_branch p_list_candidates p_promote_no_provider p_wait_merge_ref p_check_edited p_deploy_branch \
+    p_pr_modal_check dump_pr_comments pipeline_check bp_provider_env bp_open bp_merge; do
+    declare -F $f >/dev/null || echo "$P misses $f"; done ); done
+
+# one GET per provider through the libraries' own helpers, the tokens taken from .env
+( export AZ_REPO_NAME=sfdx-hardis-promo-e2e-az-6   # an existing repository; the rest comes from .env
+  source ./e2e-lib-azure.sh; az_api GET "${AZ_COLLECTION}_apis/projects?api-version=7.1" -o /dev/null -w "azure %{http_code}\n" )
+( export BB_REPO=any
+  source ./e2e-lib-bitbucket.sh; bb_api GET https://api.bitbucket.org/2.0/user -o /dev/null -w "bitbucket %{http_code}\n" )
+```
+
+On 2026-10-08 all of it passed: no syntax error, no shellcheck warning, every function defined for
+the four providers, `200` from both providers, the Azure repository GUID read by name, and
+`git ls-remote "$(bb_remote_url)"` answering on an existing repository of the workspace.
+
 ## 9. Cleaning up
 
 The repository is disposable. `gh repo delete "$REPO" --yes` needs the `delete_repo` scope
 (`gh auth refresh -h github.com -s delete_repo`). The static resources, labels and Apex classes
 left in the org are prefixed `PromoE2E` / `E2E_` and can be removed with a destructive changes
 deployment. Delete the backpromote scratch orgs with `sf org delete scratch --target-org "$DEVORG" --no-prompt` (and `$DEVORG2`). The backpromote history comments disappear with the repository.
+
+The GitLab CI project of section 6quinquies goes with
+`curl -X DELETE -H "PRIVATE-TOKEN: $GL_TOKEN" "$GL_HOST/api/v4/projects/$PROJECT_ID"` (ids in
+`$LOGS/ci-vars.sh`): its CI/CD variables and its project access token go with it. Delete it only once
+the report is written, and only when the user asks: it lives in a shared group.
+
+The Azure DevOps repository of section 6quinquies: delete the two pipeline definitions first
+(`DELETE _apis/build/definitions/<AZ_CHECK_DEF_ID>` and `<AZ_DEPLOY_DEF_ID>`, their builds go with
+them), then the repository (`DELETE _apis/git/repositories/<AZ_REPO_ID>`): its branch policies and
+its access control entry go with it. The Bitbucket repository:
+`bb_api DELETE "$BB_API"`, variables and pipelines included. Ids in `$LOGS/ci-vars.sh`.
+
+The local folders are under the temp dir: `rm -rf "$WORK" "$LOGS" "$EXPECT"` once the report is
+written, or the next run of the same provider stops on the existing `WORK`.

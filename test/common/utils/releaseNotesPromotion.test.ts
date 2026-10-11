@@ -3,7 +3,7 @@ import { expect } from 'chai';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import type { CommonPullRequestInfo } from '../../../src/common/gitProvider/index.js';
-import { dropResolvedPromotionPullRequests, pullRequestsLookup } from '../../../src/common/utils/releaseNotesUtils.js';
+import { dropAlreadyPromotedPullRequests, dropResolvedPromotionPullRequests, pullRequestsLookup } from '../../../src/common/utils/releaseNotesUtils.js';
 
 const ENABLED = { enabled: true, allowedSteps: [] };
 const DISABLED = { enabled: false, allowedSteps: [] };
@@ -53,6 +53,39 @@ describe('dropResolvedPromotionPullRequests()', () => {
   it('changes nothing when the feature is off', () => {
     const all = [promotion, pr({ idNumber: 482 })];
     expect(dropResolvedPromotionPullRequests(all, DISABLED)).to.deep.equal(all);
+  });
+});
+
+describe('dropAlreadyPromotedPullRequests()', () => {
+  // The repository of issue #2260: uat was last merged into preprod directly months ago, and the
+  // stories reach preprod through promotion branches only. The upcoming promotion notes of uat
+  // listed every story merged since that direct merge, carried or not.
+  const carriedToPreprod = pr({
+    idNumber: 900,
+    sourceBranch: 'promotion/uat/preprod/2026-09-14-1',
+    targetBranch: 'preprod',
+    description: DECLARATION,
+    mergedDate: '2026-09-14T09:00:00Z',
+  });
+  const stillOpen = pr({
+    idNumber: 901,
+    sourceBranch: 'promotion/uat/preprod/2026-09-20-1',
+    targetBranch: 'preprod',
+    description: '```yaml\npromotionPullRequests: [500]\n```',
+    mergedDate: undefined,
+  });
+  const window = () => [pr({ idNumber: 482, targetBranch: 'uat' }), pr({ idNumber: 487, targetBranch: 'uat' }), pr({ idNumber: 500, targetBranch: 'uat' })];
+
+  it('leaves out the stories a merged promotion already carried to the target branch', () => {
+    const kept = dropAlreadyPromotedPullRequests(window(), [carriedToPreprod, stillOpen], ENABLED, 'preprod');
+    // 500 stays: the promotion that declares it is not merged, so nothing reached preprod yet
+    expect(kept.map((entry) => entry.idNumber)).to.deep.equal([500]);
+  });
+
+  it('changes nothing without a merged promotion, or when the feature is off', () => {
+    const all = window();
+    expect(dropAlreadyPromotedPullRequests(all, [], ENABLED, 'preprod')).to.deep.equal(all);
+    expect(dropAlreadyPromotedPullRequests(all, [carriedToPreprod], DISABLED, 'preprod')).to.deep.equal(all);
   });
 });
 

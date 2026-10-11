@@ -1012,6 +1012,86 @@ Can also be set with the FLOW<em>DELETE</em>RETRY<em>DELAY</em>MS env variable, 
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionahaHost">
+    <div class="card">
+        <div class="card-header" id="headingahaHost">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#ahaHost"
+                        aria-expanded="" aria-controls="ahaHost" onclick="setAnchor('#ahaHost')"><span class="property-name">ahaHost</span></button>
+            </h2>
+        </div>
+
+        <div id="ahaHost"
+             class="collapse property-definition-div" aria-labelledby="headingahaHost"
+             data-parent="#accordionahaHost">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#ahaHost" onclick="anchorLink('ahaHost')">ahaHost</a></div><h4>Aha! Host</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Host of your Aha! account. Example: mycompany.aha.io</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="ahaHost_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;mycompany.aha.io&quot;</span>
+</pre></div>
+</div><div id="ahaHost_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;mycompany.euw4.aha.io&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionahaTicketRegex">
+    <div class="card">
+        <div class="card-header" id="headingahaTicketRegex">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#ahaTicketRegex"
+                        aria-expanded="" aria-controls="ahaTicketRegex" onclick="setAnchor('#ahaTicketRegex')"><span class="property-name">ahaTicketRegex</span></button>
+            </h2>
+        </div>
+
+        <div id="ahaTicketRegex"
+             class="collapse property-definition-div" aria-labelledby="headingahaTicketRegex"
+             data-parent="#accordionahaTicketRegex">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#ahaTicketRegex" onclick="anchorLink('ahaTicketRegex')">ahaTicketRegex</a></div><h4>Aha! Ticket Regex</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Regular expression to identify Aha! feature references in commits, branch names and Pull Request descriptions. The first capturing group must be the whole reference. Example: (PROD-[0-9]+)</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="ahaTicketRegex_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;(PROD-[0-9]+)&quot;</span>
+</pre></div>
+</div><div id="ahaTicketRegex_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;((?:PROD|MOBILE)-[0-9]+)&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionallowedOrgTypes">
     <div class="card">
         <div class="card-header" id="headingallowedOrgTypes">
@@ -1518,7 +1598,7 @@ Select the cleanings that will be automatically applied on your project.</p>
     <a href="#autoCleanTypes_items" onclick="anchorLink('autoCleanTypes_items')">autoCleanTypes items</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <div class="enum-value" id="autoCleanTypes_items_enum">
             <h4>Must be one of:</h4>
-            <ul class="list-group"><li class="list-group-item enum-item">"caseentitlement"</li><li class="list-group-item enum-item">"checkPermissions"</li><li class="list-group-item enum-item">"dashboards"</li><li class="list-group-item enum-item">"datadotcom"</li><li class="list-group-item enum-item">"destructivechanges"</li><li class="list-group-item enum-item">"flowPositions"</li><li class="list-group-item enum-item">"localfields"</li><li class="list-group-item enum-item">"listViewsMine"</li><li class="list-group-item enum-item">"minimizeProfiles"</li><li class="list-group-item enum-item">"productrequest"</li><li class="list-group-item enum-item">"sensitiveMetadatas"</li><li class="list-group-item enum-item">"systemDebug"</li><li class="list-group-item enum-item">"v60"</li></ul>
+            <ul class="list-group"><li class="list-group-item enum-item">"caseentitlement"</li><li class="list-group-item enum-item">"checkPermissions"</li><li class="list-group-item enum-item">"dashboards"</li><li class="list-group-item enum-item">"datadotcom"</li><li class="list-group-item enum-item">"destructivechanges"</li><li class="list-group-item enum-item">"emptyItems"</li><li class="list-group-item enum-item">"flowPositions"</li><li class="list-group-item enum-item">"localfields"</li><li class="list-group-item enum-item">"listViewsMine"</li><li class="list-group-item enum-item">"minimizeProfiles"</li><li class="list-group-item enum-item">"productrequest"</li><li class="list-group-item enum-item">"sensitiveMetadatas"</li><li class="list-group-item enum-item">"systemDebug"</li><li class="list-group-item enum-item">"v60"</li></ul>
             </div>
         
 
@@ -2379,7 +2459,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
             />
         </svg>
     <a href="#commandsPreDeploy_items_id" onclick="anchorLink('commandsPreDeploy_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Identifier of the action (can be any string)</p>
+<span class="description"><p>Identifier of the action, generated by sf hardis:project:action:create or the VS Code editor when the action is created. Do not write or change it by hand: it links the action to its tracked state in the Pull Request comments.</p>
 </span>
         
 
@@ -2531,7 +2611,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
     <a href="#commandsPreDeploy_items_type_anyOf_i0" onclick="anchorLink('commandsPreDeploy_items_type_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <div class="enum-value" id="commandsPreDeploy_items_type_anyOf_i0_enum">
             <h4>Must be one of:</h4>
-            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li><li class="list-group-item enum-item">"remove-packagexml-items"</li></ul>
+            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"run-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li><li class="list-group-item enum-item">"remove-packagexml-items"</li></ul>
             </div>
         
 
@@ -2976,7 +3056,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
             />
         </svg>
     <a href="#commandsPreDeploy_items_parameters_className" onclick="anchorLink('commandsPreDeploy_items_parameters_className')">className</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Apex batch class name to schedule for 'schedule-batch' actions</p>
+<span class="description"><p>Apex class name for 'schedule-batch' actions (a Schedulable class) and 'run-batch' actions (a Database.Batchable class). A global class of a managed package is written with its namespace: ns.ClassName</p>
 </span>
         
 
@@ -3091,6 +3171,229 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </svg>
     <a href="#commandsPreDeploy_items_parameters_jobName" onclick="anchorLink('commandsPreDeploy_items_parameters_jobName')">jobName</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Scheduled job name for 'schedule-batch' actions. Defaults to &lt;className&gt;_Schedule</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPreDeploy_items_parameters_runMode">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPreDeploy_items_parameters_runMode">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPreDeploy_items_parameters_runMode"
+                        aria-expanded="" aria-controls="commandsPreDeploy_items_parameters_runMode" onclick="setAnchor('#commandsPreDeploy_items_parameters_runMode')"><span class="property-name">runMode</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPreDeploy_items_parameters_runMode"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPreDeploy_items_parameters_runMode"
+             data-parent="#accordioncommandsPreDeploy_items_parameters_runMode">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters" onclick="anchorLink('commandsPreDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters_runMode" onclick="anchorLink('commandsPreDeploy_items_parameters_runMode')">runMode</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "wait"</span><br/>
+<span class="description"><p>For 'run-batch' actions: wait for the batch to succeed, or launch it without waiting for its result</p>
+</span><div class="enum-value" id="commandsPreDeploy_items_parameters_runMode_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"wait"</li><li class="list-group-item enum-item">"no-wait"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPreDeploy_items_parameters_batchSize">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPreDeploy_items_parameters_batchSize">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPreDeploy_items_parameters_batchSize"
+                        aria-expanded="" aria-controls="commandsPreDeploy_items_parameters_batchSize" onclick="setAnchor('#commandsPreDeploy_items_parameters_batchSize')"><span class="property-name">batchSize</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPreDeploy_items_parameters_batchSize"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPreDeploy_items_parameters_batchSize"
+             data-parent="#accordioncommandsPreDeploy_items_parameters_batchSize">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters" onclick="anchorLink('commandsPreDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters_batchSize" onclick="anchorLink('commandsPreDeploy_items_parameters_batchSize')">batchSize</a></div><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 200</span><br/>
+<span class="description"><p>Batch size passed to Database.executeBatch for 'run-batch' actions</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="commandsPreDeploy_items_parameters_batchSize_number">Value must be greater or equal to <code>1</code> and lesser or equal to <code>2000</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPreDeploy_items_parameters_waitTimeoutMinutes">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPreDeploy_items_parameters_waitTimeoutMinutes">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPreDeploy_items_parameters_waitTimeoutMinutes"
+                        aria-expanded="" aria-controls="commandsPreDeploy_items_parameters_waitTimeoutMinutes" onclick="setAnchor('#commandsPreDeploy_items_parameters_waitTimeoutMinutes')"><span class="property-name">waitTimeoutMinutes</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPreDeploy_items_parameters_waitTimeoutMinutes"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPreDeploy_items_parameters_waitTimeoutMinutes"
+             data-parent="#accordioncommandsPreDeploy_items_parameters_waitTimeoutMinutes">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters" onclick="anchorLink('commandsPreDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters_waitTimeoutMinutes" onclick="anchorLink('commandsPreDeploy_items_parameters_waitTimeoutMinutes')">waitTimeoutMinutes</a></div><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 60</span><br/>
+<span class="description"><p>For 'run-batch' actions in wait mode: minutes after which the action fails if the batch is not over. The batch keeps running in the org</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="commandsPreDeploy_items_parameters_waitTimeoutMinutes_number">Value must be greater or equal to <code>1</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPreDeploy_items_parameters_successEvenIfBatchErrors">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPreDeploy_items_parameters_successEvenIfBatchErrors">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPreDeploy_items_parameters_successEvenIfBatchErrors"
+                        aria-expanded="" aria-controls="commandsPreDeploy_items_parameters_successEvenIfBatchErrors" onclick="setAnchor('#commandsPreDeploy_items_parameters_successEvenIfBatchErrors')"><span class="property-name">successEvenIfBatchErrors</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPreDeploy_items_parameters_successEvenIfBatchErrors"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPreDeploy_items_parameters_successEvenIfBatchErrors"
+             data-parent="#accordioncommandsPreDeploy_items_parameters_successEvenIfBatchErrors">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters" onclick="anchorLink('commandsPreDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_parameters_successEvenIfBatchErrors" onclick="anchorLink('commandsPreDeploy_items_parameters_successEvenIfBatchErrors')">successEvenIfBatchErrors</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>For 'run-batch' actions in wait mode: keep the action successful when the batch completes with batches in error. A failed or aborted batch and a timeout still fail the action</p>
 </span>
         
 
@@ -3725,19 +4028,71 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordioncommandsPreDeploy_items_movedFrom">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPreDeploy_items_movedFrom">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPreDeploy_items_movedFrom"
+                        aria-expanded="" aria-controls="commandsPreDeploy_items_movedFrom" onclick="setAnchor('#commandsPreDeploy_items_movedFrom')"><span class="property-name">movedFrom</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPreDeploy_items_movedFrom"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPreDeploy_items_movedFrom"
+             data-parent="#accordioncommandsPreDeploy_items_movedFrom">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy" onclick="anchorLink('commandsPreDeploy')">commandsPreDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items" onclick="anchorLink('commandsPreDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPreDeploy_items_movedFrom" onclick="anchorLink('commandsPreDeploy_items_movedFrom')">movedFrom</a></div><h4>Moved from Pull Request</h4><span class="badge badge-dark value-type">Type: integer</span><br/>
+<span class="description"><p>Number of the Pull Request this action was moved from, to fix its definition after its deployment failed. The action keeps the same id: the copy of the original Pull Request no longer runs, and its row in the Deployment Actions comment of the original Pull Request shows it as moved.</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="commandsPreDeploy_items_movedFrom_number">Value must be greater or equal to <code>1</code></span></p>
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="commandsPreDeploy_items_movedFrom_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">123</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div><br/>
 <div class="badge badge-secondary">Example:</div>
 <br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#commandsPreDeploy_ex1" aria-controls="commandsPreDeploy_ex1"></button><div id="commandsPreDeploy_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;knowledgeUnassign&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;32e7e3d7-eeeb-4162-ae9e-a4013e8439e1&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Remove KnowledgeUser right to the user who has it&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sf data update record --sobject User --where \&quot;UserPermissionsKnowledgeUser=&#39;true&#39;\&quot; --values \&quot;UserPermissionsKnowledgeUser=&#39;false&#39;\&quot; --json&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;context&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;all&quot;</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;importDataPackage&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;d9b3402e-08c3-4ee4-ab41-bfd8395e4170&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Import SFDMU data package&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
@@ -3746,7 +4101,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 <span class="w">        </span><span class="s2">&quot;context&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;process-deployment-only&quot;</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;removeLegacyItems&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;a803e4c8-4471-48fd-ba14-7cd6c45b8ad1&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Remove legacy items from deployment package.xml&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;remove-packagexml-items&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
@@ -3858,7 +4213,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
             />
         </svg>
     <a href="#commandsPostDeploy_items_id" onclick="anchorLink('commandsPostDeploy_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Identifier of the action (can be any string)</p>
+<span class="description"><p>Identifier of the action, generated by sf hardis:project:action:create or the VS Code editor when the action is created. Do not write or change it by hand: it links the action to its tracked state in the Pull Request comments.</p>
 </span>
         
 
@@ -4010,7 +4365,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
     <a href="#commandsPostDeploy_items_type_anyOf_i0" onclick="anchorLink('commandsPostDeploy_items_type_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <div class="enum-value" id="commandsPostDeploy_items_type_anyOf_i0_enum">
             <h4>Must be one of:</h4>
-            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li></ul>
+            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"run-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li></ul>
             </div>
         
 
@@ -4082,11 +4437,13 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 </pre></div>
 </div><div id="commandsPostDeploy_items_type_ex4" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;schedule-batch&quot;</span>
 </pre></div>
-</div><div id="commandsPostDeploy_items_type_ex5" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;publish-community&quot;</span>
+</div><div id="commandsPostDeploy_items_type_ex5" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;run-batch&quot;</span>
 </pre></div>
-</div><div id="commandsPostDeploy_items_type_ex6" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;manual&quot;</span>
+</div><div id="commandsPostDeploy_items_type_ex6" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;publish-community&quot;</span>
 </pre></div>
-</div><div id="commandsPostDeploy_items_type_ex7" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;notifySlack&quot;</span>
+</div><div id="commandsPostDeploy_items_type_ex7" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;manual&quot;</span>
+</pre></div>
+</div><div id="commandsPostDeploy_items_type_ex8" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;notifySlack&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -4455,7 +4812,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
             />
         </svg>
     <a href="#commandsPostDeploy_items_parameters_className" onclick="anchorLink('commandsPostDeploy_items_parameters_className')">className</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Apex batch class name to schedule for 'schedule-batch' actions</p>
+<span class="description"><p>Apex class name for 'schedule-batch' actions (a Schedulable class) and 'run-batch' actions (a Database.Batchable class). A global class of a managed package is written with its namespace: ns.ClassName</p>
 </span>
         
 
@@ -4570,6 +4927,229 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </svg>
     <a href="#commandsPostDeploy_items_parameters_jobName" onclick="anchorLink('commandsPostDeploy_items_parameters_jobName')">jobName</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
 <span class="description"><p>Scheduled job name for 'schedule-batch' actions. Defaults to &lt;className&gt;_Schedule</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_parameters_runMode">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_parameters_runMode">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_parameters_runMode"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_parameters_runMode" onclick="setAnchor('#commandsPostDeploy_items_parameters_runMode')"><span class="property-name">runMode</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_parameters_runMode"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_parameters_runMode"
+             data-parent="#accordioncommandsPostDeploy_items_parameters_runMode">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_runMode" onclick="anchorLink('commandsPostDeploy_items_parameters_runMode')">runMode</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "wait"</span><br/>
+<span class="description"><p>For 'run-batch' actions: wait for the batch to succeed, or launch it without waiting for its result</p>
+</span><div class="enum-value" id="commandsPostDeploy_items_parameters_runMode_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"wait"</li><li class="list-group-item enum-item">"no-wait"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_parameters_batchSize">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_parameters_batchSize">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_parameters_batchSize"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_parameters_batchSize" onclick="setAnchor('#commandsPostDeploy_items_parameters_batchSize')"><span class="property-name">batchSize</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_parameters_batchSize"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_parameters_batchSize"
+             data-parent="#accordioncommandsPostDeploy_items_parameters_batchSize">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_batchSize" onclick="anchorLink('commandsPostDeploy_items_parameters_batchSize')">batchSize</a></div><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 200</span><br/>
+<span class="description"><p>Batch size passed to Database.executeBatch for 'run-batch' actions</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="commandsPostDeploy_items_parameters_batchSize_number">Value must be greater or equal to <code>1</code> and lesser or equal to <code>2000</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_parameters_waitTimeoutMinutes">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_parameters_waitTimeoutMinutes">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_parameters_waitTimeoutMinutes"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_parameters_waitTimeoutMinutes" onclick="setAnchor('#commandsPostDeploy_items_parameters_waitTimeoutMinutes')"><span class="property-name">waitTimeoutMinutes</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_parameters_waitTimeoutMinutes"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_parameters_waitTimeoutMinutes"
+             data-parent="#accordioncommandsPostDeploy_items_parameters_waitTimeoutMinutes">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_waitTimeoutMinutes" onclick="anchorLink('commandsPostDeploy_items_parameters_waitTimeoutMinutes')">waitTimeoutMinutes</a></div><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 60</span><br/>
+<span class="description"><p>For 'run-batch' actions in wait mode: minutes after which the action fails if the batch is not over. The batch keeps running in the org</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="commandsPostDeploy_items_parameters_waitTimeoutMinutes_number">Value must be greater or equal to <code>1</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_parameters_successEvenIfBatchErrors">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_parameters_successEvenIfBatchErrors">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_parameters_successEvenIfBatchErrors"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_parameters_successEvenIfBatchErrors" onclick="setAnchor('#commandsPostDeploy_items_parameters_successEvenIfBatchErrors')"><span class="property-name">successEvenIfBatchErrors</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_parameters_successEvenIfBatchErrors"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_parameters_successEvenIfBatchErrors"
+             data-parent="#accordioncommandsPostDeploy_items_parameters_successEvenIfBatchErrors">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_successEvenIfBatchErrors" onclick="anchorLink('commandsPostDeploy_items_parameters_successEvenIfBatchErrors')">successEvenIfBatchErrors</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>For 'run-batch' actions in wait mode: keep the action successful when the batch completes with batches in error. A failed or aborted batch and a timeout still fail the action</p>
 </span>
         
 
@@ -5139,19 +5719,71 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </div>
     </div>
 </div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_movedFrom">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_movedFrom">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_movedFrom"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_movedFrom" onclick="setAnchor('#commandsPostDeploy_items_movedFrom')"><span class="property-name">movedFrom</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_movedFrom"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_movedFrom"
+             data-parent="#accordioncommandsPostDeploy_items_movedFrom">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_movedFrom" onclick="anchorLink('commandsPostDeploy_items_movedFrom')">movedFrom</a></div><h4>Moved from Pull Request</h4><span class="badge badge-dark value-type">Type: integer</span><br/>
+<span class="description"><p>Number of the Pull Request this action was moved from, to fix its definition after its deployment failed. The action keeps the same id: the copy of the original Pull Request no longer runs, and its row in the Deployment Actions comment of the original Pull Request shows it as moved.</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="commandsPostDeploy_items_movedFrom_number">Value must be greater or equal to <code>1</code></span></p>
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="commandsPostDeploy_items_movedFrom_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="mf">123</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
         </div>
     </div><br/>
 <div class="badge badge-secondary">Example:</div>
 <br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#commandsPostDeploy_ex1" aria-controls="commandsPostDeploy_ex1"></button><div id="commandsPostDeploy_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;knowledgeUnassign&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ddd0d387-0b84-4ce5-8b0a-a9a370d2ece3&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Remove KnowledgeUser right to the user who has it&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;command&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;command&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;sf data update record --sobject User --where \&quot;UserPermissionsKnowledgeUser=&#39;true&#39;\&quot; --values \&quot;UserPermissionsKnowledgeUser=&#39;false&#39;\&quot; --json&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;context&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;all&quot;</span>
 <span class="w">    </span><span class="p">},</span>
 <span class="w">    </span><span class="p">{</span>
-<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;publishCommunity&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;6e9749de-d7e7-4e44-8742-f8cae3e2142e&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Publish community after deploy&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;publish-community&quot;</span><span class="p">,</span>
 <span class="w">        </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
@@ -10199,6 +10831,44 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         <br/>
 <div class="badge badge-secondary">Example:</div>
 <br/><div id="disableDeploymentActions_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionfailValidationOnPendingManualActions">
+    <div class="card">
+        <div class="card-header" id="headingfailValidationOnPendingManualActions">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#failValidationOnPendingManualActions"
+                        aria-expanded="" aria-controls="failValidationOnPendingManualActions" onclick="setAnchor('#failValidationOnPendingManualActions')"><span class="property-name">failValidationOnPendingManualActions</span></button>
+            </h2>
+        </div>
+
+        <div id="failValidationOnPendingManualActions"
+             class="collapse property-definition-div" aria-labelledby="headingfailValidationOnPendingManualActions"
+             data-parent="#accordionfailValidationOnPendingManualActions">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#failValidationOnPendingManualActions" onclick="anchorLink('failValidationOnPendingManualActions')">failValidationOnPendingManualActions</a></div><h4>Fail validation on pending manual actions</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Set it to true to stop the validation job of a Pull Request right after its pre-deployment actions while one of its pre-deployment manual actions is not marked as performed in the target org branch (ticked in the Pull Request comment, Mark as done in VS Code, or sf hardis:project:action:set-status): they must be done before the merge. A draft Pull Request (draft flag, or draft in its title) is never stopped. By default they are only listed, with a warning.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="failValidationOnPendingManualActions_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
 </pre></div>
 </div>
             </div>
@@ -17480,6 +18150,40 @@ If active, contributors are never offered to initialize their sandbox on New Use
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionserviceNowPostDeploymentComments">
+    <div class="card">
+        <div class="card-header" id="headingserviceNowPostDeploymentComments">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#serviceNowPostDeploymentComments"
+                        aria-expanded="" aria-controls="serviceNowPostDeploymentComments" onclick="setAnchor('#serviceNowPostDeploymentComments')"><span class="property-name">serviceNowPostDeploymentComments</span></button>
+            </h2>
+        </div>
+
+        <div id="serviceNowPostDeploymentComments"
+             class="collapse property-definition-div" aria-labelledby="headingserviceNowPostDeploymentComments"
+             data-parent="#accordionserviceNowPostDeploymentComments">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#serviceNowPostDeploymentComments" onclick="anchorLink('serviceNowPostDeploymentComments')">serviceNowPostDeploymentComments</a></div><h4>ServiceNow Post Deployment Comments</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>Write a work note on the ServiceNow records when they are deployed in a major org. Set it to false when the CI user must stay read-only on the tickets: they are still listed, with their title and status, in the Pull Request comments and the notifications.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionserviceNowTablePrefixes">
     <div class="card">
         <div class="card-header" id="headingserviceNowTablePrefixes">
@@ -17582,10 +18286,10 @@ If active, contributors are never offered to initialize their sandbox on New Use
             />
         </svg>
     <a href="#ticketingProvider" onclick="anchorLink('ticketingProvider')">ticketingProvider</a></div><h4>Ticketing Provider</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
-<span class="description"><p>Ticketing provider used on the project</p>
+<span class="description"><p>Ticketing provider used on the project. When defined, ticket references are only looked for with this provider. When empty, every provider that is configured is used, and a reference like PROJ-123 is a Jira ticket.</p>
 </span><div class="enum-value" id="ticketingProvider_enum">
             <h4>Must be one of:</h4>
-            <ul class="list-group"><li class="list-group-item enum-item">"JIRA"</li><li class="list-group-item enum-item">"AZURE"</li><li class="list-group-item enum-item">"SERVICENOW"</li><li class="list-group-item enum-item">"GENERIC"</li></ul>
+            <ul class="list-group"><li class="list-group-item enum-item">"JIRA"</li><li class="list-group-item enum-item">"AZURE"</li><li class="list-group-item enum-item">"SERVICENOW"</li><li class="list-group-item enum-item">"AHA"</li><li class="list-group-item enum-item">"GENERIC"</li></ul>
             </div>
         
 

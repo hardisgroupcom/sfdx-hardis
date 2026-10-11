@@ -56,3 +56,13 @@ reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no pat
 [[IgnoredVulns]]
 id = "CVE-2026-85063"
 reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-03: no fixed braces release exists (3.0.3, the latest, is affected). Stack exhaustion when braces expands an attacker-supplied deeply nested pattern. braces is only brought by dev tooling (oclif > find-yarn-workspace-root > micromatch, @salesforce/dev-scripts > mocha > chokidar), never by the published plugin, and only expands our own patterns."
+
+[[IgnoredVulns]]
+id = "GHSA-hp3w-g68c-fv3c"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-06: no fixed sprintf-js release exists. 1.0.3 only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, so no untrusted format string ever reaches sprintf-js."

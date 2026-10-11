@@ -11,7 +11,7 @@ import {
   abortPromotion,
   assertPromotionBranchesEnabled,
   requireGitProviderForPromotion,
-  buildPromotionPullRequestBody,
+  buildPromotionPullRequestDescription,
   buildPromotionPullRequestTitle,
   checkGitCleanForPromotion,
   closeSupersededPromotionPullRequests,
@@ -101,9 +101,9 @@ In agent mode:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis-training) course runs this command, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own:
 
-- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://hardisgroupcom.github.io/sfdx-hardis-training/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
 
 <!-- training-links:end -->
 `;
@@ -270,7 +270,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
     // prompt gets there: the description is trimmed to fit rather than the Pull Request being
     // refused, which would leave the branch pushed and nothing to review
     const bodyProvider = await GitProvider.getInstance();
-    const body = buildPromotionPullRequestBody({
+    const bodyOptions = {
       sourceBranch,
       targetBranch,
       branchName,
@@ -279,7 +279,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
       ticketIds,
       alreadyThere: alreadyThereStories,
       maxLength: bodyProvider?.getMaxPullRequestDescriptionLength() ?? null,
-    });
+    };
+    const { body, promptEmbedded } = buildPromotionPullRequestDescription(bodyOptions);
 
     const result = await pushAndCreatePromotionPullRequest({
       branchName,
@@ -304,7 +305,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://hardisgroupcom.github.io/s
         files: [...new Set(conflicted.flatMap((entry) => entry.files))].join(', ') || '-',
       })));
       // Ready-to-paste prompt for a coding agent, also embedded in the Pull Request description
+      // unless the provider caps its length (Azure DevOps)
       conflictPromptFile = await writeConflictResolutionPrompt({
+        embeddedInDescription: promptEmbedded,
         sourceBranch,
         targetBranch,
         branchName,

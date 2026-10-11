@@ -29,7 +29,7 @@ The command's technical implementation involves:
 - **Configuration Loading:** Reads the `filter-config.json` file, which contains an array of `filters`. Each filter defines a `name`, `description`, either `folders` or `files` (where to apply the filter), `file_extensions`, and an `exclude_list`.
 - **File System Operations:** Copies the input folder to an output folder (if different) to avoid modifying original files directly. It then iterates through either explicitly listed files or files found in configured folders, and applies extension checks before filtering.
 - **XML Parsing and Manipulation:** For each matching XML file:
-  - It uses `xml2js.Parser` to parse the XML content into a JavaScript object.
+  - It parses the XML content into a JavaScript object.
   - It recursively traverses the JavaScript object, applying the `filterElement` function.
   - The `filterElement` function checks for `type_tag` and `identifier_tag` defined in the `exclude_list`. If a match is found and the identifier matches one of the `excludeDef.values` entries (exact or wildcard), the element is removed from the XML structure.
   - After filtering, it uses `writeXmlFile` to write the modified JavaScript object back to the XML file.
@@ -56,7 +56,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 | agent               | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | configfile<br/>-c   | option  | Config JSON file path                                         |         |          |         |
 | debug               | boolean | debug                                                         |         |          |         |
-| flags-dir           | option  | undefined                                                     |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                          |         |          |         |
 | inputfolder<br/>-i  | option  | Input folder (default: "." )                                  |         |          |         |
 | json                | boolean | Format output as json.                                        |         |          |         |
 | outputfolder<br/>-f | option  | Output folder (default: parentFolder + _xml_content_filtered) |         |          |         |
