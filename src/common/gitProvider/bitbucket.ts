@@ -1,4 +1,4 @@
-import { GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
+import { CiRunFilters, CiRunStatus, CommonCiRun, GitProviderRepositorySettings, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
@@ -9,9 +9,11 @@ import { getBannerMarkdownAndLink } from '../../config/index.js';
 import { fromBitbucketMarkup, toBitbucketMarkup } from './utils/utilsBitbucketMarkup.js';
 import { enforceCommentLengthLimit } from './utils/utilsPrCommentSizeGuard.js';
 import { t } from '../utils/i18n.js';
-import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatches, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { httpPost } from '../utils/httpUtils.js';
+import { CiRunCandidate, classifyJobKind, selectCiRuns } from './utils/jobKindUtils.js';
+import { SfError } from '@salesforce/core';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 const { Bitbucket } = bbPkg;
 
@@ -26,9 +28,27 @@ export class BitbucketProvider extends GitProviderRoot {
   public serverUrl: string = 'https://bitbucket.org';
   public token: string;
   private email: string;
+  private workspace: string | null;
+  private repoSlug: string | null;
 
-  constructor() {
+  constructor(repository?: GitProviderRepositorySettings) {
     super();
+    if (repository) {
+      // Another repository than the one of the current folder: nothing is read from the CI context
+      const parsed = BitbucketProvider.parseBitbucketRepoUrl(repository.remoteUrl);
+      if (!parsed) {
+        throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: repository.remoteUrl, provider: "Bitbucket" }));
+      }
+      this.token = repository.token;
+      // A token given for another repository comes without an account email: it is sent as a Bearer token
+      this.email = '';
+      this.workspace = parsed.workspace;
+      this.repoSlug = parsed.repoSlug;
+      this.bitbucket = new Bitbucket({ auth: { token: this.token }, notice: false } as any);
+      return;
+    }
+    this.workspace = process.env.BITBUCKET_WORKSPACE || null;
+    this.repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
     this.token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || '';
     // A Bitbucket repository/workspace Access Token authenticates as a Bearer
     // token (token only). An Atlassian account API token must instead be used as
@@ -469,8 +489,8 @@ export class BitbucketProvider extends GitProviderRoot {
   public async listPullRequests(
     filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
-    const workspace = process.env.BITBUCKET_WORKSPACE || null;
-    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    const workspace = this.workspace;
+    const repoSlug = this.repoSlug;
     if (!workspace || !repoSlug) return null;
 
     try {
@@ -1115,6 +1135,42 @@ ${getBannerMarkdownAndLink()}
     uxLog("log", this, c.grey('[Bitbucket] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 
+  // A pipeline is what Bitbucket lists, and it has no name of its own: the bitbucket-pipelines.yml
+  // of sfdx-hardis names its steps, so the steps of a pipeline say what it does. No error is caught
+  // here: a token without the pipeline scope (403) must not read as "no deployment".
+  public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
+    if (!this.workspace || !this.repoSlug) {
+      throw new SfError('[Bitbucket Integration] ' + t('gitProviderCiRunsRepositoryUnknown', { variables: 'BITBUCKET_WORKSPACE, BITBUCKET_REPO_SLUG' }));
+    }
+    const pipelines = await this.listPipelinesSince(filters.minDate);
+    // Sorted out before the steps are read: one call per pipeline is only spent on the kinds asked for
+    const kept: Array<{ pipeline: any; trigger: 'push' | 'pullRequest'; status: CiRunStatus }> = [];
+    for (const pipeline of pipelines) {
+      if (pipeline?.state?.name !== 'COMPLETED') {
+        continue;
+      }
+      const status = BitbucketProvider.toCiRunStatus(pipeline.state?.result?.name);
+      const trigger = BitbucketProvider.toCiRunTrigger(pipeline, filters);
+      if (status && trigger) {
+        kept.push({ pipeline, trigger, status });
+      }
+    }
+    // Not the settled variant: a pipeline whose steps cannot be read fails the whole listing
+    const stepsOfKept = await mapInAdaptiveBatches(
+      kept,
+      (item) => this.listPipelineSteps(item.pipeline.uuid),
+      { sizes: PROVIDER_BATCH_PROFILES.bitbucket },
+    );
+    const candidates: CiRunCandidate[] = [];
+    kept.forEach((item, index) => {
+      const candidate = this.toCiRunCandidate(item.pipeline, item.trigger, item.status, stepsOfKept[index] || []);
+      if (candidate) {
+        candidates.push(candidate);
+      }
+    });
+    return selectCiRuns(candidates, filters.kinds);
+  }
+
   // The text of a comment as Bitbucket gets it: rewritten for its markdown, within its size limit.
   // The cut is made on the body as sfdx-hardis wrote it, where the markers to keep at the end are
   // known, and with less room at each turn until what it becomes fits: the hidden markers are
@@ -1140,6 +1196,119 @@ ${getBannerMarkdownAndLink()}
   // HTML comments (see utilsBitbucketMarkup.ts)
   private commentText(comment: any): string {
     return fromBitbucketMarkup(comment?.content?.raw || '');
+  }
+
+  // GET /repositories/{workspace}/{repo_slug}/pipelines, newest first, every pipeline created since
+  // minDate whatever its state. The pipelines listing gives no `next` link to rely on: pages are
+  // asked until one is empty, or entirely older than minDate.
+  private async listPipelinesSince(minDate: Date): Promise<any[]> {
+    const pipelinesByUuid = new Map<string, any>();
+    const createdSince = (pipeline: any) => new Date(pipeline?.created_on || '').getTime() >= minDate.getTime();
+    for (let page = 1; ; page++) {
+      const response = await this.bitbucket.pipelines.list({
+        workspace: this.workspace || '',
+        repo_slug: this.repoSlug || '',
+        sort: '-created_on',
+        // Bitbucket Cloud caps a pipelines page at 100
+        pagelen: 100,
+        page,
+      } as any);
+      const values: any[] = Array.isArray(response?.data?.values) ? (response.data.values as any[]) : [];
+      const sizeBefore = pipelinesByUuid.size;
+      for (const pipeline of values.filter(createdSince)) {
+        pipelinesByUuid.set(String(pipeline.uuid || ''), pipeline);
+      }
+      // Nothing new means the page is past minDate, or the same page was served again: stop
+      // instead of asking it forever
+      if (values.length === 0 || pipelinesByUuid.size === sizeBefore) {
+        break;
+      }
+    }
+    return [...pipelinesByUuid.values()];
+  }
+
+  // EXPIRED, and anything Bitbucket adds later, deployed nothing and failed nothing
+  private static toCiRunStatus(resultName: string | null | undefined): CiRunStatus | null {
+    if (resultName === 'SUCCESSFUL') {
+      return 'succeeded';
+    }
+    if (resultName === 'FAILED' || resultName === 'ERROR') {
+      return 'failed';
+    }
+    if (resultName === 'STOPPED') {
+      return 'canceled';
+    }
+    return null;
+  }
+
+  // push: the pipeline of one of the branches asked for. pullRequest: the pipeline of a Pull
+  // Request. null: a tag, a custom pipeline, a scheduled one, another branch, or a kind not asked for
+  private static toCiRunTrigger(pipeline: any, filters: CiRunFilters): 'push' | 'pullRequest' | null {
+    const target = pipeline?.target || {};
+    if (target.type === 'pipeline_pullrequest_target') {
+      return filters.kinds.includes('validation') ? 'pullRequest' : null;
+    }
+    if (!filters.kinds.includes('deployment') || target.ref_type !== 'branch' || !filters.branches.includes(target.ref_name)) {
+      return null;
+    }
+    // A scheduled pipeline runs on a branch without anything having been merged into it
+    if (pipeline?.trigger?.name === 'SCHEDULE' || pipeline?.trigger?.type === 'pipeline_trigger_schedule') {
+      return null;
+    }
+    return 'push';
+  }
+
+  // GET /repositories/{workspace}/{repo_slug}/pipelines/{pipeline_uuid}/steps
+  private async listPipelineSteps(pipelineUuid: string): Promise<any[]> {
+    return this.fetchAllPages(
+      (params) => this.bitbucket.pipelines.listSteps(params),
+      {
+        workspace: this.workspace || '',
+        repo_slug: this.repoSlug || '',
+        pipeline_uuid: pipelineUuid,
+        // A pipeline holds 100 steps at most
+        pagelen: 100,
+      },
+    );
+  }
+
+  private toCiRunCandidate(pipeline: any, trigger: 'push' | 'pullRequest', pipelineStatus: CiRunStatus, steps: any[]): CiRunCandidate | null {
+    const target = pipeline.target || {};
+    let name = steps.map((step) => String(step?.name || '')).filter(Boolean).join(' / ');
+    let status = pipelineStatus;
+    let timedSteps = steps;
+    let finishedAt: string = pipeline.completed_on || '';
+    // A pipeline can run other steps (MegaLinter, tests): the deployment, or the deployment check
+    // of a Pull Request, is read from its own step, or a failing linter would make it look failed
+    const ownKind = trigger === 'pullRequest' ? 'validation' : 'deployment';
+    const ownStep = steps.find((step) => classifyJobKind(step?.name) === ownKind);
+    if (ownStep) {
+      const stepStatus = BitbucketProvider.toCiRunStatus(ownStep.state?.result?.name);
+      // The step did not run (NOT_RUN after an earlier failure): nothing was deployed nor checked
+      if (!stepStatus) {
+        return null;
+      }
+      name = String(ownStep.name);
+      status = stepStatus;
+      timedSteps = [ownStep];
+      finishedAt = ownStep.completed_on || finishedAt;
+    }
+    const startedAt = timedSteps.map((step) => String(step?.started_on || '')).filter(Boolean).sort()[0];
+    return {
+      id: String(pipeline.uuid || ''),
+      name,
+      trigger,
+      // Bitbucket gives the destination of a Pull Request pipeline as a branch name
+      branch: trigger === 'push' ? target.ref_name || '' : (typeof target.destination === 'string' ? target.destination : ''),
+      ...(trigger === 'pullRequest' ? { pullRequestId: String(target.pullrequest?.id || ''), sourceBranch: typeof target.source === 'string' ? target.source : '' } : {}),
+      status,
+      queuedAt: pipeline.created_on || '',
+      startedAt: startedAt || pipeline.created_on || '',
+      finishedAt,
+      commitSha: target.commit?.hash || '',
+      triggeredBy: pipeline.creator?.display_name || '',
+      webUrl: `${this.serverUrl}/${this.workspace}/${this.repoSlug}/pipelines/results/${pipeline.build_number}`,
+    };
   }
 
 }

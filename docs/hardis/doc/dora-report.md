@@ -3,48 +3,64 @@
 
 ## Description
 
-Generates a DORA (DevOps Research and Assessment) metrics report for a Salesforce project.
+Generates a DORA (DevOps Research and Assessment) metrics report for a Salesforce project, for each of its major orgs.
 
 ## Command Behavior
 
-Collects data from three sources and computes industry-standard DORA metrics:
+Everything is read from the **git provider** (GitHub, GitLab, Azure DevOps, Bitbucket), so no org login is needed and every team member gets the same numbers:
 
-- **Tooling API** (DeployRequest): deployment/validation history, duration, success rate
-- **Git Provider** (GitHub, GitLab, Azure DevOps, Bitbucket): merged pull requests, lead time, cycle time
-- **Ticket Provider** (JIRA, Azure Boards, ServiceNow, Aha!): incident/bug resolution for MTTR enrichment
+- **Deployment jobs** of each major branch: a deployment is a run of the deployment job after a merge
+- **Deployment checks** of the Pull Requests targeting each major branch
+- **Pull Requests** merged into each major branch, and the ones still open
 
-**Core DORA Metrics (5):**
+The command fails when no authenticated git provider is available, or when its token cannot read CI jobs.
 
-1. **Deployment Frequency** - how often successful deployments reach the target org
-2. **Lead Time for Changes** - time from PR creation to deployment
-3. **Change Failure Rate** - percentage of failed deployments
-4. **Mean Time to Recovery (MTTR)** - time to restore after a failure
-5. **Deployment Rework Rate** - ratio of hotfix/unplanned deployments
+**Core DORA Metrics (5), per major branch:**
 
-**Supplementary Salesforce Metrics (5):**
+1. **Deployment Frequency** - successful deployment jobs per week
+2. **Lead Time for Changes** - time from Pull Request creation to the end of the job that deployed its merge
+3. **Change Failure Rate** - failed deployment jobs / (succeeded + failed). Canceled jobs are counted apart
+4. **Mean Time to Recovery (MTTR)** - time from a failed deployment job to the next successful one on the same branch
+5. **Deployment Rework Rate** - share of hotfix Pull Requests, or of deployments redone within a day of a failure
 
-6. Deployment Duration (metadata transfer time)
-7. PR Cycle Time
-8. Change Volume
-9. Deployment Activity (per team member)
-10. Validation Success Rate
+**Supplementary Metrics:**
 
-Each metric is classified against DORA benchmarks as **Elite**, **High**, **Medium**, or **Low**.
+6. Deployment Duration (time the job ran)
+7. Deployment Queue Time (time the job waited for a runner)
+8. PR Cycle Time
+9. Change Volume
+10. Validation Success Rate (deployment checks of the Pull Requests)
+11. Contributors (Pull Requests and deployments per person)
 
-Output includes a **Markdown report** with Mermaid diagrams, a **CSV export** of raw data, and an optional **notification** (Slack, Teams, etc.).
+Each metric is classified against DORA benchmarks as **Elite**, **High**, **Medium**, or **Low**, with the same scale for every branch.
+
+Each branch also gets a **needs attention** list: a deployment that is still failing, Pull Requests open for more than 7 days, a failure rate that went up, no deployment for 30 days.
+
+**Which branches:**
+
+- `--branches` when given (comma-separated).
+- In a CI job: the current branch.
+- Run by a user: every major branch (`config/branches/.sfdx-hardis.*.yml`).
+- In a monitoring repository whose `.sfdx-hardis.yml` has `deploymentRepository`: the branch `deploymentBranch` of that repository. The token is `SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN` when set, else the git provider token of the monitoring repository, which must then be able to read the deployment repository.
+
+**Output:** a **Markdown report** with Mermaid diagrams (and a PDF with `--pdf`), a **CSV export** of the jobs, and a **notification** (Slack, Teams, Grafana...) when a single branch is computed: `--target-org` then only says which org the notification is about.
+
+`--data-only` returns the JSON result alone, without report files nor notification. The VS Code **DORA metrics** panel uses it.
+
+`--compare` also computes the period of the same length just before, so each metric shows where it comes from.
 
 This command is part of [sfdx-hardis Documentation](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-The command queries `DeployRequest` records via the Salesforce Tooling API to build deployment metrics.
-It uses `GitProvider.listPullRequests()` to fetch merged PRs with date filtering, falling back to the local `git log` when no provider API is available: merge commits, and the squash commits of GitHub (`(#123)`) and Azure DevOps (`Merged PR 123:`).
-Ticket references are extracted from PR titles/descriptions via `TicketProvider`, enriched with server data when configured, and used to compute MTTR from bug/incident resolution times.
-
-Mermaid `xychart-beta` diagrams visualize deployment frequency trends and lead time, while `pie` charts show deployment outcome distribution.
-
-Each data source is optional: the report gracefully degrades when the org, git provider, or ticket provider is unavailable.
+- Runs are listed with `GitProvider.listCiRuns()`: workflow runs on GitHub, jobs on GitLab, builds on Azure DevOps, pipelines and their steps on Bitbucket.
+- A run is a deployment or a deployment check according to the name of its job (`Process Deployment`, `deploy_to_org`, `Deployment`, `Deploy to major org`, and their check counterparts). When a project renamed its jobs and no run of a branch is named as a deployment, every run triggered by a push to that branch counts.
+- Token scopes: `Actions: Read` on GitHub, `read_api` on GitLab, `Build: Read` on Azure DevOps, `pipeline` on Bitbucket.
+- Finished runs do not change: they are kept in `~/.sfdx/sfdx-hardis-cache/dora`, and only the runs newer than the last reading are asked to the provider. `--refresh` reads everything again.
+- A git provider keeps its job runs for a limited time: when a branch has no run as old as the period asked for, the report says when its data starts.
+- A job run again on the same commit replaces its previous result on some providers, so a failure fixed by a re-run can disappear from the history.
+- The `--json` result holds `branches` (metrics, weekly series, failed deployments, slow and hotfix Pull Requests, attention list), `contributors`, and the legacy `metrics`, `supplementary` and `counts` of the production branch.
 </details>
 
 ### Agent Mode
@@ -52,13 +68,15 @@ Each data source is optional: the report gracefully degrades when the org, git p
 Supports non-interactive execution with `--agent`:
 
 ```sh
-sf hardis:doc:dora-report --agent --target-org myorg@example.com
+sf hardis:doc:dora-report --agent
+sf hardis:doc:dora-report --agent --data-only --compare --period 180 --json
 ```
 
 In agent mode:
 
-- All interactive prompts are skipped.
+- The command has no interactive prompt: `--agent` changes nothing to its behavior.
 - `--period` defaults to 90 days when not provided.
+- The git provider token must be in the environment (`GITHUB_TOKEN`, `CI_SFDX_HARDIS_GITLAB_TOKEN`, `CI_SFDX_HARDIS_AZURE_TOKEN`, `CI_SFDX_HARDIS_BITBUCKET_TOKEN`).
 
 <!-- training-links:start -->
 
@@ -74,18 +92,22 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 
 ## Parameters
 
-| Name              |  Type   | Description                                                      | Default | Required | Options |
-|:------------------|:-------:|:-----------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation            |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                  |         |          |         |
-| flags-dir         | option  | Import flag values from a directory.                             |         |          |         |
-| json              | boolean | Format output as json.                                           |         |          |         |
-| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .md |         |          |         |
-| pdf               | boolean | Also generate the documentation in PDF format                    |         |          |         |
-| period<br/>-p     | option  | Number of days to analyze (default: 90)                          |   90    |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required    |         |          |         |
-| target-org<br/>-o | option  | Username or alias of the target org.                             |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration        |         |          |         |
+| Name              |  Type   | Description                                                                                          | Default | Required | Options |
+|:------------------|:-------:|:-----------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                |         |          |         |
+| branches<br/>-b   | option  | Comma-separated branches to compute. Default: the current branch in CI, every major branch otherwise |         |          |         |
+| compare           | boolean | Also compute the previous period of the same length, to show how each metric moved                   |         |          |         |
+| data-only         | boolean | Return the JSON result only: no report file, no notification                                         |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                      |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                 |         |          |         |
+| json              | boolean | Format output as json.                                                                               |         |          |         |
+| outputfile<br/>-f | option  | Force the path and name of output report file. Must end with .md                                     |         |          |         |
+| pdf               | boolean | Also generate the documentation in PDF format                                                        |         |          |         |
+| period<br/>-p     | option  | Number of days to analyze (default: 90, maximum: 365)                                                |   90    |          |         |
+| refresh           | boolean | Read every job again from the git provider instead of using the local cache                          |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                        |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org.                                                                 |         |          |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                            |         |          |         |
 
 ## Examples
 
@@ -94,11 +116,11 @@ $ sf hardis:doc:dora-report
 ```
 
 ```shell
-$ sf hardis:doc:dora-report --target-org myorg@example.com
+$ sf hardis:doc:dora-report --period 30
 ```
 
 ```shell
-$ sf hardis:doc:dora-report --period 30
+$ sf hardis:doc:dora-report --branches integration,uat,main
 ```
 
 ```shell
@@ -106,7 +128,15 @@ $ sf hardis:doc:dora-report --pdf
 ```
 
 ```shell
-$ sf hardis:doc:dora-report --agent --target-org myorg@example.com
+$ sf hardis:doc:dora-report --target-org myorg@example.com
+```
+
+```shell
+$ sf hardis:doc:dora-report --agent
+```
+
+```shell
+$ sf hardis:doc:dora-report --agent --data-only --compare --json
 ```
 
 

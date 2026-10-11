@@ -194,6 +194,7 @@ Credentials, in this order:
    - GitLab: `CI_SFDX_HARDIS_GITLAB_TOKEN` or `ACCESS_TOKEN`
    - Azure DevOps: `CI_SFDX_HARDIS_AZURE_TOKEN` or `SYSTEM_ACCESSTOKEN`
    - Bitbucket: `CI_SFDX_HARDIS_BITBUCKET_TOKEN`, with `CI_SFDX_HARDIS_BITBUCKET_EMAIL` when the token is an Atlassian account API token
+   - `SFDX_HARDIS_DEPLOYMENT_REPO_TOKEN`: a token for the deployment repository, set when the token of this repository cannot read it. It is the one `sf hardis:doc:dora-report` uses from the monitoring pipeline
 3. Neither: tell the user which login or which variable is missing, and answer with what git alone shows.
 
 Read-only calls for the pipelines and the Pull Requests. `<branch>` is the deployment branch for the deployment repository, and the current branch for this one:
@@ -318,6 +319,7 @@ Scores and trends (other names: list them, see above):
 
 - Health score and its sub-scores, computed weekly: `max by (__name__) (last_over_time({__name__=~"HealthScore.*_metric", source="sfdx-hardis", orgIdentifier="acme"}[8d]))`. The reasons are only on the weekly `MONITORING_SUMMARY` line, with a `start` 8 days ago: `{source="sfdx-hardis", orgIdentifier="acme", type="MONITORING_SUMMARY"} |= "healthScoreDetails" | json d="healthScoreDetails" | line_format "{{.d}}" | keep type` with `limit=1`.
 - Metrics the dashboards use: `ApexTestsCodeCoverage_metric`, `Score_metric` and `HighRisk_metric` (Security Health Check), `SuspectMetadataUpdates_metric` (audit trail), `ACTIVE_USERS_CRM_WEEKLY_metric`, `UNUSED_USERS_CRM_6_MONTHS_metric`, `unusedApexClasses_metric`, `MetadatasWithoutDescription_metric`, `AiUsageCreditsTotal_metric`, `deploymentsTotal_metric`, `deploymentSuccessRate_metric`, `DoraLeadTimeDays_metric`.
+- The `Dora*_metric` values (type `DORA_REPORT`) are not read from the org: `sf hardis:doc:dora-report` computes them from the deployment jobs and the Pull Requests of the deployment repository, for the branch `deploymentBranch`. It runs either in the pipeline of the deployment repository or in this monitoring pipeline. No DORA value means the command is scheduled in neither, or that it failed for lack of a token that can read the CI jobs of the deployment repository.
 
 Backups, checks and deployments:
 

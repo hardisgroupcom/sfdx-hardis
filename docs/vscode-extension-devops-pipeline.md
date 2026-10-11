@@ -101,7 +101,7 @@ The gear menu gathers the settings of the project:
 
 - **(1)** opens **Pipeline Settings**, the editor of `.sfdx-hardis.yml`: branches, deployment options, tickets, notifications. See [Configuration](sfdx-hardis-config-file.md).
 - **(2)** connects a major branch to its org, so the CI/CD pipeline can deploy there.
-- **(3)** generates a DORA metrics report of the deployments (frequency, lead time, failure rate).
+- **(3)** opens the [DORA metrics](hardis/doc/salesforce-devops-dora-report.md) of the pipeline: deployment frequency, lead time, failure rate and recovery time of each major org, read from the deployment jobs and the Pull Requests of the git provider.
 
 ## Edit the package files
 

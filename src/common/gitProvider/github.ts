@@ -1,14 +1,15 @@
 import c from "chalk";
-import { buildPrCreateUrl, encodePrUrlPathBranch, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, encodePrUrlPathBranch, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
+import { GITHUB_DEFAULT_API_URL, GITHUB_DEFAULT_GRAPHQL_URL, GITHUB_DEFAULT_SERVER_URL, GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
 import { parseGithubRunUrl } from "./utils/jobUrlUtils.js";
+import { CiRunCandidate, selectCiRuns } from "./utils/jobKindUtils.js";
 import { SfError } from "@salesforce/core";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 
@@ -22,8 +23,28 @@ export class GithubProvider extends GitProviderRoot {
   public prNumber: number | null;
   public runId: string | number | null;
 
-  constructor() {
+  constructor(repository?: GitProviderRepositorySettings) {
     super();
+    if (repository) {
+      // Another repository than the one of the current folder: nothing is read from the CI context
+      const parsed = GithubProvider.parseGithubRepoUrl(repository.remoteUrl);
+      if (!parsed) {
+        throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: repository.remoteUrl, provider: "GitHub" }));
+      }
+      const isGithubDotCom = parsed.serverUrl.toLowerCase() === GITHUB_DEFAULT_SERVER_URL;
+      this.api = new GithubApiClient(repository.token, {
+        apiUrl: isGithubDotCom ? GITHUB_DEFAULT_API_URL : `${parsed.serverUrl}/api/v3`,
+        graphqlUrl: isGithubDotCom ? GITHUB_DEFAULT_GRAPHQL_URL : `${parsed.serverUrl}/api/graphql`,
+      });
+      this.repoOwner = parsed.owner;
+      this.repoName = parsed.repo;
+      this.serverUrl = parsed.serverUrl;
+      this.workflow = null;
+      this.branch = null;
+      this.prNumber = null;
+      this.runId = null;
+      return;
+    }
     const tokenName = process.env.CI_SFDX_HARDIS_GITHUB_TOKEN ? "CI_SFDX_HARDIS_GITHUB_TOKEN" : process.env.PAT ? "PAT" : "GITHUB_TOKEN";
     const token = process.env[tokenName];
     const context = getGithubActionsContext();
@@ -848,6 +869,114 @@ ${getBannerMarkdownAndLink()}
     if (!commentRef?.ref) return;
     await this.updateIssueComment(commentRef.ref, body);
     uxLog("log", this, c.grey('[GitHub] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
+  }
+
+  // A workflow run is what GitHub lists, and the sfdx-hardis workflows hold one job each: the name
+  // of the workflow says what the run does
+  public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
+    const candidates: CiRunCandidate[] = [];
+    if (filters.kinds.includes('deployment')) {
+      for (const branch of filters.branches) {
+        const runs = await this.listWorkflowRunsSince({ branch, event: 'push' }, filters.minDate);
+        candidates.push(...this.toCiRunCandidates(runs, 'push'));
+      }
+    }
+    if (filters.kinds.includes('validation')) {
+      const runs = await this.listWorkflowRunsSince({ event: 'pull_request' }, filters.minDate);
+      candidates.push(...this.toCiRunCandidates(runs, 'pullRequest'));
+    }
+    const selected = selectCiRuns(candidates, filters.kinds);
+    // The run does not say when a runner picked it, its jobs do: one more call per deployment
+    await mapInAdaptiveBatchesSettled(selected.filter((run) => run.kind === 'deployment'), async (run) => {
+      run.startedAt = (await this.getRunJobsStartDate(run.id)) || run.startedAt;
+    }, { sizes: PROVIDER_BATCH_PROFILES.github });
+    return selected;
+  }
+
+  // GET /repos/{owner}/{repo}/actions/runs, completed runs created since minDate. The listing stops
+  // at 1,000 results for one query: the window is then asked again up to the oldest run received
+  private async listWorkflowRunsSince(params: Record<string, any>, minDate: Date): Promise<any[]> {
+    const maxResultsPerQuery = 1000;
+    const runsById = new Map<number, any>();
+    const from = minDate.toISOString();
+    let until: string | null = null;
+    for (; ;) {
+      const created: string = until ? `${from}..${until}` : `>=${from}`;
+      const windowRuns: any[] = [];
+      for (let page = 1; windowRuns.length < maxResultsPerQuery; page++) {
+        const response = await this.api.get<any>(`${this.repoPath()}/actions/runs`, {
+          params: { ...params, status: 'completed', created, per_page: 100, page },
+        });
+        const pageRuns: any[] = Array.isArray(response.data?.workflow_runs) ? response.data.workflow_runs : [];
+        windowRuns.push(...pageRuns);
+        if (pageRuns.length < 100) {
+          break;
+        }
+      }
+      const sizeBefore = runsById.size;
+      for (const run of windowRuns) {
+        runsById.set(run.id, run);
+      }
+      const oldest = windowRuns.map((run) => String(run.created_at || '')).filter(Boolean).sort()[0];
+      // Nothing new means the whole window holds the same second: stop instead of asking it forever
+      if (windowRuns.length < maxResultsPerQuery || !oldest || runsById.size === sizeBefore) {
+        break;
+      }
+      until = oldest;
+    }
+    return [...runsById.values()];
+  }
+
+  private toCiRunCandidates(runs: any[], trigger: 'push' | 'pullRequest'): CiRunCandidate[] {
+    const candidates: CiRunCandidate[] = [];
+    for (const run of runs) {
+      const status = GithubProvider.toCiRunStatus(run.conclusion);
+      if (!status) {
+        continue;
+      }
+      // Empty once the Pull Request is closed, and on a Pull Request coming from a fork: the caller
+      // then finds it from the branch of the run
+      const pullRequest = trigger === 'pullRequest' ? run.pull_requests?.[0] : null;
+      candidates.push({
+        id: String(run.id),
+        name: run.name || run.display_title || '',
+        trigger,
+        branch: trigger === 'push' ? run.head_branch || '' : pullRequest?.base?.ref || '',
+        ...(trigger === 'pullRequest' ? { pullRequestId: pullRequest?.number ? String(pullRequest.number) : '', sourceBranch: run.head_branch || '' } : {}),
+        status,
+        queuedAt: run.created_at || '',
+        startedAt: run.run_started_at || run.created_at || '',
+        finishedAt: run.updated_at || '',
+        commitSha: run.head_sha || '',
+        triggeredBy: run.triggering_actor?.login || run.actor?.login || '',
+        webUrl: run.html_url || '',
+      });
+    }
+    return candidates;
+  }
+
+  // Skipped, neutral and action_required runs deployed nothing and failed nothing
+  private static toCiRunStatus(conclusion: string | null | undefined): CiRunStatus | null {
+    if (conclusion === 'success') {
+      return 'succeeded';
+    }
+    if (conclusion === 'failure' || conclusion === 'timed_out' || conclusion === 'startup_failure') {
+      return 'failed';
+    }
+    if (conclusion === 'cancelled') {
+      return 'canceled';
+    }
+    return null;
+  }
+
+  // When the first job of a run started, null when none did
+  private async getRunJobsStartDate(runId: string): Promise<string | null> {
+    const response = await this.api.get<any>(`${this.repoPath()}/actions/runs/${encodeURIComponent(runId)}/jobs`, { params: { per_page: 100 } });
+    const starts = (Array.isArray(response.data?.jobs) ? response.data.jobs : [])
+      .map((job: any) => String(job.started_at || ''))
+      .filter(Boolean)
+      .sort();
+    return starts[0] || null;
   }
 
   // The run a job URL points to, refused when it is not a run of this repository
