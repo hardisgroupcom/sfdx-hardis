@@ -9,7 +9,7 @@
 - ServiceNow: the ticket links of the Pull Request comments open the record directly, instead of a "Page not found" page on the Next Experience UI.
 - Bitbucket: the list of Pull Requests already deployed through a promotion branch is drawn as a list in the Pull Request comments, instead of one long paragraph.
 - Doc: the [DevOps Pipeline](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/) guide shows the running jobs and the job durations of the VS Code Pull Request view.
-- [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) retries when the network drops during a long test run, and no longer reports failed tests with a 0% coverage when results cannot be retrieved.
+- [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) retries when the network drops during a long test run, no longer reports failed tests with a 0% coverage when the run times out or its results cannot be retrieved, and waits 2 hours by default instead of 1.
 
 ## [8.16.0] 2026-10-09
 

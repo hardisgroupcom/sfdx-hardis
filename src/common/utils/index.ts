@@ -1043,6 +1043,8 @@ export interface ExecCommandRetryOptions {
   tryCount?: number;
   retryMaxAttempts?: number;
   retryStringConstraint?: string;
+  // Retry only when this returns true for the command output (stdout + stderr)
+  retryIf?: (output: string) => boolean;
   retryDelay?: number;
 }
 
@@ -1212,7 +1214,8 @@ export async function execCommand(
         if (
           retry.tryCount <= (retry.retryMaxAttempts || 1) &&
           (retry.retryStringConstraint == null ||
-            ((e as any).stdout + (e as any).stderr).includes(retry.retryStringConstraint))
+            ((e as any).stdout + (e as any).stderr).includes(retry.retryStringConstraint)) &&
+          (retry.retryIf == null || retry.retryIf((e as any).stdout + (e as any).stderr))
         ) {
           uxLog(
             "warning",

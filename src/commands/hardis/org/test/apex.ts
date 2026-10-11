@@ -11,7 +11,7 @@ import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/i
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
+import { ApexTestNoResultReason, extractErrorSummary, parseWaitMinutes, runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -28,13 +28,13 @@ If following configuration is defined, it will fail if apex coverage target is n
 
 In a monitoring job, failing tests or a coverage under the target do not fail the job: the result is in the notification and the reports. A test run that stops without a result (expired session, timeout, network errors) still fails it. Everywhere else, the command exits with code 1.
 
-You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 60 minutes.
+You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
 ## Command Behavior
 
 - Starts the Apex tests asynchronously, then checks every 30 seconds whether the test run is over.
 - Network errors while talking to the org (for example \`fetch failed\` during a long nightly run) are retried, so a short outage does not fail the job.
-- If the results still cannot be retrieved, the notification says so and no coverage metric is sent, instead of reporting failed tests and a 0% coverage.
+- If the test run does not end in time, or if its results cannot be retrieved, the notification says so with the test run id, and no failing classes or coverage are sent, instead of reporting failed tests and a 0% coverage.
 
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
 
@@ -51,10 +51,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Runs \`sf apex run test --test-level <level> --json\` without \`--wait\` to get the test run id.
-- Polls \`AsyncApexJob.Status\` until \`Completed\`, \`Failed\` or \`Aborted\`, within \`SFDX_TEST_WAIT_MINUTES\` (default 60).
+- Runs \`sf apex run test --test-level <level> --code-coverage --json\` without \`--wait\` to get the test run id.
+- Polls \`ApexTestRunResult.Status\` until the run is over, within \`SFDX_TEST_WAIT_MINUTES\` (default 120, also used when the value is not a positive integer).
 - Downloads results with \`sf apex get test --test-run-id <id> --code-coverage --result-format human --output-dir <reportDir>\`.
 - Transient network errors (\`fetch failed\`, \`ECONNRESET\`, \`ETIMEDOUT\`, \`socket hang up\`...) are retried on every call to the org.
+- The download of the results is retried up to 4 times, 30 seconds apart, as long as it returns no test outcome.
 
 </details>
 `;
@@ -94,6 +95,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
   protected testRunOutcome: string;
   protected testRunOutputString: string;
   protected testRunId: string | null = null;
+  protected testRunNoResultReason: ApexTestNoResultReason | null = null;
+  protected waitMinutes = 120;
   protected statusMessage: string;
   protected coverageTarget = 75.0;
   protected coverageValue = 0.0;
@@ -133,8 +136,8 @@ In agent mode, all interactive prompts are skipped and default values are used.
       await this.processApexTestsFailure();
     }
     // Tests results could not be retrieved: do not report fake failures or a 0% coverage
-    else if (this.testRunOutcome === 'NetworkError') {
-      this.processApexTestsNetworkError();
+    else if (this.testRunOutcome === 'NoResult') {
+      this.processApexTestsNoResult();
     }
     else if (this.testRunOutcome === 'Passed') {
       uxLog("success", this, c.green(t('apexTestsPassed', { testRunOutcome: this.testRunOutcome })));
@@ -143,7 +146,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     await this.checkOrgWideCoverage();
     await this.checkTestRunCoverage();
 
-    if (this.testRunOutcome !== 'NoApex' && this.testRunOutcome !== 'NetworkError') {
+    if (this.testRunOutcome !== 'NoApex' && this.testRunOutcome !== 'NoResult') {
       uxLog("other", this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
     }
 
@@ -156,13 +159,13 @@ In agent mode, all interactive prompts are skipped and default values are used.
       severity: this.notifSeverity,
       attachedFiles: this.notifAttachedFiles,
       logElements: this.failingTestClasses,
-      data: {
+      // No values when results could not be retrieved, so Grafana does not show a fake 0% coverage
+      data: this.testRunOutcome === 'NoResult' ? {} : {
         metric: this.failingTestClasses.length,
         coverageTarget: this.coverageTarget,
         coverageValue: this.coverageValue,
       },
-      // No metrics when results could not be retrieved, so Grafana does not show a fake 0% coverage
-      metrics: this.testRunOutcome === 'NetworkError' ? {} : {
+      metrics: this.testRunOutcome === 'NoResult' ? {} : {
         ApexTestsFailingClasses: this.failingTestClasses.length,
         ApexTestsCodeCoverage: this.coverageValue,
       },
@@ -187,12 +190,17 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
   private async runApexTests(testlevel: any, debugMode: any, orgUsername: string | null, conn: Connection) {
     const reportDir = await getReportDirectory();
+    const waitMinutesEnv = getEnvVar("SFDX_TEST_WAIT_MINUTES");
+    this.waitMinutes = parseWaitMinutes(waitMinutesEnv);
+    if (waitMinutesEnv && String(this.waitMinutes) !== waitMinutesEnv.trim()) {
+      uxLog("warning", this, c.yellow(t('apexTestsInvalidWaitMinutes', { value: waitMinutesEnv, waitMinutes: this.waitMinutes })));
+    }
     const testRunRes = await runApexTestsResilient({
       testLevel: testlevel,
       orgUsername,
       conn,
       reportDir,
-      waitMinutes: parseInt(getEnvVar("SFDX_TEST_WAIT_MINUTES") || '60', 10),
+      waitMinutes: this.waitMinutes,
       debugMode,
       commandThis: this,
     });
@@ -201,36 +209,43 @@ In agent mode, all interactive prompts are skipped and default values are used.
       this.testRunOutcome = 'NoApex';
       return;
     }
-    if (testRunRes.status === 'networkError') {
-      this.testRunOutcome = 'NetworkError';
+    if (testRunRes.status === 'noResult') {
+      this.testRunOutcome = 'NoResult';
+      this.testRunNoResultReason = testRunRes.reason;
       this.testRunId = testRunRes.testRunId;
       this.testRunCompleted = false;
       return;
     }
-    if (testRunRes.status === 'timeout') {
+    // Parse outcome value from logs with Regex
+    const outcomeMatch = /Outcome *(.*) */.exec(testRunRes.outputString);
+    this.testRunOutcome = outcomeMatch ? outcomeMatch[1].trim() : 'Failed';
+    // A run that could not give a result prints no outcome
+    this.testRunCompleted = outcomeMatch !== null;
+    if (testRunRes.commandFailed && this.testRunOutcome === 'Passed') {
       this.testRunOutcome = 'Failed';
-      this.testRunId = testRunRes.testRunId;
-      this.testRunCompleted = false;
-    }
-    else {
-      // Parse outcome value from logs with Regex
-      const outcomeMatch = /Outcome *(.*) */.exec(testRunRes.outputString);
-      this.testRunOutcome = outcomeMatch ? outcomeMatch[1].trim() : 'Failed';
-      // A run that could not give a result prints no outcome
-      this.testRunCompleted = outcomeMatch !== null;
-      if (testRunRes.commandFailed && this.testRunOutcome === 'Passed') {
-        this.testRunOutcome = 'Failed';
-      }
     }
     await generateApexCoverageOutputFile();
   }
 
-  private processApexTestsNetworkError() {
+  private processApexTestsNoResult() {
     this.notifSeverity = 'error';
-    uxLog("warning", this, c.yellow(t('apexTestsNetworkErrorUnableToGetResults', { testRunId: this.testRunId || '-' })));
     const testRunInfo = this.testRunId ? ` Check test run ${this.testRunId} in Setup > Apex Test Execution.` : '';
-    this.statusMessage = `Unable to get Apex test results because of network errors: tests may still have run in the org.${testRunInfo}`;
-    this.notifText = `Unable to get Apex test results in org ${this.orgMarkdown} because of network errors (tests may still have run in the org).${testRunInfo}`;
+    if (this.testRunNoResultReason === 'timeout') {
+      uxLog("warning", this, c.yellow(this.testRunOutputString));
+      this.statusMessage = `Apex test run did not complete within ${this.waitMinutes} minutes: tests may still be running in the org. Increase SFDX_TEST_WAIT_MINUTES to wait longer.${testRunInfo}`;
+      this.notifText = `Apex test run did not complete within ${this.waitMinutes} minutes in org ${this.orgMarkdown} (tests may still be running in the org).${testRunInfo}`;
+    }
+    else if (this.testRunNoResultReason === 'networkError') {
+      uxLog("warning", this, c.yellow(t('apexTestsNetworkErrorUnableToGetResults', { testRunId: this.testRunId || '-' })));
+      this.statusMessage = `Unable to get Apex test results because of network errors: tests may still have run in the org.${testRunInfo}`;
+      this.notifText = `Unable to get Apex test results in org ${this.orgMarkdown} because of network errors (tests may still have run in the org).${testRunInfo}`;
+    }
+    else {
+      const errorSummary = extractErrorSummary(this.testRunOutputString).replace(/\.+$/, '');
+      uxLog("warning", this, c.yellow(t('apexTestsUnableToGetResults', { testRunId: this.testRunId || '-', message: errorSummary })));
+      this.statusMessage = `Unable to get Apex test results: ${errorSummary}.${testRunInfo}`;
+      this.notifText = `Unable to get Apex test results in org ${this.orgMarkdown}: ${errorSummary}.${testRunInfo}`;
+    }
   }
 
   private async processApexTestsFailure() {
@@ -267,7 +282,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   private async checkOrgWideCoverage() {
-    if (this.testRunOutcome === 'NoApex' || this.testRunOutcome === 'NetworkError') {
+    if (this.testRunOutcome === 'NoApex' || this.testRunOutcome === 'NoResult') {
       return;
     }
     // Safely extract org-wide coverage from output to avoid crashes when regex doesn't match
@@ -314,7 +329,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
   }
 
   private async checkTestRunCoverage() {
-    if (this.testRunOutcome === 'NoApex' || this.testRunOutcome === 'NetworkError') {
+    if (this.testRunOutcome === 'NoApex' || this.testRunOutcome === 'NoResult') {
       return;
     }
     if (this.testRunOutputString.includes('Test Run Coverage')) {

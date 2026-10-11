@@ -17,17 +17,36 @@ const TRANSIENT_NETWORK_ERROR_PATTERNS = [
   'network timeout',
 ];
 
-const APEX_TEST_RUN_FINAL_STATUSES = ['Completed', 'Failed', 'Aborted'];
+// Same list as the Salesforce CLI, which reads ApexTestRunResult to know when a test run is over
+const APEX_TEST_RUN_FINAL_STATUSES = ['Completed', 'Failed', 'Aborted', 'Passed', 'Skipped'];
+const DEFAULT_WAIT_MINUTES = 120;
 const POLL_INTERVAL_SECONDS = 30;
 const MAX_CONSECUTIVE_NETWORK_ERRORS = 20;
-const MAX_COMMAND_ATTEMPTS = 5;
+// Polls without any ApexTestRunResult row before asking sf apex get test what happened to the run
+const MAX_CONSECUTIVE_MISSING_STATUS = 4;
+const COMMAND_RETRIES = 4;
 const COMMAND_RETRY_DELAY_SECONDS = 30;
+const ERROR_SUMMARY_MAX_LENGTH = 300;
+
+export type ApexTestNoResultReason = 'networkError' | 'timeout' | 'error';
 
 export type ApexTestRunResult =
   | { status: 'completed'; outputString: string; commandFailed: boolean }
   | { status: 'noApex'; outputString: string }
-  | { status: 'timeout'; outputString: string; testRunId: string }
-  | { status: 'networkError'; outputString: string; testRunId: string | null };
+  | { status: 'noResult'; reason: ApexTestNoResultReason; outputString: string; testRunId: string | null };
+
+export interface ApexTestRunOptions {
+  testLevel: string;
+  orgUsername: string | null;
+  conn: Connection;
+  reportDir: string;
+  waitMinutes: number;
+  debugMode: boolean;
+  commandThis: any;
+  // For unit tests
+  execCommandFn?: typeof execCommand;
+  sleepFn?: (seconds: number) => Promise<void>;
+}
 
 export function isTransientNetworkError(message: string): boolean {
   const lowerMessage = (message || '').toLowerCase();
@@ -45,86 +64,66 @@ export function isNoApexError(message: string): boolean {
   );
 }
 
-async function sleep(seconds: number): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+// Minutes to wait for the test run: a value that is not a positive integer gives the default
+export function parseWaitMinutes(value: string | null | undefined): number {
+  const trimmedValue = (value || '').trim();
+  if (!/^\d+$/.test(trimmedValue) || parseInt(trimmedValue, 10) === 0) {
+    return DEFAULT_WAIT_MINUTES;
+  }
+  return parseInt(trimmedValue, 10);
 }
 
-function logNetworkRetry(commandThis: any, attempt: number, maxAttempts: number, message: string) {
-  const firstLine = (message || '').split('\n').find((line) => line.trim() !== '') || message;
-  uxLog("warning", commandThis, c.yellow(t('apexTestsNetworkErrorRetrying', { attempt, maxAttempts, message: firstLine.trim() })));
+// Finds the test run id in an output that could not be parsed as a single JSON document
+export function extractTestRunId(output: string): string | null {
+  const match = /"testRunId":\s*"(707[a-zA-Z0-9]{12}(?:[a-zA-Z0-9]{3})?)"/.exec(output || '');
+  return match ? match[1] : null;
+}
+
+// One line telling why a sf command failed, for the notification
+export function extractErrorSummary(output: string): string {
+  const lines = (output || '').split('\n').map((line) => line.trim()).filter((line) => line !== '');
+  const jsonMessage = /"message":\s*"((?:[^"\\]|\\.)*)"/.exec(output || '');
+  const summary = jsonMessage
+    ? jsonMessage[1].replace(/\\"/g, '"').replace(/\\n/g, ' ')
+    : lines.find((line) => line.startsWith('Error')) || lines[0] || '';
+  return summary.length > ERROR_SUMMARY_MAX_LENGTH ? summary.substring(0, ERROR_SUMMARY_MAX_LENGTH) + '...' : summary;
 }
 
 // Run Apex tests asynchronously, then poll the org until the run is over, then download results.
 // Each call to the org is retried when the network fails, so a long test run survives a short outage.
-export async function runApexTestsResilient(options: {
-  testLevel: string;
-  orgUsername: string | null;
-  conn: Connection;
-  reportDir: string;
-  waitMinutes: number;
-  debugMode: boolean;
-  commandThis: any;
-}): Promise<ApexTestRunResult> {
-  const { testLevel, orgUsername, conn, reportDir, waitMinutes, debugMode, commandThis } = options;
+export async function runApexTestsResilient(options: ApexTestRunOptions): Promise<ApexTestRunResult> {
+  const { testLevel, orgUsername, reportDir, debugMode, commandThis } = options;
+  const exec = options.execCommandFn || execCommand;
   const targetOrgArg = orgUsername ? ` --target-org ${orgUsername}` : '';
 
-  // Start the test run
-  const startCommand = 'sf apex run test' + ` --test-level ${testLevel}` + targetOrgArg + ' --json';
+  // Start the test run. Without --code-coverage, the org does not collect coverage for the run
+  const startCommand = 'sf apex run test' + ` --test-level ${testLevel}` + ' --code-coverage' + targetOrgArg + ' --json';
   let testRunId: string | null = null;
-  for (let attempt = 1; attempt <= MAX_COMMAND_ATTEMPTS && testRunId === null; attempt++) {
-    const startRes = await execCommand(startCommand, commandThis, { fail: false, output: true, debug: debugMode });
-    if (startRes?.result?.testRunId) {
-      testRunId = startRes.result.testRunId;
-      break;
-    }
-    const errorMessage = startRes?.errorMessage || startRes?.message || JSON.stringify(startRes);
-    if (isNoApexError(errorMessage)) {
-      return { status: 'noApex', outputString: errorMessage };
-    }
-    if (!isTransientNetworkError(errorMessage)) {
-      return { status: 'completed', outputString: errorMessage, commandFailed: true };
-    }
-    if (attempt === MAX_COMMAND_ATTEMPTS) {
-      return { status: 'networkError', outputString: errorMessage, testRunId: null };
-    }
-    logNetworkRetry(commandThis, attempt, MAX_COMMAND_ATTEMPTS, errorMessage);
-    await sleep(COMMAND_RETRY_DELAY_SECONDS);
+  let startOutput = '';
+  try {
+    const startRes = await exec(startCommand, commandThis, {
+      fail: true,
+      output: true,
+      debug: debugMode,
+      retry: buildCommandRetry(isTransientNetworkError),
+    });
+    startOutput = startRes?.stdout || JSON.stringify(startRes);
+    // A CLI warning printed before the JSON makes it unparseable, but the test run is started
+    testRunId = startRes?.result?.testRunId || extractTestRunId(startOutput);
+  } catch (e) {
+    startOutput = (e as Error).message || String(e);
   }
-  uxLog("log", commandThis, c.grey(t('apexTestRunStartedWaiting', { testRunId, waitMinutes })));
+  if (testRunId === null) {
+    if (isNoApexError(startOutput)) {
+      return { status: 'noApex', outputString: startOutput };
+    }
+    return buildNoResult(startOutput, null);
+  }
+  uxLog("log", commandThis, c.grey(t('apexTestRunStartedWaiting', { testRunId, waitMinutes: options.waitMinutes })));
 
-  // Wait for the test run to be over
-  const deadline = Date.now() + waitMinutes * 60 * 1000;
-  let consecutiveNetworkErrors = 0;
-  let lastStatus = '';
-  let isOver = false;
-  while (!isOver) {
-    if (Date.now() > deadline) {
-      return {
-        status: 'timeout',
-        outputString: t('apexTestRunTimeout', { testRunId, waitMinutes }),
-        testRunId: testRunId as string,
-      };
-    }
-    try {
-      const jobRes = await conn.query(`SELECT Status FROM AsyncApexJob WHERE Id = '${testRunId}'`);
-      consecutiveNetworkErrors = 0;
-      const status = (jobRes.records[0] as any)?.Status || 'Unknown';
-      if (status !== lastStatus) {
-        uxLog("log", commandThis, c.grey(t('apexTestRunStatus', { testRunId, status })));
-        lastStatus = status;
-      }
-      isOver = APEX_TEST_RUN_FINAL_STATUSES.includes(status);
-    } catch (e) {
-      const errorMessage = (e as Error).message || String(e);
-      consecutiveNetworkErrors++;
-      if (!isTransientNetworkError(errorMessage) || consecutiveNetworkErrors >= MAX_CONSECUTIVE_NETWORK_ERRORS) {
-        return { status: 'networkError', outputString: errorMessage, testRunId };
-      }
-      logNetworkRetry(commandThis, consecutiveNetworkErrors, MAX_CONSECUTIVE_NETWORK_ERRORS, errorMessage);
-    }
-    if (!isOver) {
-      await sleep(POLL_INTERVAL_SECONDS);
-    }
+  const waitRes = await waitForTestRunEnd(testRunId, options);
+  if (waitRes !== null) {
+    return waitRes;
   }
 
   // Get test results (same output as sf apex run test with --wait)
@@ -135,22 +134,98 @@ export async function runApexTestsResilient(options: {
     ' --result-format human' +
     ` --output-dir "${reportDir}"` +
     targetOrgArg;
-  for (let attempt = 1; attempt <= MAX_COMMAND_ATTEMPTS; attempt++) {
+  try {
+    const getRes = await exec(getCommand, commandThis, {
+      fail: true,
+      output: true,
+      debug: debugMode,
+      // Not only on network errors: just after the end of a run, the org can refuse to give its results for a moment
+      // (seen: "invalid cross reference id" while another test run was starting)
+      retry: buildCommandRetry((output) => !hasTestRunOutcome(output)),
+    });
+    return { status: 'completed', outputString: getRes.stdout + getRes.stderr, commandFailed: false };
+  } catch (e) {
+    const errorMessage = (e as Error).message || String(e);
+    // Failed tests make the command exit with an error code, but the output contains the test results
+    if (hasTestRunOutcome(errorMessage)) {
+      return { status: 'completed', outputString: errorMessage, commandFailed: true };
+    }
+    return buildNoResult(errorMessage, testRunId);
+  }
+}
+
+// Returns null when the test run is over, or the reason why its end could not be observed
+async function waitForTestRunEnd(testRunId: string, options: ApexTestRunOptions): Promise<ApexTestRunResult | null> {
+  const { conn, waitMinutes, commandThis } = options;
+  const sleep = options.sleepFn || defaultSleep;
+  const deadline = Date.now() + waitMinutes * 60 * 1000;
+  let consecutiveNetworkErrors = 0;
+  let consecutiveMissingStatus = 0;
+  let lastStatus = '';
+  for (; ;) {
     try {
-      const getRes = await execCommand(getCommand, commandThis, { fail: true, output: true, debug: debugMode });
-      return { status: 'completed', outputString: getRes.stdout + getRes.stderr, commandFailed: false };
+      const runRes = await conn.tooling.query(`SELECT Status FROM ApexTestRunResult WHERE AsyncApexJobId = '${testRunId}'`);
+      consecutiveNetworkErrors = 0;
+      const status: string = (runRes.records[0] as any)?.Status || '';
+      if (status === '') {
+        consecutiveMissingStatus++;
+        if (consecutiveMissingStatus >= MAX_CONSECUTIVE_MISSING_STATUS) {
+          return null;
+        }
+      } else {
+        consecutiveMissingStatus = 0;
+        if (status !== lastStatus) {
+          uxLog("log", commandThis, c.grey(t('apexTestRunStatus', { testRunId, status })));
+          lastStatus = status;
+        }
+        if (APEX_TEST_RUN_FINAL_STATUSES.includes(status)) {
+          return null;
+        }
+      }
     } catch (e) {
       const errorMessage = (e as Error).message || String(e);
-      // Failed tests make the command exit with an error code, but the output contains the test results
-      if (/Outcome\s+\S/.test(errorMessage) || !isTransientNetworkError(errorMessage)) {
-        return { status: 'completed', outputString: errorMessage, commandFailed: true };
+      consecutiveNetworkErrors++;
+      if (!isTransientNetworkError(errorMessage) || consecutiveNetworkErrors >= MAX_CONSECUTIVE_NETWORK_ERRORS) {
+        return buildNoResult(errorMessage, testRunId);
       }
-      if (attempt === MAX_COMMAND_ATTEMPTS) {
-        return { status: 'networkError', outputString: errorMessage, testRunId };
-      }
-      logNetworkRetry(commandThis, attempt, MAX_COMMAND_ATTEMPTS, errorMessage);
-      await sleep(COMMAND_RETRY_DELAY_SECONDS);
+      logNetworkRetry(commandThis, consecutiveNetworkErrors, errorMessage);
     }
+    // Checked after the query, so a run that ends during the last wait is not reported as a timeout
+    const remainingSeconds = Math.ceil((deadline - Date.now()) / 1000);
+    if (remainingSeconds <= 0) {
+      return {
+        status: 'noResult',
+        reason: 'timeout',
+        outputString: t('apexTestRunTimeout', { testRunId, waitMinutes }),
+        testRunId,
+      };
+    }
+    await sleep(Math.min(POLL_INTERVAL_SECONDS, remainingSeconds));
   }
-  return { status: 'networkError', outputString: '', testRunId };
+}
+
+function buildCommandRetry(retryIf: (output: string) => boolean) {
+  return { retryMaxAttempts: COMMAND_RETRIES, retryDelay: COMMAND_RETRY_DELAY_SECONDS, retryIf };
+}
+
+function buildNoResult(outputString: string, testRunId: string | null): ApexTestRunResult {
+  return {
+    status: 'noResult',
+    reason: isTransientNetworkError(outputString) ? 'networkError' : 'error',
+    outputString,
+    testRunId,
+  };
+}
+
+function hasTestRunOutcome(output: string): boolean {
+  return /Outcome\s+\S/.test(output);
+}
+
+function logNetworkRetry(commandThis: any, attempt: number, message: string) {
+  const firstLine = (message || '').split('\n').find((line) => line.trim() !== '') || message;
+  uxLog("warning", commandThis, c.yellow(t('apexTestsNetworkErrorRetrying', { attempt, maxAttempts: MAX_CONSECUTIVE_NETWORK_ERRORS, message: firstLine.trim() })));
+}
+
+async function defaultSleep(seconds: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
