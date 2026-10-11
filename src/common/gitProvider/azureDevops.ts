@@ -1,4 +1,6 @@
-import { buildPrCreateUrl, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { CiRunCandidate, classifyJobKind, selectCiRuns } from "./utils/jobKindUtils.js";
+import { Build, BuildQueryOrder, BuildReason, BuildResult, BuildStatus, TaskResult } from "azure-devops-node-api/interfaces/BuildInterfaces.js";
 import { toAzureDevopsWording } from "./utils/utilsAzureDevopsWording.js";
 import * as azdev from "azure-devops-node-api";
 import c from "chalk";
@@ -12,7 +14,7 @@ import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prComm
 import { SfError } from "@salesforce/core";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
-import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatches, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 import { parseAzureBuildUrl } from "./utils/jobUrlUtils.js";
 import { pipeline } from "stream/promises";
@@ -27,9 +29,25 @@ export class AzureDevopsProvider extends GitProviderRoot {
   // Download address of the artifacts listed by listJobArtifacts, by "<build id>/<artifact name>"
   private artifactDownloadUrls = new Map<string, string>();
   public attachmentsWorkItemTitle: string = process.env.AZURE_ATTACHMENTS_WORK_ITEM_TITLE || 'sfdx-hardis tech attachments'
+  // Set when the provider is built for another repository than the one of the current folder
+  private otherRepository: { remoteUrl: string; teamProject: string; repositoryName: string } | null = null;
+  // GUID of the repository, asked once to the Git API when only its name is known
+  private resolvedRepositoryGuid: string | null = null;
 
-  constructor() {
+  constructor(repository?: GitProviderRepositorySettings) {
     super();
+    if (repository) {
+      // Another repository than the one of the current folder: nothing is read from the CI context
+      const parsed = AzureDevopsProvider.parseAzureRepoUrl(repository.remoteUrl);
+      if (!parsed) {
+        throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: repository.remoteUrl, provider: "Azure DevOps" }));
+      }
+      this.otherRepository = { remoteUrl: repository.remoteUrl, teamProject: parsed.teamProject, repositoryName: parsed.repositoryId };
+      this.serverUrl = parsed.collectionUri;
+      this.token = repository.token;
+      this.azureApi = new azdev.WebApi(this.serverUrl, azdev.getHandlerFromToken(this.token));
+      return;
+    }
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = process.env.SYSTEM_COLLECTIONURI || "";
     // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
@@ -374,16 +392,17 @@ ${this.getPipelineVariablesConfig()}
     status?: string,
     pullRequestStatus?: "open" | "merged" | "abandoned",
     targetBranch?: string,
-    minDate?: Date
+    minDate?: Date,
+    withoutComments?: boolean
   } = {}): Promise<CommonPullRequestInfo[] | null> {
     // Get Azure Git API
     const azureGitApi = await this.azureApi.getGitApi();
-    const repositoryId = process.env.BUILD_REPOSITORY_ID || null;
+    const repositoryId = this.repositoryIdOrName;
     if (repositoryId == null) {
       uxLog("warning", this, c.yellow('[Azure Integration] ' + t('azureIntegrationNoBuildRepositoryId')));
       return [];
     }
-    const teamProject = process.env.SYSTEM_TEAMPROJECT || null;
+    const teamProject = this.teamProjectName;
     if (teamProject == null) {
       uxLog("warning", this, c.yellow("[Azure Integration] Unable to find SYSTEM_TEAMPROJECT"));
       return [];
@@ -414,6 +433,19 @@ ${this.getPipelineVariablesConfig()}
     // Process request
     uxLog("action", this, c.cyan(t('callingAzureApiToListPullRequests')));
     uxLog("log", this, c.grey(t('constraint', { JSON: JSON.stringify(queryConstraint, null, 2) })));
+
+    if (filters.withoutComments) {
+      // The API serves the listing by pages: all of them, or the oldest Pull Requests of the period are lost
+      const listed: GitPullRequest[] = [];
+      for (let skip = 0; ; skip += AzureDevopsProvider.PULL_REQUESTS_PAGE_SIZE) {
+        const page = (await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject, undefined, skip, AzureDevopsProvider.PULL_REQUESTS_PAGE_SIZE)) || [];
+        listed.push(...page);
+        if (page.length < AzureDevopsProvider.PULL_REQUESTS_PAGE_SIZE) {
+          break;
+        }
+      }
+      return listed.map((pullRequest) => this.completePullRequestInfo(pullRequest));
+    }
 
     // List pull requests
     const pullRequests = await azureGitApi.getPullRequests(repositoryId, queryConstraint, teamProject);
@@ -906,6 +938,11 @@ ${getBannerMarkdownAndLink()}
   // Web URL of a Pull Request. The repository name variable is exposed as BUILD_REPOSITORY_NAME by
   // Azure Pipelines: the BUILD_REPOSITORYNAME spelling is kept as a fallback for older agents.
   private buildPullRequestWebUrl(pullRequestId: number | undefined): string {
+    if (this.otherRepository) {
+      return `${this.serverUrl}${encodeURIComponent(this.otherRepository.teamProject)}/_git/${encodeURIComponent(
+        this.otherRepository.repositoryName,
+      )}/pullrequest/${pullRequestId}`;
+    }
     const repositoryName = process.env.BUILD_REPOSITORY_NAME || process.env.BUILD_REPOSITORYNAME || "";
     return `${process.env.SYSTEM_COLLECTIONURI}${encodeURIComponent(
       process.env.SYSTEM_TEAMPROJECT || "",
@@ -963,7 +1000,7 @@ ${getBannerMarkdownAndLink()}
 
   private async pullRequestCacheRepositoryKey(): Promise<string> {
     if (this.cachedRepositoryKey === null) {
-      this.cachedRepositoryKey = repositoryKeyFromRemoteUrl((await getGitRepoUrl()) || "");
+      this.cachedRepositoryKey = repositoryKeyFromRemoteUrl(this.otherRepository ? this.otherRepository.remoteUrl : (await getGitRepoUrl()) || "");
     }
     return this.cachedRepositoryKey;
   }
@@ -1444,6 +1481,25 @@ ${getBannerMarkdownAndLink()}
     uxLog("log", this, c.grey('[Azure DevOps] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
   }
 
+  // A build is what Azure DevOps lists, and sfdx-hardis installs one pipeline per yml file
+  // (Deployment, DeploymentCheck, MegaLinter): the name of the pipeline says what the build does
+  public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
+    const candidates: CiRunCandidate[] = [];
+    if (filters.kinds.includes('deployment')) {
+      for (const branch of filters.branches) {
+        const builds = await this.listCompletedBuildsSince(filters.minDate, { branchName: `refs/heads/${branch}` });
+        // A scheduled build of the branch deploys nothing new, and a Pull Request build is a check
+        const pushBuilds = builds.filter((build) => AzureDevopsProvider.PUSH_BUILD_REASONS.includes(build.reason as BuildReason));
+        candidates.push(...this.toCiRunCandidates(pushBuilds, 'push'));
+      }
+    }
+    if (filters.kinds.includes('validation')) {
+      const builds = await this.listCompletedBuildsSince(filters.minDate, { reasonFilter: BuildReason.PullRequest });
+      candidates.push(...this.toCiRunCandidates(builds.filter((build) => build.reason === BuildReason.PullRequest), 'pullRequest'));
+    }
+    return selectCiRuns(await this.readOwnJobOfBuilds(candidates), filters.kinds);
+  }
+
   // The build a job URL points to, refused when it is not a build of this project
   private parseOwnBuildUrl(jobUrl: string): { teamProject: string; buildId: number } {
     const build = parseAzureBuildUrl(jobUrl);
@@ -1454,7 +1510,216 @@ ${getBannerMarkdownAndLink()}
     }
     return { teamProject: build.teamProject, buildId: build.buildId };
   }
+
+  private static readonly PUSH_BUILD_REASONS = [BuildReason.IndividualCI, BuildReason.BatchedCI, BuildReason.Manual];
+
+  private static readonly BUILDS_PAGE_SIZE = 1000;
+
+  private static readonly PULL_REQUESTS_PAGE_SIZE = 100;
+
+  // Build API getBuilds: the completed builds of this repository finished since minDate, oldest
+  // first. azure-devops-node-api does not return the continuation token of the REST API (it comes
+  // in a response header the client drops), so a full page is followed by the same query starting
+  // at the finish time of its last build.
+  private async listCompletedBuildsSince(minDate: Date, query: { branchName?: string; reasonFilter?: BuildReason }): Promise<Build[]> {
+    const teamProject = this.teamProjectName;
+    if (!teamProject) {
+      throw new SfError("[Azure DevOps] " + t('gitProviderCiRunsRepositoryUnknown', { variables: "SYSTEM_TEAMPROJECT" }));
+    }
+    const repositoryGuid = await this.getRepositoryGuid();
+    const buildApi = await this.azureApi.getBuildApi();
+    const buildsById = new Map<number, Build>();
+    let minTime = minDate;
+    for (; ;) {
+      const page = (await buildApi.getBuilds(
+        teamProject,
+        undefined, // definitions
+        undefined, // queues
+        undefined, // buildNumber
+        minTime,
+        undefined, // maxTime
+        undefined, // requestedFor
+        query.reasonFilter,
+        BuildStatus.Completed,
+        undefined, // resultFilter
+        undefined, // tagFilters
+        undefined, // properties
+        AzureDevopsProvider.BUILDS_PAGE_SIZE,
+        undefined, // continuationToken
+        undefined, // maxBuildsPerDefinition
+        undefined, // deletedFilter
+        BuildQueryOrder.FinishTimeAscending,
+        query.branchName,
+        undefined, // buildIds
+        repositoryGuid,
+        "TfsGit",
+      )) || [];
+      const sizeBefore = buildsById.size;
+      for (const build of page) {
+        buildsById.set(build.id || 0, build);
+      }
+      const lastFinishTime = page.length > 0 ? page[page.length - 1].finishTime : undefined;
+      // Nothing new means a whole page finished at the same instant: stop instead of asking it forever
+      if (page.length < AzureDevopsProvider.BUILDS_PAGE_SIZE || !lastFinishTime || buildsById.size === sizeBefore) {
+        break;
+      }
+      minTime = new Date(lastFinishTime);
+    }
+    return [...buildsById.values()];
+  }
+
+  // The Build API filters on the GUID of a repository. A pipeline job has it in BUILD_REPOSITORY_ID;
+  // anywhere else only the name read from the git remote is known, and the Git API gives the GUID.
+  private async getRepositoryGuid(): Promise<string> {
+    if (this.resolvedRepositoryGuid === null) {
+      const repositoryIdOrName = this.repositoryIdOrName;
+      if (!repositoryIdOrName) {
+        throw new SfError("[Azure DevOps] " + t('gitProviderCiRunsRepositoryUnknown', { variables: "BUILD_REPOSITORY_ID" }));
+      }
+      if (AZURE_GUID_REGEX.test(repositoryIdOrName)) {
+        this.resolvedRepositoryGuid = repositoryIdOrName;
+      } else {
+        const azureGitApi = await this.azureApi.getGitApi();
+        const repository = await azureGitApi.getRepository(repositoryIdOrName, this.teamProjectName || undefined);
+        if (!repository?.id) {
+          throw new SfError("[Azure DevOps] " + t('gitProviderRepositoryNotFound', { repository: repositoryIdOrName, project: this.teamProjectName || "" }));
+        }
+        this.resolvedRepositoryGuid = repository.id;
+      }
+    }
+    return this.resolvedRepositoryGuid;
+  }
+
+  // The name of an Azure pipeline is whatever was typed when it was created, and a build can run
+  // other jobs (MegaLinter next to the deployment check). What a build did is read from its own
+  // job, named in the yml sfdx-hardis installs (Deployment, DeploymentCheck): one timeline call per
+  // build. A build without such a job keeps the name and the result of its pipeline.
+  private async readOwnJobOfBuilds(candidates: CiRunCandidate[]): Promise<CiRunCandidate[]> {
+    if (candidates.length === 0) {
+      return [];
+    }
+    const buildApi = await this.azureApi.getBuildApi();
+    const teamProject = this.teamProjectName || "";
+    const withJobs = await mapInAdaptiveBatches(candidates, async (candidate) => {
+      const timeline = await buildApi.getBuildTimeline(teamProject, Number(candidate.id));
+      const ownKind = candidate.trigger === 'pullRequest' ? 'validation' : 'deployment';
+      const job = (timeline?.records || []).find((record) => record.type === 'Job' && classifyJobKind(record.name) === ownKind);
+      if (!job) {
+        return candidate;
+      }
+      const status = AzureDevopsProvider.toJobCiRunStatus(job.result);
+      // The job was skipped: nothing was deployed nor checked
+      if (!status) {
+        return null;
+      }
+      return {
+        ...candidate,
+        name: job.name || candidate.name,
+        status,
+        startedAt: AzureDevopsProvider.toIsoDate(job.startTime) || candidate.startedAt,
+        finishedAt: AzureDevopsProvider.toIsoDate(job.finishTime) || candidate.finishedAt,
+      };
+    }, { sizes: PROVIDER_BATCH_PROFILES.azure });
+    return withJobs.filter((candidate): candidate is CiRunCandidate => candidate != null);
+  }
+
+  private toCiRunCandidates(builds: Build[], trigger: 'push' | 'pullRequest'): CiRunCandidate[] {
+    const candidates: CiRunCandidate[] = [];
+    for (const build of builds) {
+      const status = AzureDevopsProvider.toCiRunStatus(build.result);
+      if (!status) {
+        continue;
+      }
+      const queuedAt = AzureDevopsProvider.toIsoDate(build.queueTime);
+      candidates.push({
+        id: String(build.id),
+        name: build.definition?.name || '',
+        trigger,
+        branch: trigger === 'push'
+          ? (build.sourceBranch || '').replace("refs/heads/", "")
+          : AzureDevopsProvider.getBuildPullRequestBranch(build, 'target'),
+        ...(trigger === 'pullRequest'
+          ? { pullRequestId: AzureDevopsProvider.getBuildPullRequestId(build), sourceBranch: AzureDevopsProvider.getBuildPullRequestBranch(build, 'source') }
+          : {}),
+        status,
+        queuedAt,
+        startedAt: AzureDevopsProvider.toIsoDate(build.startTime) || queuedAt,
+        finishedAt: AzureDevopsProvider.toIsoDate(build.finishTime),
+        commitSha: build.sourceVersion || '',
+        triggeredBy: build.requestedFor?.displayName || build.requestedBy?.displayName || '',
+        webUrl: build._links?.web?.href || '',
+      });
+    }
+    return candidates;
+  }
+
+  // A build without result, or with a result that is neither of these, deployed nothing and failed nothing
+  private static toCiRunStatus(result: BuildResult | undefined): CiRunStatus | null {
+    if (result === BuildResult.Succeeded || result === BuildResult.PartiallySucceeded) {
+      return 'succeeded';
+    }
+    if (result === BuildResult.Failed) {
+      return 'failed';
+    }
+    if (result === BuildResult.Canceled) {
+      return 'canceled';
+    }
+    return null;
+  }
+
+  private static toJobCiRunStatus(result: TaskResult | undefined): CiRunStatus | null {
+    if (result === TaskResult.Succeeded || result === TaskResult.SucceededWithIssues) {
+      return 'succeeded';
+    }
+    if (result === TaskResult.Failed) {
+      return 'failed';
+    }
+    if (result === TaskResult.Canceled) {
+      return 'canceled';
+    }
+    return null;
+  }
+
+  // The source or the target branch of the Pull Request a build checks. Azure Repos writes them in
+  // the parameters of the build (a JSON string), other triggers in triggerInfo
+  private static getBuildPullRequestBranch(build: Build, side: 'source' | 'target'): string {
+    let parameters: any = {};
+    try {
+      parameters = JSON.parse(build.parameters || '{}');
+    } catch {
+      // Parameters that are not JSON say nothing about the Pull Request
+    }
+    const branch = parameters?.[`system.pullRequest.${side}Branch`] || build.triggerInfo?.[`pr.${side}Branch`] || '';
+    return String(branch).replace("refs/heads/", "");
+  }
+
+  // The number of the Pull Request a build checks: told by the trigger, else read from the
+  // refs/pull/<id>/merge branch the build ran on
+  private static getBuildPullRequestId(build: Build): string {
+    return build.triggerInfo?.['pr.number'] || (build.sourceBranch || '').match(/^refs\/pull\/(\d+)\//)?.[1] || '';
+  }
+
+  private static toIsoDate(date: Date | string | undefined): string {
+    if (!date) {
+      return '';
+    }
+    const parsed = new Date(date);
+    return isNaN(parsed.getTime()) ? '' : parsed.toISOString();
+  }
+
+  // Team project and repository of this provider: the ones of the repository it was built for,
+  // else the ones of the CI context, read when asked since they can be set after the constructor
+  private get teamProjectName(): string | null {
+    return this.otherRepository ? this.otherRepository.teamProject : process.env.SYSTEM_TEAMPROJECT || null;
+  }
+
+  // A GUID in a pipeline job, the name of the repository anywhere else
+  private get repositoryIdOrName(): string | null {
+    return this.otherRepository ? this.otherRepository.repositoryName : process.env.BUILD_REPOSITORY_ID || null;
+  }
 }
+
+const AZURE_GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // The team project of the repository. In an Azure Pipelines job BUILD_REPOSITORY_ID is a GUID and
 // the API needs nothing else; outside CI (VS Code, a terminal) it is the repository name read from
@@ -1464,7 +1729,7 @@ ${getBannerMarkdownAndLink()}
 // of another, and SYSTEM_TEAMPROJECT is then the project of the pipeline, not of the repository.
 function azureTeamProject(): string | undefined {
   const repositoryId = process.env.BUILD_REPOSITORY_ID || "";
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(repositoryId)) {
+  if (AZURE_GUID_REGEX.test(repositoryId)) {
     return undefined;
   }
   return process.env.SYSTEM_TEAMPROJECT || undefined;

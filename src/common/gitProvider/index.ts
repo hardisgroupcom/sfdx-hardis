@@ -754,6 +754,53 @@ export abstract class GitProvider {
   }
 
   /**
+   * Provider of a repository other than the one of the current folder (the deployment repository,
+   * read from a monitoring repository). It is never the cached instance of the current repository.
+   *
+   * The token is options.token when given. Otherwise the token the environment holds for the
+   * provider of that repository is tried: it works when both repositories are on the same provider
+   * and the token can read both. tokenVariableName is the variable the error messages name.
+   */
+  static getInstanceForRepository(remoteUrl: string, options: { token?: string | null; tokenVariableName: string }): GitProviderRoot {
+    const environmentTokens: Record<GitProviderType, string> = {
+      azure: process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || "",
+      gitlab: process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "",
+      github: process.env.CI_SFDX_HARDIS_GITHUB_TOKEN || process.env.PAT || process.env.GITHUB_TOKEN || "",
+      bitbucket: process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || "",
+    };
+    const typesWithToken = (Object.keys(environmentTokens) as GitProviderType[]).filter((type) => environmentTokens[type] !== "");
+    // A self-managed host does not name its product: it is then taken as the provider of the
+    // current repository, when the environment holds the token of one provider only
+    const providerType = GitProvider.getProviderTypeFromRemoteUrl(remoteUrl) || (typesWithToken.length === 1 ? typesWithToken[0] : null);
+    if (!providerType && (options.token || typesWithToken.length > 1)) {
+      throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: remoteUrl, provider: "GitHub, GitLab, Azure DevOps or Bitbucket" }));
+    }
+    const token = options.token || (providerType ? environmentTokens[providerType] : "");
+    if (!providerType || !token) {
+      if (providerType && typesWithToken.length > 0) {
+        throw new SfError(t('gitProviderRepositoryTokenWrongProvider', {
+          currentProvider: typesWithToken[0],
+          targetProvider: providerType,
+          repository: remoteUrl,
+          tokenVariable: options.tokenVariableName,
+        }));
+      }
+      throw new SfError(t('gitProviderRepositoryNoToken', { repository: remoteUrl, tokenVariable: options.tokenVariableName }));
+    }
+    const repository = { remoteUrl, token };
+    switch (providerType) {
+      case "azure":
+        return new AzureDevopsProvider(repository);
+      case "gitlab":
+        return new GitlabProvider(repository);
+      case "github":
+        return new GithubProvider(repository);
+      default:
+        return new BitbucketProvider(repository);
+    }
+  }
+
+  /**
    * Which provider class a remote URL belongs to, when no token tells us. The host is the only
    * reliable signal for a self-managed instance, and the GitHub and Bitbucket URL shapes are the
    * same, so the CI variables of the running job break the ties the host cannot.

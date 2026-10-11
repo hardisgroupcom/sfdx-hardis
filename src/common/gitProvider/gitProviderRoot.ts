@@ -138,7 +138,10 @@ export abstract class GitProviderRoot {
   public async listPullRequests(filters: {
     status?: string,
     targetBranch?: string,
-    minDate?: Date
+    minDate?: Date,
+    // Only what the listing gives: no comment, no completed description. Much faster on a provider
+    // that needs a call per Pull Request for them
+    withoutComments?: boolean
   } = {}): Promise<CommonPullRequestInfo[] | null> {
     uxLog("other", this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
     return null;
@@ -438,6 +441,57 @@ export abstract class GitProviderRoot {
   public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
     throw new SfError(`Method downloadJobArtifact is not implemented on ${this.getLabel()}`);
   }
+
+  // Finished CI runs since minDate: the deployment jobs of the branches asked for, and the
+  // deployment checks of the Pull Requests. DORA metrics are computed from them, so an API error
+  // is thrown, never turned into an empty list that would read as "no deployment"
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
+    throw new SfError(`Method listCiRuns is not implemented on ${this.getLabel()}`);
+  }
+}
+
+// A repository other than the one of the current folder (the deployment repository, read from a
+// monitoring repository). Every provider takes it as its optional constructor argument
+export interface GitProviderRepositorySettings {
+  remoteUrl: string;
+  token: string;
+}
+
+export type CiRunKind = 'deployment' | 'validation';
+
+export type CiRunStatus = 'succeeded' | 'failed' | 'canceled';
+
+export interface CiRunFilters {
+  // Branches whose deployment runs are wanted
+  branches: string[];
+  minDate: Date;
+  kinds: CiRunKind[];
+}
+
+export interface CommonCiRun {
+  id: string;
+  name: string;
+  kind: CiRunKind;
+  // deployment: the branch deployed. validation: the target branch of the Pull Request, empty when
+  // the provider does not say it (the caller then finds it from pullRequestId or sourceBranch)
+  branch: string;
+  // deployment only: the run was triggered by a push to the branch but its job is not named as a
+  // deployment. It counts when no run of the branch is named as one (a project that renamed its jobs)
+  unnamed?: boolean;
+  // validation only: provider-native number of the Pull Request, as a string
+  pullRequestId?: string;
+  // validation only: the branch of the Pull Request, when the provider names neither its target
+  // nor its number (GitHub forgets both once the Pull Request is closed)
+  sourceBranch?: string;
+  status: CiRunStatus;
+  // ISO dates. queuedAt is when the run was asked for, startedAt when a runner picked it
+  queuedAt: string;
+  startedAt: string;
+  finishedAt: string;
+  commitSha: string;
+  triggeredBy: string;
+  webUrl: string;
 }
 
 export interface JobArtifact {
