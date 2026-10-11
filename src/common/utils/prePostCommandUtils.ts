@@ -392,7 +392,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
   let skipAction = false;
 
   // Skip if we are in another context than the requested one
-  const cmdContext = getEffectiveActionContext(cmd);
+  const cmdContext = getEffectiveActionContext(cmd, ctx.deployWhen);
   if (cmdContext === "check-deployment-only" && ctx.checkOnly === false) {
     uxLog("action", this, c.grey(`[DeploymentActions] Skipping ${describeActionWithPr(cmd)}: validation-only action (context check-deployment-only), and this is the deployment job`));
     cmd.result = {
@@ -734,7 +734,7 @@ async function recordIdenticalCopyOfStoppedAction(cmd: PrePostCommand, ctx: Sing
  * the same parameters and the same user, is valid.
  */
 function wouldRunInThisJob(cmd: PrePostCommand, ctx: SingleActionRunContext, provider: ActionsProvider): boolean {
-  const context = getEffectiveActionContext(cmd);
+  const context = getEffectiveActionContext(cmd, ctx.deployWhen);
   if ((context === 'check-deployment-only' && !ctx.checkOnly) || (context === 'process-deployment-only' && ctx.checkOnly)) {
     return false;
   }
@@ -772,7 +772,7 @@ async function recordStoppedActions(
   const stoppedRefs: DeploymentActionRef[] = [];
   for (const cmd of stoppedCommands) {
     const sourcePr = cmd.pullRequest?.idNumber || ctx.currentPrNumber;
-    if (sourcePr <= 0 || getEffectiveActionContext(cmd) === 'check-deployment-only') {
+    if (sourcePr <= 0 || getEffectiveActionContext(cmd, ctx.deployWhen) === 'check-deployment-only') {
       continue;
     }
     const verdict = evaluateActionBranchFilter(cmd, ctx.targetBranchCandidates);

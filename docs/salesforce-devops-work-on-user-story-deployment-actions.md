@@ -630,6 +630,8 @@ A manual action that runs **before the metadata deployment** must be performed b
 - click **Mark as done in <branch>** in the VS Code Deployment Actions tab,
 - or run `sf hardis:project:action:set-status --pr <number> --action-id <id> --org-branch <branch> --status success`.
 
+The execution context of such an action is ignored: the validation job lists it even when the action is declared for the deployment job only, because the step has to be done before the merge.
+
 Then run the validation job again: it records the tick and goes on. A draft Pull Request (the draft flag of the git provider, or `draft` in its title) is never stopped: the job only warns, so the deployment check still runs while the work is in progress. A post-deployment manual action never blocks the validation, since it can only be done after the merge.
 
 This requires the same git provider token as `runOnlyOnceByOrg` state tracking.

@@ -17,6 +17,7 @@ import {
   git,
   gitAddCommitPush,
   isCI,
+  isGitWorkflowScopeError,
   uxLog,
 } from '../../../../common/utils/index.js';
 import {
@@ -291,7 +292,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     }
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), { usageType: 'monitoring' });
+    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), { usageType: 'monitoring', workflowReferencesWrittenByCommand: true });
 
     // Confirm & push on server
     const confirmPush = await prompts({
@@ -408,6 +409,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
       return true;
     } catch (e) {
       uxLog("warning", this, c.yellow(t('monitoringWorkflowNotScheduled', { message: (e as Error).message })));
+      if (isGitWorkflowScopeError(e)) {
+        uxLog("action", this, c.yellow(t('gitPushRefusedWorkflowScope')), { alwaysVisible: true });
+      }
       return false;
     } finally {
       // Whatever happened above, the learner gets their working tree back

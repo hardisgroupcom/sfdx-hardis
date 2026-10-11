@@ -71,6 +71,7 @@ Required in agent mode:
 - Changing \`--type\` clears old type-specific parameters and requires new ones.
 - \`--move-to-pr\` requires \`--scope pr\` and the number of the original Pull Request in \`--pr-id\`. When the action is not in its YAML file, it is read from the description of the Pull Request through the git provider API.
 - A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
+- A \`manual\` action declared \`pre-deploy\` is always stored with the \`all\` context.
 </details>
 
 <!-- training-links:start -->
@@ -232,7 +233,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
 
     // In interactive mode, prompt for each field with current value
     if (!agentMode && !isCI) {
-      await this.interactiveUpdate(action, flags);
+      await this.interactiveUpdate(action, flags, (flags['new-when'] as ActionWhen) || when);
     } else {
       await this.applyFlagUpdates(action, flags);
     }
@@ -244,6 +245,11 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     // from and appended to the other one, instead of ending up in both.
     const targetWhen: ActionWhen = (flags['new-when'] as ActionWhen) || when;
     const isPhaseMove = targetWhen !== when;
+    // A manual step to do before the deployment is listed by the validation job whatever its
+    // context: store what it does, also when it becomes one through --type or --new-when
+    if (action.type === 'manual' && targetWhen === 'pre-deploy') {
+      action.context = 'all';
+    }
 
     // Validate against the phase the action ends up in, which --new-when may have changed
     const validationErrors = [
@@ -331,7 +337,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     return { outputString: 'Action moved', action: movedAction as any, configFile, movedFrom: sourcePrNumber, movedToPr: targetPrId || 'draft' };
   }
 
-  private async interactiveUpdate(action: PrePostCommand, _flags: any): Promise<void> {
+  private async interactiveUpdate(action: PrePostCommand, _flags: any, targetWhen: ActionWhen): Promise<void> {
     const newLabel = await this.promptText(t('enterActionLabel'), action.label);
     if (newLabel) action.label = newLabel;
 
@@ -391,6 +397,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.githu
     if (action.type === 'run-batch') {
       // run-batch only runs in one context: there is nothing to ask
       action.context = RUN_BATCH_CONTEXT;
+    } else if (action.type === 'manual' && targetWhen === 'pre-deploy') {
+      // Listed by the validation job whatever its context: nothing to ask either
+      action.context = 'all';
     } else {
       const newContext = await this.promptSelect(t('selectActionContext'), ACTION_CONTEXTS.map(ctx => ({ title: ctx, value: ctx })), action.context);
       if (newContext) action.context = newContext;

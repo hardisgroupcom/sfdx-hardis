@@ -6,10 +6,24 @@ import { expect } from 'chai';
 import {
   describeGitError,
   isGitAuthError,
+  isGitWorkflowScopeError,
   redactUrlCredentials,
   resetGitCredentialsStateForTests,
   retryGitAfterAuthError,
 } from '../../../src/common/utils/index.js';
+
+describe('isGitWorkflowScopeError()', () => {
+  it('recognizes a push GitHub refused for a missing workflow scope, and nothing else', () => {
+    expect(
+      isGitWorkflowScopeError(
+        new Error('! [remote rejected] monitoring_acme -> monitoring_acme (refusing to allow an OAuth App to create or update workflow `.github/workflows/org-monitoring.yml` without `workflow` scope)')
+      )
+    ).to.be.true;
+    expect(isGitWorkflowScopeError(new Error('refusing to allow a Personal Access Token to create or update workflow `.github/workflows/ci.yml` without `workflow` scope'))).to.be.true;
+    expect(isGitWorkflowScopeError(new Error("fatal: Authentication failed for 'https://github.com/acme/crm.git/'"))).to.be.false;
+    expect(isGitWorkflowScopeError(undefined)).to.be.false;
+  });
+});
 
 describe('isGitAuthError()', () => {
   it('recognizes what git and the git providers answer when credentials are refused', () => {

@@ -265,6 +265,13 @@ describe('getEffectiveActionContext()', () => {
     expect(getEffectiveActionContext(action({ context: 'check-deployment-only' }))).to.equal('check-deployment-only');
     expect(getEffectiveActionContext(action({ context: undefined as any }))).to.equal('all');
   });
+
+  it('lets the validation job list a manual step to do before the deployment, whatever its context', () => {
+    expect(getEffectiveActionContext(action({ type: 'manual', context: 'process-deployment-only' }), 'pre-deploy')).to.equal('all');
+    expect(getEffectiveActionContext(action({ type: 'manual', context: 'process-deployment-only', when: 'pre-deploy' }))).to.equal('all');
+    expect(getEffectiveActionContext(action({ type: 'manual', context: 'process-deployment-only' }), 'post-deploy')).to.equal('process-deployment-only');
+    expect(getEffectiveActionContext(action({ type: 'apex', context: 'process-deployment-only' }), 'pre-deploy')).to.equal('process-deployment-only');
+  });
 });
 
 describe('Actions tried in a developer org', () => {

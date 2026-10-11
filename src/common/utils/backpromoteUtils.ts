@@ -9,7 +9,7 @@ import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvi
 import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { parsePromotionBranchName } from './promotionBranchUtils.js';
-import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
+import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter, getEffectiveActionContext } from './actionUtils.js';
 import { t } from './i18n.js';
 import { BackpromoteActionRow, BackpromoteCommentStore, backpromoteActionKey, upsertActionRow } from './backpromoteCommentUtils.js';
 import { buildIdentityKeyFromProvider, findIdenticalActionRun, formatIdenticalActionSource, markIdentitySeen, recordSuccessfulActionRun } from './deploymentActionIdentityUtils.js';
@@ -690,7 +690,7 @@ export function collectBackpromoteActions(
       const prLabel = prId > 0 ? `#${prId} - ${prTitle}` : prTitle;
       for (const cmd of commands) {
         if (!cmd || !cmd.id) continue;
-        if (cmd.context === 'check-deployment-only') continue;
+        if (getEffectiveActionContext(cmd, phase === 'commandsPreDeploy' ? 'pre-deploy' : 'post-deploy') === 'check-deployment-only') continue;
         const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
         if (branchFilterVerdict.run === false) {
           if (branchFilterVerdict.invalid) {

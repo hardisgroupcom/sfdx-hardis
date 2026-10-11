@@ -107,9 +107,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
   protected apexSCannerCodeUrl =
     'https://raw.githubusercontent.com/pozil/legacy-api-scanner/main/legacy-api-scanner.apex';
 
-  protected articleTextLegacyApi = `See article to solve issue before it's too late:
-- EN: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238
-- FR: https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/`;
+  protected articleTextLegacyApi = `See article to solve issue before it's too late: https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238`;
 
   protected legacyApiDescriptors: LegacyApiDescriptor[] = [
     {
@@ -303,7 +301,6 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     notifDetailText += "\n" + this.articleTextLegacyApi;
     if (WebSocketClient.isAliveWithLwcUI()) {
       WebSocketClient.sendReportFileMessage("https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238", t('articleEn'), 'docUrl');
-      WebSocketClient.sendReportFileMessage("https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/", t('articleFr'), 'docUrl');
     }
     if (this.notificationSampleTruncated) {
       notifDetailText += `

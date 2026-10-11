@@ -497,7 +497,20 @@ export async function gitPull(argsOrOptions?: string[] | any, argsIfOptionsFirst
 
 // Wrapper for git push with authentication error handling
 export async function gitPush(argsOrOptions?: string[] | any, argsIfOptionsFirst?: string[]): Promise<any> {
-  return runGitWithCredentialsRetry('push', 'retryingGitPushWithUpdatedCredentials', argsOrOptions, argsIfOptionsFirst);
+  try {
+    return await runGitWithCredentialsRetry('push', 'retryingGitPushWithUpdatedCredentials', argsOrOptions, argsIfOptionsFirst);
+  } catch (e) {
+    if (isGitWorkflowScopeError(e)) {
+      uxLog("action", this, c.yellow(t('gitPushRefusedWorkflowScope')), { alwaysVisible: true });
+    }
+    throw e;
+  }
+}
+
+// GitHub refuses a push that creates or updates a file of .github/workflows when the credentials
+// git used lack the workflow scope. The git error names the scope and not what to do about it.
+export function isGitWorkflowScopeError(error: any): boolean {
+  return /without \W?workflow\W? scope/i.test(String(error?.message || error || ''));
 }
 
 export interface GitCredentialsRetryDeps {
@@ -2124,7 +2137,10 @@ export async function generateSSLCertificate(
     uxLog(
       "action",
       commandThis,
-      c.cyan(t(storeCertificateInVariable ? 'pleaseConfigureThreeBelowVariablesInYour' : 'pleaseConfigureBothBelowVariablesInYour'))
+      c.cyan(
+        t(storeCertificateInVariable ? 'pleaseConfigureThreeBelowVariablesInYour' : 'pleaseConfigureBothBelowVariablesInYour') +
+        (options.usageType === 'monitoring' ? ' ' + t('monitoringVariablesBelongToThisRepository') : '')
+      )
     );
     uxLog(
       "log",
@@ -2172,7 +2188,13 @@ export async function generateSSLCertificate(
       commandThis,
       c.yellow(
         t(
-          storeCertificateInVariable ? 'ifYouAreUsingGithubOrAzureWithClientCert' : 'ifYouAreUsingGithubOrAzure',
+          // hardis:org:configure:monitoring writes the two references in the GitHub workflow itself.
+          // hardis:project:configure:auth --usage monitoring does not: it keeps the manual instruction.
+          storeCertificateInVariable
+            ? 'ifYouAreUsingGithubOrAzureWithClientCert'
+            : options.workflowReferencesWrittenByCommand === true
+              ? 'monitoringGithubReferencesAddedByCommand'
+              : 'ifYouAreUsingGithubOrAzure',
           { clientIdStringRaw, clientKeyStringRaw, clientCertStringRaw }
         )
       )
