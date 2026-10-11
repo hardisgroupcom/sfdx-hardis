@@ -203,6 +203,9 @@ training repository reads the forks of the course, the `badge-claim` issues and 
 writes `stats/course-stats.json`: learners who started and completed each level, and the median
 time of the labs next to the time they announce. `course-stats.yml` commits it every Monday, and
 the site builds its Statistics page (`<site>/stats/`) and the totals of the Badges page from it.
+`STATS.md` at the root of the repository is the same page in English, rendered from the same file:
+after changing the words of the page in `i18n/en.json`, run `course-stats.mjs --render`, or the
+site build fails on the drift.
 
 - **The committed file names nobody.** Counts and medians only, and a median appears once five
   learners are behind it. `--details` writes one row per learner to `hardis-report/course-stats/`,

@@ -34,7 +34,7 @@ have to be regenerated.
 | The site pages nobody writes               | The backlog, one page per story, the badges index, one page per badge holder       | **Yes**, `scripts/build/site.mjs`, per locale   |
 | The audit rules                            | `scripts/verify/rules.mjs`                                                         | No                                              |
 | Which Pull Request ends which lab          | `scripts/stats/markers.mjs`, read by the course statistics                         | No, follows the branch names of the universe    |
-| The course statistics                      | `stats/course-stats.json`                                                          | **Yes**, `scripts/stats/course-stats.mjs`       |
+| The course statistics                      | `stats/course-stats.json`, `STATS.md`                                              | **Yes**, `scripts/stats/course-stats.mjs`       |
 | The seed data                              | `scripts/data/HeliosBaseline/*.csv`                                                | **Yes**, `scripts/build/data.mjs`               |
 | The screenshot fixtures                    | `../vscode-sfdx-hardis/test/fixtures/screenshot/helios/` and `training-project/`   | **Yes**, `scripts/build/mocks.mjs`              |
 | The lab links in the product documentation | `../sfdx-hardis/docs/*.md`, its command descriptions, both READMEs                 | **Yes**, `scripts/build/doc-links.mjs`          |
