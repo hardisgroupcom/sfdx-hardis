@@ -18,24 +18,24 @@ In VS Code, open the **DORA metrics** panel from the gear menu of the [DevOps Pi
 
 #### Core DORA Metrics (5), per major branch
 
-| Metric                           | How it is computed                                                                                   |
-|----------------------------------|------------------------------------------------------------------------------------------------------|
-| **Deployment Frequency**         | Successful runs of the deployment job of the branch, per week                                        |
-| **Lead Time for Changes**        | From the creation of a Pull Request to the end of the job that deployed its merge                    |
-| **Change Failure Rate**          | Failed deployment jobs / (succeeded + failed). Canceled jobs are counted apart                       |
-| **Mean Time to Recovery (MTTR)** | From a failed deployment job to the next successful one on the same branch                           |
+| Metric                           | How it is computed                                                                                                             |
+|----------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| **Deployment Frequency**         | Successful runs of the deployment job of the branch, per week                                                                  |
+| **Lead Time for Changes**        | From the creation of a Pull Request to the end of the job that deployed its merge                                              |
+| **Change Failure Rate**          | Failed deployment jobs / (succeeded + failed). Canceled jobs are counted apart                                                 |
+| **Mean Time to Recovery (MTTR)** | From a failed deployment job to the next successful one on the same branch                                                     |
 | **Deployment Rework Rate**       | Share of Pull Requests coming from `hotfix/`, `fix/` or `bugfix/` branches, or of deployments redone within a day of a failure |
 
 #### Supplementary Metrics
 
-| Metric                      | Description                                                        |
-|-----------------------------|--------------------------------------------------------------------|
-| **Deployment Duration**     | Time the deployment job ran (p50, p90, avg)                        |
-| **Deployment Queue Time**   | Time the deployment job waited for a runner                        |
-| **PR Cycle Time**           | Time from Pull Request creation to merge                           |
-| **Change Volume**           | Pull Requests and deployments per week                             |
-| **Validation Success Rate** | Pass rate of the deployment checks of the Pull Requests            |
-| **Contributors**            | Pull Requests, cycle time and deployments per person               |
+| Metric                      | Description                                             |
+|-----------------------------|---------------------------------------------------------|
+| **Deployment Duration**     | Time the deployment job ran (p50, p90, avg)             |
+| **Deployment Queue Time**   | Time the deployment job waited for a runner             |
+| **PR Cycle Time**           | Time from Pull Request creation to merge                |
+| **Change Volume**           | Pull Requests and deployments per week                  |
+| **Validation Success Rate** | Pass rate of the deployment checks of the Pull Requests |
+| **Contributors**            | Pull Requests, cycle time and deployments per person    |
 
 Each metric is classified against DORA benchmarks as **Elite**, **High**, **Medium**, or **Low**, with the same scale for every branch.
 
