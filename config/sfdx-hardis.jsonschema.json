@@ -2973,6 +2973,13 @@
       "type": "boolean",
       "default": false
     },
+    "monitoringBackupSkipDeletions": {
+      "$id": "#/properties/monitoringBackupSkipDeletions",
+      "description": "Set to true to keep, in the monitoring backup, the files of the components that were deleted from the org. By default hardis:org:monitor:backup deletes them. Can also be set via MONITORING_BACKUP_SKIP_DELETIONS env variable.",
+      "title": "Keep the files of deleted components in the backup",
+      "type": "boolean",
+      "default": false
+    },
     "monitoringCommands": {
       "$id": "#/properties/monitoringCommands",
       "description": "List of monitoring commands to run with command hardis:org:monitor:all.\nUser entries are merged by 'key' onto the built-in defaults: provide only the fields you want to override. New keys are appended as custom commands. A single command can emit multiple notification types via 'notificationTypes' (e.g. APEX_FLOW_ERRORS emits both APEX_ERROR and FLOW_ERROR). Per-channel routing thresholds live on the top-level 'notificationConfig' property, not here.",

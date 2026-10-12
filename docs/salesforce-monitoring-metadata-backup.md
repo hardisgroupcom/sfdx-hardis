@@ -18,6 +18,16 @@ A file-based retrieve returns a Profile with only the permissions related to the
 - The first backup that runs with this behavior reports every Profile as updated. It is not a change in your org.
 - A Profile that can not be read fails the backup and names the Profile: add it to `manifest/package-skip-items.xml` to leave it out.
 
+### Deleted components
+
+When a component is deleted from the org, the next backup deletes its files, so the git history shows the deletion.
+
+- A file is deleted only when its component is no longer in `manifest/package-all-org-items.xml`, the list of everything that exists in the org. A component that still exists but that you skip keeps the file of its last backup.
+- For a metadata type you skip as a whole (`Report`, `Dashboard`...), only the deletions made in the org from now on are mirrored: the files left by older deletions stay.
+- There is no limit: a cleanup that removes a lot of metadata is mirrored by the next backup. If the org returns an incomplete list of its components one day, the missing files come back with the next backup.
+- The first backup that runs with this behavior deletes the files of everything deleted in the org since the monitoring started. It is not a change made in your org that day.
+- To keep the files of deleted components, set `monitoringBackupSkipDeletions: true` in the `.sfdx-hardis.yml` of the monitoring branch, or the variable `MONITORING_BACKUP_SKIP_DELETIONS=true`.
+
 ### Ask questions with a coding agent
 
 Each backup also writes an `AGENTS.md` file at the root of the monitoring repository (and a `CLAUDE.md` that imports it, when there is none). It tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what the backup skips and which monitoring checks run on the branch.

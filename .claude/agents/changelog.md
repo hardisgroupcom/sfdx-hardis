@@ -23,8 +23,9 @@ A short description of what changed. Optionally: the command it applies to (`har
    - Skip implementation details: file paths, function names, i18n keys, internal flags, refactor mechanics, locale lists, TypeScript types.
    - If it applies to a specific command, link it: `[hardis:topic:action](https://sfdx-hardis.cloudity.com/hardis/topic/action/)`.
    - Never use em-dashes. Avoid AI-tell vocabulary (leverage, robust, seamless, comprehensive, streamline, etc.).
-3. **Group it.** If the beta section already has a line for the same command or the same feature (same doc link), add your change as a nested bullet under that line, turning a single-line entry into a group if needed. A command or a feature appears at most once per section.
-4. **Otherwise add the bullet** at the top of the beta section's list (do not create a new version heading - releases set those).
+3. **Group it.** If the beta section already has a line for the same command or the same feature (same doc link), add your change as the first nested bullet under that line, turning a single-line entry into a group if needed. A command or a feature appears at most once per section.
+4. **Otherwise place the bullet by theme**, following the order of the "Organize the beta section" part of the skill (new commands, CI/CD pipeline, org monitoring, documentation generation, other commands, integrations, doc site and others). Do not create a new version heading - releases set those - and never write a theme name in the file.
+5. **Leave the section organized.** If two top-level lines of the beta section link the same command or feature, merge them into one group, and move a group that is out of the theme order. Never touch a released version section.
 
 ## Example
 
@@ -35,4 +36,4 @@ Good:
 
 Too verbose (do NOT do this): listing flags, env vars, config keys, internal checks, or affected locales as sub-bullets.
 
-Report the exact line you added. Do nothing else.
+Report the exact line you added, and the groups you merged or moved. Do nothing else.
