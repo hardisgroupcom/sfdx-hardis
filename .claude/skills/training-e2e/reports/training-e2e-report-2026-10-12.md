@@ -33,8 +33,9 @@ course.
 | CI image           | the released `sfdx-hardis-ubuntu:latest`, no source-build override, on the fork and on the monitoring repository                                           |
 | Published site     | `main` at `aadf504`. Pass A read the published pages. The fixes of this run are on the course branch, ahead of the site                                    |
 
-The three runbook commits on the sfdx-hardis branch (`654486cc3`, `22b8caacf`, `0dda317aa`) change
-no code, and `lib/` was not touched.
+The sfdx-hardis branch sits on `430ae2c41` (v8.17.0 is `4077ce021`). Its commits (`654486cc3`,
+`22b8caacf`, `0dda317aa`, `27b2b5929` for the runbook, then this report) change no code, and `lib/`
+was not touched.
 
 ## Environment
 
@@ -217,7 +218,11 @@ its 34 layouts are created with French names. It was switched back off.
 - `helios-dev` was deleted and created again from the new definition. Both settings read back
   false.
 - Its Helios Crew profile, read whole with `hardis:mdapi:read --active-only`, has 60 layout
-  assignments and 135 tabs. It had 92 and 194.
+  assignments and 135 tabs. The old `helios-dev` had 92 and 194, then 59 and 135 once the two
+  settings were deployed to it. The counts are those measured: the new org has two layouts the old
+  one lacked and one fewer of another kind, which was not identified, and the 34 standard layouts
+  quoted for the Field Service trial were counted against a Developer Edition org, not between
+  scratch orgs.
 - A dry-run against `helios-prod` is refused on four names only: the two French-named custom
   layouts above, and the `ContactPointOttSvc` and `SecurityDefenseActionEventStore` layouts. Only the
   scratch org created today has those last two. The scratch orgs of 2026-09-24 and both Developer
@@ -247,7 +252,8 @@ What is **not** proven is listed in "What this run did not cover".
   commits `a4187be`, `ca9ddc8`).
 - **Lab 3.1 step 3 (no id)**: the **Create** click of the branch rule lands on GitHub's "Confirm
   access" page (GitHub Mobile, passkey or email code). The lab does not mention it and the run could
-  not answer it. NOTES does not say whether the lab text was changed for it.
+  not answer it. NOTES does not say whether the lab text was changed for it. A troubleshooting entry was added to Lab 3.1, English and French (`12edfda`,
+  `c4564c7`).
 
 ### Check rules
 
@@ -301,8 +307,8 @@ NOTES does not map each Level 3 id to one commit.
 - **P11 (Labs 2.9 and 3.11)**: same gap as P4 in both claim paragraphs.
 - **P12 (Lab 3.3 step 13)**: "Add your user to Selected Members". The user was already a member: the
   first action puts every holder of Helios Delivery Manager in the group, and the seed grants it to
-  the learner. A learner opens the group and finds nothing to add. Lab 3.3 was edited at Level 3;
-  NOTES does not say what the new text of this step is.
+  the learner. A learner opens the group and finds nothing to add. The step now says the learner is already in the group
+  (`12edfda`, French `c4564c7`).
 - **P13 (Lab 3.6 step 7)**: "Yours waited 4 d in integration, 0.8 d in uat ... 5.7 d, High, over the
   ten User Stories you delivered" read as the learner's own numbers. The walk read 0.1 d, Elite, 22
   stories. One sentence added.

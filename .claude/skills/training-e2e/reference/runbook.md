@@ -190,9 +190,10 @@ Traps that cost earlier runs time:
   fidelity 3.
 - **Never chain a branch delete after a merge command.** When the merge is refused (a check still
   running, a review missing), deleting the head branch closes the Pull Request. Delete only after
-  `gh pr view <n> --json state` says `MERGED`. A fork `init` just created has
-  `delete_branch_on_merge` off (2026-10-12): the merged branch stays until the learner clicks
-  **Delete branch**, which Lab 1.6 asks for, so delete it once the state reads `MERGED`.
+  `gh pr view <n> --json state` says `MERGED`. Since the course
+  change of 2026-10-12, `init` turns `delete_branch_on_merge` on in the fork, so GitHub removes
+  the head branch itself and Lab 1.6 no longer asks for it: a merged branch that stays means the
+  fork was set up by an older `init`. Major branches stay because they are protected.
 - **`backpromote --reset` is not the panel's Back button.** The button only checks out the branch
   you were on. `--reset` leaves the clone on a detached HEAD at `origin/<parent>`.
 - **Leave MegaLinter's GitHub Actions auditor (zizmor) without a token.** Without one it prints a
@@ -323,8 +324,8 @@ Traps that cost earlier runs time:
 - **`action:create --sfdmu-project` takes the workspace name** (`HeliosCrewRefData`), the value
   the dialog's dropdown shows, not its path.
 - **Setup > Deliverability over CDP**: `/lightning/setup/OrgEmailSettings/home`, a classic form in
-  an iframe whose access level `select` holds *All email* (*Tous les e-mails* on these French
-  orgs); match the option by label. On orgs of a previous walk it is already set, which the lab's
+  an iframe whose access level `select` holds *All email* (*Tous les e-mails* on an org whose user is
+  still French); match the option by label. On orgs of a previous walk it is already set, which the lab's
   fourth line covers.
 - **Lab 3.8 needs an empty repository, and `gh` cannot delete the one of the last run** (no
   `delete_repo` scope). Create another one whose name still contains `monitoring`, and pass it:
@@ -456,8 +457,9 @@ Three more of 2026-10-08, from the outside world rather than the products:
 - **Salesforce restyles Setup.** The Object Manager crop of Lab 1.4 came out cut off: the clip in
   `labs/_assets/salesforce-captures.json` had to be set again. The validation rule crop of Lab 3.7
   too (x 12, y 150, 1696 x 850 since 2026-10-08). Take a `--full` capture first, read the
-  coordinates on it, then set the clip and the pills. The Developer Edition orgs speak French, so
-  take Setup pictures in a scratch org whose user is `en_US` (`helios-uat`, `helios-dev`).
+  coordinates on it, then set the clip and the pills. Take Setup pictures in an org whose user is
+  English: the scratch orgs always, the Developer Edition orgs since `init` and `seed` set it
+  (2026-10-12).
 - **`capture-web.mjs` can print nothing and write nothing** (2026-10-08): the first capture after a
   `url` change came back silent, and `annotate.mjs` then said "all current" over the old picture.
   Pass `--force`, and read the `<name>.png <url>` line it prints before opening the picture.
@@ -504,8 +506,9 @@ Level 1 at browser fidelity, since 2026-10-12 (the helpers are in the run folder
 - **The picture retake can run while the orgs are torn down**: the teardown is CLI calls, the
   retake is one hidden VS Code. Three captures are flaky and need a second `shots.mjs <name>`:
   the two Metadata Retriever ones (org combo reading *Select an Option*), and
-  `promotion-create-conflict`, which twice came back with its fourth answer cut off (kept the
-  previous capture). `backpromote-loading` stops at its third step: keep the previous one.
+  `promotion-create-conflict`, which twice came back with its fourth answer cut off inside the
+  full batch: taken alone (`shots.mjs vscode/promotion-create-conflict`) it is whole, because the
+  test captures a fixed 1.5 s after the prompt and a loaded machine needs more. `backpromote-loading` stops at its third step: keep the previous one.
 
 Level 1 notes that previous runs settled:
 
@@ -651,8 +654,9 @@ image, so no `AGENTS.md` was written. Compare a lab's claims with `git merge-bas
 v<latest>` before reporting it as broken, and release the CLI before the course Pull Request that
 describes it publishes.
 
-**The Developer Edition orgs spoke French until 2026-10-12**, when `init` and `seed` started setting
-their user to English; an org whose user is still French shows it. Their Setup pages then read *Écraser*, *Restaurer*, *Tous les
+**The Developer Edition orgs spoke French until 2026-10-12**, when `init` and `seed` started
+setting their user to English. An org whose user is still French shows it: its Setup pages read
+*Écraser*, *Restaurer*, *Tous les
 e-mails*, and a deployment error reads *Une relation enfant portant le nom ... existe déjà*. A CDP
 script that matches English labels reports nothing to do there; match on link targets or element
 names instead.
@@ -671,7 +675,9 @@ Lab 3.8 runs in a **second repository**, the monitoring one, with its own secret
 Level 3 straight after Level 2, with no **Reset this level**, since 2026-10-12 (helpers in the run
 folder of that day, `run-1012/tools/`):
 
-- **It works as written on the released image, with no `E2E ONLY` Pull Request.** The Level 2
+- **The promotions work as written on the released image, with no `E2E ONLY` Pull Request**,
+  on a Profile cleaned by a rule that was reverted afterwards: the path with the whole Profile and
+  the final fix (next bullet but one) has not been walked yet. The Level 2
   action files carry the fork's own numbers, so each promotion collects them: `uat`, then
   `preprod`, then `main` stop red once on the deliverability step, and go green after the box is
   ticked (`gh-tick.mjs <fork> <pr> "Set Email Deliverability"`, then `gh run rerun`, then
@@ -683,8 +689,8 @@ folder of that day, `run-1012/tools/`):
   walk with no reset meets them, since the reset path never publishes that Profile:
     - **Features.** A scratch org comes with Field Service
       (`FieldServiceSettings.fieldServiceOrgPref`) and the Thanks badges
-      (`WorkDotComSettings.enableWorkThanksPref`) on, a Developer Edition org with both off: 33
-      layouts and 59 tabs. `config/project-scratch-def.json` switches both off, and `init` does it
+      (`WorkDotComSettings.enableWorkThanksPref`) on, a Developer Edition org with both off: 92
+      layout assignments and 194 tabs with both on, 59 and 135 with both off, on the same org. `config/project-scratch-def.json` switches both off, and `init` does it
       once in the scratch orgs that already exist (`alignScratchOrgs`). Retrieve the two
       `Settings` from both orgs to compare when a new one shows up.
     - **Language.** Salesforce names the layouts it creates in the language of the user at work,
@@ -700,11 +706,13 @@ folder of that day, `run-1012/tools/`):
 
   Do not clean the Profile with `cleanXmlPatterns`: the maintainer refused that fix. Salesforce
   reports one missing name per deployment, layouts before tabs, so the whole extent takes a loop:
-  dry-run the Profile alone, remove the block the error names, again
-  (`sf project deploy start --source-dir force-app --dry-run -o helios-prod`, 20 seconds a turn).
-  The Profile to test is the one `sf hardis:mdapi:read -m "Profile:Helios Crew" --active-only`
-  writes, which is what the Metadata Retriever does; `sf project retrieve start` gives another
-  list.
+  dry-run the Profile alone, remove the block the error names, again. Alone means a throwaway
+  project whose `force-app` holds that one file
+  (`sf project deploy start --source-dir force-app --dry-run -o helios-prod` from that folder, 20
+  seconds a turn); from the learner clone the same command validates the whole project. The
+  Profile to test is the one the Metadata Retriever writes, which
+  `sf hardis:mdapi:read -m "Profile:Helios Crew" --active-only --target-org helios-dev --output-dir <folder> --agent`
+  gives; `sf project retrieve start` gives another list.
 - **GitHub asks to confirm access (sudo mode) before it saves a branch rule or a secret**, with
   GitHub Mobile, a passkey or an emailed code. A walk cannot answer it: Lab 3.1 step 2 (New
   branch) is clickable over CDP (`l31-branch.mjs`), step 3 is clickable up to the Create button
