@@ -1,6 +1,6 @@
 ---
 name: changelog
-description: Style rules for updating CHANGELOG.md entries. Use whenever the user asks to update, add to, or write entries in CHANGELOG.md.
+description: Style rules for CHANGELOG.md entries, and how the beta section is organized (one group per command or feature, groups ordered by theme). Load it before any edit of CHANGELOG.md - when the user asks to update, add to, or write entries, and at the changelog step of the implement skill and agent.
 user-invocable: false
 ---
 
@@ -22,6 +22,39 @@ CHANGELOG.md entries are read by **end users** (Salesforce admins, devs, ops) de
 - **Group with bullets, never with a header.** The command link is a top-level bullet and its changes are nested bullets under it. Never open a `###` (or any other) header for a command, however many changes it has.
 - **Add entries under `## [beta] (main)`** at the top of the file. Do not create version sections - releases set those.
 - **Sibling repositories have their own changelog, and a change made there from here updates it.** `../vscode-sfdx-hardis/CHANGELOG.md` takes its entries under `## Unreleased`. `../sfdx-hardis-training/CHANGELOG.md` has no versions and no `## Unreleased`: an entry goes under the `## YYYY-MM-DD` heading of the day it is written, and when that heading does not exist yet, it is added at the top. Always in the Pull Request of that repository, with the same style rules.
+
+## Organize the beta section
+
+The beta section is read as a whole at release time. Adding an entry means leaving the whole section organized, not appending a line at the top.
+
+1. **Read the whole `## [beta] (main)` section before writing.**
+2. **One group per command or feature.** Apply the grouping rules above to the section as it is, not only to your entry: when two top-level lines already link the same command or the same feature, merge them into one group in the same edit, even if you did not write them.
+3. **Order the groups by theme**, in this order. Inside a theme, keep the groups that go together next to each other, and put the newest change of a group first.
+
+   | # | Theme                    | What goes there                                                                                                              |
+   |---|--------------------------|------------------------------------------------------------------------------------------------------------------------------|
+   | 1 | New commands             | Lines starting with `New [hardis:...]`                                                                                       |
+   | 2 | CI/CD pipeline           | `hardis:project:deploy:*`, `hardis:work:*`, Pull Request comments, deployment actions, promotion branches, backpromote, DORA |
+   | 3 | Org monitoring           | `hardis:org:monitor:*`, `hardis:org:diagnose:*`, `hardis:org:configure:monitoring`, notifications, Grafana                   |
+   | 4 | Documentation generation | `hardis:doc:*`                                                                                                               |
+   | 5 | Other commands           | Every other command, sorted by command name                                                                                  |
+   | 6 | Integrations             | Lines starting with a provider name: `GitHub:`, `GitLab:`, `Azure DevOps:`, `Bitbucket:`, `Jira:`, `ServiceNow:`...          |
+   | 7 | Doc site and others      | Lines starting with `Doc:`, dependencies, internal changes worth a line                                                      |
+
+4. **The themes are an order, not headers.** Never write a theme name in the file: the section stays a flat list of top-level bullets, with nested bullets only for the changes of a group.
+5. **Only the beta section is reorganized.** Never touch a released version section.
+
+Example of a beta section after three Pull Requests on the same command and one on another:
+
+```markdown
+## [beta] (main)
+
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
+  - <newest change>.
+  - <older change>.
+  - <oldest change>.
+- [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/): <change>.
+```
 
 ## Pattern
 

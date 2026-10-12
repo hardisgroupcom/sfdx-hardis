@@ -38,6 +38,20 @@ After the retrieve, the Profiles are read again with the CRUD Metadata API, whic
 
 Other types, including Permission Sets, come back whole from the file-based retrieve and are not read again.
 
+## Deleted components
+
+A retrieve never deletes a local file. After the retrieve, the backup deletes the files of the components that no longer exist in the org, so a component deleted in the org shows as deleted files in the next backup.
+
+- A file is deleted only when its component is not in `manifest/package-all-org-items.xml`, the list of everything that exists in the org. A component that still exists but is no longer retrieved (`manifest/package-skip-items.xml`, `MONITORING_BACKUP_SKIP_METADATA_TYPES`, installed package namespace) keeps the file of its last backup.
+- A file that the org just returned is never deleted, and neither is a file that can not be linked to a component.
+- Some files stay when nothing proves that their component is gone: the children (fields, list views, record types...) of an object that is not retrieved, the types that the org does not list by name, and the types of which nothing is retrieved (a type skipped as a whole, like `Report`). For those, only the components that the previous backup listed and that the org no longer lists are deleted: the list of the org alone is not a proof, it misses components that exist, such as the reports of nested folders.
+- The files of `GlobalValueSetTranslation` and `StandardValueSetTranslation` are never deleted: the org lists one language of a value set and not the others.
+- There is no limit on the number of deleted files: a cleanup that removes a lot of metadata is mirrored by the next backup. If the org returns an incomplete list of its components one day, the files of the missing ones are deleted, and the next backup brings them back.
+- The first backup that runs with this behavior deletes the files of everything that was deleted in the org since the monitoring started.
+- Nothing is deleted when the run does not retrieve everything (`--start-chunk`, `FULL_ORG_MANIFEST_PATH`).
+
+To keep the files of deleted components, use config property `monitoringBackupSkipDeletions: true` or environment variable `MONITORING_BACKUP_SKIP_DELETIONS=true`.
+
 ## Full mode
 
 Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
