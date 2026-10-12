@@ -228,8 +228,9 @@ site build fails on the drift.
 ## Translation
 
 The course ships in **English and French**, `labs/en/` and `labs/fr/`, mirrored file for file, with
-English as the reference. Every translated page carries a `source_rev` front matter key naming the
-English commit it was made from, so staleness is detectable.
+English as the reference. Every translated page carries a `source_rev` front matter key holding the
+content hash of the English page it was made from (`git hash-object`, which a squash merge does not
+change), so staleness is detectable.
 
 **A Trailmix cannot be localized, so each language is its own Trailmix per level**: six today, three
 English and three French. They are built from the same step list with `/fr/` in place of `/en/` in
