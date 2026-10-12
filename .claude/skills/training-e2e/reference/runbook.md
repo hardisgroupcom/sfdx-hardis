@@ -280,10 +280,13 @@ Traps that cost earlier runs time:
   ENOENT`, then `cannot change to '/c/git/training-run'`). Prefix the one command.
 - **`panel.mjs` prints bytes `grep` calls binary.** Filter its output with `grep -a`, or the only
   line you get is *Binary file (standard input) matches*.
-- **`stamp-source-rev.mjs fr` stamps every translation that reads BEHIND**, not only the ones you
-  translated (2026-10-12: 30 files, left behind by a generator commit that changed both languages
-  without stamping). Restore the `source_rev` of every file you did not re-read with
-  `git checkout --`, and report the others as behind.
+- **`source_rev` is the content hash of the English file, not a commit** (since 2026-10-12). The
+  course is squash merged, and a squash erases the commits a stamp taken on a branch named: every
+  page of the last Pull Request then read BEHIND with nothing to translate. A content hash survives
+  the squash. `stamp-source-rev.mjs fr` stamps every French page with the English text on disk,
+  committed or not, so run it only when every English change of the branch has its French side,
+  and `git checkout --` the stamp of a page you did not translate. `check-i18n.mjs --stamp` does
+  the same for `i18n/fr.json`.
 - **A deleted fork is not a fork to reset.** `reset-fork.sh` now says so and only clones the
   learner's copy. Let `init` create the fork, the way a learner's does: it opens the Actions page
   and waits, and the banner is clicked over CDP (a button whose text starts with *I understand my
@@ -312,7 +315,7 @@ Traps that cost earlier runs time:
   records** or **Publish my pipeline configuration** then arrive in the panel. A copy of `panel.mjs`
   that spawns `process.execPath` instead of `sf` does the same headless; pass it
   `-- scripts/training.mjs simulate`, with the path: `-- simulate` alone fails on *Cannot find
-  module*. Kept in the run folder of 2026-10-08 as `tools/panel-node.mjs`.
+  module*. It is `scripts/walk/panel-node.mjs` of this skill.
 - **The classic field-level security page of a profile no longer answers a CDP script**
   (2026-10-08): `/setup/layout/flsedit.jsp` timed out on the profile row, and the tabs it left open
   later wedged the CDP attach. The route a learner takes does answer (2026-10-12): the field's own

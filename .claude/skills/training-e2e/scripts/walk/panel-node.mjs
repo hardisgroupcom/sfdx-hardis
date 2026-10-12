@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 /**
- * A headless stand-in for the VS Code sfdx-hardis panel, for walking the training
- * labs without clicking.
+ * The variant of ../panel.mjs for the Training menu: it runs `node`, not `sf`.
  *
- *   node panel.mjs --cwd <repo> --answers '<json rules>' -- hardis:work:new
+ *   node panel-node.mjs --cwd <repo> --answers '<json rules>' -- scripts/training.mjs simulate
  *
- * It starts the WebSocket server the extension would start, runs the sf command
- * with --websocket pointing at it, and answers every prompt from the rules:
+ * The Command Runner of the extension runs `node scripts/training.mjs <verb>` with the address
+ * of its WebSocket server in SFDX_HARDIS_WEBSOCKET, and the questions of Simulate my teammates,
+ * Create my lab records or Publish my pipeline configuration arrive in the panel. This does the
+ * same headless. Give the script with its path: `-- simulate` alone fails on "Cannot find module".
+ *
+ * It starts the WebSocket server the extension would start, runs the command
+ * with that variable set, and answers every prompt from the rules:
  *   [{ "q": "regex on the question", "choice": "regex on a choice title" }, ...]
  *   [{ "q": "...", "value": <raw value> }]   for text prompts or exact values
  *   [{ "q": "...", "value": "__INITIAL__" }] accepts what the panel pre-fills
@@ -29,7 +33,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const HARDIS = process.env.SFDX_HARDIS_DIR || "C:/git/sfdx-hardis";
+const HARDIS = process.env.SFDX_HARDIS_DIR || path.resolve(HERE, "..", "..", "..", "..", "..");
 const require = createRequire(path.join(HARDIS, "package.json").replace(/\\/g, "/"));
 const { WebSocketServer } = require("ws");
 
