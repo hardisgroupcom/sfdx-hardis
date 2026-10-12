@@ -43,18 +43,38 @@ Trailhead-native surface open to us.
 | Level 2 Trailmix         | `Salesforce DevOps with sfdx-hardis - Contributor Advanced`                                                         |
 | Level 3 Trailmix         | `Salesforce DevOps with sfdx-hardis - Release Manager`                                                              |
 | Expected URL shape       | `https://trailhead.salesforce.com/users/nvuillamy/trailmixes/salesforce-devops-with-sfdx-hardis-contributor-basics` |
-| Training site            | `https://sfdx-hardis-training.github.io/`                                                                           |
+| Training site            | `https://sfdx-hardis-training.cloudity.com/`                                                                        |
 | Lab URL shape            | `<site>/en/level-2-contributor-advanced/2-7-resolve-a-git-merge-conflict/`                                          |
 | Badge URL shape          | `<site>/badges/<github-handle>/`                                                                                    |
 
-**The training site URL is temporary.** The course moved from
-`https://hardisgroupcom.github.io/sfdx-hardis-training/` to `https://sfdx-hardis-training.github.io/`
-on 2026-10-02, and it will move again (a custom domain is planned). When it does, replace it in
-every source of the three repositories, in one Pull Request per repository:
+**The training site URL is final.** `https://sfdx-hardis-training.cloudity.com/` is the custom
+domain of the organization site `sfdx-hardis-training/sfdx-hardis-training.github.io`. The course
+had two addresses before, and both redirect to it:
+
+| Address                                                  | Until      | What answers there                                             |
+|----------------------------------------------------------|------------|----------------------------------------------------------------|
+| `https://hardisgroupcom.github.io/sfdx-hardis-training/` | 2026-09-30 | The redirect site built by `pages.yml` of the training         |
+| `https://sfdx-hardis-training.github.io/`                | 2026-10-12 | GitHub itself: a 301 to the same path, with no CORS header     |
+
+Never write either of them in new content.
+
+- The custom domain is held by the `CNAME` file of the `gh-pages` branch, which the publish step of
+  `pages.yml` writes on every run (`cname:`). `check-site.mjs` fails when it differs from the course
+  URL. Setting the domain by hand in the Pages settings does not last: the next push wipes it.
+- The DNS record is `sfdx-hardis-training.cloudity.com CNAME sfdx-hardis-training.github.io`, in the
+  `cloudity.com` zone, which is not managed from these repositories.
+- [Trailhead Banner](https://github.com/nabondance/Trailhead-Banner) reads
+  `<site>/badges/<trailblazer>.json` and only trusts the hosts listed in its
+  `src/utils/sfdxHardisBadgeUtils.js`, for the record, for `issuer.course` and for `bannerImage`. A
+  change of `course.site`, or of the shape of a badge record, needs a Pull Request there, or the
+  badge silently leaves every banner.
+
+Should the address ever change, replace it in every source of the three repositories, in one Pull
+Request per repository:
 
 ```bash
 # from each of sfdx-hardis, ../vscode-sfdx-hardis and ../sfdx-hardis-training
-git grep -lI 'sfdx-hardis-training.github.io' -- . ':!CHANGELOG.md'
+git grep -lI 'sfdx-hardis-training.cloudity.com' -- . ':!CHANGELOG.md'
 ```
 
 - Here the URL sits in `README.md`, `docs/`, the command descriptions under `src/commands/`
@@ -62,8 +82,10 @@ git grep -lI 'sfdx-hardis-training.github.io' -- . ':!CHANGELOG.md'
   Update this table and this note in the same change.
 - Released `CHANGELOG.md` sections keep the URL they were written with.
 - In the training repository the URL is written as `course.site` in `training-universe.json` and
-  in `course-site.yml` (a check compares the two), and by hand in `config/.sfdx-hardis.yml`: the
-  ticketing URL builders and the Training menu links. Replace all three.
+  in `course-site.yml` (a check compares the two), as `cname:` in `pages.yml` (same check), and by
+  hand in `config/.sfdx-hardis.yml`: the ticketing URL builders and the Training menu links.
+  Replace all four, then redraw the cards that print the address with
+  `node scripts/badges/rerender.mjs`.
 - `LEGACY_SITE_URL` in `scripts/lib/urls.mjs` is the first address of the course and never changes:
   the forks learners made before the move still call it, and it redirects.
 - `test/fixtures/training-project/.sfdx-hardis.yml` of the extension is a copy of the training

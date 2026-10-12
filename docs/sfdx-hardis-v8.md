@@ -472,7 +472,7 @@ Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-
 - **Nothing to pay**: a free GitHub account and free Developer Edition orgs are all it takes.
 - Available in **English and French**.
 
-[![Salesforce DevOps with sfdx-hardis, the free course](https://sfdx-hardis-training.github.io/_assets/social/course.png)](salesforce-devops-training.md)
+[![Salesforce DevOps with sfdx-hardis, the free course](https://sfdx-hardis-training.cloudity.com/_assets/social/course.png)](salesforce-devops-training.md)
 
 ---
 

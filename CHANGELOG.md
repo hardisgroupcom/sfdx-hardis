@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Documentation and command help now link to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com/) course at its final address.
+
 ## [8.17.0] 2026-10-11
 
 - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now computed for each major org from the deployment jobs and Pull Requests of the git provider, without any org login, with the time each change takes to reach production and where it waits.
