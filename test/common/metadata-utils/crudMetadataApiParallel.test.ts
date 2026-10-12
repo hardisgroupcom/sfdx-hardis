@@ -41,17 +41,24 @@ function recordingConnection(delayMs: number) {
 
 describe('parallelReadCallSizes()', () => {
   it('starts at the default number of parallel calls and ends at one call at a time', () => {
-    expect(parallelReadCallSizes()).to.deep.equal([DEFAULT_READ_CONCURRENCY, 4, 2, 1]);
+    expect(DEFAULT_READ_CONCURRENCY).to.equal(5);
+    expect(parallelReadCallSizes()).to.deep.equal([5, 4, 2, 1]);
   });
 
   it('starts at the requested number', () => {
-    expect(parallelReadCallSizes(5)).to.deep.equal([5, 4, 2, 1]);
+    expect(parallelReadCallSizes(8)).to.deep.equal([8, 4, 2, 1]);
     expect(parallelReadCallSizes(2)).to.deep.equal([2, 1]);
   });
 
   it('reads one call at a time when asked for 1, 0 or less', () => {
     expect(parallelReadCallSizes(1)).to.deep.equal([1]);
     expect(parallelReadCallSizes(0)).to.deep.equal([1]);
+    expect(parallelReadCallSizes(-3)).to.deep.equal([1]);
+  });
+
+  it('falls back to the default when the number is not one', () => {
+    expect(parallelReadCallSizes(NaN)).to.deep.equal([5, 4, 2, 1]);
+    expect(parallelReadCallSizes(null)).to.deep.equal([5, 4, 2, 1]);
   });
 });
 
@@ -67,6 +74,7 @@ describe('isTransientMetadataApiError()', () => {
   it('is false for the daily API limit and for an error about the component', () => {
     expect(isTransientMetadataApiError(new Error('REQUEST_LIMIT_EXCEEDED: TotalRequests Limit exceeded.'))).to.be.false;
     expect(isTransientMetadataApiError(new Error('INVALID_TYPE: Unknown type: Profil'))).to.be.false;
+    expect(isTransientMetadataApiError(new Error('Your request timed out while reading the component'))).to.be.false;
     expect(isTransientMetadataApiError(null)).to.be.false;
   });
 });

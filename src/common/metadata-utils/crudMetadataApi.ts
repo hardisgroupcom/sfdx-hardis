@@ -12,7 +12,7 @@ import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import { createTempDir, uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
-import { isThrottlingError, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { isThrottlingError, mapInAdaptiveBatchesSettled, retryOnThrottling } from '../utils/adaptiveBatch.js';
 
 // Namespace stamped on every metadata-format root element.
 const METADATA_XMLNS = 'http://soap.sforce.com/2006/04/metadata';
@@ -145,18 +145,23 @@ export function partitionCrudCompatibility<T extends { type: { name: string }; f
 
 // readMetadata calls sent side by side. Measured on 35 Profiles (API 68): 65 seconds one call of 10 at
 // a time, 22 seconds with 5 calls of 10 side by side, 11 seconds with 8 calls of 5, and no error.
-export const DEFAULT_READ_CONCURRENCY = 8;
-const READ_CONCURRENCY_LADDER = [8, 4, 2, 1];
-const READ_RETRY_PAUSE_MS = 2000;
+// Kept at 5: an org allows 25 requests longer than 20 seconds at the same time, 5 on a Developer
+// Edition or a trial, and a call of 10 large Profiles can last that long.
+export const DEFAULT_READ_CONCURRENCY = 5;
+const READ_CONCURRENCY_LADDER = [4, 2, 1];
+// Pause before reading again the calls the org refused, longer each time: an instance that is
+// unavailable for half a minute must not fail a backup that retrieved for an hour
+const READ_RETRY_PAUSES_MS = [2000, 5000, 15000, 30000];
 
 // Number of calls sent side by side, largest first: when the org pushes back, the calls it refused
 // are read again at the next size, which is kept for the rest of the run.
 export function parallelReadCallSizes(concurrency?: number | null): number[] {
-  const max = Math.max(1, Math.floor(concurrency ?? DEFAULT_READ_CONCURRENCY));
+  const requested = Number.isFinite(concurrency) ? Math.floor(concurrency as number) : DEFAULT_READ_CONCURRENCY;
+  const max = Math.max(1, requested);
   return [max, ...READ_CONCURRENCY_LADDER.filter((size) => size < max)];
 }
 
-const TRANSIENT_METADATA_API_ERROR = /ConcurrentRequests|ConcurrentPerOrgLongTxn|SERVER_UNAVAILABLE|ERROR_HTTP_5\d\d|ENOTFOUND|timed out|timeout/i;
+const TRANSIENT_METADATA_API_ERROR = /ConcurrentRequests|ConcurrentPerOrgLongTxn|SERVER_UNAVAILABLE|ERROR_HTTP_5\d\d/i;
 
 // True for an error that a pause and fewer parallel calls can fix: too many concurrent requests, a
 // server that is unavailable, a dropped connection. The daily API limit (TotalRequests) and an error
@@ -177,14 +182,19 @@ export function isTransientMetadataApiError(error: unknown): boolean {
 // Types whose entries are permissions: --active-only drops the ones that grant nothing.
 export const ACTIVE_ONLY_TYPES = ['Profile', 'PermissionSet', 'MutingPermissionSet'];
 
+const MAX_TAB_DEFINITIONS = 50000;
+
 // Where a Profile (tabVisibilities) and a Permission Set (tabSettings) keep their tab settings
 const TAB_SETTING_KEYS = ['tabVisibilities', 'tabSettings'];
 
 // Names of the tabs that exist in the org (standard-Account, MyObject__c...), or null when the org
-// can not tell: the tab settings are then all kept.
+// can not tell: the tab settings are then all kept. Every page is read, and a dropped connection is
+// tried again: a list that is short or missing one day changes the tab settings of every Profile.
 export async function listValidTabNames(conn: Connection): Promise<Set<string> | null> {
   try {
-    const queryResult = await conn.query<{ Name: string }>('SELECT Name FROM TabDefinition');
+    const queryResult = await retryOnThrottling(async () =>
+      await conn.query<{ Name: string }>('SELECT Name FROM TabDefinition', { autoFetch: true, maxFetch: MAX_TAB_DEFINITIONS })
+    );
     const names = (queryResult.records || []).map((record) => record.Name).filter(Boolean);
     return names.length > 0 ? new Set(names) : null;
   } catch {
@@ -399,6 +409,7 @@ export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudM
   // The calls leave several at a time: a Profile takes about 2 seconds to read, whatever the number
   // of Profiles in the call, and the org serves the calls side by side.
   const readErrors = new Map<number, unknown>();
+  let pushBacks = 0;
   const readResults = await mapInAdaptiveBatchesSettled(
     readCalls,
     async (readCall) => {
@@ -411,7 +422,7 @@ export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudM
       sizes: parallelReadCallSizes(options.concurrency),
       shouldBackoff: isTransientMetadataApiError,
       // The Metadata API sends no Retry-After
-      retryAfter: () => READ_RETRY_PAUSE_MS,
+      retryAfter: () => READ_RETRY_PAUSES_MS[Math.min(pushBacks++, READ_RETRY_PAUSES_MS.length - 1)],
       sleep: options.sleep,
       onBackoff: (nextSize) => {
         uxLog('log', commandThis, c.grey(t('crudReadFewerParallelCalls', { count: String(nextSize) })));

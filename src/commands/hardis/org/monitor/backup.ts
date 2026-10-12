@@ -951,11 +951,16 @@ In agent mode:
       (this.project?.getPackageDirectories() || []).find((dir: any) => dir.default)?.fullPath ||
       packageDirs[0] ||
       path.join(process.cwd(), 'force-app');
+    // Only the profiles folders are given as the existing sources to write over: resolving every
+    // file of the backup to find the Profiles takes minutes on a large org
+    const profileDirs = packageDirs
+      .map((packageDir: string) => path.join(packageDir, 'main', 'default', 'profiles'))
+      .filter((profileDir: string) => fs.existsSync(profileDir));
     await readBackupProfiles({
       conn: flags['target-org'].getConnection(),
       profileNames: [...this.profileNames],
       outputDir: defaultPackageDir,
-      packageDirs,
+      packageDirs: profileDirs,
       commandThis: this,
       debug: this.debugMode,
     });
