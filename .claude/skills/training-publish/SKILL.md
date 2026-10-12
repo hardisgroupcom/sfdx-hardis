@@ -51,10 +51,10 @@ Trailhead-native surface open to us.
 domain of the organization site `sfdx-hardis-training/sfdx-hardis-training.github.io`. The course
 had two addresses before, and both redirect to it:
 
-| Address                                                  | Until      | What answers there                                             |
-|----------------------------------------------------------|------------|----------------------------------------------------------------|
-| `https://hardisgroupcom.github.io/sfdx-hardis-training/` | 2026-09-30 | The redirect site built by `pages.yml` of the training         |
-| `https://sfdx-hardis-training.github.io/`                | 2026-10-12 | GitHub itself: a 301 to the same path, with no CORS header     |
+| Address                                                  | Until      | What answers there                                         |
+|----------------------------------------------------------|------------|------------------------------------------------------------|
+| `https://hardisgroupcom.github.io/sfdx-hardis-training/` | 2026-09-30 | The redirect site built by `pages.yml` of the training     |
+| `https://sfdx-hardis-training.github.io/`                | 2026-10-12 | GitHub itself: a 301 to the same path, with no CORS header |
 
 Never write either of them in new content.
 
