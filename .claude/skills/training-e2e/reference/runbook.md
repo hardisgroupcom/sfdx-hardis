@@ -190,7 +190,9 @@ Traps that cost earlier runs time:
   fidelity 3.
 - **Never chain a branch delete after a merge command.** When the merge is refused (a check still
   running, a review missing), deleting the head branch closes the Pull Request. Delete only after
-  `gh pr view <n> --json state` says `MERGED`; `delete_branch_on_merge` is on in the fork anyway.
+  `gh pr view <n> --json state` says `MERGED`. A fork `init` just created has
+  `delete_branch_on_merge` off (2026-10-12): the merged branch stays until the learner clicks
+  **Delete branch**, which Lab 1.6 asks for, so delete it once the state reads `MERGED`.
 - **`backpromote --reset` is not the panel's Back button.** The button only checks out the branch
   you were on. `--reset` leaves the clone on a detached HEAD at `origin/<parent>`.
 - **Leave MegaLinter's GitHub Actions auditor (zizmor) without a token.** Without one it prints a
@@ -277,6 +279,10 @@ Traps that cost earlier runs time:
   ENOENT`, then `cannot change to '/c/git/training-run'`). Prefix the one command.
 - **`panel.mjs` prints bytes `grep` calls binary.** Filter its output with `grep -a`, or the only
   line you get is *Binary file (standard input) matches*.
+- **`stamp-source-rev.mjs fr` stamps every translation that reads BEHIND**, not only the ones you
+  translated (2026-10-12: 30 files, left behind by a generator commit that changed both languages
+  without stamping). Restore the `source_rev` of every file you did not re-read with
+  `git checkout --`, and report the others as behind.
 - **A deleted fork is not a fork to reset.** `reset-fork.sh` now says so and only clones the
   learner's copy. Let `init` create the fork, the way a learner's does: it opens the Actions page
   and waits, and the banner is clicked over CDP (a button whose text starts with *I understand my
@@ -471,6 +477,33 @@ The pipeline and the contributor loop. Nothing else in the course works if this 
 | 1.5 | Retrieve, commit, publish       | `panel.mjs ... hardis:work:save`                 | Metadata Retriever, the commit, the push                                    |
 | 1.6 | Pull Request, check, merge      | `gh pr create`, then `prflow.sh <pr> squash`     | The deployment check job, the merge, the deploy to integration              |
 | 1.7 | Capstone, on your own           | The whole loop again, unaided                    | That a learner can repeat it without the step by step                       |
+
+Level 1 at browser fidelity, since 2026-10-12 (the helpers are in the run folder of that day,
+`run-1012/tools/`, and every one of them logs its steps, carries a watchdog and exits):
+
+- **`init` on a deleted fork takes eight minutes**, and the Actions banner is clicked while it
+  waits: `banner-wait.mjs` polls `gh api repos/<fork>` and clicks the button whose text starts with
+  *I understand my workflows* about fifteen seconds after the fork appears. The push of step 7 then
+  starts a Process Deployment run, which is the proof that Actions really run.
+- **Lab 1.4 steps 4 and 5 are clickable**: on the record page, `button[title="Edit <label>"]` is
+  the pencil, `input[name="<Field__c>"]` the box and `button[name="SaveEdit"]` the Save
+  (`l14-record.mjs`). No Apex needed for the three values.
+- **Lab 1.6 step 1 is clickable**: open the compare URL `work:save` prints
+  (`/compare/integration...<branch>?expand=1`), read the base repository, the prefilled title and
+  the template, fill `pull_request[title]` and `pull_request[body]`, and click the **visible**
+  submit button: the first `Create pull request` button of the page is hidden (`pr-create.mjs`).
+  A script that throws leaves its tab open: close it through `/json/close/<id>`.
+- **Lab 1.7's list view is clickable** with role locators, which pierce the Lightning shadow DOM
+  (`l17-listview.mjs`, `l17-lv2.mjs`): **List View Controls** > **New**, the *All users can see
+  this list view* radio, the **Filter by Owner** card then **Done**, **Add Filter** with three
+  comboboxes, **Select Fields to Display**. The filter popup and the panel both have a **Save**
+  button: save the popup first. Never press Escape in the popup, it drops the filter. The retrieved
+  XML is the same as the file earlier runs deployed.
+- **The picture retake can run while the orgs are torn down**: the teardown is CLI calls, the
+  retake is one hidden VS Code. Three captures are flaky and need a second `shots.mjs <name>`:
+  the two Metadata Retriever ones (org combo reading *Select an Option*), and
+  `promotion-create-conflict`, which twice came back with its fourth answer cut off (kept the
+  previous capture). `backpromote-loading` stops at its third step: keep the previous one.
 
 Level 1 notes that previous runs settled:
 
