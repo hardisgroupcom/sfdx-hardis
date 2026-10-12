@@ -73,7 +73,7 @@ describe('isTransientMetadataApiError()', () => {
 
   it('is false for the daily API limit and for an error about the component', () => {
     expect(isTransientMetadataApiError(new Error('REQUEST_LIMIT_EXCEEDED: TotalRequests Limit exceeded.'))).to.be.false;
-    expect(isTransientMetadataApiError(new Error('INVALID_TYPE: Unknown type: Profil'))).to.be.false;
+    expect(isTransientMetadataApiError(new Error('INVALID_TYPE: Unknown type: Foo'))).to.be.false;
     expect(isTransientMetadataApiError(new Error('Your request timed out while reading the component'))).to.be.false;
     expect(isTransientMetadataApiError(null)).to.be.false;
   });
