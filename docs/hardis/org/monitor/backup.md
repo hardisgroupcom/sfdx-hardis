@@ -25,6 +25,19 @@ When the org contains Data Cloud objects (`__dlm` and `__dll` suffix on CustomOb
 
 To skip Data Cloud objects backup, use config property `monitoringBackupSkipDataCloud: true` or environment variable `MONITORING_BACKUP_SKIP_DATA_CLOUD=true`.
 
+## Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components of the same request, so a backed up Profile used to miss most of what it grants (standard objects and their fields, tabs, and in full mode everything that is in another chunk).
+
+After the retrieve, the Profiles are read again with the CRUD Metadata API, which returns them whole, and written over the retrieved files. This is what the Auto mode of the VS Code Metadata Retriever does, and what `sf hardis:mdapi:read --metadata Profile --active-only` does.
+
+- The entries that grant nothing are left out (field access with no read and no edit, Apex class access disabled, user permission disabled...), and so are the tab settings of tabs that do not exist. A permission that is revoked in the org shows as a removed line in the next backup.
+- Only the Profiles that were retrieved are read: a Profile skipped with `manifest/package-skip-items.xml` or `MONITORING_BACKUP_SKIP_METADATA_TYPES` stays skipped.
+- A Profile that can not be read fails the backup, with the names of the Profiles and the error. Skip it with `manifest/package-skip-items.xml` to let the backup go on.
+- The first backup that runs with this behavior reports every Profile as updated.
+
+Other types, including Permission Sets, come back whole from the file-based retrieve and are not read again.
+
 ## Full mode
 
 Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true

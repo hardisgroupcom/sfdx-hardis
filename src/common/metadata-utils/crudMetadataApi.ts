@@ -12,6 +12,7 @@ import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import { createTempDir, uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
+import { isThrottlingError, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 
 // Namespace stamped on every metadata-format root element.
 const METADATA_XMLNS = 'http://soap.sforce.com/2006/04/metadata';
@@ -140,6 +141,37 @@ export function partitionCrudCompatibility<T extends { type: { name: string }; f
     (isCrudIncompatibleTypeName(cmp.type.name, reg) ? skipped : supported).push(cmp);
   }
   return { supported, skipped };
+}
+
+// readMetadata calls sent side by side. Measured on 35 Profiles (API 68): 65 seconds one call of 10 at
+// a time, 22 seconds with 5 calls of 10 side by side, 11 seconds with 8 calls of 5, and no error.
+export const DEFAULT_READ_CONCURRENCY = 8;
+const READ_CONCURRENCY_LADDER = [8, 4, 2, 1];
+const READ_RETRY_PAUSE_MS = 2000;
+
+// Number of calls sent side by side, largest first: when the org pushes back, the calls it refused
+// are read again at the next size, which is kept for the rest of the run.
+export function parallelReadCallSizes(concurrency?: number | null): number[] {
+  const max = Math.max(1, Math.floor(concurrency ?? DEFAULT_READ_CONCURRENCY));
+  return [max, ...READ_CONCURRENCY_LADDER.filter((size) => size < max)];
+}
+
+const TRANSIENT_METADATA_API_ERROR = /ConcurrentRequests|ConcurrentPerOrgLongTxn|SERVER_UNAVAILABLE|ERROR_HTTP_5\d\d|ENOTFOUND|timed out|timeout/i;
+
+// True for an error that a pause and fewer parallel calls can fix: too many concurrent requests, a
+// server that is unavailable, a dropped connection. The daily API limit (TotalRequests) and an error
+// about the component itself are final.
+export function isTransientMetadataApiError(error: unknown): boolean {
+  if (!error) {
+    return false;
+  }
+  if (isThrottlingError(error)) {
+    return true;
+  }
+  const details = [(error as any)?.name, (error as any)?.errorCode, (error as any)?.code, (error as any)?.message]
+    .filter(Boolean)
+    .join(' ');
+  return TRANSIENT_METADATA_API_ERROR.test(details);
 }
 
 // Types whose entries are permissions: --active-only drops the ones that grant nothing.
@@ -326,6 +358,15 @@ export interface CrudReadOptions {
   debug?: boolean;
   // Drop the permission entries that grant nothing (see removeInactiveEntries)
   activeOnly?: boolean;
+  // readMetadata calls sent side by side (default DEFAULT_READ_CONCURRENCY, 1 reads one call at a time)
+  concurrency?: number;
+  // Pause function, replaceable in tests
+  sleep?: (ms: number) => Promise<void>;
+}
+
+interface ReadCall {
+  typeName: string;
+  fullNames: string[];
 }
 
 interface MetadataFileSpec {
@@ -347,52 +388,80 @@ export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudM
   const fileSpecs = new Map<string, MetadataFileSpec>();
   const tmpMdRoot = await createTempDir();
 
+  const readCalls: ReadCall[] = [];
   for (const [typeName, comps] of Object.entries(byType)) {
     const size = resolveEffectiveChunkSize(typeName, chunkSizeOverride);
     for (const batch of chunkArray(comps, size)) {
-      const fullNames = batch.map((cmp) => cmp.fullName);
-      let results: any[];
-      try {
-        if (debug) {
-          uxLog('other', commandThis, c.grey(`readMetadata ${typeName}: ${fullNames.join(', ')}`));
-        }
-        results = toArray(await conn.metadata.read(typeName as any, fullNames));
-      } catch (e) {
-        for (const cmp of batch) {
-          failures.push({ type: typeName, fullName: cmp.fullName, status: 'error', error: (e as Error).message });
-        }
+      readCalls.push({ typeName, fullNames: batch.map((cmp) => cmp.fullName) });
+    }
+  }
+
+  // The calls leave several at a time: a Profile takes about 2 seconds to read, whatever the number
+  // of Profiles in the call, and the org serves the calls side by side.
+  const readErrors = new Map<number, unknown>();
+  const readResults = await mapInAdaptiveBatchesSettled(
+    readCalls,
+    async (readCall) => {
+      if (debug) {
+        uxLog('other', commandThis, c.grey(`readMetadata ${readCall.typeName}: ${readCall.fullNames.join(', ')}`));
+      }
+      return toArray(await conn.metadata.read(readCall.typeName as any, readCall.fullNames));
+    },
+    {
+      sizes: parallelReadCallSizes(options.concurrency),
+      shouldBackoff: isTransientMetadataApiError,
+      // The Metadata API sends no Retry-After
+      retryAfter: () => READ_RETRY_PAUSE_MS,
+      sleep: options.sleep,
+      onBackoff: (nextSize) => {
+        uxLog('log', commandThis, c.grey(t('crudReadFewerParallelCalls', { count: String(nextSize) })));
+      },
+      onError: (error, _readCall, index) => {
+        readErrors.set(index, error);
+      },
+    }
+  );
+
+  for (let index = 0; index < readCalls.length; index++) {
+    const { typeName, fullNames } = readCalls[index];
+    const results = readResults[index];
+    if (results === undefined) {
+      const error = readErrors.get(index);
+      const errorMessage = (error as Error)?.message || String(error ?? t('crudComponentNotFoundInOrg'));
+      for (const fullName of fullNames) {
+        failures.push({ type: typeName, fullName, status: 'error', error: errorMessage });
+      }
+      continue;
+    }
+    // Map results back to the requested members by fullName (order is not guaranteed).
+    const resultsByName = new Map<string, any>();
+    for (const res of results) {
+      if (res?.fullName) {
+        resultsByName.set(res.fullName, res);
+      }
+    }
+    for (const fullName of fullNames) {
+      const res = resultsByName.get(fullName) ?? (results.length === 1 && fullNames.length === 1 ? results[0] : null);
+      if (!res?.fullName) {
+        failures.push({ type: typeName, fullName, status: 'error', error: t('crudComponentNotFoundInOrg') });
         continue;
       }
-      // Map results back to the requested members by fullName (order is not guaranteed).
-      const resultsByName = new Map<string, any>();
-      for (const res of results) {
-        if (res?.fullName) {
-          resultsByName.set(res.fullName, res);
+      if (activeOnly && validTabNames === undefined && ACTIVE_ONLY_TYPES.includes(typeName)) {
+        validTabNames = await listValidTabNames(conn);
+        if (validTabNames === null) {
+          uxLog('warning', commandThis, c.yellow(t('crudActiveOnlyTabsNotChecked')));
         }
       }
-      for (const cmp of batch) {
-        const res = resultsByName.get(cmp.fullName) ?? (results.length === 1 && batch.length === 1 ? results[0] : null);
-        if (!res?.fullName) {
-          failures.push({ type: typeName, fullName: cmp.fullName, status: 'error', error: t('crudComponentNotFoundInOrg') });
-          continue;
-        }
-        if (activeOnly && validTabNames === undefined && ACTIVE_ONLY_TYPES.includes(typeName)) {
-          validTabNames = await listValidTabNames(conn);
-          if (validTabNames === null) {
-            uxLog('warning', commandThis, c.yellow(t('crudActiveOnlyTabsNotChecked')));
-          }
-        }
-        const { result: readResult, removedCount } = activeOnly
-          ? removeInactiveEntries(typeName, res, validTabNames ?? null)
-          : { result: res, removedCount: 0 };
-        accumulateMetadataFile(fileSpecs, registry, typeName, cmp.fullName, readResult);
-        successes.push({
-          type: typeName,
-          fullName: cmp.fullName,
-          status: 'success',
-          ...(removedCount > 0 ? { inactiveEntriesRemoved: removedCount } : {}),
-        });
-      }
+      const { result: readResult, removedCount } = activeOnly
+        ? removeInactiveEntries(typeName, res, validTabNames ?? null)
+        : { result: res, removedCount: 0 };
+      accumulateMetadataFile(fileSpecs, registry, typeName, fullName, readResult);
+      successes.push({
+        type: typeName,
+        fullName,
+        status: 'success',
+        ...(removedCount > 0 ? { inactiveEntriesRemoved: removedCount } : {}),
+      });
     }
   }
 

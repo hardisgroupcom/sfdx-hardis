@@ -10,6 +10,14 @@ Adds a new commit to the git branch with the changes made since the latest monit
 
 Sfdx-hardis command: [sf hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
 
+### Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components retrieved with it. The backup reads the Profiles again with the CRUD Metadata API, so each file holds everything the Profile grants, as the Auto mode of the VS Code Metadata Retriever does.
+
+- Entries that grant nothing are left out: a permission revoked in the org shows as removed lines in the next backup.
+- The first backup that runs with this behavior reports every Profile as updated. It is not a change in your org.
+- A Profile that can not be read fails the backup and names the Profile: add it to `manifest/package-skip-items.xml` to leave it out.
+
 ### Ask questions with a coding agent
 
 Each backup also writes an `AGENTS.md` file at the root of the monitoring repository (and a `CLAUDE.md` that imports it, when there is none). It tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what the backup skips and which monitoring checks run on the branch.
