@@ -25,6 +25,7 @@ import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitoringAgentsMd.js';
 import { ensureMonitoringMegaLinterConfig, MEGALINTER_CONFIG_FILE } from '../../../../common/monitoring/monitoringMegaLinterConfig.js';
+import { collectProfileNames, readBackupProfiles } from '../../../../common/monitoring/monitoringBackupProfiles.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -65,6 +66,19 @@ You can remove more metadata types from backup, especially in case you have too 
 When the org contains Data Cloud objects (\`__dlm\` and \`__dll\` suffix on CustomObjects), they are backed up by default in a **separate retrieve call**.
 
 To skip Data Cloud objects backup, use config property \`monitoringBackupSkipDataCloud: true\` or environment variable \`MONITORING_BACKUP_SKIP_DATA_CLOUD=true\`.
+
+## Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components of the same request, so a backed up Profile used to miss most of what it grants (standard objects and their fields, tabs, and in full mode everything that is in another chunk).
+
+After the retrieve, the Profiles are read again with the CRUD Metadata API, which returns them whole, and written over the retrieved files. This is what the Auto mode of the VS Code Metadata Retriever does, and what \`sf hardis:mdapi:read --metadata Profile --active-only\` does.
+
+- The entries that grant nothing are left out (field access with no read and no edit, Apex class access disabled, user permission disabled...), and so are the tab settings of tabs that do not exist. A permission that is revoked in the org shows as a removed line in the next backup.
+- Only the Profiles that were retrieved are read: a Profile skipped with \`manifest/package-skip-items.xml\` or \`MONITORING_BACKUP_SKIP_METADATA_TYPES\` stays skipped.
+- A Profile that can not be read fails the backup, with the names of the Profiles and the error. Skip it with \`manifest/package-skip-items.xml\` to let the backup go on.
+- The first backup that runs with this behavior reports every Profile as updated.
+
+Other types, including Permission Sets, come back whole from the file-based retrieve and are not read again.
 
 ## Full mode
 
@@ -225,6 +239,8 @@ In agent mode:
   protected currentPackage: any = {};
   protected currentPackageLen = 0;
 
+  protected profileNames = new Set<string>();
+
   protected namespaces: string[];
   protected installedPackages: any[];
   protected outputFile;
@@ -321,11 +337,11 @@ In agent mode:
         c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
       );
       const packageXmlFullFile = 'manifest/package-all-org-items.xml';
-      await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
+      await buildOrgManifest(flags['target-org'].getUsername(), packageXmlFullFile, flags['target-org'].getConnection());
 
       // List namespaces used in the org
       this.namespaces = [];
-      this.installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+      this.installedPackages = await MetadataUtils.listInstalledPackages(flags['target-org'].getUsername(), this);
       for (const installedPackage of this.installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
           this.namespaces.push(installedPackage.SubscriberPackageNamespace);
@@ -342,6 +358,9 @@ In agent mode:
       else {
         await this.extractMetadatasFiltered(packageXmlFullFile, flags);
       }
+
+      // The file-based retrieve returns truncated Profiles: read them whole
+      await this.readCompleteProfiles(flags);
 
       // Write installed packages
       uxLog("action", this, c.cyan(t('writeInstalledPackages')));
@@ -919,5 +938,31 @@ In agent mode:
       );
       throw e;
     }
+    for (const profileName of collectProfileNames(packageXml)) {
+      this.profileNames.add(profileName);
+    }
+  }
+
+  // Only the Profiles of the manifests that were retrieved: package-skip-items.xml,
+  // MONITORING_BACKUP_SKIP_METADATA_TYPES and --start-chunk apply here too
+  private async readCompleteProfiles(flags: any) {
+    const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+    const defaultPackageDir =
+      (this.project?.getPackageDirectories() || []).find((dir: any) => dir.default)?.fullPath ||
+      packageDirs[0] ||
+      path.join(process.cwd(), 'force-app');
+    // Only the profiles folders are given as the existing sources to write over: resolving every
+    // file of the backup to find the Profiles takes minutes on a large org
+    const profileDirs = packageDirs
+      .map((packageDir: string) => path.join(packageDir, 'main', 'default', 'profiles'))
+      .filter((profileDir: string) => fs.existsSync(profileDir));
+    await readBackupProfiles({
+      conn: flags['target-org'].getConnection(),
+      profileNames: [...this.profileNames],
+      outputDir: defaultPackageDir,
+      packageDirs: profileDirs,
+      commandThis: this,
+      debug: this.debugMode,
+    });
   }
 }

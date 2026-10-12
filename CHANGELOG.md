@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/) backs up complete Profiles, as the Metadata Retriever does in Auto mode: the first backup after the upgrade reports every Profile as updated.
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/) lists the metadata and the installed packages of the org given with `--target-org`, instead of the default org.
+- [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) reads several batches of components in parallel, up to 3 times faster on Profiles.
+
 ## [8.17.0] 2026-10-11
 
 - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now computed for each major org from the deployment jobs and Pull Requests of the git provider, without any org login, with the time each change takes to reach production and where it waits.
