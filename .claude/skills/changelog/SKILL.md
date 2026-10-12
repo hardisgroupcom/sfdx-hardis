@@ -31,15 +31,15 @@ The beta section is read as a whole at release time. Adding an entry means leavi
 2. **One group per command or feature.** Apply the grouping rules above to the section as it is, not only to your entry: when two top-level lines already link the same command or the same feature, merge them into one group in the same edit, even if you did not write them.
 3. **Order the groups by theme**, in this order. Inside a theme, keep the groups that go together next to each other, and put the newest change of a group first.
 
-   | # | Theme | What goes there |
-   |---|-------|-----------------|
-   | 1 | New commands | Lines starting with `New [hardis:...]` |
-   | 2 | CI/CD pipeline | `hardis:project:deploy:*`, `hardis:work:*`, Pull Request comments, deployment actions, promotion branches, backpromote, DORA |
-   | 3 | Org monitoring | `hardis:org:monitor:*`, `hardis:org:diagnose:*`, `hardis:org:configure:monitoring`, notifications, Grafana |
-   | 4 | Documentation generation | `hardis:doc:*` |
-   | 5 | Other commands | Every other command, sorted by command name |
-   | 6 | Integrations | Lines starting with a provider name: `GitHub:`, `GitLab:`, `Azure DevOps:`, `Bitbucket:`, `Jira:`, `ServiceNow:`... |
-   | 7 | Doc site and others | Lines starting with `Doc:`, dependencies, internal changes worth a line |
+   | # | Theme                    | What goes there                                                                                                              |
+   |---|--------------------------|------------------------------------------------------------------------------------------------------------------------------|
+   | 1 | New commands             | Lines starting with `New [hardis:...]`                                                                                       |
+   | 2 | CI/CD pipeline           | `hardis:project:deploy:*`, `hardis:work:*`, Pull Request comments, deployment actions, promotion branches, backpromote, DORA |
+   | 3 | Org monitoring           | `hardis:org:monitor:*`, `hardis:org:diagnose:*`, `hardis:org:configure:monitoring`, notifications, Grafana                   |
+   | 4 | Documentation generation | `hardis:doc:*`                                                                                                               |
+   | 5 | Other commands           | Every other command, sorted by command name                                                                                  |
+   | 6 | Integrations             | Lines starting with a provider name: `GitHub:`, `GitLab:`, `Azure DevOps:`, `Bitbucket:`, `Jira:`, `ServiceNow:`...          |
+   | 7 | Doc site and others      | Lines starting with `Doc:`, dependencies, internal changes worth a line                                                      |
 
 4. **The themes are an order, not headers.** Never write a theme name in the file: the section stays a flat list of top-level bullets, with nested bullets only for the changes of a group.
 5. **Only the beta section is reorganized.** Never touch a released version section.
