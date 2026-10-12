@@ -314,8 +314,10 @@ Traps that cost earlier runs time:
   module*. Kept in the run folder of 2026-10-08 as `tools/panel-node.mjs`.
 - **The classic field-level security page of a profile no longer answers a CDP script**
   (2026-10-08): `/setup/layout/flsedit.jsp` timed out on the profile row, and the tabs it left open
-  later wedged the CDP attach. Grant a profile through `FieldPermissions` DML and say so in the
-  report.
+  later wedged the CDP attach. The route a learner takes does answer (2026-10-12): the field's own
+  page, `/lightning/setup/ObjectManager/<objectDurableId>/FieldsAndRelationships/<fieldId15>/view`,
+  whose classic iframe holds `input[name=fieldAccessEdit]` (**Set Field-Level Security**); click it,
+  then the frame with `input[name=save]` holds one row per profile, first box Visible.
 - **Python writes CRLF on Windows.** A script editing a lab or a CLI file must open it with
   `newline=''`, or the whole file shows as changed.
 - **`action:create --sfdmu-project` takes the workspace name** (`HeliosCrewRefData`), the value
@@ -544,6 +546,34 @@ opening them by hand: what the simulator produces is what the lab describes.
   must not appear in Level 2.
 - `hardis:work:resetselection` resets the **commits**: a soft reset, a restore of `manifest/`, and
   `canForcePush`. There is no stored list of ticked items, and no screen that shows one.
+
+Level 2 straight after Level 1, with no **Reset this level**, since 2026-10-12 (helpers in the run
+folder of that day, `run-1012/tools/`):
+
+- **It works as written.** The backpromote window is Romain's Pull Request alone, the teammate
+  stories are patches applied to the permission set and the layout as they are that day, and the
+  Lab 2.7 conflict is the lab's snippet character for character. Pull Request numbers follow on
+  from Level 1's, and the action files are named after them (`.sfdx-hardis.5.yml`, `.7.yml`,
+  `.15.yml` that day): Level 3's promotions collect them by those numbers.
+- **The Object Settings edit page has stable id suffixes** (`l24-grant.mjs`):
+  `tab_available_ck`, `tab_visible_ck`, `obj_perms_data_table:0:olp_check` (0 Read, 1 Create,
+  2 Edit), then the field rows. A `tr` filtered on a cell reading *Read* also matches the outer
+  layout row, whose first checkbox is the tab's **Available**: the grant then saves a tab setting
+  and no object permission. Prove with `ObjectPermissions` and `PermissionSetTabSetting`.
+- **A manual step is ticked in the browser** (`gh-tick.mjs`): on the Pull Request page,
+  `li.task-list-item` filtered on the label of the step, its `input[type=checkbox]`, one click.
+  The first match is the box of the Deployment Actions comment.
+- **The Metadata Retriever's Auto mode retrieves a Profile with** `sf hardis mdapi read -m
+  "Profile:Helios Crew" --target-org helios-dev --active-only --agent --ignore-errors --json`.
+  `sf project retrieve start -m Profile:...` brings a different, shorter file, and Lab 2.6 is
+  about the long one.
+- **A throwaway project deployed to a tracked scratch org answers *1 conflicts detected*.** It
+  has no local tracking of its own: pass `--ignore-conflicts`.
+- **A teardown leaves `SourceMember` rows of deleted fields that are not marked obsolete.** The
+  select-all retrieve of Lab 2.8 reports them as *cannot be found* and carries on.
+- **`helios-integration` shows the 12 Crew Capacity records under Recently Viewed** only because
+  the CI user is the scratch org user the walk opens the org with. No **All** list view travels
+  unless the walk retrieves `ListView:Crew_Capacity__c.All`.
 
 ## 7. Level 3, eleven labs
 
