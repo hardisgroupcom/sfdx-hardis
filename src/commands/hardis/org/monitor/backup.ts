@@ -94,10 +94,12 @@ Other types, including Permission Sets, come back whole from the file-based retr
 A retrieve never deletes a local file. After the retrieve, the backup deletes the files of the components that no longer exist in the org, so a component deleted in the org shows as deleted files in the next backup.
 
 - A file is deleted only when its component is not in \`manifest/package-all-org-items.xml\`, the list of everything that exists in the org. A component that still exists but is no longer retrieved (\`manifest/package-skip-items.xml\`, \`MONITORING_BACKUP_SKIP_METADATA_TYPES\`, installed package namespace) keeps the file of its last backup.
+- Before deleting, the backup asks the org for each component with the Metadata API, and deletes its files only when the org does not return it. A component the org still returns stays, and so does one the org can not be asked about (a type the Metadata API does not read, like \`Settings\`). The files kept this way are listed in the log.
 - A file that the org just returned is never deleted, and neither is a file that can not be linked to a component.
 - Some files stay when nothing proves that their component is gone: the children (fields, list views, record types...) of an object that is not retrieved, the types that the org does not list by name, and the types of which nothing is retrieved (a type skipped as a whole, like \`Report\`). For those, only the components that the previous backup listed and that the org no longer lists are deleted: the list of the org alone is not a proof, it misses components that exist, such as the reports of nested folders.
 - The files of \`GlobalValueSetTranslation\` and \`StandardValueSetTranslation\` are never deleted: the org lists one language of a value set and not the others.
-- There is no limit on the number of deleted files: a cleanup that removes a lot of metadata is mirrored by the next backup. If the org returns an incomplete list of its components one day, the files of the missing ones are deleted, and the next backup brings them back.
+- There is no limit on the number of deleted files: a cleanup that removes a lot of metadata is mirrored by the next backup.
+- An error while deleting the files is logged as a warning: the backup goes on.
 - The first backup that runs with this behavior deletes the files of everything that was deleted in the org since the monitoring started.
 - Nothing is deleted when the run does not retrieve everything (\`--start-chunk\`, \`FULL_ORG_MANIFEST_PATH\`).
 
@@ -389,7 +391,7 @@ In agent mode:
       await this.readCompleteProfiles(flags);
 
       // A retrieve never deletes a file: delete those of the components that are gone from the org
-      await this.deleteFilesOfDeletedComponents(packageXmlFullFile, previousOrgManifest);
+      await this.deleteFilesOfDeletedComponents(packageXmlFullFile, previousOrgManifest, flags);
 
       // Write installed packages
       uxLog("action", this, c.cyan(t('writeInstalledPackages')));
@@ -1004,27 +1006,34 @@ In agent mode:
     });
   }
 
-  // Nothing is deleted when the run can not tell what is gone from the org
-  private async deleteFilesOfDeletedComponents(packageXmlFullFile: string, previousOrgManifest: any) {
-    const config = await getConfig('branch');
-    let skipReason: BackupDeletionsSkipReason | null = null;
-    if (isBackupDeletionsDisabled(config)) {
-      skipReason = { kind: 'disabled' };
-    } else if (this.startChunk > 1) {
-      skipReason = { kind: 'partialRetrieve', detail: '--start-chunk' };
-    } else if (process.env.FULL_ORG_MANIFEST_PATH) {
-      skipReason = { kind: 'partialRetrieve', detail: 'FULL_ORG_MANIFEST_PATH' };
-    } else if (!this.retrievedFiles.complete) {
-      skipReason = { kind: 'partialRetrieve', detail: 'sf project retrieve start --json' };
+  // Nothing is deleted when the run can not tell what is gone from the org. Never throws: the
+  // metadata is retrieved, a cleanup that fails must not fail the backup.
+  private async deleteFilesOfDeletedComponents(packageXmlFullFile: string, previousOrgManifest: any, flags: any) {
+    try {
+      const config = await getConfig('branch');
+      let skipReason: BackupDeletionsSkipReason | null = null;
+      if (isBackupDeletionsDisabled(config)) {
+        skipReason = { kind: 'disabled' };
+      } else if (this.startChunk > 1) {
+        skipReason = { kind: 'partialRetrieve', detail: '--start-chunk' };
+      } else if (process.env.FULL_ORG_MANIFEST_PATH) {
+        skipReason = { kind: 'partialRetrieve', detail: 'FULL_ORG_MANIFEST_PATH' };
+      } else if (!this.retrievedFiles.complete) {
+        skipReason = { kind: 'noFileList' };
+      }
+      const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+      const conn = flags['target-org'].getConnection();
+      await applyBackupDeletions({
+        packageDirs: packageDirs.length > 0 ? packageDirs : [path.join(process.cwd(), 'force-app')],
+        retrieved: this.retrievedFiles,
+        currentManifest: skipReason ? null : await parsePackageXmlFile(packageXmlFullFile),
+        previousManifest: previousOrgManifest,
+        skipReason,
+        readMetadata: (type: string, fullNames: string[]) => conn.metadata.read(type, fullNames),
+        commandThis: this,
+      });
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('backupDeletionsFailed', { message: e?.message || String(e) })));
     }
-    const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
-    await applyBackupDeletions({
-      packageDirs: packageDirs.length > 0 ? packageDirs : [path.join(process.cwd(), 'force-app')],
-      retrieved: this.retrievedFiles,
-      currentManifest: skipReason ? null : await parsePackageXmlFile(packageXmlFullFile),
-      previousManifest: previousOrgManifest,
-      skipReason,
-      commandThis: this,
-    });
   }
 }

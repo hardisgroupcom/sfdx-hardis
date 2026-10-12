@@ -396,7 +396,7 @@ The other way around, a component in `force-app/` but not in `manifest/package-a
 
 A component that still exists in the org but is skipped since (`manifest/package-skip-items.xml`, `MONITORING_BACKUP_SKIP_METADATA_TYPES`) keeps the file of its last backup: that file can be old.
 
-If the org returns an incomplete list of its components one day, the backup deletes the files of the missing ones and the next backup adds them back: a component removed in one backup commit and added again in the next one, unchanged, was not touched in the org.
+Before deleting the files of a component, the backup asks the org for it with the Metadata API, and keeps the files when the org still returns it or can not be asked about it (a type the Metadata API does not read, like `Settings`). So a file deleted by a backup commit is a component the org itself said was gone, and a file that stays proves nothing.
 
 To know whether a component exists in the org today, always check the manifest.
 

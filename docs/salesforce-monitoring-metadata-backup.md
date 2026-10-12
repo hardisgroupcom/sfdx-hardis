@@ -24,7 +24,8 @@ When a component is deleted from the org, the next backup deletes its files, so 
 
 - A file is deleted only when its component is no longer in `manifest/package-all-org-items.xml`, the list of everything that exists in the org. A component that still exists but that you skip keeps the file of its last backup.
 - For a metadata type you skip as a whole (`Report`, `Dashboard`...), only the deletions made in the org from now on are mirrored: the files left by older deletions stay.
-- There is no limit: a cleanup that removes a lot of metadata is mirrored by the next backup. If the org returns an incomplete list of its components one day, the missing files come back with the next backup.
+- Before deleting, the backup asks the org for each component with the Metadata API, and keeps the files when the org still returns it or can not be asked about it. The job log lists the deleted files and the ones kept.
+- There is no limit: a cleanup that removes a lot of metadata is mirrored by the next backup.
 - The first backup that runs with this behavior deletes the files of everything deleted in the org since the monitoring started. It is not a change made in your org that day.
 - To keep the files of deleted components, set `monitoringBackupSkipDeletions: true` in the `.sfdx-hardis.yml` of the monitoring branch, or the variable `MONITORING_BACKUP_SKIP_DELETIONS=true`.
 

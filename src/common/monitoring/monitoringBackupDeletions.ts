@@ -1,5 +1,6 @@
 import c from 'chalk';
 import * as path from 'path';
+import { MetadataResolver } from '@salesforce/source-deploy-retrieve';
 import fs from '../utils/fsUtils.js';
 import { uxLog } from '../utils/index.js';
 import { t } from '../utils/i18n.js';
@@ -7,21 +8,33 @@ import { MetadataUtils } from '../metadata-utils/index.js';
 
 // A retrieve never deletes a local file: after the retrieves, the backup deletes the files of the
 // components that are gone from the org. Only the files that no retrieve of the run wrote are looked
-// at, so a file the org just returned can not be deleted.
+// at, so a file the org just returned can not be deleted, and the org is asked to confirm that each
+// component is gone before its files are deleted.
 
 // The org lists one language of a value set translation and not the others, and a retrieve does not
 // return the ones it does not list: their files are never deleted (seen on a real org: Metier-fr
 // listed, Metier-en_US not listed and readable)
 const TYPES_NOT_LISTED_RELIABLY = new Set(['GlobalValueSetTranslation', 'StandardValueSetTranslation']);
 
+// Components per readMetadata call: the limit of the Metadata API
+const COMPONENTS_PER_READ = 10;
+
 export interface ResolvedBackupFile {
   type: string;
   name: string;
   parent?: { type: string; name: string } | null;
-  xml?: string | null;
+}
+
+export interface FileOfDeletedComponent {
+  file: string;
+  type: string;
+  name: string;
 }
 
 export type PackageXmlContent = Record<string, any> | null | undefined;
+
+// conn.metadata.read: the components the org returns have a fullName
+export type ReadMetadata = (type: string, fullNames: string[]) => Promise<any>;
 
 export interface FindFilesOfDeletedComponentsOptions {
   packageDirs: string[];
@@ -37,17 +50,19 @@ export interface FindFilesOfDeletedComponentsOptions {
 export interface ApplyBackupDeletionsOptions extends FindFilesOfDeletedComponentsOptions {
   // Set when the run can not tell what is gone from the org: nothing is deleted
   skipReason?: BackupDeletionsSkipReason | null;
+  readMetadata: ReadMetadata;
   commandThis: any;
 }
 
 export interface BackupDeletionsSkipReason {
-  kind: 'disabled' | 'partialRetrieve';
+  kind: 'disabled' | 'partialRetrieve' | 'noFileList';
   detail?: string;
 }
 
 export interface BackupDeletionsResult {
   deletedFiles: string[];
-  candidates: number;
+  // Files kept because the org still returns their component, or could not be asked
+  notConfirmedFiles: string[];
   skipped: boolean;
 }
 
@@ -69,14 +84,16 @@ export class RetrievedFilesCollector {
       return;
     }
     for (const file of files) {
-      if (file?.filePath) {
-        const filePath = normalizeFilePath(file.filePath);
-        this.files.add(filePath);
-        if (fs.statSync(filePath, { throwIfNoEntry: false })?.isDirectory()) {
-          this.dirs.push(filePath + path.sep);
-        }
+      // A component that failed has no file: it was not retrieved
+      if (!file?.filePath || file.state === 'Failed') {
+        continue;
       }
-      if (file?.type && file?.fullName) {
+      const filePath = normalizeFilePath(file.filePath);
+      this.files.add(filePath);
+      if (fs.statSync(filePath, { throwIfNoEntry: false })?.isDirectory()) {
+        this.dirs.push(filePath + path.sep);
+      }
+      if (file.type && file.fullName) {
         this.components.add(componentKey(file.type, file.fullName));
         this.types.add(file.type);
       }
@@ -129,16 +146,36 @@ export async function applyBackupDeletions(options: ApplyBackupDeletionsOptions)
   const { commandThis, skipReason } = options;
   if (skipReason?.kind === 'disabled') {
     uxLog('log', commandThis, c.grey(t('backupDeletionsDisabled')));
-    return { deletedFiles: [], candidates: 0, skipped: true };
+    return { deletedFiles: [], notConfirmedFiles: [], skipped: true };
   }
   if (skipReason?.kind === 'partialRetrieve') {
     uxLog('warning', commandThis, c.yellow(t('backupDeletionsSkippedPartialRetrieve', { reason: skipReason.detail || '' })));
-    return { deletedFiles: [], candidates: 0, skipped: true };
+    return { deletedFiles: [], notConfirmedFiles: [], skipped: true };
   }
-  const { filesToDelete, candidates } = await findFilesOfDeletedComponents(options);
+  if (skipReason?.kind === 'noFileList') {
+    uxLog('warning', commandThis, c.yellow(t('backupDeletionsSkippedNoFileList')));
+    return { deletedFiles: [], notConfirmedFiles: [], skipped: true };
+  }
+  const found = await findFilesOfDeletedComponents(options);
+  if (found.length === 0) {
+    uxLog('log', commandThis, c.grey(t('backupNoFileOfDeletedComponents')));
+    return { deletedFiles: [], notConfirmedFiles: [], skipped: false };
+  }
+  const componentsNb = new Set(found.map((item) => componentKey(item.type, item.name))).size;
+  uxLog('action', commandThis, c.cyan(t('backupConfirmingDeletedComponents', { count: String(componentsNb) })));
+  const gone = await confirmDeletedComponents(found, options.readMetadata);
+  const filesToDelete = found.filter((item) => gone.has(componentKey(item.type, item.name))).map((item) => item.file);
+  const notConfirmedFiles = found.filter((item) => !gone.has(componentKey(item.type, item.name))).map((item) => item.file);
+  if (notConfirmedFiles.length > 0) {
+    uxLog(
+      'log',
+      commandThis,
+      c.grey(t('backupDeletionsNotConfirmed', { count: String(notConfirmedFiles.length) }) + '\n' + listForLog(notConfirmedFiles))
+    );
+  }
   if (filesToDelete.length === 0) {
     uxLog('log', commandThis, c.grey(t('backupNoFileOfDeletedComponents')));
-    return { deletedFiles: [], candidates, skipped: false };
+    return { deletedFiles: [], notConfirmedFiles, skipped: false };
   }
   uxLog('action', commandThis, c.cyan(t('backupDeletingFilesOfDeletedComponents', { count: String(filesToDelete.length) })));
   for (const file of filesToDelete) {
@@ -146,37 +183,35 @@ export async function applyBackupDeletions(options: ApplyBackupDeletionsOptions)
   }
   await removeEmptyParentDirs(filesToDelete, options.packageDirs);
   // Every deleted file is logged: the job log is where a deletion is checked
-  const listed = filesToDelete.map((file) => `- ${path.relative(process.cwd(), file).replace(/\\/g, '/')}`);
-  uxLog('log', commandThis, c.grey(listed.join('\n')));
-  return { deletedFiles: filesToDelete, candidates, skipped: false };
+  uxLog('log', commandThis, c.grey(listForLog(filesToDelete)));
+  return { deletedFiles: filesToDelete, notConfirmedFiles, skipped: false };
 }
 
 // A candidate is a file of a package directory that no retrieve of the run wrote. The first rule
-// that matches decides, and a file that can not be proven deleted is kept.
-export async function findFilesOfDeletedComponents(
-  options: FindFilesOfDeletedComponentsOptions
-): Promise<{ filesToDelete: string[]; candidates: number }> {
-  const resolve = options.resolve ?? MetadataUtils.resolveMetadataFromFile;
+// that matches decides, and a file that can not be proven deleted is kept. What comes out is still
+// to be confirmed by the org (confirmDeletedComponents).
+export async function findFilesOfDeletedComponents(options: FindFilesOfDeletedComponentsOptions): Promise<FileOfDeletedComponent[]> {
+  // One resolver for the whole run. It ignores .forceignore: an ignored file is still a component
+  const resolver = new MetadataResolver(undefined, undefined, false);
+  const resolve = options.resolve ?? ((filePath: string) => MetadataUtils.resolveMetadataFromFile(filePath, resolver));
   const current = indexManifest(options.currentManifest);
   const previous = indexManifest(options.previousManifest);
   const { retrieved } = options;
-  const filesToDelete: string[] = [];
-  let candidates = 0;
+  const found: FileOfDeletedComponent[] = [];
   for (const packageDir of options.packageDirs) {
     for (const file of await listFiles(packageDir)) {
       if (retrieved.hasFile(file)) {
         continue;
       }
-      candidates++;
       // 1. Not a metadata file
       const resolved = resolve(file);
       if (!resolved) {
         continue;
       }
       const key = componentKey(resolved.type, resolved.name);
-      // 2. The org returned the component without this file (a file removed from a bundle)
-      if (retrieved.components.has(key) && resolved.xml && retrieved.hasFile(resolved.xml)) {
-        filesToDelete.push(file);
+      // 2. The org just returned the component: the file is one the retrieve does not write
+      // (ignored by .forceignore, or left out of its list of files)
+      if (retrieved.components.has(key)) {
         continue;
       }
       // 3. The component exists in the org: it is skipped by a filter of the backup
@@ -189,7 +224,7 @@ export async function findFilesOfDeletedComponents(
       }
       // 5. Listed by the previous backup and not by this one: removed since
       if (previous.members.has(key)) {
-        filesToDelete.push(file);
+        found.push({ file, type: resolved.type, name: resolved.name });
         continue;
       }
       // 6. A child of a component that was not retrieved: a deleted custom field can not be told
@@ -207,10 +242,64 @@ export async function findFilesOfDeletedComponents(
         continue;
       }
       // 9. A stale file left by an older backup, of a type the org just returned without it
-      filesToDelete.push(file);
+      found.push({ file, type: resolved.type, name: resolved.name });
     }
   }
-  return { filesToDelete: filesToDelete.sort(), candidates };
+  return found.sort((a, b) => (a.file > b.file ? 1 : -1));
+}
+
+// The listing of the org is not a proof (an incomplete list, a name it writes another way): the org
+// is asked for each component, and only the ones it does not return are gone. A component the org
+// can not be asked about (a type readMetadata refuses, an error) is not confirmed: its files stay.
+export async function confirmDeletedComponents(found: FileOfDeletedComponent[], readMetadata: ReadMetadata): Promise<Set<string>> {
+  const namesByType = new Map<string, Set<string>>();
+  for (const item of found) {
+    namesByType.set(item.type, (namesByType.get(item.type) ?? new Set<string>()).add(item.name));
+  }
+  const gone = new Set<string>();
+  for (const [type, names] of namesByType) {
+    const allNames = [...names];
+    for (let i = 0; i < allNames.length; i += COMPONENTS_PER_READ) {
+      const batch = allNames.slice(i, i + COMPONENTS_PER_READ);
+      let answers = await readComponents(type, batch, readMetadata);
+      if (answers === null && batch.length > 1) {
+        // One component the org can not read fails the whole call: ask one by one
+        answers = new Map<string, boolean>();
+        for (const name of batch) {
+          const single = await readComponents(type, [name], readMetadata);
+          if (single !== null) {
+            answers.set(name, single.get(name) === true);
+          }
+        }
+      }
+      for (const name of batch) {
+        if (answers?.get(name) === false) {
+          gone.add(componentKey(type, name));
+        }
+      }
+    }
+  }
+  return gone;
+}
+
+// name -> the org returns it. null when the org could not answer.
+async function readComponents(type: string, names: string[], readMetadata: ReadMetadata): Promise<Map<string, boolean> | null> {
+  // A name is read as the file holds it and decoded: the API takes one or the other
+  const asked = [...new Set(names.flatMap((name) => [name, decodeName(name)]))];
+  const returned = new Set<string>();
+  try {
+    for (let i = 0; i < asked.length; i += COMPONENTS_PER_READ) {
+      const read = await readMetadata(type, asked.slice(i, i + COMPONENTS_PER_READ));
+      for (const item of Array.isArray(read) ? read : [read]) {
+        if (item?.fullName) {
+          returned.add(decodeName(String(item.fullName)));
+        }
+      }
+    }
+  } catch {
+    return null;
+  }
+  return new Map(names.map((name) => [name, returned.has(decodeName(name))]));
 }
 
 function indexManifest(manifest: PackageXmlContent): { members: Set<string>; types: Set<string> } {
@@ -229,13 +318,17 @@ function indexManifest(manifest: PackageXmlContent): { members: Set<string>; typ
 // Names are encoded in the files and in the manifests (Account-Account %28Marketing%29 Layout):
 // compared decoded, whatever each side holds
 function componentKey(type: string, fullName: string): string {
-  let name = String(fullName).trim();
+  return `${type}:${decodeName(fullName)}`;
+}
+
+function decodeName(fullName: string): string {
+  const name = String(fullName).trim();
   try {
-    name = decodeURIComponent(name);
+    return decodeURIComponent(name);
   } catch {
     // A name with a lone % is not encoded
+    return name;
   }
-  return `${type}:${name}`;
 }
 
 function normalizeFilePath(filePath: string): string {
@@ -249,6 +342,10 @@ async function listFiles(dir: string): Promise<string[]> {
   }
   const entries = await fs.readdir(dir, { recursive: true, withFileTypes: true });
   return entries.filter((entry) => entry.isFile()).map((entry) => path.join(entry.parentPath, entry.name));
+}
+
+function listForLog(files: string[]): string {
+  return files.map((file) => `- ${path.relative(process.cwd(), file).replace(/\\/g, '/')}`).join('\n');
 }
 
 // A deleted object leaves its folder and its fields folder behind

@@ -6,8 +6,10 @@ import path from 'path';
 import {
   applyBackupDeletions,
   backupChangeType,
+  confirmDeletedComponents,
   findFilesOfDeletedComponents,
   isBackupDeletionsDisabled,
+  ReadMetadata,
   RetrievedFilesCollector,
   retrieveFailureMessage,
   retrieveJsonErrorMessage,
@@ -21,6 +23,14 @@ const OBJECT = '<?xml version="1.0" encoding="UTF-8"?><CustomObject xmlns="http:
 const LWC_META = '<?xml version="1.0" encoding="UTF-8"?><LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata"><apiVersion>66.0</apiVersion></LightningComponentBundle>';
 const LAYOUT = '<?xml version="1.0" encoding="UTF-8"?><Layout xmlns="http://soap.sforce.com/2006/04/metadata"></Layout>';
 const LABELS = '<?xml version="1.0" encoding="UTF-8"?><CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata"></CustomLabels>';
+
+// An org that returns the components named here, and an empty answer for the others
+function orgWith(existing: string[] = [], calls: string[][] = []): ReadMetadata {
+  return async (type, fullNames) => {
+    calls.push(fullNames);
+    return fullNames.map((fullName) => (existing.includes(`${type}:${fullName}`) ? { fullName } : {}));
+  };
+}
 
 describe('monitoringBackupDeletions', () => {
   let projectDir: string;
@@ -37,15 +47,21 @@ describe('monitoringBackupDeletions', () => {
   }
 
   // What sf project retrieve start --json returns for the files the org sent back
-  function retrieved(files: { file: string; type: string; fullName: string }[]): RetrievedFilesCollector {
+  function retrieved(files: { file?: string; type: string; fullName: string; state?: string }[]): RetrievedFilesCollector {
     const collector = new RetrievedFilesCollector();
-    collector.add({ result: { files: files.map((item) => ({ filePath: item.file, type: item.type, fullName: item.fullName, state: 'Changed' })) } });
+    collector.add({
+      result: { files: files.map((item) => ({ filePath: item.file, type: item.type, fullName: item.fullName, state: item.state || 'Changed' })) },
+    });
     return collector;
   }
 
+  function relative(file: string): string {
+    return path.relative(path.join(packageDir, 'main', 'default'), file).replace(/\\/g, '/');
+  }
+
   async function find(collector: RetrievedFilesCollector, currentManifest: any, previousManifest: any = null): Promise<string[]> {
-    const result = await findFilesOfDeletedComponents({ packageDirs: [packageDir], retrieved: collector, currentManifest, previousManifest });
-    return result.filesToDelete.map((file) => path.relative(path.join(packageDir, 'main', 'default'), file).replace(/\\/g, '/'));
+    const found = await findFilesOfDeletedComponents({ packageDirs: [packageDir], retrieved: collector, currentManifest, previousManifest });
+    return found.map((item) => relative(item.file));
   }
 
   beforeEach(() => {
@@ -58,7 +74,7 @@ describe('monitoringBackupDeletions', () => {
   });
 
   describe('findFilesOfDeletedComponents', () => {
-    it('deletes the files of a class that is gone from the org, and keeps the retrieved one', async () => {
+    it('finds the files of a class that is gone from the org, and keeps the retrieved one', async () => {
       const [keptCls, keptMeta] = write({
         'classes/Kept.cls': 'public class Kept {}',
         'classes/Kept.cls-meta.xml': CLASS_META,
@@ -82,7 +98,7 @@ describe('monitoringBackupDeletions', () => {
       expect(await find(retrieved([]), { ApexClass: ['Kept'] })).to.deep.equal([]);
     });
 
-    it('deletes a custom field deleted from a retrieved object, and keeps the standard fields the org returned', async () => {
+    it('finds a custom field deleted from a retrieved object, and keeps the standard fields the org returned', async () => {
       const [objectFile, standardField] = write({
         'objects/Account/Account.object-meta.xml': OBJECT,
         'objects/Account/fields/Industry.field-meta.xml': FIELD,
@@ -108,17 +124,31 @@ describe('monitoringBackupDeletions', () => {
       expect(await find(retrieved([]), manifest, previous)).to.deep.equal(['objects/Case/fields/Removed__c.field-meta.xml']);
     });
 
-    it('deletes a file removed from a bundle the org returned', async () => {
+    it('does not count a component that failed to retrieve as retrieved', async () => {
+      const [, otherField] = write({
+        'objects/Account/fields/Industry.field-meta.xml': FIELD,
+        'objects/Contact/fields/Level__c.field-meta.xml': FIELD,
+      });
+      const collector = retrieved([
+        { type: 'CustomObject', fullName: 'Account', state: 'Failed' },
+        { file: otherField, type: 'CustomField', fullName: 'Contact.Level__c' },
+      ]);
+      const manifest = { CustomObject: ['Account', 'Contact'], CustomField: ['Contact.Level__c'] };
+      expect(collector.components.has('CustomObject:Account')).to.be.false;
+      expect(await find(collector, manifest)).to.deep.equal([]);
+    });
+
+    it('keeps the other files of a component the org just returned', async () => {
       const [js, meta] = write({
         'lwc/timeline/timeline.js': 'export default class Timeline {}',
         'lwc/timeline/timeline.js-meta.xml': LWC_META,
-        'lwc/timeline/timeline.css': '.a {}',
+        'lwc/timeline/__tests__/timeline.test.js': 'test',
       });
       const collector = retrieved([
         { file: js, type: 'LightningComponentBundle', fullName: 'timeline' },
         { file: meta, type: 'LightningComponentBundle', fullName: 'timeline' },
       ]);
-      expect(await find(collector, { LightningComponentBundle: ['timeline'] })).to.deep.equal(['lwc/timeline/timeline.css']);
+      expect(await find(collector, { LightningComponentBundle: ['other'] })).to.deep.equal([]);
     });
 
     it('keeps a type that the org does not list by name, unless the previous backup listed the component', async () => {
@@ -146,7 +176,7 @@ describe('monitoringBackupDeletions', () => {
       ]);
     });
 
-    it('never deletes a value set translation, even when the previous backup listed it', async () => {
+    it('never finds a value set translation, even when the previous backup listed it', async () => {
       const [french] = write({
         'globalValueSetTranslations/Sector-fr.globalValueSetTranslation-meta.xml': '<GlobalValueSetTranslation/>',
         'globalValueSetTranslations/Sector-en_US.globalValueSetTranslation-meta.xml': '<GlobalValueSetTranslation/>',
@@ -172,45 +202,99 @@ describe('monitoringBackupDeletions', () => {
       const [meta] = write({ 'staticresources/site.resource-meta.xml': '<StaticResource/>', 'staticresources/site/index.html': '<html/>' });
       const collector = retrieved([
         { file: meta, type: 'StaticResource', fullName: 'site' },
-        { file: path.join(path.dirname(meta), 'site'), type: 'StaticResource', fullName: 'site' },
+        { file: path.join(path.dirname(meta), 'site'), type: 'StaticResource', fullName: 'other' },
       ]);
       expect(await find(collector, { StaticResource: ['site'] })).to.deep.equal([]);
     });
   });
 
+  describe('confirmDeletedComponents', () => {
+    const found = (type: string, names: string[]) => names.map((name) => ({ file: `${name}.xml`, type, name }));
+
+    it('confirms only the components the org does not return', async () => {
+      const gone = await confirmDeletedComponents(found('ApexClass', ['Gone', 'StillThere']), orgWith(['ApexClass:StillThere']));
+      expect([...gone]).to.deep.equal(['ApexClass:Gone']);
+    });
+
+    it('asks 10 names by call, each component once', async () => {
+      const calls: string[][] = [];
+      const names = Array.from({ length: 12 }, (_, i) => `Class${i}`);
+      const gone = await confirmDeletedComponents([...found('ApexClass', names), ...found('ApexClass', ['Class0'])], orgWith([], calls));
+      expect(calls.map((call) => call.length)).to.deep.equal([10, 2]);
+      expect(gone.size).to.equal(12);
+    });
+
+    it('reads an encoded name both ways, and keeps the component when the org returns one of them', async () => {
+      const calls: string[][] = [];
+      const layout = 'Account-Account %28Sales%29 Layout';
+      const gone = await confirmDeletedComponents(found('Layout', [layout]), orgWith(['Layout:Account-Account (Sales) Layout'], calls));
+      expect(calls[0]).to.deep.equal([layout, 'Account-Account (Sales) Layout']);
+      expect(gone.size).to.equal(0);
+    });
+
+    it('does not confirm a component the org can not be asked about, and still answers for the others of the call', async () => {
+      const read: ReadMetadata = async (type, fullNames) => {
+        if (fullNames.includes('Broken')) {
+          throw new Error('UNKNOWN_EXCEPTION');
+        }
+        return fullNames.map(() => ({}));
+      };
+      const gone = await confirmDeletedComponents(found('SharingRules', ['Broken', 'Gone']), read);
+      expect([...gone]).to.deep.equal(['SharingRules:Gone']);
+    });
+
+    it('confirms nothing for a type the org refuses to read', async () => {
+      const read: ReadMetadata = async () => {
+        throw new Error('type is not a valid metadata type for reading');
+      };
+      expect((await confirmDeletedComponents(found('Settings', ['Social', 'Web']), read)).size).to.equal(0);
+    });
+  });
+
   describe('applyBackupDeletions', () => {
-    it('deletes the files and the folders left empty', async () => {
-      const [objectFile] = write({
+    it('deletes the files of the components the org confirms, and the folders left empty', async () => {
+      const [objectFile, , , stillThere] = write({
         'objects/Account/Account.object-meta.xml': OBJECT,
         'objects/Gone__c/Gone__c.object-meta.xml': OBJECT,
         'objects/Gone__c/fields/Name__c.field-meta.xml': FIELD,
+        'objects/Listed_Wrong__c/Listed_Wrong__c.object-meta.xml': OBJECT,
       });
       const result = await applyBackupDeletions({
         packageDirs: [packageDir],
         retrieved: retrieved([{ file: objectFile, type: 'CustomObject', fullName: 'Account' }]),
         currentManifest: { CustomObject: ['Account'], CustomField: ['Account.Other__c'] },
-        previousManifest: { CustomObject: ['Account', 'Gone__c'], CustomField: ['Account.Other__c', 'Gone__c.Name__c'] },
+        previousManifest: { CustomObject: ['Account', 'Gone__c', 'Listed_Wrong__c'], CustomField: ['Account.Other__c', 'Gone__c.Name__c'] },
+        readMetadata: orgWith(['CustomObject:Listed_Wrong__c']),
         commandThis,
       });
-      expect(result.deletedFiles).to.have.length(2);
+      expect(result.deletedFiles.map(relative)).to.deep.equal(['objects/Gone__c/Gone__c.object-meta.xml', 'objects/Gone__c/fields/Name__c.field-meta.xml']);
+      expect(result.notConfirmedFiles.map(relative)).to.deep.equal(['objects/Listed_Wrong__c/Listed_Wrong__c.object-meta.xml']);
       expect(result.skipped).to.be.false;
       expect(fs.existsSync(path.join(packageDir, 'main', 'default', 'objects', 'Gone__c'))).to.be.false;
       expect(fs.existsSync(objectFile)).to.be.true;
+      expect(fs.existsSync(stillThere)).to.be.true;
     });
 
-    it('deletes nothing when the run is skipped', async () => {
-      const [gone] = write({ 'classes/Gone.cls-meta.xml': CLASS_META });
-      for (const skipReason of [{ kind: 'disabled' as const }, { kind: 'partialRetrieve' as const, detail: '--start-chunk' }]) {
+    it('deletes nothing and asks the org nothing when the run is skipped', async () => {
+      const [gone] = write({ 'classes/Gone.cls': 'public class Gone {}', 'classes/Gone.cls-meta.xml': CLASS_META });
+      const calls: string[][] = [];
+      for (const skipReason of [
+        { kind: 'disabled' as const },
+        { kind: 'partialRetrieve' as const, detail: '--start-chunk' },
+        { kind: 'noFileList' as const },
+      ]) {
         const result = await applyBackupDeletions({
           packageDirs: [packageDir],
           retrieved: retrieved([]),
           currentManifest: { ApexClass: ['Kept'] },
-          previousManifest: null,
+          previousManifest: { ApexClass: ['Kept', 'Gone'] },
           skipReason,
+          readMetadata: orgWith([], calls),
           commandThis,
         });
-        expect(result).to.deep.equal({ deletedFiles: [], candidates: 0, skipped: true });
+        expect(result).to.deep.equal({ deletedFiles: [], notConfirmedFiles: [], skipped: true });
       }
+      expect(calls).to.deep.equal([]);
       expect(fs.existsSync(gone)).to.be.true;
     });
   });
@@ -225,6 +309,14 @@ describe('monitoringBackupDeletions', () => {
     });
   });
 
+  describe('backupChangeType', () => {
+    it('marks new files A and deleted files D, and leaves modified files as git reports them', () => {
+      expect(backupChangeType({ index: '?', working_dir: '?' })).to.equal('A');
+      expect(backupChangeType({ index: ' ', working_dir: 'D' })).to.equal('D');
+      expect(backupChangeType({ index: ' ', working_dir: 'M' })).to.equal(' ');
+    });
+  });
+
   describe('isBackupDeletionsDisabled', () => {
     afterEach(() => {
       delete process.env.MONITORING_BACKUP_SKIP_DELETIONS;
@@ -235,14 +327,6 @@ describe('monitoringBackupDeletions', () => {
       expect(isBackupDeletionsDisabled({ monitoringBackupSkipDeletions: true })).to.be.true;
       process.env.MONITORING_BACKUP_SKIP_DELETIONS = 'true';
       expect(isBackupDeletionsDisabled({})).to.be.true;
-    });
-  });
-
-  describe('backupChangeType', () => {
-    it('marks new files A and deleted files D, and leaves modified files as git reports them', () => {
-      expect(backupChangeType({ index: '?', working_dir: '?' })).to.equal('A');
-      expect(backupChangeType({ index: ' ', working_dir: 'D' })).to.equal('D');
-      expect(backupChangeType({ index: ' ', working_dir: 'M' })).to.equal(' ');
     });
   });
 
