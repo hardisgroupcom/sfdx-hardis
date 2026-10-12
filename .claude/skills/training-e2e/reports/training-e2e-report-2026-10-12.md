@@ -252,7 +252,7 @@ What is **not** proven is listed in "What this run did not cover".
   commits `a4187be`, `ca9ddc8`).
 - **Lab 3.1 step 3 (no id)**: the **Create** click of the branch rule lands on GitHub's "Confirm
   access" page (GitHub Mobile, passkey or email code). The lab does not mention it and the run could
-  not answer it. NOTES does not say whether the lab text was changed for it. A troubleshooting entry was added to Lab 3.1, English and French (`12edfda`,
+  not answer it. A troubleshooting entry was added to Lab 3.1, English and French (`12edfda`,
   `c4564c7`).
 
 ### Check rules
