@@ -651,7 +651,8 @@ image, so no `AGENTS.md` was written. Compare a lab's claims with `git merge-bas
 v<latest>` before reporting it as broken, and release the CLI before the course Pull Request that
 describes it publishes.
 
-**The Developer Edition orgs speak French.** Their Setup pages read *Écraser*, *Restaurer*, *Tous les
+**The Developer Edition orgs spoke French until 2026-10-12**, when `init` and `seed` started setting
+their user to English; an org whose user is still French shows it. Their Setup pages then read *Écraser*, *Restaurer*, *Tous les
 e-mails*, and a deployment error reads *Une relation enfant portant le nom ... existe déjà*. A CDP
 script that matches English labels reports nothing to do there; match on link targets or element
 names instead.
@@ -677,13 +678,33 @@ folder of that day, `run-1012/tools/`):
   `promo.sh <pr> <target>` with no `tick`). The post-deployment actions then run in the order of
   the Pull Request numbers, which is the lab order, so the backfill runs before the batch.
 - **A Profile retrieved whole in Lab 2.6 stopped the seed of the two Developer Edition orgs**
-  (2026-10-12): it listed the page layout and the tab of every object of the scratch org, and a
-  Developer Edition org lacks about 35 of those layouts and 49 of those tabs. The course cleans
-  them since then (`cleanXmlPatterns` in `config/.sfdx-hardis.yml`). When a deployment to
-  `helios-preprod` or `helios-prod` fails on `Profile Helios Crew`, that rule did not reach the
-  fork: Lab 3.1 "If it goes wrong" has the repair. A dry run tells the whole extent, one layer at
-  a time, because Salesforce reports the layouts first and the tabs only once the layouts pass:
-  `sf project deploy start --source-dir force-app --dry-run --ignore-conflicts -o helios-preprod`.
+  (2026-10-12). It names the page layout and the tab of every object of the org it came from, and
+  an org that lacks one refuses the whole Profile. Three things made the orgs differ, and only a
+  walk with no reset meets them, since the reset path never publishes that Profile:
+    - **Features.** A scratch org comes with Field Service
+      (`FieldServiceSettings.fieldServiceOrgPref`) and the Thanks badges
+      (`WorkDotComSettings.enableWorkThanksPref`) on, a Developer Edition org with both off: 33
+      layouts and 59 tabs. `config/project-scratch-def.json` switches both off, and `init` does it
+      once in the scratch orgs that already exist (`alignScratchOrgs`). Retrieve the two
+      `Settings` from both orgs to compare when a new one shows up.
+    - **Language.** Salesforce names the layouts it creates in the language of the user at work,
+      not in the one of Company Information: `Présentation Crew Capacity` against
+      `Crew Capacity Layout`. `init` and `seed` set the user to English (`workInEnglish`). A
+      layout created before that keeps its French name until the object is deleted and deployed
+      again, which the teardown does.
+    - **Age.** A scratch org created today has layouts for `ContactPointOttSvc` and
+      `SecurityDefenseActionEventStore` that orgs created three weeks earlier do not have, with
+      the same objects. No setting covers that one: it is the case the troubleshooting entry of
+      Lab 2.6 is for (delete the `<layoutAssignments>` block in a Fix story). Whether a Developer
+      Edition org signed up the same day has them is not known.
+
+  Do not clean the Profile with `cleanXmlPatterns`: the maintainer refused that fix. Salesforce
+  reports one missing name per deployment, layouts before tabs, so the whole extent takes a loop:
+  dry-run the Profile alone, remove the block the error names, again
+  (`sf project deploy start --source-dir force-app --dry-run -o helios-prod`, 20 seconds a turn).
+  The Profile to test is the one `sf hardis:mdapi:read -m "Profile:Helios Crew" --active-only`
+  writes, which is what the Metadata Retriever does; `sf project retrieve start` gives another
+  list.
 - **GitHub asks to confirm access (sudo mode) before it saves a branch rule or a secret**, with
   GitHub Mobile, a passkey or an emailed code. A walk cannot answer it: Lab 3.1 step 2 (New
   branch) is clickable over CDP (`l31-branch.mjs`), step 3 is clickable up to the Create button
