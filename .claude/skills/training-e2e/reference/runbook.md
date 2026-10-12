@@ -667,6 +667,61 @@ Lab 3.8 runs in a **second repository**, the monitoring one, with its own secret
   branch. Both were in `defaults/monitoring/.github/workflows/org-monitoring.yml`, and both printed a
   reassuring fallback message. Check what the run actually did, not what it reported.
 
+Level 3 straight after Level 2, with no **Reset this level**, since 2026-10-12 (helpers in the run
+folder of that day, `run-1012/tools/`):
+
+- **It works as written on the released image, with no `E2E ONLY` Pull Request.** The Level 2
+  action files carry the fork's own numbers, so each promotion collects them: `uat`, then
+  `preprod`, then `main` stop red once on the deliverability step, and go green after the box is
+  ticked (`gh-tick.mjs <fork> <pr> "Set Email Deliverability"`, then `gh run rerun`, then
+  `promo.sh <pr> <target>` with no `tick`). The post-deployment actions then run in the order of
+  the Pull Request numbers, which is the lab order, so the backfill runs before the batch.
+- **A Profile retrieved whole in Lab 2.6 stopped the seed of the two Developer Edition orgs**
+  (2026-10-12): it listed the page layout and the tab of every object of the scratch org, and a
+  Developer Edition org lacks about 35 of those layouts and 49 of those tabs. The course cleans
+  them since then (`cleanXmlPatterns` in `config/.sfdx-hardis.yml`). When a deployment to
+  `helios-preprod` or `helios-prod` fails on `Profile Helios Crew`, that rule did not reach the
+  fork: Lab 3.1 "If it goes wrong" has the repair. A dry run tells the whole extent, one layer at
+  a time, because Salesforce reports the layouts first and the tabs only once the layouts pass:
+  `sf project deploy start --source-dir force-app --dry-run --ignore-conflicts -o helios-preprod`.
+- **GitHub asks to confirm access (sudo mode) before it saves a branch rule or a secret**, with
+  GitHub Mobile, a passkey or an emailed code. A walk cannot answer it: Lab 3.1 step 2 (New
+  branch) is clickable over CDP (`l31-branch.mjs`), step 3 is clickable up to the Create button
+  (`l31-rule.mjs`) and then falls back on the lab's own `gh api` call, and the secrets go
+  through `gh secret set`.
+- **Creating `preprod` starts a deployment job that deploys nothing.** The course workflow skips
+  its deployment step while the branch has no org, the run is green, and DORA counts it: `preprod`
+  reads one deployment more than it had.
+- **Start `promo.sh` once, and never with `&` inside a tool call.** The shell that started it goes
+  away and the script lives on: a second one then finds the Pull Request merged and prints
+  *MERGED, but no deployment job started*, which is false.
+- **A picture of a state that is gone needs a Pull Request of its own.** The Deployment Actions
+  comment of Lab 2.4 is pending in `integration` only until US-026 is merged. To take it again
+  later: a branch from `integration` carrying a copy of the action file under the next Pull
+  Request number and new ids, a Pull Request titled `E2E ONLY`, the capture once its check
+  stopped red, then close it without a merge and delete its branch.
+- **`web-captures.json` names Pull Requests of the fork the pictures were taken from.** A fork
+  created by `init` starts again at #1, so those URLs point at other Pull Requests or at nothing:
+  set the `url` before a capture, and do not read them as today's numbers.
+- **`promotion-create-conflict` is right when taken alone** (`shots.mjs
+  vscode/promotion-create-conflict`). Inside the full batch the test captures 1.5 s after the
+  prompt and the panel has not finished scrolling on a loaded machine.
+- **Lab 3.8, the email of the first run.** Give the job an address (`gh secret set
+  NOTIF_EMAIL_ADDRESS` on the monitoring repository) and a severity (`notificationConfig`, key
+  `ORG_LIMITS`, `notifications.email: log` in the `.sfdx-hardis.yml` of the monitoring branch,
+  which is what **All** writes), commit and push before the run. Proof that it left: the
+  Monitoring job logs `[EmailProvider] Sent email to ***` after `Handling notification of type
+  ORG_LIMITS`, and `sf org list limits -o helios-prod` shows `SingleEmail` one lower. A second
+  email, `DEPLOYMENTS`, leaves when a deployment failed in the org that week. Nothing proves the
+  mailbox: say so. The limits table is printed twice in the log (the failed command is replayed),
+  which is one run and one email, not two.
+- **With `delete_branch_on_merge` on, GitHub deletes the head of every merged Pull Request except
+  a protected one.** The four major branches stay after each promotion; teammate, fix, retrofit,
+  `config/pipeline-...` and `promotion/...` branches go. No Level 3 step needs one afterwards:
+  `simulate` reads `integration`, the retrofits merge `origin/main` and `origin/preprod`, rule
+  3.10 finds the promotion in the history of `preprod`. The clone stays on a branch that no longer
+  exists on the fork until the next **New User Story**, which does not mind.
+
 ### Lab 3.10: the five stories, the conflict, the retrofit
 
 The lab was proven on a synthetic repository (`node scripts/verify/prove-promotion-conflict.mjs`
@@ -720,6 +775,8 @@ in the course), never yet against real orgs in this shape. What a walk has to re
   and ran the previous one; the symptom was the four-file marker comment on a job that said `beta`.
   Compare the image push time (Docker Hub tags API, `tag_last_pushed`) with `npm view sfdx-hardis
   time` for the beta version, and re-run the image job of `deploy.yml` if the image is older.
+  **Since 2026-10-12 none of this is needed**: the released 8.17.0 names the two files of the lab
+  and nothing else, and the whole lab passes on the released image.
 - The GitHub screens of this lab are captured by `capture-web.mjs` as
   `github-pr-promotion-description` and `github-pr-promotion-markers` (`web-captures.json`), from a
   real promotion Pull Request of the fork: the description with the folded prompt, and the red check
