@@ -12,7 +12,7 @@ q='[.[]|select(.name=="Simulate Deployment to Major Org")]|sort_by(.startedAt)|l
 sleep 20
 for _ in $(seq 1 90); do
   B=$(gh pr checks "$1" -R "$R" --json name,bucket,link,startedAt -q "$q|.bucket" 2>/dev/null)
-  case $B in pass|fail|cancel) break;; esac
+  case $B in pass | fail | cancel) break ;; esac
   sleep 20
 done
 L=$(gh pr checks "$1" -R "$R" --json name,bucket,link,startedAt -q "$q|.link" | sed -E 's#.*/runs/([0-9]+).*#\1#')
