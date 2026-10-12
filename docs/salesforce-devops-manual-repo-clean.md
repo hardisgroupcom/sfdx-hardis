@@ -25,8 +25,8 @@ If you remove them with the standard process, they are added to `manifest/destru
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 2.8 - Recover from committing the wrong metadata](https://sfdx-hardis-training.github.io/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
+- [Lab 2.8 - Recover from committing the wrong metadata](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-8-recover-from-committing-the-wrong-metadata/)
 
 <!-- training-links:end -->
