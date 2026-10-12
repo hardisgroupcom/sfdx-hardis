@@ -482,8 +482,8 @@ The pipeline and the contributor loop. Nothing else in the course works if this 
 | 1.6 | Pull Request, check, merge      | `gh pr create`, then `prflow.sh <pr> squash`     | The deployment check job, the merge, the deploy to integration              |
 | 1.7 | Capstone, on your own           | The whole loop again, unaided                    | That a learner can repeat it without the step by step                       |
 
-Level 1 at browser fidelity, since 2026-10-12 (the helpers are in the run folder of that day,
-`run-1012/tools/`, and every one of them logs its steps, carries a watchdog and exits):
+Level 1 at browser fidelity, since 2026-10-12 (the helpers are in `scripts/walk/` of this skill,
+and all but `ps-grant.mjs` and `page.mjs` log their steps, carry a watchdog and exit):
 
 - **`init` on a deleted fork takes eight minutes**, and the Actions banner is clicked while it
   waits: `banner-wait.mjs` polls `gh api repos/<fork>` and clicks the button whose text starts with
@@ -550,8 +550,8 @@ opening them by hand: what the simulator produces is what the lab describes.
 - `hardis:work:resetselection` resets the **commits**: a soft reset, a restore of `manifest/`, and
   `canForcePush`. There is no stored list of ticked items, and no screen that shows one.
 
-Level 2 straight after Level 1, with no **Reset this level**, since 2026-10-12 (helpers in the run
-folder of that day, `run-1012/tools/`):
+Level 2 straight after Level 1, with no **Reset this level**, since 2026-10-12 (helpers in
+`scripts/walk/` of this skill):
 
 - **It works as written.** The backpromote window is Romain's Pull Request alone, the teammate
   stories are patches applied to the permission set and the layout as they are that day, and the
@@ -672,8 +672,8 @@ Lab 3.8 runs in a **second repository**, the monitoring one, with its own secret
   branch. Both were in `defaults/monitoring/.github/workflows/org-monitoring.yml`, and both printed a
   reassuring fallback message. Check what the run actually did, not what it reported.
 
-Level 3 straight after Level 2, with no **Reset this level**, since 2026-10-12 (helpers in the run
-folder of that day, `run-1012/tools/`):
+Level 3 straight after Level 2, with no **Reset this level**, since 2026-10-12 (helpers in
+`scripts/walk/` of this skill):
 
 - **The promotions work as written on the released image, with no `E2E ONLY` Pull Request**,
   on a Profile cleaned by a rule that was reverted afterwards: the path with the whole Profile and
