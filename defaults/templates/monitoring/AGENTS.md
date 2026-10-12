@@ -386,6 +386,15 @@ If a component is in `manifest/package-all-org-items.xml` but not in `force-app/
 
 The other way around, a component in `force-app/` but not in `manifest/package-all-org-items.xml` was deleted from the org: the backup never deletes files. To know whether a component exists in the org today, always check the manifest.
 
+## How Profiles are stored
+
+The files in `force-app/main/default/profiles/` are read with the CRUD Metadata API after the retrieve, so each one holds everything the Profile grants, including on standard objects, managed package items and components the backup skips.
+
+- **Only what is granted is written.** An entry whose flags are all false is left out: a field with no read and no edit access, an Apex class or a Visualforce page that is not enabled, a user permission that is off. So a field, a class or a permission that is not in the file is not granted by the Profile, and a permission revoked in the org shows as removed lines in the diff.
+- Tab visibilities are kept even when `Hidden`, except for tabs that do not exist in the org.
+- **Older commits hold truncated Profiles.** Before sfdx-hardis read them this way, a Profile file only held the permissions related to the components retrieved with it. The first backup made with the new behavior modifies every Profile file at once, with thousands of added lines: that commit is not a change in the org. Never report it as one, and do not compare a Profile across it to say what was granted.
+- Permission Sets are retrieved whole and written as the org returns them, false entries included: there, read the flags.
+
 ## Monitoring checks configured on this branch
 
 `sf hardis:org:monitor:all` runs these checks, each at its own frequency. This list merges the defaults of sfdx-hardis with the `monitoringCommands` and `monitoringDisable` settings of `.sfdx-hardis.yml`.
