@@ -553,6 +553,18 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
   }
 }
 
+// A Dev Hub authenticated through an External Client App fails scratch signup with C-1016 unless the CLI's built-in app
+// is used. Nothing is added when the user chose an app, or set SFDX_CLIENT_SECRET, which the CLI would send with it.
+export function getScratchSignupEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  if (env.SF_SCRATCH_SIGNUP_CONNECTED_APP || env.SFDX_CLIENT_SECRET) {
+    return {};
+  }
+  return {
+    SF_SCRATCH_SIGNUP_CONNECTED_APP: 'PlatformCLI',
+    SF_SCRATCH_SIGNUP_CALLBACK_URL: env.SF_SCRATCH_SIGNUP_CALLBACK_URL || 'http://localhost:1717/OauthRedirect',
+  };
+}
+
 export async function installPackages(installedPackages: any[], orgAlias: string) {
   const packages = installedPackages || [];
   elapseStart('Install all packages');

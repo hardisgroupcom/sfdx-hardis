@@ -29,6 +29,7 @@ The command configuration can be customized using:
 
 - `config/.sfdx-hardis.yml` file with properties like `installedPackages`, `initPermissionSets`, `scratchOrgInitApexScripts`, and `dataPackages`.
 - Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
+- Environment variables **SF_SCRATCH_SIGNUP_CONNECTED_APP** and **SF_SCRATCH_SIGNUP_CALLBACK_URL**: by default the new org is signed up with the Salesforce CLI built-in app (`PlatformCLI`), so a Dev Hub authenticated through an External Client App works (Salesforce CLI 2.147.7 or later). Not applied when you set **SF_SCRATCH_SIGNUP_CONNECTED_APP** or **SFDX_CLIENT_SECRET**.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
