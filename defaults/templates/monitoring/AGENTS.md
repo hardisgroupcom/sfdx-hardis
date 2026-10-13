@@ -37,11 +37,12 @@ When the user asks what changed in the org between two dates and does not ask fo
 
 ### Where each kind of change comes from
 
-The backup retrieves the org into `force-app/` but **never deletes a file**: a component deleted in the org stays in `force-app/`. So:
+The backup retrieves the org into `force-app/`, then deletes the files of the components that are gone from the org. **The files do not tell the whole story**: older backups never deleted a file, and some files still stay after their component is deleted (see [What is not in the backup](#what-is-not-in-the-backup)). So:
 
 - **Added** and **Removed** come only from `manifest/package-all-org-items.xml`, the list of every item that exists in the org at each backup.
 - **Updated** comes from the files modified under `force-app/`.
-- Never report a component as Removed because of `force-app/`, and never infer that a component exists in the org because its file is in `force-app/`.
+- Never report a component as Removed because its file was deleted from `force-app/`, and never infer that a component exists in the org because its file is in `force-app/`.
+- **The first backup that deletes files removes, in one commit, the files of everything deleted in the org since the monitoring started.** Those components were not removed that day: the manifest of that commit does not list them as removed. The date of each removal is the commit where the component left the manifest.
 
 ### Collect the changes
 
@@ -358,7 +359,7 @@ Any other command against an org counts as a write: do not run it, even when the
 
 | Path | Content |
 | ---- | ------- |
-| `force-app/main/default/` | The metadata of the org, in Salesforce DX source format: one folder per metadata type (`objects/`, `classes/`, `triggers/`, `flows/`, `lwc/`, `aura/`, `permissionsets/`, `profiles/`, `layouts/`...). This is the backup. Files are added and updated, never deleted: a component deleted in the org stays here. |
+| `force-app/main/default/` | The metadata of the org, in Salesforce DX source format: one folder per metadata type (`objects/`, `classes/`, `triggers/`, `flows/`, `lwc/`, `aura/`, `permissionsets/`, `profiles/`, `layouts/`...). This is the backup. The files of a component deleted in the org are deleted by the next backup, with the exceptions listed in [What is not in the backup](#what-is-not-in-the-backup). |
 | `installedPackages/` | One JSON file per package installed in the org: name, namespace, version name and number. |
 | `manifest/package-all-org-items.xml` | Every metadata item that exists in the org, including the ones that are not backed up. Use it to check if a component exists in the org. |
 | `manifest/package-backup-items.xml` | The items actually retrieved: the full list, minus the filters below. |
@@ -384,7 +385,29 @@ Any other command against an org counts as a write: do not run it, even when the
 
 If a component is in `manifest/package-all-org-items.xml` but not in `force-app/`, one of these filters skipped it.
 
-The other way around, a component in `force-app/` but not in `manifest/package-all-org-items.xml` was deleted from the org: the backup never deletes files. To know whether a component exists in the org today, always check the manifest.
+The other way around, a component in `force-app/` but not in `manifest/package-all-org-items.xml` was deleted from the org. The backup deletes the files of such components, but a file stays when nothing proves that its component is gone:
+
+- the fields, list views, record types and other children of an object that is not retrieved
+- the types that the org does not list by name
+- the value set translations (`globalValueSetTranslations/`, `standardValueSetTranslations/`): the org lists one language of a value set and not the others, so their files are never deleted
+- the types of which nothing is retrieved, like a type skipped as a whole in `manifest/package-skip-items.xml`: there, only a component that the previous backup listed and that the org no longer lists has its files deleted, so the files of older deletions stay
+- every file, when the branch sets `monitoringBackupSkipDeletions: true` in `.sfdx-hardis.yml` or the `MONITORING_BACKUP_SKIP_DELETIONS` variable
+- every file, in the commits made before sfdx-hardis deleted files
+
+A component that still exists in the org but is skipped since (`manifest/package-skip-items.xml`, `MONITORING_BACKUP_SKIP_METADATA_TYPES`) keeps the file of its last backup: that file can be old.
+
+Before deleting the files of a component, the backup asks the org for it with the Metadata API, and keeps the files when the org still returns it or can not be asked about it (a type the Metadata API does not read, like `Settings`). So a file deleted by a backup commit is a component the org itself said was gone, and a file that stays proves nothing.
+
+To know whether a component exists in the org today, always check the manifest.
+
+## How Profiles are stored
+
+The files in `force-app/main/default/profiles/` are read with the CRUD Metadata API after the retrieve, so each one holds everything the Profile grants, including on standard objects, managed package items and components the backup skips.
+
+- **Only what is granted is written.** An entry whose flags are all false is left out: a field with no read and no edit access, an Apex class or a Visualforce page that is not enabled, a user permission that is off. So a field, a class or a permission that is not in the file is not granted by the Profile, and a permission revoked in the org shows as removed lines in the diff.
+- Tab visibilities are kept even when `Hidden`, except for tabs that do not exist in the org.
+- **Older commits hold truncated Profiles.** Before sfdx-hardis read them this way, a Profile file only held the permissions related to the components retrieved with it. The first backup made with the new behavior modifies every Profile file at once, with thousands of added lines: that commit is not a change in the org. Never report it as one, and do not compare a Profile across it to say what was granted.
+- Permission Sets are retrieved whole and written as the org returns them, false entries included: there, read the flags.
 
 ## Monitoring checks configured on this branch
 

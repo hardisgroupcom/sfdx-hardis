@@ -11,7 +11,7 @@ This guide takes you from an empty Git repository to a working CI/CD pipeline, w
 <!-- training-callout:start -->
 
 !!! tip "Learn by doing"
-    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 6 h 55. [Start Level 3](https://sfdx-hardis-training.github.io/en/level-3-release-manager/)
+    Level 3 - Release Manager of the free [Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) course walks through this guide on a free org of your own: 11 labs, about 6 h 55. [Start Level 3](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/)
 
 <!-- training-callout:end -->
 
@@ -54,8 +54,8 @@ Then:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course does this, click by click, on an org of your own:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
 
-- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
 
 <!-- training-links:end -->

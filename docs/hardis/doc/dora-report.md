@@ -95,10 +95,10 @@ In agent mode:
 
 ## Learn by doing
 
-The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io) course runs this command, click by click, on an org of your own, in these labs:
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own, in these labs:
 
-- [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
-- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.github.io/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
+- [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
+- [Lab 3.11 - Capstone: run a weekly release cycle](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-11-capstone-run-a-weekly-release-cycle/)
 
 <!-- training-links:end -->
 

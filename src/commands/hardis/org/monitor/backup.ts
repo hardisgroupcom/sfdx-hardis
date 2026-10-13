@@ -1,12 +1,12 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
-import { execCommand, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { CONSTANTS, getApiVersion, getConfig, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -25,6 +25,16 @@ import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitoringAgentsMd.js';
 import { ensureMonitoringMegaLinterConfig, MEGALINTER_CONFIG_FILE } from '../../../../common/monitoring/monitoringMegaLinterConfig.js';
+import { collectProfileNames, readBackupProfiles } from '../../../../common/monitoring/monitoringBackupProfiles.js';
+import {
+  applyBackupDeletions,
+  backupChangeType,
+  BackupDeletionsSkipReason,
+  isBackupDeletionsDisabled,
+  RetrievedFilesCollector,
+  retrieveFailureMessage,
+  retrieveJsonErrorMessage,
+} from '../../../../common/monitoring/monitoringBackupDeletions.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -65,6 +75,35 @@ You can remove more metadata types from backup, especially in case you have too 
 When the org contains Data Cloud objects (\`__dlm\` and \`__dll\` suffix on CustomObjects), they are backed up by default in a **separate retrieve call**.
 
 To skip Data Cloud objects backup, use config property \`monitoringBackupSkipDataCloud: true\` or environment variable \`MONITORING_BACKUP_SKIP_DATA_CLOUD=true\`.
+
+## Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components of the same request, so a backed up Profile used to miss most of what it grants (standard objects and their fields, tabs, and in full mode everything that is in another chunk).
+
+After the retrieve, the Profiles are read again with the CRUD Metadata API, which returns them whole, and written over the retrieved files. This is what the Auto mode of the VS Code Metadata Retriever does, and what \`sf hardis:mdapi:read --metadata Profile --active-only\` does.
+
+- The entries that grant nothing are left out (field access with no read and no edit, Apex class access disabled, user permission disabled...), and so are the tab settings of tabs that do not exist. A permission that is revoked in the org shows as a removed line in the next backup.
+- Only the Profiles that were retrieved are read: a Profile skipped with \`manifest/package-skip-items.xml\` or \`MONITORING_BACKUP_SKIP_METADATA_TYPES\` stays skipped.
+- A Profile that can not be read fails the backup, with the names of the Profiles and the error. Skip it with \`manifest/package-skip-items.xml\` to let the backup go on.
+- The first backup that runs with this behavior reports every Profile as updated.
+
+Other types, including Permission Sets, come back whole from the file-based retrieve and are not read again.
+
+## Deleted components
+
+A retrieve never deletes a local file. After the retrieve, the backup deletes the files of the components that no longer exist in the org, so a component deleted in the org shows as deleted files in the next backup.
+
+- A file is deleted only when its component is not in \`manifest/package-all-org-items.xml\`, the list of everything that exists in the org. A component that still exists but is no longer retrieved (\`manifest/package-skip-items.xml\`, \`MONITORING_BACKUP_SKIP_METADATA_TYPES\`, installed package namespace) keeps the file of its last backup.
+- Before deleting, the backup asks the org for each component with the Metadata API, and deletes its files only when the org does not return it. A component the org still returns stays, and so does one the org can not be asked about (a type the Metadata API does not read, like \`Settings\`). The files kept this way are listed in the log.
+- A file that the org just returned is never deleted, and neither is a file that can not be linked to a component.
+- Some files stay when nothing proves that their component is gone: the children (fields, list views, record types...) of an object that is not retrieved, the types that the org does not list by name, and the types of which nothing is retrieved (a type skipped as a whole, like \`Report\`). For those, only the components that the previous backup listed and that the org no longer lists are deleted: the list of the org alone is not a proof, it misses components that exist, such as the reports of nested folders.
+- The files of \`GlobalValueSetTranslation\` and \`StandardValueSetTranslation\` are never deleted: the org lists one language of a value set and not the others.
+- There is no limit on the number of deleted files: a cleanup that removes a lot of metadata is mirrored by the next backup.
+- An error while deleting the files is logged as a warning: the backup goes on.
+- The first backup that runs with this behavior deletes the files of everything that was deleted in the org since the monitoring started.
+- Nothing is deleted when the run does not retrieve everything (\`--start-chunk\`, \`FULL_ORG_MANIFEST_PATH\`).
+
+To keep the files of deleted components, use config property \`monitoringBackupSkipDeletions: true\` or environment variable \`MONITORING_BACKUP_SKIP_DELETIONS=true\`.
 
 ## Full mode
 
@@ -225,6 +264,9 @@ In agent mode:
   protected currentPackage: any = {};
   protected currentPackageLen = 0;
 
+  protected profileNames = new Set<string>();
+  protected retrievedFiles = new RetrievedFilesCollector();
+
   protected namespaces: string[];
   protected installedPackages: any[];
   protected outputFile;
@@ -321,11 +363,13 @@ In agent mode:
         c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
       );
       const packageXmlFullFile = 'manifest/package-all-org-items.xml';
-      await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
+      // What the previous backup listed: a component that is no longer listed was deleted since
+      const previousOrgManifest = fs.existsSync(packageXmlFullFile) ? await parsePackageXmlFile(packageXmlFullFile) : null;
+      await buildOrgManifest(flags['target-org'].getUsername(), packageXmlFullFile, flags['target-org'].getConnection());
 
       // List namespaces used in the org
       this.namespaces = [];
-      this.installedPackages = await MetadataUtils.listInstalledPackages(null, this);
+      this.installedPackages = await MetadataUtils.listInstalledPackages(flags['target-org'].getUsername(), this);
       for (const installedPackage of this.installedPackages) {
         if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
           this.namespaces.push(installedPackage.SubscriberPackageNamespace);
@@ -342,6 +386,12 @@ In agent mode:
       else {
         await this.extractMetadatasFiltered(packageXmlFullFile, flags);
       }
+
+      // The file-based retrieve returns truncated Profiles: read them whole
+      await this.readCompleteProfiles(flags);
+
+      // A retrieve never deletes a file: delete those of the components that are gone from the org
+      await this.deleteFilesOfDeletedComponents(packageXmlFullFile, previousOrgManifest, flags);
 
       // Write installed packages
       uxLog("action", this, c.cyan(t('writeInstalledPackages')));
@@ -387,7 +437,7 @@ In agent mode:
         this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
           return {
             File: diffFile.path.replace('force-app/main/default/', ''),
-            ChangeType: diffFile.index === '?' ? 'A' : diffFile.index,
+            ChangeType: backupChangeType(diffFile),
             FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
             WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
             PrevName: diffFile?.from || '',
@@ -412,10 +462,8 @@ In agent mode:
           {
             text: this.diffFiles
               .map((diffFile) => {
-                let flag = '';
-                if (diffFile.index && diffFile.index !== ' ') {
-                  flag = ` (${diffFile.index === '?' ? 'A' : diffFile.index})`;
-                }
+                const changeType = backupChangeType(diffFile);
+                const flag = changeType && changeType !== ' ' ? ` (${changeType})` : '';
                 const line = `- ${filesHumanFormatted.get(diffFile.path)}` + flag;
                 return line;
               })
@@ -874,7 +922,8 @@ In agent mode:
     }).join('\n');
     uxLog("log", this, c.grey(mdTypesString));
     try {
-      await execCommand(
+      // --json: its list of written files tells which local files the org did not return
+      const retrieveResult = await execSfdxJson(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
         this,
         {
@@ -883,7 +932,17 @@ In agent mode:
           debug: this.debugMode,
         }
       );
-    } catch (e) {
+      const retrieveFailure = retrieveFailureMessage(retrieveResult);
+      if (retrieveFailure) {
+        throw new SfError(retrieveFailure);
+      }
+      this.retrievedFiles.add(retrieveResult);
+    } catch (e: any) {
+      // The output of a failed --json command is a JSON document: keep its message readable
+      const jsonErrorMessage = retrieveJsonErrorMessage(e);
+      if (jsonErrorMessage) {
+        e.message = jsonErrorMessage;
+      }
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
       uxLog("warning", this, c.yellow(t('backupPackageXmlThatFailedToBe') + c.grey(failedPackageXmlContent)));
       if (this.full) {
@@ -918,6 +977,63 @@ In agent mode:
         )
       );
       throw e;
+    }
+    for (const profileName of collectProfileNames(packageXml)) {
+      this.profileNames.add(profileName);
+    }
+  }
+
+  // Only the Profiles of the manifests that were retrieved: package-skip-items.xml,
+  // MONITORING_BACKUP_SKIP_METADATA_TYPES and --start-chunk apply here too
+  private async readCompleteProfiles(flags: any) {
+    const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+    const defaultPackageDir =
+      (this.project?.getPackageDirectories() || []).find((dir: any) => dir.default)?.fullPath ||
+      packageDirs[0] ||
+      path.join(process.cwd(), 'force-app');
+    // Only the profiles folders are given as the existing sources to write over: resolving every
+    // file of the backup to find the Profiles takes minutes on a large org
+    const profileDirs = packageDirs
+      .map((packageDir: string) => path.join(packageDir, 'main', 'default', 'profiles'))
+      .filter((profileDir: string) => fs.existsSync(profileDir));
+    await readBackupProfiles({
+      conn: flags['target-org'].getConnection(),
+      profileNames: [...this.profileNames],
+      outputDir: defaultPackageDir,
+      packageDirs: profileDirs,
+      commandThis: this,
+      debug: this.debugMode,
+    });
+  }
+
+  // Nothing is deleted when the run can not tell what is gone from the org. Never throws: the
+  // metadata is retrieved, a cleanup that fails must not fail the backup.
+  private async deleteFilesOfDeletedComponents(packageXmlFullFile: string, previousOrgManifest: any, flags: any) {
+    try {
+      const config = await getConfig('branch');
+      let skipReason: BackupDeletionsSkipReason | null = null;
+      if (isBackupDeletionsDisabled(config)) {
+        skipReason = { kind: 'disabled' };
+      } else if (this.startChunk > 1) {
+        skipReason = { kind: 'partialRetrieve', detail: '--start-chunk' };
+      } else if (process.env.FULL_ORG_MANIFEST_PATH) {
+        skipReason = { kind: 'partialRetrieve', detail: 'FULL_ORG_MANIFEST_PATH' };
+      } else if (!this.retrievedFiles.complete) {
+        skipReason = { kind: 'noFileList' };
+      }
+      const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+      const conn = flags['target-org'].getConnection();
+      await applyBackupDeletions({
+        packageDirs: packageDirs.length > 0 ? packageDirs : [path.join(process.cwd(), 'force-app')],
+        retrieved: this.retrievedFiles,
+        currentManifest: skipReason ? null : await parsePackageXmlFile(packageXmlFullFile),
+        previousManifest: previousOrgManifest,
+        skipReason,
+        readMetadata: (type: string, fullNames: string[]) => conn.metadata.read(type, fullNames),
+        commandThis: this,
+      });
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('backupDeletionsFailed', { message: e?.message || String(e) })));
     }
   }
 }

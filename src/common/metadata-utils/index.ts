@@ -432,12 +432,23 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   // Resolve a local source file to its metadata component (a file of a LWC or Aura bundle resolves to the
-  // bundle, a field file to "Object.Field__c"). Returns null when the file is not Salesforce metadata.
-  public static resolveMetadataFromFile(filePath: string): { type: string; name: string } | null {
+  // bundle, a field file to "Object.Field__c", with its object as parent). Returns null when the file
+  // is not Salesforce metadata.
+  // Pass a resolver to resolve many files: building one per file is the slow part.
+  public static resolveMetadataFromFile(
+    filePath: string,
+    resolver?: MetadataResolver
+  ): { type: string; name: string; parent: { type: string; name: string } | null } | null {
     try {
       // Ignore .forceignore: a file listed in .forceignore is still a component of the org
-      const component = new MetadataResolver(undefined, undefined, false).getComponentsFromPath(path.resolve(filePath))[0];
-      return component ? { type: component.type.name, name: component.fullName } : null;
+      const component = (resolver ?? new MetadataResolver(undefined, undefined, false)).getComponentsFromPath(path.resolve(filePath))[0];
+      return component
+        ? {
+          type: component.type.name,
+          name: component.fullName,
+          parent: component.parent ? { type: component.parent.type.name, name: component.parent.fullName } : null,
+        }
+        : null;
     } catch {
       return null;
     }

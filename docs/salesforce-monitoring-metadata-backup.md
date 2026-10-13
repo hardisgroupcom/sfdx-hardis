@@ -10,6 +10,25 @@ Adds a new commit to the git branch with the changes made since the latest monit
 
 Sfdx-hardis command: [sf hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/)
 
+### Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components retrieved with it. The backup reads the Profiles again with the CRUD Metadata API, so each file holds everything the Profile grants, as the Auto mode of the VS Code Metadata Retriever does.
+
+- Entries that grant nothing are left out: a permission revoked in the org shows as removed lines in the next backup.
+- The first backup that runs with this behavior reports every Profile as updated. It is not a change in your org.
+- A Profile that can not be read fails the backup and names the Profile: add it to `manifest/package-skip-items.xml` to leave it out.
+
+### Deleted components
+
+When a component is deleted from the org, the next backup deletes its files, so the git history shows the deletion.
+
+- A file is deleted only when its component is no longer in `manifest/package-all-org-items.xml`, the list of everything that exists in the org. A component that still exists but that you skip keeps the file of its last backup.
+- For a metadata type you skip as a whole (`Report`, `Dashboard`...), only the deletions made in the org from now on are mirrored: the files left by older deletions stay.
+- Before deleting, the backup asks the org for each component with the Metadata API, and keeps the files when the org still returns it or can not be asked about it. The job log lists the deleted files and the ones kept.
+- There is no limit: a cleanup that removes a lot of metadata is mirrored by the next backup.
+- The first backup that runs with this behavior deletes the files of everything deleted in the org since the monitoring started. It is not a change made in your org that day.
+- To keep the files of deleted components, set `monitoringBackupSkipDeletions: true` in the `.sfdx-hardis.yml` of the monitoring branch, or the variable `MONITORING_BACKUP_SKIP_DELETIONS=true`.
+
 ### Ask questions with a coding agent
 
 Each backup also writes an `AGENTS.md` file at the root of the monitoring repository (and a `CLAUDE.md` that imports it, when there is none). It tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what the backup skips and which monitoring checks run on the branch.
