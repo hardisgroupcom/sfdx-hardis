@@ -40,7 +40,7 @@ The command's technical implementation involves:
 - **Pool Summary Retrieval:** It uses \`getPoolSummary\` to read the configured storage service (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub) and build a summary of the pool.
 - **JSON Output:** With \`--json\`, the \`pool\` property holds the summary read by the VS Code extension panel. \`errorKind\` is \`noGitProvider\` when the storage cannot be reached.
 - **Data Display:** It logs the pool configuration and the available scratch orgs to the console in a human-readable format.
-- **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not (\`errorKind\` is then \`noPool\`). The Dev Hub is optional: when one is connected, its scratch org limits are read live.
+- **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not (\`errorKind\` is then \`noPool\`). The Dev Hub is optional. The scratch org limits shown are the ones recorded by the last pool refresh; with a storage that records none, they are read from the connected Dev Hub.
 </details>
 
 ### Agent Mode

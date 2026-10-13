@@ -181,7 +181,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
         const childEnv = Object.assign({}, process.env);
         applySfPerformanceEnv('sf ' + commandArgs.join(' '), childEnv);
         const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: childEnv });
-        uxLog("log", this, '[pool] ' + c.grey(t('hardisScratchCreateStarted', { val: i })));
+        uxLog("log", this, '[pool] ' + c.grey(t('hardisScratchCreateStarted', { value: i })));
         // handle errors
         child.on('error', (err) => {
           resolve({ code: 1, result: { error: err } });

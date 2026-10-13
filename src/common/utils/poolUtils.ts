@@ -51,11 +51,11 @@ export async function getPoolSummary(options: any = {}): Promise<PoolSummary | n
     return null;
   }
   const summary = await storage.getSummary();
-  // The limits of the Dev Hub are read live when it is connected: the storage only knows the
-  // ones of the last refresh
-  const liveLimits = await getDevHubScratchLimits(options.devHubConn);
-  if (liveLimits) {
-    summary.devHubLimits = liveLimits;
+  // The limits recorded by the last refresh are the ones of the Dev Hub of the pool. The Dev Hub
+  // connected here is only asked when the storage recorded none: on a workstation the default
+  // Dev Hub can be another org than the one the CI jobs use.
+  if (!summary.devHubLimits) {
+    summary.devHubLimits = await getDevHubScratchLimits(options.devHubConn);
   }
   return summary;
 }
@@ -243,15 +243,18 @@ async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { posi
 // Who is taking a scratch org, for the history of the pool
 async function buildTakeContext(): Promise<PoolTakeContext> {
   let pullRequest = '';
+  // A Pull Request job runs on a merge ref ("pull/3/merge"): the branch people know is its source
+  let pullRequestBranch = '';
   try {
     const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
     pullRequest = prInfo?.idStr ? `#${prInfo.idStr}` : '';
+    pullRequestBranch = prInfo?.sourceBranch || '';
   } catch {
     pullRequest = '';
   }
   return {
     by: process.env.GITHUB_ACTOR || process.env.GITLAB_USER_LOGIN || process.env.BUILD_REQUESTEDFOR || os.userInfo().username,
-    branch: (await getCurrentGitBranch()) || '',
+    branch: pullRequestBranch || (await getCurrentGitBranch()) || '',
     pullRequest,
     jobUrl: (await GitProvider.getJobUrl()) || '',
   };
