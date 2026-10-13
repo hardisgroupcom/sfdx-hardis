@@ -17,7 +17,7 @@ class FakeDashboardProvider {
   // False like Bitbucket: one open dashboard at a time
   public twoOpenDashboards = true;
   // Ids of the comments this client is not allowed to delete (written by another account)
-  public undeletable = new Set<number>();
+  public protectedComments = new Set<number>();
   private nextCommentId = 100;
 
   constructor(private atomicDelete: boolean, private format: DashboardFormat = 'markdown') { }
@@ -66,7 +66,7 @@ class FakeDashboardProvider {
   }
 
   async deleteDashboardComment(ref: DashboardRef, commentId: number) {
-    if (this.undeletable.has(commentId)) {
+    if (this.protectedComments.has(commentId)) {
       throw new Error('403 Forbidden');
     }
     // The comment is looked up before the delay: simultaneous callers all find it
@@ -253,7 +253,7 @@ describe('GitProviderPoolStorage', function () {
     await storage.addOrg(fakeScratchOrg(2));
     // The entries were written by the CI account: this developer can only delete their own comments
     for (const comment of provider.current().comments) {
-      provider.undeletable.add(comment.id);
+      provider.protectedComments.add(comment.id);
     }
     const taken = await Promise.all(Array.from({ length: 5 }, (_, index) => newStorage(provider).takeOrg(takeContext(index))));
     const aliases = taken.filter((scratchOrg) => scratchOrg !== null).map((scratchOrg) => scratchOrg.scratchOrgAlias);
