@@ -67,6 +67,14 @@ export async function recordPoolFailure(error: string, options: any = {}): Promi
   }
 }
 
+// To call at the start of a pool refresh, before the scratch orgs of the pool are listed
+export async function preparePoolRefresh(options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    await storage.prepareRefresh();
+  }
+}
+
 // To call at the end of a pool refresh
 export async function finalizePoolRefresh(options: any = {}): Promise<void> {
   const storage = await getInitializedStorage(options);

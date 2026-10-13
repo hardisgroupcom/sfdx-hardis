@@ -3103,6 +3103,8 @@
   "poolLocalAuthOk": "The git provider token and the encryption key are valid: you can take scratch orgs from the pool",
   "poolOrgClaimedByAnotherJob": "Scratch org {{alias}} was taken by another job, trying the next one",
   "poolOtherKeyEntriesKept": "{{count}} scratch org(s) of the pool are encrypted with another key than {{variable}} on this computer. They are kept: only a CI job removes them, after a key rotation",
+  "poolPreviousKeyNeeded": "{{count}} scratch org(s) were removed from the pool but not deleted from the Dev Hub, because nothing proves their entries are genuine. To delete them at the next key rotation, set {{variable}} to the previous key for the refresh that follows the rotation",
+  "poolScratchOrgNotAdded": "The scratch org could not be added to the pool: {{message}}",
   "poolScratchOrgNotDeleted": "Scratch org {{alias}} could not be deleted from the Dev Hub: {{message}}",
   "poolStorageNotReachable": "The storage of the scratch org pool ({{storageService}}) cannot be reached: check that the Dev Hub is connected",
   "postActionsHaveFailed": "Post actions have failed !",

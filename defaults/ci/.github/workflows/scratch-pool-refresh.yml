@@ -45,6 +45,8 @@ jobs:
           SFDX_CLIENT_KEY_DEVHUB: ${{ secrets.SFDX_CLIENT_KEY_DEVHUB }}
           # Key that encrypts the scratch orgs of a pool stored in the git provider
           SFDX_HARDIS_POOL_ENCRYPTION_KEY: ${{ secrets.SFDX_HARDIS_POOL_ENCRYPTION_KEY }}
+          # Only during a key rotation: the key the pool had before
+          SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY: ${{ secrets.SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SCRATCH_ORG_POOL: "true"
           FORCE_COLOR: "1"

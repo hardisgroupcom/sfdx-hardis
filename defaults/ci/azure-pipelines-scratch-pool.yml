@@ -57,6 +57,8 @@ jobs:
           SFDX_CLIENT_KEY_DEVHUB: $(SFDX_CLIENT_KEY_DEVHUB)
           # Key that encrypts the scratch orgs of a pool stored in the git provider
           SFDX_HARDIS_POOL_ENCRYPTION_KEY: $(SFDX_HARDIS_POOL_ENCRYPTION_KEY)
+          # Only during a key rotation: the key the pool had before
+          SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY: $(SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY)
           SCRATCH_ORG_POOL: "true"
           CI: "true"
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)

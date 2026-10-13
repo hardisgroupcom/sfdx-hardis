@@ -3099,6 +3099,8 @@
   "poolLocalAuthOk": "De git provider token en de versleutelingssleutel zijn geldig: je kunt scratch orgs uit het pool halen",
   "poolOrgClaimedByAnotherJob": "Scratch org {{alias}} is door een andere job genomen, de volgende wordt geprobeerd",
   "poolOtherKeyEntriesKept": "{{count}} scratch org(s) van de pool zijn versleuteld met een andere sleutel dan {{variable}} op deze computer. Ze blijven behouden: alleen een CI-job verwijdert ze, na een sleutelrotatie",
+  "poolPreviousKeyNeeded": "{{count}} scratch org(s) zijn uit de pool verwijderd maar niet uit de Dev Hub, omdat niets bewijst dat hun vermeldingen echt zijn. Om ze bij de volgende sleutelrotatie te verwijderen, stel je {{variable}} in op de vorige sleutel voor de vernieuwing die op de rotatie volgt",
+  "poolScratchOrgNotAdded": "De scratch org kon niet aan de pool worden toegevoegd: {{message}}",
   "poolScratchOrgNotDeleted": "Scratch org {{alias}} kon niet uit de Dev Hub worden gewist: {{message}}",
   "poolStorageNotReachable": "De opslag van de scratch org pool ({{storageService}}) is niet bereikbaar: controleer of de Dev Hub verbonden is",
   "postActionsHaveFailed": "Nabewerkingen zijn mislukt !",

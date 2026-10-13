@@ -39,6 +39,9 @@ export interface PoolStorageInterface {
   takeOrg(context: PoolTakeContext): Promise<any | null>;
   removeOrgs(scratchOrgs: any[]): Promise<void>;
   recordFailure(error: string, jobUrl: string): Promise<void>;
+  // Called at the start of a pool refresh, before the scratch orgs of the pool are counted.
+  // Throws when the pool must not be refreshed from here.
+  prepareRefresh(): Promise<void>;
   // Called at the end of a pool refresh: cleans what the storage has to clean and records the refresh
   finalizeRefresh(info: PoolRefreshInfo): Promise<void>;
   // What can be shown of the pool, without any credential

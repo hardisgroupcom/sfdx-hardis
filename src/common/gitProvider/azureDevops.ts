@@ -484,6 +484,15 @@ ${this.getPipelineVariablesConfig()}
         lastError = e;
       }
       await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 700));
+      // A call that failed can have created the comment: posting it again would put a scratch
+      // org twice in the pool
+      const marker = body.match(/\[sfdx-hardis-pool-data:[A-Za-z0-9_-]+\]/)?.[0];
+      if (marker) {
+        const existing = (await this.listDashboardComments(dashboard)).find((comment) => comment.body.replace(/\s+/g, '').includes(marker));
+        if (existing) {
+          return existing.id;
+        }
+      }
     }
     throw lastError;
   }

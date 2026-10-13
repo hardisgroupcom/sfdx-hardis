@@ -3099,6 +3099,8 @@
   "poolLocalAuthOk": "Il token del git provider e la chiave di cifratura sono validi: puoi prelevare scratch org dal pool",
   "poolOrgClaimedByAnotherJob": "La scratch org {{alias}} è stata prelevata da un altro job, provo con la successiva",
   "poolOtherKeyEntriesKept": "{{count}} scratch org del pool sono cifrate con una chiave diversa da {{variable}} su questo computer. Vengono conservate: solo un job di CI le rimuove, dopo una rotazione della chiave",
+  "poolPreviousKeyNeeded": "{{count}} scratch org sono state rimosse dal pool ma non eliminate dal Dev Hub, perché nulla prova che le loro voci siano autentiche. Per eliminarle alla prossima rotazione della chiave, imposta {{variable}} con la chiave precedente per l'aggiornamento che segue la rotazione",
+  "poolScratchOrgNotAdded": "Impossibile aggiungere la scratch org al pool: {{message}}",
   "poolScratchOrgNotDeleted": "Non è stato possibile eliminare la scratch org {{alias}} dal Dev Hub: {{message}}",
   "poolStorageNotReachable": "Lo storage del pool di scratch org ({{storageService}}) non è raggiungibile: verifica che il Dev Hub sia connesso",
   "postActionsHaveFailed": "Le azioni successive hanno avuto esito negativo!",

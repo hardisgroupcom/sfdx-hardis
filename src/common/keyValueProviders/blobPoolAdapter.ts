@@ -67,6 +67,10 @@ export class BlobPoolAdapter implements PoolStorageInterface {
     return;
   }
 
+  async prepareRefresh() {
+    return;
+  }
+
   async finalizeRefresh() {
     return;
   }

@@ -580,6 +580,11 @@ export class BitbucketProvider extends GitProviderRoot {
     }
   }
 
+  // One open Pull Request per pair of branches
+  public allowsTwoOpenDashboards(): boolean {
+    return false;
+  }
+
   // Deleted comments stay in the listing of a Pull Request for ever
   public async isDashboardWornOut(dashboard: DashboardRef): Promise<boolean> {
     if (!this.dashboardDeletedComments.has(dashboard.id)) {

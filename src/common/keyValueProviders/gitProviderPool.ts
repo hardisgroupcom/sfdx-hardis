@@ -13,7 +13,11 @@ import {
   generatePoolEncryptionKey,
   getPoolEncryptionKey,
   getPoolKeyId,
+  getPreviousPoolEncryptionKey,
+  isPoolDataSignedBy,
   POOL_ENCRYPTION_KEY_ENV_VAR,
+  POOL_PREVIOUS_ENCRYPTION_KEY_ENV_VAR,
+  signPoolData,
 } from '../utils/poolCryptoUtils.js';
 import {
   analyzePoolComments,
@@ -140,7 +144,6 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
       payload: encryptPoolPayload(scratchOrg, key),
     };
     await this.provider().createDashboardComment(dashboard!, this.commentBody(data));
-    await this.refreshDashboardBody();
   }
 
   async takeOrg(context: PoolTakeContext) {
@@ -178,7 +181,6 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     for (const entry of pool.state.entries.filter((candidate) => usernames.has(candidate.data.username))) {
       await this.deleteEntry(pool, entry);
     }
-    await this.refreshDashboardBody();
   }
 
   async recordFailure(error: string, jobUrl: string) {
@@ -193,25 +195,48 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     await this.provider().createDashboardComment(dashboard!, this.commentBody(data));
   }
 
-  async finalizeRefresh(info: PoolRefreshInfo) {
+  // Entries of another key cannot be read anymore. A CI job removes them before it counts what
+  // the pool misses. A workstation never does, and does not refill a pool it cannot read: a
+  // mistyped key would otherwise empty the pool, or double it.
+  async prepareRefresh() {
     const key = this.requireKey();
     await this.getDashboard(true);
-    let pool = (await this.loadPool(false))!;
-    // Entries of another key cannot be read anymore: their scratch orgs are deleted from the Dev Hub
+    const pool = (await this.loadPool(false))!;
     const otherKeyEntries = pool.state.entries.filter((entry) => entry.data.keyId !== getPoolKeyId(key));
-    if (otherKeyEntries.length > 0 && !this.dropsOtherKeyEntries) {
-      uxLog("warning", this, c.yellow('[pool] ' + t('poolOtherKeyEntriesKept', { count: otherKeyEntries.length, variable: POOL_ENCRYPTION_KEY_ENV_VAR })));
-    } else if (otherKeyEntries.length > 0) {
-      for (const entry of otherKeyEntries) {
-        // An entry with a claim is a scratch org somebody took: only its comment is removed
-        const taken = pool.state.claimsByEntry.has(entry.id);
-        await this.provider().deleteDashboardComment(pool.dashboard, entry.id);
-        if (!taken) {
-          await this.tryDeleteScratchOrg(entry);
-        }
-      }
-      uxLog("warning", this, c.yellow('[pool] ' + t('poolEntriesDroppedKeyRotation', { count: otherKeyEntries.length })));
+    if (this.dropsOtherKeyEntries) {
+      await this.deleteUnsignedComments(pool.dashboard, key);
     }
+    if (otherKeyEntries.length === 0) {
+      return;
+    }
+    if (!this.dropsOtherKeyEntries) {
+      throw new SfError(t('poolOtherKeyEntriesKept', { count: otherKeyEntries.length, variable: POOL_ENCRYPTION_KEY_ENV_VAR }));
+    }
+    const previousKey = getPreviousPoolEncryptionKey();
+    let unverified = 0;
+    for (const entry of otherKeyEntries) {
+      // An entry with a claim is a scratch org somebody took: only its comment is removed.
+      // An entry the previous key did not sign can be forged, with the id of any scratch org of
+      // the Dev Hub: its comment is removed, nothing is deleted on its word.
+      const taken = pool.state.claimsByEntry.has(entry.id);
+      const verified = previousKey !== null && isPoolDataSignedBy(entry.data, previousKey);
+      await this.provider().deleteDashboardComment(pool.dashboard, entry.id);
+      if (!taken && verified) {
+        await this.tryDeleteScratchOrg(entry);
+      } else if (!taken) {
+        unverified++;
+      }
+    }
+    uxLog("warning", this, c.yellow('[pool] ' + t('poolEntriesDroppedKeyRotation', { count: otherKeyEntries.length })));
+    if (unverified > 0) {
+      uxLog("warning", this, c.yellow('[pool] ' + t('poolPreviousKeyNeeded', { count: unverified, variable: POOL_PREVIOUS_ENCRYPTION_KEY_ENV_VAR })));
+    }
+  }
+
+  async finalizeRefresh(info: PoolRefreshInfo) {
+    this.requireKey();
+    await this.getDashboard(true);
+    let pool = (await this.loadPool(false))!;
     // Entries of scratch orgs already taken, that the job which took them could not delete itself.
     // A claim of the last minutes is left alone: its job may still be reading the comments.
     for (const entry of pool.state.entries) {
@@ -314,28 +339,60 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     }
   }
 
-  // Closes the dashboard and opens a new one holding the same comments
+  // Opens a new dashboard holding the same comments, and closes the old one
   private async replaceDashboard(): Promise<void> {
     const oldDashboard = this.dashboard!;
-    const comments = await this.listPoolComments(oldDashboard);
     uxLog("log", this, c.grey('[pool] ' + t('poolDashboardRollover')));
-    await this.provider().closeDashboard(oldDashboard);
-    // Created without looking for it first: the listing of a provider can still return the
-    // dashboard that was closed a moment ago
-    const newDashboard = await this.createEmptyDashboard();
-    this.dashboard = newDashboard;
-    // Entries first: a claim names the comment id of its entry, and the copies get new ids
+    const copied = new Set<number>();
     const newEntryIds = new Map<number, number>();
-    for (const comment of comments.filter((candidate) => candidate.data.kind === 'entry')) {
-      newEntryIds.set(comment.id, await this.provider().createDashboardComment(newDashboard, this.commentBody(comment.data)));
-    }
-    for (const comment of comments.filter((candidate) => candidate.data.kind !== 'entry')) {
-      const data = { ...comment.data };
-      if (data.kind === 'claim' && newEntryIds.has(Number(data.entry))) {
-        data.entry = newEntryIds.get(Number(data.entry));
+    // Entries first: a claim names the comment id of its entry, and the copies get new ids
+    const copyComments = async (target: DashboardRef) => {
+      const comments = (await this.listPoolComments(oldDashboard)).filter((comment) => !copied.has(comment.id));
+      for (const comment of [...comments.filter((candidate) => candidate.data.kind === 'entry'), ...comments.filter((candidate) => candidate.data.kind !== 'entry')]) {
+        const data = { ...comment.data };
+        if (data.kind === 'claim' && newEntryIds.has(Number(data.entry))) {
+          data.entry = newEntryIds.get(Number(data.entry));
+        }
+        const newId = await this.provider().createDashboardComment(target, this.commentBody(data));
+        if (data.kind === 'entry') {
+          newEntryIds.set(comment.id, newId);
+        }
+        copied.add(comment.id);
       }
-      await this.provider().createDashboardComment(newDashboard, this.commentBody(data));
+    };
+    if (!this.provider().allowsTwoOpenDashboards()) {
+      // The old one must be closed first. The new one is created without looking for it: the
+      // listing of a provider can still return the dashboard that was closed a moment ago.
+      const comments = await this.listPoolComments(oldDashboard);
+      await this.provider().closeDashboard(oldDashboard);
+      const newDashboard = await this.createEmptyDashboard();
+      this.dashboard = newDashboard;
+      for (const comment of [...comments.filter((candidate) => candidate.data.kind === 'entry'), ...comments.filter((candidate) => candidate.data.kind !== 'entry')]) {
+        const data = { ...comment.data };
+        if (data.kind === 'claim' && newEntryIds.has(Number(data.entry))) {
+          data.entry = newEntryIds.get(Number(data.entry));
+        }
+        const newId = await this.provider().createDashboardComment(newDashboard, this.commentBody(data));
+        if (data.kind === 'entry') {
+          newEntryIds.set(comment.id, newId);
+        }
+      }
+      return;
     }
+    // The old dashboard stays the one every job finds until the copy is complete: a copy that
+    // fails loses nothing, and the next refresh tries again
+    const newDashboard = await this.createEmptyDashboard();
+    try {
+      await copyComments(newDashboard);
+      await this.provider().closeDashboard(oldDashboard);
+      // What jobs wrote on the old dashboard during the copy: a claim missed here would give its
+      // scratch org a second time
+      await copyComments(newDashboard);
+    } catch (e) {
+      await this.provider().closeDashboard(newDashboard).catch(() => undefined);
+      throw e;
+    }
+    this.dashboard = newDashboard;
   }
 
   // Never fails the caller: the body is a display, the comments are the pool
@@ -362,9 +419,38 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     return { dashboard, state: analyzePoolComments(comments, key ? getPoolKeyId(key) : null) };
   }
 
+  // With the key, only the comments it signed are the pool: anyone who can comment on the
+  // dashboard can write one that looks like a claim or an entry. The entries of another key are
+  // kept apart, for the key rotation. Without the key nothing can be checked, and nothing is
+  // acted upon either: the comments are only counted.
   private async listPoolComments(dashboard: DashboardRef): Promise<PoolComment[]> {
-    const comments = await this.provider().listDashboardComments(dashboard);
-    return comments.map((comment) => parsePoolComment(comment)).filter((comment): comment is PoolComment => comment !== null);
+    const comments = (await this.provider().listDashboardComments(dashboard))
+      .map((comment) => parsePoolComment(comment))
+      .filter((comment): comment is PoolComment => comment !== null);
+    const key = getPoolEncryptionKey();
+    if (!key) {
+      return comments;
+    }
+    const keyId = getPoolKeyId(key);
+    return comments.filter((comment) => this.isSigned(comment, key) || (comment.data.kind === 'entry' && comment.data.keyId !== keyId));
+  }
+
+  // Signed with the key of the pool, or with the previous one during a key rotation
+  private isSigned(comment: PoolComment, key: string): boolean {
+    const previousKey = getPreviousPoolEncryptionKey();
+    return isPoolDataSignedBy(comment.data, key) || (previousKey !== null && isPoolDataSignedBy(comment.data, previousKey));
+  }
+
+  // Comments that look like the pool and that no known key signed: what a previous key left
+  // (claims, failures, refreshes), or forgeries. Removed by CI jobs only, like the entries.
+  private async deleteUnsignedComments(dashboard: DashboardRef, key: string): Promise<void> {
+    const comments = (await this.provider().listDashboardComments(dashboard))
+      .map((comment) => parsePoolComment(comment))
+      .filter((comment): comment is PoolComment => comment !== null);
+    for (const comment of comments.filter((candidate) => candidate.data.kind !== 'entry' && !this.isSigned(candidate, key))) {
+      // A comment of another account can be refused: it is ignored by every reader anyway
+      await this.provider().deleteDashboardComment(dashboard, comment.id).catch(() => false);
+    }
   }
 
   private async getDashboard(create: boolean): Promise<DashboardRef | null> {
@@ -374,7 +460,15 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     await this.initialize();
     this.dashboard = await this.provider().findDashboard(this.dashboardTitle());
     if (!this.dashboard && create) {
-      this.dashboard = await this.createEmptyDashboard();
+      const created = await this.createEmptyDashboard();
+      // Another job can have created it at the same moment: everybody keeps the oldest one
+      const found = await this.provider().findDashboard(this.dashboardTitle()).catch(() => null);
+      if (found && found.id < created.id) {
+        await this.provider().closeDashboard(created).catch(() => undefined);
+        this.dashboard = found;
+      } else {
+        this.dashboard = created;
+      }
     }
     return this.dashboard;
   }
@@ -409,8 +503,12 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     return this.provider().getDashboardTitle(POOL_DASHBOARD_TITLE);
   }
 
+  // Every comment is written by a holder of the key, and signed with it
   private commentBody(data: PoolCommentData): string {
-    return buildPoolCommentBody(data, this.provider().getDashboardFormat());
+    const key = this.requireKey();
+    const unsigned = { ...data };
+    delete unsigned.mac;
+    return buildPoolCommentBody({ ...unsigned, mac: signPoolData(unsigned, key) }, this.provider().getDashboardFormat());
   }
 
   private requireKey(): string {

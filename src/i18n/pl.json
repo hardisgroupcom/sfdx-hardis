@@ -3099,6 +3099,8 @@
   "poolLocalAuthOk": "Token git provider i klucz szyfrowania są prawidłowe: można pobierać scratch orgi z pool",
   "poolOrgClaimedByAnotherJob": "Scratch org {{alias}} został pobrany przez inne zadanie, próba z następnym",
   "poolOtherKeyEntriesKept": "{{count}} scratch org(ów) puli zaszyfrowano innym kluczem niż {{variable}} na tym komputerze. Zostają zachowane: usuwa je tylko job CI, po rotacji klucza",
+  "poolPreviousKeyNeeded": "{{count}} scratch org(ów) usunięto z puli, ale nie z Dev Hub, ponieważ nic nie potwierdza autentyczności ich wpisów. Aby usunąć je przy następnej rotacji klucza, należy ustawić {{variable}} na poprzedni klucz dla odświeżenia następującego po rotacji",
+  "poolScratchOrgNotAdded": "Nie udało się dodać scratch org do puli: {{message}}",
   "poolScratchOrgNotDeleted": "Nie udało się usunąć scratch orga {{alias}} z Dev Hub: {{message}}",
   "poolStorageNotReachable": "Magazyn puli scratch orgów ({{storageService}}) jest nieosiągalny: należy sprawdzić, czy Dev Hub jest połączony",
   "postActionsHaveFailed": "Działania końcowe zakończyły się niepowodzeniem!",

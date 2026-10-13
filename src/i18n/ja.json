@@ -3097,6 +3097,8 @@
   "poolLocalAuthOk": "git provider の token と暗号化キーは有効です。pool からスクラッチ組織を取得できます",
   "poolOrgClaimedByAnotherJob": "スクラッチ組織 {{alias}} は別のジョブに取得されました。次のスクラッチ組織を試します",
   "poolOtherKeyEntriesKept": "プールの {{count}} 件のスクラッチ組織は、このコンピューターの {{variable}} とは別のキーで暗号化されています。これらは保持されます。キーのローテーション後に CI ジョブのみが削除します",
+  "poolPreviousKeyNeeded": "{{count}} 件のスクラッチ組織をプールから削除しましたが、エントリが本物であることを確認できないため Dev Hub からは削除していません。次回のキーローテーション時に削除するには、ローテーション直後の更新で {{variable}} に以前のキーを設定してください",
+  "poolScratchOrgNotAdded": "スクラッチ組織をプールに追加できませんでした: {{message}}",
   "poolScratchOrgNotDeleted": "スクラッチ組織 {{alias}} を Dev Hub から削除できませんでした: {{message}}",
   "poolStorageNotReachable": "スクラッチ組織プールのストレージ ({{storageService}}) にアクセスできません。Dev Hub が接続されているか確認してください",
   "postActionsHaveFailed": "後処理アクションが失敗しました！",

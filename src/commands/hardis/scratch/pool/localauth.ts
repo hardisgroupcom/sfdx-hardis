@@ -99,7 +99,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
     // Request additional setup to the user
     const provider: PoolStorageInterface = await instantiateProvider(poolConfig.storageService);
-    const authenticated = await provider.userAuthenticate();
+    const { flags } = await this.parse(ScratchPoolLocalAuth);
+    const authenticated = await provider.userAuthenticate({
+      devHubConn: flags['target-dev-hub']?.getConnection(),
+      devHubUsername: flags['target-dev-hub']?.getUsername(),
+    });
 
     // Return an object to be displayed with --json
     return authenticated

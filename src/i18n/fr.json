@@ -3099,6 +3099,8 @@
   "poolLocalAuthOk": "Le token du git provider et la clé de chiffrement sont valides : vous pouvez prendre des scratch orgs dans le pool",
   "poolOrgClaimedByAnotherJob": "La scratch org {{alias}} a été prise par un autre job, essai de la suivante",
   "poolOtherKeyEntriesKept": "{{count}} scratch org(s) du pool sont chiffrées avec une autre clé que {{variable}} sur cet ordinateur. Elles sont conservées : seul un job de CI les retire, après une rotation de clé",
+  "poolPreviousKeyNeeded": "{{count}} scratch org(s) ont été retirées du pool mais pas supprimées du Dev Hub, car rien ne prouve que leurs entrées sont authentiques. Pour les supprimer lors de la prochaine rotation de clé, définissez {{variable}} avec la clé précédente pour le rafraîchissement qui suit la rotation",
+  "poolScratchOrgNotAdded": "La scratch org n'a pas pu être ajoutée au pool : {{message}}",
   "poolScratchOrgNotDeleted": "La scratch org {{alias}} n'a pas pu être supprimée du Dev Hub : {{message}}",
   "poolStorageNotReachable": "Le stockage du pool de scratch orgs ({{storageService}}) est inaccessible : vérifiez que le Dev Hub est connecté",
   "postActionsHaveFailed": "Les actions post-déploiement ont échoué !",

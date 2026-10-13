@@ -31,7 +31,7 @@ The pool is stored in your git provider, in a **Scratch Orgs Pool Dashboard**:
 | Azure DevOps    | A work item of type Task, named after the repository                    |
 | Bitbucket Cloud | A Pull Request that is never merged, opened from a technical branch     |
 
-Each scratch org of the pool is one comment of the dashboard. Its alias, username and expiration date are readable by anyone who can read the repository. Its credentials are **encrypted** with a key that only your CI/CD variables and your team hold.
+Each scratch org of the pool is one comment of the dashboard. Its alias, username and expiration date are readable by anyone who can read the repository. Its credentials are **encrypted** with a key that only your CI/CD variables and your team hold. Every comment is also **signed** with that key: a comment written by someone who does not have it is ignored.
 
 The text of the dashboard is rebuilt from the comments: available scratch orgs, last scratch orgs taken, failed creations, and the scratch org limits of the Dev Hub.
 
@@ -120,9 +120,14 @@ The dashboard is the same pool, read from your git provider. It is the place to 
 
 ### Rotate the encryption key
 
-- Replace the value of `SFDX_HARDIS_POOL_ENCRYPTION_KEY` in the CI/CD variables.
-- Run the pool refresh job of your CI server: the scratch orgs encrypted with the previous key are removed from the pool and deleted from the Dev Hub, then new ones are created. A refresh run from a computer never removes them, so a mistyped key cannot empty the pool.
-- Give the new key to the developers.
+- Copy the current value of `SFDX_HARDIS_POOL_ENCRYPTION_KEY` into a masked CI/CD variable named `SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY`.
+- Replace the value of `SFDX_HARDIS_POOL_ENCRYPTION_KEY` by the new key.
+- Run the pool refresh job of your CI server: the scratch orgs encrypted with the previous key are removed from the pool and deleted from the Dev Hub, then new ones are created.
+- Delete the variable `SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY`, and give the new key to the developers.
+
+Without the previous key, the refresh still removes the old scratch orgs from the pool, but it does not delete them from the Dev Hub: they stay active until they expire. Nothing proves an entry is genuine without the key that signed it, and the refresh never deletes a scratch org on the word of a comment anyone could have written.
+
+A refresh run from a computer never removes the scratch orgs of another key, and refuses to refill a pool it cannot read: a mistyped key cannot empty the pool.
 
 ### Troubleshooting
 

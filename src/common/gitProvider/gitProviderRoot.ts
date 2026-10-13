@@ -509,6 +509,12 @@ export abstract class GitProviderRoot {
     return false;
   }
 
+  // False when a second dashboard cannot be opened while the first one is (Bitbucket accepts one
+  // open Pull Request per pair of branches): a replacement then closes before it creates
+  public allowsTwoOpenDashboards(): boolean {
+    return true;
+  }
+
   // Closes a dashboard so findDashboard does not return it anymore
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async closeDashboard(dashboard: DashboardRef): Promise<void> {

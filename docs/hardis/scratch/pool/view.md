@@ -26,7 +26,7 @@ The command's technical implementation involves:
 - **Pool Summary Retrieval:** It uses `getPoolSummary` to read the configured storage service (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub) and build a summary of the pool.
 - **JSON Output:** With `--json`, the `pool` property holds the summary read by the VS Code extension panel. `errorKind` is `noGitProvider` when the storage cannot be reached.
 - **Data Display:** It logs the pool configuration and the available scratch orgs to the console in a human-readable format.
-- **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not.
+- **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not (`errorKind` is then `noPool`). The Dev Hub is optional: when one is connected, its scratch org limits are read live.
 </details>
 
 ### Agent Mode
@@ -43,15 +43,15 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
-|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
-| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
-| json                  | boolean | Format output as json.                                                                                            |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
-| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
+| Name                  |  Type   | Description                                                   | Default | Required | Options |
+|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                          |         |          |         |
+| json                  | boolean | Format output as json.                                        |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org.                         |         |          |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
 
 ## Examples
 

@@ -34,6 +34,8 @@ export interface PoolCommentData {
   error?: string;
   // state
   devHubLimits?: PoolDevHubLimits | null;
+  // Signature of the other fields with the key of the pool
+  mac?: string;
 }
 
 export interface PoolComment {

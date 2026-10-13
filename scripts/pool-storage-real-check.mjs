@@ -138,10 +138,12 @@ try {
     await writer.addOrg(fakeScratchOrg(8), 'last');
     throw new KeepDashboard();
   }
+  process.env.SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY = process.env.SFDX_HARDIS_POOL_ENCRYPTION_KEY;
   process.env.SFDX_HARDIS_POOL_ENCRYPTION_KEY = 'real-check-rotated-key-' + Date.now();
   summary = await writer.getSummary();
   check('another key is reported as a mismatch', summary.keyStatus === 'mismatch', `keyStatus=${summary.keyStatus}`);
   check('nothing can be taken with another key', (await writer.takeOrg(context(99))) === null);
+  await writer.prepareRefresh();
   await writer.finalizeRefresh({ jobUrl: '', devHubLimits: null });
   summary = await writer.getSummary();
   check('the refresh after a key rotation drops the entries of the previous key', summary.available === 0 && summary.keyStatus === 'ok', `available=${summary.available}, keyStatus=${summary.keyStatus}`);

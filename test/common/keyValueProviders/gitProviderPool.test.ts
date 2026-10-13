@@ -1,14 +1,21 @@
 import { expect } from 'chai';
 import { GitProviderPoolStorage } from '../../../src/common/keyValueProviders/gitProviderPool.js';
 import { DashboardComment, DashboardFormat, DashboardRef } from '../../../src/common/gitProvider/gitProviderRoot.js';
-import { POOL_ENCRYPTION_KEY_ENV_VAR } from '../../../src/common/utils/poolCryptoUtils.js';
-import { buildPoolCommentBody, parsePoolComment } from '../../../src/common/utils/poolDashboardUtils.js';
+import { POOL_ENCRYPTION_KEY_ENV_VAR, POOL_PREVIOUS_ENCRYPTION_KEY_ENV_VAR, signPoolData } from '../../../src/common/utils/poolCryptoUtils.js';
+import { buildPoolCommentBody, parsePoolComment, PoolCommentData } from '../../../src/common/utils/poolDashboardUtils.js';
+
+// A comment of the pool, signed like the storage signs its own
+function signedBody(data: PoolCommentData, key = 'unit-test-key'): string {
+  return buildPoolCommentBody({ ...data, mac: signPoolData(data, key) }, 'markdown');
+}
 
 // A git provider kept in memory, with the two behaviors measured on the real ones: a delete that
 // answers true to everybody (GitHub, GitLab, Bitbucket) or to the first caller only (Azure DevOps)
 class FakeDashboardProvider {
   public dashboards: Array<{ ref: DashboardRef; title: string; body: string; closed: boolean; comments: DashboardComment[] }> = [];
   public wornOut = false;
+  // False like Bitbucket: one open dashboard at a time
+  public twoOpenDashboards = true;
   // Ids of the comments this client is not allowed to delete (written by another account)
   public undeletable = new Set<number>();
   private nextCommentId = 100;
@@ -21,6 +28,10 @@ class FakeDashboardProvider {
 
   getDashboardTitle(title: string) {
     return title;
+  }
+
+  allowsTwoOpenDashboards() {
+    return this.twoOpenDashboards;
   }
 
   getDashboardFormat() {
@@ -120,6 +131,7 @@ describe('GitProviderPoolStorage', function () {
   });
 
   afterEach(() => {
+    delete process.env[POOL_PREVIOUS_ENCRYPTION_KEY_ENV_VAR];
     if (previousKey === undefined) {
       delete process.env[POOL_ENCRYPTION_KEY_ENV_VAR];
     } else {
@@ -161,6 +173,8 @@ describe('GitProviderPoolStorage', function () {
     const provider = new FakeDashboardProvider(false);
     const storage = newStorage(provider);
     await storage.addOrg(fakeScratchOrg(1));
+    // The text of the dashboard is rebuilt at the end of a refresh
+    await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
     const dashboard = provider.current();
     expect(JSON.stringify(dashboard)).to.not.include('secret-token');
     const decoded = dashboard.comments.map((comment) => JSON.stringify(parsePoolComment(comment)?.data)).join('');
@@ -174,6 +188,7 @@ describe('GitProviderPoolStorage', function () {
     const provider = new FakeDashboardProvider(true, 'html');
     const storage = newStorage(provider);
     await storage.addOrg(fakeScratchOrg(1));
+    await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
     expect(provider.current().body).to.include('<table>');
     expect(provider.current().comments[0].body).to.include('<pre>');
     expect((await storage.takeOrg(takeContext(1))).scratchOrgAlias).to.equal('PO-org-1');
@@ -219,8 +234,10 @@ describe('GitProviderPoolStorage', function () {
     const storage = newStorage(provider, devHubConn);
     await storage.addOrg(fakeScratchOrg(1));
     process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = 'rotated-key';
+    process.env[POOL_PREVIOUS_ENCRYPTION_KEY_ENV_VAR] = 'unit-test-key';
     expect((await storage.getSummary()).keyStatus).to.equal('mismatch');
     expect(await storage.takeOrg(takeContext(1))).to.equal(null);
+    await storage.prepareRefresh();
     await storage.finalizeRefresh({ jobUrl: 'https://example.com/job/9', devHubLimits: null });
     const summary = await storage.getSummary();
     expect(summary.available).to.equal(0);
@@ -253,7 +270,7 @@ describe('GitProviderPoolStorage', function () {
     await storage.addOrg(fakeScratchOrg(1));
     const dashboard = provider.current();
     const entryId = dashboard.comments[0].id;
-    const oldClaim = buildPoolCommentBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'developer', date: '2020-01-01T00:00:00Z' }, 'markdown');
+    const oldClaim = signedBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'developer', date: '2020-01-01T00:00:00Z' });
     dashboard.comments.push({ id: 999, body: oldClaim, createdDate: '2020-01-01T00:00:00Z' });
     await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
     expect(provider.current().comments.some((comment) => comment.id === entryId)).to.equal(false);
@@ -268,7 +285,7 @@ describe('GitProviderPoolStorage', function () {
     await storage.addOrg(fakeScratchOrg(1));
     const dashboard = provider.current();
     const entryId = dashboard.comments[0].id;
-    const claim = buildPoolCommentBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'running-job', date: new Date().toISOString() }, 'markdown');
+    const claim = signedBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'running-job', date: new Date().toISOString() });
     dashboard.comments.push({ id: 999, body: claim, createdDate: new Date().toISOString() });
     await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
     expect(provider.current().comments.some((comment) => comment.id === entryId)).to.equal(true);
@@ -303,7 +320,7 @@ describe('GitProviderPoolStorage', function () {
     // A job claimed the first scratch org a moment ago, and could not remove its entry
     const dashboard = provider.current();
     const entryId = dashboard.comments[0].id;
-    const claim = buildPoolCommentBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'running-job', date: new Date().toISOString() }, 'markdown');
+    const claim = signedBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'running-job', date: new Date().toISOString() });
     dashboard.comments.push({ id: 999, body: claim, createdDate: new Date().toISOString() });
     provider.wornOut = true;
     await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
@@ -328,9 +345,11 @@ describe('GitProviderPoolStorage', function () {
     await storage.addOrg(fakeScratchOrg(2));
     const dashboard = provider.current();
     const takenEntryId = dashboard.comments[0].id;
-    const claim = buildPoolCommentBody({ v: 1, kind: 'claim', entry: takenEntryId, alias: 'PO-org-1', by: 'developer', date: '2020-01-01T00:00:00Z' }, 'markdown');
+    const claim = signedBody({ v: 1, kind: 'claim', entry: takenEntryId, alias: 'PO-org-1', by: 'developer', date: '2020-01-01T00:00:00Z' });
     dashboard.comments.push({ id: 999, body: claim, createdDate: '2020-01-01T00:00:00Z' });
     process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = 'rotated-key';
+    process.env[POOL_PREVIOUS_ENCRYPTION_KEY_ENV_VAR] = 'unit-test-key';
+    await storage.prepareRefresh();
     await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
     expect(deleted).to.deep.equal(['ASO_00D000000000002']);
     expect((await storage.getSummary()).history.map((fetch) => fetch.by)).to.deep.equal(['developer']);
@@ -344,7 +363,13 @@ describe('GitProviderPoolStorage', function () {
     (storage as any).dropsOtherKeyEntries = false;
     await storage.addOrg(fakeScratchOrg(1));
     process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = 'mistyped-key';
-    await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
+    let refused: Error | null = null;
+    try {
+      await storage.prepareRefresh();
+    } catch (e) {
+      refused = e as Error;
+    }
+    expect(refused).to.not.equal(null);
     expect(deleted).to.deep.equal([]);
     process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = 'unit-test-key';
     expect((await storage.listOrgs()).map((scratchOrg) => scratchOrg.scratchOrgAlias)).to.deep.equal(['PO-org-1']);
@@ -361,13 +386,82 @@ describe('GitProviderPoolStorage', function () {
     provider.listDashboardComments = async (ref: DashboardRef) => {
       listings++;
       if (listings === 3) {
-        const older = buildPoolCommentBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'other-job', date: new Date().toISOString() }, 'markdown');
+        const older = signedBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'other-job', date: new Date().toISOString() });
         provider.current().comments.push({ id: 50, body: older, createdDate: new Date().toISOString() });
       }
       return realList(ref);
     };
     expect(await storage.takeOrg(takeContext(1))).to.equal(null);
     expect((await storage.getSummary()).history.map((fetch) => fetch.by)).to.deep.equal(['other-job']);
+  });
+
+  it('ignores the comments the key did not sign: a forged claim does not take a scratch org', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const storage = newStorage(provider);
+    await storage.addOrg(fakeScratchOrg(1));
+    const dashboard = provider.current();
+    const entryId = dashboard.comments[0].id;
+    const forgedClaim: PoolCommentData = { v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'intruder', date: '2020-01-01T00:00:00Z' };
+    dashboard.comments.push({ id: 50, body: buildPoolCommentBody(forgedClaim, 'markdown'), createdDate: '2020-01-01T00:00:00Z' });
+    dashboard.comments.push({ id: 51, body: signedBody(forgedClaim, 'another-key'), createdDate: '2020-01-01T00:00:00Z' });
+    expect((await storage.getSummary()).available).to.equal(1);
+    expect((await storage.takeOrg(takeContext(1))).scratchOrgAlias).to.equal('PO-org-1');
+    expect((await storage.getSummary()).history.map((fetch) => fetch.by)).to.deep.equal(['job-1']);
+  });
+
+  it('does not delete a scratch org on the word of an entry the previous key did not sign', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const deleted: string[] = [];
+    const devHubConn = { sobject: () => ({ findOne: async () => ({ Id: 'ASO' }), destroy: async (id: string) => deleted.push(id) }) };
+    const storage = newStorage(provider, devHubConn);
+    await storage.addOrg(fakeScratchOrg(1));
+    // An entry of an unknown key, naming a scratch org of the Dev Hub that is not in the pool
+    const forgedEntry: PoolCommentData = { v: 1, kind: 'entry', alias: 'victim', username: 'victim@example.com', orgId: '00D999999999999AAA', keyId: 'deadbeef', payload: 'x.y.z' };
+    provider.current().comments.push({ id: 60, body: signedBody(forgedEntry, 'intruder-key'), createdDate: '2020-01-01T00:00:00Z' });
+    await storage.prepareRefresh();
+    expect(deleted).to.deep.equal([]);
+    expect(provider.current().comments.some((comment) => comment.id === 60)).to.equal(false);
+    expect((await storage.getSummary()).available).to.equal(1);
+  });
+
+  it('replaces a worn out dashboard on a provider that accepts one open dashboard at a time', async () => {
+    const provider = new FakeDashboardProvider(false);
+    provider.twoOpenDashboards = false;
+    const storage = newStorage(provider);
+    await storage.addOrg(fakeScratchOrg(1));
+    await storage.addOrg(fakeScratchOrg(2));
+    await storage.takeOrg(takeContext(1));
+    provider.wornOut = true;
+    await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
+    expect(provider.dashboards.map((dashboard) => dashboard.closed)).to.deep.equal([true, false]);
+    const summary = await newStorage(provider).getSummary();
+    expect(summary.orgs.map((org) => org.alias)).to.deep.equal(['PO-org-2']);
+    expect(summary.history).to.have.length(1);
+  });
+
+  it('keeps the old dashboard when the copy to the new one fails', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const storage = newStorage(provider);
+    await storage.addOrg(fakeScratchOrg(1));
+    await storage.addOrg(fakeScratchOrg(2));
+    provider.wornOut = true;
+    const realCreate = provider.createDashboardComment.bind(provider);
+    provider.createDashboardComment = async (ref: DashboardRef, body: string) => {
+      if (ref.id === 2) {
+        throw new Error('throttled');
+      }
+      return realCreate(ref, body);
+    };
+    let failed = false;
+    try {
+      await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
+    } catch {
+      failed = true;
+    }
+    expect(failed).to.equal(true);
+    expect(provider.dashboards.map((dashboard) => dashboard.closed)).to.deep.equal([false, true]);
+    provider.createDashboardComment = realCreate;
+    expect((await newStorage(provider).getSummary()).orgs.map((org) => org.alias)).to.deep.equal(['PO-org-1', 'PO-org-2']);
   });
 
   it('replaces a worn out dashboard by a new one holding the same pool', async () => {

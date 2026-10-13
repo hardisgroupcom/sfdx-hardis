@@ -6,7 +6,7 @@ import { which } from '../../../../common/utils/whichUtils.js';
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { addScratchOrgToPool, finalizePoolRefresh, listPoolOrgs, recordPoolFailure, removePoolOrgs } from '../../../../common/utils/poolUtils.js';
+import { addScratchOrgToPool, finalizePoolRefresh, listPoolOrgs, preparePoolRefresh, recordPoolFailure, removePoolOrgs } from '../../../../common/utils/poolUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { applySfPerformanceEnv, execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
@@ -32,7 +32,7 @@ Key functionalities:
 - **Parallel Creation:** New scratch orgs are created in parallel using child processes, optimizing the replenishment process.
 - **Authentication Handling:** Authenticates to scratch orgs before deletion or creation, ensuring proper access.
 - **Dashboard Update (\`gitProvider\` storage):** Records the refresh, the failed creations and the scratch org limits of the Dev Hub, then rebuilds the "Scratch Orgs Pool Dashboard" of the git provider.
-- **Housekeeping (\`gitProvider\` storage):** In a CI job, removes the entries encrypted with a previous key and deletes their scratch orgs from the Dev Hub (a refresh run from a computer keeps them). Removes the entries of the scratch orgs already taken.
+- **Housekeeping (\`gitProvider\` storage):** In a CI job, removes the entries encrypted with a previous key before the pool is counted, and deletes their scratch orgs from the Dev Hub when \`SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY\` proves they are genuine. A refresh run from a computer keeps them and stops. Comments that the key of the pool did not sign are ignored. Removes the entries of the scratch orgs already taken.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -115,6 +115,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       devHubConn: flags['target-dev-hub'].getConnection(),
       devHubUsername: flags['target-dev-hub'].getUsername(),
     };
+    await preparePoolRefresh(poolOptions);
     let scratchOrgs = await listPoolOrgs(poolOptions);
 
     /* jscpd:ignore-end */
@@ -213,9 +214,20 @@ In agent mode, all interactive prompts are skipped and default values are used.
             uxLog("warning", this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
           }
           const scratchOrgResult = result.result || result;
-          await addScratchOrgToPool(scratchOrgResult);
-          if (scratchOrgResult.status !== 0) {
-            await recordPoolFailure(String(scratchOrgResult.message || scratchOrgResult.rawLog || 'Scratch org creation failed'), poolOptions);
+          // A storage error must not leave this promise pending: the refresh would never end
+          try {
+            await addScratchOrgToPool(scratchOrgResult);
+            if (scratchOrgResult.status !== 0) {
+              // Only the message of the command: its raw output can hold usernames or URLs, and the
+              // failure is readable by anyone who can read the pool
+              await recordPoolFailure(String(result.message || scratchOrgResult.message || 'Scratch org creation failed, see the log of the job'), poolOptions);
+            }
+          } catch (e) {
+            uxLog("warning", this, c.yellow('[pool] ' + t('poolScratchOrgNotAdded', { message: (e as Error).message })));
+            if (code === 0) {
+              numberCreated--;
+              numberfailed++;
+            }
           }
           resolve({ code, result: result });
         });
