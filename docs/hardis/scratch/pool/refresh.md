@@ -16,7 +16,7 @@ Key functionalities:
 - **Parallel Creation:** New scratch orgs are created in parallel using child processes, optimizing the replenishment process.
 - **Authentication Handling:** Authenticates to scratch orgs before deletion or creation, ensuring proper access.
 - **Dashboard Update (`gitProvider` storage):** Records the refresh, the failed creations and the scratch org limits of the Dev Hub, then rebuilds the "Scratch Orgs Pool Dashboard" of the git provider.
-- **Housekeeping (`gitProvider` storage):** Removes the entries encrypted with a previous key (their scratch orgs are deleted from the Dev Hub), and releases the scratch orgs claimed by a job that died.
+- **Housekeeping (`gitProvider` storage):** In a CI job, removes the entries encrypted with a previous key and deletes their scratch orgs from the Dev Hub (a refresh run from a computer keeps them). Removes the entries of the scratch orgs already taken.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
