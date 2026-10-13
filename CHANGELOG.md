@@ -2,7 +2,7 @@
 
 ## [beta] (main)
 
-- [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): creates scratch orgs from a Dev Hub authenticated by JWT through an External Client App, instead of failing with error C-1016.
+- [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): scratch orgs are signed up with the Salesforce CLI built-in app by default, so a Dev Hub authenticated through an External Client App no longer fails with error C-1016 (Salesforce CLI 2.147.7 or later).
 
 ## [8.17.0] 2026-10-11
 
