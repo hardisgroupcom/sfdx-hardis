@@ -3098,6 +3098,7 @@
   "poolGitProviderTokenMissing": "Nessun token del git provider trovato: non è possibile leggere la dashboard del pool di scratch org. Connettiti al tuo git provider oppure imposta il suo token nel file .env del tuo progetto",
   "poolLocalAuthOk": "Il token del git provider e la chiave di cifratura sono validi: puoi prelevare scratch org dal pool",
   "poolOrgClaimedByAnotherJob": "La scratch org {{alias}} è stata prelevata da un altro job, provo con la successiva",
+  "poolOtherKeyEntriesKept": "{{count}} scratch org del pool sono cifrate con una chiave diversa da {{variable}} su questo computer. Vengono conservate: solo un job di CI le rimuove, dopo una rotazione della chiave",
   "poolScratchOrgNotDeleted": "Non è stato possibile eliminare la scratch org {{alias}} dal Dev Hub: {{message}}",
   "poolStorageNotReachable": "Lo storage del pool di scratch org ({{storageService}}) non è raggiungibile: verifica che il Dev Hub sia connesso",
   "postActionsHaveFailed": "Le azioni successive hanno avuto esito negativo!",

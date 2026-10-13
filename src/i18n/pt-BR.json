@@ -3066,6 +3066,7 @@
   "poolGitProviderTokenMissing": "Nenhum token do git provider encontrado: não é possível ler o dashboard do pool de scratch orgs. Conecte-se ao seu git provider ou defina o token dele no arquivo .env do seu projeto",
   "poolLocalAuthOk": "O token do git provider e a chave de criptografia são válidos: você pode retirar scratch orgs do pool",
   "poolOrgClaimedByAnotherJob": "A scratch org {{alias}} foi retirada por outro job, tentando a próxima",
+  "poolOtherKeyEntriesKept": "{{count}} scratch org(s) do pool estão criptografadas com outra chave que {{variable}} neste computador. Elas são mantidas: somente um job de CI as remove, após uma rotação de chave",
   "poolScratchOrgNotDeleted": "Não foi possível excluir a scratch org {{alias}} do Dev Hub: {{message}}",
   "poolStorageNotReachable": "O armazenamento do pool de scratch orgs ({{storageService}}) não pode ser acessado: verifique se o Dev Hub está conectado",
   "postActionsHaveFailed": "As ações pós-deploy falharam!",

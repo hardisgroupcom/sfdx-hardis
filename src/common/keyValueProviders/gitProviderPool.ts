@@ -3,7 +3,7 @@ import c from 'chalk';
 import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { DashboardRef, GitProviderRoot } from '../gitProvider/gitProviderRoot.js';
-import { uxLog } from '../utils/index.js';
+import { isCI, uxLog } from '../utils/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { t } from '../utils/i18n.js';
 import { PoolRefreshInfo, PoolStorageInterface, PoolTakeContext } from '../utils/keyValueUtils.js';
@@ -36,6 +36,7 @@ const MAX_TAKE_ATTEMPTS = 5;
 // A claim this old is settled: the job that posted it has finished deciding whether it won
 const SETTLED_CLAIM_MS = 5 * 60 * 1000;
 const MAX_FAILURE_LENGTH = 500;
+const CLAIM_CONFIRMATION_DELAY_MS = 1500;
 
 // Pool stored in a "Scratch Orgs Pool Dashboard" of the git provider: an issue (GitHub, GitLab), a
 // work item (Azure DevOps) or a dedicated Pull Request (Bitbucket). One comment per scratch org,
@@ -47,6 +48,11 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
   private gitProvider: GitProviderRoot | null;
   private dashboard: DashboardRef | null = null;
   private devHubConn: any = null;
+  // Entries of a previous key are only removed by a CI job: on a workstation, a mistyped key
+  // would otherwise delete every scratch org of the pool
+  private dropsOtherKeyEntries: boolean = isCI;
+  // Pause between the two readings that confirm a claim
+  private claimConfirmationDelayMs = CLAIM_CONFIRMATION_DELAY_MS;
   // Pool size chosen during the setup, before it is written in the configuration
   private maxScratchOrgsOverride: number | null = null;
 
@@ -193,15 +199,17 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     let pool = (await this.loadPool(false))!;
     // Entries of another key cannot be read anymore: their scratch orgs are deleted from the Dev Hub
     const otherKeyEntries = pool.state.entries.filter((entry) => entry.data.keyId !== getPoolKeyId(key));
-    for (const entry of otherKeyEntries) {
-      // An entry with a claim is a scratch org somebody took: only its comment is removed
-      const taken = pool.state.claimsByEntry.has(entry.id);
-      await this.provider().deleteDashboardComment(pool.dashboard, entry.id);
-      if (!taken) {
-        await this.tryDeleteScratchOrg(entry);
+    if (otherKeyEntries.length > 0 && !this.dropsOtherKeyEntries) {
+      uxLog("warning", this, c.yellow('[pool] ' + t('poolOtherKeyEntriesKept', { count: otherKeyEntries.length, variable: POOL_ENCRYPTION_KEY_ENV_VAR })));
+    } else if (otherKeyEntries.length > 0) {
+      for (const entry of otherKeyEntries) {
+        // An entry with a claim is a scratch org somebody took: only its comment is removed
+        const taken = pool.state.claimsByEntry.has(entry.id);
+        await this.provider().deleteDashboardComment(pool.dashboard, entry.id);
+        if (!taken) {
+          await this.tryDeleteScratchOrg(entry);
+        }
       }
-    }
-    if (otherKeyEntries.length > 0) {
       uxLog("warning", this, c.yellow('[pool] ' + t('poolEntriesDroppedKeyRotation', { count: otherKeyEntries.length })));
     }
     // Entries of scratch orgs already taken, that the job which took them could not delete itself.
@@ -267,9 +275,14 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     // write its own comments: a developer is often not allowed to delete the comment the CI
     // account created, so removing the entry is a cleanup the next pool refresh finishes.
     const claimId = await this.provider().createDashboardComment(dashboard, this.commentBody(claimData));
-    const comments = await this.listPoolComments(dashboard);
-    const claims = analyzePoolComments(comments, null).claimsByEntry.get(entry.id) || [];
-    if (claims[0]?.id === claimId) {
+    // Read twice: a listing served a moment too early can miss the older claim of another job,
+    // and both jobs would believe they won. The second reading, after a pause, sees it.
+    let won = await this.isOldestClaim(dashboard, entry.id, claimId);
+    if (won) {
+      await new Promise((resolve) => setTimeout(resolve, this.claimConfirmationDelayMs));
+      won = await this.isOldestClaim(dashboard, entry.id, claimId);
+    }
+    if (won) {
       try {
         await this.provider().deleteDashboardComment(dashboard, entry.id);
       } catch (e) {
@@ -279,6 +292,11 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     }
     await this.provider().deleteDashboardComment(dashboard, claimId);
     return false;
+  }
+
+  private async isOldestClaim(dashboard: DashboardRef, entryId: number, claimId: number): Promise<boolean> {
+    const claims = analyzePoolComments(await this.listPoolComments(dashboard), null).claimsByEntry.get(entryId) || [];
+    return claims[0]?.id === claimId;
   }
 
   private async deleteEntry(pool: LoadedPool, entry: PoolComment): Promise<void> {

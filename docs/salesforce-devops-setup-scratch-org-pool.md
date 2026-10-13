@@ -121,7 +121,7 @@ The dashboard is the same pool, read from your git provider. It is the place to 
 ### Rotate the encryption key
 
 - Replace the value of `SFDX_HARDIS_POOL_ENCRYPTION_KEY` in the CI/CD variables.
-- Run the pool refresh: the scratch orgs encrypted with the previous key are removed from the pool and deleted from the Dev Hub, then new ones are created.
+- Run the pool refresh job of your CI server: the scratch orgs encrypted with the previous key are removed from the pool and deleted from the Dev Hub, then new ones are created. A refresh run from a computer never removes them, so a mistyped key cannot empty the pool.
 - Give the new key to the developers.
 
 ### Troubleshooting

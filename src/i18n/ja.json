@@ -3096,6 +3096,7 @@
   "poolGitProviderTokenMissing": "git provider の token が見つかりません。スクラッチ組織 pool のダッシュボードを読み取れません。git provider に接続するか、その token をプロジェクトの .env ファイルに設定してください",
   "poolLocalAuthOk": "git provider の token と暗号化キーは有効です。pool からスクラッチ組織を取得できます",
   "poolOrgClaimedByAnotherJob": "スクラッチ組織 {{alias}} は別のジョブに取得されました。次のスクラッチ組織を試します",
+  "poolOtherKeyEntriesKept": "プールの {{count}} 件のスクラッチ組織は、このコンピューターの {{variable}} とは別のキーで暗号化されています。これらは保持されます。キーのローテーション後に CI ジョブのみが削除します",
   "poolScratchOrgNotDeleted": "スクラッチ組織 {{alias}} を Dev Hub から削除できませんでした: {{message}}",
   "poolStorageNotReachable": "スクラッチ組織プールのストレージ ({{storageService}}) にアクセスできません。Dev Hub が接続されているか確認してください",
   "postActionsHaveFailed": "後処理アクションが失敗しました！",

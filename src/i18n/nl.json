@@ -3098,6 +3098,7 @@
   "poolGitProviderTokenMissing": "Geen git provider token gevonden: het dashboard van het scratch org pool kan niet worden gelezen. Verbind met je git provider of stel de token in het .env-bestand van je project in",
   "poolLocalAuthOk": "De git provider token en de versleutelingssleutel zijn geldig: je kunt scratch orgs uit het pool halen",
   "poolOrgClaimedByAnotherJob": "Scratch org {{alias}} is door een andere job genomen, de volgende wordt geprobeerd",
+  "poolOtherKeyEntriesKept": "{{count}} scratch org(s) van de pool zijn versleuteld met een andere sleutel dan {{variable}} op deze computer. Ze blijven behouden: alleen een CI-job verwijdert ze, na een sleutelrotatie",
   "poolScratchOrgNotDeleted": "Scratch org {{alias}} kon niet uit de Dev Hub worden gewist: {{message}}",
   "poolStorageNotReachable": "De opslag van de scratch org pool ({{storageService}}) is niet bereikbaar: controleer of de Dev Hub verbonden is",
   "postActionsHaveFailed": "Nabewerkingen zijn mislukt !",

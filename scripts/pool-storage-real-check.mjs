@@ -52,6 +52,8 @@ if (provider === 'azure') {
   process.env.SYSTEM_ACCESSTOKEN = process.env.CI_SFDX_HARDIS_AZURE_TOKEN;
 }
 process.env.SFDX_HARDIS_POOL_ENCRYPTION_KEY = 'real-check-key-' + Date.now();
+// Entries of a previous key are only removed by a CI job
+process.env.CI = 'true';
 
 const { GitProviderPoolStorage } = await import('../lib/common/keyValueProviders/gitProviderPool.js');
 const { GitProvider } = await import('../lib/common/gitProvider/index.js');

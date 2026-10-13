@@ -104,6 +104,9 @@ const takeContext = (index: number) => ({ by: `job-${index}`, branch: 'feature/x
 function newStorage(provider: FakeDashboardProvider, devHubConn: any = null) {
   const storage = new GitProviderPoolStorage(provider as any);
   (storage as any).devHubConn = devHubConn;
+  // As in a CI job, with a short confirmation pause
+  (storage as any).dropsOtherKeyEntries = true;
+  (storage as any).claimConfirmationDelayMs = 20;
   return storage;
 }
 
@@ -331,6 +334,40 @@ describe('GitProviderPoolStorage', function () {
     await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
     expect(deleted).to.deep.equal(['ASO_00D000000000002']);
     expect((await storage.getSummary()).history.map((fetch) => fetch.by)).to.deep.equal(['developer']);
+  });
+
+  it('keeps the entries of another key on a workstation: only a CI job removes them', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const deleted: string[] = [];
+    const devHubConn = { sobject: () => ({ findOne: async () => ({ Id: 'ASO' }), destroy: async (id: string) => deleted.push(id) }) };
+    const storage = newStorage(provider, devHubConn);
+    (storage as any).dropsOtherKeyEntries = false;
+    await storage.addOrg(fakeScratchOrg(1));
+    process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = 'mistyped-key';
+    await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
+    expect(deleted).to.deep.equal([]);
+    process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = 'unit-test-key';
+    expect((await storage.listOrgs()).map((scratchOrg) => scratchOrg.scratchOrgAlias)).to.deep.equal(['PO-org-1']);
+  });
+
+  it('loses a claim when an older one shows up at the second reading', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const storage = newStorage(provider);
+    await storage.addOrg(fakeScratchOrg(1));
+    const entryId = provider.current().comments[0].id;
+    // The first listing after the claim misses the older claim of another job, the second one has it
+    const realList = provider.listDashboardComments.bind(provider);
+    let listings = 0;
+    provider.listDashboardComments = async (ref: DashboardRef) => {
+      listings++;
+      if (listings === 3) {
+        const older = buildPoolCommentBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'other-job', date: new Date().toISOString() }, 'markdown');
+        provider.current().comments.push({ id: 50, body: older, createdDate: new Date().toISOString() });
+      }
+      return realList(ref);
+    };
+    expect(await storage.takeOrg(takeContext(1))).to.equal(null);
+    expect((await storage.getSummary()).history.map((fetch) => fetch.by)).to.deep.equal(['other-job']);
   });
 
   it('replaces a worn out dashboard by a new one holding the same pool', async () => {

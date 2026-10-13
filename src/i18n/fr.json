@@ -3098,6 +3098,7 @@
   "poolGitProviderTokenMissing": "Aucun token du git provider trouvé : le tableau de bord du pool de scratch orgs ne peut pas être lu. Connectez-vous à votre git provider, ou définissez son token dans le fichier .env de votre projet",
   "poolLocalAuthOk": "Le token du git provider et la clé de chiffrement sont valides : vous pouvez prendre des scratch orgs dans le pool",
   "poolOrgClaimedByAnotherJob": "La scratch org {{alias}} a été prise par un autre job, essai de la suivante",
+  "poolOtherKeyEntriesKept": "{{count}} scratch org(s) du pool sont chiffrées avec une autre clé que {{variable}} sur cet ordinateur. Elles sont conservées : seul un job de CI les retire, après une rotation de clé",
   "poolScratchOrgNotDeleted": "La scratch org {{alias}} n'a pas pu être supprimée du Dev Hub : {{message}}",
   "poolStorageNotReachable": "Le stockage du pool de scratch orgs ({{storageService}}) est inaccessible : vérifiez que le Dev Hub est connecté",
   "postActionsHaveFailed": "Les actions post-déploiement ont échoué !",
