@@ -24,12 +24,12 @@ Creating a scratch org, installing its packages and pushing the sources takes mi
 
 The pool is stored in your git provider, in a **Scratch Orgs Pool Dashboard**:
 
-| Git provider    | Where the dashboard lives                                               |
-|-----------------|-------------------------------------------------------------------------|
-| GitHub          | An issue of the repository                                              |
-| GitLab          | An issue of the project                                                 |
-| Azure DevOps    | A work item of type Task, named after the repository                    |
-| Bitbucket Cloud | A Pull Request that is never merged, opened from a technical branch     |
+| Git provider    | Where the dashboard lives                                           |
+|-----------------|---------------------------------------------------------------------|
+| GitHub          | An issue of the repository                                          |
+| GitLab          | An issue of the project                                             |
+| Azure DevOps    | A work item of type Task, named after the repository                |
+| Bitbucket Cloud | A Pull Request that is never merged, opened from a technical branch |
 
 Each scratch org of the pool is one comment of the dashboard. Its alias, username and expiration date are readable by anyone who can read the repository. Its credentials are **encrypted** with a key that only your CI/CD variables and your team hold. Every comment is also **signed** with that key: a comment written by someone who does not have it is ignored.
 
@@ -63,24 +63,24 @@ poolConfig:
 
 The CI account must be allowed to write on the dashboard:
 
-| Git provider    | What to check                                                                                                         |
-|-----------------|-----------------------------------------------------------------------------------------------------------------------|
-| GitHub          | The workflow templates already give `issues: write` to the scratch org jobs                                           |
-| GitLab          | The variable `CI_SFDX_HARDIS_GITLAB_TOKEN` holds a project access token with scope `api`                              |
-| Azure DevOps    | The Build Service user of the project is allowed to edit work items                                                   |
+| Git provider    | What to check                                                                                                              |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------|
+| GitHub          | The workflow templates already give `issues: write` to the scratch org jobs                                                |
+| GitLab          | The variable `CI_SFDX_HARDIS_GITLAB_TOKEN` holds a project access token with scope `api`                                   |
+| Azure DevOps    | The Build Service user of the project is allowed to edit work items                                                        |
 | Bitbucket Cloud | The variable `CI_SFDX_HARDIS_BITBUCKET_TOKEN` holds an access token with scopes `repository:write` and `pullrequest:write` |
 
 ### Schedule the pool refresh
 
 The refresh deletes the scratch orgs that are about to expire and creates new ones until the pool is full. Schedule it every night, with the variable `SCRATCH_ORG_POOL` set to `true`.
 
-| CI server           | How to schedule it                                                                                                                         |
-|---------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| GitHub Actions      | Workflow `scratch-pool-refresh.yml` runs every night. Create the repository variable `SCRATCH_ORG_POOL` with value `true`                  |
-| GitLab CI           | In **Build -> Pipeline schedules**, create a schedule on your main branch with the variable `SCRATCH_ORG_POOL` = `true`                    |
-| Azure Pipelines     | Create a pipeline from the file `azure-pipelines-scratch-pool.yml`, with the variable `SCRATCH_ORG_POOL` = `true`                          |
-| Bitbucket Pipelines | In **Pipelines -> Schedules**, schedule the custom pipeline `scratch-pool-refresh` on your main branch                                     |
-| Jenkins             | Create a job on the same `Jenkinsfile`, triggered every night, with the environment variable `SCRATCH_ORG_POOL` = `true`                   |
+| CI server           | How to schedule it                                                                                                        |
+|---------------------|---------------------------------------------------------------------------------------------------------------------------|
+| GitHub Actions      | Workflow `scratch-pool-refresh.yml` runs every night. Create the repository variable `SCRATCH_ORG_POOL` with value `true` |
+| GitLab CI           | In **Build -> Pipeline schedules**, create a schedule on your main branch with the variable `SCRATCH_ORG_POOL` = `true`   |
+| Azure Pipelines     | Create a pipeline from the file `azure-pipelines-scratch-pool.yml`, with the variable `SCRATCH_ORG_POOL` = `true`         |
+| Bitbucket Pipelines | In **Pipelines -> Schedules**, schedule the custom pipeline `scratch-pool-refresh` on your main branch                    |
+| Jenkins             | Create a job on the same `Jenkinsfile`, triggered every night, with the environment variable `SCRATCH_ORG_POOL` = `true`  |
 
 On GitHub Actions, Azure Pipelines and Jenkins, the secrets are not sent to the jobs automatically: the templates list the Dev Hub variables and `SFDX_HARDIS_POOL_ENCRYPTION_KEY`, replace `DEVHUB` by the alias of your Dev Hub.
 
@@ -131,13 +131,13 @@ A refresh run from a computer never removes the scratch orgs of another key, and
 
 ### Troubleshooting
 
-| What you see                                                        | What to do                                                                                                                       |
-|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| The pool is always empty                                            | Check that the refresh job is scheduled and green, and the **failed creations** of the dashboard                                 |
-| `SFDX_HARDIS_POOL_ENCRYPTION_KEY is not set`                        | Define the variable in the CI/CD settings, or in the VS Code panel or the `.env` file on a computer                              |
-| The key is not the one the scratch orgs were encrypted with         | Use the key displayed at setup, or [rotate it](#rotate-the-encryption-key)                                                        |
-| No git provider token found                                         | Connect to your git provider from the DevOps Pipeline, or define the token variable of your provider                             |
-| Jobs create scratch orgs although the pool is full                  | Look at the job log: it says why no scratch org was taken (missing key, missing token, dashboard not writable)                   |
-| The Dev Hub limits are reached                                      | Lower `maxScratchOrgsNumber`, or delete unused scratch orgs with [hardis:scratch:delete](hardis/scratch/delete.md)               |
+| What you see                                                | What to do                                                                                                         |
+|-------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| The pool is always empty                                    | Check that the refresh job is scheduled and green, and the **failed creations** of the dashboard                   |
+| `SFDX_HARDIS_POOL_ENCRYPTION_KEY is not set`                | Define the variable in the CI/CD settings, or in the VS Code panel or the `.env` file on a computer                |
+| The key is not the one the scratch orgs were encrypted with | Use the key displayed at setup, or [rotate it](#rotate-the-encryption-key)                                         |
+| No git provider token found                                 | Connect to your git provider from the DevOps Pipeline, or define the token variable of your provider               |
+| Jobs create scratch orgs although the pool is full          | Look at the job log: it says why no scratch org was taken (missing key, missing token, dashboard not writable)     |
+| The Dev Hub limits are reached                              | Lower `maxScratchOrgsNumber`, or delete unused scratch orgs with [hardis:scratch:delete](hardis/scratch/delete.md) |
 
 You can now go to step [7. Create the first Pull Request](salesforce-devops-setup-merge-request.md).
