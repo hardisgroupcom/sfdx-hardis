@@ -19,6 +19,7 @@ import {
   uxLog,
 } from '../../../common/utils/index.js';
 import {
+  getScratchSignupEnv,
   initApexScripts,
   initOrgData,
   initOrgMetadatas,
@@ -391,12 +392,7 @@ In agent mode:
       fail: false,
       output: false,
       debug: this.debugMode,
-      // A Dev Hub authenticated through an External Client App fails signup with C-1016:
-      // use the CLI's built-in app for the new org unless the user chose another one
-      env: {
-        SF_SCRATCH_SIGNUP_CONNECTED_APP: process.env.SF_SCRATCH_SIGNUP_CONNECTED_APP || 'PlatformCLI',
-        SF_SCRATCH_SIGNUP_CALLBACK_URL: process.env.SF_SCRATCH_SIGNUP_CALLBACK_URL || 'http://localhost:1717/OauthRedirect',
-      },
+      env: getScratchSignupEnv(),
     });
     await clearCache('sf org list');
     if (!createResult || createResult.status !== 0 || !createResult.result) {
