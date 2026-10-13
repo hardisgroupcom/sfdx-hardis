@@ -118,6 +118,8 @@ SFDX_HARDIS_POOL_ENCRYPTION_KEY=the-key-displayed-at-setup
 
 The dashboard is the same pool, read from your git provider. It is the place to look when a Pull Request job did not get a scratch org.
 
+![Scratch Orgs Pool Dashboard in a GitHub issue](assets/images/scratch-org-pool-dashboard.png)
+
 ### Rotate the encryption key
 
 - Copy the current value of `SFDX_HARDIS_POOL_ENCRYPTION_KEY` into a masked CI/CD variable named `SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY`.
