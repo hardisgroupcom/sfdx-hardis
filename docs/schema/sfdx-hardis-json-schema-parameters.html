@@ -16472,7 +16472,7 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
 <div class="badge badge-secondary">Example:</div>
 <br/><div id="poolConfig_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">    </span><span class="s2">&quot;maxScratchOrgsNumber&quot;</span><span class="o">:</span><span class="w"> </span><span class="mf">10</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;storageService&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;kvdb.io&quot;</span>
+<span class="w">    </span><span class="s2">&quot;storageService&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;gitProvider&quot;</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -16627,15 +16627,22 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#poolConfig_storageService" onclick="anchorLink('poolConfig_storageService')">storageService</a></div><h4>Storage service for scratch org pool</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Remote service allowing to store scratch org pool details</p>
-</span>
+    <a href="#poolConfig_storageService" onclick="anchorLink('poolConfig_storageService')">storageService</a></div><h4>Storage service for scratch org pool</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>Where the scratch org pool is stored. gitProvider: a "Scratch Orgs Pool Dashboard" of the git provider (issue on GitHub and GitLab, work item on Azure DevOps, Pull Request on Bitbucket), with scratch org credentials encrypted by the key in variable SFDX<em>HARDIS</em>POOL<em>ENCRYPTION</em>KEY. salesforce: a custom object of the Dev Hub. localtest: a local file, for tests only.</p>
+</span><div class="enum-value" id="poolConfig_storageService_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"gitProvider"</li><li class="list-group-item enum-item">"salesforce"</li><li class="list-group-item enum-item">"localtest"</li></ul>
+            </div>
         
 
         
         
 
-        
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="poolConfig_storageService_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;gitProvider&quot;</span>
+</pre></div>
+</div>
             </div>
         </div>
     </div>

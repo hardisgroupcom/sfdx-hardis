@@ -92,6 +92,8 @@ _See [Configure CI authentication](salesforce-devops-setup-auth.md)_
 - [ ] `SFDX_CLIENT_KEY_<ALIAS>` (AES passphrase) and/or `SFDX_CLIENT_CERT_<ALIAS>` is defined, matching the [certificate storage mode](salesforce-devops-setup-auth.md#certificate-storage-modes) you selected.
 - [ ] All credential variables are **masked / secret**, and not restricted to protected branches only if your pipelines run on other branches.
 - [ ] If you use scratch orgs, Dev Hub authentication is configured too (`sf hardis:project:configure:auth --devhub` plus the `SFDX_CLIENT_*_<DEVHUB_ALIAS>` variables).
+- [ ] If you use scratch orgs with GitHub, Azure, Bitbucket or Jenkins, the variable `USE_SCRATCH_ORGS` is set to `"true"` (the scratch org jobs are off by default there).
+- [ ] If you use a [scratch org pool](salesforce-devops-setup-scratch-org-pool.md), its refresh job is scheduled with `SCRATCH_ORG_POOL` set to `"true"`, and with a pool stored in the git provider the masked variable `SFDX_HARDIS_POOL_ENCRYPTION_KEY` is defined.
 - [ ] No `SFDX_AUTH_URL_*` variable is used for a major org (it embeds a long-lived refresh token, reserve it for scratch orgs and Dev Hub).
 - [ ] Login works from the CI server: a pipeline job reaches the org without falling back to an interactive prompt.
 

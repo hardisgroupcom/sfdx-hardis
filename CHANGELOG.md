@@ -7,8 +7,12 @@
   - Backs up complete Profiles, as the Metadata Retriever does in Auto mode: the first backup after the upgrade reports every Profile as updated.
   - Lists the metadata and the installed packages of the org given with `--target-org`, instead of the default org.
 - [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) reads several batches of components in parallel, up to 3 times faster on Profiles.
+- Scratch orgs:
+  - [hardis:scratch:pool:create](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/): the scratch org pool can now be stored in the git provider, in a "Scratch Orgs Pool Dashboard" (an issue on GitHub and GitLab, a work item on Azure DevOps, a Pull Request on Bitbucket), with encrypted scratch org credentials.
+  - GitHub, Azure DevOps, Bitbucket and Jenkins pipeline templates can now create a scratch org (or take one from the pool) and run Apex tests on it, like GitLab already did. Off by default.
+  - [hardis:scratch:pool:view](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/view/) no longer outputs scratch org credentials, and shows the last scratch orgs taken from the pool and the Dev Hub limits.
+  - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): scratch orgs are signed up with the Salesforce CLI built-in app by default, so a Dev Hub authenticated through an External Client App no longer fails with error C-1016 (Salesforce CLI 2.147.7 or later).
 - Documentation and command help now link to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com/) course at its final address.
-- [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): scratch orgs are signed up with the Salesforce CLI built-in app by default, so a Dev Hub authenticated through an External Client App no longer fails with error C-1016 (Salesforce CLI 2.147.7 or later).
 
 ## [8.17.0] 2026-10-11
 

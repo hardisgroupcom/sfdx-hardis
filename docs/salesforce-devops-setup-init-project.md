@@ -26,6 +26,8 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
 
 - If you use GitLab CI and sandboxes only (no scratch orgs), open **gitlab-ci-config.yml** at the root of the repository and set the variable **USE_SCRATCH_ORGS** to `"false"`
 
+- With GitHub, Azure, Bitbucket or Jenkins, the scratch org jobs (create a scratch org or take one from the scratch org pool, run the Apex tests on it, delete it) are off by default: set the variable **USE_SCRATCH_ORGS** to `"true"` to run them. To keep scratch orgs ready in a pool, see [Set up a scratch org pool](salesforce-devops-setup-scratch-org-pool.md).
+
 - Depending on your Git provider, keep the related workflow files and delete the others
 
   - GitLab
@@ -34,6 +36,7 @@ description: Learn how to initialize a Salesforce DX project for CI/CD with sfdx
   - Azure
     - `azure-pipelines-checks.yml`
     - `azure-pipelines-deployment.yml`
+    - `azure-pipelines-scratch-pool.yml` (only if you use a scratch org pool)
   - GitHub
     - Folder `.github/workflows`
   - Bitbucket

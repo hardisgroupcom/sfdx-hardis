@@ -3,7 +3,7 @@ import c from "chalk";
 import { Agent as HttpsAgent } from "https";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
@@ -502,6 +502,70 @@ ${getBannerMarkdownAndLink()}
       };
       return prResult;
     }
+  }
+
+  public supportsDashboard(): boolean {
+    return true;
+  }
+
+  // The dashboard is an issue
+  public async findDashboard(title: string): Promise<DashboardRef | null> {
+    const issues: any[] = await this.gitlabApi.Issues.all({
+      projectId: this.dashboardProjectId(),
+      search: title,
+      in: 'title',
+      state: 'opened',
+      orderBy: 'created_at',
+      sort: 'asc',
+    } as any);
+    const issue = issues.find((candidate) => candidate.title === title);
+    return issue ? { id: issue.iid, url: issue.web_url } : null;
+  }
+
+  public async createDashboard(title: string, body: string): Promise<DashboardRef> {
+    const issue: any = await this.gitlabApi.Issues.create(this.dashboardProjectId(), title, { description: body });
+    return { id: issue.iid, url: issue.web_url };
+  }
+
+  public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
+    await this.gitlabApi.Issues.edit(this.dashboardProjectId(), dashboard.id, { title, description: body });
+  }
+
+  public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
+    const notes: any[] = await this.gitlabApi.IssueNotes.all(this.dashboardProjectId(), dashboard.id, { sort: 'asc', orderBy: 'created_at' } as any);
+    return notes
+      .filter((note) => note.system !== true)
+      .map((note) => ({ id: Number(note.id), body: note.body || '', createdDate: note.created_at || '' }))
+      .sort((a, b) => a.id - b.id);
+  }
+
+  public async createDashboardComment(dashboard: DashboardRef, body: string): Promise<number> {
+    const note: any = await this.gitlabApi.IssueNotes.create(this.dashboardProjectId(), dashboard.id, body);
+    return Number(note.id);
+  }
+
+  public async deleteDashboardComment(dashboard: DashboardRef, commentId: number): Promise<boolean> {
+    try {
+      await this.gitlabApi.IssueNotes.remove(this.dashboardProjectId(), dashboard.id, commentId);
+      return true;
+    } catch (e) {
+      if ((e as any)?.cause?.response?.status === 404 || /404|not found/i.test((e as Error).message || '')) {
+        return false;
+      }
+      throw e;
+    }
+  }
+
+  public async closeDashboard(dashboard: DashboardRef): Promise<void> {
+    await this.gitlabApi.Issues.edit(this.dashboardProjectId(), dashboard.id, { stateEvent: 'close' });
+  }
+
+  private dashboardProjectId(): string {
+    const projectId = this.projectId || process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || null;
+    if (!projectId) {
+      throw new SfError('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired'));
+    }
+    return projectId;
   }
 
   public async closePullRequest(pullRequestNumber: number): Promise<boolean> {

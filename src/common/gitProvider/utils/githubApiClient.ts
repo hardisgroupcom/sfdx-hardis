@@ -128,6 +128,10 @@ export class GithubApiClient {
     return this.send<T>('PATCH', path, body, options);
   }
 
+  public async delete<T = any>(path: string, options: GithubRequestOptions = {}): Promise<HttpResponse<T>> {
+    return this.send<T>('DELETE', path, undefined, options);
+  }
+
   // Follows the Link: <...>; rel="next" header until the last page and returns the
   // concatenated items (the REST list endpoints return one JSON array per page)
   public async paginate<T = any>(path: string, options: GithubRequestOptions = {}): Promise<T[]> {
@@ -186,7 +190,7 @@ export class GithubApiClient {
     return path.startsWith('http') ? path : this.apiUrl + path;
   }
 
-  private async send<T>(method: 'GET' | 'POST' | 'PATCH', path: string, body: any, options: GithubRequestOptions = {}): Promise<HttpResponse<T>> {
+  private async send<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', path: string, body: any, options: GithubRequestOptions = {}): Promise<HttpResponse<T>> {
     const url = this.buildUrl(path);
     const config: HttpRequestConfig = { params: options.params, headers: options.headers };
     try {
@@ -195,6 +199,9 @@ export class GithubApiClient {
       }
       if (method === 'PATCH') {
         return await this.http.patch<T>(url, body, config);
+      }
+      if (method === 'DELETE') {
+        return await this.http.delete<T>(url, config);
       }
       return await this.http.post<T>(url, body, config);
     } catch (error) {
