@@ -3099,6 +3099,7 @@
   "poolLocalAuthOk": "El token del git provider y la clave de cifrado son válidos: puedes tomar scratch orgs del pool",
   "poolOrgClaimedByAnotherJob": "La scratch org {{alias}} fue tomada por otro job, se prueba con la siguiente",
   "poolScratchOrgNotDeleted": "No se pudo borrar la scratch org {{alias}} del Dev Hub: {{message}}",
+  "poolStorageNotReachable": "No se puede acceder al almacenamiento del pool de scratch orgs ({{storageService}}): comprueba que el Dev Hub está conectado",
   "postActionsHaveFailed": "Las acciones posteriores han fallado.",
   "postDeploymentActionsLabel": "Acciones de posdespliegue",
   "postdeploymentcommentsIsNotImplementedOn": "postDeploymentComments no está implementado en",

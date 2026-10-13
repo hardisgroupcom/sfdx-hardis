@@ -384,8 +384,15 @@ ${this.getPipelineVariablesConfig()}
   // Work items belong to the project, not to the repository: two repositories of one project
   // must not share a dashboard
   public getDashboardTitle(title: string): string {
-    const repositoryName = this.otherRepository?.repositoryName || process.env.BUILD_REPOSITORYNAME || "";
-    return repositoryName ? `${title} (${repositoryName})` : title;
+    // In a pipeline the name is in BUILD_REPOSITORY_NAME (BUILD_REPOSITORYNAME in the templates).
+    // On a workstation only BUILD_REPOSITORY_ID is set, read from the git remote: it is then the name.
+    const repositoryId = process.env.BUILD_REPOSITORY_ID || "";
+    const repositoryName =
+      this.otherRepository?.repositoryName ||
+      process.env.BUILD_REPOSITORY_NAME ||
+      process.env.BUILD_REPOSITORYNAME ||
+      (AZURE_GUID_REGEX.test(repositoryId) ? "" : repositoryId);
+    return repositoryName ? `${title} (${decodeURIComponent(repositoryName)})` : title;
   }
 
   // Work item descriptions and comments are HTML
@@ -496,15 +503,6 @@ ${this.getPipelineVariablesConfig()}
     }
   }
 
-  // Same scheme as azdev.getHandlerFromToken: a Personal Access Token (52 or 84 characters) is
-  // sent as Basic auth, the token of a pipeline as a Bearer
-  private getAuthorizationHeader(): string {
-    if (this.token.length === 52 || this.token.length === 84) {
-      return "Basic " + Buffer.from(`:${this.token}`).toString("base64");
-    }
-    return `Bearer ${this.token}`;
-  }
-
   // A work item refuses updates past 10,000 revisions, and every comment and every body update
   // is one: it is replaced well before
   public async isDashboardWornOut(dashboard: DashboardRef): Promise<boolean> {
@@ -524,6 +522,15 @@ ${this.getPipelineVariablesConfig()}
       dashboard.id,
       this.dashboardTeamProject(),
     );
+  }
+
+  // Same scheme as azdev.getHandlerFromToken: a Personal Access Token (52 or 84 characters) is
+  // sent as Basic auth, the token of a pipeline as a Bearer
+  private getAuthorizationHeader(): string {
+    if (this.token.length === 52 || this.token.length === 84) {
+      return "Basic " + Buffer.from(`:${this.token}`).toString("base64");
+    }
+    return `Bearer ${this.token}`;
   }
 
   private dashboardTeamProject(): string {

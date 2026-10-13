@@ -20,6 +20,12 @@ pipelines:
               name: Run MegaLinter
               image: ghcr.io/oxsecurity/megalinter-salesforce:latest
               script:
+                # The scratch org pool dashboard is a Pull Request that is never merged: nothing to lint
+                - |
+                  if [ "${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}" = "sfdx-hardis/scratch-orgs-pool" ]; then
+                    echo "[sfdx-hardis] Nothing to check on the scratch org pool dashboard Pull Request"
+                    exit 0
+                  fi
                 - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash
                   /entrypoint.sh
               artifacts:
@@ -30,6 +36,11 @@ pipelines:
               clone:
                 depth: full
               script:
+                - |
+                  if [ "${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}" = "sfdx-hardis/scratch-orgs-pool" ]; then
+                    echo "[sfdx-hardis] Nothing to check on the scratch org pool dashboard Pull Request"
+                    exit 0
+                  fi
                 - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" |
                   sed 's/refs\/heads\///')
                 - export CI_COMMIT_REF_NAME=$BRANCH_NAME
@@ -73,6 +84,11 @@ pipelines:
                 - |
                   if [ "$USE_SCRATCH_ORGS" != "true" ]; then
                     echo "[sfdx-hardis] USE_SCRATCH_ORGS is not true: scratch org tests are skipped"
+                    exit 0
+                  fi
+                - |
+                  if [ "${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}" = "sfdx-hardis/scratch-orgs-pool" ]; then
+                    echo "[sfdx-hardis] Nothing to check on the scratch org pool dashboard Pull Request"
                     exit 0
                   fi
                 - export

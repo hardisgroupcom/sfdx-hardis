@@ -292,6 +292,47 @@ describe('GitProviderPoolStorage', function () {
     expect(states).to.have.length(1);
   });
 
+  it('keeps a scratch org that is being taken unavailable after the dashboard is replaced', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const storage = newStorage(provider);
+    await storage.addOrg(fakeScratchOrg(1));
+    await storage.addOrg(fakeScratchOrg(2));
+    // A job claimed the first scratch org a moment ago, and could not remove its entry
+    const dashboard = provider.current();
+    const entryId = dashboard.comments[0].id;
+    const claim = buildPoolCommentBody({ v: 1, kind: 'claim', entry: entryId, alias: 'PO-org-1', by: 'running-job', date: new Date().toISOString() }, 'markdown');
+    dashboard.comments.push({ id: 999, body: claim, createdDate: new Date().toISOString() });
+    provider.wornOut = true;
+    await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
+    expect(provider.dashboards).to.have.length(2);
+    const summary = await newStorage(provider).getSummary();
+    expect(summary.orgs.map((org) => org.alias)).to.deep.equal(['PO-org-2']);
+    expect((await newStorage(provider).takeOrg(takeContext(1))).scratchOrgAlias).to.equal('PO-org-2');
+    expect(await newStorage(provider).takeOrg(takeContext(2))).to.equal(null);
+  });
+
+  it('does not delete from the Dev Hub a taken scratch org whose entry is of a previous key', async () => {
+    const provider = new FakeDashboardProvider(false);
+    const deleted: string[] = [];
+    const devHubConn = {
+      sobject: () => ({
+        findOne: async (conditions: any) => ({ Id: 'ASO_' + conditions.ScratchOrg }),
+        destroy: async (id: string) => deleted.push(id),
+      }),
+    };
+    const storage = newStorage(provider, devHubConn);
+    await storage.addOrg(fakeScratchOrg(1));
+    await storage.addOrg(fakeScratchOrg(2));
+    const dashboard = provider.current();
+    const takenEntryId = dashboard.comments[0].id;
+    const claim = buildPoolCommentBody({ v: 1, kind: 'claim', entry: takenEntryId, alias: 'PO-org-1', by: 'developer', date: '2020-01-01T00:00:00Z' }, 'markdown');
+    dashboard.comments.push({ id: 999, body: claim, createdDate: '2020-01-01T00:00:00Z' });
+    process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = 'rotated-key';
+    await storage.finalizeRefresh({ jobUrl: '', devHubLimits: null });
+    expect(deleted).to.deep.equal(['ASO_00D000000000002']);
+    expect((await storage.getSummary()).history.map((fetch) => fetch.by)).to.deep.equal(['developer']);
+  });
+
   it('replaces a worn out dashboard by a new one holding the same pool', async () => {
     const provider = new FakeDashboardProvider(false);
     const storage = newStorage(provider);

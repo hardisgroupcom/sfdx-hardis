@@ -3067,6 +3067,7 @@
   "poolLocalAuthOk": "O token do git provider e a chave de criptografia são válidos: você pode retirar scratch orgs do pool",
   "poolOrgClaimedByAnotherJob": "A scratch org {{alias}} foi retirada por outro job, tentando a próxima",
   "poolScratchOrgNotDeleted": "Não foi possível excluir a scratch org {{alias}} do Dev Hub: {{message}}",
+  "poolStorageNotReachable": "O armazenamento do pool de scratch orgs ({{storageService}}) não pode ser acessado: verifique se o Dev Hub está conectado",
   "postActionsHaveFailed": "As ações pós-deploy falharam!",
   "postDeploymentActionsLabel": "Ações pós-deploy",
   "postdeploymentcommentsIsNotImplementedOn": "postDeploymentComments não está implementado em ",

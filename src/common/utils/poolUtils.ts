@@ -265,7 +265,9 @@ async function initializeProvider(options: any) {
   if (poolConfig?.storageService) {
     const storage = await instantiateProvider(poolConfig.storageService);
     try {
-      await storage.initialize(options);
+      if ((await storage.initialize(options)) === false) {
+        throw new SfError(t('poolStorageNotReachable', { storageService: poolConfig.storageService }));
+      }
       poolStorage = storage;
       return true;
     } catch (e) {

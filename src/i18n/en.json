@@ -3103,6 +3103,7 @@
   "poolLocalAuthOk": "The git provider token and the encryption key are valid: you can take scratch orgs from the pool",
   "poolOrgClaimedByAnotherJob": "Scratch org {{alias}} was taken by another job, trying the next one",
   "poolScratchOrgNotDeleted": "Scratch org {{alias}} could not be deleted from the Dev Hub: {{message}}",
+  "poolStorageNotReachable": "The storage of the scratch org pool ({{storageService}}) cannot be reached: check that the Dev Hub is connected",
   "postActionsHaveFailed": "Post actions have failed !",
   "postDeploymentActionsLabel": "Post-deployment actions",
   "postdeploymentcommentsIsNotImplementedOn": "postDeploymentComments is not implemented on ",

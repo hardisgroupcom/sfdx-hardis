@@ -3099,6 +3099,7 @@
   "poolLocalAuthOk": "Il token del git provider e la chiave di cifratura sono validi: puoi prelevare scratch org dal pool",
   "poolOrgClaimedByAnotherJob": "La scratch org {{alias}} è stata prelevata da un altro job, provo con la successiva",
   "poolScratchOrgNotDeleted": "Non è stato possibile eliminare la scratch org {{alias}} dal Dev Hub: {{message}}",
+  "poolStorageNotReachable": "Lo storage del pool di scratch org ({{storageService}}) non è raggiungibile: verifica che il Dev Hub sia connesso",
   "postActionsHaveFailed": "Le azioni successive hanno avuto esito negativo!",
   "postDeploymentActionsLabel": "Azioni di post-distribuzione",
   "postdeploymentcommentsIsNotImplementedOn": "postDeploymentComments non è implementato su ",

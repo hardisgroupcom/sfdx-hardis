@@ -3098,6 +3098,7 @@
   "poolLocalAuthOk": "Das git provider token und der Verschlüsselungsschlüssel sind gültig: Sie können Scratch Orgs aus dem Pool entnehmen",
   "poolOrgClaimedByAnotherJob": "Scratch Org {{alias}} wurde von einem anderen Job entnommen, die nächste wird versucht",
   "poolScratchOrgNotDeleted": "Scratch Org {{alias}} konnte nicht aus dem Dev Hub gelöscht werden: {{message}}",
+  "poolStorageNotReachable": "Der Speicher des Scratch-Org-Pools ({{storageService}}) ist nicht erreichbar: Prüfen Sie, ob der Dev Hub verbunden ist",
   "postActionsHaveFailed": "Post-Aktionen sind fehlgeschlagen!",
   "postDeploymentActionsLabel": "Post-Deployment-Aktionen",
   "postdeploymentcommentsIsNotImplementedOn": "postDeploymentComments ist nicht implementiert für ",

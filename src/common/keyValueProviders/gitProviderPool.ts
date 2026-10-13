@@ -4,6 +4,7 @@ import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { DashboardRef, GitProviderRoot } from '../gitProvider/gitProviderRoot.js';
 import { uxLog } from '../utils/index.js';
+import { WebSocketClient } from '../websocketClient.js';
 import { t } from '../utils/i18n.js';
 import { PoolRefreshInfo, PoolStorageInterface, PoolTakeContext } from '../utils/keyValueUtils.js';
 import {
@@ -73,7 +74,9 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     if (!getPoolEncryptionKey()) {
       const key = generatePoolEncryptionKey();
       process.env[POOL_ENCRYPTION_KEY_ENV_VAR] = key;
-      uxLog("action", this, c.cyan(t('poolEncryptionKeyGenerated', { variable: POOL_ENCRYPTION_KEY_ENV_VAR, key: c.green(key) })), { sensitive: true });
+      // <copy> shows the key with a copy button in the VS Code UI. The line stays out of the log file.
+      const displayedKey = WebSocketClient.isAliveWithLwcUI() ? `<copy>${key}</copy>` : key;
+      uxLog("action", this, c.cyan(t('poolEncryptionKeyGenerated', { variable: POOL_ENCRYPTION_KEY_ENV_VAR, key: c.green(displayedKey) })), { sensitive: true });
     }
     const dashboard = await this.getDashboard(true);
     await this.refreshDashboardBody();
@@ -191,8 +194,12 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     // Entries of another key cannot be read anymore: their scratch orgs are deleted from the Dev Hub
     const otherKeyEntries = pool.state.entries.filter((entry) => entry.data.keyId !== getPoolKeyId(key));
     for (const entry of otherKeyEntries) {
-      await this.deleteEntry(pool, entry);
-      await this.tryDeleteScratchOrg(entry);
+      // An entry with a claim is a scratch org somebody took: only its comment is removed
+      const taken = pool.state.claimsByEntry.has(entry.id);
+      await this.provider().deleteDashboardComment(pool.dashboard, entry.id);
+      if (!taken) {
+        await this.tryDeleteScratchOrg(entry);
+      }
     }
     if (otherKeyEntries.length > 0) {
       uxLog("warning", this, c.yellow('[pool] ' + t('poolEntriesDroppedKeyRotation', { count: otherKeyEntries.length })));
@@ -299,8 +306,17 @@ export class GitProviderPoolStorage implements PoolStorageInterface {
     // dashboard that was closed a moment ago
     const newDashboard = await this.createEmptyDashboard();
     this.dashboard = newDashboard;
-    for (const comment of comments) {
-      await this.provider().createDashboardComment(newDashboard, this.commentBody(comment.data));
+    // Entries first: a claim names the comment id of its entry, and the copies get new ids
+    const newEntryIds = new Map<number, number>();
+    for (const comment of comments.filter((candidate) => candidate.data.kind === 'entry')) {
+      newEntryIds.set(comment.id, await this.provider().createDashboardComment(newDashboard, this.commentBody(comment.data)));
+    }
+    for (const comment of comments.filter((candidate) => candidate.data.kind !== 'entry')) {
+      const data = { ...comment.data };
+      if (data.kind === 'claim' && newEntryIds.has(Number(data.entry))) {
+        data.entry = newEntryIds.get(Number(data.entry));
+      }
+      await this.provider().createDashboardComment(newDashboard, this.commentBody(data));
     }
   }
 

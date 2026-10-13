@@ -13,6 +13,9 @@ import { CiRunCandidate, selectCiRuns } from "./utils/jobKindUtils.js";
 import { SfError } from "@salesforce/core";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 
+// Open issues read to find a dashboard by its title, 100 per page
+const DASHBOARD_SEARCH_MAX_PAGES = 50;
+
 export class GithubProvider extends GitProviderRoot {
   private api: GithubApiClient;
   private repoOwner: string | null;
@@ -510,9 +513,19 @@ ${getBannerMarkdownAndLink()}
   // The dashboard is an issue. The open issues are read rather than searched: the search index
   // lags behind, and an issue created a second ago would be created again.
   public async findDashboard(title: string): Promise<DashboardRef | null> {
-    const issues = await this.api.paginate<any>(`${this.repoPath()}/issues`, { params: { state: 'open', sort: 'created', direction: 'asc' } });
-    const issue = issues.find((candidate) => !candidate.pull_request && candidate.title === title);
-    return issue ? { id: issue.number, url: issue.html_url } : null;
+    // Oldest first, one page at a time: the dashboard is usually among the oldest open issues
+    for (let page = 1; page <= DASHBOARD_SEARCH_MAX_PAGES; page++) {
+      const response = await this.api.get<any[]>(`${this.repoPath()}/issues`, { params: { state: 'open', sort: 'created', direction: 'asc', per_page: 100, page } });
+      const issues = Array.isArray(response.data) ? response.data : [];
+      const issue = issues.find((candidate) => !candidate.pull_request && candidate.title === title);
+      if (issue) {
+        return { id: issue.number, url: issue.html_url };
+      }
+      if (issues.length < 100) {
+        break;
+      }
+    }
+    return null;
   }
 
   public async createDashboard(title: string, body: string): Promise<DashboardRef> {
