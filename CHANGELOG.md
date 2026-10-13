@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.18.0] 2026-10-13
+
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
   - Deletes the files of the components deleted from the org: the first backup after the upgrade removes all the files left by past deletions.
   - Backs up complete Profiles, as the Metadata Retriever does in Auto mode: the first backup after the upgrade reports every Profile as updated.
