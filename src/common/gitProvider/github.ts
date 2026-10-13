@@ -1,5 +1,5 @@
 import c from "chalk";
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, encodePrUrlPathBranch, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, encodePrUrlPathBranch, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GITHUB_DEFAULT_API_URL, GITHUB_DEFAULT_GRAPHQL_URL, GITHUB_DEFAULT_SERVER_URL, GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
@@ -501,6 +501,55 @@ ${getBannerMarkdownAndLink()}
       };
       return prResult;
     }
+  }
+
+  public supportsDashboard(): boolean {
+    return true;
+  }
+
+  // The dashboard is an issue. The open issues are read rather than searched: the search index
+  // lags behind, and an issue created a second ago would be created again.
+  public async findDashboard(title: string): Promise<DashboardRef | null> {
+    const issues = await this.api.paginate<any>(`${this.repoPath()}/issues`, { params: { state: 'open', sort: 'created', direction: 'asc' } });
+    const issue = issues.find((candidate) => !candidate.pull_request && candidate.title === title);
+    return issue ? { id: issue.number, url: issue.html_url } : null;
+  }
+
+  public async createDashboard(title: string, body: string): Promise<DashboardRef> {
+    const response = await this.api.post<any>(`${this.repoPath()}/issues`, { title, body });
+    return { id: response.data.number, url: response.data.html_url };
+  }
+
+  public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
+    await this.api.patch<any>(`${this.repoPath()}/issues/${dashboard.id}`, { title, body });
+  }
+
+  public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
+    const comments = await this.api.paginate<any>(`${this.repoPath()}/issues/${dashboard.id}/comments`);
+    return comments
+      .map((comment) => ({ id: Number(comment.id), body: comment.body || '', createdDate: comment.created_at || '' }))
+      .sort((a, b) => a.id - b.id);
+  }
+
+  public async createDashboardComment(dashboard: DashboardRef, body: string): Promise<number> {
+    const response = await this.createIssueComment(dashboard.id, body);
+    return Number(response.data.id);
+  }
+
+  public async deleteDashboardComment(_dashboard: DashboardRef, commentId: number): Promise<boolean> {
+    try {
+      await this.api.delete<any>(`${this.repoPath()}/issues/comments/${commentId}`);
+      return true;
+    } catch (e) {
+      if ((e as any)?.status === 404) {
+        return false;
+      }
+      throw e;
+    }
+  }
+
+  public async closeDashboard(dashboard: DashboardRef): Promise<void> {
+    await this.api.patch<any>(`${this.repoPath()}/issues/${dashboard.id}`, { state: 'closed' });
   }
 
   public async closePullRequest(pullRequestNumber: number): Promise<boolean> {

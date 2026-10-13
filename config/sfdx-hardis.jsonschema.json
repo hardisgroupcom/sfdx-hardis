@@ -3563,7 +3563,7 @@
       "examples": [
         {
           "maxScratchOrgsNumber": 10,
-          "storageService": "kvdb.io"
+          "storageService": "gitProvider"
         }
       ],
       "title": "Scratch org pool configuration",
@@ -3590,7 +3590,16 @@
         },
         "storageService": {
           "$id": "#/properties/poolConfig/storageService",
-          "description": "Remote service allowing to store scratch org pool details",
+          "description": "Where the scratch org pool is stored. gitProvider: a \"Scratch Orgs Pool Dashboard\" of the git provider (issue on GitHub and GitLab, work item on Azure DevOps, Pull Request on Bitbucket), with scratch org credentials encrypted by the key in variable SFDX_HARDIS_POOL_ENCRYPTION_KEY. salesforce: a custom object of the Dev Hub. localtest: a local file, for tests only.",
+          "docUrl": "https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/",
+          "enum": [
+            "gitProvider",
+            "salesforce",
+            "localtest"
+          ],
+          "examples": [
+            "gitProvider"
+          ],
           "title": "Storage service for scratch org pool",
           "type": "string"
         }

@@ -35,7 +35,8 @@ This guide takes you from an empty Git repository to a working CI/CD pipeline, w
 3. [**Initialize the SFDX project**](salesforce-devops-setup-init-project.md): generate the project structure and the CI/CD workflow files with `sf hardis:project:create`.
 4. [**Configure CI authentication**](salesforce-devops-setup-auth.md): let the CI server connect to each major org with an External Client App and a JWT certificate.
 5. [**Retrieve an existing org**](salesforce-devops-setup-existing-org.md) _(optional)_: bring the metadata of an existing production org into the repository, then clean it.
-6. [**Create the first Pull Request**](salesforce-devops-setup-merge-request.md): merge the setup branch and get the validation jobs green.
+6. [**Set up a scratch org pool**](salesforce-devops-setup-scratch-org-pool.md) _(optional)_: for scratch org projects, keep scratch orgs ready in your git provider, so jobs and developers get one in seconds.
+7. [**Create the first Pull Request**](salesforce-devops-setup-merge-request.md): merge the setup branch and get the validation jobs green.
 
 Then:
 

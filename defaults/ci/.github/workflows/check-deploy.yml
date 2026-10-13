@@ -111,3 +111,57 @@ jobs:
         with:
           name: sfdx-hardis reports
           path: hardis-report
+
+  # Scratch org tests: create a scratch org (or take one from the scratch org pool), push the sources
+  # and run the Apex tests on it.
+  # Runs only when the repository variable USE_SCRATCH_ORGS is "true"
+  # (Settings -> Secrets and variables -> Actions -> Variables)
+  # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/
+  scratch_org_tests:
+    if: ${{ vars.USE_SCRATCH_ORGS == 'true' && !startsWith(github.head_ref, 'auto-fix/') }}
+    runs-on: ubuntu-latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    name: Scratch org tests
+    permissions:
+      issues: write # Allows sfdx-hardis to take a scratch org from the "Scratch Orgs Pool Dashboard" issue
+      pull-requests: read
+      contents: read
+    env:
+      # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+      # and replace DEVHUB by the alias of your Dev Hub
+      SFDX_AUTH_URL_DEV_HUB: ${{ secrets.SFDX_AUTH_URL_DEV_HUB }}
+      SFDX_CLIENT_ID_DEVHUB: ${{ secrets.SFDX_CLIENT_ID_DEVHUB }}
+      SFDX_CLIENT_KEY_DEVHUB: ${{ secrets.SFDX_CLIENT_KEY_DEVHUB }}
+      # Key that decrypts the scratch orgs of a pool stored in the git provider
+      SFDX_HARDIS_POOL_ENCRYPTION_KEY: ${{ secrets.SFDX_HARDIS_POOL_ENCRYPTION_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Set the repository variable CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
+      CI_DELETE_SCRATCH_ORG: ${{ vars.CI_DELETE_SCRATCH_ORG || 'true' }}
+      SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }}
+      FORCE_COLOR: "1"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Create scratch org (or take it from the pool)
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:create
+      - name: Run Apex tests
+        run: |
+          sleep 120 # A scratch org that was just created can be not ready yet
+          sf hardis:org:test:apex
+      # Skipped when a previous step failed, so the scratch org can be investigated until it expires
+      - name: Delete scratch org
+        if: ${{ success() && env.CI_DELETE_SCRATCH_ORG != 'false' }}
+        run: sf org delete scratch --no-prompt || true
+      - name: Archive sfdx-hardis reports
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfdx-hardis scratch org reports
+          path: hardis-report

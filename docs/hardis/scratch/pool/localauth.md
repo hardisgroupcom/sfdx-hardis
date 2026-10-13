@@ -8,7 +8,9 @@
 
 **Authenticates a local user to the configured scratch org pool storage service, enabling them to fetch and manage scratch orgs from the pool.**
 
-This command is essential for developers who want to utilize a shared scratch org pool for their local development. It establishes the necessary authentication with the backend storage service (e.g., Salesforce Custom Object, Redis) that manages the pool's state, allowing the user to retrieve available scratch orgs for their work.
+This command is for developers who want to take scratch orgs from a shared pool on their workstation. It checks the access to the storage service that holds the pool (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub).
+
+With the `gitProvider` storage there is nothing to log in to: the command checks that a git provider token and the encryption key of the pool (`SFDX_HARDIS_POOL_ENCRYPTION_KEY`) are available, and tells where to set them when they are not: the `.env` file of the project, or the secrets of the VS Code extension.
 
 Key functionalities:
 

@@ -449,6 +449,84 @@ export abstract class GitProviderRoot {
   public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
     throw new SfError(`Method listCiRuns is not implemented on ${this.getLabel()}`);
   }
+
+  // A dashboard is the object of the provider that holds a body and comments outside of any Pull
+  // Request of the project: an issue (GitHub, GitLab), a work item (Azure DevOps), a dedicated
+  // Pull Request (Bitbucket, which has no issues). The scratch org pool is stored in one.
+  public supportsDashboard(): boolean {
+    return false;
+  }
+
+  // Title a dashboard is created with and found by. A provider whose dashboards are not held by
+  // the repository (Azure DevOps work items belong to the project) adds the repository to it.
+  public getDashboardTitle(title: string): string {
+    return title;
+  }
+
+  // Markup of the dashboard body and comments: Azure DevOps work items are HTML
+  public getDashboardFormat(): DashboardFormat {
+    return 'markdown';
+  }
+
+  // Open dashboard with exactly this title, the oldest one when several exist. Null when none.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async findDashboard(title: string): Promise<DashboardRef | null> {
+    throw new SfError(`Method findDashboard is not implemented on ${this.getLabel()}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createDashboard(title: string, body: string): Promise<DashboardRef> {
+    throw new SfError(`Method createDashboard is not implemented on ${this.getLabel()}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
+    throw new SfError(`Method updateDashboardBody is not implemented on ${this.getLabel()}`);
+  }
+
+  // All the comments that are not deleted, oldest first. The ids grow with the creation order.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
+    throw new SfError(`Method listDashboardComments is not implemented on ${this.getLabel()}`);
+  }
+
+  // Returns the id of the new comment
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createDashboardComment(dashboard: DashboardRef, body: string): Promise<number> {
+    throw new SfError(`Method createDashboardComment is not implemented on ${this.getLabel()}`);
+  }
+
+  // False when the comment was already gone
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async deleteDashboardComment(dashboard: DashboardRef, commentId: number): Promise<boolean> {
+    throw new SfError(`Method deleteDashboardComment is not implemented on ${this.getLabel()}`);
+  }
+
+  // True when the dashboard must be replaced by a new one: Bitbucket keeps deleted comments in
+  // its listings forever, and an Azure DevOps work item accepts a limited number of revisions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async isDashboardWornOut(dashboard: DashboardRef): Promise<boolean> {
+    return false;
+  }
+
+  // Closes a dashboard so findDashboard does not return it anymore
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async closeDashboard(dashboard: DashboardRef): Promise<void> {
+    throw new SfError(`Method closeDashboard is not implemented on ${this.getLabel()}`);
+  }
+}
+
+export type DashboardFormat = 'markdown' | 'html';
+
+export interface DashboardRef {
+  id: number;
+  url: string;
+}
+
+export interface DashboardComment {
+  id: number;
+  body: string;
+  createdDate: string;
 }
 
 // A repository other than the one of the current folder (the deployment repository, read from a

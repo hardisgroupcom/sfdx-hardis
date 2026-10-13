@@ -1,0 +1,77 @@
+# Pipeline for the scratch org pool refresh
+#
+# Deletes the scratch orgs about to expire and creates new ones, so jobs and developers get a
+# scratch org in seconds.
+#
+# Setup:
+#   - Configure the pool first with: sf hardis:scratch:pool:create
+#   - Go to Pipelines
+#   - Create a new pipeline (Create new -> Existing Azure Pipelines YAML file) and select this file
+#   - Add your variables in the "variables" section and tick "Keep this value secret":
+#     SCRATCH_ORG_POOL = true, SFDX_HARDIS_POOL_ENCRYPTION_KEY, and the Dev Hub authentication variables
+#   - The "Scratch Orgs Pool Dashboard" is a work item: give the Build Service user the permission
+#     to edit work items in the project
+#
+# More info at https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/
+
+name: Refresh scratch org pool
+
+# Every night, on the default branch. Not triggered by commits or Pull Requests
+trigger: none
+pr: none
+schedules:
+  - cron: "0 3 * * *"
+    displayName: Nightly scratch org pool refresh
+    branches:
+      include:
+        - main
+    always: true
+
+variables:
+  - name: FORCE_COLOR
+    value: "1"
+
+jobs:
+  - job: RefreshScratchOrgPool
+    condition: eq(variables['SCRATCH_ORG_POOL'], 'true')
+    timeoutInMinutes: 150
+    pool:
+      vmImage: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    steps:
+      - checkout: self
+        fetchDepth: 0
+        persistCredentials: true
+        displayName: Git Checkout
+
+      - script: |
+          set -e
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:pool:refresh
+        env:
+          # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+          # and replace DEVHUB by the alias of your Dev Hub
+          SFDX_AUTH_URL_DEV_HUB: $(SFDX_AUTH_URL_DEV_HUB)
+          SFDX_CLIENT_ID_DEVHUB: $(SFDX_CLIENT_ID_DEVHUB)
+          SFDX_CLIENT_KEY_DEVHUB: $(SFDX_CLIENT_KEY_DEVHUB)
+          # Key that encrypts the scratch orgs of a pool stored in the git provider
+          SFDX_HARDIS_POOL_ENCRYPTION_KEY: $(SFDX_HARDIS_POOL_ENCRYPTION_KEY)
+          SCRATCH_ORG_POOL: "true"
+          CI: "true"
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          SYSTEM_TEAMPROJECT: $(System.TeamProject)
+          SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+          SYSTEM_JOB_ID: $(System.JobId)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+          BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+          BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+          BUILD_BUILD_ID: $(Build.BuildId)
+        displayName: "Refresh scratch org pool"
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: hardis-report
+        displayName: Publish sfdx-hardis reports

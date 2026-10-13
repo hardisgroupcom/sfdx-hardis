@@ -1,4 +1,4 @@
-import { CiRunFilters, CiRunStatus, CommonCiRun, GitProviderRepositorySettings, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
+import { CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from './gitProviderRoot.js';
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
@@ -23,7 +23,15 @@ function getOldestBitbucketCommitDate(commits: any[]): string | null {
   return getOldestCommitDateWithMargin(commits, (commit) => commit?.date);
 }
 
+// Technical branch and file of the dashboard Pull Request (see findDashboard)
+const DASHBOARD_BRANCH = 'sfdx-hardis/scratch-orgs-pool';
+const DASHBOARD_BRANCH_FILE = '.sfdx-hardis-dashboard.md';
+// Above this number of deleted comments, the dashboard Pull Request is replaced by a new one
+const DASHBOARD_MAX_DELETED_COMMENTS = 500;
+
 export class BitbucketProvider extends GitProviderRoot {
+  // Number of deleted comments seen at the last listing of a dashboard, by dashboard id
+  private dashboardDeletedComments = new Map<number, number>();
   private bitbucket: InstanceType<typeof Bitbucket>;
   public serverUrl: string = 'https://bitbucket.org';
   public token: string;
@@ -465,6 +473,133 @@ export class BitbucketProvider extends GitProviderRoot {
     }
     const time = new Date(dateValue).getTime();
     return isNaN(time) ? 0 : time;
+  }
+
+  public supportsDashboard(): boolean {
+    return true;
+  }
+
+  // Bitbucket Cloud has no issues anymore (its issues API answers 410): the dashboard is a Pull
+  // Request that is never merged, opened from a technical branch
+  public async findDashboard(title: string): Promise<DashboardRef | null> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    const result = await this.bitbucket.repositories.listPullRequests({
+      workspace,
+      repo_slug: repoSlug,
+      state: "OPEN" as any,
+      // The state goes in the query: with a query, Bitbucket ignores the state parameter
+      q: `title="${title.replace(/"/g, '\\"')}" AND state="OPEN"`,
+    });
+    const pullRequests: any[] = ((result?.data as any)?.values || []).filter((pr: any) => pr.title === title);
+    pullRequests.sort((a, b) => a.id - b.id);
+    const pullRequest = pullRequests[0];
+    return pullRequest ? { id: pullRequest.id, url: pullRequest.links?.html?.href || '' } : null;
+  }
+
+  public async createDashboard(title: string, body: string): Promise<DashboardRef> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    const repository = await this.bitbucket.repositories.get({ workspace, repo_slug: repoSlug });
+    const mainBranch = (repository?.data as any)?.mainbranch?.name || 'main';
+    // A Pull Request needs a difference with its target: one commit on the technical branch,
+    // which this call also creates when it does not exist yet
+    const commitForm = new FormData();
+    commitForm.append('branch', DASHBOARD_BRANCH);
+    commitForm.append('message', 'Technical branch of the sfdx-hardis dashboard Pull Request: do not merge, do not delete');
+    commitForm.append(DASHBOARD_BRANCH_FILE, `Technical file of the "${title}" Pull Request, managed by sfdx-hardis.\nDo not merge this branch.\n${new Date().toISOString()}\n`);
+    await httpPost(
+      `https://api.bitbucket.org/2.0/repositories/${workspace}/${repoSlug}/src`,
+      commitForm,
+      { headers: { Authorization: this.getAuthorizationHeader() } },
+    );
+    const result = await this.bitbucket.repositories.createPullRequest({
+      workspace,
+      repo_slug: repoSlug,
+      _body: {
+        title,
+        description: toBitbucketMarkup(body, 'newDescription'),
+        source: { branch: { name: DASHBOARD_BRANCH } },
+        destination: { branch: { name: mainBranch } },
+        close_source_branch: false,
+      } as any,
+    });
+    const pullRequest = result?.data as any;
+    return { id: pullRequest.id, url: pullRequest.links?.html?.href || '' };
+  }
+
+  public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    await this.bitbucket.repositories.updatePullRequest({
+      workspace,
+      repo_slug: repoSlug,
+      pull_request_id: dashboard.id,
+      _body: { title, description: toBitbucketMarkup(body, 'description') } as any,
+    });
+  }
+
+  public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    const comments = await this.fetchAllPages(
+      (params) => this.bitbucket.repositories.listPullRequestComments(params),
+      { pull_request_id: dashboard.id, repo_slug: repoSlug, workspace, pagelen: 100 },
+      500,
+    );
+    this.dashboardDeletedComments.set(dashboard.id, comments.filter((comment) => comment?.deleted).length);
+    return comments
+      .filter((comment) => !comment?.deleted)
+      .map((comment) => ({ id: Number(comment.id), body: this.commentText(comment), createdDate: comment.created_on || '' }))
+      .sort((a, b) => a.id - b.id);
+  }
+
+  public async createDashboardComment(dashboard: DashboardRef, body: string): Promise<number> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    const result = await this.bitbucket.repositories.createPullRequestComment({
+      workspace,
+      repo_slug: repoSlug,
+      pull_request_id: dashboard.id,
+      _body: { content: { raw: toBitbucketMarkup(body) } } as any,
+    });
+    return Number((result?.data as any)?.id);
+  }
+
+  // Bitbucket answers 204 again for a comment that is already deleted
+  public async deleteDashboardComment(dashboard: DashboardRef, commentId: number): Promise<boolean> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    try {
+      await this.bitbucket.repositories.deletePullRequestComment({
+        workspace,
+        repo_slug: repoSlug,
+        pull_request_id: dashboard.id,
+        comment_id: commentId,
+      });
+      return true;
+    } catch (e) {
+      if ((e as any)?.status === 404) {
+        return false;
+      }
+      throw e;
+    }
+  }
+
+  // Deleted comments stay in the listing of a Pull Request for ever
+  public async isDashboardWornOut(dashboard: DashboardRef): Promise<boolean> {
+    if (!this.dashboardDeletedComments.has(dashboard.id)) {
+      await this.listDashboardComments(dashboard);
+    }
+    return (this.dashboardDeletedComments.get(dashboard.id) || 0) > DASHBOARD_MAX_DELETED_COMMENTS;
+  }
+
+  public async closeDashboard(dashboard: DashboardRef): Promise<void> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    await this.bitbucket.repositories.declinePullRequest({ workspace, repo_slug: repoSlug, pull_request_id: dashboard.id });
+  }
+
+  private dashboardRepository(): { workspace: string; repoSlug: string } {
+    const workspace = this.workspace || process.env.BITBUCKET_WORKSPACE || '';
+    const repoSlug = this.repoSlug || process.env.BITBUCKET_REPO_SLUG || '';
+    if (!workspace || !repoSlug) {
+      throw new SfError('[Bitbucket Integration] BITBUCKET_WORKSPACE and BITBUCKET_REPO_SLUG must be defined to use a Pull Request as dashboard');
+    }
+    return { workspace, repoSlug };
   }
 
   public async closePullRequest(pullRequestNumber: number): Promise<boolean> {

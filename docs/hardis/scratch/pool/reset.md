@@ -25,7 +25,7 @@ Key functionalities:
 The command's technical implementation involves:
 
 - **Configuration Loading:** It retrieves the `poolConfig` from the project's .sfdx-hardis.yml file to ensure a pool is configured.
-- **Pool Storage Interaction:** It uses `getPoolStorage` to retrieve the current list of scratch orgs in the pool and `setPoolStorage` to clear the pool's record.
+- **Pool Storage Interaction:** It uses `listPoolOrgs` to retrieve the current list of scratch orgs in the pool and `removePoolOrgs` to remove them from the storage. With the `gitProvider` storage, the encryption key of the pool is required.
 - **Scratch Org Deletion:** It iterates through each scratch org in the retrieved list. For each org, it authenticates to it using `authenticateWithSfdxUrlStore` and then executes `sf org delete scratch` via `execCommand`.
 - **Logging:** Provides clear messages about the deletion process and the status of each scratch org.
 </details>
@@ -57,11 +57,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
 ## Examples
 
 ```shell
-$ sf hardis:scratch:pool:refresh
+$ sf hardis:scratch:pool:reset
 ```
 
 ```shell
-$ sf hardis:scratch:pool:refresh --agent
+$ sf hardis:scratch:pool:reset --agent
 ```
 
 

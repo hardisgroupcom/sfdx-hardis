@@ -4,15 +4,20 @@ import { dateHelper } from './dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { getConfig, setConfig } from '../../config/index.js';
-import { createTempDir, execSfdxJson, isCI, uxLog } from './index.js';
-import { KeyValueProviderInterface } from './keyValueUtils.js';
+import { createTempDir, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from './index.js';
+import { PoolRefreshInfo, PoolStorageInterface, PoolTakeContext } from './keyValueUtils.js';
 import { LocalTestProvider } from '../keyValueProviders/localtest.js';
 import { SfError } from '@salesforce/core';
 import { prompts } from './prompts.js';
 import { SalesforceProvider } from '../keyValueProviders/salesforce.js';
+import { BlobPoolAdapter } from '../keyValueProviders/blobPoolAdapter.js';
+import { GitProviderPoolStorage } from '../keyValueProviders/gitProviderPool.js';
+import { GitProvider } from '../gitProvider/index.js';
+import { PoolSummary } from './poolDashboardUtils.js';
+import { getDevHubScratchLimits } from './poolDevHubUtils.js';
 import { t } from './i18n.js';
 
-let keyValueProvider: KeyValueProviderInterface;
+let poolStorage: PoolStorageInterface;
 
 export async function getPoolConfig() {
   const config = await getConfig('branch');
@@ -24,32 +29,61 @@ export async function hasPoolConfig() {
   return poolConfig !== null;
 }
 
-// Read scratch org pool remote storage
-export async function getPoolStorage(options: any = {}) {
-  const providerInitialized = await initializeProvider(options);
-  if (providerInitialized) {
-    return await keyValueProvider.getValue(null);
-  }
-  return null;
+// The scratch orgs that can be taken from the pool, with their credentials
+export async function listPoolOrgs(options: any = {}): Promise<any[]> {
+  const storage = await getInitializedStorage(options);
+  return storage ? await storage.listOrgs() : [];
 }
 
-// Write scratch org pool remote storage
-export async function setPoolStorage(value: any, options: any = {}) {
-  const providerInitialized = await initializeProvider(options);
-  if (providerInitialized) {
+export async function removePoolOrgs(scratchOrgs: any[], options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage && scratchOrgs.length > 0) {
     uxLog("other", this, '[pool] ' + c.grey(`Updating pool storage value...`));
-    const valueSetRes = await keyValueProvider.setValue(null, value);
+    await storage.removeOrgs(scratchOrgs);
     uxLog("other", this, '[pool] ' + c.grey(`Updated pool storage value.`));
-    return valueSetRes;
   }
-  return null;
+}
+
+// What can be shown of the pool, without any credential. Null when the storage is not reachable.
+export async function getPoolSummary(options: any = {}): Promise<PoolSummary | null> {
+  const storage = await getInitializedStorage(options);
+  if (!storage) {
+    return null;
+  }
+  const summary = await storage.getSummary();
+  // The limits of the Dev Hub are read live when it is connected: the storage only knows the
+  // ones of the last refresh
+  const liveLimits = await getDevHubScratchLimits(options.devHubConn);
+  if (liveLimits) {
+    summary.devHubLimits = liveLimits;
+  }
+  return summary;
+}
+
+export async function recordPoolFailure(error: string, options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    await storage.recordFailure(error, (await GitProvider.getJobUrl()) || '');
+  }
+}
+
+// To call at the end of a pool refresh
+export async function finalizePoolRefresh(options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    const info: PoolRefreshInfo = {
+      jobUrl: (await GitProvider.getJobUrl()) || '',
+      devHubLimits: await getDevHubScratchLimits(options.devHubConn),
+    };
+    await storage.finalizeRefresh(info);
+  }
 }
 
 // Update ActiveScratchOrgInfo
 export async function updateActiveScratchOrg(scratchOrg: string, keyValues: any, options: any = {}) {
-  const providerInitialized = await initializeProvider(options);
-  if (providerInitialized) {
-    return await keyValueProvider.updateActiveScratchOrg(scratchOrg, keyValues);
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    return await storage.updateActiveScratchOrg(scratchOrg, keyValues);
   }
   return null;
 }
@@ -62,37 +96,11 @@ export async function addScratchOrgToPool(scratchOrg: any, options: any = { posi
     return await addScratchOrgToPool(scratchOrg, options);
   } else {
     updatingPool = true;
-    const res = await executeAddScratchOrgToPool(scratchOrg, options);
-    updatingPool = false;
-    return res;
-  }
-}
-
-// Write scratch org pool remote storage
-async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { position: 'last' }) {
-  const poolStorage = await getPoolStorage(options);
-  // Valid scratch orgs
-  if (scratchOrg.status === 0) {
-    const scratchOrgs = poolStorage.scratchOrgs || [];
-    if (options.position === 'first') {
-      scratchOrgs.push(scratchOrg);
-    } else {
-      scratchOrgs.unshift(scratchOrg);
+    try {
+      return await executeAddScratchOrgToPool(scratchOrg, options);
+    } finally {
+      updatingPool = false;
     }
-    poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage, options);
-    await updateActiveScratchOrg(scratchOrg, {
-      Description: `Added to pool by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
-    });
-  } else {
-    // Store scratch creation errors
-    /*
-    const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
-    scratchOrgErrors.push(scratchOrg);
-    poolStorage.scratchOrgErrors = scratchOrgErrors;
-    await setPoolStorage(poolStorage, options);
-    */
-    uxLog("other", this, '[pool] ' + c.red(t('scratchOrgCreationError') + JSON.stringify(scratchOrg)));
   }
 }
 
@@ -114,8 +122,8 @@ export async function fetchScratchOrg(options: any) {
 }
 
 export async function tryFetchScratchOrg(options: any) {
-  const poolStorage = await getPoolStorage(options);
-  if (poolStorage === null) {
+  const storage = await getInitializedStorage(options);
+  if (!storage) {
     uxLog(
       "warning",
       this,
@@ -125,15 +133,11 @@ export async function tryFetchScratchOrg(options: any) {
     return null;
   }
   uxLog("other", this, '[pool] ' + c.cyan(t('tryingToFetchScratchOrgFromThe')));
-  const scratchOrgs: Array<any> = poolStorage.scratchOrgs || [];
-  if (scratchOrgs.length > 0) {
-    const scratchOrg = scratchOrgs.shift();
+  const scratchOrg = await storage.takeOrg(await buildTakeContext());
+  if (scratchOrg) {
     await updateActiveScratchOrg(scratchOrg, {
       Description: `Fetched by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
     });
-    // Remove and save
-    poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage, options);
     // Authenticate to scratch org
     uxLog("action", this, '[pool] ' + c.cyan(t('authenticatingToScratchOrgFromPool')));
     const authTempDir = await createTempDir();
@@ -195,23 +199,78 @@ export async function tryFetchScratchOrg(options: any) {
   return null;
 }
 
-export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInterface>> {
-  return [SalesforceProvider, LocalTestProvider].map((cls) => new cls());
+// The storages a pool can be configured with, the proposed one first
+export async function listKeyValueProviders(): Promise<Array<PoolStorageInterface>> {
+  return [new GitProviderPoolStorage(), new BlobPoolAdapter(new SalesforceProvider()), new BlobPoolAdapter(new LocalTestProvider())];
+}
+
+export async function instantiateProvider(storageService: string) {
+  const providerClasses = await listKeyValueProviders();
+  const providerClassRes = providerClasses.filter((cls) => cls.name === storageService);
+  if (providerClassRes.length === 0) {
+    throw new SfError(c.red('Unable to find class for storage provider ' + storageService));
+  }
+  return providerClassRes[0];
+}
+
+// Write scratch org pool remote storage
+async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { position: 'last' }) {
+  // Valid scratch orgs
+  if (scratchOrg.status === 0) {
+    const storage = await getInitializedStorage(options);
+    if (!storage) {
+      return;
+    }
+    uxLog("other", this, '[pool] ' + c.grey(`Updating pool storage value...`));
+    await storage.addOrg(scratchOrg, options.position === 'first' ? 'first' : 'last');
+    uxLog("other", this, '[pool] ' + c.grey(`Updated pool storage value.`));
+    await updateActiveScratchOrg(scratchOrg, {
+      Description: `Added to pool by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
+    });
+  } else {
+    uxLog("other", this, '[pool] ' + c.red(t('scratchOrgCreationError') + JSON.stringify(scratchOrg)));
+  }
+}
+
+// Who is taking a scratch org, for the history of the pool
+async function buildTakeContext(): Promise<PoolTakeContext> {
+  let pullRequest = '';
+  try {
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+    pullRequest = prInfo?.idStr ? `#${prInfo.idStr}` : '';
+  } catch {
+    pullRequest = '';
+  }
+  return {
+    by: process.env.GITHUB_ACTOR || process.env.GITLAB_USER_LOGIN || process.env.BUILD_REQUESTEDFOR || os.userInfo().username,
+    branch: (await getCurrentGitBranch()) || '',
+    pullRequest,
+    jobUrl: (await GitProvider.getJobUrl()) || '',
+  };
+}
+
+// The storage of the pool, ready to use. Null when there is none, or when the user declined to authenticate.
+async function getInitializedStorage(options: any): Promise<PoolStorageInterface | null> {
+  const providerInitialized = await initializeProvider(options);
+  return providerInitialized ? poolStorage : null;
 }
 
 async function initializeProvider(options: any) {
-  if (keyValueProvider) {
+  if (poolStorage) {
+    // A later caller can bring the Dev Hub connection an earlier one did not have
+    await poolStorage.initialize(options);
     return true;
   }
   const poolConfig = await getPoolConfig();
-  if (poolConfig.storageService) {
-    keyValueProvider = await instantiateProvider(poolConfig.storageService);
+  if (poolConfig?.storageService) {
+    const storage = await instantiateProvider(poolConfig.storageService);
     try {
-      await keyValueProvider.initialize(options);
+      await storage.initialize(options);
+      poolStorage = storage;
       return true;
     } catch (e) {
-      // in CI, we should always be able to initialize the provider
-      if (isCI) {
+      // in CI, we should always be able to initialize the provider. noPrompt: the caller handles the error itself
+      if (isCI || options?.noPrompt === true) {
         throw e;
       }
       uxLog("other", this, '[pool] ' + c.grey(t('providerInitializationError') + (e as Error).message));
@@ -222,20 +281,13 @@ async function initializeProvider(options: any) {
         description: t('descConfigureScratchOrgPool'),
       });
       if (resp.value === true) {
-        await keyValueProvider.userAuthenticate(options);
-        await keyValueProvider.initialize(options);
+        await storage.userAuthenticate(options);
+        await storage.initialize(options);
+        poolStorage = storage;
         return true;
       }
       return false;
     }
   }
-}
-
-export async function instantiateProvider(storageService: string) {
-  const providerClasses = await listKeyValueProviders();
-  const providerClassRes = providerClasses.filter((cls) => cls.name === storageService);
-  if (providerClassRes.length === 0) {
-    throw new SfError(c.red('Unable to find class for storage provider ' + storageService));
-  }
-  return providerClassRes[0];
+  return false;
 }

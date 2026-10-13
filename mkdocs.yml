@@ -173,7 +173,8 @@ nav:
           - 3. Initialize the SFDX project: salesforce-devops-setup-init-project.md
           - 4. Configure CI authentication: salesforce-devops-setup-auth.md
           - 5. Retrieve an existing org (optional): salesforce-devops-setup-existing-org.md
-          - 6. First Pull Request: salesforce-devops-setup-merge-request.md
+          - 6. Scratch org pool (optional): salesforce-devops-setup-scratch-org-pool.md
+          - 7. First Pull Request: salesforce-devops-setup-merge-request.md
           - Publish job artifacts: salesforce-devops-setup-publish-artifacts.md
           - Setup checklist: salesforce-devops-setup-checklist.md
   - Org Monitoring:

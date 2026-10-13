@@ -182,8 +182,91 @@ pipeline {
                     }
                 }
 
+                ///////////////////////////////////////////////////////////////////////////////
+                // Scratch org tests: create a scratch org (or take one from the scratch   //
+                // org pool), push the sources and run the Apex tests on it.               //
+                // Runs only when the environment variable USE_SCRATCH_ORGS is "true".     //
+                ///////////////////////////////////////////////////////////////////////////////
+                stage('Scratch Org Tests') {
+                    when { environment name: 'USE_SCRATCH_ORGS', value: 'true' }
+                    steps {
+                        script {
+                            def currentBranch = env.GIT_BRANCH?.replaceAll('^(refs/heads/|origin/)', '') ?: ''
+                            if (currentBranch.startsWith('auto-fix/')) {
+                                echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${currentBranch}"
+                            } else {
+                                withCredentials([
+                                    // Dev Hub authentication: keep the credentials matching the way your Dev Hub is authenticated,
+                                    // and replace DEVHUB by the alias of your Dev Hub
+                                    string(credentialsId: 'SFDX_AUTH_URL_DEV_HUB',           variable: 'SFDX_AUTH_URL_DEV_HUB',           optional: true),
+                                    string(credentialsId: 'SFDX_CLIENT_ID_DEVHUB',           variable: 'SFDX_CLIENT_ID_DEVHUB',           optional: true),
+                                    string(credentialsId: 'SFDX_CLIENT_KEY_DEVHUB',          variable: 'SFDX_CLIENT_KEY_DEVHUB',          optional: true),
+                                    // Key that decrypts the scratch orgs of a pool stored in the git provider
+                                    string(credentialsId: 'SFDX_HARDIS_POOL_ENCRYPTION_KEY', variable: 'SFDX_HARDIS_POOL_ENCRYPTION_KEY', optional: true),
+                                    // Token of the git provider hosting the repository: the scratch org pool is stored there
+                                    string(credentialsId: 'GITHUB_TOKEN',                    variable: 'GITHUB_TOKEN',                    optional: true),
+                                    string(credentialsId: 'CI_SFDX_HARDIS_GITLAB_TOKEN',     variable: 'CI_SFDX_HARDIS_GITLAB_TOKEN',     optional: true),
+                                    string(credentialsId: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',  variable: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',  optional: true),
+                                    string(credentialsId: 'CI_SFDX_HARDIS_AZURE_TOKEN',      variable: 'CI_SFDX_HARDIS_AZURE_TOKEN',      optional: true),
+                                ]) {
+                                    // Several Pull Requests taking a scratch org from the pool at the same time are queued here.
+                                    // With the Lockable Resources plugin, wrap the two lines below in: lock('scratch-org-pool') { ... }
+                                    sh 'sf hardis:auth:login --devhub'
+                                    sh 'sf hardis:scratch:create'
+                                    // A scratch org that was just created can be not ready yet
+                                    sh 'sleep 120'
+                                    sh 'sf hardis:org:test:apex'
+                                    // Not reached when a command above failed, so the scratch org can be investigated until it expires.
+                                    // Set CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
+                                    sh '''
+                                        if [ "${CI_DELETE_SCRATCH_ORG:-true}" != "false" ]; then
+                                            sf org delete scratch --no-prompt || true
+                                        fi
+                                    '''
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
+                        }
+                    }
+                }
+
             } // end parallel Pull Request Checks
         } // end Pull Request Checks
+
+        ///////////////////////////////////////////////////////////////////////////////////
+        // Scratch org pool refresh: deletes the scratch orgs about to expire and       //
+        // creates new ones. Runs only when SCRATCH_ORG_POOL is "true": create a        //
+        // dedicated Jenkins job on this Jenkinsfile, scheduled every night, that sets  //
+        // this environment variable. Configure the pool first with                     //
+        // sf hardis:scratch:pool:create                                                //
+        ///////////////////////////////////////////////////////////////////////////////////
+        stage('Scratch Org Pool Refresh') {
+            when { environment name: 'SCRATCH_ORG_POOL', value: 'true' }
+            steps {
+                withCredentials([
+                    string(credentialsId: 'SFDX_AUTH_URL_DEV_HUB',           variable: 'SFDX_AUTH_URL_DEV_HUB',           optional: true),
+                    string(credentialsId: 'SFDX_CLIENT_ID_DEVHUB',           variable: 'SFDX_CLIENT_ID_DEVHUB',           optional: true),
+                    string(credentialsId: 'SFDX_CLIENT_KEY_DEVHUB',          variable: 'SFDX_CLIENT_KEY_DEVHUB',          optional: true),
+                    string(credentialsId: 'SFDX_HARDIS_POOL_ENCRYPTION_KEY', variable: 'SFDX_HARDIS_POOL_ENCRYPTION_KEY', optional: true),
+                    string(credentialsId: 'GITHUB_TOKEN',                    variable: 'GITHUB_TOKEN',                    optional: true),
+                    string(credentialsId: 'CI_SFDX_HARDIS_GITLAB_TOKEN',     variable: 'CI_SFDX_HARDIS_GITLAB_TOKEN',     optional: true),
+                    string(credentialsId: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',  variable: 'CI_SFDX_HARDIS_BITBUCKET_TOKEN',  optional: true),
+                    string(credentialsId: 'CI_SFDX_HARDIS_AZURE_TOKEN',      variable: 'CI_SFDX_HARDIS_AZURE_TOKEN',      optional: true),
+                ]) {
+                    sh 'sf hardis:auth:login --devhub'
+                    sh 'sf hardis:scratch:pool:refresh'
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
+                }
+            }
+        }
 
         /////////////////////////////////////////////////////////////////////////////////
         // Deploy to the target org when a commit lands on a deployment branch        //
@@ -193,6 +276,8 @@ pipeline {
                 allOf {
                     expression { DEPLOYMENT_BRANCHES.contains(env.BRANCH_NAME_CLEAN) }
                     not { changeRequest() }
+                    // The job that refreshes the scratch org pool does not deploy
+                    not { environment name: 'SCRATCH_ORG_POOL', value: 'true' }
                 }
             }
             steps {

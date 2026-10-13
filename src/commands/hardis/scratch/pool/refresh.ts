@@ -6,7 +6,7 @@ import { which } from '../../../../common/utils/whichUtils.js';
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { addScratchOrgToPool, getPoolStorage, setPoolStorage } from '../../../../common/utils/poolUtils.js';
+import { addScratchOrgToPool, finalizePoolRefresh, listPoolOrgs, recordPoolFailure, removePoolOrgs } from '../../../../common/utils/poolUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { applySfPerformanceEnv, execCommand, stripAnsi, uxLog } from '../../../../common/utils/index.js';
 import { dateHelper } from '../../../../common/utils/dateHelper.js';
@@ -31,6 +31,8 @@ Key functionalities:
 - **Pool Replenishment:** Creates new scratch orgs to replace expired ones and to reach the \`maxScratchOrgsNumber\` defined in the pool configuration.
 - **Parallel Creation:** New scratch orgs are created in parallel using child processes, optimizing the replenishment process.
 - **Authentication Handling:** Authenticates to scratch orgs before deletion or creation, ensuring proper access.
+- **Dashboard Update (\`gitProvider\` storage):** Records the refresh, the failed creations and the scratch org limits of the Dev Hub, then rebuilds the "Scratch Orgs Pool Dashboard" of the git provider.
+- **Housekeeping (\`gitProvider\` storage):** Removes the entries encrypted with a previous key (their scratch orgs are deleted from the Dev Hub), and releases the scratch orgs claimed by a job that died.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -38,7 +40,7 @@ Key functionalities:
 The command's technical implementation involves:
 
 - **Configuration Loading:** It retrieves the \`poolConfig\` from the project's \`.sfdx-hardis.yml\` file to get parameters like \`maxScratchOrgsNumber\`, \`maxScratchOrgsNumberToCreateOnce\`, and \`minScratchOrgRemainingDays\`.
-- **Pool Storage Interaction:** It uses \`getPoolStorage\` and \`setPoolStorage\` to interact with the configured storage service (e.g., Salesforce Custom Object, Redis) to retrieve and update the list of scratch orgs in the pool.
+- **Pool Storage Interaction:** It uses \`listPoolOrgs\`, \`removePoolOrgs\` and \`addScratchOrgToPool\` to interact with the configured storage service (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub). With the \`gitProvider\` storage, the encryption key of the pool (\`SFDX_HARDIS_POOL_ENCRYPTION_KEY\`) is required.
 - **Expiration Check:** It calculates the remaining days for each scratch org in the pool using moment and flags those below the \`minScratchOrgRemainingDays\` threshold for deletion.
 - **Scratch Org Deletion:** For expired orgs, it authenticates to them using \`authenticateWithSfdxUrlStore\` and then executes \`sf org delete scratch\` via \`execCommand\`.
 - **Scratch Org Creation:** To replenish the pool, it spawns new child processes that run the \`sf hardis:scratch:create --pool\` command. This allows for parallel creation of multiple scratch orgs.
@@ -108,12 +110,12 @@ In agent mode, all interactive prompts are skipped and default values are used.
     const maxScratchOrgsNumberToCreateOnce = config.poolConfig.maxScratchOrgsNumberToCreateOnce || 10;
     uxLog("log", this, c.grey(t('poolConfig') + JSON.stringify(config.poolConfig)));
 
-    // Get pool storage
-    const poolStorage = await getPoolStorage({
+    // Get the scratch orgs of the pool
+    const poolOptions = {
       devHubConn: flags['target-dev-hub'].getConnection(),
       devHubUsername: flags['target-dev-hub'].getUsername(),
-    });
-    let scratchOrgs = poolStorage.scratchOrgs || [];
+    };
+    let scratchOrgs = await listPoolOrgs(poolOptions);
 
     /* jscpd:ignore-end */
     // Clean expired orgs
@@ -146,11 +148,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     });
     // Delete expired orgs and update pool if found
     if (scratchOrgsToDelete.length > 0) {
-      poolStorage.scratchOrgs = scratchOrgs;
-      await setPoolStorage(poolStorage, {
-        devHubConn: flags['target-dev-hub'].getConnection(),
-        devHubUsername: flags['target-dev-hub'].getUsername(),
-      });
+      await removePoolOrgs(scratchOrgsToDelete, poolOptions);
       for (const scratchOrgToDelete of scratchOrgsToDelete) {
         // Authenticate to scratch org to delete
         await authenticateWithSfdxUrlStore(scratchOrgToDelete);
@@ -214,7 +212,11 @@ In agent mode, all interactive prompts are skipped and default values are used.
             result = { result: { status: 1, rawLog: stdout } };
             uxLog("warning", this, c.yellow(`Error parsing stdout (${i}): ` + stdout));
           }
-          await addScratchOrgToPool(result.result || result);
+          const scratchOrgResult = result.result || result;
+          await addScratchOrgToPool(scratchOrgResult);
+          if (scratchOrgResult.status !== 0) {
+            await recordPoolFailure(String(scratchOrgResult.message || scratchOrgResult.rawLog || 'Scratch org creation failed'), poolOptions);
+          }
           resolve({ code, result: result });
         });
       });
@@ -226,6 +228,9 @@ In agent mode, all interactive prompts are skipped and default values are used.
     if (this.debugMode) {
       uxLog("log", this, c.grey(t('createResults') + JSON.stringify(createResults, null, 2)));
     }
+
+    // Let the storage clean itself and record this refresh
+    await finalizePoolRefresh(poolOptions);
 
     const colorFunc = numberCreated === numberOfOrgsToCreate ? c.green : numberCreated === 0 ? c.red : c.yellow;
     uxLog(

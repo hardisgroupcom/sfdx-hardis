@@ -1,4 +1,4 @@
-import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardFormat, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { CiRunCandidate, classifyJobKind, selectCiRuns } from "./utils/jobKindUtils.js";
 import { Build, BuildQueryOrder, BuildReason, BuildResult, BuildStatus, TaskResult } from "azure-devops-node-api/interfaces/BuildInterfaces.js";
 import { toAzureDevopsWording } from "./utils/utilsAzureDevopsWording.js";
@@ -12,6 +12,7 @@ import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPu
 import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
 import { SfError } from "@salesforce/core";
+import { HttpError, httpDelete } from "../utils/httpUtils.js";
 import { prompts } from "../utils/prompts.js";
 import { t } from '../utils/i18n.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatches, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
@@ -20,6 +21,10 @@ import { parseAzureBuildUrl } from "./utils/jobUrlUtils.js";
 import { pipeline } from "stream/promises";
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobName, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
 import { getCachedPullRequestDescription, repositoryKeyFromRemoteUrl, setCachedPullRequestDescription } from "../cache/pullRequestDescriptionCache.js";
+
+// A dashboard work item is replaced above this number of revisions (the limit of Azure DevOps is 10,000)
+const DASHBOARD_MAX_REVISIONS = 8000;
+const DASHBOARD_COMMENT_ATTEMPTS = 4;
 
 export class AzureDevopsProvider extends GitProviderRoot {
   private azureApi: InstanceType<typeof azdev.WebApi>;
@@ -370,6 +375,167 @@ ${this.getPipelineVariablesConfig()}
     }
     uxLog("log", this, c.grey('[Azure Integration] ' + t('azureIntegrationUnableToFindPrInfo')));
     return null;
+  }
+
+  public supportsDashboard(): boolean {
+    return true;
+  }
+
+  // Work items belong to the project, not to the repository: two repositories of one project
+  // must not share a dashboard
+  public getDashboardTitle(title: string): string {
+    const repositoryName = this.otherRepository?.repositoryName || process.env.BUILD_REPOSITORYNAME || "";
+    return repositoryName ? `${title} (${repositoryName})` : title;
+  }
+
+  // Work item descriptions and comments are HTML
+  public getDashboardFormat(): DashboardFormat {
+    return 'html';
+  }
+
+  // The dashboard is a Task work item, found by its title like the attachments work item
+  public async findDashboard(title: string): Promise<DashboardRef | null> {
+    const forcedId = process.env.AZURE_SCRATCH_POOL_WORK_ITEM_ID;
+    if (forcedId) {
+      return { id: Number(forcedId), url: this.buildWorkItemWebUrl(Number(forcedId)) };
+    }
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    const queryResult = await witApi.queryByWiql({
+      query: `
+        SELECT [System.Id]
+        FROM WorkItems
+        WHERE [System.Title] = '${title.replace(/'/g, "''")}'
+          AND [System.TeamProject] = '${this.dashboardTeamProject().replace(/'/g, "''")}'
+        ORDER BY [System.Id]
+      `,
+    });
+    const workItemId = (queryResult.workItems || [])[0]?.id;
+    return workItemId ? { id: Number(workItemId), url: this.buildWorkItemWebUrl(Number(workItemId)) } : null;
+  }
+
+  public async createDashboard(title: string, body: string): Promise<DashboardRef> {
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    const workItem = await witApi.createWorkItem(
+      [],
+      [
+        { op: "add", path: "/fields/System.Title", value: title },
+        { op: "add", path: "/fields/System.Description", value: body },
+      ],
+      this.dashboardTeamProject(),
+      "Task",
+    );
+    return { id: Number(workItem.id), url: this.buildWorkItemWebUrl(Number(workItem.id)) };
+  }
+
+  public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    await witApi.updateWorkItem(
+      [],
+      [
+        { op: "add", path: "/fields/System.Title", value: title },
+        { op: "add", path: "/fields/System.Description", value: body },
+      ],
+      dashboard.id,
+      this.dashboardTeamProject(),
+    );
+  }
+
+  public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    const comments: DashboardComment[] = [];
+    let continuationToken: string | undefined = undefined;
+    do {
+      const page = await witApi.getComments(this.dashboardTeamProject(), dashboard.id, 200, continuationToken);
+      for (const comment of page.comments || []) {
+        if (comment.isDeleted) {
+          continue;
+        }
+        comments.push({
+          id: Number(comment.id),
+          body: comment.text || '',
+          createdDate: comment.createdDate ? new Date(comment.createdDate).toISOString() : '',
+        });
+      }
+      continuationToken = page.continuationToken || undefined;
+    } while (continuationToken);
+    return comments.sort((a, b) => a.id - b.id);
+  }
+
+  public async createDashboardComment(dashboard: DashboardRef, body: string): Promise<number> {
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    // Comments posted at the same time on one work item sometimes fail (TF54000, TF401349):
+    // the same call succeeds a moment later
+    let lastError: any = null;
+    for (let attempt = 0; attempt < DASHBOARD_COMMENT_ATTEMPTS; attempt++) {
+      try {
+        const comment = await witApi.addComment({ text: body }, this.dashboardTeamProject(), dashboard.id);
+        if (comment?.id) {
+          return Number(comment.id);
+        }
+        lastError = new SfError("[Azure Integration] The work item comment was not created");
+      } catch (e) {
+        lastError = e;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300 + Math.random() * 700));
+    }
+    throw lastError;
+  }
+
+  public async deleteDashboardComment(dashboard: DashboardRef, commentId: number): Promise<boolean> {
+    // Direct REST call: the client of azure-devops-node-api resolves the same way for a 404, and
+    // the 404 is the answer that tells another job deleted the comment first
+    const url = `${this.serverUrl.replace(/\/$/, "")}/${encodeURIComponent(this.dashboardTeamProject())}/_apis/wit/workItems/${dashboard.id}/comments/${commentId}?api-version=7.1-preview.4`;
+    try {
+      await httpDelete(url, { headers: { Authorization: this.getAuthorizationHeader() } });
+      return true;
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 404) {
+        return false;
+      }
+      throw e;
+    }
+  }
+
+  // Same scheme as azdev.getHandlerFromToken: a Personal Access Token (52 or 84 characters) is
+  // sent as Basic auth, the token of a pipeline as a Bearer
+  private getAuthorizationHeader(): string {
+    if (this.token.length === 52 || this.token.length === 84) {
+      return "Basic " + Buffer.from(`:${this.token}`).toString("base64");
+    }
+    return `Bearer ${this.token}`;
+  }
+
+  // A work item refuses updates past 10,000 revisions, and every comment and every body update
+  // is one: it is replaced well before
+  public async isDashboardWornOut(dashboard: DashboardRef): Promise<boolean> {
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    const workItem = await witApi.getWorkItem(dashboard.id, ["System.Rev"], undefined, undefined, this.dashboardTeamProject());
+    return Number(workItem?.rev || 0) > DASHBOARD_MAX_REVISIONS;
+  }
+
+  // Renamed like the attachments work item when it is full: findDashboard looks for the exact title
+  public async closeDashboard(dashboard: DashboardRef): Promise<void> {
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    const workItem = await witApi.getWorkItem(dashboard.id, ["System.Title"], undefined, undefined, this.dashboardTeamProject());
+    const title = workItem?.fields?.["System.Title"] || "";
+    await witApi.updateWorkItem(
+      [],
+      [{ op: "add", path: "/fields/System.Title", value: `${title} (closed ${new Date().toISOString().slice(0, 10)})` }],
+      dashboard.id,
+      this.dashboardTeamProject(),
+    );
+  }
+
+  private dashboardTeamProject(): string {
+    const teamProject = this.otherRepository?.teamProject || process.env.SYSTEM_TEAMPROJECT || "";
+    if (!teamProject) {
+      throw new SfError("[Azure Integration] SYSTEM_TEAMPROJECT must be defined to use a work item as dashboard");
+    }
+    return teamProject;
+  }
+
+  private buildWorkItemWebUrl(workItemId: number): string {
+    return `${this.serverUrl.replace(/\/$/, "")}/${encodeURIComponent(this.dashboardTeamProject())}/_workitems/edit/${workItemId}`;
   }
 
   public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
