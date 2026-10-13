@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): creates scratch orgs from a Dev Hub authenticated by JWT through an External Client App, instead of failing with error C-1016.
+
 ## [8.17.0] 2026-10-11
 
 - [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now computed for each major org from the deployment jobs and Pull Requests of the git provider, without any org login, with the time each change takes to reach production and where it waits.
