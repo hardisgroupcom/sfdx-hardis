@@ -103,11 +103,11 @@ What to look for, in this order:
 
 Then write down which of three cases it is, because the fix and the reply differ:
 
-| Case | The fix | The reply |
-|------|---------|-----------|
-| The lab is wrong for everybody | The lab, and its picture if it disagrees | What changed, and the way out now |
-| The lab is right today, and the fork is older than what it describes | A troubleshooting entry naming the symptom and **Update my course** | Why their fork behaved that way, and the clicks to bring it up to date |
-| The learner took another path | Often nothing, sometimes a sentence that closes the wrong path | What happened on their fork, by its name and number, and how to get back |
+| Case                                                                 | The fix                                                             | The reply                                                                |
+|----------------------------------------------------------------------|---------------------------------------------------------------------|--------------------------------------------------------------------------|
+| The lab is wrong for everybody                                       | The lab, and its picture if it disagrees                            | What changed, and the way out now                                        |
+| The lab is right today, and the fork is older than what it describes | A troubleshooting entry naming the symptom and **Update my course** | Why their fork behaved that way, and the clicks to bring it up to date   |
+| The learner took another path                                        | Often nothing, sometimes a sentence that closes the wrong path      | What happened on their fork, by its name and number, and how to get back |
 
 A reply that names their Pull Request, their commit or the day of their last update is one they
 can act on. Say only what the fork shows: "your check passed at 20:56 on the commit that added the
