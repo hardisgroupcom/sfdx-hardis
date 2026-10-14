@@ -4222,6 +4222,7 @@
   "usingEncryptedCertFromFile": "Usando el certificado cifrado del archivo {{file}}",
   "usingForcedDeploymentCheckId": "Usando el id de validación {{deploymentCheckId}} forzado por la variable de entorno SFDX_HARDIS_DEPLOY_CHECK_ID",
   "usingForcedPackageXmlOutputPathFrom": "Usando la ruta de salida package.xml forzada desde la variable de entorno FULL_ORG_MANIFEST_PATH: {{packageXmlOutputFile}}. Esto solo debe usarse en modo desarrollo.",
+  "usingTargetUsernameFromBranchConfig": "Usando targetUsername de la configuración del branch: {{username}}",
   "usingTempDirectory": "Usando el directorio temporal {{tempDir}}",
   "validatingSpecifiedConnectedApp": "Validando la(s) Connected App(s) especificada(s): {{appNames}}",
   "validationsStats": "Validaciones: {{total}} en total ({{succeeded}} correctas, {{failed}} fallidas) | Tasa de éxito: {{successRate}}% | Duración media: {{avgDuration}} min | Espera media: {{avgPending}} min",

@@ -4226,6 +4226,7 @@
   "usingEncryptedCertFromFile": "Using encrypted certificate from file {{file}}",
   "usingForcedDeploymentCheckId": "Using deployment check id {{deploymentCheckId}} forced by SFDX_HARDIS_DEPLOY_CHECK_ID env var",
   "usingForcedPackageXmlOutputPathFrom": "Using forced package.xml output path from FULL_ORG_MANIFEST_PATH env var: {{packageXmlOutputFile}}. This should be used only in development mode.",
+  "usingTargetUsernameFromBranchConfig": "Using targetUsername from branch config: {{username}}",
   "usingTempDirectory": "Using temp directory {{tempDir}}",
   "validatingSpecifiedConnectedApp": "Validating specified Connected App(s): {{appNames}}",
   "validationsStats": "Validations: {{total}} total ({{succeeded}} succeeded, {{failed}} failed) | Success rate: {{successRate}}% | Avg duration: {{avgDuration}} min | Avg pending: {{avgPending}} min",

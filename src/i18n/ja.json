@@ -4219,6 +4219,7 @@
   "usingEncryptedCertFromFile": "ファイル {{file}} から暗号化された証明書を使用しています",
   "usingForcedDeploymentCheckId": "環境変数 SFDX_HARDIS_DEPLOY_CHECK_ID で指定されたデプロイ検証 ID {{deploymentCheckId}} を使用します",
   "usingForcedPackageXmlOutputPathFrom": "環境変数 FULL_ORG_MANIFEST_PATH で指定された package.xml の出力パスを使用しています: {{packageXmlOutputFile}}。これは開発モードでのみ使用してください。",
+  "usingTargetUsernameFromBranchConfig": "branch 設定の targetUsername を使用します: {{username}}",
   "usingTempDirectory": "一時ディレクトリ {{tempDir}} を使用しています",
   "validatingSpecifiedConnectedApp": "指定された接続アプリケーションを検証しています: {{appNames}}",
   "validationsStats": "検証: 合計 {{total}} 件（成功 {{succeeded}} 件、失敗 {{failed}} 件）| 成功率: {{successRate}}% | 平均所要時間: {{avgDuration}} 分 | 平均待機時間: {{avgPending}} 分",
