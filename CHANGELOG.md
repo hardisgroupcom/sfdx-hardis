@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- CI/CD pipeline templates: the check deploy, deployment and Apex test jobs now declare a job timeout above the deployment wait on every git platform, with a comment telling where to raise it.
 - Pull Request comments: the carried Pull Requests are listed in numeric order, the fold says "N other Pull Requests" when the one being read is left out, and no sentence writes "Pull Request(s)" anymore
 - Pull Request comments: banners with an orange badge for a validation waiting for manual actions and for a deployment whose post-deployment action failed, no "To do by hand" section once everything is done, the Backpromotes comment in the navigation line of feature Pull Requests, developer orgs named by the sandbox part of their instance URL or by their alias instead of an org id
 

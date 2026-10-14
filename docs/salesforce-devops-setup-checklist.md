@@ -139,7 +139,7 @@ The default workflow files already declare the three jobs (check deploy, code qu
 - [ ] The **branch lists** of the workflow files are updated with **your** major branch names, if they differ from the defaults (`integration`, `uat`, `preprod`, `main`): each template has an `Add your major branches here` comment at the right place, and GitLab uses `DEPLOY_BRANCHES` in `gitlab-ci-config.yml`.
 - [ ] The sfdx-hardis Docker image or plugin version used by the pipeline is the one you want (pin a version instead of `latest` if you need reproducible runs).
 - [ ] The CI runner has enough minutes / capacity for the deployments.
-- [ ] `SFDX_DEPLOY_WAIT_MINUTES` is increased if your deployments need more than the default 120 minutes.
+- [ ] `SFDX_DEPLOY_WAIT_MINUTES` is increased if your deployments need more than the default 120 minutes, and the job timeout declared in the workflow files stays above it: `timeout` on GitLab, `timeoutInMinutes` on Azure, `timeout` in the Jenkinsfile, repository variable `CI_JOB_TIMEOUT_MINUTES` on GitHub. On Bitbucket Cloud a step cannot run more than 120 minutes, so the wait must stay below that.
 
 #### Project configuration
 
