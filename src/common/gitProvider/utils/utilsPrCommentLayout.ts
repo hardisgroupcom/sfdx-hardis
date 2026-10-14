@@ -145,7 +145,7 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   } else if (status === 'invalid') {
     const reason = describeFailure(prData, failedActions);
     if (options.checkOnly) {
-      // Waiting for manual actions is orange, like its banner: nothing is broken yet
+      // Waiting for manual actions is a warning, like the orange badge of its banner: nothing is broken yet
       const waiting = isWaitingForManualSteps(prData, commands);
       verdict = `${waiting ? '⚠️' : '❌'} Cannot merge into ${target}: ${reason}`;
       next = waiting
@@ -155,7 +155,7 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
           : 'Fix it, commit and push: the validation runs again.';
     } else if (prData.metadataOutcome === 'deployed') {
       // Salesforce accepted the deployment: what failed came after it (an action, the coverage check).
-      // A failed action is orange, like its banner; a coverage failure stays red, the code is to fix
+      // A failed action is a warning, like the orange badge of its banner; a coverage failure stays a cross, the code is to fix
       verdict = failedActions.length > 0
         ? `⚠️ Deployed to ${target}, but ${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment`
         : `❌ Deployed to ${target}, but ${reason}`;

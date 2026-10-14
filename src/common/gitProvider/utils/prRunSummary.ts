@@ -67,7 +67,7 @@ export interface PrWorkflowRun {
 
 const RUN_SUMMARY_VERSION = 1;
 const RUN_SUMMARY_REGEX = /<!-- sfdx-hardis run-summary ([A-Za-z0-9+/=]+) -->/;
-// The orange banners (waiting for manual actions, deployed but an action failed) are failures of the job
+// The orange badge banners (waiting for manual actions, deployed but an action failed) are failures of the job
 const BANNER_REGEX = /pr-banner-(validation|deployment)-(success|failure|waiting|action-failed)/;
 const HIDDEN_MARKER_REGEX = /[ \t]*<!-- sfdx-hardis [^>]*-->[ \t]*\n?/g;
 // The comment reporters of MegaLinter sign their comment with <!-- megalinter: <reporter> ... -->

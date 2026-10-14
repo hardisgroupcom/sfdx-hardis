@@ -71,7 +71,7 @@ export type PrCommentBannerKey =
   | 'actions-error';
 
 // Validation and deployment comments are only posted once completed. Besides success and failure,
-// each has one orange case: a validation stopped by manual actions not done yet (nothing was
+// each has one orange badge case: a validation stopped by manual actions not done yet (nothing was
 // simulated), and a deployment Salesforce accepted but whose post-deployment action failed. The
 // deployment actions comment has a pending state (manual actions still waiting to be performed).
 const PR_COMMENT_BANNERS: Record<PrCommentBannerKey, { file: string; altTextKey: string }> = {

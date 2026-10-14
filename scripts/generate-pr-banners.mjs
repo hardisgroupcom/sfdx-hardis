@@ -39,7 +39,7 @@ const STATUSES = {
 };
 
 // Validation and deployment comments are only posted once completed. Besides success and failure,
-// each has one orange case: a validation stopped by manual actions not done yet (nothing was
+// each has one orange badge case: a validation stopped by manual actions not done yet (nothing was
 // simulated), and a deployment Salesforce accepted but whose post-deployment action failed.
 const VARIANTS = [
   { file: 'pr-banner-validation-success.png', type: 'validation', status: 'success', text: 'Deployment simulation successful' },

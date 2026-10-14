@@ -1062,7 +1062,7 @@ export function resolvePrCommentStatus(prData: Partial<PullRequestData>): "valid
 
 /**
  * Banner identifying a validation (checkOnly deployment) or deployment results comment, with its
- * outcome: success, failure, or the orange case of each (a validation waiting for manual actions,
+ * outcome: success, failure, or the orange badge case of each (a validation waiting for manual actions,
  * a deployment whose post-deployment action failed). A pending comment (posted before the result
  * is known, like the pending deployment placeholder or a draft deployment actions file stopping the
  * job early) displays no banner, only its title.

@@ -32,7 +32,7 @@ Depending on your git provider, configure one of the following integrations.
 
 ## Pull Request comments
 
-Whatever the git provider, sfdx-hardis can post up to four different comments on the same Pull Request. The first three start with a banner telling which comment you are reading, and how it went: green when it succeeded, red when it failed, orange when the job stopped for something that is not an error in the code. The banner replaces the title of the comment, which stays as the alt text of the image.
+Whatever the git provider, sfdx-hardis can post up to four different comments on the same Pull Request. The first three start with a banner telling which comment you are reading, and how it went: the background says which comment it is, and the badge on its icon says how it went, green when it succeeded, red when it failed, orange when the job stopped for something that is not an error in the code. The banner replaces the title of the comment, which stays as the alt text of the image.
 
 ### Validation
 
@@ -42,7 +42,7 @@ Posted by the validation job, before the merge. It contains the result of the de
 
 ![](assets/images/pr-banner-validation-waiting.png)
 
-The orange banner means the validation stopped before any simulation: manual actions of the Pull Request are still to do in the target org (`failValidationOnPendingManualActions`). Tick them once done, and the validation runs again.
+The orange clock means the validation stopped before any simulation: manual actions of the Pull Request are still to do in the target org (`failValidationOnPendingManualActions`). Tick them once done, and the validation runs again.
 
 ### Deployment
 
@@ -52,7 +52,7 @@ Posted by the deployment job, after the merge. It contains the result of the rea
 
 ![](assets/images/pr-banner-deployment-action-failed.png)
 
-The orange banner means Salesforce accepted the metadata, and a post-deployment action failed afterwards: the org has the new metadata, and the failed action is to rerun or to fix.
+The orange warning sign means Salesforce accepted the metadata, and a post-deployment action failed afterwards: the org has the new metadata, and the failed action is to rerun or to fix.
 
 ### Deployment actions
 
