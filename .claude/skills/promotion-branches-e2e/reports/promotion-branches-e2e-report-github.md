@@ -130,9 +130,32 @@ Nothing. The chains ran once, end to end.
 
 ___
 
+## Proof run of the fix branch
+
+The branch `fix/pr-comment-wording` (PR #2345) ran the same sections again on GitHub the same day,
+from a worktree, in repositories `-50` (sections) and `-51` (backpromote): sections 4, 6, 6quater
+and 6sexies 42 / 47 / 21 / 24 OK, the two visual fixtures OK, the backpromote steps 61 OK, the
+diagram, the audit (1309 checks over 55 Pull Requests) and the PR modal check green.
+
+Three e2e scripts failed on the new wording before the product did, and were fixed on the branch:
+`check-backpromote-comments.cjs` expected the sandbox key in the visible table (it shows the org
+label now), `check-pr-modal.cjs` did not know the "Developer orgs" header, and
+`check-comments-visual.cjs` took the four entry navigation line for a table row left in pipes. The
+two Backpromotes comment checks recorded as failed (C1, C2) replay green with the fixed script.
+
+What the pictures show: the "Developer orgs" column, the Backpromotes comment with its navigation
+line on the feature Pull Requests and no Backpromotes entry on the promotion ones, a developer org
+named by its alias (`promo-e2e-dev`) or by its host when the alias is unknown to the job. The two
+new banners show their alt text: the images are served from `main` until the merge. The promotion
+descriptions of the shared stories of section 6sexies carry no "Tickets:" line, in this run as in
+the night run: not something the branch changed.
+
+___
+
 ## Left behind
 
-Repositories `nvuillam/sfdx-hardis-promo-e2e-48`, `-49` and `-ci-3`, and the two scratch orgs
-(they expire on 2026-10-12 by their original date; the setup of this run reset them). Next free
-numbers: `-50`, `-ci-4`. Work folders: `%TEMP%/e2e-1014/promo-e2e-github*`, `promo-e2e-bp-github*`,
-`promo-e2e-ci-github*`.
+Repositories `nvuillam/sfdx-hardis-promo-e2e-48`, `-49`, `-50`, `-51` and `-ci-3`, and the two
+scratch orgs (they expire on 2026-10-12 by their original date; the setup of this run reset them).
+Next free numbers: `-52`, `-ci-4`. Work folders: `%TEMP%/e2e-1014/promo-e2e-github*`,
+`promo-e2e-bp-github*`, `promo-e2e-ci-github*` (the night's GitHub folders were renamed
+`promo-e2e-night-*` before the proof run).
