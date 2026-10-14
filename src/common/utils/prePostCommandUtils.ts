@@ -4,7 +4,7 @@ import fs from './fsUtils.js';
 
 import * as path from 'path';
 import { getConfig, getEnvVar } from '../../config/index.js';
-import { getCurrentGitBranch, uxLog } from './index.js';
+import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, getActionStateEntry, getStateEntriesForPr, DeploymentActionRef, buildIdenticalActionNote } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
@@ -324,8 +324,9 @@ export interface SingleActionRunContext {
   // reads the definition from the Pull Request files): its state says whether it already ran
   actionPrNumber?: number;
   // Written in the state entry when the action runs outside of a deployment job
-  // (sf hardis:project:action:run): who ran it, and from where.
-  note?: string;
+  // (sf hardis:project:action:run): who ran it, and from where. A function receives the status
+  // of the action once known: a manual action is reached, not run.
+  note?: string | ((status: string) => string);
   // The run is recorded outside of the Pull Request comment (a developer org without a Pull Request
   // yet): the caller checks runOnlyOnceByOrg against that record itself.
   skipRunOnlyOnceCheck?: boolean;
@@ -661,21 +662,24 @@ async function recordActionOutcomeInState(cmd: PrePostCommand, ctx: SingleAction
   }
   const identicalCopy = isIdenticalActionCopy(cmd);
   const { jobId, jobUrl } = await getJobInfoWithUrl();
+  const status = getRecordedActionStatus(cmd);
+  // A manual action reached from a workstation was not run by a job: no job id to show
+  const reachedByHand = status === 'manual' && !isCI;
   upsertActionInState({
     actionId: cmd.id,
     actionLabel: cmd.label,
     orgBranch: ctx.orgBranchName,
     when: ctx.deployWhen,
     executionOrder: ctx.executionOrder,
-    status: getRecordedActionStatus(cmd),
-    jobId,
-    jobUrl,
+    status,
+    jobId: reachedByHand ? '' : jobId,
+    jobUrl: reachedByHand ? '' : jobUrl,
     date: new Date().toISOString(),
     output: cmd.result.output,
     // Persisted so a runOnlyOnceByOrg action can replay them when it is skipped later.
     // The masked copy, because this is written into a Pull Request comment.
     outputs: cmd.result.outputsForDisplay,
-    note: identicalCopy && cmd.result.identicalTo ? buildIdenticalActionNote(cmd.result.identicalTo) : ctx.note,
+    note: identicalCopy && cmd.result.identicalTo ? buildIdenticalActionNote(cmd.result.identicalTo) : typeof ctx.note === 'function' ? ctx.note(status) : ctx.note,
   }, sourcePrNumber);
   // The action was moved from another Pull Request to fix its definition: once the copy has run in
   // this org (or an identical action did its work), the original row points at it instead of

@@ -9,6 +9,7 @@ import {
   classifyBackpromoteCurrentBranch,
   countConflictMarkerBlocks,
   countDifferingLines,
+  deriveOrgLabel,
   deriveSandboxName,
   filterNoOverwriteKeys,
   findBackpromoteParentBranchRefusal,
@@ -369,5 +370,25 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('Do not push and do not deploy');
     expect(prompt).to.contain('click Backpromote in the VS Code Backpromote panel');
     expect(prompt).to.contain('sf hardis:work:backpromote --auto --run-id 7f3a');
+  });
+});
+
+describe('developer org label', () => {
+  it('names a sandbox by the sandbox part of its instance URL', () => {
+    expect(deriveOrgLabel({ instanceUrl: 'https://mycompany--dev1.sandbox.my.salesforce.com', username: 'jane@acme.com.dev1' })).to.equal('dev1');
+  });
+
+  // A scratch org has a random host: its alias is the name its owner knows it by. Without an
+  // alias, the first host label is what the address bar shows, never the org id
+  it('names a scratch org or a Developer Edition by its alias, else the first label of its instance URL', () => {
+    expect(deriveOrgLabel({ instanceUrl: 'https://power-ability-1234-dev-ed.scratch.my.salesforce.com', alias: 'promo-e2e-dev', username: 'test-x@example.com' })).to.equal('promo-e2e-dev');
+    expect(deriveOrgLabel({ instanceUrl: 'https://power-ability-1234-dev-ed.scratch.my.salesforce.com', username: 'test-x@example.com' })).to.equal('power-ability-1234-dev-ed');
+    expect(deriveOrgLabel({ instanceUrl: 'https://Acme-Dev.my.salesforce.com' })).to.equal('Acme-Dev');
+  });
+
+  it('falls back on the username when the URL names nothing and there is no alias', () => {
+    expect(deriveOrgLabel({ instanceUrl: 'https://test.salesforce.com', alias: 'dev-sam', username: 'sam@acme.com' })).to.equal('dev-sam');
+    expect(deriveOrgLabel({ instanceUrl: 'https://login.salesforce.com', username: 'sam@acme.com' })).to.equal('sam@acme.com');
+    expect(deriveOrgLabel({})).to.equal('');
   });
 });

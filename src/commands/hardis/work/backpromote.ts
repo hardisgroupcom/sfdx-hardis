@@ -49,6 +49,7 @@ import {
 import {
   BackpromoteTargetOrgInfo,
   backpromoteOrgDisplayName,
+  backpromoteOrgLabel,
   compareItemsWithOrg,
   deployBackpromoteDeletions,
   deployBackpromotePackage,
@@ -1279,7 +1280,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
         }
       }
     };
-    const actionOptions = { selectedActionIds, alreadyRun: ctx.actionRows, sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, user: ctx.user, conn: ctx.conn, store: ctx.store, commandThis: this };
+    const actionOptions = { selectedActionIds, alreadyRun: ctx.actionRows, sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, orgLabel: backpromoteOrgLabel(ctx.targetOrg), user: ctx.user, conn: ctx.conn, store: ctx.store, commandThis: this };
     const merge = (outcome: BackpromoteActionsOutcome) => {
       result.actions.run.push(...outcome.run);
       result.actions.skipped.push(...outcome.skipped);
@@ -1357,12 +1358,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       }
     }
     // One comment per Pull Request, written in the batches of the provider ladder: the Pull
-    // Requests are distinct, so the writes do not race each other
+    // Requests are distinct, so the writes do not race each other. The source branch of each
+    // Pull Request is passed so the store refuses a vehicle without asking the provider
+    const sourceBranchOf = new Map(ctx.windowGroups.flatMap((group) => group.associatedPrs).map((pr) => [pr.id, pr.sourceBranch]));
     const commented = await mapInAdaptiveBatchesSettled(
       [...prNumbers],
       async (number) => {
-        const row = buildSandboxRow({ sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, user: ctx.user, parentBranch: ctx.parentBranch, leftOut: leftOutByPr.get(number) || [], version: this.config.version });
-        await ctx.store.update(number, (state) => upsertSandboxRow(state, row));
+        const row = buildSandboxRow({ sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, orgLabel: backpromoteOrgLabel(ctx.targetOrg), user: ctx.user, parentBranch: ctx.parentBranch, leftOut: leftOutByPr.get(number) || [], version: this.config.version });
+        await ctx.store.update(number, (state) => upsertSandboxRow(state, row), { sourceBranch: sourceBranchOf.get(number) });
         return number;
       },
       {
@@ -1436,7 +1439,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
         continue;
       }
       for (const action of actions) {
-        const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase: action.phase, sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, date: new Date().toISOString(), status: 'success', user: ctx.user };
+        const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase: action.phase, sandboxName: ctx.targetOrg.sandboxName, orgId: ctx.targetOrg.orgId, orgLabel: backpromoteOrgLabel(ctx.targetOrg), date: new Date().toISOString(), status: 'success', user: ctx.user };
         try {
           await ctx.store.update(action.pullRequest, (state) => upsertActionRow(state, row));
           action.alreadyRunOn = row.date;

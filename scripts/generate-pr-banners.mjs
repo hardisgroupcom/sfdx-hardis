@@ -35,15 +35,19 @@ const STATUSES = {
   success: { color: '#2FD07E', icon: 'check' },
   failure: { color: '#FF5B70', icon: 'cross' },
   pending: { color: '#FFB020', icon: 'clock' },
+  warning: { color: '#FFB020', icon: 'alert' },
 };
 
-// Validation and deployment comments are only posted once completed: their only statuses are
-// success and failure, so no pending banner exists for them.
+// Validation and deployment comments are only posted once completed. Besides success and failure,
+// each has one orange case: a validation stopped by manual actions not done yet (nothing was
+// simulated), and a deployment Salesforce accepted but whose post-deployment action failed.
 const VARIANTS = [
   { file: 'pr-banner-validation-success.png', type: 'validation', status: 'success', text: 'Deployment simulation successful' },
   { file: 'pr-banner-validation-failure.png', type: 'validation', status: 'failure', text: 'Deployment simulation failed' },
+  { file: 'pr-banner-validation-waiting.png', type: 'validation', status: 'pending', text: 'Waiting for manual actions' },
   { file: 'pr-banner-deployment-success.png', type: 'deployment', status: 'success', text: 'Deployment successful' },
   { file: 'pr-banner-deployment-failure.png', type: 'deployment', status: 'failure', text: 'Deployment failed' },
+  { file: 'pr-banner-deployment-action-failed.png', type: 'deployment', status: 'warning', text: 'Deployed, an action failed' },
   { file: 'pr-banner-actions-completed.png', type: 'actions', status: 'success', text: 'All actions completed' },
   { file: 'pr-banner-actions-pending.png', type: 'actions', status: 'pending', text: 'Manual actions pending' },
   { file: 'pr-banner-actions-error.png', type: 'actions', status: 'failure', text: 'Actions in error' },
@@ -57,6 +61,7 @@ const ICONS = {
   check: '<path d="M20 6 9 17l-5-5"/>',
   cross: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
 };
 
 const icon = (name, size, strokeWidth = 2.2) =>

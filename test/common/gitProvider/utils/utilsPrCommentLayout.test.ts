@@ -386,3 +386,30 @@ describe('Deployment Actions checkbox lines', () => {
     expect(items[1].checked).to.be.true;
   });
 });
+
+describe('Manual actions already done', () => {
+  const done = command({
+    id: 'gate-1',
+    label: 'Open the gate',
+    type: 'manual',
+    result: { statusCode: 'skipped', skippedCode: 'already-run-in-org', skippedReason: 'runOnlyOnceByOrg: already run in uat on 2026-10-14' } as any,
+  });
+  const pending = command({ id: 'gate-2', label: 'Close the gate', type: 'manual', result: { statusCode: 'manual' } as any });
+
+  // Nothing left to do: the actions table already says "Already done in uat"
+  it('shows no "To do by hand" section when every manual action is done', () => {
+    const body = render({ status: 'valid', preDeployActions: { commands: [done], orgBranch: 'uat' } }, true, { targetBranch: 'uat' });
+    expect(body).to.not.contain('To do by hand in');
+    expect(body).to.not.contain('- [x]');
+    expect(body).to.contain('Already done in uat');
+  });
+
+  // Next to a pending action, the done one stays listed and ticked, so the checkbox sync does not
+  // tick it again on every job
+  it('keeps the done actions ticked next to the pending ones', () => {
+    const body = render({ status: 'invalid', preDeployActions: { commands: [done, pending], orgBranch: 'uat' } }, true, { targetBranch: 'uat' });
+    expect(body).to.contain('#### 👋 To do by hand in `uat` before the deployment');
+    expect(body).to.contain('- [x]');
+    expect(body).to.contain('- [ ]');
+  });
+});

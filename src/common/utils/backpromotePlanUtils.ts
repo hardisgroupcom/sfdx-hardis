@@ -463,6 +463,7 @@ export async function promptConfirmReset(branch: string): Promise<boolean> {
 export function buildSandboxRow(options: {
   sandboxName: string;
   orgId: string;
+  orgLabel?: string;
   user: string;
   parentBranch: string;
   leftOut: BackpromoteLeftOutItem[];
@@ -471,6 +472,7 @@ export function buildSandboxRow(options: {
   return {
     sandboxName: options.sandboxName,
     orgId: options.orgId,
+    ...(options.orgLabel ? { orgLabel: options.orgLabel } : {}),
     date: new Date().toISOString(),
     user: options.user,
     parentBranch: options.parentBranch,

@@ -739,6 +739,7 @@ export async function executeBackpromoteActions(options: {
   alreadyRun: Map<string, BackpromoteActionRow>;
   sandboxName: string;
   orgId: string;
+  orgLabel: string;
   user: string;
   conn: any;
   store: BackpromoteCommentStore;
@@ -760,7 +761,7 @@ export async function executeBackpromoteActions(options: {
     if (action.prId <= 0) {
       return;
     }
-    const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase, sandboxName: options.sandboxName, orgId: options.orgId, date: new Date().toISOString(), status, user: options.user };
+    const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase, sandboxName: options.sandboxName, orgId: options.orgId, orgLabel: options.orgLabel, date: new Date().toISOString(), status, user: options.user };
     try {
       await options.store.update(action.prId, (state) => upsertActionRow(state, row));
     } catch (e) {

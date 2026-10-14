@@ -50,6 +50,33 @@ export function buildDeploymentPrCommentSections(prData: Partial<PullRequestData
 }
 
 /**
+ * What the comment is about, for its banner: beyond success and failure, a validation stopped only
+ * by manual actions not done yet (nothing was simulated, nothing to fix in the code), and a
+ * deployment Salesforce accepted but whose post-deployment action failed (the org has the metadata).
+ * A deployment that failed on the code coverage after Salesforce accepted it keeps the failure:
+ * the coverage is a property of the code, so it is something to fix.
+ */
+export type DeploymentCommentOutcome = 'success' | 'failure' | 'waiting-manual-actions' | 'deployed-action-failed' | 'pending';
+
+export function getDeploymentCommentOutcome(prData: Partial<PullRequestData>, checkOnly: boolean): DeploymentCommentOutcome {
+  const status = prData.status || prData.deployStatus;
+  if (status === 'valid') {
+    return 'success';
+  }
+  if (status !== 'invalid') {
+    return 'pending';
+  }
+  const commands = listPhasedCommands(prData);
+  if (checkOnly) {
+    return isWaitingForManualSteps(prData, commands) ? 'waiting-manual-actions' : 'failure';
+  }
+  if (prData.metadataOutcome === 'deployed' && commands.some((c) => isBlockingFailure(c.cmd))) {
+    return 'deployed-action-failed';
+  }
+  return 'failure';
+}
+
+/**
  * Words telling why an action did not run, written for the person reading the Pull Request
  */
 export function humanActionReason(cmd: PrePostCommand, orgBranch?: string): string {
@@ -119,11 +146,7 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
     const reason = describeFailure(prData, failedActions);
     if (options.checkOnly) {
       verdict = `❌ Cannot merge into ${target}: ${reason}`;
-      // Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed
-      const waitingForManualSteps = (prData.errorCount || 0) === 0 && (prData.failedTestsCount || 0) === 0 && failedActions.length === 0
-        && prData.coverage?.status !== 'invalid' && !prData.blockingIssueMarkdownBody
-        && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
-      next = waitingForManualSteps
+      next = isWaitingForManualSteps(prData, commands)
         ? TICK_THEN_VALIDATE_AGAIN
         : isNetworkFailure(prData)
           ? 'Nothing points to an error in the metadata: run the validation job again.'
@@ -157,6 +180,13 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
     next = '';
   }
   return [`### ${verdict}`, [next, note].filter((text) => text !== '').join(' ')].filter((line) => line !== '').join('\n\n');
+}
+
+// Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed
+function isWaitingForManualSteps(prData: Partial<PullRequestData>, commands: PhasedCommand[]): boolean {
+  return (prData.errorCount || 0) === 0 && (prData.failedTestsCount || 0) === 0 && !commands.some((c) => isBlockingFailure(c.cmd))
+    && prData.coverage?.status !== 'invalid' && !prData.blockingIssueMarkdownBody
+    && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
 }
 
 // How to merge the Pull Request once it is green. A User Story is squashed into one commit; a major
@@ -426,8 +456,9 @@ function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: Phase
  * Manual actions to perform in the org, as checkboxes carrying the hidden marker that lets the next
  * sfdx-hardis job record a ticked box as done. Pre-deployment actions are listed in the validation
  * comment (and in the deployment comment while still to do), post-deployment ones in the deployment
- * comment. Actions already performed are listed ticked: unticked, the checkbox sync would tick them
- * again on every job.
+ * comment. Actions already performed are listed ticked next to the pending ones: unticked, the
+ * checkbox sync would tick them again on every job. When nothing is left to do, there is no section:
+ * the actions table already says "Already done in <org>", and the sync ignores a box that is absent.
  */
 function buildManualActionsChecklist(commands: PhasedCommand[], phase: ActionPhase, options: PrCommentLayoutOptions): string {
   // A post-deployment manual action can only be done after the merge. A pre-deployment one is
@@ -444,12 +475,12 @@ function buildManualActionsChecklist(commands: PhasedCommand[], phase: ActionPha
   const manual = commands.filter(
     (c) => c.cmd.type === 'manual' && (c.cmd.result?.statusCode === 'manual' || c.cmd.result?.statusCode === 'failed' || (isDone(c.cmd) && !lateReminder))
   );
-  if (manual.length === 0) {
+  const pending = manual.filter((c) => !isDone(c.cmd)).length;
+  if (pending === 0) {
     return '';
   }
   const orgBranch = manual[0].orgBranch;
   const org = orgBranch ? `\`${orgBranch}\`` : 'the org';
-  const pending = manual.filter((c) => !isDone(c.cmd)).length;
   const title = lateReminder
     ? `#### 👋 Still to do by hand in ${org} (planned before the deployment)`
     : phase === 'pre-deploy'

@@ -12,7 +12,7 @@ import { promptActionConfirm, promptActionSelect, promptActionText } from './act
 import { t } from './i18n.js';
 import { gitUserName } from './backpromoteGitUtils.js';
 import { BackpromoteActionRow, BackpromoteCommentStore, upsertActionRow } from './backpromoteCommentUtils.js';
-import { deriveSandboxName } from './backpromoteRules.js';
+import { deriveOrgLabel, deriveSandboxName } from './backpromoteRules.js';
 import * as os from 'os';
 import { ActionWhen, DEV_SANDBOXES_BRANCH_NAME, buildActionTargetBranchCandidates, readActions, readPullRequestDescriptionActions, resolvePrId } from './actionUtils.js';
 import {
@@ -413,7 +413,7 @@ export async function runActionOutsideDeployment(
     targetBranchCandidates: buildActionTargetBranchCandidates(target.orgBranch, majorBranchNames),
     hasGitProvider: !options.localPrId,
     pipelineContext: await buildPipelineContext({ checkOnly: false, when: def.when || 'post-deploy', targetBranch: target.orgBranch }),
-    note: buildRunLocallyNote(gitUserName() || null, target.username, isCI),
+    note: (status: string) => buildRunLocallyNote(gitUserName() || null, target.username, isCI, status),
     // In a developer org, "already done there" is decided per org before the run (Backpromotes
     // comment, or the local file): the dev-sandboxes column is shared by every developer org, and
     // a try in one sandbox must not skip the action in another
@@ -429,7 +429,8 @@ export async function runActionOutsideDeployment(
       executionOrder,
       // An identical action of the same run did its work: done in this org
       status: getRecordedActionStatus(def),
-      jobId: 'local',
+      // A manual action reached from a workstation was not run by anybody: no job to name
+      jobId: getRecordedActionStatus(def) === 'manual' ? '' : 'local',
       jobUrl: '',
       date: new Date().toISOString(),
       // The end of the output, where the outcome is: an Apex debug log can be thousands of lines
@@ -437,7 +438,7 @@ export async function runActionOutsideDeployment(
       outputs: def.result.outputsForDisplay,
       note: isIdenticalActionCopy(def) && def.result.identicalTo
         ? buildIdenticalActionNote(def.result.identicalTo)
-        : buildRunLocallyNote(gitUserName() || null, target.username, isCI),
+        : buildRunLocallyNote(gitUserName() || null, target.username, isCI, def.result.statusCode),
     });
     uxLog("log", this, c.grey(t('actionRunLocalStateSaved', { file })));
   }
@@ -778,6 +779,7 @@ export function buildDevOrgBackpromoteRow(
     phase: def.when === 'pre-deploy' ? 'pre' : 'post',
     sandboxName: deriveSandboxName({ instanceUrl: target.instanceUrl, username: target.username, orgId }),
     orgId,
+    orgLabel: deriveOrgLabel({ instanceUrl: target.instanceUrl, username: target.username }),
     date: date.toISOString(),
     status: rowStatus,
     user,
