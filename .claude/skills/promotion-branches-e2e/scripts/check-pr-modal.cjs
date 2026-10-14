@@ -267,7 +267,8 @@ function stateCells(body) {
     return [];
   }
   const header = lines[start].split('|').map((s) => s.trim());
-  const orgs = header.slice(3, header.length - 1);
+  // The developer orgs column is labelled in the header, keyed dev-sandboxes in the statuses of the CLI
+  const orgs = header.slice(3, header.length - 1).map((org) => (org === 'Developer orgs' ? 'dev-sandboxes' : org));
   const cells = [];
   for (let i = start + 2; i < lines.length && lines[i].startsWith('|'); i++) {
     const parts = lines[i].split('|').map((s) => s.trim());

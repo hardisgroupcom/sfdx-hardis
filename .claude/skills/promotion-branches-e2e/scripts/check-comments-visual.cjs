@@ -289,6 +289,15 @@ function inspectInPage(input) {
 
   const clone = element.cloneNode(true);
   clone.querySelectorAll('pre, code, textarea, script, style').forEach((node) => node.remove());
+  // The navigation line of the comment ("🔍 Validation | 🚀 Deployment | 🛠️ Actions | ⤵️ Backpromotes")
+  // is rendered links separated by pipes: not a table row left in pipes
+  clone.querySelectorAll('p').forEach((paragraph) => {
+    const content = paragraph.textContent || '';
+    const navLinks = [...paragraph.querySelectorAll('a, strong, b')].filter((node) => /Validation|Deployment|Actions|Backpromotes/.test(node.textContent || ''));
+    if (navLinks.length >= 2 && (content.match(/\|/g) || []).length >= navLinks.length - 1 && content.length < 200) {
+      paragraph.remove();
+    }
+  });
   const text = clone.textContent || '';
   const leaks = [];
   const leak = (label, regex) => {
