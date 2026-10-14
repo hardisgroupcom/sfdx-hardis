@@ -69,6 +69,11 @@ describe('Deployment Actions state comment (matrix format)', () => {
     const body = buildDeploymentActionsCommentBody(entries, undefined, 42);
 
     expect(body).to.contain('| Action | When | integration | uat |');
+    // The developer orgs column is labelled, its key stays dev-sandboxes in the hidden rows
+    const withDevOrg = buildDeploymentActionsCommentBody([...entries, entry({ orgBranch: 'dev-sandboxes', status: 'manual', jobId: '', jobUrl: '' })], undefined, 42);
+    expect(withDevOrg).to.match(/\| Action \| When \|.* Developer orgs \|/);
+    expect(withDevOrg).to.not.match(/\| Action \| When \|.* dev-sandboxes \|/);
+    expect(parseDeploymentActionsCommentBody(withDevOrg).some((e) => e.orgBranch === 'dev-sandboxes')).to.be.true;
     expect(body).to.contain('#### Needs you');
     expect(body).to.contain('### In uat: 👋 1 to do by hand');
     expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 when:pre-deploy --> 👋 ');

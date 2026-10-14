@@ -4,7 +4,7 @@ import fs from './fsUtils.js';
 
 import * as path from 'path';
 import { getConfig, getEnvVar } from '../../config/index.js';
-import { getCurrentGitBranch, uxLog } from './index.js';
+import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { loadDeploymentActionsState, checkActionInState, upsertActionInState, persistDeploymentActionsState, getJobInfoWithUrl, syncManualActionCheckboxes, getActionStateEntry, getStateEntriesForPr, DeploymentActionRef, buildIdenticalActionNote } from './deploymentActionsStateUtils.js';
 // data import moved to DataAction class in actionsProvider
@@ -324,8 +324,9 @@ export interface SingleActionRunContext {
   // reads the definition from the Pull Request files): its state says whether it already ran
   actionPrNumber?: number;
   // Written in the state entry when the action runs outside of a deployment job
-  // (sf hardis:project:action:run): who ran it, and from where.
-  note?: string;
+  // (sf hardis:project:action:run): who ran it, and from where. A function receives the status
+  // of the action once known: a manual action is reached, not run.
+  note?: string | ((status: string) => string);
   // The run is recorded outside of the Pull Request comment (a developer org without a Pull Request
   // yet): the caller checks runOnlyOnceByOrg against that record itself.
   skipRunOnlyOnceCheck?: boolean;
@@ -661,21 +662,24 @@ async function recordActionOutcomeInState(cmd: PrePostCommand, ctx: SingleAction
   }
   const identicalCopy = isIdenticalActionCopy(cmd);
   const { jobId, jobUrl } = await getJobInfoWithUrl();
+  const status = getRecordedActionStatus(cmd);
+  // A manual action reached from a workstation was not run by a job: no job id to show
+  const reachedByHand = status === 'manual' && !isCI;
   upsertActionInState({
     actionId: cmd.id,
     actionLabel: cmd.label,
     orgBranch: ctx.orgBranchName,
     when: ctx.deployWhen,
     executionOrder: ctx.executionOrder,
-    status: getRecordedActionStatus(cmd),
-    jobId,
-    jobUrl,
+    status,
+    jobId: reachedByHand ? '' : jobId,
+    jobUrl: reachedByHand ? '' : jobUrl,
     date: new Date().toISOString(),
     output: cmd.result.output,
     // Persisted so a runOnlyOnceByOrg action can replay them when it is skipped later.
     // The masked copy, because this is written into a Pull Request comment.
     outputs: cmd.result.outputsForDisplay,
-    note: identicalCopy && cmd.result.identicalTo ? buildIdenticalActionNote(cmd.result.identicalTo) : ctx.note,
+    note: identicalCopy && cmd.result.identicalTo ? buildIdenticalActionNote(cmd.result.identicalTo) : typeof ctx.note === 'function' ? ctx.note(status) : ctx.note,
   }, sourcePrNumber);
   // The action was moved from another Pull Request to fix its definition: once the copy has run in
   // this org (or an identical action did its work), the original row points at it instead of
@@ -905,7 +909,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
         paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch but none of the Pull Requests it declares (\`promotionPullRequests\`) could be used, so only its own deployment actions and Apex test classes ${checkOnly ? 'are' : 'were'} processed.`);
       } else {
         const subjectsSentence = subjects.length > 0 ? `${subjectsLabel} ${checkOnly ? 'are' : 'were'} collected from them` : `They carry no deployment action and no Apex test class`;
-        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
+        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${pullRequestsLabel(carried.length)} declared in its description. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
       }
       const inheritedMarkdown = buildInheritedBehaviorsMarkdown(promotionDetails.inheritedBehaviors, scopeInfo.pullRequests);
       if (inheritedMarkdown) {
@@ -924,7 +928,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
         const promotionLink = carriedBy.webUrl ? `[#${carriedBy.idStr}](${carriedBy.webUrl})` : `#${carriedBy.idStr}`;
         promotions.set(carriedBy.idStr, `\`${carriedBy.sourceBranch}\` ${promotionLink}`);
       }
-      paragraphs.push(`ℹ️ ${carriedByPromotion.length} Pull Request(s) of this window were carried by ${promotions.size === 1 ? 'the promotion branch' : 'the promotion branches'} ${[...promotions.values()].join(', ')}.`);
+      paragraphs.push(`ℹ️ ${pullRequestsLabel(carriedByPromotion.length)} of this window ${carriedByPromotion.length === 1 ? 'was' : 'were'} carried by ${promotions.size === 1 ? 'the promotion branch' : 'the promotion branches'} ${[...promotions.values()].join(', ')}.`);
     }
     const alreadyPromotedMarkdown = buildAlreadyPromotedMarkdown(promotionDetails.alreadyPromoted);
     if (alreadyPromotedMarkdown) {
@@ -959,7 +963,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       }
       // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
       // in which case the actions were collected but deliberately not run (see fix #2053)
-      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s).`;
+      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${pullRequestsLabel(scopeInfo.pullRequests.length)}.`;
       if (subjects.includes('Deployment actions')) {
         collectedSentence += ` Each action keeps its tracked state on its own Pull Request.`;
       }
@@ -972,6 +976,11 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
   } catch (e) {
     uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsScopeError', { message: (e as Error).message })));
   }
+}
+
+// "1 Pull Request", "3 Pull Requests": the comments know the count, so they never write "(s)"
+function pullRequestsLabel(count: number): string {
+  return `${count} Pull ${count === 1 ? 'Request' : 'Requests'}`;
 }
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, deploySuccess: boolean) {

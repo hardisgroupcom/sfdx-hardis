@@ -68,7 +68,7 @@ describe('Pull Request comment layout', () => {
       },
       false
     );
-    expect(body).to.contain('### ❌ Deployed to `integration`, but an action failed after the deployment');
+    expect(body).to.contain('### ⚠️ Deployed to `integration`, but an action failed after the deployment');
     expect(body).to.contain('The org has the new metadata.');
     expect(body).to.contain('| Metadata | ✅ Deployed: 4 components changed (1 created, 3 updated) |');
     expect(body).to.contain('| Apex tests | ⚪ Not needed');
@@ -131,7 +131,7 @@ describe('Pull Request comment layout', () => {
       },
       true
     );
-    expect(body).to.contain('### ❌ Cannot merge into `integration`: Manual actions to perform before the merge');
+    expect(body).to.contain('### ⚠️ Cannot merge into `integration`: Manual actions to perform before the merge');
     expect(body).to.contain('Do the steps below in the org, tick their boxes, then run the validation again.');
     expect(body).to.not.contain('commit and push');
   });
@@ -165,13 +165,33 @@ describe('Pull Request comment layout', () => {
       },
       true
     );
-    expect(body).to.contain('<summary>🎫 1 ticket · 1 Pull Request</summary>');
+    // "other": the Pull Request being read (#12) is in the scope but not in the list
+    expect(body).to.contain('<summary>🎫 1 ticket · 1 other Pull Request</summary>');
     expect(body).to.contain('- [PROJ-1](https://jira/PROJ-1) Invoice reminder');
     expect(body).to.contain('- [#7](https://x/7) Carried, by Mariia');
     expect(body).to.not.contain('This one');
     // Two lists in the fold: one short header each
     expect(body).to.contain('**Tickets**\n\n- [PROJ-1]');
     expect(body).to.contain('**Pull Requests**\n\n- [#7]');
+  });
+
+  it('lists the carried Pull Requests in numeric order, whatever the order of the window', () => {
+    const body = render(
+      {
+        status: 'valid',
+        pullRequestsInScope: [
+          { idStr: '13', idNumber: 13, title: 'Thirteen' },
+          { idStr: '4', idNumber: 4, title: 'Four' },
+          { idStr: '12', idNumber: 12, title: 'This one' },
+          { idStr: '33', idNumber: 33, title: 'Thirty-three' },
+          { idStr: '5', idNumber: 5, title: 'Five' },
+        ],
+      },
+      false
+    );
+    expect(body).to.contain('<summary>🎫 4 other Pull Requests</summary>');
+    expect(body).to.contain('- #4 Four\n- #5 Five\n- #13 Thirteen\n- #33 Thirty-three');
+    expect(body).to.not.contain('This one');
   });
 
   it('does not repeat the summary as a header when the fold holds only one list', () => {
@@ -364,5 +384,32 @@ describe('Deployment Actions checkbox lines', () => {
     const items = parseManualActionCheckboxes(body);
     expect(items.map((item) => item.label)).to.deep.equal(['E2E flaky', 'E2E after', 'E2E manual']);
     expect(items[1].checked).to.be.true;
+  });
+});
+
+describe('Manual actions already done', () => {
+  const done = command({
+    id: 'gate-1',
+    label: 'Open the gate',
+    type: 'manual',
+    result: { statusCode: 'skipped', skippedCode: 'already-run-in-org', skippedReason: 'runOnlyOnceByOrg: already run in uat on 2026-10-14' } as any,
+  });
+  const pending = command({ id: 'gate-2', label: 'Close the gate', type: 'manual', result: { statusCode: 'manual' } as any });
+
+  // Nothing left to do: the actions table already says "Already done in uat"
+  it('shows no "To do by hand" section when every manual action is done', () => {
+    const body = render({ status: 'valid', preDeployActions: { commands: [done], orgBranch: 'uat' } }, true, { targetBranch: 'uat' });
+    expect(body).to.not.contain('To do by hand in');
+    expect(body).to.not.contain('- [x]');
+    expect(body).to.contain('Already done in uat');
+  });
+
+  // Next to a pending action, the done one stays listed and ticked, so the checkbox sync does not
+  // tick it again on every job
+  it('keeps the done actions ticked next to the pending ones', () => {
+    const body = render({ status: 'invalid', preDeployActions: { commands: [done, pending], orgBranch: 'uat' } }, true, { targetBranch: 'uat' });
+    expect(body).to.contain('#### 👋 To do by hand in `uat` before the deployment');
+    expect(body).to.contain('- [x]');
+    expect(body).to.contain('- [ ]');
   });
 });

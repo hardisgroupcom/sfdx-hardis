@@ -225,6 +225,8 @@ describe('Recovery notes', () => {
   it('describes a local run and a run in CI differently', () => {
     expect(buildRunLocallyNote('Jane Doe', 'jane@acme.com', false)).to.match(/^Run locally by Jane Doe \(jane@acme.com\) on /);
     expect(buildRunLocallyNote(null, 'jane@acme.com', true)).to.match(/^Retried by sf hardis:project:action:run as \(jane@acme.com\) on /);
+    // A manual action is reached, not run: it stays to do by hand in that org
+    expect(buildRunLocallyNote('Jane Doe', 'jane@acme.com', false, 'manual')).to.match(/^Reached by sf hardis:project:action:run as Jane Doe \(jane@acme.com\) on .*: still to do by hand there\.$/);
   });
 });
 
@@ -353,6 +355,7 @@ describe('Run in another org', () => {
       actionId: 'action-1',
       label: 'Assign the crew leads',
       phase: 'post',
+      orgLabel: 'dev-jane',
       sandboxName: 'dev-jane',
       orgId: '00D000000000001AAA',
       date: date.toISOString(),

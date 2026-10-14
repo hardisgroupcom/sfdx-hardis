@@ -37,6 +37,8 @@ export interface DeploymentActionRef {
 // Org branch of the tries made in a developer org (same value as DEV_SANDBOXES_BRANCH_NAME of
 // actionUtils, not imported to keep this module free of a dependency cycle)
 export const DEV_SANDBOXES_ORG_BRANCH = 'dev-sandboxes';
+// What the "Status by org" table calls that column
+export const DEV_SANDBOXES_COLUMN_LABEL = 'Developer orgs';
 
 // What the two checkbox marker prefixes start with, to list the comments holding either in one call
 const CHECKBOX_MARKER_COMMON_PREFIX = '<!-- sfdx-hardis-';
@@ -421,7 +423,9 @@ function parseMatrixDeploymentActionsCommentBody(body: string): DeploymentAction
     if (branches.length === 0) {
       const headerMatch = line.match(/^\|\s*Action\s*\|\s*When\s*\|(.*)\|\s*$/);
       if (headerMatch) {
-        branches = headerMatch[1].split('|').map((b) => b.trim()).filter((b) => b !== '');
+        branches = headerMatch[1].split('|').map((b) => b.trim()).filter((b) => b !== '')
+          // The developer orgs column is labelled in the header, keyed dev-sandboxes everywhere else
+          .map((b) => (b === DEV_SANDBOXES_COLUMN_LABEL ? DEV_SANDBOXES_ORG_BRANCH : b));
       }
       continue;
     }
@@ -741,7 +745,9 @@ export function buildDeploymentActionsCommentBody(
   const usedMatrixIcons: string[] = [];
   if (branches.length > 0 && matrixActionIds.length > 0) {
     body += `#### Status by org\n\n`;
-    body += `| Action | When |${branches.map((b) => ` ${b} |`).join('')}\n`;
+    // The developer orgs share one column: its header is a label, dev-sandboxes stays the key of
+    // the state and of the action filters
+    body += `| Action | When |${branches.map((b) => ` ${b === DEV_SANDBOXES_ORG_BRANCH ? DEV_SANDBOXES_COLUMN_LABEL : b} |`).join('')}\n`;
     body += `|--------|------|${branches.map(() => ':---:|').join('')}\n`;
     for (const actionId of matrixActionIds) {
       const actionEntries = sorted.filter((e) => e.actionId === actionId);
@@ -1086,10 +1092,14 @@ export function buildClosedByCheckboxNote(previousStatus: 'failed' | 'not-run', 
 }
 
 /**
- * Note of an action retried outside of a deployment job by sf hardis:project:action:run.
+ * Note of an action retried outside of a deployment job by sf hardis:project:action:run. A manual
+ * action is not run by anybody: reached in the org, it stays to do by hand there.
  */
-export function buildRunLocallyNote(gitUser: string | null, sfUsername: string | null, inCi: boolean): string {
+export function buildRunLocallyNote(gitUser: string | null, sfUsername: string | null, inCi: boolean, status?: string): string {
   const who = formatNoteAuthor(gitUser, sfUsername);
+  if (status === 'manual') {
+    return `Reached by sf hardis:project:action:run as ${who} on ${formatNoteDate(new Date())}: still to do by hand there.`;
+  }
   return inCi
     ? `Retried by sf hardis:project:action:run as ${who} on ${formatNoteDate(new Date())}.`
     : `Run locally by ${who} on ${formatNoteDate(new Date())}.`;

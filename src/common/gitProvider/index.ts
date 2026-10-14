@@ -9,7 +9,7 @@ import { debuglog } from "util";
 import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
 import { cleanFlowDiffMarkdownForPrComment, removeMermaidLinks } from "../utils/mermaidUtils.js";
-import { buildDeploymentPrCommentSections } from "./utils/utilsPrCommentLayout.js";
+import { buildDeploymentPrCommentSections, DeploymentCommentOutcome, getDeploymentCommentOutcome } from "./utils/utilsPrCommentLayout.js";
 import { fitPrCommentSections, PR_COMMENT_FRAME_RESERVE } from "./utils/utilsPrCommentSizeGuard.js";
 import { getPullRequestData } from "../utils/gitUtils.js";
 import { t } from '../utils/i18n.js';
@@ -20,6 +20,7 @@ import {
   getPrCommentKind,
   isPrCommentNavEnabled,
   isPrDescriptionNavEnabled,
+  PrCommentKind,
   PrCommentNavLinks,
   renderPrCommentNav,
   replacePrCommentNavBlock,
@@ -285,7 +286,7 @@ export abstract class GitProvider {
         message: markdownBody,
         status: status,
         messageKey: (checkOnly === true) ? `deployment-check` : `deployment`,
-        bannerKey: getDeploymentBannerKey(checkOnly, status),
+        bannerKey: getDeploymentBannerKey(checkOnly, getDeploymentCommentOutcome(prData, checkOnly === true)),
         navBlock: buildPrCommentNavBlock(checkOnly === true ? 'validation' : 'deployment'),
       };
       // Post main message
@@ -487,7 +488,7 @@ export abstract class GitProvider {
       if (comments === null || comments.length === 0) {
         return;
       }
-      const navComments: { kind: 'validation' | 'deployment' | 'actions'; comment: PullRequestCommentRef }[] = [];
+      const navComments: { kind: PrCommentKind; comment: PullRequestCommentRef }[] = [];
       const links: PrCommentNavLinks = {};
       for (const comment of comments) {
         const kind = getPrCommentKind(comment.body);
@@ -527,8 +528,19 @@ export abstract class GitProvider {
     if (gitProvider == null) {
       return;
     }
-    const prInfo = await GitProvider.getPullRequestInfo();
+    // Outside a CI job (a backpromote run from a workstation), the Pull Request is not in the
+    // environment: it is read by its number
+    let prInfo = await GitProvider.getPullRequestInfo();
+    if (prNumber && (prInfo == null || prInfo.idNumber !== prNumber)) {
+      prInfo = await gitProvider.getPullRequestById(prNumber);
+    }
     if (prInfo == null || (prNumber && prInfo.idNumber !== prNumber)) {
+      return;
+    }
+    // Where the description freezes at merge time (Azure DevOps), a merged Pull Request keeps the
+    // navigation it had: the comments posted after the merge (backpromotes) are linked from the
+    // other comments only
+    if (prInfo.mergedDate && gitProvider.isPrDescriptionEditableAfterMerge() === false) {
       return;
     }
     const currentDescription = prInfo.description || '';
@@ -1050,17 +1062,24 @@ export function resolvePrCommentStatus(prData: Partial<PullRequestData>): "valid
 
 /**
  * Banner identifying a validation (checkOnly deployment) or deployment results comment, with its
- * outcome: success or failure, the only two possible statuses. A "tovalidate" comment (posted
- * before the result is known, like the pending deployment placeholder or a draft deployment
- * actions file stopping the job early) displays no banner, only its title.
+ * outcome: success, failure, or the orange badge case of each (a validation waiting for manual actions,
+ * a deployment whose post-deployment action failed). A pending comment (posted before the result
+ * is known, like the pending deployment placeholder or a draft deployment actions file stopping the
+ * job early) displays no banner, only its title.
  */
-export function getDeploymentBannerKey(checkOnly: boolean, status: "valid" | "invalid" | "tovalidate"): PrCommentBannerKey | undefined {
-  if (status === "tovalidate") {
-    return undefined;
+export function getDeploymentBannerKey(checkOnly: boolean, outcome: DeploymentCommentOutcome): PrCommentBannerKey | undefined {
+  switch (outcome) {
+    case 'success':
+      return checkOnly === true ? 'validation-success' : 'deployment-success';
+    case 'failure':
+      return checkOnly === true ? 'validation-failure' : 'deployment-failure';
+    case 'waiting-manual-actions':
+      return 'validation-waiting';
+    case 'deployed-action-failed':
+      return 'deployment-action-failed';
+    default:
+      return undefined;
   }
-  const type = checkOnly === true ? "validation" : "deployment";
-  const outcome = status === "valid" ? "success" : "failure";
-  return `${type}-${outcome}` as PrCommentBannerKey;
 }
 
 export declare type CommonPullRequestInfo = {

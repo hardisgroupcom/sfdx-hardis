@@ -202,4 +202,17 @@ ${encodeRunSummaryMarker({ kind: 'deployment', status: 'invalid' })}
     ]);
     expect(runs.map((run) => run.kind)).to.deep.equal(['validation', 'deployment']);
   });
+
+  // The orange badge banners are failures of the job: the validation did not pass, the deployment job is red
+  it('reads the orange badge banners of a comment without marker as failures', () => {
+    const waiting = parseWorkflowRunFromComment({
+      body: `![x](https://sfdx-hardis.cloudity.com/assets/images/pr-banner-validation-waiting.png)\n\n${VALIDATION_KEY}`,
+    });
+    expect(waiting?.status).to.equal('invalid');
+    const actionFailed = parseWorkflowRunFromComment({
+      body: `![x](https://sfdx-hardis.cloudity.com/assets/images/pr-banner-deployment-action-failed.png)\n\n${DEPLOYMENT_KEY}`,
+    });
+    expect(actionFailed?.kind).to.equal('deployment');
+    expect(actionFailed?.status).to.equal('invalid');
+  });
 });

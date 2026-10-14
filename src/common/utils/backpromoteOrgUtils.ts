@@ -18,6 +18,7 @@ import { t } from './i18n.js';
 import {
   BackpromoteTargetOrgRefusal,
   countDifferingLines,
+  deriveOrgLabel,
   deriveSandboxName,
   findBackpromoteTargetOrgRefusal,
   isBinaryMetadataFile,
@@ -52,6 +53,11 @@ export interface BackpromoteTargetOrgInfo {
  */
 export function backpromoteOrgDisplayName(targetOrg: Pick<BackpromoteTargetOrgInfo, 'orgType' | 'alias' | 'sandboxName'>): string {
   return targetOrg.orgType === 'scratch' && targetOrg.alias ? targetOrg.alias : targetOrg.sandboxName;
+}
+
+/** The label written in the rows of the Backpromotes comments for this org (deriveOrgLabel) */
+export function backpromoteOrgLabel(targetOrg: Pick<BackpromoteTargetOrgInfo, 'instanceUrl' | 'alias' | 'username'>): string {
+  return deriveOrgLabel({ instanceUrl: targetOrg.instanceUrl, alias: targetOrg.alias, username: targetOrg.username });
 }
 
 /**

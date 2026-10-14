@@ -9,6 +9,7 @@ import {
   classifyBackpromoteCurrentBranch,
   countConflictMarkerBlocks,
   countDifferingLines,
+  deriveOrgLabel,
   deriveSandboxName,
   filterNoOverwriteKeys,
   findBackpromoteParentBranchRefusal,
@@ -328,7 +329,7 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('Invalid field:SOLUTION.ISSUE in related list:RelatedSolutionList');
     expect(prompt).to.contain('sfdx-hardis deployment hint "Invalid field in related list"');
     expect(prompt).to.contain('  > - Activate the related feature');
-    expect(prompt).to.contain('Merged in `integration` by the Pull Request(s): #415');
+    expect(prompt).to.contain('Merged in `integration` by the Pull Request #415');
     expect(prompt).to.contain('### Average test coverage 60%');
     expect(prompt).to.contain('  > Add tests for InvoiceCalculator.');
     expect(prompt).to.contain('Fix the files in this checkout, on `backpromote/integration/dev1`');
@@ -361,7 +362,7 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('`force-app/main/default/flows/Quote_Approval.flow-meta.xml` (2 conflict block(s))');
     expect(prompt).to.contain('common base');
     expect(prompt).to.contain('`force-app/main/default/classes/A.cls` (1 conflict block(s))');
-    expect(prompt).to.contain('changed in integration by the Pull Request(s) #482');
+    expect(prompt).to.contain('changed in integration by the Pull Request #482');
     expect(prompt).to.contain('backpromote/integration/dev1');
     expect(prompt).to.contain('#482 Quote approval process (https://github.com/acme/crm/pull/482)');
     expect(prompt).to.contain('then to commit the solved files on `backpromote/integration/dev1`');
@@ -369,5 +370,25 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('Do not push and do not deploy');
     expect(prompt).to.contain('click Backpromote in the VS Code Backpromote panel');
     expect(prompt).to.contain('sf hardis:work:backpromote --auto --run-id 7f3a');
+  });
+});
+
+describe('developer org label', () => {
+  it('names a sandbox by the sandbox part of its instance URL', () => {
+    expect(deriveOrgLabel({ instanceUrl: 'https://mycompany--dev1.sandbox.my.salesforce.com', username: 'jane@acme.com.dev1' })).to.equal('dev1');
+  });
+
+  // A scratch org has a random host: its alias is the name its owner knows it by. Without an
+  // alias, the first host label is what the address bar shows, never the org id
+  it('names a scratch org or a Developer Edition by its alias, else the first label of its instance URL', () => {
+    expect(deriveOrgLabel({ instanceUrl: 'https://power-ability-1234-dev-ed.scratch.my.salesforce.com', alias: 'promo-e2e-dev', username: 'test-x@example.com' })).to.equal('promo-e2e-dev');
+    expect(deriveOrgLabel({ instanceUrl: 'https://power-ability-1234-dev-ed.scratch.my.salesforce.com', username: 'test-x@example.com' })).to.equal('power-ability-1234-dev-ed');
+    expect(deriveOrgLabel({ instanceUrl: 'https://Acme-Dev.my.salesforce.com' })).to.equal('Acme-Dev');
+  });
+
+  it('falls back on the username when the URL names nothing and there is no alias', () => {
+    expect(deriveOrgLabel({ instanceUrl: 'https://test.salesforce.com', alias: 'dev-sam', username: 'sam@acme.com' })).to.equal('dev-sam');
+    expect(deriveOrgLabel({ instanceUrl: 'https://login.salesforce.com', username: 'sam@acme.com' })).to.equal('sam@acme.com');
+    expect(deriveOrgLabel({})).to.equal('');
   });
 });

@@ -35,14 +35,15 @@
  *   pipeline gets `trigger: none` (the build validation policy of each major branch runs it on Pull
  *   Requests, which the template comment asks to set by hand), the deployment pipeline a CI trigger
  *   on the four major branches and `pr: none`. The MegaLinter job of the checks template is left
- *   out: the free tier has one parallel job and 1800 minutes a month. AZURE_E2E_CI_TOKEN=pat maps
+ *   out (the free tier has one parallel job and 1800 minutes a month), and so is its scratch org
+ *   tests job (no Dev Hub in this test). AZURE_E2E_CI_TOKEN=pat maps
  *   CI_SFDX_HARDIS_AZURE_TOKEN to a secret variable holding the PAT instead of $(System.AccessToken)
  *   (see ci-provider-azure.sh).
  * --provider bitbucket: bitbucket-pipelines.yml, the link commands before `sf hardis:auth:login` in
  *   both steps, with a cache of the clone (`sfdxhardislink`, /tmp/sfdx-hardis: a later step fetches
  *   the branch into it and reuses node_modules). The MegaLinter step of the pull request pipeline is
- *   left out (build minutes). The logins and the token are repository variables, set by
- *   ci-provider-bitbucket.sh.
+ *   left out (build minutes), and so is its scratch org tests step (no Dev Hub in this test). The
+ *   logins and the token are repository variables, set by ci-provider-bitbucket.sh.
  *
  * With SFDX_HARDIS_IMAGE set (ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:beta for instance), the jobs
  * run in that image instead of `:latest`, and the branch argument may be `-`: no link step, the jobs
@@ -290,7 +291,8 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
   for (const name of Object.keys(triggers)) {
     const lines = readTemplate(path.join(sfdxHardisRoot, 'defaults', 'ci', name));
     if (name === 'azure-pipelines-checks.yml') {
-      removeAzureMegaLinterJob(lines, name);
+      removeAzureJob(lines, name, 'ScratchOrgTests', 'the scratch org tests job of the template is left out (no Dev Hub in this test)');
+      removeAzureJob(lines, name, 'MegaLinter', 'the MegaLinter job of the template is left out (one free parallel job, 1800 minutes a month)');
     }
     if (image) {
       const containerIndex = lines.findIndex((l) => /^ {4}container: /.test(l));
@@ -340,6 +342,10 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
         if (linkIndex < 0 || linkIndex > job.steps.indexOf(sfdxStep)) {
           throw new Error(`${name}: the E2E ONLY step is missing or after the sfdx-hardis step`);
         }
+        // a job left out by half leaves its steps in the one before it
+        if (job.steps.some((s) => typeof s.script === 'string' && s.script.includes('hardis:scratch:create'))) {
+          throw new Error(`${name}: the steps of the scratch org tests job ended in job ${job.job}`);
+        }
         if (name === 'azure-pipelines-checks.yml' && doc.trigger !== 'none') {
           throw new Error(`${name}: trigger is not none`);
         }
@@ -352,22 +358,25 @@ function writeAzure(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
   return files;
 }
 
-// The MegaLinter job of the checks template, with the comment lines just above it
-function removeAzureMegaLinterJob(lines, name) {
-  const jobIndex = lines.findIndex((l) => /^ {2}- job: MegaLinter\s*$/.test(l));
+// A job of the checks template, with the comment lines just above it, replaced by one comment.
+// The test keeps the DeploymentCheck job alone: every other job of the template is left out here
+// (a template that gains a job stops this script at its "expected one job" check: add it here)
+function removeAzureJob(lines, name, jobName, why) {
+  const jobIndex = lines.findIndex((l) => new RegExp(`^ {2}- job: ${jobName}\\s*$`).test(l));
   if (jobIndex < 0) {
-    fail(`${name}: no MegaLinter job to leave out`);
+    fail(`${name}: no ${jobName} job to leave out`);
   }
   let start = jobIndex;
   while (start > 0 && /^ {2}#/.test(lines[start - 1])) {
     start--;
   }
-  let end = lines.findIndex((l, i) => i > jobIndex && /^( {2}- job:|\S)/.test(l));
+  // the body of a job is indented by four spaces at least, blank lines included: it ends at the
+  // first line indented by less (the comment lines of the next job, or the next key)
+  let end = lines.findIndex((l, i) => i > jobIndex && /^ {0,3}\S/.test(l));
   if (end < 0) {
     end = lines.length;
   }
-  const removed = ['  # E2E ONLY: the MegaLinter job of the template is left out (one free parallel job, 1800 minutes a month)'];
-  lines.splice(start, end - start, ...(end === lines.length ? [...removed, ''] : removed));
+  lines.splice(start, end - start, `  # E2E ONLY: ${why}`, '');
 }
 
 // ------------------------------------------------------------------ Bitbucket Pipelines
@@ -382,8 +391,21 @@ function writeBitbucket(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
     lines[imageIndex] = `image: ${image}`;
   }
 
+  // The scratch org tests step of the pull request pipeline (no Dev Hub in this test), from its
+  // comment lines to the end of the parallel block (the first line indented by less than ten spaces)
+  const scratchIndex = lines.findIndex((l) => /^ {10}# Scratch org tests/.test(l));
+  if (scratchIndex < 0) {
+    fail(`${name}: no "Scratch org tests" step in the pull request pipeline, update writeBitbucket`);
+  }
+  let scratchEnd = lines.findIndex((l, i) => i > scratchIndex && /^ {0,9}\S/.test(l));
+  if (scratchEnd < 0) {
+    scratchEnd = lines.length;
+  }
+  lines.splice(scratchIndex, scratchEnd - scratchIndex, '          # E2E ONLY: the scratch org tests step of the template is left out (no Dev Hub in this test)', '');
+
   // The MegaLinter step and the parallel block around it: the simulate step stays alone, one
-  // sequence item deeper, which is still a valid sequence under the "**" key
+  // sequence item deeper, which is still a valid sequence under the "**" key. A template that
+  // gains a step in that block stops this script at its "one single step" check: leave it out here
   const parallelIndex = lines.findIndex((l) => /^ {6}- parallel:\s*$/.test(l));
   const megaIndex = lines.findIndex((l) => /^ {10}# Run MegaLinter\s*$/.test(l));
   const simulateIndex = lines.findIndex((l) => /^ {10}# Simulate deployment\s*$/.test(l));
@@ -458,6 +480,9 @@ function writeBitbucket(sfdxHardisRoot, repositoryRoot, sfdxHardisBranch) {
           const script = step.script.map((c) => (typeof c === 'string' ? c : '')).join('\n');
           if (sfdxHardisBranch !== '-' && (!script.includes(LINK_MARKER) || !(step.caches || []).includes('sfdxhardislink'))) {
             throw new Error(`${name}: step "${step.name}" has no link command or no cache`);
+          }
+          if (script.includes('hardis:scratch:create')) {
+            throw new Error(`${name}: step "${step.name}" holds the commands of the scratch org tests step`);
           }
         }
       },

@@ -143,3 +143,26 @@ describe('Navigation line extraction', () => {
     expect(extractPrCommentNavLine('No navigation here')).to.be.null;
   });
 });
+
+describe('Backpromotes comment in the navigation', () => {
+  const links = { validation: 'https://x/1', deployment: 'https://x/2', actions: 'https://x/3', backpromotes: 'https://x/4' };
+
+  it('recognizes the Backpromotes comment from its marker', () => {
+    expect(getPrCommentKind('<!-- sfdx-hardis backpromotes -->\n<!-- sfdx-hardis backpromotes-data {} -->\n### Backpromotes')).to.equal('backpromotes');
+  });
+
+  // A feature Pull Request that received a backpromote: four entries, Backpromotes last
+  it('lists the Backpromotes entry last, after Actions', () => {
+    expect(renderPrCommentNav(links, 'deployment')).to.equal(
+      '[🔍 Validation](https://x/1) | **🚀 Deployment** | [🛠️ Actions](https://x/3) | [⤵️ Backpromotes](https://x/4)'
+    );
+    expect(renderPrCommentNav(links, 'backpromotes')).to.contain('| **⤵️ Backpromotes**');
+  });
+
+  // A promotion vehicle never has a Backpromotes comment: its navigation keeps three entries
+  it('shows no Backpromotes entry when that comment does not exist', () => {
+    const { backpromotes, ...vehicleLinks } = links;
+    expect(backpromotes).to.be.a('string');
+    expect(renderPrCommentNav(vehicleLinks, 'validation')).to.not.contain('Backpromotes');
+  });
+});

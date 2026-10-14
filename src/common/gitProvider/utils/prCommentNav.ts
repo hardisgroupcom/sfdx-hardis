@@ -1,9 +1,11 @@
 /*
 Navigation between the sfdx-hardis comments of a Pull Request.
 
-A Pull Request can carry three sfdx-hardis comments (validation, deployment, deployment actions),
-posted by different jobs and buried under the other comments. Each of them, and the Pull Request
-description, displays the same navigation line linking to the others.
+A Pull Request can carry four sfdx-hardis comments (validation, deployment, deployment actions,
+backpromotes), posted by different jobs and buried under the other comments. Each of them, and the
+Pull Request description, displays the same navigation line linking to the others. The Backpromotes
+comment only exists on a feature or fix Pull Request, never on a promotion vehicle: there, the line
+keeps three entries.
 
 This module holds only pure helpers and the process cache, with no git provider import, so both the
 providers and the deployment actions state can use it without a circular import. The API calls
@@ -12,7 +14,7 @@ themselves are in GitProvider.refreshPullRequestNavigation().
 
 import { getEnvVar } from "../../../config/index.js";
 
-export type PrCommentKind = 'validation' | 'deployment' | 'actions';
+export type PrCommentKind = 'validation' | 'deployment' | 'actions' | 'backpromotes';
 
 export const PR_NAV_START = '<!-- sfdx-hardis nav-start -->';
 export const PR_NAV_END = '<!-- sfdx-hardis nav-end -->';
@@ -23,17 +25,23 @@ export const SFDX_HARDIS_COMMENT_MARKER = '<!-- sfdx-hardis ';
 // Must match DEPLOYMENT_ACTIONS_MARKER in deploymentActionsStateUtils.ts
 export const DEPLOYMENT_ACTIONS_MARKER = '<!-- sfdx-hardis deployment-actions-state -->';
 
+// Must match BACKPROMOTES_MARKER in backpromoteCommentUtils.ts
+export const BACKPROMOTES_COMMENT_MARKER = '<!-- sfdx-hardis backpromotes -->';
+
 // The key holds the name of the CI job, and a GitHub Actions job name has spaces in it
 // ("Simulate Deployment (sfdx-hardis)"): the key runs up to the end of the marker, not to the first space
 const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (.+?) -->/;
 
 /**
- * Which of the three sfdx-hardis comments a body is, read from its markers.
+ * Which of the four sfdx-hardis comments a body is, read from its markers.
  * Returns null for the other sfdx-hardis comments (Flow diffs), which stay out of the navigation.
  */
 export function getPrCommentKind(body: string): PrCommentKind | null {
   if (body.includes(DEPLOYMENT_ACTIONS_MARKER)) {
     return 'actions';
+  }
+  if (body.includes(BACKPROMOTES_COMMENT_MARKER)) {
+    return 'backpromotes';
   }
   // Provider suffixes follow the message key: deployment-check-<job>-<pr>, deployment-<job>-<pr>
   const messageKey = body.match(MESSAGE_KEY_REGEX)?.[1] || '';
@@ -46,11 +54,13 @@ export function getPrCommentKind(body: string): PrCommentKind | null {
   return null;
 }
 
-// Same order as the deployment lifecycle: validate, deploy, then run the actions
+// Same order as the deployment lifecycle: validate, deploy, run the actions, then the backpromotes
+// to the developer sandboxes
 const NAV_ENTRIES: { kind: PrCommentKind; label: string }[] = [
   { kind: 'validation', label: '🔍 Validation' },
   { kind: 'deployment', label: '🚀 Deployment' },
   { kind: 'actions', label: '🛠️ Actions' },
+  { kind: 'backpromotes', label: '⤵️ Backpromotes' },
 ];
 
 export type PrCommentNavLinks = Partial<Record<PrCommentKind, string>>;

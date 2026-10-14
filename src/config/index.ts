@@ -62,20 +62,25 @@ export const getBannerMarkdownAndLink = () => {
 export type PrCommentBannerKey =
   | 'validation-success'
   | 'validation-failure'
+  | 'validation-waiting'
   | 'deployment-success'
   | 'deployment-failure'
+  | 'deployment-action-failed'
   | 'actions-completed'
   | 'actions-pending'
   | 'actions-error';
 
-// Validation and deployment comments are only posted once completed, so they carry no pending
-// banner: their only statuses are success and failure. Only the deployment actions comment has a
-// pending state (manual actions still waiting to be performed).
+// Validation and deployment comments are only posted once completed. Besides success and failure,
+// each has one orange badge case: a validation stopped by manual actions not done yet (nothing was
+// simulated), and a deployment Salesforce accepted but whose post-deployment action failed. The
+// deployment actions comment has a pending state (manual actions still waiting to be performed).
 const PR_COMMENT_BANNERS: Record<PrCommentBannerKey, { file: string; altTextKey: string }> = {
   'validation-success': { file: 'pr-banner-validation-success.png', altTextKey: 'prBannerValidationSuccess' },
   'validation-failure': { file: 'pr-banner-validation-failure.png', altTextKey: 'prBannerValidationFailure' },
+  'validation-waiting': { file: 'pr-banner-validation-waiting.png', altTextKey: 'prBannerValidationWaiting' },
   'deployment-success': { file: 'pr-banner-deployment-success.png', altTextKey: 'prBannerDeploymentSuccess' },
   'deployment-failure': { file: 'pr-banner-deployment-failure.png', altTextKey: 'prBannerDeploymentFailure' },
+  'deployment-action-failed': { file: 'pr-banner-deployment-action-failed.png', altTextKey: 'prBannerDeploymentActionFailed' },
   'actions-completed': { file: 'pr-banner-actions-completed.png', altTextKey: 'prBannerActionsCompleted' },
   'actions-pending': { file: 'pr-banner-actions-pending.png', altTextKey: 'prBannerActionsPending' },
   'actions-error': { file: 'pr-banner-actions-error.png', altTextKey: 'prBannerActionsError' },

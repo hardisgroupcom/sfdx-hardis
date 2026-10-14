@@ -50,6 +50,33 @@ export function buildDeploymentPrCommentSections(prData: Partial<PullRequestData
 }
 
 /**
+ * What the comment is about, for its banner: beyond success and failure, a validation stopped only
+ * by manual actions not done yet (nothing was simulated, nothing to fix in the code), and a
+ * deployment Salesforce accepted but whose post-deployment action failed (the org has the metadata).
+ * A deployment that failed on the code coverage after Salesforce accepted it keeps the failure:
+ * the coverage is a property of the code, so it is something to fix.
+ */
+export type DeploymentCommentOutcome = 'success' | 'failure' | 'waiting-manual-actions' | 'deployed-action-failed' | 'pending';
+
+export function getDeploymentCommentOutcome(prData: Partial<PullRequestData>, checkOnly: boolean): DeploymentCommentOutcome {
+  const status = prData.status || prData.deployStatus;
+  if (status === 'valid') {
+    return 'success';
+  }
+  if (status !== 'invalid') {
+    return 'pending';
+  }
+  const commands = listPhasedCommands(prData);
+  if (checkOnly) {
+    return isWaitingForManualSteps(prData, commands) ? 'waiting-manual-actions' : 'failure';
+  }
+  if (prData.metadataOutcome === 'deployed' && commands.some((c) => isBlockingFailure(c.cmd))) {
+    return 'deployed-action-failed';
+  }
+  return 'failure';
+}
+
+/**
  * Words telling why an action did not run, written for the person reading the Pull Request
  */
 export function humanActionReason(cmd: PrePostCommand, orgBranch?: string): string {
@@ -118,19 +145,20 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   } else if (status === 'invalid') {
     const reason = describeFailure(prData, failedActions);
     if (options.checkOnly) {
-      verdict = `❌ Cannot merge into ${target}: ${reason}`;
-      // Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed
-      const waitingForManualSteps = (prData.errorCount || 0) === 0 && (prData.failedTestsCount || 0) === 0 && failedActions.length === 0
-        && prData.coverage?.status !== 'invalid' && !prData.blockingIssueMarkdownBody
-        && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
-      next = waitingForManualSteps
+      // Waiting for manual actions is a warning, like the orange badge of its banner: nothing is broken yet
+      const waiting = isWaitingForManualSteps(prData, commands);
+      verdict = `${waiting ? '⚠️' : '❌'} Cannot merge into ${target}: ${reason}`;
+      next = waiting
         ? TICK_THEN_VALIDATE_AGAIN
         : isNetworkFailure(prData)
           ? 'Nothing points to an error in the metadata: run the validation job again.'
           : 'Fix it, commit and push: the validation runs again.';
     } else if (prData.metadataOutcome === 'deployed') {
-      // Salesforce accepted the deployment: what failed came after it (an action, the coverage check)
-      verdict = `❌ Deployed to ${target}, but ${failedActions.length > 0 ? `${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment` : reason}`;
+      // Salesforce accepted the deployment: what failed came after it (an action, the coverage check).
+      // A failed action is a warning, like the orange badge of its banner; a coverage failure stays a cross, the code is to fix
+      verdict = failedActions.length > 0
+        ? `⚠️ Deployed to ${target}, but ${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment`
+        : `❌ Deployed to ${target}, but ${reason}`;
       next = failedActions.length > 0
         ? `The org has the new metadata. Rerun or fix the failed ${failedActions.length === 1 ? 'action' : 'actions'} below.`
         : 'The org has the new metadata.';
@@ -157,6 +185,13 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
     next = '';
   }
   return [`### ${verdict}`, [next, note].filter((text) => text !== '').join(' ')].filter((line) => line !== '').join('\n\n');
+}
+
+// Stopped only by manual steps not done yet: nothing to fix in the code, and a push is not needed
+function isWaitingForManualSteps(prData: Partial<PullRequestData>, commands: PhasedCommand[]): boolean {
+  return (prData.errorCount || 0) === 0 && (prData.failedTestsCount || 0) === 0 && !commands.some((c) => isBlockingFailure(c.cmd))
+    && prData.coverage?.status !== 'invalid' && !prData.blockingIssueMarkdownBody
+    && commands.some((c) => c.phase === 'pre-deploy' && c.cmd.result?.statusCode === 'manual');
 }
 
 // How to merge the Pull Request once it is green. A User Story is squashed into one commit; a major
@@ -426,8 +461,9 @@ function buildNeedsYouSections(prData: Partial<PullRequestData>, commands: Phase
  * Manual actions to perform in the org, as checkboxes carrying the hidden marker that lets the next
  * sfdx-hardis job record a ticked box as done. Pre-deployment actions are listed in the validation
  * comment (and in the deployment comment while still to do), post-deployment ones in the deployment
- * comment. Actions already performed are listed ticked: unticked, the checkbox sync would tick them
- * again on every job.
+ * comment. Actions already performed are listed ticked next to the pending ones: unticked, the
+ * checkbox sync would tick them again on every job. When nothing is left to do, there is no section:
+ * the actions table already says "Already done in <org>", and the sync ignores a box that is absent.
  */
 function buildManualActionsChecklist(commands: PhasedCommand[], phase: ActionPhase, options: PrCommentLayoutOptions): string {
   // A post-deployment manual action can only be done after the merge. A pre-deployment one is
@@ -444,12 +480,12 @@ function buildManualActionsChecklist(commands: PhasedCommand[], phase: ActionPha
   const manual = commands.filter(
     (c) => c.cmd.type === 'manual' && (c.cmd.result?.statusCode === 'manual' || c.cmd.result?.statusCode === 'failed' || (isDone(c.cmd) && !lateReminder))
   );
-  if (manual.length === 0) {
+  const pending = manual.filter((c) => !isDone(c.cmd)).length;
+  if (pending === 0) {
     return '';
   }
   const orgBranch = manual[0].orgBranch;
   const org = orgBranch ? `\`${orgBranch}\`` : 'the org';
-  const pending = manual.filter((c) => !isDone(c.cmd)).length;
   const title = lateReminder
     ? `#### 👋 Still to do by hand in ${org} (planned before the deployment)`
     : phase === 'pre-deploy'
@@ -535,8 +571,15 @@ function buildActionsDetails(commands: PhasedCommand[], options: PrCommentLayout
 // Tickets and Pull Requests of the deployment, one per line
 function buildReferencesSection(prData: Partial<PullRequestData>, options: PrCommentLayoutOptions): PrCommentSection | null {
   const tickets = prData.tickets || [];
-  // The Pull Request being read is not listed: only the ones it carries
-  const pullRequests = (prData.pullRequestsInScope || []).filter((pr) => !options.prNumber || pr.idNumber !== options.prNumber);
+  // The Pull Request being read is not listed: only the ones it carries, in numeric order (the
+  // scope lists them in the order of the promotion window, which a reader looking for one cannot follow)
+  const allPullRequests = prData.pullRequestsInScope || [];
+  const pullRequests = allPullRequests
+    .filter((pr) => !options.prNumber || pr.idNumber !== options.prNumber)
+    .sort((a, b) => (a.idNumber ?? 0) - (b.idNumber ?? 0) || a.idStr.localeCompare(b.idStr));
+  // The summary says "other" when the Pull Request being read was left out, so that its count
+  // agrees with the scope sentence, which counts that Pull Request too
+  const others = pullRequests.length < allPullRequests.length;
   if (tickets.length === 0 && pullRequests.length === 0) {
     return null;
   }
@@ -564,7 +607,7 @@ function buildReferencesSection(prData: Partial<PullRequestData>, options: PrCom
     }
     const summary = [
       tickets.length > 0 ? `${tickets.length} ${tickets.length === 1 ? 'ticket' : 'tickets'}` : '',
-      pullRequests.length > 0 ? `${pullRequests.length} Pull ${pullRequests.length === 1 ? 'Request' : 'Requests'}` : '',
+      pullRequests.length > 0 ? `${pullRequests.length} ${others ? 'other ' : ''}Pull ${pullRequests.length === 1 ? 'Request' : 'Requests'}` : '',
     ].filter((part) => part !== '').join(' · ');
     return folded(`🎫 ${summary}`, parts.join('\n').trim());
   };
