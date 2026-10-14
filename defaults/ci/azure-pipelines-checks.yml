@@ -31,6 +31,8 @@ variables:
     value: "1"
   - name: BRANCH_NAME
     value: $[replace(variables['System.PullRequest.TargetBranch'], 'refs/heads/', '')]
+  - name: CURRENT_BRANCH_NAME
+    value: $[replace(variables['System.PullRequest.SourceBranch'], 'refs/heads/', '')]
 
 jobs:
   # Simulate SFDX deployment
@@ -38,6 +40,11 @@ jobs:
     timeoutInMinutes: 150
     pool:
       vmImage: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+    # Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis-ubuntu:latest
+    # To use coding agents for auto-fix of deployment errors, use image ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     steps:
       # Checkout repo
       - checkout: self
@@ -45,23 +52,20 @@ jobs:
         persistCredentials: true
         displayName: Git Checkout
 
-      # Setup Node.js
-      - task: UseNode@1
-        inputs:
-          version: ">=24.0.0"
-        displayName: "Use Node.js"
-
-      # Install SFDX & Dependencies
+      # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-devops-setup-auth/ )
       - script: |
-          npm install @salesforce/cli --global
-          sf plugins install @salesforce/plugin-packaging
-          echo 'y' | sf plugins install sfdx-hardis
-          echo 'y' | sf plugins install sfdx-git-delta
-          sf version --verbose --json
-        displayName: "Install SFDX & plugins"
-
-      # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
-      - script: |
+          if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "${CURRENT_BRANCH_NAME}" ]; then
+            echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH_NAME}"
+            exit 0
+          fi
+          # Uncomment the lines below to allow coding agents to push auto-fix branches and create Pull Requests
+          # (also requires the sfdx-hardis-ubuntu-with-agents image, an AI API key in the variables below,
+          # and "Contribute" + "Create branch" permissions for the Build Service user on the repository)
+          # if [ -n "${SYSTEM_ACCESSTOKEN:-}" ]; then
+          #   git config user.email "sfdx-hardis-bot@cloudity.com"
+          #   git config user.name "sfdx-hardis Bot"
+          #   echo "[sfdx-hardis] Azure push/PR auth enabled for coding agents via SYSTEM_ACCESSTOKEN"
+          # fi
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check
         env:
@@ -80,9 +84,17 @@ jobs:
           JIRA_HOST: $(JIRA_HOST)
           JIRA_EMAIL: $(JIRA_EMAIL)
           JIRA_TOKEN: $(JIRA_TOKEN)
-          JIRA_PAT: $(JIRA_HOST)
+          JIRA_PAT: $(JIRA_PAT)
+          AHA_HOST: $(AHA_HOST)
+          AHA_API_KEY: $(AHA_API_KEY)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
           OPENAI_API_KEY: $(OPENAI_API_KEY)
+          # Uncomment to provide API keys for coding agent auto-fix of deployment errors
+          # ANTHROPIC_API_KEY: $(ANTHROPIC_API_KEY)
+          # GEMINI_API_KEY: $(GEMINI_API_KEY)
+          # Uncomment to customize coding agent behavior
+          # SFDX_HARDIS_CODING_AGENT_MODEL: "sonnet" # Override the model used by the agent
+          # SFDX_HARDIS_CODING_AGENT_MAX_TURNS: "30" # Limit the number of agentic turns
           SFDX_AUTH_URL_TECHNICAL_ORG: $(SFDX_AUTH_URL_TECHNICAL_ORG)
           SYSTEM_ACCESSTOKEN: $(System.AccessToken)
           CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
@@ -97,6 +109,75 @@ jobs:
           BUILD_BUILD_ID: $(Build.BuildId)
           SFDX_DISABLE_FLOW_DIFF: false # Set to true to disable Flow doc during CI/CD setup
         displayName: "Simulate deploy to org"
+      # Publish sfdx-hardis reports, including the complete deployment result JSON
+      # continueOnError: the folder is not created when there is nothing to deploy
+      # (empty delta package.xml), and the publish task hard-fails on a missing path
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: hardis-report
+        displayName: Publish sfdx-hardis reports
+
+  # Scratch org tests: create a scratch org (or take one from the scratch org pool), push the sources
+  # and run the Apex tests on it.
+  # Runs only when the pipeline variable USE_SCRATCH_ORGS is "true"
+  # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/
+  - job: ScratchOrgTests
+    condition: eq(variables['USE_SCRATCH_ORGS'], 'true')
+    timeoutInMinutes: 150
+    pool:
+      vmImage: ubuntu-latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    steps:
+      - checkout: self
+        fetchDepth: 0
+        persistCredentials: true
+        displayName: Git Checkout
+
+      - script: |
+          set -e
+          if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "${CURRENT_BRANCH_NAME}" ]; then
+            echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH_NAME}"
+            exit 0
+          fi
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:create
+          sleep 120 # A scratch org that was just created can be not ready yet
+          sf hardis:org:test:apex
+          # Not reached when a command above failed, so the scratch org can be investigated until it expires.
+          # Set the pipeline variable CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
+          if [ "${CI_DELETE_SCRATCH_ORG}" != "false" ]; then
+            sf org delete scratch --no-prompt || true
+          fi
+        env:
+          # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+          # and replace DEVHUB by the alias of your Dev Hub
+          SFDX_AUTH_URL_DEV_HUB: $(SFDX_AUTH_URL_DEV_HUB)
+          SFDX_CLIENT_ID_DEVHUB: $(SFDX_CLIENT_ID_DEVHUB)
+          SFDX_CLIENT_KEY_DEVHUB: $(SFDX_CLIENT_KEY_DEVHUB)
+          # Key that decrypts the scratch orgs of a pool stored in the git provider
+          SFDX_HARDIS_POOL_ENCRYPTION_KEY: $(SFDX_HARDIS_POOL_ENCRYPTION_KEY)
+          CI_DELETE_SCRATCH_ORG: $(CI_DELETE_SCRATCH_ORG)
+          CI: "true"
+          # The "Scratch Orgs Pool Dashboard" is a work item: the Build Service user needs the
+          # permission to edit work items in the project
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          SYSTEM_TEAMPROJECT: $(System.TeamProject)
+          SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+          SYSTEM_JOB_ID: $(System.JobId)
+          SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+          BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+          BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+          BUILD_BUILD_ID: $(Build.BuildId)
+        displayName: "Scratch org tests"
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: hardis-report-scratch-org
+        displayName: Publish sfdx-hardis reports
 
   # Run MegaLinter to detect linting and security issues
   # https://megalinter.io/latest/flavors/salesforce/
@@ -106,7 +187,7 @@ jobs:
       vmImage: ubuntu-latest
     steps:
       # Pull MegaLinter docker image
-      - script: docker pull oxsecurity/megalinter-salesforce:latest
+      - script: docker pull ghcr.io/oxsecurity/megalinter-salesforce:latest
         displayName: Pull MegaLinter
       # Run MegaLinter
       - script: |
@@ -118,7 +199,7 @@ jobs:
             -e SYSTEM_PULLREQUEST_SOURCECOMMITID=$(System.PullRequest.SourceCommitId) \
             -e SYSTEM_PULLREQUEST_TARGETBRANCH=$(System.PullRequest.TargetBranch) \
             -e BUILD_REASON=$(Build.Reason) \
-            oxsecurity/megalinter-salesforce:latest
+            ghcr.io/oxsecurity/megalinter-salesforce:latest
         displayName: Run MegaLinter
       # Publish Megalinter reports
       - publish: $(System.DefaultWorkingDirectory)/megalinter-reports/

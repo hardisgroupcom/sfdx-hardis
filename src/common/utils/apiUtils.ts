@@ -1,104 +1,169 @@
-import { execSfdxJson, uxLog } from './index.js';
+import { uxLog } from './index.js';
 import c from 'chalk';
+import { randomUUID } from 'crypto';
+import Papa from 'papaparse';
 import { Connection } from '@salesforce/core';
-import ora, { Ora } from 'ora';
-import { WebSocketClient } from '../websocketClient.js';
+import { createSpinner, Spinner } from './spinner.js';
+import { CommandLogLineQuery, WebSocketClient } from '../websocketClient.js';
 import { generateCsvFile, generateReportPath } from './filesUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
+import { t } from './i18n.js';
+import { registerAnonymizationSalt } from './anonymizeUtils.js';
 
 // Constants for record limits
 const MAX_CHUNKS = Number(process.env.SOQL_MAX_BATCHES ?? 50);
 const CHUNK_SIZE = Number(process.env.SOQL_CHUNK_SIZE ?? 200);
 const MAX_RECORDS = MAX_CHUNKS * CHUNK_SIZE;
 
+// True when Salesforce rejected the query because the sObject does not exist on this org, which
+// is how an edition that never provisions the object answers. Monitoring runs across whole
+// fleets, so callers are expected to skip quietly rather than fail the job. Anything else (a
+// permission problem, a transient outage) must keep propagating.
+export function isUnsupportedSObjectError(error: unknown, sObjectName: string): boolean {
+  const message = String((error as { message?: string })?.message ?? error).toLowerCase();
+  return (
+    message.includes('invalid_type') ||
+    message.includes('is not supported') ||
+    message.includes(`sobject type '${sObjectName.toLowerCase()}'`)
+  );
+}
+
+// Start tracking a query in the VS Code UI: the returned object is attached to the start line,
+// then to the completion (or failure) line, so the extension can show the query state and its
+// number of records next to the query text.
+export function startQueryLog(type: CommandLogLineQuery['type']): CommandLogLineQuery {
+  return { id: randomUUID(), type, status: 'running' };
+}
+
+// Human readable summary of a completed query, e.g. "Retrieved 12 records in 3 chunks(s)"
+function queryCompletionText(recordCount: number, batchCount: number): string {
+  return batchCount > 1 ? `Retrieved ${recordCount} records in ${batchCount} chunks(s)` : `Retrieved ${recordCount} records`;
+}
+
 // Perform simple SOQL query (max results: 10000)
 export async function soqlQuery(soqlQuery: string, conn: Connection): Promise<any> {
+  // Anonymization pseudonyms are salted per org: register the salt as soon as an org is queried,
+  // so report files generated before setConnectionVariables() use the same salt as notifications
+  registerAnonymizationSalt(conn?.instanceUrl);
+  const query = startQueryLog('soql');
   uxLog(
     "log",
     this,
     c.grey(
       '[SOQL Query] ' +
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
-    )
+    ),
+    { query }
   );
-  // First query
-  const res = await conn.query(soqlQuery);
-  let pageRes = Object.assign({}, res);
-  let batchCount = 1;
+  try {
+    // First query
+    const res = await conn.query(soqlQuery);
+    let pageRes = Object.assign({}, res);
+    let batchCount = 1;
 
-  // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
-    uxLog("log", this, c.grey(`Fetching batch ${batchCount + 1}/${MAX_CHUNKS}...`));
-    pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
-    res.records.push(...pageRes.records);
-    batchCount++;
+    // Get all page results
+    while (pageRes.done === false && pageRes.nextRecordsUrl && batchCount < MAX_CHUNKS) {
+      uxLog("log", this, c.grey(t('fetchingBatch', { batchCount: batchCount + 1, MAX: MAX_CHUNKS })));
+      pageRes = await conn.queryMore(pageRes.nextRecordsUrl);
+      res.records.push(...pageRes.records);
+      batchCount++;
+    }
+    if (!pageRes.done) {
+      uxLog("warning", this, c.yellow(t('warningQueryLimitOfRecordsReachedSome', { MAX_RECORDS })));
+      uxLog("warning", this, c.yellow(`Consider using bulkQuery for larger datasets.`));
+    }
+    uxLog("log", this, c.grey(`[SOQL Query] ${queryCompletionText(res.records.length, batchCount)}`), {
+      query: { ...query, status: 'completed', recordCount: res.records.length, batchCount },
+    });
+    return res;
+  } catch (e: any) {
+    uxLog("log", this, c.grey(`[SOQL Query] Query failed: ${e?.message || e}`), { query: { ...query, status: 'error' } });
+    throw e;
   }
-  if (!pageRes.done) {
-    uxLog("warning", this, c.yellow(`Warning: Query limit of ${MAX_RECORDS} records reached. Some records were not retrieved.`));
-    uxLog("warning", this, c.yellow(`Consider using bulkQuery for larger datasets.`));
-  }
-  if (batchCount > 1) {
-    uxLog("log", this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
-  }
-  else {
-    uxLog("log", this, c.grey(`[SOQL Query] Retrieved ${res.records.length} records`));
-  }
-  return res;
 }
 
 // Perform simple SOQL query with Tooling API
+// Uses Sforce-Query-Options: batchSize=2000 to avoid default 100-record limit (Tooling API can return fewer by default)
 export async function soqlQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
+  registerAnonymizationSalt(conn?.instanceUrl);
+  const query = startQueryLog('tooling');
   uxLog(
     "log",
     this,
     c.grey(
       '[SOQL Query Tooling] ' +
       c.italic(soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery)
-    )
+    ),
+    { query }
   );
-  // First query
-  const res = await conn.tooling.query(soqlQuery);
-  let pageRes = Object.assign({}, res);
-  let batchCount = 1;
-  // Get all page results
-  while (pageRes.done === false && pageRes.nextRecordsUrl) {
-    pageRes = await conn.tooling.queryMore(pageRes.nextRecordsUrl || "");
-    res.records.push(...pageRes.records);
-    batchCount++;
+  try {
+    const apiVersion = `v${conn.getApiVersion() || '65.0'}`;
+    const queryPath = `/services/data/${apiVersion}/tooling/query/?q=${encodeURIComponent(soqlQuery)}`;
+    const headers: Record<string, string> = {
+      'Sforce-Query-Options': 'batchSize=2000',
+    };
+    const res = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+      method: 'GET',
+      url: queryPath,
+      headers,
+    });
+    const result = { records: res.records || [], done: res.done, nextRecordsUrl: res.nextRecordsUrl };
+    let batchCount = 1;
+    while (result.done === false && result.nextRecordsUrl) {
+      const nextPath = result.nextRecordsUrl.startsWith('/') ? result.nextRecordsUrl : `/${result.nextRecordsUrl}`;
+      const pageRes = await conn.request<{ records: any[]; done: boolean; nextRecordsUrl?: string }>({
+        method: 'GET',
+        url: nextPath,
+        headers,
+      });
+      result.records.push(...(pageRes.records || []));
+      result.done = pageRes.done;
+      result.nextRecordsUrl = pageRes.nextRecordsUrl;
+      batchCount++;
+    }
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] ${queryCompletionText(result.records.length, batchCount)}`), {
+      query: { ...query, status: 'completed', recordCount: result.records.length, batchCount },
+    });
+    return result;
+  } catch (e: any) {
+    uxLog("log", this, c.grey(`[SOQL Query Tooling] Query failed: ${e?.message || e}`), { query: { ...query, status: 'error' } });
+    throw e;
   }
-  if (batchCount > 1) {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records in ${batchCount} chunks(s)`));
-  } else {
-    uxLog("log", this, c.grey(`[SOQL Query Tooling] Retrieved ${res.records.length} records`));
-  }
-  return res;
 }
 
 let spinnerQ;
 const maxRetry = Number(process.env.BULK_QUERY_RETRY || 5);
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3): Promise<any> {
+  registerAnonymizationSalt(conn?.instanceUrl);
   const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
-  uxLog("log", this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)));
+  const query = startQueryLog('bulk');
+  uxLog("log", this, c.grey('[BulkApiV2] ' + c.italic(queryLabel)), { query });
   conn.bulk2.pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
   conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Start query
   try {
-    spinnerQ = ora({ text: `[BulkApiV2] Bulk Query: ${queryLabel}`, spinner: 'moon' }).start();
+    spinnerQ = createSpinner({ text: `[BulkApiV2] Bulk Query: ${queryLabel}` }).start();
     const recordStream = await conn.bulk2.query(soqlQuery);
     recordStream.on('error', (err) => {
-      uxLog("warning", this, c.yellow('Bulk Query error: ' + err));
+      uxLog("warning", this, c.yellow(t('bulkQueryError') + err));
+      uxLog("log", this, c.grey(t('fullQueryWas', { query: soqlQuery })));
       globalThis.sfdxHardisFatalError = true;
     });
     // Wait for all results
     const records = await recordStream.toArray();
     spinnerQ.succeed(`[BulkApiV2] Bulk Query completed with ${records.length} results.`);
     if (WebSocketClient.isAliveWithLwcUI()) {
-      uxLog("log", this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`));
+      uxLog("log", this, c.grey(`[BulkApiV2] Bulk Query completed with ${records.length} results.`), {
+        query: { ...query, status: 'completed', recordCount: records.length },
+      });
     }
     return { records: records };
   } catch (e: any) {
     spinnerQ.fail(`[BulkApiV2] Bulk query error: ${e.message}`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2] Bulk query error: ${e.message}`), { query: { ...query, status: 'error' } });
+    }
     // Try again if the reason is a timeout and max number of retries is not reached yet
     const eStr = e + '';
     if ((eStr.includes('ETIMEDOUT') || eStr.includes('Polling timed out')) && retries < maxRetry) {
@@ -111,6 +176,112 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     } else {
       throw e;
     }
+  }
+}
+
+// One page of Bulk API 2.0 results: the CSV body and the Sforce-Locator of the next page. It goes through
+// the connection transport, the one conn.request uses, so the proxy settings (HTTP_PROXY / HTTPS_PROXY)
+// apply; conn.request itself hides the response headers. Plain fetch only if that transport is missing.
+async function getBulkResultsPage(
+  conn: Connection,
+  url: string
+): Promise<{ status: number; body: string; locator: string }> {
+  const headers = { Authorization: `Bearer ${conn.accessToken}`, Accept: 'text/csv' };
+  const transport = (conn as any)._transport;
+  if (transport && typeof transport.httpRequest === 'function') {
+    const response: any = await transport.httpRequest({ method: 'GET', url, headers });
+    const responseHeaders = response?.headers ?? {};
+    return {
+      status: Number(response?.statusCode ?? 0),
+      body: String(response?.body ?? ''),
+      locator: String(responseHeaders['sforce-locator'] ?? responseHeaders['Sforce-Locator'] ?? ''),
+    };
+  }
+  const response = await fetch(url, { headers });
+  return {
+    status: response.status,
+    body: await response.text(),
+    locator: response.headers.get('sforce-locator') ?? '',
+  };
+}
+
+// Same as bulkQuery, on the Tooling API (/tooling/jobs/query). jsforce bulk2 only targets /jobs/query,
+// and sf data query has no Tooling bulk mode.
+export async function bulkQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
+  registerAnonymizationSalt(conn?.instanceUrl);
+  const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
+  const query = startQueryLog('bulk');
+  uxLog("log", this, c.grey('[BulkApiV2 Tooling] ' + c.italic(queryLabel)), { query });
+  const pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
+  // Tooling jobs on MetadataComponentDependency can run for minutes on large orgs
+  const pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 600000; // 10 min
+  const jobsPath = `/services/data/v${conn.getApiVersion()}/tooling/jobs/query`;
+  let jobId = '';
+  spinnerQ = createSpinner({ text: `[BulkApiV2 Tooling] Bulk Query: ${queryLabel}` }).start();
+  try {
+    let jobInfo: any = await conn.request({
+      method: 'POST',
+      url: jobsPath,
+      body: JSON.stringify({ operation: 'query', query: soqlQuery }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    jobId = jobInfo.id;
+    const startTime = Date.now();
+    while (jobInfo.state !== 'JobComplete') {
+      if (['Failed', 'Aborted'].includes(jobInfo.state)) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: jobInfo.state, message: jobInfo.errorMessage ?? '' }));
+      }
+      if (Date.now() - startTime > pollTimeout) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: jobInfo.state, message: 'Polling timed out' }));
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      jobInfo = await conn.request({ method: 'GET', url: `${jobsPath}/${jobId}` });
+    }
+    // Results are paged with the Sforce-Locator response header, which conn.request does not expose
+    const records: any[] = [];
+    let locator = '';
+    do {
+      const locatorParam = locator ? `?locator=${encodeURIComponent(locator)}` : '';
+      const resultsUrl = `${conn.instanceUrl}${jobsPath}/${jobId}/results${locatorParam}`;
+      let page = await getBulkResultsPage(conn, resultsUrl);
+      if (page.status === 401) {
+        // Expired session: a request through the connection refreshes the access token, then try again
+        await conn.request({ method: 'GET', url: `${jobsPath}/${jobId}` });
+        page = await getBulkResultsPage(conn, resultsUrl);
+      }
+      if (page.status < 200 || page.status >= 300) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: page.status, message: page.body }));
+      }
+      const parsed = Papa.parse(page.body, { header: true, skipEmptyLines: true });
+      records.push(...parsed.data);
+      locator = page.locator;
+    } while (locator && locator !== 'null');
+    spinnerQ.succeed(`[BulkApiV2 Tooling] Bulk Query completed with ${records.length} results.`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2 Tooling] Bulk Query completed with ${records.length} results.`), {
+        query: { ...query, status: 'completed', recordCount: records.length },
+      });
+    }
+    return { records };
+  } catch (e: any) {
+    // Do not leave the job running in the org
+    if (jobId) {
+      try {
+        await conn.request({
+          method: 'PATCH',
+          url: `${jobsPath}/${jobId}`,
+          body: JSON.stringify({ state: 'Aborted' }),
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        // Already complete, failed or aborted
+      }
+    }
+    spinnerQ.fail(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`), { query: { ...query, status: 'error' } });
+    }
+    throw e;
   }
 }
 
@@ -164,7 +335,7 @@ export async function bulkQueryByChunks(
   return results;
 }
 
-let spinner: Ora;
+let spinner: Spinner;
 // Same than soqlQuery but using bulk. Do not use if there will be too many results for javascript to handle in memory
 export async function bulkUpdate(
   objectName: string,
@@ -179,10 +350,10 @@ export async function bulkUpdate(
       `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`
     )
   );
-  conn.bulk2.pollInterval = 5000; // 5 sec
-  conn.bulk2.pollTimeout = 60000; // 60 sec
+  conn.bulk2.pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
+  conn.bulk2.pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 60000; // 60 sec
   // Initialize Job
-  spinner = ora({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}`, spinner: 'moon' }).start();
+  spinner = createSpinner({ text: `[BulkApiV2] Bulk ${c.bold(action.toUpperCase())} on ${c.bold(records.length)} records of object ${c.bold(objectName)}` }).start();
   const job = conn.bulk2.createJob({
     operation: action as any,
     object: objectName,
@@ -208,7 +379,9 @@ export async function bulkUpdate(
 - Success: ${res.successfulResults.length} records
 - Failed: ${res.failedResults.length} records
 - Unprocessed: ${res.unprocessedRecords.length} records`));
-  const outputFile = await generateReportPath('bulk', `${objectName}-${action}`, { withDate: true });
+  // Empty outputFile so generateReportPath builds a real path (report dir, branch, date, .csv);
+  // passing the name as outputFile would be taken as an explicit path and bypass all of that.
+  const outputFile = await generateReportPath(`bulk-${objectName}-${action}`, '', { withDate: true });
   if (res.failedResults.length > 0) {
     uxLog("warning", this, c.yellow(`[BulkApiV2] Some records failed to ${action}. Check the results for details.`));
   }
@@ -234,33 +407,74 @@ export async function bulkDelete(
   return await bulkUpdate(objectName, "delete", records, conn);
 }
 
+// Tooling API composite requests accept at most 25 subrequests.
+const TOOLING_COMPOSITE_CHUNK_SIZE = 25;
+
+// Delete records via the Tooling API. jsforce conn.tooling.destroy(type, ids[]) can NOT be used here:
+// https://github.com/jsforce/jsforce/issues/1815.
+// Batch unitary DELETE subrequests through the Tooling composite endpoint,
+// Fall back to one-by-one deletes also through Tooling API instead of sf CLI for speed..
 export async function bulkDeleteTooling(
   objectName: string,
   recordsIds: string[],
   conn: Connection
-): Promise<any> {
-  uxLog("log", this, c.grey(`[ToolingApi] Delete ${recordsIds.length} records on ${objectName}: ${JSON.stringify(recordsIds)}`));
-  try {
-    const deleteJobResults = await conn.tooling.destroy(objectName, recordsIds, { allOrNone: false });
-    return deleteJobResults
-  } catch (e: any) {
-    uxLog("warning", this, c.yellow(`[ToolingApi] jsforce error while calling Tooling API. Fallback to to unitary delete (longer but should work !)`));
-    uxLog("log", this, c.grey(e.message));
-    const deleteJobResults: any = [];
-    for (const record of recordsIds) {
-      const deleteCommand =
-        `sf data:delete:record --sobject ${objectName} --record-id ${record} --target-org ${conn.getUsername()} --use-tooling-api`;
-      const deleteCommandRes = await execSfdxJson(deleteCommand, this, {
-        fail: false,
-        output: true
-      });
-      const deleteResult: any = { Id: record, success: true }
-      if (!(deleteCommandRes.status === 0)) {
-        deleteResult.success = false;
-        deleteResult.error = JSON.stringify(deleteCommandRes);
-      }
-      deleteJobResults.push(deleteResult);
+): Promise<{ results: any[] }> {
+  uxLog("log", this, c.grey('[ToolingApi] ' + t('toolingApiDeletingRecords', { count: recordsIds.length, objectName: objectName, ids: JSON.stringify(recordsIds) })));
+  const basePath = `/services/data/v${conn.getApiVersion()}/tooling`;
+  const totalChunks = Math.ceil(recordsIds.length / TOOLING_COMPOSITE_CHUNK_SIZE);
+  const results: any[] = [];
+  for (let i = 0; i < recordsIds.length; i += TOOLING_COMPOSITE_CHUNK_SIZE) {
+    const chunkIds = recordsIds.slice(i, i + TOOLING_COMPOSITE_CHUNK_SIZE);
+    if (totalChunks > 1) {
+      const currentChunk = Math.floor(i / TOOLING_COMPOSITE_CHUNK_SIZE) + 1;
+      uxLog("log", this, c.grey('[ToolingApi] ' + t('toolingApiCompositeChunk', { current: currentChunk, total: totalChunks, count: chunkIds.length })));
     }
-    return { results: deleteJobResults };
+    try {
+      const recordIdByReferenceId = new Map(chunkIds.map((recordId, pos) => [`ref${pos}`, recordId]));
+      const compositeRequest = chunkIds.map((recordId, pos) => ({
+        method: 'DELETE',
+        url: `${basePath}/sobjects/${objectName}/${recordId}`,
+        referenceId: `ref${pos}`,
+      }));
+      const compositeRes: any = await conn.requestPost(`${basePath}/composite`, { allOrNone: false, compositeRequest });
+      for (const subResponse of compositeRes?.compositeResponse || []) {
+        const recordId = recordIdByReferenceId.get(subResponse?.referenceId) || '';
+        if (subResponse?.httpStatusCode >= 200 && subResponse?.httpStatusCode < 300) {
+          results.push({ Id: recordId, success: true, errors: [] });
+        } else {
+          const errors = (Array.isArray(subResponse?.body) ? subResponse.body : [subResponse?.body])
+            .filter(Boolean)
+            .map((err: any) => ({ statusCode: err?.errorCode ?? String(subResponse?.httpStatusCode), message: err?.message ?? JSON.stringify(err) }));
+          results.push({ Id: recordId, success: false, errors });
+        }
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[ToolingApi] ' + t('toolingApiCompositeFallback', { error: e.message })));
+      results.push(...(await deleteToolingRecordsOneByOne(objectName, chunkIds, conn)));
+    }
   }
+  return { results };
+}
+
+// Unitary Tooling API deletes: single-id conn.tooling.destroy targets /tooling/sobjects/<type>/<id>
+async function deleteToolingRecordsOneByOne(
+  objectName: string,
+  recordsIds: string[],
+  conn: Connection
+): Promise<any[]> {
+  const results: any[] = [];
+  WebSocketClient.sendProgressStartMessage(t('deletingRecordsOnObject', { count: recordsIds.length, objectName: objectName }), recordsIds.length);
+  let step = 0;
+  for (const recordId of recordsIds) {
+    step++;
+    try {
+      await conn.tooling.destroy(objectName, recordId);
+      results.push({ Id: recordId, success: true, errors: [] });
+    } catch (e: any) {
+      results.push({ Id: recordId, success: false, errors: [{ statusCode: e.errorCode ?? e.name, message: e.message }] });
+    }
+    WebSocketClient.sendProgressStepMessage(step, recordsIds.length);
+  }
+  WebSocketClient.sendProgressEndMessage(recordsIds.length);
+  return results;
 }

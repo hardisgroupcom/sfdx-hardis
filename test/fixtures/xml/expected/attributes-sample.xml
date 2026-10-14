@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObjectTranslation xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <fields>
+        <help xsi:nil="true"/>
+        <label>Type de client</label>
+        <name>Client_Type__c</name>
+        <picklistValues>
+            <masterLabel>Gold &amp; Platinum</masterLabel>
+            <translation>Or &amp; Platine</translation>
+        </picklistValues>
+    </fields>
+    <fields>
+        <label xsi:nil="true"/>
+        <name>Revenue__c</name>
+    </fields>
+</CustomObjectTranslation>

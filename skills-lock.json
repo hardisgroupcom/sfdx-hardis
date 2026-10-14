@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "skills": {
+    "alerting-irm": {
+      "source": "grafana/skills",
+      "sourceType": "github",
+      "skillPath": "skills/grafana-core/alerting-irm/SKILL.md",
+      "computedHash": "2037eed7dc356ba49cbf56e65cd37e5bc1d2f3dfc41ac621ac5777f5ac07a9ee"
+    },
+    "dashboarding": {
+      "source": "grafana/skills",
+      "sourceType": "github",
+      "skillPath": "skills/grafana-core/dashboarding/SKILL.md",
+      "computedHash": "cafd091f7b71fb043ada1b9bbf17e529474b6116dbd3c9e31d70d787b1eb90e3"
+    },
+    "loki": {
+      "source": "grafana/skills",
+      "sourceType": "github",
+      "skillPath": "skills/grafana-lgtm/loki/SKILL.md",
+      "computedHash": "d795a6d243616bcda87e1506c0d0847f62a354c6ccb4f881d73f78c3f4f063e3"
+    },
+    "megalinter": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter/SKILL.md",
+      "computedHash": "8f44fe8aba5e5710fdb3b09729bcd34407bc0ff60f3361f7e2874fb977706e0e"
+    },
+    "megalinter-check": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter-check/SKILL.md",
+      "computedHash": "f50caf1f1cf81d000102d88a92ec2bb08d780e7be1ab726ca5863886301de4cd"
+    },
+    "megalinter-fix": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter-fix/SKILL.md",
+      "computedHash": "c4ddb9266ba7cc89b2fb6d87f2f193e6dad09b1a0698f38fce3475ce2287f863"
+    },
+    "megalinter-setup": {
+      "source": "oxsecurity/megalinter",
+      "sourceType": "github",
+      "skillPath": "skills/megalinter-setup/SKILL.md",
+      "computedHash": "19c1b8464306bb6b0a11528fd5a114f80ea339de7f3e64d5499a8fc4fb6fc13d"
+    },
+    "promql": {
+      "source": "grafana/skills",
+      "sourceType": "github",
+      "skillPath": "skills/grafana-core/promql/SKILL.md",
+      "computedHash": "5a54dc2c9319e52d59d5b8694c51700a7795bc611584021c258d5d3c3274e5fd"
+    }
+  }
+}

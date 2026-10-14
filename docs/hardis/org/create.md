@@ -26,7 +26,7 @@ The command's technical implementation involves:
 
 - **Configuration Loading:** It loads project and user configurations using `getConfig` to retrieve settings like `projectName`, `devHubAlias`, and `userEmail`.
 - **Git Integration:** Retrieves the current Git branch name using `getCurrentGitBranch` to inform sandbox naming.
-- **File System Operations:** Uses `fs-extra` to manage sandbox definition files (reading `project-sandbox-def.json`, writing a user-specific definition file) and temporary directories.
+- **File System Operations:** Uses Node.js `fs` to manage sandbox definition files (reading `project-sandbox-def.json`, writing a user-specific definition file) and temporary directories.
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands (`sf org create sandbox`, `sf data get record`, `sf data update record`, `sf org open`) using `execSfdxJson` for sandbox creation, user updates, and opening the org in a browser.
 - **Cache Management:** Clears the Salesforce CLI org list cache (`clearCache('sf org list')`) to ensure the newly created sandbox is immediately recognized.
 - **Initialization Utilities:** Calls a suite of utility functions (`initPermissionSetAssignments`, `initApexScripts`, `initOrgData`) to perform post-creation setup tasks.
@@ -35,13 +35,27 @@ The command's technical implementation involves:
 - **Required Plugin Check:** Explicitly lists `sfdmu` as a required plugin, indicating its role in data initialization.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:create --agent --target-dev-hub mydevhub@example.com
+```
+
+In agent mode:
+
+- The user email prompt is skipped; `USER_EMAIL` env var or `userEmail` config property is required.
+- If no email is available, an error is thrown.
+
 
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
@@ -50,6 +64,10 @@ The command's technical implementation involves:
 
 ```shell
 $ sf hardis:org:create
+```
+
+```shell
+$ sf hardis:org:create --agent
 ```
 
 

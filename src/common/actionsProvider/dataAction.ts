@@ -1,6 +1,7 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
+import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
 import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
 
 export class DataAction extends ActionsProvider {
@@ -23,28 +24,26 @@ export class DataAction extends ActionsProvider {
     return null;
   }
 
+  // The workspace path is relative to scripts/data, written by hand with either slash
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { sfdmuProject: normalizeIdentityPath(cmd.parameters?.sfdmuProject) };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
     const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
-    const importOptions: any = {
-      fail: false,
-      output: true
-    }
+    const importOptions: any = {}
     if (this.customUsernameToUse) {
       importOptions.targetUsername = this.customUsernameToUse;
     }
-    let res: any;
     try {
-      res = await importData(sfdmuProjectPath!, null, importOptions);
-      if (res.status === 0) {
-        return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
-      }
+      const res = await importData(sfdmuProjectPath!, null, importOptions);
+      return { statusCode: 'success', output: buildActionOutput(res) };
     } catch (error) {
       uxLog('error', this, c.red(`[DeploymentActions] Error during data import for action ${cmd.label}: ${error}`));
       return { statusCode: 'failed', output: `Error during data import: ${error}` };
     }
-    return { statusCode: 'failed', output: (res.stdout || '') + '\n' + (res.stderr || '') };
   }
 }

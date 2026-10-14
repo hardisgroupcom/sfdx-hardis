@@ -4,6 +4,7 @@ import c from 'chalk';
 import { AnyJson } from '@salesforce/ts-types';
 import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 const xorFlags = ['zipfile', 'validateddeployrequestid', 'deploydir'];
 export class Deploy extends SfCommand<any> {
@@ -36,6 +37,17 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
 - **User Guidance:** It logs messages to the console, including deprecation warnings and pointers to external documentation for troubleshooting.
 - **Argument Passthrough:** It directly passes the command-line arguments (\`this.argv\`) to the underlying Salesforce CLI command, ensuring all standard deployment options are supported.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:mdapi:deploy --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = [];
   public static readonly flags: any = {
@@ -100,6 +112,10 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
     concise: Flags.boolean({
       description: 'concise',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       default: false,
       description: 'debug',
@@ -112,8 +128,8 @@ This command acts as an intelligent wrapper around the Salesforce CLI's metadata
   /* jscpd:ignore-end */
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to the command `sf hardis project deploy start`.'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToTheCommandSfHardis')));
     uxLog(
       "error",
       this,

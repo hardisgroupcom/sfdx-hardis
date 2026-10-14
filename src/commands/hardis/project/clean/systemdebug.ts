@@ -6,8 +6,9 @@ import c from 'chalk';
 import { glob } from 'glob';
 import * as path from 'path';
 import { uxLog } from '../../../../common/utils/index.js';
-import fs from 'fs-extra';
-import { GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import fs from '../../../../common/utils/fsUtils.js';
+import { PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS } from '../../../../common/utils/projectUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -44,15 +45,31 @@ The command's technical implementation involves:
 - **File Writing:** If any changes are made to a file, the modified content is written back to the file using \`fs.writeFile\`.
 - **Logging:** Provides a summary of how many files were cleaned.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:systemdebug --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:project:clean:systemdebug'];
+  public static examples = ['$ sf hardis:project:clean:systemdebug',
+    '$ sf hardis:project:clean:systemdebug --agent',];
 
   public static flags: any = {
     folder: Flags.string({
       char: 'f',
       default: 'force-app',
       description: 'Root folder',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     websocket: Flags.string({
       description: messages.getMessage('websocket'),
@@ -79,11 +96,16 @@ The command's technical implementation involves:
     this.del = flags.delete || false;
 
     // Delete standard files when necessary
-    uxLog("action", this, c.cyan(`Comment or delete System.debug line in apex classes and triggers`));
+    uxLog("action", this, c.cyan(t('commentOrDeleteSystemDebugLine')));
     /* jscpd:ignore-end */
     const rootFolder = path.resolve(this.folder);
-    const findManagedPattern = rootFolder + `/**/*.{cls,trigger}`;
-    const matchingFiles = await glob(findManagedPattern, { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
+    // The root folder is passed as cwd, not glued in front of the pattern: on Windows it holds
+    // backslashes, and brace expansion turns them into escapes, so the pattern matched nothing
+    const matchingFiles = await glob(`**/*.{cls,trigger}`, {
+      cwd: rootFolder,
+      ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+      absolute: true,
+    });
     let countFiles = 0;
     for (const apexFile of matchingFiles) {
       const fileText = await fs.readFile(apexFile, 'utf8');

@@ -1,6 +1,7 @@
-import {DocBuilderRoot} from "./docBuilderRoot.js";
-import {PromptTemplate} from "../aiProvider/promptTemplates.js";
-import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
+import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { PromptTemplate } from "../aiProvider/promptTemplates.js";
+import { RulesBuilderUtil } from "../utils/rulesBuilderUtil.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderEscalationRules extends DocBuilderRoot {
 
@@ -10,15 +11,15 @@ export class DocBuilderEscalationRules extends DocBuilderRoot {
   public xmlRootKey = "escalationRule";
 
   public static buildIndexTable(prefix: string, escalationRulesDescriptions: any, filterObject: string | null = null) {
-    const filteredEscalationRules = filterObject ? escalationRulesDescriptions.filter(escalationRule => escalationRule.impactedObjects.includes(filterObject)) : escalationRulesDescriptions;
+    const filteredEscalationRules = filterObject ? escalationRulesDescriptions.filter(escalationRule => (escalationRule.impactedObjects || []).includes(filterObject)) : escalationRulesDescriptions;
     if (filteredEscalationRules.length === 0) {
       return [];
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Escalation Rules" : "## Escalation Rules",
+      filterObject ? `## ${t('docMdRelatedEscalationRules')}` : `## ${t('docMdEscalationRules')}`,
       "",
-      "| Escalation Rule | Is Active |",
+      `| ${t('docMdColEscalationRule')} | ${t('docMdColIsActive')} |`,
       "|     :----       |  :--: | "
     ]);
 
@@ -39,11 +40,13 @@ export class DocBuilderEscalationRules extends DocBuilderRoot {
 
     await ruleBuilderUtil.buildInitialMarkDownLinesForEscalationRules(this.parsedXmlObject);
 
-    const escalationRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
+    const escalationRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
+      `# ${this.metadataName}`,
+      '',
       '<!-- Escalation Rule description -->',
-      '## Escalation Rules list',
+      `## ${t('docMdEscalationRulesList')}`,
       ...escalationRuleTableLines,
       '',
     ];

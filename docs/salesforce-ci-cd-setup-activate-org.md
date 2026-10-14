@@ -1,41 +1,11 @@
 ---
-title: Configure Orgs
-description: Learn how to activate Dev Hub and Sandbox Tracking on a CI/CD Salesforce project, and apply org settings
+title: Prepare the Salesforce orgs for CI/CD
+description: This page moved to salesforce-devops-setup-activate-org
+search:
+  exclude: true
 ---
 <!-- markdownlint-disable MD013 -->
 
-## Production Org Settings
+## Page moved
 
-### Dev Hub and Sandbox Tracking
-
-You must declare an org (usually production) as a DevHub and activate sandbox tracking to be able to work with advanced features of Salesforce DX
-
-- Login to Dev Hub org
-
-- Go to `Setup -> Dev Hub`
-
-- [Activate Dev Hub](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_devhub.htm)
-
-- [Activate Sandbox tracking](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_setup_enable_source_tracking_sandboxes.htm)
-  - If sandbox were already existing, you need to refresh them if you want their source tracking to be activated
-  - To use **Create from** from an existing sandbox, you need to refresh it before the cloning, else the nex sandbox won't have the tracking activated
-
-### Activate Experience Bundle Metadata
-
-- Go to Setup -> Digital Experiences
-
-- Activate **Enable ExperienceBundle Metadata API**
-
-## Major orgs
-
-When there is a new state of a major branch (after a merge), a deployment to the related major Org will be automatically triggered by the CI server.
-
-You need to have a Salesforce sandbox corresponding to each major branch.
-
-Example:
-
-- Branch `preprod` - create a sandbox named `Preprod`, cloned from Production org
-- Branch `uat` - create a sandbox named `UAT`, cloned from PreProd org
-- Branch `integration` - create a sandbox named `Integration`, cloned from UAT org
-
-If you are converting an existing project to CI/CD and already have existing orgs, just create an org `Integration`, and you'll refresh later `UAT` and `PreProd`, once your setup will be more advanced.
+[Prepare the Salesforce orgs for CI/CD](salesforce-devops-setup-activate-org.md)

@@ -6,7 +6,7 @@ description: Schedule daily check for missing metadata attributes with sfdx-hard
 
 ## Detect missing attributes
 
-Follow best practices by documenting your data model !
+Follow best practices by documenting your data model.
 
 Sfdx-hardis command: [sf hardis:lint:missingattributes](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
 

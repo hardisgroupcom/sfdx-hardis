@@ -3,13 +3,20 @@ import { Flags } from '@salesforce/sf-plugins-core';
 import { Connection } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import sortArray from 'sort-array';
+import sortArray from '../../../common/utils/sortArray.js';
 import { generateReports, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { soqlQuery, soqlQueryTooling } from '../../../common/utils/apiUtils.js';
+import { t } from '../../../common/utils/i18n.js';
+
+const REF_METADATA_COMPONENT_BATCH_SIZE = Number(process.env.METADATA_COMPONENT_BATCH_SIZE ?? 20);
 
 export default class HardisDocFieldusage extends SfCommand<any> {
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
     'sObjects': Flags.string({
       char: 's',
@@ -40,11 +47,23 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
 - **Dependency Lookup:** The core of the command involves querying \`MetadataComponentDependency\` using the IDs of the custom fields. This API provides information about which other metadata components depend on the specified fields.
 - **Data Aggregation & Reporting:** The retrieved data is then processed and formatted into a tabular output, showing the sObject name, field name, field type, dependency type, and dependency name. The results are also generated into various report formats (e.g., CSV, JSON) for further analysis.
 - **SOQL Queries:** It uses \`soqlQuery\` and \`soqlQueryTooling\` utilities to execute SOQL queries against the Salesforce org.
+- **Batching:** MetadataComponentDependency queries are processed in batches (default: 20 fields per batch, configurable via \`METADATA_COMPONENT_BATCH_SIZE\` environment variable) to avoid HTTP 431 errors with large numbers of fields.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:fieldusage --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
 `;
 
   public static examples = [
     '$ sf hardis:doc:fieldusage',
+    '$ sf hardis:doc:fieldusage --agent',
     '$ sf hardis:doc:fieldusage --sObjects Account,Contact,Opportunity',
     '$ sf hardis:doc:fieldusage --target-org myOrgAlias --sObjects CustomObject__c'
   ];
@@ -98,14 +117,24 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
   }
 
   public async queryMetadataComponentDependency(connection: Connection, fieldIds: string[]) {
-    const metadataQuery = `
-      SELECT MetadataComponentId, MetadataComponentType, MetadataComponentName, RefMetadataComponentName, RefMetadataComponentId
-      FROM MetadataComponentDependency
-      WHERE RefMetadataComponentId IN (${fieldIds.join(',')})
-    `;
-    const dependencyResults = await soqlQueryTooling(metadataQuery, connection);
+    const allRecords: any[] = [];
 
-    return dependencyResults;
+    for (let i = 0; i < fieldIds.length; i += REF_METADATA_COMPONENT_BATCH_SIZE) {
+      const batch = fieldIds.slice(i, i + REF_METADATA_COMPONENT_BATCH_SIZE);
+
+      const metadataQuery = `
+        SELECT MetadataComponentId, MetadataComponentType, MetadataComponentName, RefMetadataComponentName, RefMetadataComponentId
+        FROM MetadataComponentDependency
+        WHERE RefMetadataComponentId IN (${batch.join(',')})
+      `;
+
+      const dependencyResults = await soqlQueryTooling(metadataQuery, connection);
+      allRecords.push(...dependencyResults.records);
+
+      uxLog("other", this, `Processed batch ${Math.floor(i / REF_METADATA_COMPONENT_BATCH_SIZE) + 1} of ${Math.ceil(fieldIds.length / REF_METADATA_COMPONENT_BATCH_SIZE)} (${batch.length} fields)`);
+    }
+
+    return { records: allRecords };
   }
 
   public async run(): Promise<AnyJson> {
@@ -181,7 +210,7 @@ The command operates by querying Salesforce's Tooling API and Metadata Component
       order: ['asc', 'asc', 'asc'],
     });
 
-    uxLog("action", this, c.cyan(`Found ${resultSorted.length} custom field usage records.`));
+    uxLog("action", this, c.cyan(t('foundCustomFieldUsageRecords', { resultSorted: resultSorted.length })));
     uxLogTable(this, rows);
 
     const reportFiles = await generateReports(resultSorted, columns, this, {

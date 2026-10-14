@@ -1,0 +1,198 @@
+import { SfCommand } from '@salesforce/sf-plugins-core';
+import { promptActionConfirm, promptActionSelect, promptActionText } from '../../../../common/utils/actionPromptUtils.js';
+import { SfError } from '@salesforce/core';
+import c from 'chalk';
+import { isCI } from '../../../../common/utils/index.js';
+import { ActionBranchFilterMode, ActionScope, ActionWhen, listActionTargetBranchChoices } from '../../../../common/utils/actionUtils.js';
+import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
+import { CustomFunctionDefinition } from '../../../../common/utils/customFunctionUtils.js';
+import { applyRunBatchFlags, normalizeRunBatchParameters } from '../../../../common/actionsProvider/runBatchAction.js';
+
+/**
+ * Base class for hardis:project:action:* commands.
+ * Provides shared interactive/headless helpers used across list, create, update, delete, and reorder.
+ */
+export abstract class ActionCommandBase extends SfCommand<any> {
+
+  /** Throw if a required flag is missing in agent/CI mode. */
+  protected requireFlag(value: any, flagName: string): string {
+    if (!value) {
+      throw new SfError(t('missingRequiredFlag', { flag: flagName }));
+    }
+    return value;
+  }
+
+  /**
+   * Collect --scope and --when: uses flag values in agent/CI mode,
+   * falls back to interactive prompts in interactive mode.
+   */
+  protected async collectScopeAndWhen(flags: any, agentMode: boolean): Promise<{ scope: ActionScope; when: ActionWhen }> {
+    const scope: ActionScope = agentMode || isCI
+      ? this.requireFlag(flags.scope, 'scope') as ActionScope
+      : flags.scope || await this.promptSelect(t('selectActionScope'), [
+        { title: t('actionScopeProject'), value: 'project' },
+        { title: t('actionScopeBranch'), value: 'branch' },
+        { title: t('actionScopePr'), value: 'pr' },
+      ]);
+
+    const when: ActionWhen = agentMode || isCI
+      ? this.requireFlag(flags.when, 'when') as ActionWhen
+      : flags.when || await this.promptSelect(t('selectActionWhen'), [
+        { title: t('actionWhenPreDeploy'), value: 'pre-deploy' },
+        { title: t('actionWhenPostDeploy'), value: 'post-deploy' },
+      ]);
+
+    return { scope, when };
+  }
+
+  /**
+   * Collect the run-batch parameters other than the class name: flags in agent/CI mode,
+   * prompts seeded with the current values otherwise.
+   */
+  protected async collectRunBatchParameters(
+    flags: any,
+    headless: boolean,
+    current: PrePostCommand['parameters'] = {}
+  ): Promise<Record<string, any>> {
+    if (headless) {
+      return applyRunBatchFlags({ runMode: 'wait' }, flags);
+    }
+    const collected: Record<string, any> = applyRunBatchFlags({ ...current }, flags);
+    delete collected.className;
+    if (!flags['run-mode']) {
+      collected.runMode = await this.promptSelect(t('selectRunBatchMode'), [
+        { title: t('runBatchModeWait'), value: 'wait' },
+        { title: t('runBatchModeNoWait'), value: 'no-wait' },
+      ], collected.runMode || 'wait');
+    }
+    if (flags['batch-size'] === undefined) {
+      collected.batchSize = await this.promptText(t('enterBatchSize'), collected.batchSize ? String(collected.batchSize) : '');
+    }
+    if (collected.runMode !== 'no-wait') {
+      if (flags['wait-timeout'] === undefined) {
+        collected.waitTimeoutMinutes = await this.promptText(
+          t('enterWaitTimeoutMinutes'),
+          collected.waitTimeoutMinutes ? String(collected.waitTimeoutMinutes) : ''
+        );
+      }
+      if (flags['success-even-if-batch-errors'] === undefined) {
+        collected.successEvenIfBatchErrors = await this.promptConfirm(
+          t('actionPromptSuccessEvenIfBatchErrors'),
+          collected.successEvenIfBatchErrors === true
+        );
+      }
+    }
+    return normalizeRunBatchParameters(collected);
+  }
+
+  protected async promptSelect(message: string, choices: any[], initial?: string): Promise<any> {
+    return promptActionSelect(message, choices, initial);
+  }
+
+  protected async promptText(message: string, initial: string): Promise<string> {
+    return promptActionText(message, initial);
+  }
+
+  /**
+   * Resolve action ID: use flag in agent/CI mode, flag value if provided, or prompt interactively.
+   * `promptMessage` is the i18n key for the interactive select prompt.
+   */
+  protected async resolveActionId(flags: any, agentMode: boolean, actions: any[], promptMessage: string): Promise<string> {
+    if (agentMode || isCI) {
+      return this.requireFlag(flags['action-id'], 'action-id');
+    }
+    if (flags['action-id']) {
+      return flags['action-id'];
+    }
+    return this.promptSelect(promptMessage, actions.map(a => ({
+      title: `${a.label} (${a.type})`,
+      value: a.id,
+      description: a.id,
+    })));
+  }
+
+  /**
+   * Ask whether the action is restricted to some target branches, and to which ones.
+   * Returns both keys so the caller can assign them as-is: the unused one is undefined,
+   * which clears a filter previously set the other way round.
+   */
+  protected async promptTargetBranchFilter(
+    action?: Pick<PrePostCommand, 'includeTargetBranches' | 'excludeTargetBranches'>
+  ): Promise<{ includeTargetBranches?: string[]; excludeTargetBranches?: string[] }> {
+    const currentMode: ActionBranchFilterMode = (action?.includeTargetBranches || []).length > 0
+      ? 'include'
+      : (action?.excludeTargetBranches || []).length > 0 ? 'exclude' : 'none';
+    const mode: ActionBranchFilterMode = await this.promptSelect(t('actionPromptRestrictTargetBranches'), [
+      { title: t('actionBranchFilterNone'), value: 'none' },
+      { title: t('actionBranchFilterInclude'), value: 'include' },
+      { title: t('actionBranchFilterExclude'), value: 'exclude' },
+    ], currentMode);
+    if (mode !== 'include' && mode !== 'exclude') {
+      return { includeTargetBranches: undefined, excludeTargetBranches: undefined };
+    }
+    const currentBranches = (mode === 'include' ? action?.includeTargetBranches : action?.excludeTargetBranches) || [];
+    const choices = (await listActionTargetBranchChoices()).map((choice) => ({
+      ...choice,
+      selected: currentBranches.includes(choice.value),
+    }));
+    const response = await prompts({
+      type: 'multiselect',
+      name: 'value',
+      message: c.cyanBright(t('selectActionTargetBranches')),
+      description: t('selectActionTargetBranches'),
+      choices,
+    });
+    const selectedBranches: string[] = response.value || [];
+    // An empty selection means no restriction at all: do not save a filter matching nothing
+    if (selectedBranches.length === 0) {
+      return { includeTargetBranches: undefined, excludeTargetBranches: undefined };
+    }
+    return mode === 'include'
+      ? { includeTargetBranches: selectedBranches, excludeTargetBranches: undefined }
+      : { includeTargetBranches: undefined, excludeTargetBranches: selectedBranches };
+  }
+
+  protected async promptConfirm(message: string, initial = false): Promise<boolean> {
+    return promptActionConfirm(message, initial);
+  }
+
+  /**
+   * Ask for the value of every input a custom function declares, rendering each one according to
+   * its declared type. `currentValues` pre-fills the answers when updating an existing action.
+   *
+   * A secret input asks for the NAME of a CI/CD variable, never for the value: the value is read
+   * from the environment when the action runs, so it never reaches a configuration file.
+   */
+  protected async promptCustomFunctionInputs(
+    definition: CustomFunctionDefinition,
+    currentValues: Record<string, any> = {}
+  ): Promise<Record<string, any>> {
+    const parameters: Record<string, any> = {};
+    for (const input of definition.inputs || []) {
+      const currentValue = currentValues[input.name] ?? input.default;
+      const message = `${input.label || input.name}${input.required ? ' *' : ''}`;
+      if (input.type === 'boolean') {
+        parameters[input.name] = await this.promptConfirm(message, currentValue === true);
+        continue;
+      }
+      if (input.type === 'select') {
+        parameters[input.name] = await this.promptSelect(
+          message,
+          (input.options || []).map((option) => ({ title: option, value: option })),
+          currentValue != null ? String(currentValue) : undefined
+        );
+        continue;
+      }
+      const promptMessage = input.type === 'secret' ? t('enterSecretVariableName', { name: input.label || input.name }) : message;
+      const answer = await this.promptText(promptMessage, currentValue != null ? String(currentValue) : '');
+      if (answer === '' && !input.required) {
+        // Nothing typed and nothing required: leave the parameter out so the function default wins
+        continue;
+      }
+      parameters[input.name] = input.type === 'number' && answer !== '' ? Number(answer) : answer;
+    }
+    return parameters;
+  }
+}

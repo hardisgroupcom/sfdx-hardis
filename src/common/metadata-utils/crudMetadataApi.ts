@@ -1,0 +1,657 @@
+import { Connection, SfError } from '@salesforce/core';
+import {
+  ComponentSet,
+  ComponentSetBuilder,
+  MetadataConverter,
+  MetadataResolver,
+  RegistryAccess,
+} from '@salesforce/source-deploy-retrieve';
+import { XMLBuilder, XMLParser } from 'fast-xml-parser';
+import c from 'chalk';
+import fs from '../utils/fsUtils.js';
+import * as path from 'path';
+import { createTempDir, uxLog } from '../utils/index.js';
+import { t } from '../utils/i18n.js';
+import { isThrottlingError, mapInAdaptiveBatchesSettled, retryOnThrottling } from '../utils/adaptiveBatch.js';
+
+// Namespace stamped on every metadata-format root element.
+const METADATA_XMLNS = 'http://soap.sforce.com/2006/04/metadata';
+
+// CRUD-based Metadata API read/upsert limit: 10 components per call,
+// except CustomMetadata and CustomApplication which allow 200.
+// https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_readMetadata.htm
+export const DEFAULT_MAX_CHUNK_SIZE = 10;
+export const SPECIAL_MAX_CHUNK_SIZE = 200;
+export const SPECIAL_CHUNK_TYPES = ['CustomApplication', 'CustomMetadata'];
+
+export type CrudComponentResult = {
+  type: string;
+  fullName: string;
+  status: 'success' | 'error' | 'skipped';
+  created?: boolean;
+  filePath?: string;
+  error?: string;
+  // Entries dropped by --active-only (permissions that grant nothing), only set when > 0.
+  inactiveEntriesRemoved?: number;
+};
+
+export type CrudMetadataOutcome = {
+  successes: CrudComponentResult[];
+  failures: CrudComponentResult[];
+  // Components left untouched because their type is not addressable by the CRUD Metadata API.
+  skipped: CrudComponentResult[];
+};
+
+// SDR registry adapters whose source representation carries non-XML content (Apex/Visualforce
+// code, binaries, or multi-file bundles). The CRUD Metadata API payload is a single parsed XML
+// body, so it cannot carry that content: these types must use the file-based Metadata API.
+// `bundle` -> LWC/Aura, `matchingContentFile` -> Apex*, `mixedContent` -> StaticResource/Document,
+// `digitalExperience` -> DigitalExperienceBundle. Pure-XML adapters (`decomposed`, `default`, none)
+// such as CustomObject/Profile/PermissionSet round-trip fine and are not listed.
+export const CRUD_INCOMPATIBLE_ADAPTERS = new Set(['bundle', 'matchingContentFile', 'mixedContent', 'digitalExperience']);
+
+/* ----------------------------------------------------------------------------
+ * Pure helpers (no connection, unit-testable)
+ * ------------------------------------------------------------------------- */
+
+// Hard per-type ceiling imposed by the Salesforce CRUD Metadata API.
+export function determineMaxChunkSize(typeName: string): number {
+  return SPECIAL_CHUNK_TYPES.includes(typeName) ? SPECIAL_MAX_CHUNK_SIZE : DEFAULT_MAX_CHUNK_SIZE;
+}
+
+// Validate a user-supplied --chunk-size against the absolute allowed maximum.
+// Returns the value, or throws if out of range. Per-type capping happens in resolveEffectiveChunkSize.
+export function validateChunkSizeOverride(requested: number): number {
+  if (!Number.isInteger(requested) || requested < 1) {
+    throw new SfError(t('crudChunkSizeMustBePositive', { value: String(requested) }));
+  }
+  if (requested > SPECIAL_MAX_CHUNK_SIZE) {
+    throw new SfError(t('crudChunkSizeTooLarge', { value: String(requested), max: String(SPECIAL_MAX_CHUNK_SIZE) }));
+  }
+  return requested;
+}
+
+// The size actually used for a given type: the override capped at the type's hard ceiling.
+export function resolveEffectiveChunkSize(typeName: string, override?: number | null): number {
+  const ceiling = determineMaxChunkSize(typeName);
+  if (override == null) {
+    return ceiling;
+  }
+  return Math.min(override, ceiling);
+}
+
+export function chunkArray<T>(input: T[], size: number): T[][] {
+  if (size < 1) {
+    throw new SfError(t('crudChunkSizeMustBePositive', { value: String(size) }));
+  }
+  const chunks: T[][] = [];
+  for (let i = 0; i < input.length; i += size) {
+    chunks.push(input.slice(i, i + size));
+  }
+  return chunks;
+}
+
+export function groupByType<T>(items: T[], typeOf: (item: T) => string): Record<string, T[]> {
+  return items.reduce((acc, item) => {
+    const key = typeOf(item);
+    (acc[key] ||= []).push(item);
+    return acc;
+  }, {} as Record<string, T[]>);
+}
+
+// Split repeatable --metadata flag values (each of which may be comma-joined) into individual entries.
+// SDR's ComponentSetBuilder parses the "Type:Name" / bare "Type" form itself, so we only normalize here.
+export function splitMetadataEntries(values: string[] | undefined): string[] {
+  return (values || []).flatMap((entry) => entry.split(',').map((e) => e.trim()).filter(Boolean));
+}
+
+// Decide whether the overall run should be treated as a failure (non-zero exit).
+// Skipped components are not failures, so only `failures` is consulted.
+export function isOutcomeFailed(outcome: Pick<CrudMetadataOutcome, 'failures'>, ignoreErrors: boolean): boolean {
+  return !ignoreErrors && outcome.failures.length > 0;
+}
+
+// True when the type's source carries non-XML content the CRUD Metadata API payload cannot
+// represent. Pure over the adapter string so it is trivially unit-testable.
+export function isCrudIncompatibleAdapter(adapter: string | null | undefined): boolean {
+  return adapter != null && CRUD_INCOMPATIBLE_ADAPTERS.has(adapter);
+}
+
+// Resolve a type name to its SDR registry adapter and classify it. Unknown type names are
+// treated as compatible so the API call (not this guard) surfaces a real error.
+export function isCrudIncompatibleTypeName(typeName: string, registry: RegistryAccess): boolean {
+  try {
+    const adapter = (registry.getTypeByName(typeName) as any)?.strategies?.adapter as string | undefined;
+    return isCrudIncompatibleAdapter(adapter);
+  } catch {
+    return false;
+  }
+}
+
+// Split components into those the CRUD Metadata API can process and those it cannot.
+// `registry` defaults to a fresh RegistryAccess so callers (e.g. commands) need not construct one.
+export function partitionCrudCompatibility<T extends { type: { name: string }; fullName: string }>(
+  components: T[],
+  registry?: RegistryAccess
+): { supported: T[]; skipped: T[] } {
+  const reg = registry ?? new RegistryAccess();
+  const supported: T[] = [];
+  const skipped: T[] = [];
+  for (const cmp of components) {
+    (isCrudIncompatibleTypeName(cmp.type.name, reg) ? skipped : supported).push(cmp);
+  }
+  return { supported, skipped };
+}
+
+// readMetadata calls sent side by side. Measured on 35 Profiles (API 68): 65 seconds one call of 10 at
+// a time, 22 seconds with 5 calls of 10 side by side, 11 seconds with 8 calls of 5, and no error.
+// Kept at 5: an org allows 25 requests longer than 20 seconds at the same time, 5 on a Developer
+// Edition or a trial, and a call of 10 large Profiles can last that long.
+export const DEFAULT_READ_CONCURRENCY = 5;
+const READ_CONCURRENCY_LADDER = [4, 2, 1];
+// Pause before reading again the calls the org refused, longer each time: an instance that is
+// unavailable for half a minute must not fail a backup that retrieved for an hour
+const READ_RETRY_PAUSES_MS = [2000, 5000, 15000, 30000];
+
+// Number of calls sent side by side, largest first: when the org pushes back, the calls it refused
+// are read again at the next size, which is kept for the rest of the run.
+export function parallelReadCallSizes(concurrency?: number | null): number[] {
+  const requested = Number.isFinite(concurrency) ? Math.floor(concurrency as number) : DEFAULT_READ_CONCURRENCY;
+  const max = Math.max(1, requested);
+  return [max, ...READ_CONCURRENCY_LADDER.filter((size) => size < max)];
+}
+
+const TRANSIENT_METADATA_API_ERROR = /ConcurrentRequests|ConcurrentPerOrgLongTxn|SERVER_UNAVAILABLE|ERROR_HTTP_5\d\d/i;
+
+// True for an error that a pause and fewer parallel calls can fix: too many concurrent requests, a
+// server that is unavailable, a dropped connection. The daily API limit (TotalRequests) and an error
+// about the component itself are final.
+export function isTransientMetadataApiError(error: unknown): boolean {
+  if (!error) {
+    return false;
+  }
+  if (isThrottlingError(error)) {
+    return true;
+  }
+  const details = [(error as any)?.name, (error as any)?.errorCode, (error as any)?.code, (error as any)?.message]
+    .filter(Boolean)
+    .join(' ');
+  return TRANSIENT_METADATA_API_ERROR.test(details);
+}
+
+// Types whose entries are permissions: --active-only drops the ones that grant nothing.
+export const ACTIVE_ONLY_TYPES = ['Profile', 'PermissionSet', 'MutingPermissionSet'];
+
+const MAX_TAB_DEFINITIONS = 50000;
+
+// Where a Profile (tabVisibilities) and a Permission Set (tabSettings) keep their tab settings
+const TAB_SETTING_KEYS = ['tabVisibilities', 'tabSettings'];
+
+// Names of the tabs that exist in the org (standard-Account, MyObject__c...), or null when the org
+// can not tell: the tab settings are then all kept. Every page is read, and a dropped connection is
+// tried again: a list that is short or missing one day changes the tab settings of every Profile.
+export async function listValidTabNames(conn: Connection): Promise<Set<string> | null> {
+  try {
+    const queryResult = await retryOnThrottling(async () =>
+      await conn.query<{ Name: string }>('SELECT Name FROM TabDefinition', { autoFetch: true, maxFetch: MAX_TAB_DEFINITIONS })
+    );
+    const names = (queryResult.records || []).map((record) => record.Name).filter(Boolean);
+    return names.length > 0 ? new Set(names) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Drop the entries of a permission metadata read result whose boolean fields are all false
+// (field access with no read and no edit, class access disabled, app not visible and not default...).
+// Entries without any boolean field are always kept: tab visibilities (Hidden included), layout
+// assignments, login IP ranges and login hours carry a meaning even without a "true" in them.
+// readMetadata may return booleans or "true"/"false" strings, both are handled.
+// validTabNames, when given, also drops the tab settings of tabs that do not exist: readMetadata returns
+// one for every standard object, tab or not, and the deployment refuses those
+// ("You can't edit tab settings for X, as it's not a valid tab").
+export function removeInactiveEntries(
+  typeName: string,
+  result: Record<string, any>,
+  validTabNames: Set<string> | null = null
+): { result: Record<string, any>; removedCount: number } {
+  if (!ACTIVE_ONLY_TYPES.includes(typeName)) {
+    return { result, removedCount: 0 };
+  }
+  let removedCount = 0;
+  const filtered: Record<string, any> = {};
+  for (const [key, value] of Object.entries(result)) {
+    if (validTabNames !== null && TAB_SETTING_KEYS.includes(key)) {
+      const tabEntries = toArray(value);
+      const keptTabs = tabEntries.filter((entry: any) => validTabNames.has(entry?.tab));
+      removedCount += tabEntries.length - keptTabs.length;
+      if (keptTabs.length > 0) {
+        filtered[key] = keptTabs;
+      }
+      continue;
+    }
+    const isEntryList = Array.isArray(value) || isPlainObject(value);
+    if (!isEntryList) {
+      filtered[key] = value;
+      continue;
+    }
+    const entries = toArray(value);
+    const kept = entries.filter((entry) => !isInactiveEntry(entry));
+    removedCount += entries.length - kept.length;
+    if (kept.length > 0) {
+      filtered[key] = Array.isArray(value) ? kept : kept[0];
+    }
+  }
+  return { result: filtered, removedCount };
+}
+
+// Partition the component set and turn the incompatible components into `skipped` outcome results,
+// while initializing the empty `successes`/`failures` accumulators shared by read and upsert.
+function initCrudOutcome(
+  componentSet: ComponentSet,
+  registry: RegistryAccess
+): {
+  supported: ReturnType<ComponentSet['toArray']>;
+  successes: CrudComponentResult[];
+  failures: CrudComponentResult[];
+  skippedResults: CrudComponentResult[];
+} {
+  const { supported, skipped } = partitionCrudCompatibility(componentSet.toArray(), registry);
+  const skippedResults: CrudComponentResult[] = skipped.map((cmp) => ({
+    type: cmp.type.name,
+    fullName: cmp.fullName,
+    status: 'skipped',
+  }));
+  return { supported, successes: [], failures: [], skippedResults };
+}
+
+// Build a metadata-format XML document string from a read() result object.
+// `rootElementName` is the metadata type name (e.g. "Profile", "CustomObject").
+export function buildMetadataXml(rootElementName: string, data: Record<string, any>): string {
+  const builder = new XMLBuilder({
+    format: true,
+    indentBy: '    ',
+    ignoreAttributes: false,
+    attributeNamePrefix: '@_',
+    suppressEmptyNode: false,
+  });
+  const xml = builder.build({
+    '?xml': { '@_version': '1.0', '@_encoding': 'UTF-8' },
+    [rootElementName]: { '@_xmlns': METADATA_XMLNS, ...data },
+  });
+  return xml.endsWith('\n') ? xml : xml + '\n';
+}
+
+// Strip properties that must not appear in a metadata-format file body.
+function cleanReadResult(result: Record<string, any>): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { fullName, ...rest } = result;
+  return rest;
+}
+
+// An entry is inactive when it has at least one boolean field and every boolean field is false.
+function isInactiveEntry(entry: any): boolean {
+  if (!isPlainObject(entry)) {
+    return false;
+  }
+  const booleanValues = Object.values(entry).filter(
+    (v) => v === true || v === false || v === 'true' || v === 'false'
+  );
+  return booleanValues.length > 0 && booleanValues.every((v) => v === false || v === 'false');
+}
+
+function isPlainObject(value: unknown): value is Record<string, any> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function toArray<T>(value: T | T[] | null | undefined): T[] {
+  if (value == null) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
+/* ----------------------------------------------------------------------------
+ * Component set resolution (input: -m / -x / -d)
+ * ------------------------------------------------------------------------- */
+
+export interface BuildComponentSetOptions {
+  metadataEntries?: string[];
+  manifestPath?: string;
+  sourceDirs?: string[];
+  packageDirs?: string[];
+  username?: string;
+  // When true, wildcards / bare types are expanded against the org via listMetadata.
+  resolveFromOrg?: boolean;
+}
+
+export async function buildTargetComponentSet(options: BuildComponentSetOptions): Promise<ComponentSet> {
+  const buildOpts: Parameters<typeof ComponentSetBuilder.build>[0] = {};
+  const directoryPaths = options.packageDirs ?? [];
+  if (options.sourceDirs?.length) {
+    buildOpts.sourcepath = options.sourceDirs;
+  }
+  if (options.manifestPath) {
+    buildOpts.manifest = {
+      manifestPath: options.manifestPath,
+      directoryPaths,
+    };
+  }
+  if (options.metadataEntries?.length) {
+    buildOpts.metadata = {
+      metadataEntries: options.metadataEntries,
+      directoryPaths,
+    };
+  }
+  // Org resolution (listMetadata) is only meaningful to expand bare types and wildcards
+  // passed via --metadata. ComponentSetBuilder scopes the org listing by the metadata
+  // entries; with no entries it lists the ENTIRE org and unions it into the set. So for
+  // --source-dir / --manifest (which already name concrete components) we must NOT set
+  // `org`, otherwise a source-dir read pulls every component of every type from the org.
+  if (options.resolveFromOrg && options.username && options.metadataEntries?.length) {
+    buildOpts.org = { username: options.username, exclude: [] };
+  }
+  return ComponentSetBuilder.build(buildOpts);
+}
+
+/* ----------------------------------------------------------------------------
+ * CRUD read (org -> local source files)
+ * ------------------------------------------------------------------------- */
+
+export interface CrudReadOptions {
+  conn: Connection;
+  componentSet: ComponentSet;
+  outputDir: string;
+  packageDirs?: string[];
+  chunkSizeOverride?: number | null;
+  commandThis: any;
+  debug?: boolean;
+  // Drop the permission entries that grant nothing (see removeInactiveEntries)
+  activeOnly?: boolean;
+  // readMetadata calls sent side by side (default DEFAULT_READ_CONCURRENCY, 1 reads one call at a time)
+  concurrency?: number;
+  // Pause function, replaceable in tests
+  sleep?: (ms: number) => Promise<void>;
+}
+
+interface ReadCall {
+  typeName: string;
+  fullNames: string[];
+}
+
+interface MetadataFileSpec {
+  rootElementName: string;
+  data: Record<string, any>;
+}
+
+export async function crudReadMetadatas(options: CrudReadOptions): Promise<CrudMetadataOutcome> {
+  const { conn, componentSet, outputDir, chunkSizeOverride, commandThis, debug, activeOnly } = options;
+  const registry = new RegistryAccess();
+  // Read once, and only when a type that carries tab settings is read with activeOnly
+  let validTabNames: Set<string> | null | undefined;
+
+  // Set aside types the CRUD Metadata API cannot read (Apex, LWC, StaticResource, ...).
+  const { supported, successes, failures, skippedResults } = initCrudOutcome(componentSet, registry);
+  const byType = groupByType(supported, (cmp) => cmp.type.name);
+
+  // Accumulate metadata-format files (top-level types and parent-wrapped child types).
+  const fileSpecs = new Map<string, MetadataFileSpec>();
+  const tmpMdRoot = await createTempDir();
+
+  const readCalls: ReadCall[] = [];
+  for (const [typeName, comps] of Object.entries(byType)) {
+    const size = resolveEffectiveChunkSize(typeName, chunkSizeOverride);
+    for (const batch of chunkArray(comps, size)) {
+      readCalls.push({ typeName, fullNames: batch.map((cmp) => cmp.fullName) });
+    }
+  }
+
+  // The calls leave several at a time: a Profile takes about 2 seconds to read, whatever the number
+  // of Profiles in the call, and the org serves the calls side by side.
+  const readErrors = new Map<number, unknown>();
+  let pushBacks = 0;
+  const readResults = await mapInAdaptiveBatchesSettled(
+    readCalls,
+    async (readCall) => {
+      if (debug) {
+        uxLog('other', commandThis, c.grey(`readMetadata ${readCall.typeName}: ${readCall.fullNames.join(', ')}`));
+      }
+      return toArray(await conn.metadata.read(readCall.typeName as any, readCall.fullNames));
+    },
+    {
+      sizes: parallelReadCallSizes(options.concurrency),
+      shouldBackoff: isTransientMetadataApiError,
+      // The Metadata API sends no Retry-After
+      retryAfter: () => READ_RETRY_PAUSES_MS[Math.min(pushBacks++, READ_RETRY_PAUSES_MS.length - 1)],
+      sleep: options.sleep,
+      onBackoff: (nextSize) => {
+        uxLog('log', commandThis, c.grey(t('crudReadFewerParallelCalls', { count: String(nextSize) })));
+      },
+      onError: (error, _readCall, index) => {
+        readErrors.set(index, error);
+      },
+    }
+  );
+
+  for (let index = 0; index < readCalls.length; index++) {
+    const { typeName, fullNames } = readCalls[index];
+    const results = readResults[index];
+    if (results === undefined) {
+      const error = readErrors.get(index);
+      const errorMessage = (error as Error)?.message || String(error ?? t('crudComponentNotFoundInOrg'));
+      for (const fullName of fullNames) {
+        failures.push({ type: typeName, fullName, status: 'error', error: errorMessage });
+      }
+      continue;
+    }
+    // Map results back to the requested members by fullName (order is not guaranteed).
+    const resultsByName = new Map<string, any>();
+    for (const res of results) {
+      if (res?.fullName) {
+        resultsByName.set(res.fullName, res);
+      }
+    }
+    for (const fullName of fullNames) {
+      const res = resultsByName.get(fullName) ?? (results.length === 1 && fullNames.length === 1 ? results[0] : null);
+      if (!res?.fullName) {
+        failures.push({ type: typeName, fullName, status: 'error', error: t('crudComponentNotFoundInOrg') });
+        continue;
+      }
+      if (activeOnly && validTabNames === undefined && ACTIVE_ONLY_TYPES.includes(typeName)) {
+        validTabNames = await listValidTabNames(conn);
+        if (validTabNames === null) {
+          uxLog('warning', commandThis, c.yellow(t('crudActiveOnlyTabsNotChecked')));
+        }
+      }
+      const { result: readResult, removedCount } = activeOnly
+        ? removeInactiveEntries(typeName, res, validTabNames ?? null)
+        : { result: res, removedCount: 0 };
+      accumulateMetadataFile(fileSpecs, registry, typeName, fullName, readResult);
+      successes.push({
+        type: typeName,
+        fullName,
+        status: 'success',
+        ...(removedCount > 0 ? { inactiveEntriesRemoved: removedCount } : {}),
+      });
+    }
+  }
+
+  // Write all metadata-format files, then convert to source format (handles decomposition).
+  if (fileSpecs.size > 0) {
+    for (const [relPath, spec] of fileSpecs.entries()) {
+      const absPath = path.join(tmpMdRoot, relPath);
+      await fs.ensureDir(path.dirname(absPath));
+      await fs.writeFile(absPath, buildMetadataXml(spec.rootElementName, spec.data));
+    }
+    const writtenFiles = await convertMetadataDirToSource(tmpMdRoot, outputDir, options.packageDirs);
+    // Attach written file paths to successes where we can match them.
+    for (const success of successes) {
+      const match = writtenFiles.find((f) => f.type === success.type && f.fullName === success.fullName);
+      if (match) {
+        success.filePath = match.filePath;
+      }
+    }
+  }
+
+  return { successes, failures, skipped: skippedResults };
+}
+
+// Place a read result into the in-memory file map, wrapping child types under their parent.
+function accumulateMetadataFile(
+  fileSpecs: Map<string, MetadataFileSpec>,
+  registry: RegistryAccess,
+  typeName: string,
+  fullName: string,
+  result: Record<string, any>
+): void {
+  const type = registry.getTypeByName(typeName);
+  const parentType = registry.getParentType(typeName);
+  if (parentType) {
+    // Child type (e.g. RecordType under CustomObject): nest under a synthesized parent file.
+    const parentName = fullName.split('.')[0];
+    const childName = fullName.includes('.') ? fullName.slice(fullName.indexOf('.') + 1) : fullName;
+    const relPath = path.join(parentType.directoryName, `${parentName}.${parentType.suffix}`);
+    const collectionKey = type.directoryName;
+    const spec = fileSpecs.get(relPath) ?? { rootElementName: parentType.name, data: {} as Record<string, any> };
+    const childData = { ...cleanReadResult(result), fullName: childName };
+    (spec.data[collectionKey] ||= []).push(childData);
+    fileSpecs.set(relPath, spec);
+    return;
+  }
+  const relPath = path.join(type.directoryName, `${fullName}.${type.suffix}`);
+  fileSpecs.set(relPath, { rootElementName: type.name, data: cleanReadResult(result) });
+}
+
+interface ConvertedFile {
+  type: string;
+  fullName: string;
+  filePath: string;
+}
+
+// Resolve a metadata-format directory and convert it to source format into outputDir.
+// Merges with any existing source in packageDirs so files are overwritten in place.
+async function convertMetadataDirToSource(
+  mdRoot: string,
+  outputDir: string,
+  packageDirs?: string[]
+): Promise<ConvertedFile[]> {
+  const resolver = new MetadataResolver();
+  const components = resolver.getComponentsFromPath(mdRoot);
+  let mergeWith: any[] = [];
+  if (packageDirs?.length) {
+    const existing = packageDirs.filter((dir) => fs.existsSync(dir));
+    if (existing.length) {
+      mergeWith = ComponentSet.fromSource(existing).getSourceComponents().toArray();
+    }
+  }
+  const result = await new MetadataConverter().convert(components, 'source', {
+    type: 'merge',
+    mergeWith,
+    defaultDirectory: outputDir,
+  });
+  return (result.converted ?? []).map((cmp: any) => ({
+    type: cmp.type.name,
+    fullName: cmp.fullName,
+    filePath: cmp.xml ?? '',
+  }));
+}
+
+/* ----------------------------------------------------------------------------
+ * CRUD upsert (local source files -> org)
+ * ------------------------------------------------------------------------- */
+
+export interface CrudUpsertOptions {
+  conn: Connection;
+  componentSet: ComponentSet;
+  chunkSizeOverride?: number | null;
+  commandThis: any;
+  debug?: boolean;
+}
+
+export async function crudUpsertMetadatas(options: CrudUpsertOptions): Promise<CrudMetadataOutcome> {
+  const { conn, componentSet, chunkSizeOverride, commandThis, debug } = options;
+  const registry = new RegistryAccess();
+
+  // Set aside types the CRUD Metadata API cannot deploy (Apex, LWC, StaticResource, ...).
+  const { supported, successes, failures, skippedResults } = initCrudOutcome(componentSet, registry);
+  if (supported.length === 0) {
+    return { successes, failures, skipped: skippedResults };
+  }
+
+  // Convert local source into metadata format (recomposes decomposed types into a single file).
+  const tmpMdRoot = await createTempDir();
+  const convertResult = await new MetadataConverter().convert(componentSet, 'metadata', {
+    type: 'directory',
+    outputDirectory: tmpMdRoot,
+  });
+
+  // Upsert at the top-level-type granularity (child types live inside their parent file).
+  const parser = new XMLParser({ ignoreAttributes: true, parseTagValue: false, trimValues: true });
+  const seen = new Set<string>();
+  const payloadsByType = groupByType(
+    (convertResult.converted ?? []).filter(
+      (cmp: any) =>
+        cmp.xml && !registry.getParentType(cmp.type.name) && !isCrudIncompatibleTypeName(cmp.type.name, registry)
+    ),
+    (cmp: any) => cmp.type.name
+  );
+
+  for (const [typeName, comps] of Object.entries(payloadsByType)) {
+    const size = resolveEffectiveChunkSize(typeName, chunkSizeOverride);
+    // De-duplicate components that map to the same file.
+    const uniqueComps = (comps as any[]).filter((cmp) => {
+      const key = `${typeName}:${cmp.fullName}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+    const payloads = uniqueComps
+      .map((cmp) => {
+        try {
+          const fileContent = fs.readFileSync(cmp.xml, 'utf8');
+          const parsed = parser.parse(fileContent);
+          const body = parsed[typeName] ?? {};
+          delete body['@_xmlns'];
+          return { fullName: cmp.fullName, ...body };
+        } catch (e) {
+          failures.push({ type: typeName, fullName: cmp.fullName, status: 'error', error: (e as Error).message });
+          return null;
+        }
+      })
+      .filter((p): p is Record<string, any> => p !== null);
+
+    for (const batch of chunkArray(payloads, size)) {
+      try {
+        if (debug) {
+          uxLog('other', commandThis, c.grey(`upsertMetadata ${typeName}: ${batch.map((b) => b.fullName).join(', ')}`));
+        }
+        const upsertResults = toArray(await conn.metadata.upsert(typeName as any, batch));
+        const resultsByName = new Map<string, any>();
+        for (const res of upsertResults) {
+          if (res?.fullName) {
+            resultsByName.set(res.fullName, res);
+          }
+        }
+        for (const payload of batch) {
+          const res = resultsByName.get(payload.fullName) ?? (upsertResults.length === 1 ? upsertResults[0] : null);
+          if (res?.success) {
+            successes.push({ type: typeName, fullName: payload.fullName, status: 'success', created: res.created === true });
+          } else {
+            const errors = toArray(res?.errors)
+              .map((err: any) => err?.message ?? String(err))
+              .join('; ');
+            failures.push({ type: typeName, fullName: payload.fullName, status: 'error', error: errors || t('crudUpsertFailed') });
+          }
+        }
+      } catch (e) {
+        for (const payload of batch) {
+          failures.push({ type: typeName, fullName: payload.fullName, status: 'error', error: (e as Error).message });
+        }
+      }
+    }
+  }
+
+  return { successes, failures, skipped: skippedResults };
+}

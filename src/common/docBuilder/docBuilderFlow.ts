@@ -1,10 +1,12 @@
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLBuilder } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import * as path from "path";
 import { prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
-import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
+import { mdTableCell } from "../gitProvider/utils/utilsMarkdown.js";
 import fs from "fs";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderFlow extends DocBuilderRoot {
 
@@ -13,17 +15,26 @@ export class DocBuilderFlow extends DocBuilderRoot {
   public placeholder = "<!-- Flow description -->";
   public xmlRootKey = "Flow";
 
-  public static buildIndexTable(prefix: string, flowDescriptions: any[], outputMarkdownRoot: string, filterObject: string | null = null): string[] {
+  // Process Builders are Flows under the hood, so they are listed by this same table. Their
+  // section is named apart: their index page used to be titled "Flows", and an object page
+  // displayed "Related Flows" twice, once for each of the two tables.
+  public static buildIndexTable(
+    prefix: string,
+    flowDescriptions: any[],
+    outputMarkdownRoot: string,
+    filterObject: string | null = null,
+    sectionTitle: { all: string, related: string } = { all: t('docMdFlows'), related: t('docMdRelatedFlows') }
+  ): string[] {
     const filteredFlows = filterObject ? flowDescriptions.filter(flow => flow.object === filterObject || flow.impactedObjects.includes(filterObject)) : flowDescriptions;
     if (filteredFlows.length === 0) {
       return [];
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Flows" : "## Flows",
+      filterObject ? `## ${sectionTitle.related}` : `## ${sectionTitle.all}`,
       "",
-      "| Object | Name      | Type | Description |",
-      "| :----  | :-------- | :--: | :---------- | "
+      `| ${t('docMdColObject')} | ${t('docMdColName')} | ${t('docMdColType')} | ${t('docMdColDescription')} | ${t('docMdColStatus')} |`,
+      "| :----  | :-------- | :--: | :---------- | :----- |"
     ]);
     for (const flow of filteredFlows) {
       const outputFlowHistoryMdFile = path.join(outputMarkdownRoot, "flows", flow.name + "-history.md");
@@ -31,7 +42,7 @@ export class DocBuilderFlow extends DocBuilderRoot {
         `[${flow.name}](${prefix}${flow.name}.md) [🕒](${prefix}${flow.name}-history.md)` :
         `[${flow.name}](${prefix}${flow.name}.md)`;
       lines.push(...[
-        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} |`
+        `| ${flow.object || "💻"} | ${flowNameCell} | ${prettifyFieldName(flow.type)} | ${mdTableCell(flow.description)} | ${flow.status || ""} |`
       ]);
     }
     lines.push("");
@@ -40,7 +51,7 @@ export class DocBuilderFlow extends DocBuilderRoot {
 
   public async stripXmlForAi(): Promise<string> {
     const xmlStringStripped = this.metadataXml.replace(/<locationX>.*?<\/locationX>\s*|<locationY>.*?<\/locationY>\s*/g, '');
-    const xmlObj = new XMLParser().parse(xmlStringStripped);
+    const xmlObj = getLargeXmlParser().parse(xmlStringStripped);
     const xmlStripped = new XMLBuilder().build(xmlObj);
     return xmlStripped;
   }

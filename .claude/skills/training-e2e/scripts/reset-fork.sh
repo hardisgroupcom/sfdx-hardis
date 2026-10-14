@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# Puts the fork back to what a learner gets from a brand new fork: main and the
+# training/start-level-* branches at the course's latest commit, no other branch,
+# no secret, no open Pull Request. Then clones the shared repository into $RUN,
+# which is what a learner does.
+#
+#   bash reset-fork.sh            # reset from the course's main
+#   REF=feat/something bash reset-fork.sh
+#
+# Run this before every walk. A re-walk on a dirty fork produces failures that
+# belong to the previous run, and three of the five runs so far lost time to one.
+set -e
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=env.sh
+source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
+REF=${REF:-main}
+
+# The fork is restored from $UPSTREAM, so read it from $UPSTREAM rather than
+# from whatever $COURSE's origin happens to be. A course clone whose origin is
+# the fork itself would otherwise reset the fork from the fork.
+git -C "$COURSE" fetch -q "https://github.com/$UPSTREAM.git" \
+  "+refs/heads/*:refs/remotes/e2e-upstream/*"
+
+# A fork that does not exist has nothing to reset: every call below would die
+# on a 404 that says nothing. Only the learner's copy is cloned then, and "Set
+# up my training environment" creates the fork, which is what a learner's first
+# run does. Anything but a 404 (an expired token, a rate limit, the network) is
+# not "no fork": stop, or the walk would start on the fork of the last run.
+FORK_STATE=$(gh api "repos/$FORK" -q .full_name 2>&1) && FORK_EXISTS=yes || FORK_EXISTS=""
+if [ -z "$FORK_EXISTS" ] && ! echo "$FORK_STATE" | grep -q "HTTP 404"; then
+  echo "Cannot read $FORK: $FORK_STATE"
+  exit 1
+fi
+
+if [ -n "$FORK_EXISTS" ]; then
+  echo "resetting $FORK from $UPSTREAM@$REF"
+  for n in $(gh pr list -R "$FORK" --state open --json number -q '.[].number'); do gh pr close "$n" -R "$FORK" >/dev/null; done
+  for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do gh api -X DELETE "repos/$FORK/branches/$b/protection" >/dev/null 2>&1 || true; done
+
+  git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/$REF:refs/heads/main"
+  for lvl in 1 2 3; do
+    git -C "$COURSE" rev-parse -q --verify "e2e-upstream/training/start-level-$lvl" >/dev/null &&
+      git -C "$COURSE" push -q -f "https://github.com/$FORK.git" "e2e-upstream/training/start-level-$lvl:refs/heads/training/start-level-$lvl"
+  done
+
+  for b in $(gh api "repos/$FORK/branches" --paginate -q '.[].name'); do
+    case $b in main | gh-pages | training/start-level-*) ;; *) gh api -X DELETE "repos/$FORK/git/refs/heads/$b" >/dev/null ;; esac
+  done
+  for s in $(gh api "repos/$FORK/actions/secrets" -q '.secrets[].name'); do gh secret delete "$s" -R "$FORK" >/dev/null; done
+else
+  echo "$FORK does not exist: nothing to reset. Lab 1.2 (training.mjs init) will create it."
+fi
+
+# The learner clones the shared repository, not their fork: "Set up my training
+# environment" is what renames origin to upstream and adds the fork as origin.
+# Cloning the fork here would skip that step and take init down its other path.
+# A VS Code holding the clone (the lab driver opens it) makes this fail with
+# "Device or resource busy", after the fork has already been reset. Say so, and
+# say what to do, rather than dying on a message nobody can act on.
+if [ -d "$RUN" ] && ! rm -rf "$RUN" 2>/dev/null; then
+  echo "${FORK_EXISTS:+The fork is reset, but }$RUN could not be removed: something holds it open,"
+  echo "usually a VS Code window (the lab driver opens the clone)."
+  echo "Close it, or run again with another clone:  RUN=/c/git/training-run2 bash reset-fork.sh"
+  exit 1
+fi
+git clone -q "https://github.com/$UPSTREAM.git" "$RUN"
+git -C "$RUN" checkout -q -B main "origin/$REF"
+echo "${FORK_EXISTS:+fork reset, }$RUN cloned from $UPSTREAM at $(git -C "$RUN" log --oneline -1)"

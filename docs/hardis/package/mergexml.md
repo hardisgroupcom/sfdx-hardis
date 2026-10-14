@@ -27,17 +27,28 @@ The command's technical implementation involves:
 - **Interactive Prompts:** If no `package.xml` files are specified, it uses the `prompts` library to allow the user to interactively select files to merge.
 - **`appendPackageXmlFilesContent` Utility:** The core merging logic is handled by the `appendPackageXmlFilesContent` utility function. This function reads the content of each input `package.xml` file, combines their metadata types and members, and writes the consolidated content to the specified result file.
 - **XML Manipulation:** Internally, `appendPackageXmlFilesContent` parses the XML of each `package.xml`, merges the `<types>` and `<members>` elements, and then rebuilds the XML structure for the output file.
-- **File System Operations:** It uses `fs-extra` to ensure the output directory exists and to write the merged `package.xml` file.
+- **File System Operations:** It uses Node.js `fs` to ensure the output directory exists and to write the merged `package.xml` file.
 - **WebSocket Communication:** It uses `WebSocketClient.requestOpenFile` to open the generated merged `package.xml` file in VS Code for immediate review.
 </details>
+
+### Agent Mode
+
+Use `--agent` to disable all interactive prompts. In agent mode:
+
+- `--packagexmls`: Comma-separated list of package.xml files to merge. If omitted, all matching files from the folder/pattern are processed automatically.
+- `--folder` and `--pattern`: Used to discover files when `--packagexmls` is not provided.
+- `--result`: Output file name (default: `manifest/package-merge.xml`).
+
+All interactive file selection prompts are skipped.
 
 
 ## Parameters
 
 | Name               |  Type   | Description                                                                                  |      Default      | Required | Options |
 |:-------------------|:-------:|:---------------------------------------------------------------------------------------------|:-----------------:|:--------:|:-------:|
+| agent              | boolean | Run in non-interactive mode for agents and automation                                        |                   |          |         |
 | debug              | boolean | debug                                                                                        |                   |          |         |
-| flags-dir          | option  | undefined                                                                                    |                   |          |         |
+| flags-dir          | option  | Import flag values from a directory.                                                         |                   |          |         |
 | folder<br/>-f      | option  | Root folder                                                                                  |     manifest      |          |         |
 | json               | boolean | Format output as json.                                                                       |                   |          |         |
 | packagexmls<br/>-p | option  | Comma separated list of package.xml files to merge. Will be prompted to user if not provided |                   |          |         |
@@ -58,6 +69,10 @@ $ sf hardis:package:mergexml --folder packages --pattern /**/*.xml --result myMe
 
 ```shell
 $ sf hardis:package:mergexml --packagexmls "config/mypackage1.xml,config/mypackage2.xml,config/mypackage3.xml" --result myMergedPackage.xml
+```
+
+```shell
+$ sf hardis:package:mergexml --agent
 ```
 
 

@@ -1,0 +1,15 @@
+{
+  "{{S6}}": {
+    "comment": true,
+    "sandboxRowCount": 1,
+    "sandboxes": [
+      {
+        "name": "{{SANDBOX}}",
+        "status": "partial",
+        "leftOutReasons": {
+          "StaticResource:E2E_S3": "keptOrg"
+        }
+      }
+    ]
+  }
+}

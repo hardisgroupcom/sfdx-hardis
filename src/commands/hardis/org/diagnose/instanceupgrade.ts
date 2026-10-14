@@ -2,8 +2,8 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import axios from 'axios';
-import moment from 'moment';
+import { httpGet } from '../../../../common/utils/httpUtils.js';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
@@ -44,9 +44,19 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including the instance name, upgrade date, and days remaining, along with relevant metrics for monitoring dashboards.
 - **User Feedback:** Provides clear messages to the user about the upgrade status and proximity.
 </details>
-`;
 
-  public static examples = ['$ sf hardis:org:diagnose:instanceupgrade'];
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:instanceupgrade --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+
+  public static examples = ['$ sf hardis:org:diagnose:instanceupgrade', '$ sf hardis:org:diagnose:instanceupgrade --agent'];
 
   public static flags: any = {
     debug: Flags.boolean({
@@ -59,6 +69,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -81,7 +95,7 @@ The command's technical implementation involves:
 
     // Get Salesforce instance info
     const instanceStatusUrl = `https://api.status.salesforce.com/v1/instances/${instanceName}/status`;
-    const axiosResponse = await axios.get(instanceStatusUrl);
+    const axiosResponse = await httpGet(instanceStatusUrl);
     const instanceInfo = axiosResponse.data;
     const maintenances = instanceInfo.Maintenances || [];
     orgInfo.maintenanceNextUpgrade = {};
@@ -97,26 +111,27 @@ The command's technical implementation involves:
     }
 
     // Get number of days before next major upgrade
-    const nextUpgradeDate = moment(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
+    const nextUpgradeDate = dateHelper(orgInfo?.maintenanceNextUpgrade?.plannedStartTime);
     const nextMajorUpgradeDateStr = nextUpgradeDate.format("ll");
-    const today = moment();
+    const today = dateHelper();
     const daysBeforeUpgrade = today.diff(nextUpgradeDate, 'days');
 
     // Manage notifications
     const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
     const notifButtons = await getNotificationButtons();
     let notifSeverity: NotifSeverity = 'log';
-    const notifText = `Salesforce instance *${instanceName}* of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (*${daysBeforeUpgrade} days*) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+    const notifText = `Salesforce instance **${instanceName}** of ${orgMarkdown} will be upgraded on **${nextMajorUpgradeDateStr}** (**${daysBeforeUpgrade} days**) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
+    const logText = `Salesforce instance ${instanceName} of ${orgMarkdown} will be upgraded on ${nextMajorUpgradeDateStr} (${daysBeforeUpgrade} days) to ${orgInfo?.maintenanceNextUpgrade?.name}`;
 
     // Change severity according to number of days
     if (daysBeforeUpgrade <= 15) {
       notifSeverity = 'warning';
-      uxLog("warning", this, c.yellow(notifText));
+      uxLog("warning", this, c.yellow(logText));
     } else if (daysBeforeUpgrade <= 30) {
       notifSeverity = 'info';
-      uxLog("success", this, c.green(notifText));
+      uxLog("success", this, c.green(logText));
     } else {
-      uxLog("success", this, c.green(notifText));
+      uxLog("success", this, c.green(logText));
     }
 
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email

@@ -8,14 +8,24 @@ const hook: Hook<'init'> = async (options) => {
   }
   // Set argv as global as sf arch messes with it !
   globalThis.processArgv = [...options.argv];
-  // Dynamically import libraries to improve perfs when other commands are called
-  const fs = (await import('fs-extra')).default;
-  const path = await import('path');
-  const os = await import('os');
-  const { isCI } = await import('../../common/utils/index.js');
-  const dotenv = await import('dotenv');
-  // Handle variables defined in .env file
-  dotenv.config();
+  // Inline isCI check to avoid importing the heavy utils module (~2300 lines + transitive deps)
+  const isCI = process.env.CI != null;
+  // Dynamically import libraries in parallel to improve perfs when other commands are called
+  const [
+    { default: fs },
+    path,
+    os,
+  ] = await Promise.all([
+    import('../../common/utils/fsUtils.js'),
+    import('path'),
+    import('os'),
+  ]);
+  // Handle variables defined in .env file (existing environment variables are not overridden)
+  try {
+    process.loadEnvFile();
+  } catch {
+    // No .env file in the current directory
+  }
   // Debug env variables
   if (process.env.SFDX_HARDIS_DEBUG_ENV === 'true') {
     console.log('ENV VARS:\n' + JSON.stringify(process.env, null, 2));
@@ -25,14 +35,39 @@ const hook: Hook<'init'> = async (options) => {
     // Initialize log file name (in the current directory if not empty)
     const reportsDir =
       fs.readdirSync(process.cwd()).length === 0 ? path.join(os.tmpdir(), 'hardis-report') : './hardis-report';
-    await fs.ensureDir(reportsDir);
     const commandsLogFolder = path.join(reportsDir, 'commands');
-    await fs.ensureDir(commandsLogFolder);
+    await fs.ensureDir(commandsLogFolder); // ensureDir creates parent directories too
     const logFileName = (new Date().toJSON().slice(0, 19) + '-' + commandId + '.log').replace(/:/g, '-');
     const hardisLogFile = path.resolve(path.join(commandsLogFolder, logFileName));
     globalThis.hardisLogFileStream = fs.createWriteStream(hardisLogFile, { flags: 'a' });
-    globalThis.hardisLogFileStream.write(commandId + ' ' + globalThis.processArgv.join(' ') + '\n');
+    globalThis.hardisLogFileStream.write(commandId + ' ' + maskSecretArgs(globalThis.processArgv).join(' ') + '\n');
   }
 };
+
+// Values of secret-carrying flags (--grafana-token, --password, --client-secret=xxx, ...)
+// must not land in the persisted command log
+function maskSecretArgs(argv: string[]): string[] {
+  const secretFlagRegex = /^--?[\w-]*(token|password|secret|api-?key)[\w-]*$/i;
+  const masked: string[] = [];
+  let previousIsSecretFlag = false;
+  for (const arg of argv) {
+    // Mask only actual values: a boolean secret flag followed by another flag must not
+    // swallow that flag from the log
+    if (previousIsSecretFlag && !arg.startsWith('-')) {
+      masked.push('***');
+      previousIsSecretFlag = false;
+      continue;
+    }
+    previousIsSecretFlag = false;
+    const inlineMatch = /^(--?[\w-]*(?:token|password|secret|api-?key)[\w-]*)=(.*)$/i.exec(arg);
+    if (inlineMatch) {
+      masked.push(`${inlineMatch[1]}=***`);
+      continue;
+    }
+    previousIsSecretFlag = secretFlagRegex.test(arg);
+    masked.push(arg);
+  }
+  return masked;
+}
 
 export default hook;

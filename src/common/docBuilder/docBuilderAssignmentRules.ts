@@ -1,6 +1,7 @@
-import {DocBuilderRoot} from "./docBuilderRoot.js";
-import {PromptTemplate} from "../aiProvider/promptTemplates.js";
-import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
+import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { PromptTemplate } from "../aiProvider/promptTemplates.js";
+import { RulesBuilderUtil } from "../utils/rulesBuilderUtil.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
@@ -10,15 +11,15 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
   public xmlRootKey = "assignmentRule";
 
   public static buildIndexTable(prefix: string, assignmentRulesDescriptions: any, filterObject: string | null = null) {
-    const filteredAssignmentRules = filterObject ? assignmentRulesDescriptions.filter(assignmentRule => assignmentRule.impactedObjects.includes(filterObject)) : assignmentRulesDescriptions;
+    const filteredAssignmentRules = filterObject ? assignmentRulesDescriptions.filter(assignmentRule => (assignmentRule.impactedObjects || []).includes(filterObject)) : assignmentRulesDescriptions;
     if (filteredAssignmentRules.length === 0) {
       return [];
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Assignment Rules" : "## Assignment Rules",
+      filterObject ? `## ${t('docMdRelatedAssignmentRules')}` : `## ${t('docMdAssignmentRules')}`,
       "",
-      "| Assignment Rule | Is Active |",
+      `| ${t('docMdColAssignmentRule')} | ${t('docMdColIsActive')} |`,
       "|     :----       |  :--: | "
     ]);
 
@@ -39,11 +40,13 @@ export class DocBuilderAssignmentRules extends DocBuilderRoot {
 
     await ruleBuilderUtil.buildInitialMarkDownLinesForRules(this.parsedXmlObject);
 
-    const assignmentRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
+    const assignmentRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
+      `# ${this.metadataName}`,
+      '',
       '<!-- Assignment Rule description -->',
-      '## Assignment Rules list',
+      `## ${t('docMdAssignmentRulesList')}`,
       ...assignmentRuleTableLines,
       '',
     ];

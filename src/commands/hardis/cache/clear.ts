@@ -5,7 +5,9 @@ import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { clearCache } from '../../../common/cache/index.js';
+import { clearOrgApiCache } from '../../../common/cache/orgApiCache.js';
 import { uxLog } from '../../../common/utils/index.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -29,14 +31,33 @@ This command is designed to remove temporary files, stored configurations, and o
 The command's technical implementation is straightforward:
 
 - **Direct Function Call:** It directly invokes the \`clearCache()\` function, which is imported from uri../../../common/cache/index.jsuri.
+- **Org API cache:** It also removes the results of technical API calls cached per org Id (\`listMetadata\`, \`EntityDefinition\`...) under \`~/.sfdx/sfdx-hardis-cache/orgs/\`.
 - **Cache Management Logic:** The uriclearCache()\` function encapsulates the logic for identifying and removing the specific files and directories that constitute the sfdx-hardis cache.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:cache:clear --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:cache:clear'];
+  public static examples = ['$ sf hardis:cache:clear',
+    '$ sf hardis:cache:clear --agent',];
 
+  // Keep in sync with HIDDEN_PANEL_COMMANDS in common/websocketClient.ts (enforced by a unit test)
   public static uiConfig = { hide: true };
+  public static disableWebsocket = true;
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -55,9 +76,10 @@ The command's technical implementation is straightforward:
 
   public async run(): Promise<AnyJson> {
     await clearCache();
-    uxLog("action", this, c.cyan('sfdx-hardis cache cleared.'));
+    await clearOrgApiCache();
+    uxLog("action", this, c.cyan(t('sfdxHardisCacheCleared')));
     return {
-      message: 'sfdx-hardis cache cleared.',
+      message: t('sfdxHardisCacheCleared'),
     };
   }
 }

@@ -1,12 +1,13 @@
-import { UtilsAi } from "./utils.js";
+import { UtilsAi } from "./utils/utils.js";
 import path from "path";
-import fs from "fs-extra";
+import fs from '../utils/fsUtils.js';
 import { PromptTemplateDefinition } from "./promptTemplates/types.js";
 import { PROMPT_TEMPLATES as IMPORTED_PROMPT_TEMPLATES } from "./promptTemplates/index.js";
 import { PROMPT_VARIABLES, PromptVariable } from "./promptTemplates/variablesIndex.js";
 import { uxLog } from "../utils/index.js";
 
 export type PromptTemplate =
+  "PROMPT_CODING_AGENT_FIX_DEPLOYMENT_ERRORS" |
   "PROMPT_SOLVE_DEPLOYMENT_ERROR" |
   "PROMPT_DESCRIBE_FLOW" |
   "PROMPT_DESCRIBE_FLOW_DIFF" |
@@ -22,8 +23,15 @@ export type PromptTemplate =
   "PROMPT_DESCRIBE_ASSIGNMENT_RULES" |
   "PROMPT_DESCRIBE_APPROVAL_PROCESS" |
   "PROMPT_DESCRIBE_LWC" |
+  "PROMPT_DESCRIBE_AURA_BUNDLE" |
+  "PROMPT_DESCRIBE_VISUALFORCE_PAGE" |
+  "PROMPT_DESCRIBE_VISUALFORCE_COMPONENT" |
   "PROMPT_DESCRIBE_AUTORESPONSE_RULES" |
-  "PROMPT_DESCRIBE_ESCALATION_RULES";
+  "PROMPT_DESCRIBE_ESCALATION_RULES" |
+  "PROMPT_DESCRIBE_WORKFLOW_RULE" |
+  "PROMPT_MONITORING_SUMMARY" |
+  "PROMPT_MONITORING_PPTX_REPORT" |
+  "PROMPT_RELEASE_SUMMARY";
 
 // Loads a template, allowing override from local file, with caching
 const promptTemplateCache: Record<string, PromptTemplateDefinition> = {};
@@ -38,9 +46,11 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
     throw new Error(`Unknown prompt template: ${template}`);
   }
 
-  // Check for local override (Text file)
-  const localPath = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.txt`);
-  if (fs.existsSync(localPath)) {
+  // Check for local override (.md preferred, .txt for backward compatibility)
+  const localPathMd = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.md`);
+  const localPathTxt = path.resolve(process.cwd(), "config", "prompt-templates", `${template}.txt`);
+  const localPath = fs.existsSync(localPathMd) ? localPathMd : fs.existsSync(localPathTxt) ? localPathTxt : null;
+  if (localPath) {
     try {
       const localTemplate = fs.readFileSync(localPath, "utf-8");
       templateData.text = {
@@ -60,7 +70,7 @@ function getPromptTemplate(template: PromptTemplate): PromptTemplateDefinition {
 // Loads a prompt variable, allowing override from local file, with caching
 const promptVariableCache: Record<string, string> = {};
 
-function getPromptVariable(variable: PromptVariable): string {
+async function getPromptVariable(variable: PromptVariable): Promise<string> {
   if (promptVariableCache[variable]) {
     return promptVariableCache[variable];
   }
@@ -70,9 +80,11 @@ function getPromptVariable(variable: PromptVariable): string {
     throw new Error(`Unknown prompt variable: ${variable}`);
   }
 
-  // Check for local override (Text file)
-  const localPath = path.resolve(process.cwd(), "config", "prompt-templates", `${variable}.txt`);
-  if (fs.existsSync(localPath)) {
+  // Check for local override (.md preferred, .txt for backward compatibility)
+  const localPathMd = path.resolve(process.cwd(), "config", "prompt-templates", `${variable}.md`);
+  const localPathTxt = path.resolve(process.cwd(), "config", "prompt-templates", `${variable}.txt`);
+  const localPath = fs.existsSync(localPathMd) ? localPathMd : fs.existsSync(localPathTxt) ? localPathTxt : null;
+  if (localPath) {
     try {
       const localVariable = fs.readFileSync(localPath, "utf-8");
       uxLog("log", this, `Loaded local prompt variable for ${variable} from ${localPath}`);
@@ -84,13 +96,13 @@ function getPromptVariable(variable: PromptVariable): string {
     }
   }
 
-  const promptsLanguage = UtilsAi.getPromptsLanguage();
+  const promptsLanguage = await UtilsAi.getPromptsLanguage();
   const value = variableData.text?.[promptsLanguage] || variableData.text?.["en"] || "";
   promptVariableCache[variable] = value;
   return value;
 }
 
-export function buildPromptFromTemplate(template: PromptTemplate, variables: object): string {
+export async function buildPromptFromTemplate(template: PromptTemplate, variables: object): Promise<string> {
   const templateData = getPromptTemplate(template);
   const missingVariables = templateData.variables.filter((variable) => !variables[variable.name]);
   if (missingVariables.length > 0) {
@@ -103,12 +115,12 @@ export function buildPromptFromTemplate(template: PromptTemplate, variables: obj
     }
   }
 
-  const promptsLanguage = UtilsAi.getPromptsLanguage();
+  const promptsLanguage = await UtilsAi.getPromptsLanguage();
   let prompt: string = process.env?.[template] || templateData.text?.[promptsLanguage] || (templateData.text?.["en"] + `\n\nIMPORTANT: Please reply in the language corresponding to ISO code "${promptsLanguage}" (for example, in french for "fr", in english for "en", in german for "de", etc.)`);
 
   // Replace prompt variables first (format: {{VARIABLE_NAME}})
   for (const variableName of Object.keys(PROMPT_VARIABLES) as PromptVariable[]) {
-    const variableContent = getPromptVariable(variableName);
+    const variableContent = await getPromptVariable(variableName);
     prompt = prompt.replaceAll(`{{${variableName}}}`, variableContent);
   }
 

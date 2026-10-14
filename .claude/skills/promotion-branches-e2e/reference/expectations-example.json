@@ -1,0 +1,64 @@
+{
+  "1": {
+    "kind": "story",
+    "manualActions": [
+      "e2e-manual-1"
+    ]
+  },
+  "2": {
+    "kind": "story"
+  },
+  "3": {
+    "kind": "story"
+  },
+  "4": {
+    "kind": "story",
+    "manualActions": [
+      "e2e-manual-4"
+    ]
+  },
+  "5": {
+    "kind": "story"
+  },
+  "6": {
+    "kind": "story",
+    "manualActions": [
+      "e2e-manual-6"
+    ]
+  },
+  "7": {
+    "kind": "promotion",
+    "carries": [
+      1,
+      3
+    ]
+  },
+  "8": {
+    "kind": "promotion",
+    "carries": [
+      4
+    ]
+  },
+  "9": {
+    "kind": "promotion",
+    "carries": [
+      3,
+      1
+    ]
+  },
+  "10": {
+    "kind": "promotion",
+    "carries": [
+      4,
+      3,
+      1,
+      6
+    ]
+  },
+  "17": {
+    "kind": "promotion-not-run",
+    "carries": [
+      13
+    ]
+  }
+}

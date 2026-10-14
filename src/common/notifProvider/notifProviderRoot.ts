@@ -1,12 +1,18 @@
 import { SfError } from "@salesforce/core";
 import { uxLog } from "../utils/index.js";
-import type { NotifMessage } from "./types.js";
+import type { NotificationChannel, NotifMessage } from "./types.js";
 
 export abstract class NotifProviderRoot {
   protected token: string;
 
   public getLabel(): string {
     throw new SfError("getLabel should be implemented on this call");
+  }
+
+  // Logical channel this provider belongs to. Used by NotifProvider to map per-notif-type
+  // severity thresholds to providers (messaging covers Slack and Teams; email covers Email; api covers Api).
+  public getChannel(): NotificationChannel {
+    throw new SfError("getChannel should be implemented on this call");
   }
 
   // By default, we don't send logs to other notif targets than API to avoid noise

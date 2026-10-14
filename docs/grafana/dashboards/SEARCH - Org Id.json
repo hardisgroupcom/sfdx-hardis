@@ -1,35 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_GRAFANACLOUD-CLOUDITY-LOGS",
-      "label": "grafanacloud-cloudity-logs",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "loki",
-      "pluginName": "Loki"
-    }
-  ],
-  "__elements": {},
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "12.4.0-19938312174"
-    },
-    {
-      "type": "datasource",
-      "id": "loki",
-      "name": "Loki",
-      "version": "12.4.0-19938312174"
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": [
       {
@@ -49,12 +18,13 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 3638389128646656,
   "links": [],
   "panels": [
     {
       "datasource": {
         "type": "loki",
-        "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+        "uid": "grafanacloud-logs"
       },
       "fieldConfig": {
         "defaults": {
@@ -221,7 +191,7 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "${DS_GRAFANACLOUD-CLOUDITY-LOGS}"
+            "uid": "grafanacloud-logs"
           },
           "direction": "backward",
           "editorMode": "builder",
@@ -251,7 +221,9 @@
           "options": {
             "fields": {
               "All active licenses": {
-                "aggregations": ["last"],
+                "aggregations": [
+                  "last"
+                ],
                 "operation": "aggregate"
               },
               "Salesforce Org Identifier": {
@@ -314,7 +286,6 @@
   "timezone": "browser",
   "title": "SEARCH - Org Id",
   "uid": "sfdx-hardis-search-by-org-id",
-  "version": 4,
-  "weekStart": "",
-  "id": null
+  "version": 2,
+  "weekStart": ""
 }

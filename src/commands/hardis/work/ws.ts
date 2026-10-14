@@ -13,6 +13,8 @@ export default class WebSocketAction extends SfCommand<any> {
   public static description = `
 ## Command Behavior
 
+> **This command does not require human interaction and is suitable for automation and AI agent usage.**
+
 **Performs technical operations related to WebSocket communication, primarily for internal use by the sfdx-hardis VS Code extension.**
 
 This command is not intended for direct end-user interaction. It facilitates communication between the sfdx-hardis CLI and the VS Code Extension, enabling features like real-time status updates and plugin refreshes.
@@ -33,6 +35,7 @@ The command's technical implementation involves:
 </details>
 `;
 
+  // Keep in sync with HIDDEN_PANEL_COMMANDS in common/websocketClient.ts (enforced by a unit test)
   public static uiConfig = { hide: true };
 
   public static examples = ['$ sf hardis:work:ws --event refreshStatus'];

@@ -20,10 +20,13 @@ Key functionalities:
 - **SFDMU Workspace Integration:** Leverages an existing SFDMU workspace (defined by an `export.json` file) to determine which objects and records to export, along with any filtering or transformation rules.
 - **Interactive Workspace Selection:** If the SFDMU workspace path is not provided via the `--path` flag, it interactively prompts the user to select one.
 - **Org Selection:** Ensures that a target Salesforce org is selected (either via the `--target-org` flag or through an interactive prompt) to specify the source of the data export.
+- **Confirmation Before Exporting:** Displays a summary of the objects handled by the workspace (object, operation, external id, filter, mocked fields) followed by the full `export.json`, then asks for confirmation before querying the org.
 
 See this article for a practical example:
 
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -37,23 +40,48 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Required Plugin:** It explicitly lists `sfdmu` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg`
+
+- The `--path` flag (or `--project-name`) is required in agent mode (no interactive workspace selection).
+- The `--target-org` flag is used directly (no interactive org selection prompt).
+- The workspace content is still displayed, but its confirmation prompt is skipped.
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| path<br/>-p       | option  | Path to the sfdmu workspace folder                            |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                |  Type   | Description                                                                                                  | Default | Required | Options |
+|:--------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json                | boolean | Format output as json.                                                                                       |         |          |         |
+| no-prompt<br/>-r    | boolean | Do not prompt for Org, use default org                                                                       |         |          |         |
+| path<br/>-p         | option  | Path to the sfdmu workspace folder                                                                           |         |          |         |
+| project-name<br/>-n | option  | Name of the sfdmu project to use (if not defined, you will be prompted to select one)                        |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o   | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:org:data:export
+```
+
+```shell
+$ sf hardis:org:data:export --project-name MyDataProject --target-org my-org@example.com
+```
+
+```shell
+$ sf hardis:org:data:export --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com
+```
+
+```shell
+$ sf hardis:org:data:export --agent --path ./scripts/data/MyDataProject --target-org myOrg
 ```
 
 

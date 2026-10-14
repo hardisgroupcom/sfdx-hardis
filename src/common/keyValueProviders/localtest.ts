@@ -1,10 +1,11 @@
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import * as os from 'os';
 import { getConfig } from '../../config/index.js';
 import { uxLog } from '../utils/index.js';
 import { KeyValueProviderInterface } from '../utils/keyValueUtils.js';
+import { t } from '../utils/i18n.js';
 
 export class LocalTestProvider implements KeyValueProviderInterface {
   name = 'localtest';
@@ -43,7 +44,7 @@ export class LocalTestProvider implements KeyValueProviderInterface {
         key = `pool_${projectName}`;
       }
       this.poolStorageLocalFileName = path.join(os.homedir(), `poolStorage_${key}.json`);
-      uxLog("log", this, c.grey('Local test storage file: ' + this.poolStorageLocalFileName));
+      uxLog("log", this, c.grey(t('localTestStorageFile') + this.poolStorageLocalFileName));
     }
   }
 

@@ -3,19 +3,20 @@ import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/s
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from "path";
-import { createTempDir, execCommand, uxLog, uxLogTable } from '../../../../common/utils/index.js';
+import { createTempDir, execCommand, removeTempDir, uxLog, uxLogTable } from '../../../../common/utils/index.js';
 import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { CONSTANTS } from '../../../../config/index.js';
-import sortArray from 'sort-array';
+import sortArray from '../../../../common/utils/sortArray.js';
 import { createBlankSfdxProject } from '../../../../common/utils/projectUtils.js';
 import { parseXmlFile } from '../../../../common/utils/xmlUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -81,13 +82,24 @@ The command's technical implementation involves:
 - **Date Calculation:** Uses \`moment\` to calculate the time since the last OAuth token usage.
 - **Report Generation:** It uses \`generateCsvFile\` to create the CSV report of unused Connected Apps.
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
-- **File System Operations:** Uses \`fs-extra\` for creating and removing temporary directories and files.
+- **File System Operations:** Uses Node.js \`fs\` for creating and removing temporary directories and files.
 - **Environment Variable Reading:** Reads the \`ALLOWED_INACTIVE_CONNECTED_APPS\` environment variable to customize the list of ignored Connected Apps.
 </details>
-`;
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unused-connected-apps --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
 
   public static examples = [
     '$ sf hardis:org:diagnose:unused-connected-apps',
+    '$ sf hardis:org:diagnose:unused-connected-apps --agent',
   ];
 
   public static flags: any = {
@@ -105,6 +117,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -127,7 +143,7 @@ The command's technical implementation involves:
     const conn = flags['target-org'].getConnection();
 
     // Collect all Connected Apps
-    uxLog("action", this, c.cyan(`Extracting the whole list of Connected Apps from ${conn.instanceUrl} ...`));
+    uxLog("action", this, c.cyan(t('extractingTheWholeListOfConnectedApps', { conn: conn.instanceUrl })));
     const allConnectedAppsQuery =
       `SELECT Name,CreatedBy.Name,CreatedDate,LastModifiedBy.Name,LastModifiedDate,OptionsAllowAdminApprovedUsersOnly FROM ConnectedApplication ORDER BY Name`;
     const allConnectedAppsQueryRes = await soqlQuery(allConnectedAppsQuery, conn);
@@ -135,28 +151,31 @@ The command's technical implementation involves:
 
     // Collect all Connected Apps metadata in a blank project
     const tmpDirForSfdxProject = await createTempDir();
-    this.tmpSfdxProjectPath = await createBlankSfdxProject(tmpDirForSfdxProject);
-    uxLog("action", this, c.cyan(`Retrieve ConnectedApp Metadatas from ${conn.instanceUrl} ...`));
-    await execCommand(
-      `sf project retrieve start -m ConnectedApp --target-org ${conn.username}`,
-      this,
-      { cwd: this.tmpSfdxProjectPath, fail: true, output: true });
+    try {
+      this.tmpSfdxProjectPath = await createBlankSfdxProject(tmpDirForSfdxProject);
+      uxLog("action", this, c.cyan(t('retrieveConnectedappMetadatasFrom', { conn: conn.instanceUrl })));
+      await execCommand(
+        `sf project retrieve start -m ConnectedApp --target-org ${conn.username}`,
+        this,
+        { cwd: this.tmpSfdxProjectPath, fail: true, output: true });
 
-    // Collect all Connected Apps used in LoginHistory table
-    uxLog("action", this, c.cyan(`Extracting all applications found in LoginHistory object from ${conn.instanceUrl} ...`));
-    const allAppsInLoginHistoryQuery =
-      `SELECT Application FROM LoginHistory GROUP BY Application ORDER BY Application`;
-    const allAppsInLoginHistoryQueryRes = await soqlQuery(allAppsInLoginHistoryQuery, conn);
-    const allAppsInLoginHistoryNames = allAppsInLoginHistoryQueryRes.records.map(loginHistory => loginHistory.Application);
+      // Collect all Connected Apps used in LoginHistory table
+      uxLog("action", this, c.cyan(t('extractingAllApplicationsFoundInLoginhistoryObject', { conn: conn.instanceUrl })));
+      const allAppsInLoginHistoryQuery =
+        `SELECT Application FROM LoginHistory GROUP BY Application ORDER BY Application`;
+      const allAppsInLoginHistoryQueryRes = await soqlQuery(allAppsInLoginHistoryQuery, conn);
+      const allAppsInLoginHistoryNames = allAppsInLoginHistoryQueryRes.records.map(loginHistory => loginHistory.Application);
 
-    // Perform analysis
-    uxLog("action", this, c.cyan(`Starting analysis...`));
-    this.connectedAppResults = await Promise.all(allConnectedApps.map(async (connectedApp) => {
-      return await this.analyzeConnectedApp(allAppsInLoginHistoryNames, connectedApp, conn);
-    }));
-
-    uxLog("log", this, c.grey(`Analysis complete. Deleting temporary project files...`));
-    await fs.rm(tmpDirForSfdxProject, { recursive: true });
+      // Perform analysis
+      uxLog("action", this, c.cyan(`Starting analysis...`));
+      this.connectedAppResults = await Promise.all(allConnectedApps.map(async (connectedApp) => {
+        return await this.analyzeConnectedApp(allAppsInLoginHistoryNames, connectedApp, conn);
+      }));
+    } finally {
+      // A failing analysis must not leave the retrieved ConnectedApp metadata tree behind
+      uxLog("log", this, c.grey(`Deleting temporary project files...`));
+      await removeTempDir(tmpDirForSfdxProject);
+    }
 
     this.connectedAppResults = sortArray(this.connectedAppResults,
       {
@@ -175,10 +194,10 @@ The command's technical implementation involves:
       const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const notifSeverity: NotifSeverity = numberWarnings > 0 ? 'warning' : 'log';
-      const notifText = `${numberWarnings} Connected Apps to check have been found in ${orgMarkdown}`
+      const notifText = `**${numberWarnings}** Connected Apps to check have been found in ${orgMarkdown}`
       let notifDetailText = '';
       for (const connectedApp of this.connectedAppResults.filter(app => app.severity === "warning")) {
-        notifDetailText += `• *${connectedApp.Name}*\n`;
+        notifDetailText += `- **${connectedApp.Name}**\n`;
       }
       const notifAttachments = [{ text: notifDetailText }];
       // Post notif
@@ -202,14 +221,14 @@ The command's technical implementation involves:
         return {
           SeverityIcon: connectedApp.severityIcon,
           ConnectedApp: connectedApp.Name,
-          AppLastModifiedDate: moment(connectedApp.LastModifiedDate).format('ll'),
+          AppLastModifiedDate: dateHelper(connectedApp.LastModifiedDate).format('ll'),
           AppLastModifiedBy: connectedApp.LastModifiedBy,
-          LastOAuthUsageDate: connectedApp.LastOAuthUsageDate ? moment(connectedApp.LastOAuthUsageDate).format('ll') : '',
+          LastOAuthUsageDate: connectedApp.LastOAuthUsageDate ? dateHelper(connectedApp.LastOAuthUsageDate).format('ll') : '',
           LastOAuthUsageBy: connectedApp.LastOAuthUsageDate,
           SeverityReason: connectedApp.severityReason,
         }
       })
-      uxLog("action", this, c.cyan(`Found ${c.bold(numberWarnings)} Connected Apps to check.`));
+      uxLog("action", this, c.cyan(t('foundConnectedAppsToCheck', { numberWarnings: c.bold(numberWarnings) })));
       uxLogTable(this, connectedAppsLight);
 
       // Generate output CSV file
@@ -263,15 +282,15 @@ The command's technical implementation involves:
   }
 
   private async checkOAuthToken(connectedApp: any, conn: any, loginHistoryFound: boolean, severity: NotifSeverity, reason: string) {
-    uxLog("log", this, c.grey(`Looking in OAuthToken for last usage of ${connectedApp.Name}...`));
+    uxLog("log", this, c.grey(t('lookingInOauthtokenForLastUsageOf', { connectedApp: connectedApp.Name })));
     const oAuthTokenQuery = `SELECT AppName,User.Name,LastUsedDate FROM OAuthToken WHERE AppName='${connectedApp.Name.replace(/'/g, "\\'")}' ORDER BY LastUsedDate DESC LIMIT 1`;
     const oAuthTokenQueryRes = await soqlQuery(oAuthTokenQuery, conn);
     const latestOAuthToken = oAuthTokenQueryRes.records.length === 1 ? oAuthTokenQueryRes.records[0] : null;
     if (latestOAuthToken && latestOAuthToken.LastUsedDate) {
       connectedApp.LastOAuthUsageDate = latestOAuthToken.LastUsedDate;
       connectedApp.LastOAuthUsageBy = latestOAuthToken?.User?.Name || 'Not set';
-      const today = moment();
-      const lastUsage = moment(connectedApp.LastOAuthUsageDate);
+      const today = dateHelper();
+      const lastUsage = dateHelper(connectedApp.LastOAuthUsageDate);
       if (today.diff(lastUsage, "months") < 6 && loginHistoryFound === false) {
         severity = 'log';
         reason = "OAuth Token < 6 months";

@@ -2,12 +2,24 @@ import * as fs from "fs";
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { sortCrossPlatform } from "../utils/index.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderApex extends DocBuilderRoot {
 
   public docType = "APEX";
   public promptKey: PromptTemplate = "PROMPT_DESCRIBE_APEX";
   public placeholder = "<!-- Apex description -->";
+
+  // ApexDocGen writes one folder per @group ApexDoc tag and links a class of another group as
+  // ../<group>/<Class>.md (with backslashes on Windows). Every class page is flattened into the
+  // single apex folder of the documentation, and the SObject pages live in the objects folder,
+  // so both shapes of link are rewritten to where the pages actually are.
+  public static flattenApexDocLinks(apexDocContent: string): string {
+    return apexDocContent
+      .replaceAll("..\\custom-objects\\", "../objects/")
+      .replaceAll("../custom-objects/", "../objects/")
+      .replace(/\]\(\.\.[\\/](?!objects[\\/])[^)\\/]+[\\/]([^)\\/]+\.md)\)/g, "]($1)");
+  }
 
   public static buildIndexTable(prefix: string, apexDescriptions: any[], filterObject: string | null = null): string[] {
     const filteredApex = filterObject ? apexDescriptions.filter(apex => apex.impactedObjects.includes(filterObject)) : apexDescriptions;
@@ -16,9 +28,9 @@ export class DocBuilderApex extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Apex Classes" : "## Apex Classes",
+      filterObject ? `## ${t('docMdRelatedApexClasses')}` : `## ${t('docMdApexClasses')}`,
       "",
-      "| Apex Class | Type |",
+      `| ${t('docMdColApexClass')} | ${t('docMdColType')} |`,
       "| :----      | :--: | "
     ]);
     for (const apex of filteredApex) {
@@ -45,13 +57,16 @@ export class DocBuilderApex extends DocBuilderRoot {
       })).filter(apex => apex.relatedClasses.includes(className)).map(apex => apex.name));
     const allRelatedClasses = [...new Set([...relatedClasses, ...reverseRelatedClasses])];
 
-    const lines: string[] = ["## Class Diagram"];
+    const lines: string[] = [`## ${t('docMdClassDiagram')}`];
     lines.push("");
     lines.push("```mermaid");
     lines.push("graph TD");
     lines.push(`  ${className}["${className}"]:::mainApexClass`);
     if (fs.existsSync(`docs/apex/${className}.md`)) {
-      lines.push(`  click ${className} "/objects/${className}/"`);
+      // The main node of the diagram used to link to /objects/, where no Apex class page lives.
+      // The target is relative to the page holding the diagram, so it survives a site that is not
+      // served from the root of its domain: a static resource, or a GitHub Pages project site.
+      lines.push(`  click ${className} "../${className}/"`);
     }
 
     // Declare all classes related to the className
@@ -64,7 +79,7 @@ export class DocBuilderApex extends DocBuilderRoot {
         lines.push(`  ${relatedClassName}["${relatedClassName}"]:::apexClass`);
       }
       if (fs.existsSync(`docs/apex/${relatedClassName}.md`)) {
-        lines.push(`  click ${relatedClassName} "/apex/${relatedClassName}/"`);
+        lines.push(`  click ${relatedClassName} "../${relatedClassName}/"`);
       }
     }
     lines.push("");

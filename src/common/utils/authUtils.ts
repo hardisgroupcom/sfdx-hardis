@@ -1,32 +1,46 @@
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
+import { exec as childExec, spawn as childSpawn } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   createTempDir,
-  execCommand,
   execSfdxJson,
-  findJsonInString,
   getCurrentGitBranch,
-  getExecutionContext,
+  isAgentMode,
   isCI,
   promptInstanceUrl,
+  stripAnsi,
   uxLog,
 } from './index.js';
-import { CONSTANTS, getConfig } from '../../config/index.js';
-import { SfError } from '@salesforce/core';
+import { CONSTANTS, getConfig, getEnvVar } from '../../config/index.js';
+import { SfError, StateAggregator } from '@salesforce/core';
 import { clearCache } from '../cache/index.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { decryptFile } from '../cryptoUtils.js';
-import spawn from 'cross-spawn';
+import { prompts } from './prompts.js';
+import { t } from './i18n.js';
+
+const execAsync = promisify(childExec);
 
 // Options used by authOrg / authenticateUsingDeviceLogin
 export interface AuthOrgOptions {
   checkAuth?: boolean;
+  /** Alias to give the org being connected. When absent, an interactive login keeps the alias
+      the username already has, or asks the user for one with a default built from the instance URL. */
+  alias?: string;
   argv?: string[];
   debug?: boolean;
   scratch?: boolean;
   setDefault?: boolean;
   forceUsername?: string;
+  encryptedCertContent?: string;
+  // When true, do not delete the JWT certificate temp file after login (the caller is
+  // responsible for deleting it later using safeDeleteAuthTempFile). Used by deployment
+  // command actions that refresh their session mid-run (for example "sf agent ...").
+  keepCertFile?: boolean;
+  // Output: when keepCertFile is true, authOrg writes the kept certificate file path here.
+  keptCertFilePath?: string;
   Command?: {
     flags?: Record<string, any>;
     id?: string;
@@ -35,6 +49,177 @@ export interface AuthOrgOptions {
 }
 
 // (removed accidental default export)
+
+/* Extract --target-org / --targetusername / -o / -u value from argv.
+   Supports both "--flag value" and "--flag=value" forms. */
+export function extractTargetOrgFromArgv(argv: string[] | undefined): string | null {
+  if (!argv || argv.length === 0) return null;
+  const flagNames = ['--target-org', '--targetusername', '-o', '-u'];
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    for (const flag of flagNames) {
+      if (arg === flag && i + 1 < argv.length) {
+        return argv[i + 1];
+      }
+      if (arg.startsWith(flag + '=')) {
+        return arg.substring(flag.length + 1);
+      }
+    }
+  }
+  return null;
+}
+
+/* A short, memorable name for an org, built from its instance URL.
+
+   https://acme-dev-dev-ed.develop.my.salesforce.com  ->  acme-dev
+   https://acme-integration.my.salesforce.com         ->  acme-integration
+   https://acme--uat.sandbox.my.salesforce.com        ->  acme--uat
+
+   It is only a default: the user is always free to type something else.
+*/
+export function shortenInstanceUrl(instanceUrl: string): string {
+  const host = (instanceUrl || '')
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/.*$/, '')
+    .toLowerCase();
+  const shortened = host
+    .replace(/\.sandbox\.my\.salesforce\.com$/, '')
+    .replace(/\.develop\.my\.salesforce\.com$/, '')
+    .replace(/\.scratch\.my\.salesforce\.com$/, '')
+    .replace(/\.my\.salesforce\.com$/, '')
+    .replace(/\.lightning\.force\.com$/, '')
+    .replace(/\.my\.site\.com$/, '')
+    .replace(/\.salesforce\.com$/, '')
+    .replace(/-dev-ed$/, '')
+    .replace(/[^a-z0-9\-_]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  // login.salesforce.com and test.salesforce.com say nothing about the org
+  if (shortened === '' || shortened === 'login' || shortened === 'test') {
+    return 'my-org';
+  }
+  return shortened;
+}
+
+// login.salesforce.com and test.salesforce.com are shared by every org: they give nothing to build an alias from
+export function isGenericLoginUrl(instanceUrl: string | null | undefined): boolean {
+  const host = (instanceUrl || '')
+    .replace(/^https?:\/\//i, '')
+    .replace(/\/.*$/, '')
+    .toLowerCase();
+  return host === '' || host === 'login.salesforce.com' || host === 'test.salesforce.com';
+}
+
+export interface OrgAliasDecision {
+  /** Alias to pass to the login command, when it is already known */
+  alias: string | null;
+  /** When to ask the user for an alias: before the login, after it, or never */
+  ask: 'before' | 'after' | 'never';
+}
+
+/* Decides how an org connected with a web login gets its alias.
+
+   Asking before the login lets "sf org login web --alias" name the org in the same call.
+   It needs a suggestion to offer, so it is only possible when the instance URL is the one
+   of the org. With login.salesforce.com or test.salesforce.com the real instance URL is
+   only known once the login is done: the question comes after, followed by "sf alias set".
+*/
+export function decideOrgAlias(input: {
+  /** Alias the login already carries: --alias, Dev Hub alias, --target-org... */
+  carriedAlias?: string | null;
+  /** Alias the username already has, when the username is known before the login */
+  existingAlias?: string | null;
+  instanceUrl: string;
+  /** False in CI and in agent mode, where nobody can answer */
+  interactive: boolean;
+}): OrgAliasDecision {
+  if (input.carriedAlias) {
+    return { alias: input.carriedAlias, ask: 'never' };
+  }
+  if (input.existingAlias) {
+    return { alias: input.existingAlias, ask: 'never' };
+  }
+  if (!input.interactive) {
+    return { alias: null, ask: 'never' };
+  }
+  return { alias: null, ask: isGenericLoginUrl(input.instanceUrl) ? 'after' : 'before' };
+}
+
+// Alias an already known username has, read from the local SF CLI state (no CLI call)
+export async function getAliasOfUsername(username: string | null | undefined): Promise<string | null> {
+  if (!username) {
+    return null;
+  }
+  try {
+    const stateAggregator = await StateAggregator.getInstance();
+    return stateAggregator.aliases.get(username) || null;
+  } catch {
+    return null;
+  }
+}
+
+/* Names an org that is already connected.
+
+   Used when the alias could not be given to the login command itself: the login went
+   through login.salesforce.com or test.salesforce.com, or no login happened at all.
+   Without an alias an org shows up everywhere as its username, and the user has nothing
+   short to type.
+*/
+export async function nameConnectedOrg(username: string, instanceUrl: string): Promise<string | null> {
+  if (!username || username === 'err' || isCI || isAgentMode()) {
+    return null;
+  }
+  const alias = await promptOrgAlias(instanceUrl);
+  if (!alias) {
+    return null;
+  }
+  return await setOrgAlias(alias, username);
+}
+
+// Asks for the alias of an org, with a default value built from its instance URL
+export async function promptOrgAlias(instanceUrl: string): Promise<string | null> {
+  const aliasRes = await prompts({
+    type: 'text',
+    name: 'alias',
+    message: t('whatNameForThisOrg'),
+    description: t('theAliasReplacesTheUsernameEverywhere'),
+    initial: shortenInstanceUrl(instanceUrl),
+  });
+  return (aliasRes.alias || '').trim() || null;
+}
+
+export async function setOrgAlias(alias: string, username: string): Promise<string | null> {
+  // The VS Code UI hides everything after a prompt until the next action log
+  uxLog("action", this, c.cyan(t('namingTheOrg', { alias: alias })));
+  const aliasSetRes = await execSfdxJson(`sf alias set ${alias}=${username}`, this, {
+    fail: false,
+    output: false,
+  });
+  if (aliasSetRes?.status !== 0) {
+    uxLog("warning", this, c.yellow(t('couldNotSetOrgAlias', { alias: alias })));
+    return null;
+  }
+  // Cached org lists still hold the org without its alias
+  await clearCache('sf org list');
+  uxLog("success", this, c.green(t('orgIsNowKnownAs', { org: username, alias: alias })));
+  return alias;
+}
+
+/* Run the sfdx-hardis "auth" hook and make sure an authentication failure is not silently ignored.
+
+   oclif Config.runHook() collects the errors thrown by hooks in its result instead of throwing them,
+   unless the error carries an oclif exit code (which SfError does not). Without this wrapper, a failed
+   web login would let the calling command carry on and display a success message.
+*/
+export async function runAuthHook(commandThis: any, options: AuthOrgOptions): Promise<any> {
+  // Reset the org set by a previous authentication, so callers can detect that this one did not connect anything
+  globalThis.justConnectedOrg = null;
+  const hookResult: any = await commandThis.config.runHook('auth', options);
+  const failure = (hookResult?.failures || [])[0];
+  if (failure) {
+    throw failure.error instanceof Error ? failure.error : new SfError(String(failure.error));
+  }
+  return hookResult;
+}
 
 // Authorize an org with sfdxAuthUrl, manually or with JWT
 export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promise<boolean> {
@@ -133,6 +318,7 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   }
   // Perform authentication
   let updateSfCliCommandOrg = false;
+  let aliasDecision: OrgAliasDecision = { alias: null, ask: 'never' };
   if (doConnect) {
     let logged = false;
     const config = await getConfig('user');
@@ -150,16 +336,35 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         '';
     }
     if (authUrl.includes('force://')) {
-      const authFile = path.join(await createTempDir(), 'sfdxScratchAuth.txt');
-      await fs.writeFile(authFile, authUrl, 'utf8');
-      const authCommand =
-        `sf org login sfdx-url -f ${authFile}` +
-        (isDevHub ? ` --set-default-dev-hub` : (setDefaultOrg ? ` --set-default` : '')) +
-        (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
-      await execCommand(authCommand, this, { fail: true, output: false });
-      uxLog("action", this, c.cyan('Successfully logged using sfdxAuthUrl'));
-      await fs.remove(authFile);
-      return true;
+      const authTmpDir = await createTempDir();
+      const authFile = path.join(authTmpDir, 'sfdxScratchAuth.txt');
+      try {
+        await fs.writeFile(authFile, authUrl, 'utf8');
+        // Same rule as the JWT and web login branches below: the org becomes the default
+        // unless the caller explicitly said not to. `setDefaultOrg` is only computed when
+        // the hook also checks the existing connection, so relying on it here left a CI job
+        // authenticated with no default org, and the very next command failed with
+        // "NoDefaultEnvError: No default environment found".
+        // The technical org is the exception it has always been: it is a second
+        // connection of the same job, and making it the default would send every
+        // command after it to the wrong org.
+        const setDefaultForAuthUrl =
+          options.setDefault ?? (orgAlias !== 'TECHNICAL_ORG');
+        const authCommand =
+          `sf org login sfdx-url -f "${authFile}"` +
+          (isDevHub ? ` --set-default-dev-hub` : setDefaultForAuthUrl ? ' --set-default' : '') +
+          (!orgAlias.includes('force://') ? ` --alias ${orgAlias}` : '');
+        const authUrlRes = await execSfdxJson(authCommand, this, { fail: true, output: false });
+        uxLog("action", this, c.cyan(t('successfullyLoggedUsingSfdxauthurl')));
+        // Publish the connected org, like the JWT and web login branches do, so callers of
+        // runAuthHook() can tell an authentication that connected nothing from this one
+        if (authUrlRes?.result?.username) {
+          globalThis.justConnectedOrg = sanitizeOrg(authUrlRes.result);
+        }
+        return true;
+      } finally {
+        await fs.remove(authTmpDir);
+      }
     }
 
     // Get auth variables, with priority CLI arguments, environment variables, then .sfdx-hardis.yml config file
@@ -169,11 +374,21 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         options.forceUsername :
         typeof cmdFlags.targetusername === 'string'
           ? cmdFlags.targetusername
-          : process.env.TARGET_USERNAME || isDevHub
+          : isDevHub
             ? config.devHubUsername
-            : config.targetUsername || null;
+            : process.env.TARGET_USERNAME
+              ? process.env.TARGET_USERNAME
+              : config.targetUsername || null;
     if (username == null && isCI) {
-      const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
+      // A CI Pull Request check runs on a detached HEAD, so the branch cannot be read
+      // from git. The CI variables hold it, and without them the message named a file
+      // called ".sfdx-hardis.null.yml", which does not help anybody.
+      const gitBranchFormatted =
+        (await getCurrentGitBranch({ formatted: true })) ||
+        getEnvVar('CONFIG_BRANCH') ||
+        getEnvVar('CI_COMMIT_REF_NAME') ||
+        orgAlias ||
+        '<branch>';
       console.error(
         c.yellow(
           `[sfdx-hardis][WARNING] You may have to define ${c.bold(
@@ -195,34 +410,48 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
           ? options.Command.flags.instanceurl
           : (process.env.INSTANCE_URL || '').startsWith('https')
             ? process.env.INSTANCE_URL
-            : config.instanceUrl
-              ? config.instanceUrl
-              : 'https://login.salesforce.com';
+            : isDevHub && config.devHubInstanceUrl
+              ? config.devHubInstanceUrl
+              : config.instanceUrl
+                ? config.instanceUrl
+                : 'https://login.salesforce.com';
     // Get JWT items clientId and certificate key
     const sfdxClientId = await getSfdxClientId(orgAlias, config);
-    const crtKeyfile = await getCertificateKeyFile(orgAlias, config);
+    const crtKeyfile = await getCertificateKeyFile(orgAlias, config, options);
     const usernameArg = options.setDefault === false ? '' : isDevHub ? '--set-default-dev-hub' : '--set-default';
     if (crtKeyfile && sfdxClientId && username) {
       // Login with JWT
-      const loginCommand =
-        'sf org login jwt' +
-        ` ${usernameArg}` +
-        ` --client-id ${sfdxClientId}` +
-        ` --jwt-key-file ${crtKeyfile}` +
-        ` --username ${username}` +
-        ` --instance-url ${instanceUrl}` +
-        (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');
-      const jwtAuthRes = await execSfdxJson(loginCommand, this, {
-        fail: false,
-        output: false
-      });
-      // await fs.remove(crtKeyfile); // Delete private key file from temp folder TODO: move to postrun hook
-      logged = jwtAuthRes.status === 0;
-      if (!logged) {
-        console.error(c.red(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`));
-        process.exit(1);
+      try {
+        const loginCommand =
+          'sf org login jwt' +
+          ` ${usernameArg}` +
+          ` --client-id ${sfdxClientId}` +
+          ` --jwt-key-file "${crtKeyfile}"` +
+          ` --username ${username}` +
+          ` --instance-url ${instanceUrl}` +
+          (orgAlias && !options.forceUsername ? ` --alias ${orgAlias}` : '');
+        const jwtAuthRes = await execSfdxJson(loginCommand, this, {
+          fail: false,
+          output: false
+        });
+        logged = jwtAuthRes.status === 0;
+        if (!logged) {
+          throw new SfError(`[sfdx-hardis][ERROR] JWT login error: \n${JSON.stringify(jwtAuthRes)}`);
+        }
       }
-    } else if (!isCI) {
+      catch (e) {
+        uxLog("error", this, c.red(`JWT login failed for org ${orgAlias}. Error: ${(e as Error).message}`));
+      }
+      finally {
+        if (options.keepCertFile) {
+          // Keep the certificate file so the caller (for example a deployment command action)
+          // can use it while its command runs, then delete it afterwards.
+          options.keptCertFilePath = crtKeyfile;
+        } else {
+          await safeDeleteAuthTempFile(crtKeyfile);
+        }
+      }
+    } else if (!isCI && !isAgentMode()) {
       // Login with web auth
       const orgLabel = `org ${orgAlias}`;
       console.warn(
@@ -235,62 +464,60 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
 
       if (isCI) {
         console.error(
-          c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+          c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`)
         );
         throw new SfError(
           `In CI context, you may define:
                 - a .sfdx-hardis.yml file with instanceUrl and targetUsername properties (or INSTANCE_URL and TARGET_USERNAME repo variables)
-                - a repository secret variable SFDX_CLIENT_ID with consumer key of SF CLI connected app
+                - a repository secret variable SFDX_CLIENT_ID with consumer key of the SF CLI External Client App
                 - store server.key file within ssh folder
                 `
         );
       }
       const orgTypes = isDevHub ? ['login'] : ['login', 'test'];
-      instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
+      if (!options.instanceUrl) {
+        instanceUrl = await promptInstanceUrl(orgTypes, orgAlias);
+      }
 
       const configInfoUsr = await getConfig('user');
-
-      const executionContext = getExecutionContext();
-
-      // // Prompt user for Web or Device login
-      // const loginTypeRes = await prompts({
-      //   name: 'loginType',
-      //   type: 'select',
-      //   message: "Select a login type",
-      //   description: 'Choose the authentication method that works best for your environment. Use Web if unsure.',
-      //   choices: [
-      //     {
-      //       title: '🌐 Web Login (If VS Code is locally installed on your computer)',
-      //       value: 'web',
-      //     },
-      //     {
-      //       title: '📟 Device Login (Useful for CodeBuilder / CodeSpaces)',
-      //       value: 'device',
-      //       description: 'Look at the instructions in the console terminal if you select this option',
-      //     },
-      //   ],
-      //   default: 'web',
-      //   initial: 'web',
-      // });
-
+      // Name the org with the login command itself whenever the alias can be known before the login
+      aliasDecision = decideOrgAlias({
+        carriedAlias: alias || (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? orgAlias : null),
+        existingAlias: await getAliasOfUsername(options.forceUsername),
+        instanceUrl: instanceUrl,
+        interactive: true,
+      });
+      const loginAlias = aliasDecision.ask === 'before' ? await promptOrgAlias(instanceUrl) : aliasDecision.alias;
       let loginResult: any = null;
-      // Manage device login
-      if (executionContext === "web") {
-        loginResult = await authenticateUsingDeviceLogin(instanceUrl, orgAlias, configInfoUsr, options, isDevHub, loginResult);
-      }
-      // Web Login if device login not used
-      if (loginResult == null) {
-        uxLog("action", this, c.cyan("Authenticating using web login..."));
-        const loginCommand =
-          'sf org login web' +
-          (alias ? ` --alias ${alias}` : options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
-          ` --instance-url ${instanceUrl}` +
-          (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias ? ` --alias ${orgAlias}` : '');
+      // Also the action log the VS Code UI needs after the alias prompt
+      uxLog("action", this, c.cyan(t('authenticatingUsingWebLogin')));
+      const loginCommand =
+        'sf org login web' +
+        (options.setDefault === false ? '' : isDevHub ? ' --set-default-dev-hub' : ' --set-default') +
+        ` --instance-url ${instanceUrl}` +
+        (loginAlias ? ` --alias ${loginAlias}` : '');
+      const maxWebLoginAttempts = 2;
+      for (let attempt = 1; attempt <= maxWebLoginAttempts; attempt++) {
         try {
-          loginResult = await execSfdxJson(loginCommand, this, { output: false, fail: true, spinner: false });
+          loginResult = await execSfdxWebLoginWithLiveVerificationCode(loginCommand, this);
+          break;
         } catch (e) {
-          // Give instructions if server is unavailable
-          if (((e as Error).message || '').includes('Cannot start the OAuth redirect server on port')) {
+          const errorMessage = (e as Error).message || '';
+          const blockedPort = extractPortFromOauthError(e);
+          if (blockedPort && attempt < maxWebLoginAttempts) {
+            const freed = await attemptToFreeOauthRedirectPort(blockedPort, this);
+            if (freed) {
+              uxLog(
+                "action",
+                this,
+                c.cyan(
+                  `[sfdx-hardis] Retrying web login (attempt ${attempt + 1}/${maxWebLoginAttempts}) after freeing port ${blockedPort}`
+                )
+              );
+              continue;
+            }
+          }
+          if (errorMessage.includes('Cannot start the OAuth redirect server on port')) {
             uxLog(
               "warning",
               this,
@@ -304,6 +531,10 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
           throw e;
         }
       }
+      if (loginResult == null) {
+        throw new SfError('sf org login web did not return any result');
+      }
+
       await clearCache('sf org list');
       logged = loginResult.status === 0;
       username = loginResult?.result?.username || loginResult?.username || 'err';
@@ -332,6 +563,10 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
         }
       }
       uxLog("other", this, `Successfully logged to ${c.green(instanceUrl)} with ${c.green(username)}`);
+      // Name the org now when its instance URL was not known before the login
+      if (aliasDecision.ask === 'after') {
+        await nameConnectedOrg(username, instanceUrl);
+      }
       WebSocketClient.sendRefreshStatusMessage();
       // Assign org to SfCommands
       // if (isDevHub) {
@@ -361,56 +596,15 @@ export async function authOrg(orgAlias: string, options: AuthOrgOptions): Promis
   return false;
 }
 
-export async function authenticateUsingDeviceLogin(instanceUrl: string, orgAlias: string, configInfoUsr: any, options: AuthOrgOptions, isDevHub: boolean, loginResult: any) {
-  uxLog("action", this, c.cyan("Authenticating using device login..."));
-  const loginCommandArgs = ['org login device', '--instance-url', instanceUrl];
-  if (orgAlias && orgAlias !== configInfoUsr?.scratchOrgAlias) {
-    loginCommandArgs.push(...['--alias', orgAlias]);
+export async function safeDeleteAuthTempFile(filePath?: string | null): Promise<void> {
+  if (!filePath) {
+    return;
   }
-  if (options.setDefault === true && isDevHub) {
-    loginCommandArgs.push('--set-default-dev-hub');
+  await fs.remove(filePath);
+  const parentDir = path.dirname(filePath);
+  if (path.basename(parentDir).startsWith('sfdx-hardis-')) {
+    await fs.remove(parentDir);
   }
-  if (options.setDefault === true && !isDevHub) {
-    loginCommandArgs.push('--set-default');
-  }
-  const loginCommand = 'sf ' + loginCommandArgs.join(' ') + " --json";
-  try {
-    // Spawn and get output in real time to send it to the console
-    const authProcess = spawn(loginCommand, { shell: true });
-    if (!authProcess.stdout || !authProcess.stderr) {
-      throw new SfError('Error during device login (no output)');
-    }
-    let allOutput = "";
-    authProcess.stdout.on('data', (data) => {
-      allOutput += data.toString();
-      const jsonOutput = findJsonInString(allOutput);
-      if (jsonOutput) {
-        if (jsonOutput.verification_uri && jsonOutput.user_code) {
-          uxLog("action", this, `To authenticate, visit ${c.cyan(jsonOutput.verification_uri)} and enter code ${c.green(jsonOutput.user_code)}`);
-          allOutput = "";
-        }
-        else if (jsonOutput?.status === 0 && jsonOutput?.result?.username) {
-          loginResult = jsonOutput.result;
-          loginResult.status = loginResult.status ?? jsonOutput.status;
-        }
-      }
-    });
-    authProcess.stderr.on('data', (data) => {
-      uxLog("warning", this, "Warning: " + c.yellow(data.toString()));
-    });
-    await new Promise((resolve, reject) => {
-      authProcess.on('close', (data) => {
-        resolve(data);
-      });
-      authProcess.on('error', (data) => {
-        reject(data);
-      });
-    });
-  } catch (e) {
-    uxLog("error", this, c.red(`Device login error: \n${(e as Error).message || e}. Falling back to web login...`));
-    loginResult = null;
-  }
-  return loginResult;
 }
 
 // Get clientId for SFDX connected app
@@ -435,7 +629,7 @@ async function getSfdxClientId(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_ID;
   }
@@ -449,16 +643,16 @@ async function getSfdxClientId(orgAlias: string, config: any) {
       c.red(
         `[sfdx-hardis] You must set env variable ${c.bold(
           sfdxClientIdVarNameUpper
-        )} with the Consumer Key value defined on SFDX Connected app`
+        )} with the Consumer Key value defined on the SFDX External Client App`
       )
     );
     console.warn(c.yellow(`If you configured ${sfdxClientIdVarNameUpper} but still see this message, you may have forgotten to reference the variable name in your GitHub or Azure YML pipeline.`));
-    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`));
   }
   return null;
 }
 
-// Get clientId for SFDX connected app
+// Get the decryption key (AES passphrase) used to decrypt the encrypted certificate. Always read from a variable.
 async function getKey(orgAlias: string, config: any) {
   // Try to find in global variables
   const sfdxClientKeyVarName = `SFDX_CLIENT_KEY_${orgAlias}`;
@@ -480,7 +674,7 @@ async function getKey(orgAlias: string, config: any) {
       )
     );
     console.warn(
-      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`)
+      c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`)
     );
     return process.env.SFDX_CLIENT_KEY;
   }
@@ -498,13 +692,27 @@ async function getKey(orgAlias: string, config: any) {
       )
     );
     console.warn(c.yellow(`If you configured ${sfdxClientKeyVarNameUpper} but still see this message, you may have forgotten to reference the variable name in your GitHub or Azure YML pipeline.`));
-    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    console.warn(c.yellow(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-auth/`));
   }
   return null;
 }
 
 // Try to find certificate key file for SF CLI connected app in different locations
-async function getCertificateKeyFile(orgAlias: string, config: any) {
+async function getCertificateKeyFile(orgAlias: string, config: any, options: AuthOrgOptions = {}) {
+  // Support providing the encrypted certificate content without committing a key file to the repo.
+  // Priority order for the encrypted certificate content:
+  //   1. options.encryptedCertContent: content of the file passed via hardis:auth:login --encrypted-cert-file
+  //      (typically retrieved from a password manager when configured with --external-storage).
+  //   2. CI/CD env variable SFDX_CLIENT_CERT[_<ORGALIAS>].
+  // Two formats are supported for the content:
+  //   1. Encrypted content (format "<iv-hex>:<encrypted-hex>") produced by sfdx-hardis. RECOMMENDED.
+  //      Requires SFDX_CLIENT_KEY[_<ORGALIAS>] AES passphrase (always a variable) to decrypt.
+  //   2. Raw PEM private key (starts with "-----BEGIN ..."). Used as-is, no decryption needed.
+  //      Fallback for advanced cases like a CA-signed certificate where the External Client App is created manually.
+  const certVarName = `SFDX_CLIENT_CERT_${orgAlias.toUpperCase()}`;
+  const certVarContent = options.encryptedCertContent || process.env[certVarName] || process.env.SFDX_CLIENT_CERT;
+
+  // List of repo locations where an encrypted .key file may have been committed.
   const filesToTry = [
     `./config/branches/.jwt/${orgAlias}.key`,
     `./config/.jwt/${orgAlias}.key`,
@@ -512,7 +720,46 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
     `./.ssh/${orgAlias}.key`,
     './ssh/server.key',
   ];
-  // Check if we find multiple files 
+
+  if (certVarContent) {
+    const usedVarName = options.encryptedCertContent ? '--encrypted-cert-file' : process.env[certVarName] ? certVarName : 'SFDX_CLIENT_CERT';
+    // Some CI providers store multi-line secrets with literal "\n" escapes; PEM content
+    // never legitimately contains the 2-char sequence "\n", so this normalization is safe.
+    const normalizedCertVarContent = certVarContent.replace(/\\n/g, '\n');
+    // Strict format detection: raw PEM is only valid when content explicitly carries a
+    // private-key PEM header. Other PEM blocks (for example BEGIN CERTIFICATE) are invalid
+    // here and should fail fast with a clear error instead of being treated as encrypted data.
+    const looksLikePrivateKeyPem = /-----BEGIN [A-Z ]*PRIVATE KEY-----/.test(normalizedCertVarContent);
+    const pemHeaderMatch = normalizedCertVarContent.match(/-----BEGIN ([A-Z ]+)-----/);
+    if (looksLikePrivateKeyPem) {
+      console.log(
+        c.grey(
+          `[sfdx-hardis] Using ${usedVarName} env variable as raw PEM private key (no decryption)`
+        )
+      );
+      const tmpSshKeyFile = path.join(await createTempDir(), `${orgAlias}.key`);
+      await fs.writeFile(tmpSshKeyFile, normalizedCertVarContent, { encoding: 'utf8', mode: 0o600 });
+      return tmpSshKeyFile;
+    }
+    if (pemHeaderMatch) {
+      const pemType = pemHeaderMatch[1];
+      throw new SfError(
+        `Invalid ${usedVarName} content: found PEM block "${pemType}". Please provide the JWT private key (for example server.key), not the certificate (for example server.crt).`
+      );
+    }
+    console.log(c.grey(`[sfdx-hardis] Using ${usedVarName} for encrypted certificate`));
+    const sshKey = await getKey(orgAlias, config);
+    if (sshKey) {
+      const tmpDir = await createTempDir();
+      const encryptedKeyFile = path.join(tmpDir, `${orgAlias}.key.enc`);
+      const tmpSshKeyFile = path.join(tmpDir, `${orgAlias}.key`);
+      await fs.writeFile(encryptedKeyFile, certVarContent, 'utf8');
+      console.log(c.grey(`[sfdx-hardis] Decrypting key...`));
+      await decryptFile(encryptedKeyFile, tmpSshKeyFile, sshKey);
+      return tmpSshKeyFile;
+    }
+  }
+  // Check if we find multiple files
   const filesFound = filesToTry.filter((file) => fs.existsSync(file));
   if (filesFound.length > 1) {
     console.warn(
@@ -541,12 +788,220 @@ async function getCertificateKeyFile(orgAlias: string, config: any) {
   if (isCI) {
     console.error(
       c.red(
-        `[sfdx-hardis] You must put a certificate key to connect via JWT.Possible locations:\n  -${filesToTry.join(
+        `[sfdx-hardis] You must put a certificate key to connect via JWT. Possible locations:\n  -${filesToTry.join(
           '\n  -'
-        )}`
+        )}\nAlternatively, set env variable SFDX_CLIENT_CERT_${orgAlias.toUpperCase()} with the sfdx-hardis encrypted key content (recommended, paired with SFDX_CLIENT_KEY_${orgAlias.toUpperCase()}) to avoid storing key files in git. Raw PEM content is also accepted for advanced cases like CA-signed certificates.`
       )
     );
-    uxLog("error", this, c.red(`See CI authentication doc at ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-auth/`));
+    uxLog("error", this, c.red(t('seeCiAuthenticationDocAtSalesforceCi', { CONSTANTS: CONSTANTS.DOC_URL_ROOT })));
+  }
+  return null;
+}
+
+async function attemptToFreeOauthRedirectPort(port: number, context: any): Promise<boolean> {
+  uxLog(
+    "warning",
+    context,
+    c.yellow(`[sfdx-hardis] OAuth redirect port ${port} is busy. Attempting to terminate the blocking process...`)
+  );
+  const freed = await killProcessesListeningOnPort(port);
+  if (freed) {
+    uxLog("other", context, c.green(`[sfdx-hardis] Port ${port} freed successfully.`));
+  } else {
+    uxLog(
+      "error",
+      context,
+      c.red(`[sfdx-hardis] Unable to free port ${port}. Please close the conflicting application manually.`)
+    );
+  }
+  return freed;
+}
+
+async function killProcessesListeningOnPort(port: number): Promise<boolean> {
+  const normalizedPort = Number(port);
+  if (!Number.isFinite(normalizedPort)) {
+    return false;
+  }
+  const numericPidPattern = /^\d+$/;
+  if (process.platform === 'win32') {
+    const netstatResult = await safeExecCommand(`netstat -ano | findstr :${normalizedPort}`);
+    const pids = new Set(
+      netstatResult.stdout
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split(/\s+/);
+          return parts[parts.length - 1];
+        })
+        .filter((pid) => pid && numericPidPattern.test(pid))
+    );
+    if (!pids.size) {
+      return false;
+    }
+    let killed = false;
+    for (const pid of pids) {
+      const killResult = await safeExecCommand(`taskkill /PID ${pid} /F`);
+      killed = killResult.success || killed;
+    }
+    return killed;
+  }
+  const lsofResult = await safeExecCommand(`lsof -ti tcp:${normalizedPort}`);
+  const pids = new Set(
+    lsofResult.stdout
+      .split(/\s+/)
+      .map((pid) => pid.trim())
+      .filter((pid) => pid && numericPidPattern.test(pid))
+  );
+  let killed = false;
+  for (const pid of pids) {
+    const killResult = await safeExecCommand(`kill -9 ${pid}`);
+    killed = killResult.success || killed;
+  }
+  if (killed) {
+    return true;
+  }
+  const fuserResult = await safeExecCommand(`fuser -k -n tcp ${normalizedPort}`);
+  return fuserResult.success;
+}
+
+async function safeExecCommand(command: string): Promise<{ success: boolean; stdout: string; stderr: string }> {
+  try {
+    const { stdout, stderr } = await execAsync(command, { windowsHide: true });
+    return { success: true, stdout, stderr };
+  } catch (error) {
+    const stdout = (error as any)?.stdout ?? '';
+    const stderr = (error as any)?.stderr ?? '';
+    return { success: false, stdout, stderr };
+  }
+}
+
+async function execSfdxWebLoginWithLiveVerificationCode(command: string, commandThis: any): Promise<any> {
+  const env = { ...process.env };
+  env.FORCE_COLOR = '0';
+  if (env?.NODE_OPTIONS && env.NODE_OPTIONS.includes('--inspect-brk')) {
+    env.NODE_OPTIONS = '';
+  }
+  if (env?.JSFORCE_LOG_LEVEL) {
+    env.JSFORCE_LOG_LEVEL = '';
+  }
+  uxLog("log", commandThis, c.grey(`${command}`));
+  return await new Promise((resolve, reject) => {
+    const child = childSpawn(command, {
+      env,
+      shell: true,
+      windowsHide: true,
+    });
+
+    let stdout = '';
+    let stderr = '';
+    let stdoutPending = '';
+    let stderrPending = '';
+    const reportedCodes = new Set<string>();
+
+    const reportVerificationCodeFromText = (text: string) => {
+      const cleanText = stripAnsi(text);
+      const codeRegex = /Verification\s+Code:\s*([A-Za-z0-9]+)/gi;
+      for (const match of cleanText.matchAll(codeRegex)) {
+        const code = match[1];
+        if (!code || reportedCodes.has(code)) {
+          continue;
+        }
+        reportedCodes.add(code);
+        uxLog('action', commandThis, c.cyan(t('verificationCodeEnterInBrowser', { code: c.bold(code) })));
+      }
+    };
+
+    const processChunk = (chunk: string, isStdout: boolean) => {
+      if (isStdout) {
+        stdout += chunk;
+        stdoutPending += chunk;
+      } else {
+        stderr += chunk;
+        stderrPending += chunk;
+      }
+      const pending = isStdout ? stdoutPending : stderrPending;
+      const lines = pending.split(/\r?\n/);
+      const keep = lines.pop() ?? '';
+      for (const line of lines) {
+        reportVerificationCodeFromText(line);
+      }
+      if (isStdout) {
+        stdoutPending = keep;
+      } else {
+        stderrPending = keep;
+      }
+    };
+
+    child.stdout.on('data', (data: Buffer | string) => {
+      processChunk(data.toString(), true);
+    });
+
+    child.stderr.on('data', (data: Buffer | string) => {
+      processChunk(data.toString(), false);
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+
+    child.on('close', (exitCode) => {
+      if (stdoutPending) {
+        reportVerificationCodeFromText(stdoutPending);
+      }
+      if (stderrPending) {
+        reportVerificationCodeFromText(stderrPending);
+      }
+
+      const status = typeof exitCode === 'number' ? exitCode : 1;
+      const stdoutClean = stripAnsi(stdout);
+      const stderrClean = stripAnsi(stderr);
+      if (status === 0) {
+        const parsedResult = parseAuthorizedUserFromWebLoginOutput(`${stdoutClean}\n${stderrClean}`);
+        if (!parsedResult) {
+          reject(new SfError(t('authWebLoginNoUserDetected')));
+          return;
+        }
+        resolve({
+          status: 0,
+          stdout,
+          stderr,
+          username: parsedResult.username,
+          orgId: parsedResult.orgId,
+          result: { username: parsedResult.username, id: parsedResult.orgId },
+        });
+        return;
+      }
+
+      const output = `${stdoutClean}\n${stderrClean}`.trim();
+      reject(new SfError(c.red(`[sfdx-hardis][ERROR] Command failed (${status}): ${command}\n${output}`)));
+    });
+  });
+}
+
+function parseAuthorizedUserFromWebLoginOutput(output: string): { username: string; orgId: string } | null {
+  const cleanOutput = stripAnsi(output);
+  const successRegex = /Successfully\s+authorized\s+([^\s]+)\s+with\s+org\s+ID\s+([A-Za-z0-9]+)/i;
+  const match = cleanOutput.match(successRegex);
+  if (!match?.[1] || !match?.[2]) {
+    return null;
+  }
+  return {
+    username: match[1],
+    orgId: match[2],
+  };
+}
+
+function extractPortFromOauthError(error: unknown): number | null {
+  const message =
+    typeof error === 'string' ? error : error instanceof Error ? error.message : '';
+  const directMatch = message.match(/port\s+(\d{2,5})/i);
+  if (directMatch?.[1]) {
+    return Number(directMatch[1]);
+  }
+  const eaddrMatch = message.match(/EADDRINUSE[^0-9]*(\d{2,5})/i) ?? message.match(/:(\d{2,5})\b/);
+  if (eaddrMatch?.[1]) {
+    return Number(eaddrMatch[1]);
   }
   return null;
 }

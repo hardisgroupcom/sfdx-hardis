@@ -1,0 +1,16 @@
+{
+  "templates": [
+    {
+      "name": "CongaTemplates.json",
+      "sfdxHardisLabel": "Conga Template files for Conga configuration",
+      "sfdxHardisDescription": "Export attachments related to conga templates",
+      "url": "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/files/CongaTemplates.json"
+    },
+    {
+      "name": "LargeFilesOnly.json",
+      "sfdxHardisLabel": "Oppys: Large files export (min 10 MB)",
+      "sfdxHardisDescription": "Export only files larger than 10 MB attached to Opportunity records",
+      "url": "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/files/LargeFilesOnly.json"
+    }
+  ]
+}

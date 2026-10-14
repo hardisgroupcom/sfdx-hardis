@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import fs from 'fs-extra';
+import fs from '../../../src/common/utils/fsUtils.js';
 import path from 'path';
 import * as os from 'node:os'
 import { mkdtemp } from 'node:fs/promises';

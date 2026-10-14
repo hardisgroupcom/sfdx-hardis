@@ -1,0 +1,254 @@
+name: tests-org
+
+# Integration tests that run sfdx-hardis commands against a real Salesforce org.
+# Scratch orgs are created by `sf hardis:scratch:create` itself, from the Dev Hub
+# authenticated with the TESTKIT_AUTH_URL secret.
+#
+# One scratch org per day, not one per run: a Developer Edition Dev Hub only allows 6 creations
+# per rolling 24h, and a few runs on the same Pull Request are enough to exhaust it. The org
+# credentials are handed from one run to the next through the Actions cache, encrypted with a
+# secret so that a cache entry is useless on its own. The org is deleted the next day.
+#
+# GitHub scopes a cache to the branch that wrote it plus the default branch, so runs of the same
+# Pull Request always share their org, while sharing it across Pull Requests relies on the
+# nightly run seeding the cache from the default branch. A run that creates the org also runs the
+# scratch org creation scenarios; a run that reuses one skips them, since nothing was created.
+#
+# Deliberately separate from the `tests` workflow:
+#  - a Developer Edition Dev Hub only allows 3 active / 6 daily scratch orgs, so these
+#    tests run on a single OS with no retry instead of the 2-OS + 3-retry matrix, and the org
+#    is shared between runs rather than created by each of them
+#  - Salesforce serializes deployments per org, so `yarn test:nuts:org` runs without
+#    mocha --parallel
+#  - dependency-bump Pull Requests do not need an org and would burn the daily quota
+#  - the sfdmu and sfdx-git-delta plugins are needed, which the shared salesforcecli
+#    NUT workflow does not install
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    # Nightly at 03:17 UTC, on the default branch
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never run two org test jobs at once: they would compete for the scratch org quota
+  # and for the target org deployment lock.
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  # Skipped for fork Pull Requests (no access to secrets, and running them would expose
+  # the org credentials to untrusted code) and for dependency bot Pull Requests.
+  should-run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            if [ "$IS_SAME_REPO" != "true" ]; then
+              echo "Fork Pull Request: org secrets are not available, skipping org tests."
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [ "$PR_AUTHOR" = "dependabot[bot]" ] || [ "$PR_AUTHOR" = "renovate[bot]" ] || [ "$PR_AUTHOR" = "github-actions[bot]" ]; then
+              echo "Dependency bot Pull Request ($PR_AUTHOR): skipping org tests to preserve the scratch org quota."
+              echo "run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+  nuts-org:
+    needs: should-run
+    if: needs.should-run.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # Generous on purpose: every scenario waits on a real deployment, and Salesforce can take
+    # 20 minutes to process one when the org is busy. A run that really hangs is caught by the
+    # 30 minute per-test mocha timeout long before this one.
+    timeout-minutes: 150
+    env:
+      # Pinned so the plugins installed below stay reachable from inside a TestSession, which
+      # relocates HOME and would otherwise hide them from the sf CLI (Linux resolves plugins
+      # under HOME). Both the install step and the tests read this same directory.
+      SF_DATA_DIR: ${{ github.workspace }}/.sf-data
+      # Credentials of the scratch org shared by every run of the day. Encrypted at rest: a cache
+      # entry can be restored by any workflow run of the repository, including a Pull Request from
+      # a fork, which never gets the secret needed to decrypt it.
+      NUT_ORG_PLAIN_FILE: .nut-org-reuse.json
+      NUT_ORG_CACHE_FILE: .nut-org-reuse.json.enc
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: lts/*
+          cache: yarn
+
+      - name: Install Salesforce CLI and the plugins used by the tests
+        run: |
+          npm install --no-cache @salesforce/cli --global
+          echo 'y' | sf plugins install sfdmu
+          echo 'y' | sf plugins install sfdx-git-delta
+          sf version --verbose
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build the plugin and link it as the local sf plugin
+        run: |
+          yarn compile
+          yarn oclif manifest
+          sf plugins link . --no-install
+
+      - name: Authenticate the Dev Hub
+        env:
+          TESTKIT_AUTH_URL: ${{ secrets.TESTKIT_AUTH_URL }}
+        run: |
+          if [ -z "${TESTKIT_AUTH_URL:-}" ]; then
+            echo "::error::TESTKIT_AUTH_URL secret is not set. Add it with the SFDX auth URL of a Dev Hub enabled org."
+            exit 1
+          fi
+          printf '%s' "$TESTKIT_AUTH_URL" > ./sfdx-auth-url.txt
+          sf org login sfdx-url --sfdx-url-file ./sfdx-auth-url.txt --set-default-dev-hub --alias nut-devhub
+          rm -f ./sfdx-auth-url.txt
+          sf org list --all
+
+      - name: Compute the scratch org cache key of the day
+        id: org-cache-key
+        run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      # The Dev Hub only allows 6 scratch org creations per rolling 24h, which a few runs are
+      # enough to exhaust. Runs of the same day share one org instead of creating their own.
+      # The key carries the run id so a later run can publish a fresher org under the same prefix,
+      # which the restore-keys prefix match then picks up (a cache entry is immutable).
+      # Caches are scoped to the branch that wrote them plus the default branch, so the org is
+      # shared across Pull Requests only once the nightly run on the default branch has seeded it.
+      - name: Restore the scratch org of the day
+        id: restore-org
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.NUT_ORG_CACHE_FILE }}
+          key: nut-scratch-org-${{ steps.org-cache-key.outputs.day }}-${{ github.run_id }}
+          restore-keys: nut-scratch-org-${{ steps.org-cache-key.outputs.day }}-
+
+      - name: Decrypt the scratch org credentials
+        if: steps.restore-org.outputs.cache-matched-key != ''
+        env:
+          # A dedicated secret if one is defined, otherwise the Dev Hub auth URL: whoever can read
+          # it already owns the Dev Hub, so it guards nothing new, and it needs no extra setup.
+          NUT_ORG_PASSPHRASE: ${{ secrets.NUT_ORG_CACHE_KEY || secrets.TESTKIT_AUTH_URL }}
+        run: |
+          if openssl enc -d -aes-256-cbc -pbkdf2 -in "$NUT_ORG_CACHE_FILE" \
+              -out "$NUT_ORG_PLAIN_FILE" -pass env:NUT_ORG_PASSPHRASE 2>/dev/null; then
+            echo "Reusing the scratch org of $(jq -r '.alias' "$NUT_ORG_PLAIN_FILE")."
+          else
+            echo "::warning::Cached scratch org credentials could not be decrypted, a new org will be created."
+            rm -f "$NUT_ORG_PLAIN_FILE"
+          fi
+
+      # A Developer Edition Dev Hub allows only 3 active scratch orgs, and a crashed run leaks
+      # its own. Free the slots taken by the runs of the previous days, keeping today's shared org.
+      # Only orgs matching the NUT username prefix are deleted, never anything else.
+      - name: Free scratch org slots left by previous days
+        run: |
+          ids="$(sf data query \
+            --query "SELECT Id, SignupUsername FROM ScratchOrgInfo WHERE Status = 'Active' AND SignupUsername LIKE 'nut@hardis-scratch-%' AND CreatedDate < TODAY" \
+            --json --target-org nut-devhub 2>/dev/null | jq -r '.result.records[]? | "\(.Id) \(.SignupUsername)"')"
+          if [ -z "$ids" ]; then
+            echo "No leftover NUT scratch org to delete."
+          else
+            echo "$ids" | while read -r id username; do
+              echo "Deleting leftover scratch org $username ($id)"
+              sf data delete record --sobject ScratchOrgInfo --record-id "$id" --json --target-org nut-devhub || true
+            done
+          fi
+          # Report both limits: deleting orgs frees ActiveScratchOrgs, but DailyScratchOrgs is a
+          # rolling 24h creation quota that deletion does not give back. A Developer Edition Dev
+          # Hub allows 3 active and 6 daily, so a day of heavy iteration can exhaust the daily one.
+          sf org list limits --target-org nut-devhub --json \
+            | jq -r '.result[] | select(.name == "ActiveScratchOrgs" or .name == "DailyScratchOrgs") | "\(.name): \(.remaining)/\(.max) remaining"'
+
+      - name: Run org integration tests
+        env:
+          TESTKIT_AUTH_URL: ${{ secrets.TESTKIT_AUTH_URL }}
+          # TESTKIT_EXECUTABLE_PATH is deliberately NOT set: the testkit runs ./bin/run.js,
+          # which is where the sfdx-hardis commands live. Plain `sf` commands are run through
+          # the runSf helper instead, so the tests do not depend on `sf plugins link`.
+          SF_DISABLE_TELEMETRY: "true"
+          # Reuse the org restored above when there is one, and save the one created otherwise.
+          # The scratch org creation scenarios only run when this job really creates an org.
+          SFDX_HARDIS_NUT_REUSE_ORG: "true"
+          # FORCE_COLOR is deliberately NOT set: it makes the CLI colorize even its --json
+          # output, and the escape codes break JSON.parse on output that looks perfectly
+          # valid in the job log, because log viewers hide the codes.
+        run: yarn test:nuts:org
+
+      # Only the deployment reports are published, never the whole test session directory:
+      # the testkit authenticates the orgs inside it, so it also holds their refresh tokens.
+      - name: Publish the deployment reports produced by the tests
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nuts-org-hardis-report
+          path: test_session_*/**/hardis-report/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      # The scratch org is kept for the rest of the day and handed to the next run through the
+      # cache. Encrypting it here means the cache never holds a usable credential on its own.
+      - name: Encrypt the scratch org credentials for the next run
+        id: keep-org
+        if: always()
+        env:
+          NUT_ORG_PASSPHRASE: ${{ secrets.NUT_ORG_CACHE_KEY || secrets.TESTKIT_AUTH_URL }}
+        run: |
+          if [ ! -f "$NUT_ORG_PLAIN_FILE" ]; then
+            echo "No scratch org to hand over to the next run."
+            exit 0
+          fi
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in "$NUT_ORG_PLAIN_FILE" \
+            -out "$NUT_ORG_CACHE_FILE" -pass env:NUT_ORG_PASSPHRASE
+          rm -f "$NUT_ORG_PLAIN_FILE"
+          echo "saved=true" >> "$GITHUB_OUTPUT"
+          echo "The scratch org of the day is available for the next run."
+
+      - name: Save the scratch org of the day
+        if: always() && steps.keep-org.outputs.saved == 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ${{ env.NUT_ORG_CACHE_FILE }}
+          key: nut-scratch-org-${{ steps.org-cache-key.outputs.day }}-${{ github.run_id }}
+
+      # Orgs of the previous days are deleted at the start of the job, and the org of the day is
+      # kept for the runs that follow. This only catches the case where nothing could be handed
+      # over, so a crashed run does not leak its org until it expires.
+      - name: Delete the scratch org when it cannot be reused
+        if: always() && steps.keep-org.outputs.saved != 'true'
+        run: |
+          ids="$(sf data query \
+            --query "SELECT Id, SignupUsername FROM ScratchOrgInfo WHERE Status = 'Active' AND SignupUsername LIKE 'nut@hardis-scratch-%'" \
+            --json --target-org nut-devhub 2>/dev/null | jq -r '.result.records[]? | "\(.Id) \(.SignupUsername)"')"
+          if [ -z "$ids" ]; then
+            echo "No NUT scratch org to delete."
+          else
+            echo "$ids" | while read -r id username; do
+              echo "Deleting scratch org $username ($id)"
+              sf data delete record --sobject ScratchOrgInfo --record-id "$id" --json --target-org nut-devhub || true
+            done
+          fi

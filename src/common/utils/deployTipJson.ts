@@ -1,11 +1,13 @@
 // Analyze deployment errors to provide tips to user 😊
 import c from "chalk";
-import format from "string-template";
 import { getAllTips } from "./deployTipsList.js";
+import { formatTemplate as format } from "./stringUtils.js";
 import { stripAnsi, uxLog } from "./index.js";
 import { AiProvider, AiResponse } from "../aiProvider/index.js";
 import { updatePullRequestResult } from "./deployTips.js";
 import { shortenLogLines } from "./deployUtils.js";
+import { buildDeployResultSummaryLines, isFullDeployJsonLogRequested } from "./deployResultSummary.js";
+import { t } from './i18n.js';
 
 
 export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, includeInLog = true, options: any): Promise<any> {
@@ -74,7 +76,7 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
         error: { message: coverageErrorMsg },
         tip: {
           label: "CodeCoverageWarning",
-          message: "Please fix code coverage so your deployment can pass",
+          message: t('pleaseFixCodeCoverageSoYourDeployment'),
           docUrl: "https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_code_coverage_intro.htm",
         },
       }))
@@ -88,16 +90,26 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
       error: { message: resultJson.result.errorMessage },
       tip: {
         label: resultJson.result.errorStatusCode || "UNKNOWN",
-        message: "Please fix unknown errors (",
+        message: t('pleaseFixUnknownErrors'),
       },
     }))
-    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold("Unknown issue: " + resultJson.result.errorMessage)), ""]);
+    detailedErrorLines.push(...["", "⛔ " + c.red(c.bold(t('unknownDeploymentIssue', { message: resultJson.result.errorMessage }))), ""]);
+  }
+
+  // Fallback: the command died before Salesforce returned a result (lost connection, CLI error...):
+  // the JSON only has a top-level message and cause
+  if (errorsAndTips.length === 0 && failedTests.length === 0 && !resultJson?.result && (resultJson?.message || resultJson?.cause)) {
+    const topLevelError = buildTopLevelErrorAndTip(resultJson);
+    errorsAndTips.push(topLevelError);
+    detailedErrorLines.push(...(topLevelError.tip.label === "NetworkError"
+      ? ["", "⛔ " + c.red(c.bold(topLevelError.error.message)), c.yellow(topLevelError.tip.message), ""]
+      : ["", "⛔ " + c.red(c.bold(t('unknownDeploymentIssue', { message: topLevelError.error.message }))), ""]));
   }
 
   // Fallback : declare an error if we have not been able to identify errors
   if (errorsAndTips.length === 0 && failedTests.length === 0) {
     errorsAndTips.push(({
-      error: { message: "There has been an issue parsing errors, please notify sfdx-hardis maintainers" },
+      error: { message: t('thereHasBeenAnIssueParsingErrors') },
       tip: {
         label: "SfdxHardisInternalError",
         message: "Declare issue on https://github.com/hardisgroupcom/sfdx-hardis/issues",
@@ -146,9 +158,68 @@ export async function analyzeDeployErrorLogsJson(resultJson: any, log: string, i
 
   // Update data that will be used for Pull Request comment
   await updatePullRequestResult(errorsAndTips, failedTests, options);
+  // Build a readable summary instead of the complete deployment JSON, that can be huge in big orgs
+  const summaryBlock = buildDeployResultSummaryLines(resultJson, {
+    check: options?.check === true,
+    label: options?.label,
+    reportFile: options?.deployResultReportFile ?? null,
+  }).join("\n");
+  // The raw output is normally replaced by the summary, but when nothing could be parsed out of it
+  // there is no summary to display, and hiding it would leave no trace at all of what went wrong.
+  const hasParsableResult = !!resultJson?.result;
+  const rawJsonBlock = isFullDeployJsonLogRequested() || !hasParsableResult ? "\n\n" + shortenLogLines(log) : "";
   // Return results
-  const newLog = includeInLog ? shortenLogLines(log) + "\n\n" + detailedErrorLines.join("\n") : shortenLogLines(log);
+  const newLog = includeInLog
+    ? summaryBlock + rawJsonBlock + "\n\n" + detailedErrorLines.join("\n")
+    : summaryBlock + rawJsonBlock;
   return { tips, errorsAndTips, failedTests, errLog: newLog };
+}
+
+// Text of a network failure: the connection to Salesforce was lost or could not be opened
+const NETWORK_FAILURE_REGEX = /fetch failed|ConnectTimeoutError|UND_ERR_CONNECT_TIMEOUT|ECONNRESET|ECONNABORTED|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|socket hang up/i;
+
+export function isNetworkFailureText(text: string): boolean {
+  return NETWORK_FAILURE_REGEX.test(text || "");
+}
+
+// Error and tip for a command output that only has a top-level message and cause, no result
+export function buildTopLevelErrorAndTip(resultJson: any): any {
+  const message = String(resultJson?.message || "").trim();
+  const cause = typeof resultJson?.cause === "string" ? resultJson.cause : JSON.stringify(resultJson?.cause ?? "");
+  if (isNetworkFailureText(`${message}\n${cause}`)) {
+    return buildNetworkErrorAndTip(extractShortNetworkCause(message, cause));
+  }
+  return {
+    error: { message: message || cause.split(/\r?\n/)[0] },
+    tip: {
+      label: resultJson?.name || "UNKNOWN",
+      message: t('pleaseFixUnknownErrors'),
+    },
+  };
+}
+
+export function buildNetworkErrorAndTip(shortCause: string): any {
+  return {
+    error: { message: t('connectionToSalesforceLost', { cause: shortCause }) },
+    tip: {
+      label: "NetworkError",
+      message: t('connectionToSalesforceLostRunAgain'),
+    },
+  };
+}
+
+// One line naming the network failure, never a stack: the innermost "[cause]: XxxError: text" of
+// undici, else the top-level message, else the first line of the cause
+export function extractShortNetworkCause(message: string, cause: string): string {
+  const innerCauses = [...(cause || "").matchAll(/\[cause\]:\s*\w*Error:\s*([^\r\n]+)/g)];
+  const inner = innerCauses.length > 0 ? innerCauses[innerCauses.length - 1][1].trim() : "";
+  const code = /code:\s*'([A-Z_]+)'/.exec(cause || "")?.[1] || "";
+  const firstCauseLine = (cause || "").split(/\r?\n/)[0].replace(/^\w*Error:\s*/, "").trim();
+  let short = inner || message || firstCauseLine || "fetch failed";
+  if (code && !short.includes(code)) {
+    short += ` [${code}]`;
+  }
+  return short.length > 300 ? short.slice(0, 297) + "..." : short;
 }
 
 async function matchesTip(tipDefinition: any, error: any) {
@@ -229,7 +300,7 @@ async function findAiTip(error: any, alreadyProcessedErrors: string[]): Promise<
     return null;
   }
   alreadyProcessedErrors.push(error.message);
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     if (alreadyProcessedErrors.length > parseInt(process.env.MAX_DEPLOYMENT_TIPS_AI_CALLS || "20")) {
       uxLog("warning", this, c.yellow(`[AI] Maximum number of AI calls for deployment tips reached. Increase with env var MAX_DEPLOYMENT_TIPS_AI_CALLS`));
       return null;

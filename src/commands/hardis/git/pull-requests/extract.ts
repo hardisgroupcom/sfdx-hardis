@@ -6,8 +6,9 @@ import c from 'chalk';
 import { isCI, selectGitBranch, uxLog } from '../../../../common/utils/index.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { GitProvider } from '../../../../common/gitProvider/index.js';
-import moment from 'moment';
+import { dateHelper } from '../../../../common/utils/dateHelper.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -41,14 +42,29 @@ The command's technical implementation involves interacting with a Git provider'
 - **CSV Generation:** The \`generateCsvFile\` utility is responsible for converting the retrieved pull request data into a CSV format, and \`generateReportPath\` determines the output file location.
 - **Error Handling:** It includes error handling for cases where a Git provider cannot be identified.
 </details>
+
+### Agent Mode
+
+Use \`--agent\` to disable all interactive prompts. In agent mode:
+
+- \`--target-branch\`: Optional. If omitted, all branches are included.
+- \`--status\`: Optional. If omitted, all statuses are included.
+- \`--min-date\`: Optional date filter.
+- All interactive branch and status selection prompts are skipped.
 `;
 
   public static examples = [
     '$ sf hardis:git:pull-requests:extract',
     '$ sf hardis:git:pull-requests:extract --target-branch main --status merged',
+    '$ sf hardis:git:pull-requests:extract --agent',
+    '$ sf hardis:git:pull-requests:extract --agent --target-branch main --status merged',
   ];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     "target-branch": Flags.string({
       char: 't',
       description: 'Target branch of PRs',
@@ -99,17 +115,18 @@ The command's technical implementation involves interacting with a Git provider'
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(GitPullRequestsExtract);
+    const agentMode = flags.agent === true;
     this.targetBranch = flags["target-branch"] || null;
     this.minDateStr = flags["min-date"] || null;
     this.prStatus = flags["status"] || null;
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
     if (this.minDateStr) {
-      this.minDate = moment(this.minDateStr).toDate()
+      this.minDate = dateHelper(this.minDateStr).toDate()
     }
 
     // Startup
-    uxLog("action", this, c.cyan(`This command will extract pull requests from the Git server.`));
+    uxLog("action", this, c.cyan(t('extractPullRequestsFromGitServer')));
 
     const gitProvider = await GitProvider.getInstance(true);
     if (gitProvider == null) {
@@ -117,7 +134,7 @@ The command's technical implementation involves interacting with a Git provider'
     }
 
     // Prompt branch & PR status if not sent
-    await this.handleUserInput();
+    await this.handleUserInput(agentMode);
 
     // Build constraint
     const prConstraint: any = {};
@@ -132,7 +149,7 @@ The command's technical implementation involves interacting with a Git provider'
     }
 
     // Process call to git provider API
-    this.pullRequests = await gitProvider.listPullRequests(prConstraint, { formatted: true });
+    this.pullRequests = (await gitProvider.listPullRequests(prConstraint)) || [];
 
     this.outputFile = await generateReportPath('pull-requests', this.outputFile);
     this.outputFilesRes = await generateCsvFile(this.pullRequests, this.outputFile, { fileTitle: 'Pull Requests' });
@@ -143,30 +160,30 @@ The command's technical implementation involves interacting with a Git provider'
     };
   }
 
-  private async handleUserInput() {
-    if (!isCI && !this.targetBranch) {
+  private async handleUserInput(agentMode: boolean) {
+    if (!isCI && !agentMode && !this.targetBranch) {
       const gitBranch = await selectGitBranch({
         remote: true,
         checkOutPull: false,
         allowAll: true,
-        message: "Please select the target branch of Pull Requests"
+        message: t('pleaseSelectTheTargetBranchOfPull')
       });
       if (gitBranch && gitBranch !== "ALL BRANCHES") {
         this.targetBranch = gitBranch;
       }
     }
 
-    if (!isCI && !this.prStatus) {
+    if (!isCI && !agentMode && !this.prStatus) {
       const statusRes = await prompts({
-        message: "Please select a status criterion, or All.",
+        message: t('pleaseSelectStatusCriterionOrAll'),
         type: "select",
-        description: "Choose which pull request status to filter by.",
-        placeholder: "Select status",
+        description: t('chooseWhichPullRequestStatusToFilterBy'),
+        placeholder: t('selectStatus'),
         choices: [
-          { title: "All status", value: "all" },
-          { title: "Merged", value: "merged" },
-          { title: "Open", value: "open" },
-          { title: "Abandoned", value: "abandoned" }
+          { title: t('prStatusAll'), value: "all" },
+          { title: t('prStatusMerged'), value: "merged" },
+          { title: t('prStatusOpen'), value: "open" },
+          { title: t('prStatusAbandoned'), value: "abandoned" }
         ]
       });
       if (statusRes && statusRes.value !== "all") {

@@ -1,7 +1,7 @@
 /* jscpd:ignore-start */
 // External Libraries and Node.js Modules
 import { glob } from 'glob';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import * as path from 'path';
 
 // Salesforce Specific
@@ -18,11 +18,89 @@ import { generateCsvFile, generateReportPath } from '../../../common/utils/files
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 /* jscpd:ignore-end */
+// Every metadata type whose status this command checks, with the folder holding its files.
+// All the patterns go to a single glob call, so the sources are walked once instead of once per type:
+// nine separate walks took 1553 ms on a real project, one walk with the nine patterns took 247 ms.
+export const METADATA_STATUS_FILE_TYPES = [
+  { key: 'flow', directory: 'flows', suffix: '.flow-meta.xml', pattern: '**/flows/**/*.flow-meta.xml' },
+  {
+    key: 'validationRule',
+    directory: 'validationRules',
+    suffix: '.validationRule-meta.xml',
+    pattern: '**/objects/**/validationRules/*.validationRule-meta.xml',
+  },
+  {
+    key: 'recordType',
+    directory: 'recordTypes',
+    suffix: '.recordType-meta.xml',
+    pattern: '**/objects/**/recordTypes/*.recordType-meta.xml',
+  },
+  {
+    key: 'approvalProcess',
+    directory: 'approvalProcesses',
+    suffix: '.approvalProcess-meta.xml',
+    pattern: '**/approvalProcesses/**/*.approvalProcess-meta.xml',
+  },
+  {
+    key: 'forecastingType',
+    directory: 'forecastingTypes',
+    suffix: '.forecastingType-meta.xml',
+    pattern: '**/forecastingTypes/**/*.forecastingType-meta.xml',
+  },
+  { key: 'workflow', directory: 'workflows', suffix: '.workflow-meta.xml', pattern: '**/workflows/**/*.workflow-meta.xml' },
+  {
+    key: 'assignmentRule',
+    directory: 'assignmentRules',
+    suffix: '.assignmentRules-meta.xml',
+    pattern: '**/assignmentRules/**/*.assignmentRules-meta.xml',
+  },
+  {
+    key: 'autoResponseRule',
+    directory: 'autoResponseRules',
+    suffix: '.autoResponseRules-meta.xml',
+    pattern: '**/autoResponseRules/**/*.autoResponseRules-meta.xml',
+  },
+  {
+    key: 'escalationRule',
+    directory: 'escalationRules',
+    suffix: '.escalationRules-meta.xml',
+    pattern: '**/escalationRules/**/*.escalationRules-meta.xml',
+  },
+];
+
+// Lists the files of every type of METADATA_STATUS_FILE_TYPES, in one walk of the sources.
+// A file is attributed to the type whose suffix it ends with and whose folder it sits in, which is what
+// the per-type patterns matched. The suffixes are all distinct, so a file belongs to a single type.
+export async function listMetadataStatusFiles(ignorePatterns: string[]): Promise<Map<string, string[]>> {
+  const filesByType = new Map<string, string[]>(METADATA_STATUS_FILE_TYPES.map((fileType) => [fileType.key, []]));
+  const allFiles = await glob(
+    METADATA_STATUS_FILE_TYPES.map((fileType) => fileType.pattern),
+    { ignore: ignorePatterns }
+  );
+  for (const file of allFiles) {
+    // glob matches without case on Windows and macOS, so the attribution ignores the case too: a folder
+    // named Flows instead of flows must land in the same bucket, not be silently dropped
+    const pathSegments = file.toLowerCase().split(/[\\/]/);
+    const fileName = pathSegments[pathSegments.length - 1];
+    const fileType = METADATA_STATUS_FILE_TYPES.find(
+      (candidate) =>
+        fileName.endsWith(candidate.suffix.toLowerCase()) && pathSegments.includes(candidate.directory.toLowerCase())
+    );
+    if (fileType) {
+      (filesByType.get(fileType.key) as string[]).push(file);
+    } else {
+      uxLog("other", this, `[metadatastatus] ${file} matched a pattern but no metadata type, skipped`);
+    }
+  }
+  return filesByType;
+}
+
 export default class LintMetadataStatus extends SfCommand<any> {
   public static title = 'check inactive metadatas';
   public static description = `
@@ -61,9 +139,19 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications (e.g., to Slack, MS Teams, Grafana) about the presence and count of inactive metadata, making it suitable for automated monitoring in CI/CD pipelines.
 - **Error Handling:** It includes basic error handling for file operations and ensures that the process continues even if some files cannot be read.
 </details>
-`;
 
-  public static examples = ['$ sf hardis:lint:metadatastatus'];
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:lint:metadatastatus --agent
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+
+  public static examples = ['$ sf hardis:lint:metadatastatus', '$ sf hardis:lint:metadatastatus --agent'];
   /* jscpd:ignore-start */
   public static flags: any = {
     debug: Flags.boolean({
@@ -81,6 +169,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
+    }),
     'target-org': optionalOrgFlagWithDeprecations,
   };
   /* jscpd:ignore-end */
@@ -88,9 +180,9 @@ The command's technical implementation involves:
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
-  private flowFilePattern = '**/flows/**/*.flow-meta.xml';
-  private validationRuleFilePattern = '**/objects/**/validationRules/*.validationRule-meta.xml';
   private ignorePatterns: string[] = GLOB_IGNORE_PATTERNS;
+  // Files of every checked metadata type, listed once for the whole command
+  private filesByType: Map<string, string[]> = new Map();
   protected inactiveItems: any[] = [];
   protected outputFile: string;
   protected outputFilesRes: any = {};
@@ -98,6 +190,7 @@ The command's technical implementation involves:
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(LintMetadataStatus);
 
+    this.filesByType = await listMetadataStatusFiles(this.ignorePatterns);
     const inactiveApprovalProcesses = await this.verifyApprovalProcesses();
     const inactiveAssignmentRules = await this.verifyAssignmentRules();
     const inactiveAutoResponseRules = await this.verifyAutoResponseRules();
@@ -129,55 +222,55 @@ The command's technical implementation involves:
       notifSeverity = 'warning';
       if (inactiveApprovalProcesses.length > 0) {
         attachments.push({
-          text: `*Inactive Approval Processes*\n${inactiveApprovalProcesses.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Approval Processes**\n${inactiveApprovalProcesses.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveAssignmentRules.length > 0) {
         attachments.push({
-          text: `*Inactive Assignment Rules*\n${inactiveAssignmentRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Assignment Rules**\n${inactiveAssignmentRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveAutoResponseRules.length > 0) {
         attachments.push({
-          text: `*Inactive Auto Response Rules*\n${inactiveAutoResponseRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Auto Response Rules**\n${inactiveAutoResponseRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveEscalationRules.length > 0) {
         attachments.push({
-          text: `*Inactive Escalation Rules*\n${inactiveEscalationRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Escalation Rules**\n${inactiveEscalationRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (draftFlows.length > 0) {
         attachments.push({
-          text: `*Inactive Flows*\n${draftFlows.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Flows**\n${draftFlows.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveForecastingTypes.length > 0) {
         attachments.push({
-          text: `*Inactive Forecasting Types*\n${inactiveForecastingTypes.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Forecasting Types**\n${inactiveForecastingTypes.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveRecordTypes.length > 0) {
         attachments.push({
-          text: `*Inactive Record Types*\n${inactiveRecordTypes.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Record Types**\n${inactiveRecordTypes.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveValidationRules.length > 0) {
         attachments.push({
-          text: `*Inactive Validation Rules*\n${inactiveValidationRules.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Validation Rules**\n${inactiveValidationRules.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
       if (inactiveWorkflows.length > 0) {
         attachments.push({
-          text: `*Inactive Workflow Rules*\n${inactiveWorkflows.map((file) => `• ${file.name}`).join('\n')}`,
+          text: `**Inactive Workflow Rules**\n${inactiveWorkflows.map((file) => `- ${file.name}`).join('\n')}`,
         });
       }
 
-      notifText = `${this.inactiveItems.length} inactive configuration elements were found in ${branchMd}`;
+      notifText = `**${this.inactiveItems.length}** inactive configuration elements were found in ${branchMd}`;
       // Build result file
       await this.buildCsvFile();
     } else {
-      uxLog("other", this, 'No draft flow or validation rule files detected.');
+      uxLog("other", this, t('noDraftFlowOrValidationRuleFiles'));
     }
     // Post notifications
     await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
@@ -208,7 +301,7 @@ The command's technical implementation involves:
    */
   private async verifyFlows(): Promise<any[]> {
     const draftFiles: any[] = [];
-    const flowFiles: string[] = await glob(this.flowFilePattern, { ignore: this.ignorePatterns });
+    const flowFiles: string[] = this.filesByType.get('flow') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of flowFiles) {
       const flowContent: string = await fs.readFile(file, 'utf-8');
@@ -230,7 +323,7 @@ The command's technical implementation involves:
    */
   private async verifyValidationRules(): Promise<any[]> {
     const inactiveRules: any[] = [];
-    const validationRuleFiles: string[] = await glob(this.validationRuleFilePattern, { ignore: this.ignorePatterns });
+    const validationRuleFiles: string[] = this.filesByType.get('validationRule') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of validationRuleFiles) {
       // Skip if validation rule is from a managed package
@@ -255,9 +348,7 @@ The command's technical implementation involves:
 
   private async verifyRecordTypes(): Promise<any[]> {
     const inactiveRecordTypes: any[] = [];
-    const recordTypeFiles: string[] = await glob('**/objects/**/recordTypes/*.recordType-meta.xml', {
-      ignore: this.ignorePatterns,
-    });
+    const recordTypeFiles: string[] = this.filesByType.get('recordType') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of recordTypeFiles) {
       const recordTypeName = path.basename(file, '.recordType-meta.xml');
@@ -282,9 +373,7 @@ The command's technical implementation involves:
 
   private async verifyApprovalProcesses(): Promise<any[]> {
     const inactiveApprovalProcesses: any[] = [];
-    const approvalProcessFiles: string[] = await glob('**/approvalProcesses/**/*.approvalProcess-meta.xml', {
-      ignore: this.ignorePatterns,
-    });
+    const approvalProcessFiles: string[] = this.filesByType.get('approvalProcess') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of approvalProcessFiles) {
       const approvalProcessFullName = path.basename(file, '.approvalProcess-meta.xml');
@@ -309,9 +398,7 @@ The command's technical implementation involves:
 
   private async verifyForecastingTypes(): Promise<any[]> {
     const inactiveForecastTypes: any[] = [];
-    const forecastTypeFiles: string[] = await glob('**/forecastingTypes/**/*.forecastingType-meta.xml', {
-      ignore: this.ignorePatterns,
-    });
+    const forecastTypeFiles: string[] = this.filesByType.get('forecastingType') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of forecastTypeFiles) {
       const forecastingTypeName = path.basename(file, '.forecastingType-meta.xml');
@@ -331,9 +418,7 @@ The command's technical implementation involves:
 
   private async verifyWorkflowRules(): Promise<any[]> {
     const inactiveWorkflowRules: any[] = [];
-    const workflowRuleFiles: string[] = await glob('**/workflows/**/*.workflow-meta.xml', {
-      ignore: this.ignorePatterns,
-    });
+    const workflowRuleFiles: string[] = this.filesByType.get('workflow') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of workflowRuleFiles) {
       const workflowRuleName = path.basename(file, '.workflow-meta.xml');
@@ -353,9 +438,7 @@ The command's technical implementation involves:
 
   private async verifyAssignmentRules(): Promise<any[]> {
     const inactiveAssignmentRules: any[] = [];
-    const assignmentRuleFiles: string[] = await glob('**/assignmentRules/**/*.assignmentRules-meta.xml', {
-      ignore: this.ignorePatterns,
-    });
+    const assignmentRuleFiles: string[] = this.filesByType.get('assignmentRule') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of assignmentRuleFiles) {
       const assignmentRuleName = path.basename(file, '.assignmentRules-meta.xml');
@@ -375,9 +458,7 @@ The command's technical implementation involves:
 
   private async verifyAutoResponseRules(): Promise<any[]> {
     const inactiveAutoResponseRules: any[] = [];
-    const autoResponseRuleFiles: string[] = await glob('**/autoResponseRules/**/*.autoResponseRules-meta.xml', {
-      ignore: this.ignorePatterns,
-    });
+    const autoResponseRuleFiles: string[] = this.filesByType.get('autoResponseRule') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of autoResponseRuleFiles) {
       const autoResponseRuleName = path.basename(file, '.autoResponseRules-meta.xml');
@@ -397,9 +478,7 @@ The command's technical implementation involves:
 
   private async verifyEscalationRules(): Promise<any[]> {
     const inactiveEscalationRules: any[] = [];
-    const escalationRuleFiles: string[] = await glob('**/escalationRules/**/*.escalationRules-meta.xml', {
-      ignore: this.ignorePatterns,
-    });
+    const escalationRuleFiles: string[] = this.filesByType.get('escalationRule') ?? [];
     const severityIcon = getSeverityIcon('warning');
     for (const file of escalationRuleFiles) {
       const escalationRuleName = path.basename(file, '.escalationRules-meta.xml');

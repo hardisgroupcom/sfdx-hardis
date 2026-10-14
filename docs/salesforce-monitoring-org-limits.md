@@ -13,9 +13,9 @@ There are many limits on a Salesforce org:
 - Daily API Calls
 - Daily Bulk API Calls
 - Daily Platform events
-- and about 40 others !
+- and about 40 others
 
-This feature controls that they are not reached, and will send notifications:
+This check verifies that they are not reached, and sends notifications:
 
 - Success <= 50%
 - Warning > 50%

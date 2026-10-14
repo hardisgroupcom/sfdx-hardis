@@ -31,13 +31,29 @@ The command's technical implementation is straightforward:
 - **\`execCommand\`:** This utility is used to run the Salesforce CLI command and capture its output.
 - **Output Display:** The raw output from the Salesforce CLI command is displayed to the user, providing all the details about the package versions.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:package:version:list --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:package:version:list'];
+  public static examples = ['$ sf hardis:package:version:list',
+    '$ sf hardis:package:version:list --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,

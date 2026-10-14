@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import fs from 'fs-extra';
+import fs from '../src/common/utils/fsUtils.js';
 import os from 'os';
 import path from 'path';
 import CleanSensitiveMetadatas from '../src/commands/hardis/project/clean/sensitive-metadatas.js';

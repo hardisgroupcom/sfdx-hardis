@@ -1,18 +1,50 @@
 import { Gitlab } from "@gitbeaker/rest";
 import c from "chalk";
 import { Agent as HttpsAgent } from "https";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { GitProviderRoot } from "./gitProviderRoot.js";
-import { CONSTANTS } from "../../config/index.js";
+import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
+import { getBannerMarkdownAndLink } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+
+import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
+import { parseGitlabJobUrl } from "./utils/jobUrlUtils.js";
+import { CiRunCandidate, selectCiRuns } from "./utils/jobKindUtils.js";
+import { httpDownloadFile, httpGet } from "../utils/httpUtils.js";
+import { SfError } from "@salesforce/core";
+import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsJobUrl, getJenkinsJobName } from "./utils/jenkinsUtils.js";
+
+// Oldest commit date of a window, used to bound the merged MRs listing (see
+// getOldestCommitDateWithMargin in gitProviderRoot.ts).
+function getOldestCommitDate(commits: any[]): string | null {
+  return getOldestCommitDateWithMargin(commits, (commit) => commit?.created_at || commit?.createdAt);
+}
 
 export class GitlabProvider extends GitProviderRoot {
   private gitlabApi: InstanceType<typeof Gitlab>;
+  private mergeRequestWebUrls: { [key: string]: string } = {};
   public serverUrl: string;
   public token: string;
+  // Numeric id or path with namespace of the project the listings are asked for
+  private projectId: string | null;
 
-  constructor() {
+  constructor(repository?: GitProviderRepositorySettings) {
     super();
+    if (repository) {
+      // Another repository than the one of the current folder: nothing is read from the CI context
+      const parsed = GitlabProvider.parseGitlabRepoUrl(repository.remoteUrl);
+      if (!parsed) {
+        throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: repository.remoteUrl, provider: "GitLab" }));
+      }
+      this.serverUrl = parsed.serverUrl;
+      this.token = repository.token;
+      // The path with namespace identifies the project: the client URL-encodes it in every call
+      this.projectId = parsed.projectPath;
+      this.gitlabApi = GitlabProvider.buildApi(this.serverUrl, this.token);
+      return;
+    }
+    this.projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || null;
     // Gitlab URL is always provided by default CI variables
     this.serverUrl = process.env.CI_SERVER_URL || "";
     // It's better to have a project token defined in a CI_SFDX_HARDIS_GITLAB_TOKEN variable, to have the rights to act on Pull Requests
@@ -29,8 +61,194 @@ export class GitlabProvider extends GitProviderRoot {
     this.gitlabApi = new Gitlab(gitlabConfig);
   }
 
+  // Auto-detect GitLab CI variables from token + local git remote URL
+  public static async autoDetectSettings(): Promise<void> {
+    try {
+      const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+      if (!remoteUrl) {
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderNoGitRemote", { provider: "GitLab" })));
+        return;
+      }
+      const parsed = GitlabProvider.parseGitlabRepoUrl(remoteUrl);
+      if (!parsed) {
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderParseUrlFailed", { provider: "GitLab" })));
+        return;
+      }
+      // Set CI_SERVER_URL if missing
+      if (!process.env.CI_SERVER_URL) {
+        process.env.CI_SERVER_URL = parsed.serverUrl;
+      }
+      // Set CI_PROJECT_PATH if missing
+      if (!process.env.CI_PROJECT_PATH) {
+        process.env.CI_PROJECT_PATH = parsed.projectPath;
+      }
+      // Try to resolve project ID via API if missing
+      const token = process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "";
+      if (!process.env.CI_PROJECT_ID) {
+        if (token) {
+          try {
+            const tempApi = GitlabProvider.buildApi(parsed.serverUrl, token);
+            const project = await tempApi.Projects.show(parsed.projectPath);
+            if (project?.id) {
+              process.env.CI_PROJECT_ID = String(project.id);
+            }
+          } catch (apiErr) {
+            uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderApiError", { provider: "GitLab", message: (apiErr as Error).message })));
+          }
+        }
+      } else if (!process.env.GITLAB_CI && token) {
+        // Outside a GitLab CI job, CI_PROJECT_ID comes from a .env file or the user environment and
+        // can be left over from another repository. Every API call would then answer about that
+        // other project: a merge request creation fails with "source_branch does not exist" even
+        // though the branch was just pushed. The local git remote is the authority here.
+        await GitlabProvider.checkProjectIdMatchesRemote(parsed, token);
+      }
+      // When running on Jenkins, map Jenkins-specific variables to GitLab equivalents
+      if (isJenkins()) {
+        if (!process.env.CI_COMMIT_REF_NAME) {
+          const branch = getJenkinsBranchName();
+          if (branch) {
+            process.env.CI_COMMIT_REF_NAME = branch;
+          }
+        }
+        if (!process.env.CI_JOB_URL) {
+          const jobUrl = getJenkinsJobUrl();
+          if (jobUrl) {
+            process.env.CI_JOB_URL = jobUrl;
+          }
+        }
+        if (!process.env.CI_JOB_NAME) {
+          const jobName = getJenkinsJobName();
+          if (jobName) {
+            process.env.CI_JOB_NAME = jobName;
+          }
+        }
+        if (!process.env.CI_MERGE_REQUEST_IID) {
+          const prNumber = getJenkinsPrNumber();
+          if (prNumber) {
+            process.env.CI_MERGE_REQUEST_IID = prNumber;
+          }
+        }
+        if (!process.env.CI_PROJECT_URL && process.env.CI_SERVER_URL && process.env.CI_PROJECT_PATH) {
+          process.env.CI_PROJECT_URL = `${process.env.CI_SERVER_URL}/${process.env.CI_PROJECT_PATH}`;
+        }
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderJenkinsMapping", { provider: "GitLab" })));
+      }
+      /* Only log the success summary when Jenkins is involved - on native CI providers this is just noise */
+      if (isJenkins()) {
+        uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderSuccess", {
+          provider: "GitLab",
+          details: `server=${process.env.CI_SERVER_URL}, project=${process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || "unknown"}`,
+        })));
+      }
+    } catch (e) {
+      uxLog("warning", GitlabProvider, c.yellow("[GitLab] " + t("autoDetectProviderFailed", { provider: "GitLab", message: (e as Error).message })));
+    }
+  }
+
+  private static buildApi(serverUrl: string, token: string): InstanceType<typeof Gitlab> {
+    const gitlabConfig: ConstructorParameters<typeof Gitlab>[0] = { host: serverUrl, token };
+    if (process.env.GITLAB_API_REJECT_UNAUTHORIZED === "false") {
+      gitlabConfig.agent = new HttpsAgent({ rejectUnauthorized: false });
+    }
+    return new Gitlab(gitlabConfig);
+  }
+
+  /**
+   * Replaces CI_PROJECT_ID when it names a project other than the one the local git remote points
+   * to. Silence is not an option: acting on the wrong project is worse than not acting at all.
+   */
+  private static async checkProjectIdMatchesRemote(parsed: { serverUrl: string; projectPath: string }, token: string): Promise<void> {
+    const configuredId = process.env.CI_PROJECT_ID as string;
+    try {
+      const tempApi = GitlabProvider.buildApi(parsed.serverUrl, token);
+      const configuredProject = await tempApi.Projects.show(configuredId);
+      const configuredPath = String((configuredProject as any)?.path_with_namespace || "");
+      if (configuredPath && configuredPath.toLowerCase() === parsed.projectPath.toLowerCase()) {
+        return;
+      }
+      const remoteProject = await tempApi.Projects.show(parsed.projectPath);
+      if (!remoteProject?.id) {
+        return;
+      }
+      uxLog("warning", GitlabProvider, c.yellow("[GitLab] " + t("gitlabProjectIdMismatch", {
+        projectId: configuredId,
+        configuredPath: configuredPath || "?",
+        remotePath: parsed.projectPath,
+        newProjectId: String(remoteProject.id),
+      })));
+      process.env.CI_PROJECT_ID = String(remoteProject.id);
+      process.env.CI_PROJECT_PATH = parsed.projectPath;
+    } catch (apiErr) {
+      // Not being able to check is not a reason to overwrite what the user configured
+      uxLog("log", GitlabProvider, c.grey("[GitLab] " + t("autoDetectProviderApiError", { provider: "GitLab", message: (apiErr as Error).message })));
+    }
+  }
+
+  public static parseGitlabRepoUrl(remoteUrl: string): { serverUrl: string; projectPath: string } | null {
+    // HTTPS: https://gitlab.com/group/project.git or https://self-hosted.com/group/subgroup/project.git
+    if (remoteUrl.startsWith("https://") || remoteUrl.startsWith("http://")) {
+      const url = remoteUrl.replace(/\.git$/, "").replace(/\/$/,"");
+      // Remove credentials (e.g. https://user:pass@gitlab.com/...)
+      const cleanUrl = url.replace(/\/\/([^@/]+@)/gm, "//");
+      const match = cleanUrl.match(/^(https?:\/\/[^/]+)\/(.+)$/);
+      if (match) {
+        return { serverUrl: match[1], projectPath: match[2] };
+      }
+    }
+    // SSH: git@gitlab.com:group/project.git
+    if (remoteUrl.startsWith("git@")) {
+      const match = remoteUrl.match(/^git@([^:]+):(.+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, projectPath: match[2] };
+      }
+    }
+    // SSH: ssh://git@gitlab.com/group/project.git
+    if (remoteUrl.startsWith("ssh://")) {
+      const match = remoteUrl.match(/^ssh:\/\/(?:[^@]+@)?([^/]+)\/(.+?)(?:\.git)?$/);
+      if (match) {
+        return { serverUrl: `https://${match[1]}`, projectPath: match[2] };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * https://<host>/<group>/<project>/-/merge_requests/new?merge_request[source_branch]=...
+   */
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    const parsed = GitlabProvider.parseGitlabRepoUrl(remoteUrl);
+    if (!parsed) {
+      return null;
+    }
+    return buildPrCreateUrl((body) => {
+      const params = new URLSearchParams({
+        "merge_request[source_branch]": request.sourceBranch,
+        "merge_request[target_branch]": request.targetBranch,
+        "merge_request[title]": request.title,
+      });
+      if (body) {
+        params.set("merge_request[description]", body);
+      }
+      return `${parsed.serverUrl}/${parsed.projectPath}/-/merge_requests/new?${params.toString()}`;
+    }, request.body || "");
+  }
+
   public getLabel(): string {
     return "sfdx-hardis Gitlab connector";
+  }
+
+  public getSafeDirectoryCommand(): string {
+    return 'git config --global --add safe.directory "$CI_PROJECT_DIR"';
+  }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "merge request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide (gitlab)`);
+    uxLog("log", this, "1) Update workflow: before auto-fix, configure git remote with a write token.");
+    uxLog("log", this, "   Example: git remote set-url origin https://oauth2:${CI_SFDX_HARDIS_GITLAB_TOKEN}@<gitlab-host>/<group>/<repo>.git");
+    uxLog("log", this, "2) Set variable: CI_SFDX_HARDIS_GITLAB_TOKEN");
+    uxLog("log", this, "3) How to get value: GitLab Project -> Settings -> Access Tokens -> create Project Access Token with role Developer (or Maintainer), scopes api + write_repository. Store it as a masked CI/CD variable.");
   }
 
   // Returns current job URL
@@ -40,6 +258,11 @@ export class GitlabProvider extends GitProviderRoot {
     }
     if (process.env.CI_JOB_URL) {
       return process.env.CI_JOB_URL;
+    }
+    // Jenkins fallback
+    const jenkinsUrl = getJenkinsJobUrl();
+    if (jenkinsUrl) {
+      return jenkinsUrl;
     }
     return null;
   }
@@ -108,7 +331,7 @@ export class GitlabProvider extends GitProviderRoot {
         });
       }
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs: ${String(err)}`));
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingMergedMrs', { message: String(err) })));
       // as a last resort try a small unfiltered query to avoid huge responses
       try {
         allMergedMRs = await this.gitlabApi.MergeRequests.all({
@@ -120,7 +343,7 @@ export class GitlabProvider extends GitProviderRoot {
           sort: "desc",
         });
       } catch (innerErr) {
-        uxLog("warning", this, c.yellow(`[Gitlab Integration] Fallback query failed: ${String(innerErr)}`));
+        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabFallbackQueryFailed', { message: String(innerErr) })));
         allMergedMRs = [];
       }
     }
@@ -138,7 +361,7 @@ export class GitlabProvider extends GitProviderRoot {
         return this.completePullRequestInfo(candidateMergeRequests[0]);
       }
     }
-    uxLog("log", this, c.grey(`[Gitlab Integration] Unable to find related Merge Request Info`));
+    uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabUnableToFindMrInfo')));
     return null;
   }
 
@@ -152,11 +375,24 @@ export class GitlabProvider extends GitProviderRoot {
       targetBranch: gitBranch,
     });
     if (latestMergeRequestsOnBranch.length > 0) {
-      const latestMergeRequest = latestMergeRequestsOnBranch[0];
-      const latestMergeRequestId = latestMergeRequest.iid;
-      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", latestMergeRequestId, deploymentCheckId, this.completePullRequestInfo(latestMergeRequest));
+      // Select the MR whose merge commit matches the commit currently being deployed (HEAD).
+      // When several MRs are merged around the same time, the most recently merged MR is not
+      // necessarily the one that produced this build's commit. Using its validation id would make
+      // QuickDeploy reuse an unrelated MR's deployment and deploy the wrong metadata.
+      const sha = await git().revparse(["HEAD"]);
+      const matchingMergeRequest = latestMergeRequestsOnBranch.find((mr) => this.isMergeRequestMatchingCommit(mr, sha)) || null;
+      if (matchingMergeRequest == null) {
+        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('noPrMatchingDeployedCommit', { sha })));
+        return null;
+      }
+      deploymentCheckId = await this.getDeploymentIdFromPullRequest(projectId || "", matchingMergeRequest.iid, deploymentCheckId, this.completePullRequestInfo(matchingMergeRequest));
     }
     return deploymentCheckId;
+  }
+
+  private isMergeRequestMatchingCommit(mr: any, sha: string): boolean {
+    // GitLab exposes the resulting target-branch commit in merge_commit_sha (merge) or squash_commit_sha (squash).
+    return (mr?.mergeCommitSha || mr?.merge_commit_sha) === sha || (mr?.squashCommitSha || mr?.squash_commit_sha) === sha;
   }
 
   public async getPullRequestDeploymentCheckId(): Promise<string | null> {
@@ -170,17 +406,35 @@ export class GitlabProvider extends GitProviderRoot {
 
   private async getDeploymentIdFromPullRequest(projectId: string, latestMergeRequestId: number, deploymentCheckId: string | null, latestMergeRequest: CommonPullRequestInfo): Promise<string | null> {
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, latestMergeRequestId);
+    // An MR can hold several deployment-id notes, one per pipeline run. Scan every note and select
+    // the most recent one by date, otherwise QuickDeploy would reuse an outdated validation id.
+    let latestDeploymentTime = -1;
     for (const existingNote of existingNotes) {
       if (existingNote.body.includes("<!-- sfdx-hardis deployment-id ")) {
         const matches = /<!-- sfdx-hardis deployment-id (.*) -->/gm.exec(existingNote.body);
         if (matches) {
-          deploymentCheckId = matches[1];
-          uxLog("error", this, c.grey(`Found deployment id ${deploymentCheckId} on MR #${latestMergeRequestId} ${latestMergeRequest.title}`));
-          break;
+          const noteTime = this.getCommentTimestamp(existingNote);
+          if (noteTime >= latestDeploymentTime) {
+            latestDeploymentTime = noteTime;
+            deploymentCheckId = matches[1];
+          }
         }
       }
     }
+    if (deploymentCheckId) {
+      uxLog("log", this, c.grey(t('foundDeploymentIdOnMr', { deploymentCheckId, latestMergeRequestId, latestMergeRequest: latestMergeRequest.title })));
+    }
     return deploymentCheckId;
+  }
+
+  // Returns a comparable timestamp (ms) for an MR note.
+  private getCommentTimestamp(note: any): number {
+    const dateValue = note?.created_at || note?.updated_at;
+    if (!dateValue) {
+      return 0;
+    }
+    const time = new Date(dateValue).getTime();
+    return isNaN(time) ? 0 : time;
   }
 
   // Posts a note on the merge request
@@ -191,30 +445,39 @@ export class GitlabProvider extends GitProviderRoot {
     const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || prInfo?.idStr || null;
     const mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
     if (projectId == null || !Number.isFinite(mergeRequestId)) {
-      uxLog("log", this, c.grey("[Gitlab integration] No project and merge request, so no note posted..."));
+      uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabNoProjectNoNote')));
       return { posted: false, providerResult: { info: "No related merge request" } };
     }
     const gitlabCiJobName = process.env.CI_JOB_NAME;
     const gitlabCIJobUrl = process.env.CI_JOB_URL;
     // Build note message
-    const messageKey = prMessage.messageKey + "-" + gitlabCiJobName + "-" + mergeRequestId;
-    let messageBody = `## ${prMessage.title || ""}
+    const messageKey = prMessage.messageKey + "-" + this.jobMessageKeySegment(gitlabCiJobName) + "-" + mergeRequestId;
+    let messageBody = `${this.buildPrCommentBodyHeader(prMessage)}${prMessage.message}
 
-${prMessage.message}
+${this.buildPoweredByFooter(gitlabCiJobName, gitlabCIJobUrl)}
 
-_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName}](${gitlabCIJobUrl})_
+${getBannerMarkdownAndLink()}
+
 <!-- sfdx-hardis message-key ${messageKey} -->
 `;
     // Add deployment id if present
     if (globalThis.pullRequestDeploymentId) {
       messageBody += `\n<!-- sfdx-hardis deployment-id ${globalThis.pullRequestDeploymentId} -->`;
     }
+    messageBody = this.enforceHardCommentLimit(messageBody);
     // Check for existing note from a previous run
-    uxLog("log", this, c.grey("[Gitlab integration] Listing Notes of Merge Request..."));
+    uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabListingMrNotes')));
     const existingNotes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
+    // A comment of the same kind (validation or deployment) matches even when its message key
+    // carries another job name: the key holds the CI job name, so renaming the job - or running
+    // once inside CI and once outside it - would otherwise leave the old comment in place and add
+    // a second one next to it. Same rule as the Azure DevOps provider.
+    const currentCommentKind = getPrCommentKindFromMessageKey(prMessage.messageKey);
     let existingNoteId: number | null = null;
     for (const existingNote of existingNotes) {
-      if (existingNote.body.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`)) {
+      const noteBody = existingNote.body || "";
+      if (noteBody.includes(`<!-- sfdx-hardis message-key ${messageKey} -->`) ||
+        (currentCommentKind !== null && getPrCommentKind(noteBody) === currentCommentKind)) {
         existingNoteId = existingNote.id;
       }
     }
@@ -222,7 +485,7 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
     // Create or update MR note
     if (existingNoteId) {
       // Update existing note
-      uxLog("log", this, c.grey("[Gitlab integration] Updating Merge Request Note on Gitlab..."));
+      uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabUpdatingMrNote')));
       const gitlabEditNoteResult = await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, { body: messageBody });
       const prResult: PullRequestMessageResult = {
         posted: gitlabEditNoteResult.id > 0,
@@ -231,13 +494,143 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       return prResult;
     } else {
       // Create new note if no existing not was found
-      uxLog("log", this, c.grey("[Gitlab integration] Adding Merge Request Note on Gitlab..."));
+      uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabAddingMrNote')));
       const gitlabPostNoteResult = await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, messageBody);
       const prResult: PullRequestMessageResult = {
         posted: gitlabPostNoteResult.id > 0,
         providerResult: gitlabPostNoteResult,
       };
       return prResult;
+    }
+  }
+
+  public supportsDashboard(): boolean {
+    return true;
+  }
+
+  // The dashboard is an issue
+  public async findDashboard(title: string): Promise<DashboardRef | null> {
+    const issues: any[] = await this.gitlabApi.Issues.all({
+      projectId: this.dashboardProjectId(),
+      search: title,
+      in: 'title',
+      state: 'opened',
+      orderBy: 'created_at',
+      sort: 'asc',
+    } as any);
+    const issue = issues.find((candidate) => candidate.title === title);
+    return issue ? { id: issue.iid, url: issue.web_url } : null;
+  }
+
+  public async createDashboard(title: string, body: string): Promise<DashboardRef> {
+    const issue: any = await this.gitlabApi.Issues.create(this.dashboardProjectId(), title, { description: body });
+    return { id: issue.iid, url: issue.web_url };
+  }
+
+  public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
+    await this.gitlabApi.Issues.edit(this.dashboardProjectId(), dashboard.id, { title, description: body });
+  }
+
+  public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
+    const notes: any[] = await this.gitlabApi.IssueNotes.all(this.dashboardProjectId(), dashboard.id, { sort: 'asc', orderBy: 'created_at' } as any);
+    return notes
+      .filter((note) => note.system !== true)
+      .map((note) => ({ id: Number(note.id), body: note.body || '', createdDate: note.created_at || '' }))
+      .sort((a, b) => a.id - b.id);
+  }
+
+  public async createDashboardComment(dashboard: DashboardRef, body: string): Promise<number> {
+    const note: any = await this.gitlabApi.IssueNotes.create(this.dashboardProjectId(), dashboard.id, body);
+    return Number(note.id);
+  }
+
+  public async deleteDashboardComment(dashboard: DashboardRef, commentId: number): Promise<boolean> {
+    try {
+      await this.gitlabApi.IssueNotes.remove(this.dashboardProjectId(), dashboard.id, commentId);
+      return true;
+    } catch (e) {
+      if ((e as any)?.cause?.response?.status === 404 || /404|not found/i.test((e as Error).message || '')) {
+        return false;
+      }
+      throw e;
+    }
+  }
+
+  public async closeDashboard(dashboard: DashboardRef): Promise<void> {
+    await this.gitlabApi.Issues.edit(this.dashboardProjectId(), dashboard.id, { stateEvent: 'close' });
+  }
+
+  private dashboardProjectId(): string {
+    const projectId = this.projectId || process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || null;
+    if (!projectId) {
+      throw new SfError('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired'));
+    }
+    return projectId;
+  }
+
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+    if (!this.gitlabApi || !projectId) {
+      return false;
+    }
+    try {
+      await this.gitlabApi.MergeRequests.edit(projectId, pullRequestNumber, { stateEvent: 'close' });
+      return true;
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: e?.message || e })));
+      return false;
+    }
+  }
+
+  public async listPullRequests(
+    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+  ): Promise<CommonPullRequestInfo[] | null> {
+    if (!this.gitlabApi) {
+      return null;
+    }
+
+    const projectId = this.projectId;
+    if (!projectId) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired')));
+      return null;
+    }
+
+    try {
+      const state =filters.status === "merged" ? "merged" : filters.status === "open" ? "opened" : "all";
+      const params: any = {
+        projectId,
+        state,
+        orderBy: "updated_at" as const,
+        sort: "desc" as const,
+        perPage: 100,
+      };
+      if (filters.targetBranch) {
+        params.targetBranch = filters.targetBranch;
+      }
+      if (filters.minDate) {
+        params.updatedAfter = filters.minDate.toISOString();
+      }
+
+      const mergeRequests = await this.gitlabApi.MergeRequests.all(params);
+
+      return (mergeRequests as any[]).map((mr: any) => this.completePullRequestInfo(mr));
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMergeRequests', { message: e?.message || e })));
+      return null;
+    }
+  }
+
+  public async getPullRequestById(mrIid: number): Promise<CommonPullRequestInfo | null> {
+    const projectId = this.projectId;
+    if (!this.gitlabApi || !projectId) {
+      return null;
+    }
+    try {
+      const mergeRequest = await this.gitlabApi.MergeRequests.show(projectId, mrIid);
+      return mergeRequest ? this.completePullRequestInfo(mergeRequest) : null;
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderPrByIdNotFound', { id: mrIid, message: String(err) })));
+      return null;
     }
   }
 
@@ -254,16 +647,19 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       // Get project ID from the API configuration
       const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
       if (!projectId) {
-        uxLog("warning", this, c.yellow("[Gitlab Integration] CI_PROJECT_ID or CI_PROJECT_PATH environment variable is required"));
+        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired')));
         return [];
       }
 
       // Step 1: Find the last merged MR from currentBranch to targetBranch
-      uxLog("log", this, c.grey(`[Gitlab Integration] Finding last merged MR from ${currentBranchName} to ${targetBranchName}`));
+      uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFindingLastMergedMr', { sourceBranch: currentBranchName, targetBranch: targetBranchName })));
       const lastMergeToTarget = await this.findLastMergedMR(currentBranchName, targetBranchName, projectId);
 
-      // Step 2: Get all commits in currentBranch since that merge (or all if no previous merge)
-      const commitsSinceLastMerge = await this.getCommitsSinceLastMerge(currentBranchName, lastMergeToTarget, projectId);
+      // Step 2: Get the commits in currentBranch since that merge. When the branches were never
+      // merged before (retrofit branch, first promotion), the window is bounded by the target
+      // branch instead: such a branch carries the whole repository history, and listing it made
+      // the MR scope cover thousands of historical MRs (issue #2115).
+      const commitsSinceLastMerge = await this.getCommitsSinceLastMerge(currentBranchName, targetBranchName, lastMergeToTarget, projectId);
 
       if (commitsSinceLastMerge.length === 0) {
         return [];
@@ -272,62 +668,116 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       // Create a Set of commit SHAs for fast lookup
       const commitSHAs = new Set(commitsSinceLastMerge.map((c) => c.id));
 
-      // Step 3: Get all merged MRs targeting currentBranch and child branches (parallelized)
+      // Step 3-6: Match merged MRs targeting currentBranch and child branches against those commits
+      /* jscpd:ignore-start */
       const allBranches = [currentBranchName, ...childBranchesNames];
-
-      const mrPromises = allBranches.map(async (branchName) => {
-        try {
-          const mergedMRs = await this.gitlabApi!.MergeRequests.all({
-            projectId,
-            targetBranch: branchName,
-            state: "merged",
-            perPage: 100,
-          });
-          uxLog("log", this, c.grey(`[Gitlab Integration] Fetching merged MRs for branch ${branchName}`));
-          return mergedMRs;
-        } catch (err) {
-          uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching merged MRs for branch ${branchName}: ${String(err)}`));
-          return [];
-        }
-      });
-
-      const mrResults = await Promise.all(mrPromises);
-      const allMergedMRs: any[] = mrResults.flat();
-
-      // Step 4: Filter MRs whose merge commit SHA is in our commit list
-      const relevantMRs = allMergedMRs.filter((mr) => {
-        // Check if the merge commit SHA is in our commits
-        const mergeCommitSha = mr.mergeCommitSha || mr.merge_commit_sha;
-        if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
-          return true;
-        }
-
-        // Also check if the MR's SHA (last commit before merge) is in our commits
-        if (mr.sha && commitSHAs.has(mr.sha)) {
-          return true;
-        }
-
-        return false;
-      });
-
-      // Step 5: Remove duplicates (same MR might be found through different branches)
-      const uniqueMRsMap = new Map<number, any>();
-      for (const mr of relevantMRs) {
-        if (mr.iid && !uniqueMRsMap.has(mr.iid)) {
-          uniqueMRsMap.set(mr.iid, mr);
-        }
-      }
-
-      const uniqueMRs = Array.from(uniqueMRsMap.values());
-
-      // Step 6: Convert to CommonPullRequestInfo
-      return uniqueMRs.map((mr) =>
-        this.completePullRequestInfo(mr)
-      );
+      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs, getOldestCommitDate(commitsSinceLastMerge));
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}\n${err instanceof Error ? err.stack : ""}`));
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
       return [];
     }
+    /* jscpd:ignore-end */
+  }
+
+  // List the Merge Requests included in a specific "go live" merge commit (e.g. the merge
+  // of preprod into main). Bounds the range by the merge commit's first parent so hotfixes
+  // merged to the target branch at other times are excluded.
+  public async listPullRequestsInGoLive(
+    branchName: string,
+    childBranchesNames: string[],
+    mergeCommitId: string,
+  ): Promise<CommonPullRequestInfo[]> {
+    if (!this.gitlabApi || !mergeCommitId) {
+      return [];
+    }
+    try {
+      const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH;
+      if (!projectId) {
+        uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired')));
+        return [];
+      }
+
+      // Step 1: Resolve the merge commit's first parent (the mainline before the go live)
+      const mergeCommit: any = await this.gitlabApi.Commits.show(projectId, mergeCommitId);
+      const firstParent = mergeCommit?.parent_ids?.[0] || mergeCommit?.parentIds?.[0];
+      if (!firstParent) {
+        return [];
+      }
+
+      // Step 2: Commits introduced by the go live (firstParent..mergeCommit)
+      const comparison: any = await this.gitlabApi.Repositories.compare(projectId, firstParent, mergeCommitId, { straight: true });
+      const goLiveCommits: any[] = comparison?.commits || [];
+      const commitSHAs = new Set<string>(goLiveCommits.map((c: any) => c.id));
+      commitSHAs.add(mergeCommitId);
+
+      // Step 3-6: Match merged MRs targeting branchName and child branches against those commits
+      /* jscpd:ignore-start */
+      const allBranches = [branchName, ...childBranchesNames];
+      // The merge commit's own date bounds the listing when the comparison brings no dated
+      // commit, so the merged MR scan can never fall back to the whole repository history.
+      const updatedAfter = getOldestCommitDate(goLiveCommits) || getOldestCommitDate([mergeCommit]);
+      return await this.collectMergedPrsForCommits(projectId, allBranches, commitSHAs, updatedAfter);
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorListingMrsSinceLastMerge', { message: String(err), stack: err instanceof Error ? err.stack : "" })));
+      return [];
+    }
+    /* jscpd:ignore-end */
+  }
+
+  // Shared tail: fetch merged MRs targeting each branch, keep those whose merge commit
+  // is part of commitSHAs, dedupe by MR iid and convert to the common shape.
+  // updatedAfter bounds the pagination: an MR merged before the oldest commit of the window
+  // cannot have its merge commit in it, so fetching the whole merged MR history of each branch
+  // (thousands of MRs on an old repository) is useless and slow.
+  private async collectMergedPrsForCommits(
+    projectId: string | number,
+    allBranches: string[],
+    commitSHAs: Set<string>,
+    updatedAfter: string | null = null,
+  ): Promise<CommonPullRequestInfo[]> {
+    // Adaptive batches of the Gitlab ladder, shrunk only when the provider throttles
+    const mrResults = await mapInAdaptiveBatchesSettled(allBranches, async (branchName) => {
+      {
+        const mergedMRs = await this.gitlabApi!.MergeRequests.all({
+          projectId,
+          targetBranch: branchName,
+          state: "merged",
+          perPage: 100,
+          // Safety cap mirroring the Bitbucket provider (fetchAllPages, 50 pages): without it,
+          // gitbeaker pages through the whole merged MR history when updatedAfter is null or
+          // the window reaches far back.
+          maxPages: 50,
+          ...(updatedAfter ? { updatedAfter } : {}),
+        });
+        uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabFetchingMergedMrs', { branchName })));
+        return mergedMRs;
+      }
+    }, {
+      sizes: PROVIDER_BATCH_PROFILES.gitlab,
+      onError: (err, branchName) => uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingMergedMrsForBranch', { branchName, message: String(err) }))),
+    });
+    const allMergedMRs: any[] = mrResults.flatMap((mrs) => mrs || []);
+
+    // Keep MRs whose merge commit SHA (or last commit before merge) is in our commit list
+    const relevantMRs = allMergedMRs.filter((mr) => {
+      const mergeCommitSha = mr.mergeCommitSha || mr.merge_commit_sha;
+      if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
+        return true;
+      }
+      if (mr.sha && commitSHAs.has(mr.sha)) {
+        return true;
+      }
+      return false;
+    });
+
+    // Remove duplicates by MR iid
+    const uniqueMRsMap = new Map<number, any>();
+    for (const mr of relevantMRs) {
+      if (mr.iid && !uniqueMRsMap.has(mr.iid)) {
+        uniqueMRsMap.set(mr.iid, mr);
+      }
+    }
+    return Array.from(uniqueMRsMap.values()).map((mr) => this.completePullRequestInfo(mr));
   }
 
   private async findLastMergedMR(
@@ -349,35 +799,44 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`));
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFindingLastMergedMr', { sourceBranch, targetBranch, message: String(err) })));
       return null;
     }
   }
 
   private async getCommitsSinceLastMerge(
     branchName: string,
+    targetBranchName: string,
     lastMerge: any | null,
     projectId: string | number,
   ): Promise<any[]> {
     try {
-      const options: any = {
-        refName: branchName,
-        perPage: 100,
-      };
-
-      // If there was a previous merge, get commits since that merge commit
-      if (lastMerge) {
-        const mergeCommitSha = lastMerge.mergeCommitSha || lastMerge.merge_commit_sha;
-        if (mergeCommitSha) {
-          // Get commits since the merge commit
-          options.since = lastMerge.mergedAt || lastMerge.merged_at;
-        }
+      // Previous merge found with a merge or squash commit: list the branch commits since its
+      // date (also works with squash promotions, whose squash commit is not an ancestor of the
+      // source branch). Not for fast-forward promotions: they leave no merge commit, and the
+      // branch can then receive fast-forwarded feature merges whose commits keep committer
+      // dates older than the promotion, which the date window would silently miss.
+      const lastMergeDate = lastMerge ? (lastMerge.mergedAt || lastMerge.merged_at) : null;
+      const lastMergeSha = lastMerge
+        ? (lastMerge.mergeCommitSha || lastMerge.merge_commit_sha || lastMerge.squashCommitSha || lastMerge.squash_commit_sha)
+        : null;
+      if (lastMergeDate && lastMergeSha) {
+        const commits = await this.gitlabApi!.Commits.all(projectId, {
+          refName: branchName,
+          since: lastMergeDate,
+          perPage: 100,
+        });
+        return commits || [];
       }
-
-      const commits = await this.gitlabApi!.Commits.all(projectId, options);
-      return commits || [];
+      // Never merged into the target before (retrofit branch, first promotion), or fast-forward
+      // promotions: the branch history is not usable as a window, so keep only the commits the
+      // merge would actually bring into the target branch, like the GitHub / Azure / Bitbucket
+      // providers do.
+      uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabComparingCommits', { base: targetBranchName, head: branchName })));
+      const comparison: any = await this.gitlabApi!.Repositories.compare(projectId, targetBranchName, branchName);
+      return comparison?.commits || [];
     } catch (err) {
-      uxLog("warning", this, c.yellow(`[Gitlab Integration] Error fetching commits for branch ${branchName}: ${String(err)}`));
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabErrorFetchingCommits', { branchName, message: String(err) })));
       return [];
     }
   }
@@ -392,9 +851,299 @@ _Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT}) from job [${gitlabCiJobName
       description: prData?.description || "",
       authorName: prData?.author?.name || "",
       webUrl: prData?.web_url || "",
+      createdDate: prData?.created_at || undefined,
+      mergedDate: prData?.merged_at || undefined,
+      mergeCommitSha: prData?.merge_commit_sha || prData?.mergeCommitSha || undefined,
+      // draft since GitLab 13.2, work_in_progress before
+      isDraft: prData?.draft === true || prData?.work_in_progress === true,
       providerInfo: prData,
       customBehaviors: {}
     }
     return this.completeWithCustomBehaviors(prInfo);
+  }
+
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitlabCannotCreateMrMissingProjectId')));
+      return { created: false, pullRequestUrl: null, providerResult: { error: "Missing CI_PROJECT_ID" } };
+    }
+    uxLog("log", this, c.grey('[Gitlab Integration] ' + t('gitlabCreatingMergeRequest', { source: request.sourceBranch, target: request.targetBranch })));
+    const result = await this.gitlabApi.MergeRequests.create(
+      projectId,
+      request.sourceBranch,
+      request.targetBranch,
+      request.title,
+      { description: request.body },
+    );
+    return {
+      created: !!(result?.iid),
+      pullRequestUrl: (result as any)?.web_url || null,
+      providerResult: result,
+    };
+  }
+
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) return null;
+    const results = await this.gitlabApi.MergeRequests.all({
+      projectId,
+      state: "opened",
+      sourceBranch,
+      targetBranch,
+    } as any);
+    const mr = (results as any[])?.[0];
+    if (!mr) return null;
+    return { pullRequestUrl: mr.web_url, id: mr.iid };
+  }
+
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    const projectId = process.env.CI_PROJECT_ID || null;
+    if (!projectId) return;
+    await this.gitlabApi.MergeRequests.edit(projectId, id, { title, description: body });
+  }
+
+  private resolveMergeRequestContext(prNumber?: number): { projectId: string; mergeRequestId: number } | null {
+    // Same fallback as listPullRequests: outside a GitLab job only CI_PROJECT_PATH may be set, and
+    // without it every comment read answers "no comment" instead of saying it could not read
+    const projectId = process.env.CI_PROJECT_ID || process.env.CI_PROJECT_PATH || null;
+    if (!projectId) return null;
+    let mergeRequestId: number;
+    if (prNumber) {
+      mergeRequestId = prNumber;
+    } else {
+      const mergeRequestIdRaw = process.env.CI_MERGE_REQUEST_IID || process.env.CI_MERGE_REQUEST_ID || null;
+      mergeRequestId = mergeRequestIdRaw ? parseInt(String(mergeRequestIdRaw), 10) : NaN;
+    }
+    if (!Number.isFinite(mergeRequestId)) return null;
+    return { projectId, mergeRequestId };
+  }
+
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    const ctx = this.resolveMergeRequestContext(prNumber);
+    if (!ctx) return null;
+    const notes = await this.gitlabApi.MergeRequestNotes.all(ctx.projectId, ctx.mergeRequestId);
+    for (const note of notes) {
+      if ((note.body || '').includes(marker)) {
+        return note.body;
+      }
+    }
+    return null;
+  }
+
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
+    body = this.enforceHardCommentLimit(body);
+    const ctx = this.resolveMergeRequestContext(prNumber);
+    if (!ctx) return false;
+    const { projectId, mergeRequestId } = ctx;
+    const notes = await this.gitlabApi.MergeRequestNotes.all(projectId, mergeRequestId);
+    let existingNoteId: number | null = null;
+    for (const note of notes) {
+      if ((note.body || '').includes(marker)) {
+        existingNoteId = note.id;
+        break;
+      }
+    }
+    if (existingNoteId) {
+      await this.gitlabApi.MergeRequestNotes.edit(projectId, mergeRequestId, existingNoteId, { body });
+      uxLog("log", this, c.grey(`[GitLab] Updated Deployment Actions note on MR !${mergeRequestId}`));
+    } else {
+      await this.gitlabApi.MergeRequestNotes.create(projectId, mergeRequestId, body);
+      uxLog("log", this, c.grey(`[GitLab] Created Deployment Actions note on MR !${mergeRequestId}`));
+    }
+    return true;
+  }
+
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    const ctx = this.resolveMergeRequestContext(prNumber);
+    if (!ctx) return [];
+    const notes = await this.gitlabApi.MergeRequestNotes.all(ctx.projectId, ctx.mergeRequestId);
+    const mergeRequestUrl = await this.getMergeRequestWebUrl(ctx.projectId, ctx.mergeRequestId);
+    const results: PullRequestCommentRef[] = [];
+    for (const note of notes) {
+      if ((note.body || '').includes(marker)) {
+        results.push({
+          prNumber: ctx.mergeRequestId,
+          ref: { projectId: ctx.projectId, noteId: note.id },
+          body: note.body || '',
+          url: mergeRequestUrl ? `${mergeRequestUrl}#note_${note.id}` : '',
+          updatedAt: String(note.updated_at || note.created_at || ''),
+        });
+      }
+    }
+    return results;
+  }
+
+  // Web URL of a merge request, to build the permalink of its notes. Cached: it never changes
+  // during a job, and every comment of the same merge request reuses it.
+  private async getMergeRequestWebUrl(projectId: string, mergeRequestId: number): Promise<string> {
+    const cacheKey = `${projectId}-${mergeRequestId}`;
+    if (this.mergeRequestWebUrls[cacheKey] !== undefined) {
+      return this.mergeRequestWebUrls[cacheKey];
+    }
+    let webUrl = '';
+    try {
+      const mergeRequest: any = await this.gitlabApi.MergeRequests.show(projectId, mergeRequestId);
+      webUrl = mergeRequest?.web_url || '';
+    } catch (e) {
+      uxLog("log", this, c.grey(`[Gitlab Integration] Unable to get merge request URL: ${(e as Error).message}`));
+    }
+    this.mergeRequestWebUrls[cacheKey] = webUrl;
+    return webUrl;
+  }
+
+  public supportsJobArtifacts(): boolean {
+    return true;
+  }
+
+  public async listJobArtifacts(jobUrl: string): Promise<JobArtifactsListing> {
+    const jobApiUrl = this.getOwnJobApiUrl(jobUrl);
+    const jobKey = `gitlab-job-${parseGitlabJobUrl(jobUrl)?.jobId}`;
+    let job: any;
+    try {
+      job = (await httpGet<any>(jobApiUrl, { headers: this.jobApiHeaders() })).data;
+    } catch (e) {
+      // A job erased with its pipeline answers 404
+      if ((e as any)?.status === 404) {
+        return { status: 'expired', jobKey, artifacts: [] };
+      }
+      throw e;
+    }
+    const archive = job?.artifacts_file || (job?.artifacts || []).find((file: any) => file?.file_type === 'archive');
+    if (!archive) {
+      // GitLab removes the archive at its expiry date and keeps the date
+      const expireAt = Date.parse(job?.artifacts_expire_at || '');
+      return { status: !isNaN(expireAt) && expireAt < Date.now() ? 'expired' : 'none', jobKey, artifacts: [] };
+    }
+    const artifact: JobArtifact = {
+      id: String(job.id),
+      name: archive.filename || 'artifacts.zip',
+      sizeBytes: archive.size || 0,
+      expired: false,
+      updatedAt: job.finished_at || job.created_at || '',
+    };
+    return { status: 'success', jobKey, artifacts: [artifact] };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
+    await httpDownloadFile(`${this.getOwnJobApiUrl(jobUrl)}/artifacts`, targetZipFile, { headers: this.jobApiHeaders() });
+  }
+
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    body = this.enforceHardCommentLimit(body);
+    if (!commentRef?.ref?.noteId) return;
+    await this.gitlabApi.MergeRequestNotes.edit(commentRef.ref.projectId, commentRef.prNumber, commentRef.ref.noteId, { body });
+    uxLog("log", this, c.grey('[GitLab] ' + t('updatedPullRequestComment', { pr: commentRef.prNumber })));
+  }
+
+  // A job is what GitLab lists, and it carries its name, its dates and its ref: one listing of
+  // the project jobs answers everything, without a call per pipeline
+  public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
+    if (!this.projectId) {
+      throw new SfError('[Gitlab Integration] ' + t('gitlabCiProjectIdRequired'));
+    }
+    const jobs = await this.listFinishedJobsSince(this.projectId, filters.minDate);
+    return selectCiRuns(this.toCiRunCandidates(jobs, filters), filters.kinds);
+  }
+
+  // API URL of the job a job URL points to, refused when it is not a job of this project. The
+  // host is always the configured one: the token never goes to the host written in the URL.
+  private getOwnJobApiUrl(jobUrl: string): string {
+    const job = parseGitlabJobUrl(jobUrl);
+    const serverUrl = (this.serverUrl || "").replace(/\/$/, "");
+    const ownProjectPath = (process.env.CI_PROJECT_PATH || "").toLowerCase();
+    if (!job || !serverUrl || job.serverUrl.toLowerCase() !== serverUrl.toLowerCase() || !ownProjectPath || job.projectPath.toLowerCase() !== ownProjectPath) {
+      throw new SfError(t('jobArtifactsUrlNotRecognized', { jobUrl }));
+    }
+    return `${serverUrl}/api/v4/projects/${encodeURIComponent(job.projectPath)}/jobs/${job.jobId}`;
+  }
+
+  private jobApiHeaders(): Record<string, string> {
+    return { Authorization: `Bearer ${this.token}` };
+  }
+
+  // GET /projects/:id/jobs, finished jobs only. The listing has no date filter and comes newest
+  // first (by job id): the paging stops at the first page that is entirely older than minDate
+  private async listFinishedJobsSince(projectId: string, minDate: Date): Promise<any[]> {
+    const perPage = 100;
+    const minTime = minDate.getTime();
+    const jobs: any[] = [];
+    for (let page = 1; ; page++) {
+      // A page number makes the client return that page alone instead of following the next ones
+      const pageJobs = (await this.gitlabApi.Jobs.all(projectId, {
+        scope: ["success", "failed", "canceled"] as any,
+        perPage,
+        page,
+      })) as any[];
+      // A job without a date is kept: dropping it could hide a deployment
+      const jobsInWindow = pageJobs.filter((job) => !(Date.parse(job?.created_at || "") < minTime));
+      jobs.push(...jobsInWindow);
+      if (pageJobs.length < perPage || jobsInWindow.length === 0) {
+        break;
+      }
+    }
+    return jobs;
+  }
+
+  private toCiRunCandidates(jobs: any[], filters: CiRunFilters): CiRunCandidate[] {
+    const withDeployments = filters.kinds.includes('deployment');
+    const withValidations = filters.kinds.includes('validation');
+    const candidates: CiRunCandidate[] = [];
+    for (const job of jobs) {
+      const status = GitlabProvider.toCiRunStatus(job.status);
+      if (!status) {
+        continue;
+      }
+      const ref = String(job.ref || job.pipeline?.ref || "");
+      // A merge request pipeline runs on refs/merge-requests/<iid>/head, /merge or /train
+      const mergeRequestRef = /^refs\/merge-requests\/(\d+)\//.exec(ref);
+      // The pipeline of a tag is not the deployment of a branch, even when both have the same name
+      if (job.tag === true) {
+        continue;
+      }
+      // A job of another branch than the ones asked for is the one of a merge request too: a
+      // project can run its deployment check on the branch pipeline of the feature branch
+      const isMergeRequest = mergeRequestRef !== null || job.pipeline?.source === "merge_request_event" || !filters.branches.includes(ref);
+      if (isMergeRequest ? !withValidations : !withDeployments) {
+        continue;
+      }
+      // A scheduled pipeline, or one started through the API or by another pipeline, runs on a
+      // branch without anything having been merged into it. "web" is a run started by hand
+      const pipelineSource = job.pipeline?.source;
+      if (!isMergeRequest && pipelineSource && pipelineSource !== "push" && pipelineSource !== "web") {
+        continue;
+      }
+      candidates.push({
+        id: String(job.id),
+        name: job.name || "",
+        trigger: isMergeRequest ? 'pullRequest' : 'push',
+        // The job does not say the target branch of its merge request: the caller finds it from pullRequestId
+        branch: isMergeRequest ? "" : ref,
+        ...(isMergeRequest ? { pullRequestId: mergeRequestRef ? mergeRequestRef[1] : "", sourceBranch: mergeRequestRef ? "" : ref } : {}),
+        status,
+        queuedAt: job.created_at || "",
+        startedAt: job.started_at || job.created_at || "",
+        finishedAt: job.finished_at || "",
+        commitSha: job.commit?.id || job.pipeline?.sha || "",
+        triggeredBy: job.user?.name || job.user?.username || "",
+        webUrl: job.web_url || "",
+      });
+    }
+    return candidates;
+  }
+
+  // Skipped and manual jobs deployed nothing and failed nothing
+  private static toCiRunStatus(status: string | null | undefined): CiRunStatus | null {
+    if (status === "success") {
+      return 'succeeded';
+    }
+    if (status === "failed") {
+      return 'failed';
+    }
+    if (status === "canceled") {
+      return 'canceled';
+    }
+    return null;
   }
 }

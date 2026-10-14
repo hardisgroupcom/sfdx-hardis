@@ -1,0 +1,688 @@
+import { SfError } from '@salesforce/core';
+import c from 'chalk';
+import fs from './fsUtils.js';
+import * as yaml from 'js-yaml';
+import * as path from 'path';
+import { getCurrentGitBranch, isCI, uxLog } from './index.js';
+import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { findDataWorkspaceByName } from './dataUtils.js';
+import { getConfig } from '../../config/index.js';
+import { GitProvider } from '../gitProvider/index.js';
+import { clearListMajorOrgsCache } from './orgConfigUtils.js';
+import { t } from './i18n.js';
+import { dumpRepositoryYaml } from './yamlUtils.js';
+
+export type ActionScope = 'project' | 'branch' | 'pr';
+export type { ActionWhen };
+
+/**
+ * Virtual target branch name matching any deployment target that is not a declared major branch:
+ * a developer sandbox reached by hardis:work:backpromote, or a local deployment from a feature branch.
+ */
+export const DEV_SANDBOXES_BRANCH_NAME = 'dev-sandboxes';
+
+export type ActionBranchFilterMode = 'none' | 'include' | 'exclude';
+
+export type ActionBranchFilterVerdict = {
+  run: boolean;
+  // true when the action definition itself is wrong (both lists set), as opposed to simply not targeted
+  invalid?: boolean;
+  reason?: string;
+};
+
+const WHEN_TO_CONFIG_KEY: Record<ActionWhen, string> = {
+  'pre-deploy': 'commandsPreDeploy',
+  'post-deploy': 'commandsPostDeploy',
+};
+
+/**
+ * Resolve the YAML config file path based on scope, branch name, and PR ID.
+ */
+export async function getActionConfigFilePath(scope: ActionScope, branch?: string, prId?: string): Promise<string> {
+  if (scope === 'project') {
+    return path.join('config', '.sfdx-hardis.yml');
+  }
+  if (scope === 'branch') {
+    // A branch name read from git or from a Pull Request target (release/uat) is written in the file
+    // name the way the config loader reads it (release__uat), as getCurrentGitBranch formats it
+    const branchName = (branch || await getCurrentGitBranch({ formatted: true }) || 'main').replace('/', '__');
+    return path.join('config', 'branches', `.sfdx-hardis.${branchName}.yml`);
+  }
+  // scope === 'pr'
+  const prFileName = prId ? `.sfdx-hardis.${prId}.yml` : '.sfdx-hardis.draft.yml';
+  return path.join('scripts', 'actions', prFileName);
+}
+
+/**
+ * Read the actions array from a config file for the given when phase.
+ */
+export async function readActions(scope: ActionScope, when: ActionWhen, branch?: string, prId?: string): Promise<PrePostCommand[]> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  const configKey = WHEN_TO_CONFIG_KEY[when];
+  if (!fs.existsSync(configFile)) {
+    return [];
+  }
+  const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  const commands: PrePostCommand[] = Array.isArray(doc[configKey]) ? doc[configKey] : [];
+  for (const cmd of commands) {
+    cmd.when = when;
+  }
+  return commands;
+}
+
+/**
+ * Write actions array back to config file, preserving other keys.
+ */
+export async function writeActions(scope: ActionScope, when: ActionWhen, actions: PrePostCommand[], branch?: string, prId?: string): Promise<string> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  const configKey = WHEN_TO_CONFIG_KEY[when];
+  let doc: any = {};
+  if (fs.existsSync(configFile)) {
+    doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  }
+  // The key the actions are stored under already says when they run: readActions sets
+  // "when" on each of them for its callers, and it must not be written back into the file
+  doc[configKey] = actions.map((action) => {
+    const stored: any = { ...action };
+    delete stored.when;
+    return stored;
+  });
+  await fs.ensureDir(path.dirname(configFile));
+  await fs.writeFile(configFile, dumpRepositoryYaml(doc));
+  // A created or updated branch config file changes the major orgs list: drop its cache.
+  if (scope === 'branch') {
+    clearListMajorOrgsCache();
+  }
+  return configFile;
+}
+
+/**
+ * Normalize a branch name for comparison: branch names come either from git (feature/JIRA-123)
+ * or from a config file name (.sfdx-hardis.feature__JIRA-123.yml), so both forms must collapse
+ * to the same value before an exact, case-insensitive match.
+ */
+export function normalizeBranchName(name: string): string {
+  return String(name || '').trim().toLowerCase().replace(/\//g, '__');
+}
+
+/**
+ * Context an action really runs in. A run-batch action changes the data of the org: it is a
+ * deployment-only action, whatever its context holds. A manual step to do before the deployment
+ * runs nothing and has to be done before the merge: the validation job always lists it, whatever
+ * its context holds, or a step declared for the deployment job only would never hold the merge.
+ */
+export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context' | 'when'>, when?: ActionWhen): PrePostCommand['context'] {
+  if (cmd.type === "run-batch") {
+    return "process-deployment-only";
+  }
+  if (cmd.type === "manual" && (when || cmd.when) === "pre-deploy") {
+    return "all";
+  }
+  return cmd.context || "all";
+}
+
+/**
+ * Names an action branch filter may match for the current deployment.
+ * The real target branch always counts, so a literal feature branch name still works.
+ * A target that is not a declared major branch is a developer sandbox, so it also matches
+ * the virtual "dev-sandboxes" name.
+ */
+export function buildActionTargetBranchCandidates(targetBranch: string, majorBranchNames: string[]): string[] {
+  const candidates = [targetBranch];
+  const isMajorBranch = (majorBranchNames || []).some(
+    (majorBranch) => normalizeBranchName(majorBranch) === normalizeBranchName(targetBranch)
+  );
+  if (!isMajorBranch) {
+    candidates.push(DEV_SANDBOXES_BRANCH_NAME);
+  }
+  return candidates;
+}
+
+/**
+ * Decide whether an action applies to the current deployment target.
+ * Pure function (no git, no org, no config): the branch filter rule lives here only.
+ *
+ * An empty list is treated as "not set" rather than "matches nothing", so a leftover
+ * `includeTargetBranches: []` in a config never silently disables an action everywhere.
+ */
+export function evaluateActionBranchFilter(
+  action: Pick<PrePostCommand, 'includeTargetBranches' | 'excludeTargetBranches'>,
+  targetBranchCandidates: string[]
+): ActionBranchFilterVerdict {
+  const includeBranches = (action.includeTargetBranches || []).filter((branch) => String(branch || '').trim() !== '');
+  const excludeBranches = (action.excludeTargetBranches || []).filter((branch) => String(branch || '').trim() !== '');
+  if (includeBranches.length > 0 && excludeBranches.length > 0) {
+    return { run: false, invalid: true, reason: t('actionValidationBranchFiltersMutuallyExclusive') };
+  }
+  const normalizedCandidates = (targetBranchCandidates || []).map((candidate) => normalizeBranchName(candidate));
+  const matches = (branches: string[]) =>
+    branches.some((branch) => normalizedCandidates.includes(normalizeBranchName(branch)));
+  // The real target branch is the first candidate: report it rather than the dev-sandboxes alias
+  const targetName = targetBranchCandidates?.[0] || '';
+  if (includeBranches.length > 0 && !matches(includeBranches)) {
+    return { run: false, reason: t('actionSkippedBranchNotIncluded', { branches: includeBranches.join(', '), target: targetName }) };
+  }
+  if (excludeBranches.length > 0 && matches(excludeBranches)) {
+    return { run: false, reason: t('actionSkippedBranchExcluded', { target: targetName }) };
+  }
+  return { run: true };
+}
+
+/**
+ * Parse a comma-separated branch list flag value into an array.
+ * An empty string is a deliberate "clear the filter" value, so it returns an empty array.
+ */
+export function parseBranchListFlag(flagValue: string): string[] {
+  return String(flagValue || '')
+    .split(',')
+    .map((branch) => branch.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Apply the --include-target-branches / --exclude-target-branches flags to an action.
+ *
+ * The two lists are mutually exclusive, so setting one clears the other: switching an action from
+ * an exclude list to an include list is a single flag, not a flag plus an explicit reset. Passing
+ * both flags at once leaves both set, which validateActionParameters then rejects as the
+ * configuration error it is. An empty value removes the restriction.
+ *
+ * A flag left out (undefined) never touches the action, so updating an unrelated field keeps the
+ * branch filter it already carries.
+ */
+export function applyBranchFilterFlagsToAction(
+  action: Partial<PrePostCommand>,
+  includeFlagValue?: string,
+  excludeFlagValue?: string
+): void {
+  const bothPassed = includeFlagValue !== undefined && excludeFlagValue !== undefined;
+  if (includeFlagValue !== undefined) {
+    const includeTargetBranches = parseBranchListFlag(includeFlagValue);
+    action.includeTargetBranches = includeTargetBranches.length > 0 ? includeTargetBranches : undefined;
+    if (includeTargetBranches.length > 0 && !bothPassed) {
+      action.excludeTargetBranches = undefined;
+    }
+  }
+  if (excludeFlagValue !== undefined) {
+    const excludeTargetBranches = parseBranchListFlag(excludeFlagValue);
+    action.excludeTargetBranches = excludeTargetBranches.length > 0 ? excludeTargetBranches : undefined;
+    if (excludeTargetBranches.length > 0 && !bothPassed) {
+      action.includeTargetBranches = undefined;
+    }
+  }
+}
+
+/**
+ * Choices offered when prompting for the target branches of an action: the major branches
+ * declared in config/branches, plus the virtual dev-sandboxes entry.
+ * orgConfigUtils is imported lazily to keep puppeteer out of the startup path of action commands.
+ */
+export async function listActionTargetBranchChoices(): Promise<{ title: string; value: string }[]> {
+  const { listMajorOrgs } = await import('./orgConfigUtils.js');
+  const majorOrgs = await listMajorOrgs();
+  const choices = majorOrgs
+    .filter((majorOrg: any) => majorOrg?.branchName)
+    .map((majorOrg: any) => ({ title: majorOrg.branchName, value: majorOrg.branchName }));
+  choices.push({ title: t('actionBranchFilterDevSandboxes'), value: DEV_SANDBOXES_BRANCH_NAME });
+  return choices;
+}
+
+/**
+ * Validate type-specific parameters for an action.
+ * Returns an array of error messages (empty if valid).
+ */
+export async function validateActionParameters(action: Partial<PrePostCommand>, when?: ActionWhen): Promise<string[]> {
+  const errors: string[] = [];
+  const type = action.type || 'command';
+  // Actions read from a config file carry `when`; a freshly built one does not, so the caller
+  // passes the phase it is being saved into.
+  const actionWhen = when || action.when;
+
+  if ((action.includeTargetBranches || []).length > 0 && (action.excludeTargetBranches || []).length > 0) {
+    errors.push(t('actionValidationBranchFiltersMutuallyExclusive'));
+  }
+
+  if (type === 'command') {
+    if (!action.command) {
+      errors.push(t('actionValidationNoCommand'));
+    }
+  } else if (type === 'apex') {
+    const apexScript = action.parameters?.apexScript || '';
+    if (!apexScript) {
+      errors.push(t('actionValidationNoApexScript'));
+    } else if (!fs.existsSync(apexScript)) {
+      errors.push(t('apexScriptNotFound', { path: apexScript }));
+    }
+  } else if (type === 'data') {
+    const sfdmuProject = action.parameters?.sfdmuProject || '';
+    if (!sfdmuProject) {
+      errors.push(t('actionValidationNoSfdmuProject'));
+    } else {
+      const workspace = await findDataWorkspaceByName(sfdmuProject, false);
+      if (!workspace) {
+        errors.push(t('sfdmuWorkspaceNotFound', { name: sfdmuProject }));
+      }
+    }
+  } else if (type === 'publish-community') {
+    if (!action.parameters?.communityName) {
+      errors.push(t('actionValidationNoCommunityName'));
+    }
+  } else if (type === 'manual') {
+    if (!action.parameters?.instructions) {
+      errors.push(t('actionValidationNoInstructions'));
+    }
+  } else if (type === 'schedule-batch') {
+    if (!action.parameters?.className) {
+      errors.push(t('actionValidationNoClassName'));
+    }
+    if (!action.parameters?.cronExpression) {
+      errors.push(t('actionValidationNoCronExpression'));
+    }
+  } else if (type === 'run-batch') {
+    const { listRunBatchParameterErrors } = await import('../actionsProvider/runBatchAction.js');
+    errors.push(...listRunBatchParameterErrors(action));
+  } else if (type === 'remove-packagexml-items') {
+    const { findInvalidPackageXmlItems, normalizePackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
+    const items = normalizePackageXmlItems(action.parameters?.packageXmlItems);
+    if (items.length === 0) {
+      errors.push(t('actionValidationNoPackageXmlItems'));
+    } else {
+      const invalidItems = findInvalidPackageXmlItems(items);
+      if (invalidItems.length > 0) {
+        errors.push(t('actionValidationInvalidPackageXmlItems', { items: invalidItems.join(' | ') }));
+      }
+    }
+    if (actionWhen === 'post-deploy') {
+      errors.push(t('actionValidationPackageXmlItemsPreDeployOnly'));
+    }
+  } else {
+    errors.push(...(await validateCustomFunctionAction(action, type, actionWhen)));
+  }
+
+  return errors;
+}
+
+/**
+ * A movedFrom written as a quoted number in YAML ("12") is the number 12: coerced in place
+ */
+export function normalizeMovedFrom(action: Partial<PrePostCommand>): void {
+  if (typeof action.movedFrom === 'string' && /^\d+$/.test((action.movedFrom as string).trim())) {
+    action.movedFrom = parseInt(action.movedFrom as string, 10);
+  }
+}
+
+/**
+ * Validate the movedFrom property of an action: the number of the Pull Request it was moved from.
+ * Only an action of a Pull Request can be moved, and never from its own Pull Request.
+ * Returns an array of error messages (empty if valid).
+ */
+export function validateMovedFrom(action: Partial<PrePostCommand>, scope: ActionScope, prId?: string): string[] {
+  if (action.movedFrom === undefined || action.movedFrom === null) {
+    return [];
+  }
+  normalizeMovedFrom(action);
+  if (!Number.isInteger(action.movedFrom) || action.movedFrom < 1) {
+    return [t('actionValidationMovedFromInvalid', { value: String(action.movedFrom) })];
+  }
+  if (scope !== 'pr') {
+    return [t('actionValidationMovedFromPrScopeOnly')];
+  }
+  if (prId && prId === String(action.movedFrom)) {
+    return [t('actionValidationMovedFromSamePr', { pr: prId })];
+  }
+  return [];
+}
+
+/**
+ * Actions declared in the YAML block of a Pull Request description, for the given phase.
+ * Each one carries its Pull Request, like the actions collected by a deployment job.
+ */
+export async function readPullRequestDescriptionActions(prNumber: number, when: ActionWhen): Promise<PrePostCommand[]> {
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    return [];
+  }
+  const pr = await gitProvider.getPullRequestById(prNumber);
+  if (!pr) {
+    return [];
+  }
+  const { getYamlFromPrDescription } = await import('./pullRequestUtils.js');
+  const config: any = getYamlFromPrDescription(pr) || {};
+  const property = when === 'pre-deploy' ? 'commandsPreDeploy' : 'commandsPostDeploy';
+  const actions: PrePostCommand[] = Array.isArray(config[property]) ? config[property] : [];
+  return actions.map((action) => ({ ...action, when, pullRequest: pr }));
+}
+
+/**
+ * Validate an action whose type is not built-in: it must be the id of a project custom function,
+ * and it must respect the contract that function declares (required inputs, allowed values,
+ * phase and context restrictions).
+ */
+async function validateCustomFunctionAction(
+  action: Partial<PrePostCommand>,
+  type: string,
+  actionWhen?: ActionWhen
+): Promise<string[]> {
+  const errors: string[] = [];
+  const { getCustomFunctionById } = await import('./customFunctionUtils.js');
+  const definition = await getCustomFunctionById(type);
+  if (!definition) {
+    errors.push(t('actionValidationUnknownType', { type }));
+    return errors;
+  }
+
+  if (definition.when && actionWhen && definition.when !== actionWhen) {
+    errors.push(t('actionValidationFunctionWrongPhase', { id: definition.id, when: definition.when }));
+  }
+
+  const allowedContexts = definition.allowedContexts || [];
+  if (allowedContexts.length > 0 && action.context && !allowedContexts.includes(action.context)) {
+    errors.push(
+      t('actionValidationFunctionContextNotAllowed', {
+        id: definition.id,
+        context: action.context,
+        contexts: allowedContexts.join(', '),
+      })
+    );
+  }
+
+  for (const input of definition.inputs || []) {
+    const rawValue = action.parameters?.[input.name] ?? input.default;
+    const isEmpty = rawValue === undefined || rawValue === null || String(rawValue).trim() === '';
+    if (input.required === true && isEmpty) {
+      errors.push(t('actionValidationFunctionMissingInput', { name: input.name, id: definition.id }));
+      continue;
+    }
+    if (isEmpty) {
+      continue;
+    }
+    // A value carrying a reference is only known at run time, so it cannot be checked here
+    if (typeof rawValue === 'string' && rawValue.includes('${{')) {
+      continue;
+    }
+    if (input.type === 'select' && !(input.options || []).includes(String(rawValue))) {
+      errors.push(
+        t('actionValidationFunctionInvalidSelectValue', {
+          name: input.name,
+          value: String(rawValue),
+          options: (input.options || []).join(', '),
+        })
+      );
+    }
+    if (input.type === 'number' && !Number.isFinite(Number(rawValue))) {
+      errors.push(t('actionValidationFunctionInvalidNumber', { name: input.name, value: String(rawValue) }));
+    }
+  }
+
+  const declaredInputNames = (definition.inputs || []).map((input) => input.name);
+  const unknownParameters = Object.keys(action.parameters || {}).filter(
+    (parameterName) => !declaredInputNames.includes(parameterName)
+  );
+  if (unknownParameters.length > 0) {
+    errors.push(
+      t('actionValidationFunctionUnknownParameters', {
+        names: unknownParameters.join(', '),
+        id: definition.id,
+        declared: declaredInputNames.join(', ') || '-',
+      })
+    );
+  }
+
+  return errors;
+}
+
+/**
+ * Action types offered by the current project: the built-in ones plus one per custom function.
+ * `when` filters out the functions restricted to the other deployment phase.
+ */
+export async function listAvailableActionTypes(when?: ActionWhen): Promise<{ title: string; value: string; description?: string }[]> {
+  const { listCustomFunctions } = await import('./customFunctionUtils.js');
+  const choices: { title: string; value: string; description?: string }[] = ACTION_TYPES.map((actionType) => ({
+    title: String(actionType),
+    value: String(actionType),
+  }));
+  const customFunctions = (await listCustomFunctions()).filter((fn) => !when || !fn.when || fn.when === when);
+  for (const customFunction of customFunctions) {
+    choices.push({
+      title: `${customFunction.label || customFunction.id} (${t('actionTypeCustomFunctionSuffix')})`,
+      value: customFunction.id,
+      description: customFunction.description || customFunction.script,
+    });
+  }
+  return choices;
+}
+
+/**
+ * Find an action by ID in a list. Throws SfError if not found.
+ */
+export function findActionById(actions: PrePostCommand[], actionId: string): { action: PrePostCommand; index: number } {
+  const index = actions.findIndex(a => a.id === actionId);
+  if (index === -1) {
+    throw new SfError(t('actionNotFound', { id: actionId }));
+  }
+  return { action: actions[index], index };
+}
+
+/**
+ * Build a PrePostCommand from the collected values.
+ */
+export function buildAction(values: {
+  id: string;
+  label: string;
+  type: PrePostCommand['type'];
+  command?: string;
+  context?: PrePostCommand['context'];
+  includeTargetBranches?: string[];
+  excludeTargetBranches?: string[];
+  allowFailure?: boolean;
+  runOnlyOnceByOrg?: boolean;
+  customUsername?: string;
+  parameters?: Record<string, any>;
+}): PrePostCommand {
+  const action: PrePostCommand = {
+    id: values.id,
+    label: values.label,
+    type: values.type,
+    command: values.command || '',
+    context: values.context || 'all',
+  };
+  if (values.parameters && Object.keys(values.parameters).length > 0) {
+    action.parameters = values.parameters;
+  }
+  // Keep the YAML clean: an action without a branch filter carries neither property
+  if ((values.includeTargetBranches || []).length > 0) {
+    action.includeTargetBranches = values.includeTargetBranches;
+  }
+  if ((values.excludeTargetBranches || []).length > 0) {
+    action.excludeTargetBranches = values.excludeTargetBranches;
+  }
+  action.allowFailure = values.allowFailure === true;
+  action.runOnlyOnceByOrg = values.runOnlyOnceByOrg !== false;
+  if (values.customUsername) {
+    action.customUsername = values.customUsername;
+  }
+  return action;
+}
+
+/**
+ * Log action details for confirmation.
+ */
+export function logActionSummary(commandThis: any, action: PrePostCommand): void {
+  uxLog("log", commandThis, c.grey(`  id: ${action.id}`));
+  uxLog("log", commandThis, c.grey(`  label: ${action.label}`));
+  uxLog("log", commandThis, c.grey(`  type: ${action.type}`));
+  uxLog("log", commandThis, c.grey(`  context: ${action.context}`));
+  if ((action.includeTargetBranches || []).length > 0) {
+    uxLog("log", commandThis, c.grey(`  includeTargetBranches: ${(action.includeTargetBranches || []).join(', ')}`));
+  }
+  if ((action.excludeTargetBranches || []).length > 0) {
+    uxLog("log", commandThis, c.grey(`  excludeTargetBranches: ${(action.excludeTargetBranches || []).join(', ')}`));
+  }
+  if (action.command) {
+    uxLog("log", commandThis, c.grey(`  command: ${action.command}`));
+  }
+  if (action.parameters) {
+    for (const [key, value] of Object.entries(action.parameters)) {
+      uxLog("log", commandThis, c.grey(`  ${key}: ${value}`));
+    }
+  }
+}
+
+/**
+ * Log a hint to the user that actions are in the draft config and they should run link-pull-request.
+ */
+function notifyDraftUsage(commandThis: any): void {
+  uxLog("log", commandThis, c.cyan(t('draftUsageHint')));
+}
+
+/**
+ * Resolve the PR ID when the user passes "current".
+ * - Tries to find the PR matching the current branch via GitProvider.
+ * - In interactive mode: if not found, prompts the user then falls back to "draft".
+ * - In agent mode: if not found, logs a warning and falls back to "draft".
+ * - If prId is not "current", returns it as-is (or undefined).
+ * - When returning undefined (draft fallback), logs a hint to run link-pull-request.
+ */
+export async function resolvePrId(
+  commandThis: any,
+  prId: string | undefined,
+  agentMode: boolean,
+): Promise<string | undefined> {
+  if (!prId || prId !== 'current') {
+    if (!prId) {
+      // No PR ID provided - will use draft config
+      notifyDraftUsage(commandThis);
+    }
+    return prId;
+  }
+
+  // Try to find the PR for the current branch via git provider API
+  try {
+    const prInfo = await GitProvider.getPullRequestInfo();
+    if (prInfo && prInfo.idStr) {
+      uxLog("log", commandThis, c.grey(t('prResolvedFromBranch', { prId: prInfo.idStr })));
+      return prInfo.idStr;
+    }
+  } catch (e) {
+    uxLog("warning", commandThis, c.yellow(t('prResolutionFailed', { message: (e as Error).message })));
+  }
+
+  // Fallback: look up merge request info from user config
+  const prIdFromConfig = await getPrIdFromUserConfig();
+  if (prIdFromConfig) {
+    uxLog("log", commandThis, c.grey(t('prResolvedFromBranch', { prId: prIdFromConfig })));
+    // If a draft config file exists, rename it to the resolved PR ID
+    tryRenameDraftToPr(prIdFromConfig);
+    return prIdFromConfig;
+  }
+
+  // PR not found
+  if (agentMode || isCI) {
+    uxLog("warning", commandThis, c.yellow(t('prNotFoundAgentWarning')));
+    notifyDraftUsage(commandThis);
+    return undefined; // will use draft
+  }
+
+  // Interactive mode: prompt user
+  const { prompts } = await import('./prompts.js');
+  const response = await prompts({
+    type: 'text',
+    name: 'value',
+    message: c.cyanBright(t('prNotFoundEnterIdOrEmpty')),
+    initial: '',
+    description: t('prNotFoundEnterIdOrEmpty'),
+  });
+  const enteredId = (response.value || '').trim();
+  if (enteredId) {
+    return enteredId;
+  }
+  uxLog("action", commandThis, c.cyan(t('usingDraftConfig')));
+  notifyDraftUsage(commandThis);
+  return undefined; // will use draft
+}
+
+/**
+ * Rename the draft config file to match a specific PR ID.
+ */
+export async function renameDraftToPr(prId: string): Promise<string> {
+  const draftFile = path.join('scripts', 'actions', '.sfdx-hardis.draft.yml');
+  const targetFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
+
+  if (!fs.existsSync(draftFile)) {
+    throw new SfError(t('draftFileNotFound'));
+  }
+  if (fs.existsSync(targetFile)) {
+    throw new SfError(t('prConfigFileAlreadyExists', { prId }));
+  }
+
+  await fs.rename(draftFile, targetFile);
+  return targetFile;
+}
+
+/**
+ * Best-effort rename of draft config file to PR-specific file.
+ * Does nothing if no draft exists or if the target file already exists.
+ */
+function tryRenameDraftToPr(prId: string): void {
+  const draftFile = path.join('scripts', 'actions', '.sfdx-hardis.draft.yml');
+  const targetFile = path.join('scripts', 'actions', `.sfdx-hardis.${prId}.yml`);
+  if (fs.existsSync(draftFile) && !fs.existsSync(targetFile)) {
+    fs.renameSync(draftFile, targetFile);
+    uxLog("log", null, c.grey(`Renamed draft config to ${targetFile}`));
+  }
+}
+
+/**
+ * Extract the PR/MR ID from user config's mergeRequests for the current branch.
+ * Returns the ID as a string, or null if not found.
+ */
+export async function getPrIdFromUserConfig(): Promise<string | null> {
+  try {
+    const currentBranch = await getCurrentGitBranch();
+    if (!currentBranch) return null;
+    const userConfig = await getConfig('user');
+    const mergeRequests: any[] = userConfig.mergeRequests || [];
+    const entry = mergeRequests.find((mr: any) => mr?.branch === currentBranch && mr?.url);
+    if (!entry?.url) return null;
+    const match = String(entry.url).match(/\/(\d+)\s*$/);
+    return match ? match[1] : null;
+  } catch (_e) {
+    return null;
+  }
+}
+
+export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'run-batch', 'remove-packagexml-items'];
+export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
+export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
+export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];
+
+/**
+ * Read the deploymentApexTestClasses array from a config file.
+ */
+export async function readTestClasses(scope: ActionScope, branch?: string, prId?: string): Promise<string[]> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  if (!fs.existsSync(configFile)) {
+    return [];
+  }
+  const doc: any = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  return Array.isArray(doc['deploymentApexTestClasses']) ? doc['deploymentApexTestClasses'] : [];
+}
+
+/**
+ * Write the deploymentApexTestClasses array back to config file, preserving other keys.
+ */
+export async function writeTestClasses(scope: ActionScope, classes: string[], branch?: string, prId?: string): Promise<string> {
+  const configFile = await getActionConfigFilePath(scope, branch, prId);
+  let doc: any = {};
+  if (fs.existsSync(configFile)) {
+    doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
+  }
+  doc['deploymentApexTestClasses'] = classes;
+  await fs.ensureDir(path.dirname(configFile));
+  await fs.writeFile(configFile, dumpRepositoryYaml(doc));
+  // A created or updated branch config file changes the major orgs list: drop its cache.
+  if (scope === 'branch') {
+    clearListMajorOrgsCache();
+  }
+  return configFile;
+}

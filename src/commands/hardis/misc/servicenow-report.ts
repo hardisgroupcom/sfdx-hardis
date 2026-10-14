@@ -4,19 +4,39 @@ import { Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { soqlQuery } from '../../../common/utils/apiUtils.js';
-import axios from 'axios';
+import { httpGet } from '../../../common/utils/httpUtils.js';
 import c from 'chalk';
-import { uxLog, uxLogTable } from '../../../common/utils/index.js';
+import { isCI, uxLog, uxLogTable } from '../../../common/utils/index.js';
 import { glob } from 'glob';
 import { GLOB_IGNORE_PATTERNS } from '../../../common/utils/projectUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
-import fs from 'fs-extra';
+import fs from '../../../common/utils/fsUtils.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../common/utils/notifUtils.js';
 import { NotifProvider, NotifSeverity } from '../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../common/utils/orgUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+/**
+ * Split the ticket field of a user story into the ticket numbers it holds.
+ *
+ * Teams separate several tickets in one field with a comma, a semicolon or simply a space, and
+ * a field often mixes them ("DMND0000001, DMND0000002 DMND0000003"). Every separator is treated
+ * the same way, so a value is never sent to ServiceNow as one invalid token.
+ *
+ * Returns an empty array for an empty, null or non-string value.
+ */
+export function splitTicketNumbers(ticketFieldValue: any): string[] {
+  if (typeof ticketFieldValue !== 'string') {
+    return [];
+  }
+  return ticketFieldValue
+    .split(/[,;\s]+/)
+    .map((ticketNumber) => ticketNumber.trim())
+    .filter((ticketNumber) => ticketNumber !== '');
+}
 
 /* jscpd:ignore-end */
 export default class ServiceNowReport extends SfCommand<any> {
@@ -30,6 +50,8 @@ Define the following environment variables (in CICD variables or locally in a **
 - SERVICENOW_PASSWORD: The password for ServiceNow API authentication.
 
 You also need to define JSON configuration file(e) in folder **config/user-stories/**
+
+When a user story carries several tickets in the field named by \`ticketField\`, separate them with a comma, a semicolon or a space. The command splits on all three, and on a mix of them, so each ticket becomes its own report row and is looked up in ServiceNow on its own.
 
 Example:
 
@@ -76,14 +98,32 @@ Example:
     }
 }
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all" --agent
+\`\`\`
+
+In agent mode:
+- The \`--config\` flag is recommended. If not provided and multiple config files exist, the first one found is used automatically.
+- The \`--where-choice\` flag is recommended. If not provided and multiple WHERE choices exist, the first one is used automatically.
+- All interactive prompts are skipped.
   `;
 
   public static examples = [
     '$ sf hardis:misc:servicenow-report',
-    '$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"'
+    '$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"',
+    '$ sf hardis:misc:servicenow-report --agent',
   ];
   /* jscpd:ignore-start */
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     config: Flags.string({
       char: 'c',
       description: 'Path to JSON config file containing user stories and ServiceNow configuration',
@@ -114,6 +154,7 @@ Example:
   protected static supportsDevhubUsername = false;
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
   public static requiresProject = true;
+  protected agentMode = false;
   protected configFile: string | undefined;
   protected whereChoice: string | undefined;
   protected outputFile: string;
@@ -167,6 +208,7 @@ Example:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ServiceNowReport);
+    this.agentMode = flags.agent === true;
     this.configFile = flags.config;
     this.whereChoice = flags['where-choice'];
     this.outputFile = flags.outputfile || null;
@@ -177,7 +219,7 @@ Example:
     // List user stories matching with criteria
     const ticketNumbers = await this.fetchUserStories(this.conn);
 
-    // Get matching demands and incidents from ServiceNow API with axios using ticket numbers
+    // Get matching demands and incidents from ServiceNow API using ticket numbers
     await this.completeUserStoriesWithServiceNowInfo(ticketNumbers);
 
     // Build final result
@@ -194,9 +236,9 @@ Example:
         // If whereChoice is provided, use it directly
         this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[this.whereChoice];
       }
-      else {
+      else if (!isCI && !this.agentMode) {
         // If whereChoice is not provided, prompt user to select one
-        uxLog("warning", this, c.yellow('No WHERE choice provided. Please select one from the available choices.'));
+        uxLog("action", this, c.cyan(t('noWhereChoiceProvidedPleaseSelectOne')));
         // If whereChoices is defined, prompt user to select one
         const whereChoices = Object.keys(this.userStoriesConfig.whereChoices).map((key) => ({
           title: key,
@@ -205,32 +247,40 @@ Example:
         }));
         const whereChoiceRes = await prompts({
           type: 'select',
-          message: 'Select a WHERE condition for user stories:',
-          description: 'Choose a predefined WHERE condition to filter user stories',
-          placeholder: 'Select a condition',
+          message: t('selectWhereConditionForUserStories'),
+          description: t('choosePredefinedWhereConditionToFilterUserStories'),
+          placeholder: t('selectACondition'),
           choices: whereChoices,
         });
         this.whereChoice = whereChoiceRes.value;
         this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[this.whereChoice || ''];
       }
+      else {
+        // In CI or agent mode, use the first available where choice
+        const firstChoiceKey = Object.keys(this.userStoriesConfig.whereChoices)[0];
+        this.whereChoice = firstChoiceKey;
+        this.userStoriesConfig.where = this.userStoriesConfig.whereChoices[firstChoiceKey];
+        uxLog("log", this, c.cyan(t('agentModeUsingFirstWhereChoice', { choice: firstChoiceKey })));
+      }
     }
-    uxLog("action", this, c.cyan(`Fetching user stories from Salesforce...`));
-    const userStoriesQuery = `SELECT ${this.userStoriesConfig.fields.join(', ')} FROM ${this.userStoriesConfig.table} WHERE ${this.userStoriesConfig.where} ORDER BY ${this.userStoriesConfig.orderBy}`;
+    uxLog("action", this, c.cyan(t('fetchingUserStoriesFromSalesforce')));
+    const userStoriesQuery = `SELECT ${this.userStoriesConfig.fields.join(', ')} FROM ${this.userStoriesConfig.table} WHERE ${this.userStoriesConfig.where}`
+      + (this.userStoriesConfig.orderBy && !this.userStoriesConfig.where.includes('ORDER BY') ? ` ORDER BY ${this.userStoriesConfig.orderBy}` : '');
     const userStoriesRes = await soqlQuery(userStoriesQuery, conn);
     this.userStories = userStoriesRes.records;
     const initialUserStoriesCount = this.userStories.length;
-    // Duplicate user stories entries if there are multiple ticket numbers separated by ; or , in the ticket field
+    // Duplicate user stories entries when the ticket field holds several ticket numbers
     this.userStories = this.userStories.flatMap((us) => {
-      const ticketFieldValue = us?.[this.userStoriesConfig.ticketField];
-      if (ticketFieldValue && (ticketFieldValue.includes(';') || ticketFieldValue.includes(','))) {
-        const ticketNumbers = ticketFieldValue.split(/[,;]\s*/).filter((tn: string) => tn);
+      const ticketNumbers = splitTicketNumbers(us?.[this.userStoriesConfig.ticketField]);
+      if (ticketNumbers.length > 1) {
         return ticketNumbers.map((tn: string) => ({ ...us, [this.userStoriesConfig.ticketField]: tn }));
       }
       return us;
     });
     const finalUserStoriesCount = this.userStories.length;
-    // Get list of tickets from user stories
-    const ticketNumbers = userStoriesRes.records.map((record: any) => record?.[this.userStoriesConfig.ticketField] as string);
+    // Read the tickets from the entries AFTER the split: sending a raw "A B" or "A;B" to
+    // ServiceNow queries one ticket that does not exist, and the report says NOT FOUND for both.
+    const ticketNumbers = this.userStories.map((record: any) => record?.[this.userStoriesConfig.ticketField] as string);
     // Remove null/undefined and duplicates
     const ticketNumbersUnique = [...new Set(ticketNumbers.filter((tn: string | undefined) => tn))] as string[];
     let message = `${initialUserStoriesCount} user stories fetched from Salesforce, with ${ticketNumbersUnique.length} unique ticket numbers.`;
@@ -238,7 +288,7 @@ Example:
       message += ` After splitting multiple ticket numbers, there are ${finalUserStoriesCount} user story entries to process.`;
     }
     uxLog("action", this, c.cyan(message));
-    uxLog("log", this, c.grey(`Ticket Numbers:\n${ticketNumbersUnique.map((tn) => `- ${tn}`).join('\n')}`));
+    uxLog("log", this, c.grey(t('ticketNumbersList', { ticketNumbers: ticketNumbersUnique.map((tn) => `- ${tn}`).join('\n') })));
     return ticketNumbersUnique;
   }
 
@@ -246,7 +296,7 @@ Example:
     const { serviceNowUrl, serviceNowApiOptions } = this.getServiceNowConfig();
 
     // Check each service now table to get the tickets infos
-    uxLog("action", this, c.cyan(`Fetching matching tickets from ServiceNow...`));
+    uxLog("action", this, c.cyan(t('fetchingTicketsFromServiceNow')));
     for (const table of this.serviceNowConfig.tables) {
       const serviceNowApiResource = `/api/now/table/${table.tableName}`;
       const serviceNowApiQuery =
@@ -254,44 +304,44 @@ Example:
         (table.urlSuffix ? table.urlSuffix : '');
       const serviceNowApiUrlWithQuery = `${serviceNowUrl}${serviceNowApiResource}${serviceNowApiQuery}`;
       // Make API call to ServiceNow
-      uxLog("log", this, `Fetching ServiceNow ${table.tableName} table using query: ${serviceNowApiUrlWithQuery}`);
+      uxLog("log", this, t('fetchingServiceNowTable', { tableName: table.tableName, url: serviceNowApiUrlWithQuery }));
       let serviceNowApiRes;
       try {
-        serviceNowApiRes = await axios.get(serviceNowApiUrlWithQuery, serviceNowApiOptions);
+        serviceNowApiRes = await httpGet(serviceNowApiUrlWithQuery, serviceNowApiOptions);
       }
       catch (error: any) {
-        uxLog("error", this, c.red(`ServiceNow API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
+        uxLog("error", this, c.red(t('servicenowApiCallFailed', { error: error.message, JSON: JSON.stringify(error?.response?.data || {}) })));
         continue;
       }
       // Complete user stories with ServiceNow data
       const serviceNowRecords = serviceNowApiRes?.data?.result;
       if (!serviceNowRecords || serviceNowRecords.length === 0) {
-        uxLog("warning", this, c.yellow(`No ${table.tableName} records found in ServiceNow response.`));
+        uxLog("warning", this, c.yellow(t('noRecordsFoundInServicenowResponse', { table: table.tableName })));
         continue;
       }
-      uxLog("success", this, `ServiceNow API call succeeded: ${serviceNowRecords.length} records of table ${table.tableName} have been found`);
+      uxLog("success", this, t('serviceNowApiCallSucceeded'));
       // If subRecordFields is defined in config, fetch each sub-record using its URL
       if (table.subRecordFields) {
         for (const subRecordField of table.subRecordFields) {
           for (const record of serviceNowRecords) {
             if (record?.[subRecordField]?.link && typeof record[subRecordField].link === 'string') {
               try {
-                const serviceNowSubRecordQuery = await axios.get(record[subRecordField].link, serviceNowApiOptions);
+                const serviceNowSubRecordQuery = await httpGet(record[subRecordField].link, serviceNowApiOptions);
                 record[subRecordField] = Object.assign(record[subRecordField], serviceNowSubRecordQuery?.data?.result || {});
-                uxLog("success", this, `ServiceNow sub-record API call succeeded for record ${record.number} field ${subRecordField}`);
+                uxLog("success", this, t('serviceNowSubRecordSucceeded'));
               }
               catch (error: any) {
-                uxLog("error", this, c.red(`ServiceNow sub-record API call failed: ${error.message}\n${JSON.stringify(error?.response?.data || {})}`));
+                uxLog("error", this, c.red(t('servicenowSubRecordApiCallFailed', { error: error.message, JSON: JSON.stringify(error?.response?.data || {}) })));
               }
             }
             else {
-              uxLog("warning", this, c.yellow(`No link found for sub-record field ${subRecordField} in record ${record.number}. Skipping sub-record fetch.`));
+              uxLog("warning", this, c.yellow(t('noLinkFoundForSubRecordField', { subRecordField, record: record.number })));
             }
           }
         }
       }
       // Match ServiceNow records to user stories based on ticket number
-      uxLog("action", this, c.cyan(`Matching ServiceNow records with user stories...`));
+      uxLog("action", this, c.cyan(t('matchingServiceNowRecordsWithUserStories')));
       for (const userStory of this.userStories) {
         const ticketNumber = userStory?.[this.userStoriesConfig.ticketField];
         const serviceNowRecord = serviceNowRecords.find((record: any) => record.number === ticketNumber);
@@ -304,7 +354,7 @@ Example:
   }
 
   private async handleResults() {
-    uxLog("action", this, c.cyan(`Building final results...`));
+    uxLog("action", this, c.cyan(t('buildingFinalResults')));
     this.results = this.userStories.map((userStory: any) => {
       const serviceNowInfo = userStory.serviceNowInfo || {};
       // Build result object dynamically based on config
@@ -345,7 +395,7 @@ Example:
       return result;
     });
 
-    uxLog("action", this, c.cyan(`Final results built with ${this.results.length} records.`));
+    uxLog("action", this, c.cyan(t('finalResultsBuiltWithRecords', { results: this.results.length })));
     uxLogTable(this, this.results);
 
     // Check results validity
@@ -353,9 +403,9 @@ Example:
       return res["Is Valid"] === false;
     });
 
-    uxLog("action", this, c.cyan(`${this.invalidResults.length} invalid results found.`));
+    uxLog("action", this, c.cyan(t('invalidResultsFound', { count: this.invalidResults.length })));
     if (this.invalidResults.length > 0) {
-      uxLog("warning", this, c.yellow(`Listing invalid results below.`));
+      uxLog("warning", this, c.yellow(t('listingInvalidResultsBelow')));
       uxLogTable(this, this.invalidResults);
       process.exitCode = 1;
     }
@@ -375,9 +425,9 @@ Example:
       const orgMarkdown = await getOrgMarkdown(this.conn?.instanceUrl);
       const notifButtons = await getNotificationButtons();
       const notifSeverity: NotifSeverity = 'warning';
-      let notifText = `${this.results.length} ServiceNow report lines have been extracted from ${orgMarkdown}`;
+      let notifText = `**${this.results.length}** ServiceNow report lines have been extracted from ${orgMarkdown}`;
       if (this.invalidResults.length > 0) {
-        notifText += `, including ${this.invalidResults.length} invalid entries`;
+        notifText += `, including **${this.invalidResults.length}** invalid entries`;
       }
       // Post notif
       await setConnectionVariables(this.conn);// Required for some notifications providers like Email
@@ -417,22 +467,27 @@ Example:
       // If no config file is provided, prompt users to select a JSON file in all files found in folder config/user-stories/
       const configFiles = await glob('config/user-stories/*.json', { cwd: process.cwd(), ignore: GLOB_IGNORE_PATTERNS });
       if (configFiles.length === 0) {
-        uxLog("warning", this, c.yellow('No configuration files found in config/user-stories/ directory. Using default config...'));
+        uxLog("warning", this, c.yellow(t('noConfigurationFilesFoundInConfigUser')));
       }
       else if (configFiles.length === 1) {
         this.configFile = configFiles[0];
         uxLog("other", this, `Single config file found: ${this.configFile}`);
       }
-      else {
+      else if (!isCI && !this.agentMode) {
         // If multiple files are found, prompt user to select one
         const configFileRes = await prompts({
           type: 'select',
-          message: 'Multiple configuration files found. Please select one:',
-          description: 'Choose which configuration file to use for the ServiceNow report',
-          placeholder: 'Select a config file',
+          message: t('multipleConfigurationFilesFoundPleaseSelectOne'),
+          description: t('chooseServiceNowConfigFileDescription'),
+          placeholder: t('selectAConfigFile'),
           choices: configFiles.map((file) => ({ title: file, value: file })),
         });
         this.configFile = configFileRes.value;
+      }
+      else {
+        // In CI or agent mode, use the first available config file
+        this.configFile = configFiles[0];
+        uxLog("log", this, c.cyan(t('agentModeUsingFirstConfigFile', { file: this.configFile })));
       }
     }
     if (this.configFile) {

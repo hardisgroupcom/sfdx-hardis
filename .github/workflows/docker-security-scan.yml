@@ -1,40 +1,104 @@
 name: Docker Security Scan
 on:
   push:
+    branches:
+      - main
+      - master
   pull_request:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
-  docker-security-scan:
-    name: Build and Scan Docker Image
+  prepare-package:
+    name: Prepare local plugin package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build from sources
+        run: yarn compile
+
+      - name: Package current sources
+        run: yarn pack --filename sfdx-hardis-local.tgz
+
+      - name: Upload packaged plugin
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: sfdx-hardis-local
+          path: sfdx-hardis-local.tgz
+
+  docker-security-scan-alpine:
+    name: Build and Scan Docker Image (Alpine)
+    needs: prepare-package
     runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Download packaged plugin
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
+        with:
+          name: sfdx-hardis-local
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Build Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: Dockerfile
           platforms: linux/amd64
           build-args: |
             SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_TGZ=sfdx-hardis-local.tgz
             SFDX_CLI_VERSION=latest
           load: true
           push: false
           tags: |
             sfdx-hardis:security-scan
 
+      # Smoke-test the CLI in the built image. Auth is not tested (no org in CI).
+      # Each command is wrapped in `timeout` so the Node "unsettled top-level await"
+      # hang / exit 13 fails the job (https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+      - name: Run CLI smoke tests
+        run: |
+          set -euo pipefail
+          image=sfdx-hardis:security-scan
+          echo "== node --version =="
+          docker run --rm "$image" node --version
+          echo "== sf --version =="
+          timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
+          echo "== sf hardis --help (plugin loads) =="
+          timeout 180 docker run --rm "$image" sf hardis --help
+          echo "== sf hardis:doc:project2markdown --help (command wired) =="
+          timeout 180 docker run --rm "$image" sf hardis:doc:project2markdown --help
+
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
         with:
           image-ref: "sfdx-hardis:security-scan"
           format: "table"
@@ -44,7 +108,7 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Generate Trivy security report
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
         if: always()
         with:
           image-ref: "sfdx-hardis:security-scan"
@@ -54,7 +118,7 @@ jobs:
           severity: "CRITICAL,HIGH"
 
       - name: Generate SBOM (CycloneDX format)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
         if: always()
         with:
           image-ref: "sfdx-hardis:security-scan"
@@ -63,7 +127,7 @@ jobs:
           scan-type: "image"
 
       - name: Generate SBOM (SPDX format)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
         if: always()
         with:
           image-ref: "sfdx-hardis:security-scan"
@@ -72,14 +136,14 @@ jobs:
           scan-type: "image"
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3.36.2
         if: always()
         with:
           sarif_file: "sfdx-hardis-trivy-image-results.sarif"
           category: "trivy"
 
       - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: security-and-sbom-documents
@@ -88,3 +152,113 @@ jobs:
             sfdx-hardis-image-sbom.spdx.json
             sfdx-hardis-trivy-image-results.txt
             sfdx-hardis-trivy-image-results.sarif
+
+  docker-security-scan-ubuntu:
+    name: Build and Scan Docker Image (Ubuntu)
+    needs: prepare-package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Download packaged plugin
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
+        with:
+          name: sfdx-hardis-local
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build Docker Ubuntu image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: Dockerfile-ubuntu
+          platforms: linux/amd64
+          build-args: |
+            SFDX_HARDIS_VERSION=latest
+            SFDX_HARDIS_TGZ=sfdx-hardis-local.tgz
+            SFDX_CLI_VERSION=latest
+          load: true
+          push: false
+          tags: |
+            sfdx-hardis-ubuntu:security-scan
+
+      # Smoke-test the CLI in the built image. Auth is not tested (no org in CI).
+      # Each command is wrapped in `timeout` so the Node "unsettled top-level await"
+      # hang / exit 13 fails the job (https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+      - name: Run CLI smoke tests (Ubuntu)
+        run: |
+          set -euo pipefail
+          image=sfdx-hardis-ubuntu:security-scan
+          echo "== node --version =="
+          docker run --rm "$image" node --version
+          echo "== sf --version =="
+          timeout 180 docker run --rm "$image" sf --version
+          echo "== sf org list --json (must succeed with no default org) =="
+          timeout 180 docker run --rm "$image" sf org list --json
+          echo "== sf hardis --help (plugin loads) =="
+          timeout 180 docker run --rm "$image" sf hardis --help
+          echo "== sf hardis:doc:project2markdown --help (command wired) =="
+          timeout 180 docker run --rm "$image" sf hardis:doc:project2markdown --help
+
+      - name: Run Trivy vulnerability scanner (Ubuntu)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "table"
+          output: "sfdx-hardis-ubuntu-trivy-image-results.txt"
+          exit-code: "1"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate Trivy security report (Ubuntu)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
+        if: always()
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "sarif"
+          output: "sfdx-hardis-ubuntu-trivy-image-results.sarif"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Generate SBOM (CycloneDX format, Ubuntu)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
+        if: always()
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "cyclonedx"
+          output: "sfdx-hardis-ubuntu-image-sbom.cyclonedx.json"
+          scan-type: "image"
+
+      - name: Generate SBOM (SPDX format, Ubuntu)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0 # zizmor: ignore[unpinned-tools] trivy-action downloads the trivy binary at runtime, no version to pin in the workflow
+        if: always()
+        with:
+          image-ref: "sfdx-hardis-ubuntu:security-scan"
+          format: "spdx-json"
+          output: "sfdx-hardis-ubuntu-image-sbom.spdx.json"
+          scan-type: "image"
+
+      - name: Upload Trivy scan results to GitHub Security tab (Ubuntu)
+        uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3.36.2
+        if: always()
+        with:
+          sarif_file: "sfdx-hardis-ubuntu-trivy-image-results.sarif"
+          category: "trivy-ubuntu"
+
+      - name: Upload SBOM artifacts (Ubuntu)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: security-and-sbom-documents-ubuntu
+          path: |
+            sfdx-hardis-ubuntu-image-sbom.cyclonedx.json
+            sfdx-hardis-ubuntu-image-sbom.spdx.json
+            sfdx-hardis-ubuntu-trivy-image-results.txt
+            sfdx-hardis-ubuntu-trivy-image-results.sarif

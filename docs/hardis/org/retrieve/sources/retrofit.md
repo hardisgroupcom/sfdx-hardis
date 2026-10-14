@@ -3,6 +3,13 @@
 
 ## Description
 
+
+## DEPRECATED
+
+**This command is deprecated and must not be used.** Changing a major org by hand is not a supported way of working.
+
+When a change was made directly in an org, recover it as an ordinary User Story: start a branch under the lowest major branch (usually `integration`), retrieve exactly what changed with the Metadata Retriever of the VS Code SFDX Hardis extension, then review and merge it like any other work. See [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/).
+
 Retrieve changes from org link to a ref branch not present in sources
 
   This command need to be triggered from a branch that is connected to a SF org. It will then retrieve all changes not present in that branch sources, commit them and create a merge request against the default branch. If a merge request already exists, it will simply add a new commit.
@@ -52,31 +59,54 @@ Retrieve changes from org link to a ref branch not present in sources
   - force-app/main/default/applications/MyOtherApp.app-meta.xml
   - force-app/main/default/flexipages/MyFlexipageContainingDashboards.flexipage-meta.xml
   ```
-  
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:org:retrieve:sources:retrofit --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
-| Name         |  Type   | Description                                                                    | Default | Required |     Options     |
-|:-------------|:-------:|:-------------------------------------------------------------------------------|:-------:|:--------:|:---------------:|
-| commit       | boolean | If true, a commit will be performed after the retrofit                         |         |          |                 |
-| commitmode   | option  | Defines if we commit all retrieved updates, or all updates including creations | updated |          | updated<br/>all |
-| debug<br/>-d | boolean | Activate debug mode (more logs)                                                |         |          |                 |
-| flags-dir    | option  | undefined                                                                      |         |          |                 |
-| json         | boolean | Format output as json.                                                         |         |          |                 |
-|productionbranch|option|Name of the git branch corresponding to the org we want to perform the retrofit on.
-Can be defined in productionBranch property in .sfdx-hardis.yml||||
-|push|boolean|If true, a push will be performed after the retrofit||||
-|pushmode|option|Defines if we send merge request options to git push arguments|default||default<br/>mergerequest|
-|retrofittargetbranch|option|Name of branch the merge request will have as target
-Can be defined in retrofitBranch property in .sfdx-hardis.yml||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|target-org<br/>-o|option|undefined||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                 |  Type   | Description                                                                                                                                             | Default | Required |         Options          |
+|:---------------------|:-------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:------------------------:|
+| agent                | boolean | Run in non-interactive mode for agents and automation                                                                                                   |         |          |                          |
+| commit               | boolean | If true, a commit will be performed after the retrofit                                                                                                  |         |          |                          |
+| commitmode           | option  | Defines if we commit all retrieved updates, or all updates including creations                                                                          | updated |          |     updated<br/>all      |
+| debug<br/>-d         | boolean | Activate debug mode (more logs)                                                                                                                         |         |          |                          |
+| flags-dir            | option  | Import flag values from a directory.                                                                                                                    |         |          |                          |
+| json                 | boolean | Format output as json.                                                                                                                                  |         |          |                          |
+| productionbranch     | option  | Name of the git branch corresponding to the org we want to perform the retrofit on.<br/>Can be defined in productionBranch property in .sfdx-hardis.yml |         |          |                          |
+| push                 | boolean | If true, a push will be performed after the retrofit                                                                                                    |         |          |                          |
+| pushmode             | option  | Defines if we send merge request options to git push arguments                                                                                          | default |          | default<br/>mergerequest |
+| retrofittargetbranch | option  | Name of branch the merge request will have as target<br/>Can be defined in retrofitBranch property in .sfdx-hardis.yml                                  |         |          |                          |
+| skipauth             | boolean | Skip authentication check when a default username is required                                                                                           |         |          |                          |
+| target-org<br/>-o    | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                            |         |   true   |                          |
+| websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                               |         |          |                          |
 
 ## Examples
 
 ```shell
 $ sf hardis:org:retrieve:sources:retrofit
+```
+
+```shell
+$ sf hardis:org:retrieve:sources:retrofit --agent
 ```
 
 ```shell

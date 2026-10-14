@@ -1,4 +1,4 @@
-import sortArray from "sort-array";
+import sortArray from './sortArray.js';
 import { prettifyFieldName } from "./flowVisualiser/nodeFormatUtils.js";
 import { isIntegration, isPreprod, isProduction } from "./orgConfigUtils.js";
 

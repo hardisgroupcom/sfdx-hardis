@@ -15,14 +15,41 @@ theme:
   #  logo: assets/images/salesforce-logo.png
   #  favicon: assets/images/salesforce-icon.png
   palette:
-    primary: "light blue"
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+      background: '#FFFFFF'
+      foreground: '#001135'
+      colors:
+        primary: '#0053FF'
+        accent: '#6A00FF'
+        link: '#0053FF'
+        header: '#001135'
+        nav: '#FAF7FF'
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+      background: '#050B1F'
+      foreground: '#FFFFFF'
+      colors:
+        primary: '#4D8BFF'
+        accent: '#9B6BFF'
+        link: '#4D8BFF'
+        header: '#001135'
+        nav: '#0A162E'
 plugins:
   - glightbox
   - search
 markdown_extensions:
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:zensical.extensions.emoji.twemoji
+      emoji_generator: !!python/name:zensical.extensions.emoji.to_svg
   - pymdownx.snippets:
       base_path: docs
       check_paths: true
@@ -39,10 +66,16 @@ markdown_extensions:
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/tablesort/5.2.1/tablesort.min.js
   - javascripts/tables.js
-  - javascripts/gtag.js
 extra_css:
   - stylesheets/extra.css
 extra:
+  # Google Analytics. Uncomment and put your own measurement id in it, and the
+  # theme sends the page view of the page a reader lands on plus one per instant
+  # navigation. Leave it out and no request is made at all.
+  #
+  # analytics:
+  #   provider: google
+  #   property: G-XXXXXXXXXX
   social:
     - icon: fontawesome/regular/circle-question
       link: https://github.com/hardisgroupcom/sfdx-hardis/issues

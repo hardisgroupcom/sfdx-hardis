@@ -2,18 +2,38 @@
 import * as azdev from "azure-devops-node-api";
 import { TicketProviderRoot } from "./ticketProviderRoot.js";
 import c from "chalk";
-import sortArray from "sort-array";
-import { Ticket } from "./index.js";
+import sortArray from '../utils/sortArray.js';
+// Type-only: a value import here would close a runtime cycle index -> provider -> index
+import type { Ticket, TicketsFromStringOptions } from "./index.js";
 import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
-import { extractRegexMatches, uxLog } from "../utils/index.js";
+import { convertMarkdownToHtml } from "../notifProvider/utils/markdownToHtml.js";
+import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
+import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
+import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
 import { SfError } from "@salesforce/core";
 import { getConfig, getEnvVar } from "../../config/index.js";
 import { GitCommitRef } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { JsonPatchDocument } from "azure-devops-node-api/interfaces/common/VSSInterfaces.js";
 import { CommonPullRequestInfo } from "../gitProvider/index.js";
+import { WebSocketClient } from "../websocketClient.js";
+import { t } from '../utils/i18n.js';
+import { WorkItemExpand } from "azure-devops-node-api/interfaces/WorkItemTrackingInterfaces.js";
+import {
+  TicketDetails,
+  TicketDetailsOptions,
+  capText,
+  classifyAttachment,
+  detectManualActions,
+  htmlToPlainText,
+  newTicketDetails,
+} from "./utils/ticketDetails.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
+  public static readonly providerKey = "azure" as const;
+  public static readonly providerLabel = "Azure Boards";
+  public static readonly supportsTicketDetails = true;
+
   protected serverUrl: string | null;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
   protected teamProject: string | null;
@@ -23,8 +43,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     super();
     // Azure server url must be provided in SYSTEM_COLLECTIONURI. ex: https:/dev.azure.com/mycompany
     this.serverUrl = getEnvVar("SYSTEM_COLLECTIONURI");
-    // a Personal Access Token must be defined
-    this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN");
+    // a Personal Access Token must be defined. AZURE_DEVOPS_EXT_PAT comes last: it is the variable
+    // the Azure CLI uses, so a developer machine usually already has it.
+    this.token = getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("AZURE_DEVOPS_EXT_PAT");
     this.teamProject = getEnvVar("SYSTEM_TEAMPROJECT");
     if (this.serverUrl && this.token && this.teamProject) {
       this.isActive = true;
@@ -35,12 +56,60 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
   }
 
+  /**
+   * Fills SYSTEM_COLLECTIONURI and SYSTEM_TEAMPROJECT from the git remote of the current repository.
+   *
+   * On a CI agent Azure Pipelines sets both for free, but a developer running the command locally
+   * would otherwise have to declare the organization and the project by hand - while the clone they
+   * are standing in already names both. So only the token really has to be configured; the rest is
+   * read from `origin`. Values already set (a CI agent, or an explicit override) always win.
+   *
+   * Sets process.env rather than returning, so the synchronous isAvailable() sees the result. This
+   * is the same approach AzureDevopsProvider uses for the git side, and the detection itself is
+   * delegated to it: it reads the raw remote, so SSH clones are handled too.
+   *
+   * Never throws: a git failure here must end as the regular "provider not configured" error of the
+   * caller, not as a stack trace.
+   */
+  public static async autoDetectFromGitRemote(): Promise<void> {
+    if (getEnvVar("SYSTEM_COLLECTIONURI") && getEnvVar("SYSTEM_TEAMPROJECT")) {
+      return;
+    }
+    if (!isGitRepo()) {
+      return;
+    }
+    try {
+      await AzureDevopsProvider.autoDetectSettings();
+      // autoDetectSettings only parses the remote when SYSTEM_COLLECTIONURI is unset, so a developer
+      // who declared the organization but not the project still has to get the project filled here
+      if (getEnvVar("SYSTEM_COLLECTIONURI") && !getEnvVar("SYSTEM_TEAMPROJECT")) {
+        const remoteUrl = (await git().getConfig("remote.origin.url"))?.value || "";
+        const parsed = remoteUrl ? AzureDevopsProvider.parseAzureRepoUrl(remoteUrl) : null;
+        if (parsed) {
+          process.env.SYSTEM_TEAMPROJECT = parsed.teamProject;
+        }
+      }
+      // Both set while at least one was missing on entry: the remote did answer
+      if (getEnvVar("SYSTEM_COLLECTIONURI") && getEnvVar("SYSTEM_TEAMPROJECT")) {
+        uxLog("log", AzureBoardsProvider, c.grey('[AzureBoardsProvider] ' + t('azureBoardsAutoDetectedFromRemote', {
+          collectionUri: process.env.SYSTEM_COLLECTIONURI || "",
+          teamProject: process.env.SYSTEM_TEAMPROJECT || "",
+        })));
+      }
+    } catch (e) {
+      uxLog("warning", AzureBoardsProvider, c.yellow('[AzureBoardsProvider] ' + t('autoDetectProviderFailed', {
+        provider: "Azure Boards",
+        message: (e as Error).message,
+      })));
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public static isAvailable(_config: any): boolean {
     if (
       // Basic auth
       getEnvVar("SYSTEM_COLLECTIONURI") &&
-      getEnvVar("SYSTEM_ACCESSTOKEN") &&
+      (getEnvVar("SYSTEM_ACCESSTOKEN") || getEnvVar("CI_SFDX_HARDIS_AZURE_TOKEN") || getEnvVar("AZURE_DEVOPS_EXT_PAT")) &&
       getEnvVar("SYSTEM_TEAMPROJECT")
     ) {
       return true;
@@ -49,10 +118,11 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   public getLabel(): string {
-    return "sfdx-hardis JIRA connector";
+    return "sfdx-hardis Azure Boards connector";
   }
 
-  public static async getTicketsFromString(text: string, prInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
+  public static async getTicketsFromString(text: string, options: TicketsFromStringOptions = {}): Promise<Ticket[]> {
+    const prInfo = options.pullRequestInfo || null;
     const tickets: Ticket[] = [];
     // Extract Azure Boards Work Items
     const azureBoardsUrlRegex = /(https:\/\/.*\/_workitems\/edit\/[0-9]+)/g;
@@ -70,33 +140,44 @@ export class AzureBoardsProvider extends TicketProviderRoot {
         }
       }
     }
-    const ticketsSorted: Ticket[] = sortArray(tickets, { by: ["id"], order: ["asc"] });
-    const config = await getConfig("project");
+    const config = options.config || (await getConfig("project"));
     if (!this.isAvailable(config)) {
-      return ticketsSorted;
+      return sortArray(tickets, { by: ["id"], order: ["asc"] }) as Ticket[];
     }
-    // Get tickets from Azure commits
-    if (prInfo?.providerInfo?.commits) {
-      const azureBoardsProvider = new AzureBoardsProvider(config);
-      const azureApi = azureBoardsProvider.azureApi;
-      const azureGitApi = await azureApi.getGitApi();
-      const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
-      const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
-      const azureCommits: GitCommitRef[] = [];
-      for (const commitId of commitIds) {
-        const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
-        azureCommits.push(...commitRefs);
-      }
-      for (const commit of azureCommits) {
-        for (const workItem of commit?.workItems || []) {
-          if (!tickets.some((ticket) => ticket.id === workItem.id)) {
-            tickets.push({
-              provider: "AZURE",
-              url: workItem.url || "",
-              id: workItem.id || "",
-            });
+    // Get tickets from Azure commits.
+    // BUILD_REPOSITORY_ID only exists on an Azure Pipelines agent: Azure Boards is also used with
+    // GitHub or GitLab repositories, and asking the Azure git API for the commits of an empty
+    // repository id would fail on every one of them. The work items linked to the Pull Request
+    // itself are collected below, and do not need the git API.
+    const repositoryId = getEnvVar("BUILD_REPOSITORY_ID") || "";
+    if (prInfo?.providerInfo?.commits && repositoryId) {
+      // Never lets a failure here escape: the caller turns any throw into "unable to compute git
+      // summary" and drops the whole Pull Request comment, work items and commits alike
+      try {
+        const azureBoardsProvider = new AzureBoardsProvider(config);
+        const azureApi = azureBoardsProvider.azureApi;
+        const azureGitApi = await azureApi.getGitApi();
+        const commitIds = prInfo?.providerInfo?.commits.filter((commit) => commit.hash).map((commit) => commit.hash);
+        const azureCommits: GitCommitRef[] = [];
+        for (const commitId of commitIds) {
+          const commitRefs = await azureGitApi.getCommits(repositoryId, { fromCommitId: commitId, toCommitId: commitId, includeWorkItems: true });
+          azureCommits.push(...commitRefs);
+        }
+        for (const commit of azureCommits) {
+          for (const workItem of commit?.workItems || []) {
+            if (!tickets.some((ticket) => ticket.id === workItem.id)) {
+              tickets.push({
+                provider: "AZURE",
+                url: workItem.url || "",
+                id: workItem.id || "",
+              });
+            }
           }
         }
+      } catch (e) {
+        uxLog("warning", AzureBoardsProvider, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsCommitWorkItemsError', {
+          message: (e as Error).message,
+        })));
       }
     }
 
@@ -113,7 +194,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
 
-    return ticketsSorted;
+    return sortArray(tickets, { by: ["id"], order: ["asc"] }) as Ticket[];
   }
 
   // Call Azure Work Items apis to gather more information from the ticket identifiers
@@ -123,52 +204,210 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       uxLog(
         "action",
         this,
-        c.cyan(
-          `[AzureBoardsProvider] Now trying to collect ${azureTicketsNumber} tickets infos from Azure Boards Server ` +
-          process.env.SYSTEM_COLLECTIONURI +
-          " ...",
+        c.cyan('[AzureBoardsProvider]' + 
+          t('azureBoardsProviderCollectingTickets', { azureTicketsNumber, serverUrl: process.env.SYSTEM_COLLECTIONURI || "" }),
         ),
       );
     }
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
-    for (const ticket of tickets) {
-      if (ticket.provider === "AZURE") {
-        const ticketInfo = await azureWorkItemApi.getWorkItem(Number(ticket.id));
-        if (ticketInfo && ticketInfo?.fields) {
-          ticket.foundOnServer = true;
-          ticket.subject = ticketInfo.fields["System.Title"] || "";
-          ticket.status = ticketInfo.fields["System.State"] || "";
-          ticket.statusLabel = ticketInfo.fields["System.State"] || "";
-          if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
-            ticket.url = ticketInfo?._links["html"]["href"];
+    // One HTTP call per work item: show a progress bar instead of flooding the log with one line each
+    const showProgress = azureTicketsNumber > 1;
+    if (showProgress) {
+      WebSocketClient.sendProgressStartMessage(t('collectingTicketsInfo', { count: azureTicketsNumber }), azureTicketsNumber);
+    }
+    // try/finally so the progress bar never stays stuck in the VS Code UI when a fetch throws
+    try {
+      // One HTTP call per work item, in the adaptive batches of the Azure DevOps ladder, shrunk only
+      // when Azure throttles. One failing work item (deleted id, expired PAT...) must not lose the others.
+      const azureTickets = tickets.filter((ticket) => ticket.provider === "AZURE");
+      const errorById = new Map<string, string>();
+      const infos = await mapInAdaptiveBatchesSettled(azureTickets, (ticket) => azureWorkItemApi.getWorkItem(Number(ticket.id)), {
+        sizes: PROVIDER_BATCH_PROFILES.azure,
+        onBackoff: (size, e, waitMs) => uxLog("log", this, c.grey('[AzureBoardsProvider] ' + t('providerThrottledBackoff', { count: size, waitSeconds: Math.round(waitMs / 1000), message: (e as Error)?.message || '' }))),
+        onError: (e, ticket) => errorById.set(ticket.id, (e as Error).message),
+        onProgress: (done, total) => {
+          if (showProgress) {
+            WebSocketClient.sendProgressStepMessage(done, total);
           }
-          uxLog("log", this, c.grey("[AzureBoardsProvider] Collected data for Work Item " + ticket.id));
-        } else {
-          uxLog("warning", this, c.yellow("[AzureBoardsProvider] Unable to get Azure Boards WorkItem " + ticket.id + "\n" + c.grey(JSON.stringify(ticketInfo))));
+        },
+      });
+      const infoById = new Map(azureTickets.map((ticket, index) => [ticket.id, infos[index] ?? null]));
+      for (const ticket of tickets) {
+        if (ticket.provider === "AZURE") {
+          const ticketInfo: any = infoById.get(ticket.id) ?? { error: errorById.get(ticket.id) || 'no work item returned' };
+          if (ticketInfo && ticketInfo?.fields) {
+            ticket.foundOnServer = true;
+            ticket.subject = ticketInfo.fields["System.Title"] || "";
+            ticket.status = ticketInfo.fields["System.State"] || "";
+            ticket.statusLabel = ticketInfo.fields["System.State"] || "";
+            if (ticketInfo?._links && ticketInfo._links["html"] && ticketInfo._links["html"]["href"]) {
+              ticket.url = ticketInfo?._links["html"]["href"];
+            }
+            // "other" keeps this per-ticket line out of the VS Code UI, where the progress bar shows instead
+            uxLog("other", this, c.grey('[AzureBoardsProvider] ' + t('azureBoardsProviderCollectedWorkItem', { ticketId: ticket.id })));
+          } else {
+            uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderUnableToGetWorkItem', { ticketId: ticket.id, ticketInfo: JSON.stringify(ticketInfo) })));
+          }
         }
+      }
+    } finally {
+      if (showProgress) {
+        WebSocketClient.sendProgressEndMessage(azureTicketsNumber);
       }
     }
     return tickets;
   }
 
+  /** True when the identifier is a work item id, bare or in the AB-1234 form used by the skills */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static matchesTicketId(ticketId: string, _config: any = {}): boolean {
+    return /^(AB-)?[0-9]{1,10}$/i.test((ticketId || "").trim());
+  }
+
+  /** Accepts 1234, AB-1234, or a _workitems/edit/1234 URL */
+  private static workItemIdOf(ticketId: string): number | null {
+    const trimmed = (ticketId || "").trim();
+    const match = trimmed.match(/(?:_workitems\/edit\/|^AB-|^)([0-9]{1,10})$/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  /** Azure identities come back either as an object or as a "Display Name <mail>" string */
+  private static identityName(identity: any): string {
+    if (!identity) {
+      return "";
+    }
+    if (typeof identity === "string") {
+      return identity.replace(/\s*<[^>]*>$/, "");
+    }
+    return identity.displayName || identity.uniqueName || "";
+  }
+
+  public async getTicketDetails(ticketId: string, options: TicketDetailsOptions = {}): Promise<TicketDetails | null> {
+    if (!this.isActive) {
+      uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderNotConfigured')));
+      return null;
+    }
+    const workItemId = AzureBoardsProvider.workItemIdOf(ticketId);
+    if (workItemId === null) {
+      return null;
+    }
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
+    // Relations carry both the linked work items and the attached files
+    const workItem: any = await azureWorkItemApi.getWorkItem(workItemId, undefined, undefined, WorkItemExpand.All);
+    if (!workItem?.fields) {
+      return null;
+    }
+    const fields = workItem.fields;
+    const details = newTicketDetails("AZURE", `AB-${workItemId}`);
+    details.url = workItem?._links?.html?.href || `${this.serverUrl}/${this.teamProject}/_workitems/edit/${workItemId}`;
+    details.subject = fields["System.Title"] || "";
+    details.type = fields["System.WorkItemType"] || "";
+    details.status = fields["System.State"] || "";
+    details.priority = String(fields["Microsoft.VSTS.Common.Priority"] ?? "");
+    details.assignee = AzureBoardsProvider.identityName(fields["System.AssignedTo"]);
+    details.reporter = AzureBoardsProvider.identityName(fields["System.CreatedBy"]);
+    details.created = fields["System.CreatedDate"] || "";
+    details.updated = fields["System.ChangedDate"] || "";
+    details.storyPoints = String(fields["Microsoft.VSTS.Scheduling.StoryPoints"] ?? "");
+    details.sprint = fields["System.IterationPath"] || "";
+    details.labels = String(fields["System.Tags"] || "").split(";").map((tag) => tag.trim()).filter(Boolean);
+    details.description = capText(htmlToPlainText(fields["System.Description"]));
+    details.acceptanceCriteria = capText(htmlToPlainText(fields["Microsoft.VSTS.Common.AcceptanceCriteria"]));
+    details.extra.areaPath = fields["System.AreaPath"] || "";
+    details.extra.reason = fields["System.Reason"] || "";
+    details.extra.project = this.teamProject || "";
+
+    try {
+      const commentList: any = await azureWorkItemApi.getComments(this.teamProject || "", workItemId);
+      details.comments = (commentList?.comments || []).map((comment: any) => ({
+        author: AzureBoardsProvider.identityName(comment?.createdBy),
+        date: comment?.createdDate ? String(comment.createdDate) : "",
+        body: capText(htmlToPlainText(comment?.text)),
+      }));
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderCommentsError', { ticketId: String(workItemId), message: e.message })));
+    }
+
+    for (const relation of workItem?.relations || []) {
+      const relationType = relation?.rel || "";
+      if (relationType === "AttachedFile") {
+        const attributes = relation?.attributes || {};
+        const filename = attributes.name || "attachment";
+        details.attachments.push({
+          filename,
+          contentType: "",
+          size: Number(attributes.resourceSize || 0),
+          created: attributes.resourceCreatedDate ? String(attributes.resourceCreatedDate) : "",
+          author: "",
+          url: relation?.url || "",
+          kind: classifyAttachment("", filename),
+          localPath: null,
+          textContent: null,
+          truncated: false,
+          error: null,
+        });
+        continue;
+      }
+      // Hierarchy / related / duplicate links all point at another work item
+      const linkedId = String(relation?.url || "").match(/workItems\/([0-9]+)$/)?.[1];
+      if (!linkedId) {
+        continue;
+      }
+      const item = {
+        relation: relationType.replace("System.LinkTypes.", "").replace("Microsoft.VSTS.Common.", ""),
+        id: `AB-${linkedId}`,
+        title: relation?.attributes?.name || "",
+        status: "",
+        url: `${this.serverUrl}/${this.teamProject}/_workitems/edit/${linkedId}`,
+      };
+      if (relationType === "System.LinkTypes.Hierarchy-Forward") {
+        details.subtasks.push({ ...item, relation: "child" });
+      } else {
+        if (relationType === "System.LinkTypes.Hierarchy-Reverse") {
+          item.relation = "parent";
+          details.parent = item.id;
+        }
+        details.links.push(item);
+      }
+    }
+
+    await this.downloadDetailsAttachments(details, this.serverUrl || "", this.attachmentHeaders(), options);
+
+    details.manualActions = detectManualActions([
+      details.description,
+      details.acceptanceCriteria,
+      ...details.comments.map((comment) => comment.body),
+      ...details.attachments.map((attachment) => attachment.textContent),
+    ]);
+    return details;
+  }
+
+  /** Azure PATs authenticate as Basic with an empty user name */
+  private attachmentHeaders(): Record<string, string> {
+    return { Authorization: "Basic " + Buffer.from(`:${this.token || ""}`).toString("base64") };
+  }
+
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
-    uxLog("action", this, c.cyan(`[AzureBoardsProvider] Try to post comments on ${tickets.length} work items...`));
-    const orgMarkdown = await getOrgMarkdown(org, "html");
-    const branchMarkdown = await getBranchMarkdown("html");
+    uxLog("action", this, c.cyan('[AzureBoardsProvider] ' + t('azureBoardsProviderPostingComments', { count: tickets.length })));
+    const orgMarkdown = await getOrgMarkdown(org);
+    const branchMarkdown = await getBranchMarkdown();
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     for (const ticket of tickets) {
-      if (ticket.foundOnServer) {
-        let azureBoardsComment = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
+      // The list holds the tickets of every connector: without this filter a configured Azure
+      // Boards would call getWorkItem(NaN) on a JIRA key or a ServiceNow record number
+      if (ticket.provider === "AZURE" && ticket.foundOnServer) {
+        let commentMd = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
         if (pullRequestInfo) {
           const prUrl = pullRequestInfo.webUrl || "";
           if (prUrl) {
             const prAuthor = pullRequestInfo.authorName;
-            azureBoardsComment += `<br/><br/>PR: <a href="${prUrl}">${pullRequestInfo.title}</a>` + (prAuthor ? ` by ${prAuthor}` : "");
+            commentMd += `\n\nPR: [${pullRequestInfo.title}](${prUrl})` + (prAuthor ? ` by ${prAuthor}` : "");
           }
         }
+        const azureBoardsComment = await convertMarkdownToHtml(commentMd);
 
         // Post comment
         try {
@@ -179,7 +418,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("commentPostRes: " + commentPostRes);
           }
         } catch (e6) {
-          uxLog("warning", this, c.yellow(`[AzureBoardsProvider] Error while posting comment on ${ticket.id}\n${(e6 as any).message}\n${c.grey((e6 as any).stack)}`));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
         }
 
         // Add tag
@@ -198,22 +437,22 @@ export class AzureBoardsProvider extends TicketProviderRoot {
             throw new SfError("tag workItem: " + workItem);
           }
         } catch (e6) {
-          uxLog("warning", this, c.yellow(`[AzureBoardsProvider] Error while adding tag ${tag} on ${ticket.id}\n${(e6 as any).message} \n${c.grey((e6 as any).stack)} `));
+          uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderErrorAddingTag', { tag, ticketId: ticket.id, message: (e6 as any).message })));
         }
       }
     }
     uxLog(
       "log",
       this,
-      c.grey(
-        `[AzureBoardsProvider] Posted comments on ${commentedTickets.length} work item(s): ` + commentedTickets.map((ticket) => ticket.id).join(", "),
+      c.grey('[AzureBoardsProvider]' + 
+        t('azureBoardsProviderPostedComments', { count: commentedTickets.length, tickets: commentedTickets.map((ticket) => ticket.id).join(", ") }),
       ),
     );
     uxLog(
       "log",
       this,
-      c.grey(
-        `[AzureBoardsProvider] Added tag ${tag} on ${taggedTickets.length} work item(s): ` + taggedTickets.map((ticket) => ticket.id).join(", "),
+      c.grey('[AzureBoardsProvider]' + 
+        t('azureBoardsProviderAddedTag', { tag, count: taggedTickets.length, tickets: taggedTickets.map((ticket) => ticket.id).join(", ") }),
       ),
     );
     return tickets;

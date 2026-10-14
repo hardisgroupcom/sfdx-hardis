@@ -6,7 +6,9 @@
 
 ## Command Behavior
 
-**Performs technical operations related to WebSocket communication, primarily for internal use by the sfdx-hardis VS Code Extension.**
+> **This command does not require human interaction and is suitable for automation and AI agent usage.**
+
+**Performs technical operations related to WebSocket communication, primarily for internal use by the sfdx-hardis VS Code extension.**
 
 This command is not intended for direct end-user interaction. It facilitates communication between the sfdx-hardis CLI and the VS Code Extension, enabling features like real-time status updates and plugin refreshes.
 
@@ -32,7 +34,7 @@ The command's technical implementation involves:
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
 | event<br/>-e | option  | WebSocket event                                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

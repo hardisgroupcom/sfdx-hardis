@@ -1,17 +1,23 @@
 import c from 'chalk';
-import fs from 'fs-extra';
-import moment from 'moment';
+import fs from './fsUtils.js';
+import { dateHelper } from './dateHelper.js';
 import * as os from 'os';
 import * as path from 'path';
 import { getConfig, setConfig } from '../../config/index.js';
-import { createTempDir, execSfdxJson, isCI, uxLog } from './index.js';
-import { KeyValueProviderInterface } from './keyValueUtils.js';
+import { createTempDir, execSfdxJson, getCurrentGitBranch, isCI, uxLog } from './index.js';
+import { PoolRefreshInfo, PoolStorageInterface, PoolTakeContext } from './keyValueUtils.js';
 import { LocalTestProvider } from '../keyValueProviders/localtest.js';
 import { SfError } from '@salesforce/core';
 import { prompts } from './prompts.js';
 import { SalesforceProvider } from '../keyValueProviders/salesforce.js';
+import { BlobPoolAdapter } from '../keyValueProviders/blobPoolAdapter.js';
+import { GitProviderPoolStorage } from '../keyValueProviders/gitProviderPool.js';
+import { GitProvider } from '../gitProvider/index.js';
+import { PoolSummary } from './poolDashboardUtils.js';
+import { getDevHubScratchLimits } from './poolDevHubUtils.js';
+import { t } from './i18n.js';
 
-let keyValueProvider: KeyValueProviderInterface;
+let poolStorage: PoolStorageInterface;
 
 export async function getPoolConfig() {
   const config = await getConfig('branch');
@@ -23,32 +29,69 @@ export async function hasPoolConfig() {
   return poolConfig !== null;
 }
 
-// Read scratch org pool remote storage
-export async function getPoolStorage(options: any = {}) {
-  const providerInitialized = await initializeProvider(options);
-  if (providerInitialized) {
-    return await keyValueProvider.getValue(null);
-  }
-  return null;
+// The scratch orgs that can be taken from the pool, with their credentials
+export async function listPoolOrgs(options: any = {}): Promise<any[]> {
+  const storage = await getInitializedStorage(options);
+  return storage ? await storage.listOrgs() : [];
 }
 
-// Write scratch org pool remote storage
-export async function setPoolStorage(value: any, options: any = {}) {
-  const providerInitialized = await initializeProvider(options);
-  if (providerInitialized) {
+export async function removePoolOrgs(scratchOrgs: any[], options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage && scratchOrgs.length > 0) {
     uxLog("other", this, '[pool] ' + c.grey(`Updating pool storage value...`));
-    const valueSetRes = await keyValueProvider.setValue(null, value);
+    await storage.removeOrgs(scratchOrgs);
     uxLog("other", this, '[pool] ' + c.grey(`Updated pool storage value.`));
-    return valueSetRes;
   }
-  return null;
+}
+
+// What can be shown of the pool, without any credential. Null when the storage is not reachable.
+export async function getPoolSummary(options: any = {}): Promise<PoolSummary | null> {
+  const storage = await getInitializedStorage(options);
+  if (!storage) {
+    return null;
+  }
+  const summary = await storage.getSummary();
+  // The limits recorded by the last refresh are the ones of the Dev Hub of the pool. The Dev Hub
+  // connected here is only asked when the storage recorded none: on a workstation the default
+  // Dev Hub can be another org than the one the CI jobs use.
+  if (!summary.devHubLimits) {
+    summary.devHubLimits = await getDevHubScratchLimits(options.devHubConn);
+  }
+  return summary;
+}
+
+export async function recordPoolFailure(error: string, options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    await storage.recordFailure(error, (await GitProvider.getJobUrl()) || '');
+  }
+}
+
+// To call at the start of a pool refresh, before the scratch orgs of the pool are listed
+export async function preparePoolRefresh(options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    await storage.prepareRefresh();
+  }
+}
+
+// To call at the end of a pool refresh
+export async function finalizePoolRefresh(options: any = {}): Promise<void> {
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    const info: PoolRefreshInfo = {
+      jobUrl: (await GitProvider.getJobUrl()) || '',
+      devHubLimits: await getDevHubScratchLimits(options.devHubConn),
+    };
+    await storage.finalizeRefresh(info);
+  }
 }
 
 // Update ActiveScratchOrgInfo
 export async function updateActiveScratchOrg(scratchOrg: string, keyValues: any, options: any = {}) {
-  const providerInitialized = await initializeProvider(options);
-  if (providerInitialized) {
-    return await keyValueProvider.updateActiveScratchOrg(scratchOrg, keyValues);
+  const storage = await getInitializedStorage(options);
+  if (storage) {
+    return await storage.updateActiveScratchOrg(scratchOrg, keyValues);
   }
   return null;
 }
@@ -56,42 +99,16 @@ export async function updateActiveScratchOrg(scratchOrg: string, keyValues: any,
 let updatingPool = false;
 export async function addScratchOrgToPool(scratchOrg: any, options: any = { position: 'last' }) {
   if (updatingPool === true) {
-    uxLog("log", this, c.grey('Already updating scratch org pool. Try again in 2000 ms.'));
+    uxLog("log", this, c.grey(t('alreadyUpdatingScratchOrgPoolTryAgain')));
     await new Promise((resolve) => setTimeout(resolve, 2000));
     return await addScratchOrgToPool(scratchOrg, options);
   } else {
     updatingPool = true;
-    const res = await executeAddScratchOrgToPool(scratchOrg, options);
-    updatingPool = false;
-    return res;
-  }
-}
-
-// Write scratch org pool remote storage
-async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { position: 'last' }) {
-  const poolStorage = await getPoolStorage(options);
-  // Valid scratch orgs
-  if (scratchOrg.status === 0) {
-    const scratchOrgs = poolStorage.scratchOrgs || [];
-    if (options.position === 'first') {
-      scratchOrgs.push(scratchOrg);
-    } else {
-      scratchOrgs.unshift(scratchOrg);
+    try {
+      return await executeAddScratchOrgToPool(scratchOrg, options);
+    } finally {
+      updatingPool = false;
     }
-    poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage, options);
-    await updateActiveScratchOrg(scratchOrg, {
-      Description: `Added to pool by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,
-    });
-  } else {
-    // Store scratch creation errors
-    /*
-    const scratchOrgErrors = poolStorage.scratchOrgErrors || [];
-    scratchOrgErrors.push(scratchOrg);
-    poolStorage.scratchOrgErrors = scratchOrgErrors;
-    await setPoolStorage(poolStorage, options);
-    */
-    uxLog("other", this, '[pool] ' + c.red('Scratch org creation error:\n' + JSON.stringify(scratchOrg)));
   }
 }
 
@@ -113,8 +130,8 @@ export async function fetchScratchOrg(options: any) {
 }
 
 export async function tryFetchScratchOrg(options: any) {
-  const poolStorage = await getPoolStorage(options);
-  if (poolStorage === null) {
+  const storage = await getInitializedStorage(options);
+  if (!storage) {
     uxLog(
       "warning",
       this,
@@ -123,18 +140,14 @@ export async function tryFetchScratchOrg(options: any) {
     );
     return null;
   }
-  uxLog("other", this, '[pool] ' + c.cyan('Trying to fetch a scratch org from the scratch orgs pool to improve performance.'));
-  const scratchOrgs: Array<any> = poolStorage.scratchOrgs || [];
-  if (scratchOrgs.length > 0) {
-    const scratchOrg = scratchOrgs.shift();
+  uxLog("other", this, '[pool] ' + c.cyan(t('tryingToFetchScratchOrgFromThe')));
+  const scratchOrg = await storage.takeOrg(await buildTakeContext());
+  if (scratchOrg) {
     await updateActiveScratchOrg(scratchOrg, {
-      Description: `Fetched by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,
+      Description: `Fetched by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
     });
-    // Remove and save
-    poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage, options);
     // Authenticate to scratch org
-    uxLog("action", this, '[pool] ' + c.cyan('Authenticating to scratch org from pool...'));
+    uxLog("action", this, '[pool] ' + c.cyan(t('authenticatingToScratchOrgFromPool')));
     const authTempDir = await createTempDir();
     const tmpAuthFile = path.join(authTempDir, 'authFile.txt');
     const authFileContent =
@@ -174,10 +187,10 @@ export async function tryFetchScratchOrg(options: any) {
       fail: false,
       output: false,
     });
-    uxLog("action", this, c.cyan(`Open scratch org with URL: ${c.green(openRes?.result?.url)}`));
+    uxLog("action", this, c.cyan(t('openScratchOrgWithUrl', { openRes: c.green(openRes?.result?.url) })));
     // Return scratch org
     await updateActiveScratchOrg(scratchOrg, {
-      Description: `Authenticated by ${os.userInfo().username} on ${moment().format('YYYYMMDD_hhmm')}`,
+      Description: `Authenticated by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
     });
     return scratchOrg;
   }
@@ -194,40 +207,9 @@ export async function tryFetchScratchOrg(options: any) {
   return null;
 }
 
-export async function listKeyValueProviders(): Promise<Array<KeyValueProviderInterface>> {
-  return [SalesforceProvider, LocalTestProvider].map((cls) => new cls());
-}
-
-async function initializeProvider(options: any) {
-  if (keyValueProvider) {
-    return true;
-  }
-  const poolConfig = await getPoolConfig();
-  if (poolConfig.storageService) {
-    keyValueProvider = await instantiateProvider(poolConfig.storageService);
-    try {
-      await keyValueProvider.initialize(options);
-      return true;
-    } catch (e) {
-      // in CI, we should always be able to initialize the provider
-      if (isCI) {
-        throw e;
-      }
-      uxLog("other", this, '[pool] ' + c.grey('Provider initialization error: ' + (e as Error).message));
-      // If manual, let's ask the user if he/she has credentials to input
-      const resp = await prompts({
-        type: 'confirm',
-        message: 'Scratch org pool credentials are missing, do you want to configure them ?',
-        description: 'Set up authentication credentials required to access the scratch org pool service',
-      });
-      if (resp.value === true) {
-        await keyValueProvider.userAuthenticate(options);
-        await keyValueProvider.initialize(options);
-        return true;
-      }
-      return false;
-    }
-  }
+// The storages a pool can be configured with, the proposed one first
+export async function listKeyValueProviders(): Promise<Array<PoolStorageInterface>> {
+  return [new GitProviderPoolStorage(), new BlobPoolAdapter(new SalesforceProvider()), new BlobPoolAdapter(new LocalTestProvider())];
 }
 
 export async function instantiateProvider(storageService: string) {
@@ -237,4 +219,88 @@ export async function instantiateProvider(storageService: string) {
     throw new SfError(c.red('Unable to find class for storage provider ' + storageService));
   }
   return providerClassRes[0];
+}
+
+// Write scratch org pool remote storage
+async function executeAddScratchOrgToPool(scratchOrg: any, options: any = { position: 'last' }) {
+  // Valid scratch orgs
+  if (scratchOrg.status === 0) {
+    const storage = await getInitializedStorage(options);
+    if (!storage) {
+      return;
+    }
+    uxLog("other", this, '[pool] ' + c.grey(`Updating pool storage value...`));
+    await storage.addOrg(scratchOrg, options.position === 'first' ? 'first' : 'last');
+    uxLog("other", this, '[pool] ' + c.grey(`Updated pool storage value.`));
+    await updateActiveScratchOrg(scratchOrg, {
+      Description: `Added to pool by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
+    });
+  } else {
+    uxLog("other", this, '[pool] ' + c.red(t('scratchOrgCreationError') + JSON.stringify(scratchOrg)));
+  }
+}
+
+// Who is taking a scratch org, for the history of the pool
+async function buildTakeContext(): Promise<PoolTakeContext> {
+  let pullRequest = '';
+  // A Pull Request job runs on a merge ref ("pull/3/merge"): the branch people know is its source
+  let pullRequestBranch = '';
+  try {
+    const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+    pullRequest = prInfo?.idStr ? `#${prInfo.idStr}` : '';
+    pullRequestBranch = prInfo?.sourceBranch || '';
+  } catch {
+    pullRequest = '';
+  }
+  return {
+    by: process.env.GITHUB_ACTOR || process.env.GITLAB_USER_LOGIN || process.env.BUILD_REQUESTEDFOR || os.userInfo().username,
+    branch: pullRequestBranch || (await getCurrentGitBranch()) || '',
+    pullRequest,
+    jobUrl: (await GitProvider.getJobUrl()) || '',
+  };
+}
+
+// The storage of the pool, ready to use. Null when there is none, or when the user declined to authenticate.
+async function getInitializedStorage(options: any): Promise<PoolStorageInterface | null> {
+  const providerInitialized = await initializeProvider(options);
+  return providerInitialized ? poolStorage : null;
+}
+
+async function initializeProvider(options: any) {
+  if (poolStorage) {
+    // A later caller can bring the Dev Hub connection an earlier one did not have
+    await poolStorage.initialize(options);
+    return true;
+  }
+  const poolConfig = await getPoolConfig();
+  if (poolConfig?.storageService) {
+    const storage = await instantiateProvider(poolConfig.storageService);
+    try {
+      if ((await storage.initialize(options)) === false) {
+        throw new SfError(t('poolStorageNotReachable', { storageService: poolConfig.storageService }));
+      }
+      poolStorage = storage;
+      return true;
+    } catch (e) {
+      // in CI, we should always be able to initialize the provider. noPrompt: the caller handles the error itself
+      if (isCI || options?.noPrompt === true) {
+        throw e;
+      }
+      uxLog("other", this, '[pool] ' + c.grey(t('providerInitializationError') + (e as Error).message));
+      // If manual, let's ask the user if he/she has credentials to input
+      const resp = await prompts({
+        type: 'confirm',
+        message: t('scratchOrgPoolCredentialsAreMissingDo'),
+        description: t('descConfigureScratchOrgPool'),
+      });
+      if (resp.value === true) {
+        await storage.userAuthenticate(options);
+        await storage.initialize(options);
+        poolStorage = storage;
+        return true;
+      }
+      return false;
+    }
+  }
+  return false;
 }

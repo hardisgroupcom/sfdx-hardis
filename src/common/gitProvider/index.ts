@@ -1,32 +1,139 @@
 import c from "chalk";
-import { getCurrentGitBranch, isCI, uxLog } from "../utils/index.js";
+import { getCurrentGitBranch, git, isCI, uxLog } from "../utils/index.js";
 import { AzureDevopsProvider } from "./azureDevops.js";
 import { GithubProvider } from "./github.js";
 import { GitlabProvider } from "./gitlab.js";
-import { GitProviderRoot } from "./gitProviderRoot.js";
+import { GitProviderRoot, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { BitbucketProvider } from "./bitbucket.js";
-import Debug from "debug";
-import { CONSTANTS, getEnvVar } from "../../config/index.js";
+import { debuglog } from "util";
+import { CONSTANTS, getEnvVar, PrCommentBannerKey } from "../../config/index.js";
 import { prompts } from "../utils/prompts.js";
-import { removeMermaidLinks } from "../utils/mermaidUtils.js";
+import { cleanFlowDiffMarkdownForPrComment, removeMermaidLinks } from "../utils/mermaidUtils.js";
+import { buildDeploymentPrCommentSections } from "./utils/utilsPrCommentLayout.js";
+import { fitPrCommentSections, PR_COMMENT_FRAME_RESERVE } from "./utils/utilsPrCommentSizeGuard.js";
 import { getPullRequestData } from "../utils/gitUtils.js";
-const debug = Debug("sfdxhardis");
+import { t } from '../utils/i18n.js';
+import { SfError } from "@salesforce/core";
+import {
+  buildPrCommentNavBlock,
+  DEPLOYMENT_ACTIONS_MARKER,
+  getPrCommentKind,
+  isPrCommentNavEnabled,
+  isPrDescriptionNavEnabled,
+  PrCommentNavLinks,
+  renderPrCommentNav,
+  replacePrCommentNavBlock,
+  setPrCommentNavLinks,
+  SFDX_HARDIS_COMMENT_MARKER,
+  upsertNavInDescription,
+} from "./utils/prCommentNav.js";
+import { encodeRunSummaryMarker, markdownFirstLineAsText } from "./utils/prRunSummary.js";
+import { classifyBackpromoteCurrentBranch } from "../utils/backpromoteRules.js";
+import { listMajorOrgs } from "../utils/orgConfigUtils.js";
+import type { PrePostCommand } from "../actionsProvider/actionsProvider.js";
+import type { Ticket } from "../ticketProvider/index.js";
+// Enable with NODE_DEBUG=sfdxhardis
+const debug = debuglog("sfdxhardis");
+// The answer of git about the checkout, asked once per process (assertGitRepositoryNotRefused)
+let gitRepositoryCheck: Promise<void> | null = null;
+
+export type GitProviderType = "github" | "gitlab" | "azure" | "bitbucket";
+
+const GIT_PROVIDER_CLASSES: Record<GitProviderType, typeof GitProviderRoot> = {
+  github: GithubProvider,
+  gitlab: GitlabProvider,
+  azure: AzureDevopsProvider,
+  bitbucket: BitbucketProvider,
+};
+
+// The environment the provider is built from: a change of one of these (a token set by a prompt,
+// a CI variable auto-detected from the git remote) is a new provider
+const PROVIDER_ENV_VARS = [
+  "SYSTEM_ACCESSTOKEN",
+  "CI_SFDX_HARDIS_AZURE_TOKEN",
+  "AZURE_DEVOPS_EXT_PAT",
+  "SYSTEM_COLLECTIONURI",
+  "SYSTEM_TEAMPROJECT",
+  "BUILD_REPOSITORY_ID",
+  "CI_JOB_TOKEN",
+  "CI_SFDX_HARDIS_GITLAB_TOKEN",
+  "ACCESS_TOKEN",
+  "CI_SERVER_URL",
+  "CI_PROJECT_ID",
+  "CI_PROJECT_PATH",
+  "GITLAB_CI",
+  "GITHUB_TOKEN",
+  "CI_SFDX_HARDIS_GITHUB_TOKEN",
+  "GITHUB_REPOSITORY",
+  "GITHUB_API_URL",
+  "BITBUCKET_WORKSPACE",
+  "BITBUCKET_REPO_SLUG",
+  "CI_SFDX_HARDIS_BITBUCKET_TOKEN",
+  "CI_SFDX_HARDIS_BITBUCKET_EMAIL",
+  "PAT",
+  "GITLAB_API_REJECT_UNAUTHORIZED",
+  "GITHUB_EVENT_PATH",
+  "GITHUB_REF",
+  "GITHUB_REF_NAME",
+  "GITHUB_SERVER_URL",
+  "GITHUB_GRAPHQL_URL",
+  "GITHUB_REPOSITORY_OWNER",
+  "CHANGE_ID",
+  "AZURE_ATTACHMENTS_WORK_ITEM_TITLE",
+];
 
 export abstract class GitProvider {
+  // One provider per process: every call used to run the auto-detection again (a git config
+  // read, sometimes an API call), and a batch of 80 Pull Request reads spawned 80 git processes
+  // for the same answer. The instance is kept as long as the environment it was built from
+  // (and the working directory) does not change.
+  private static cachedInstance: { key: string; instance: GitProviderRoot | null } | null = null;
+
+  private static instanceKey(): string {
+    return [process.cwd(), ...PROVIDER_ENV_VARS.map((name) => `${name}=${process.env[name] || ""}`)].join("\u0000");
+  }
+
+  /** Forget the cached provider (tests, or after the environment changed by other means than a prompt) */
+  static resetInstance(): void {
+    GitProvider.cachedInstance = null;
+  }
+
   static async getInstance(prompt = false): Promise<GitProviderRoot | null> {
+    const cached = GitProvider.cachedInstance;
+    // A cached "no provider" answer is kept only when the caller does not want the prompt
+    if (cached && cached.key === GitProvider.instanceKey() && (cached.instance != null || !prompt)) {
+      return cached.instance;
+    }
+    GitProvider.lastBuildFailed = false;
+    const instance = await GitProvider.buildInstance(prompt);
+    // The key is read after the build: the auto-detection completes the environment. A null caused
+    // by an error (a network blip during the auto-detection) is not kept: the next call tries again
+    if (instance != null || !GitProvider.lastBuildFailed) {
+      GitProvider.cachedInstance = { key: GitProvider.instanceKey(), instance };
+    }
+    return instance;
+  }
+
+  private static lastBuildFailed = false;
+
+  private static async buildInstance(prompt: boolean): Promise<GitProviderRoot | null> {
     try {
-      // Azure
-      if (process.env.SYSTEM_ACCESSTOKEN) {
+      // Azure - detect from SYSTEM_ACCESSTOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT
+      if (process.env.SYSTEM_ACCESSTOKEN || process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.AZURE_DEVOPS_EXT_PAT) {
+        // Auto-detect missing CI variables from git remote URL when only a token is available
+        if (!process.env.SYSTEM_COLLECTIONURI || !process.env.SYSTEM_ACCESSTOKEN) {
+          await AzureDevopsProvider.autoDetectSettings();
+        }
         const serverUrl = process.env.SYSTEM_COLLECTIONURI || null;
         // a Personal Access Token must be defined
-        const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || null;
+        const token = process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || null;
         if (serverUrl == null || token == null) {
           uxLog(
             "warning",
             this,
             c.yellow(`To benefit from Azure Pipelines advanced integration, you need to define the following variables as ENV vars:
 - SYSTEM_COLLECTIONURI
-- SYSTEM_ACCESSTOKEN or CI_SFDX_HARDIS_AZURE_TOKEN`),
+- SYSTEM_ACCESSTOKEN, CI_SFDX_HARDIS_AZURE_TOKEN or AZURE_DEVOPS_EXT_PAT`),
           );
           return null;
         }
@@ -45,14 +152,26 @@ export abstract class GitProvider {
           );
           return null;
         }
+        // Auto-detect missing CI variables from git remote URL. Outside a GitLab CI job this runs
+        // even when everything is set, because CI_PROJECT_ID then comes from a .env file or the
+        // user environment and can be left over from another repository: autoDetectSettings checks
+        // it against the git remote and says so. Inside a job GITLAB_CI is always set, so the
+        // detection is skipped there exactly as before.
+        if (!process.env.CI_SERVER_URL || !process.env.CI_PROJECT_ID || !process.env.GITLAB_CI) {
+          await GitlabProvider.autoDetectSettings();
+        }
         return new GitlabProvider();
       }
-      // Github
-      else if (process.env.GITHUB_TOKEN) {
+      // Github - detect from GITHUB_TOKEN or CI_SFDX_HARDIS_GITHUB_TOKEN
+      else if (process.env.GITHUB_TOKEN || process.env.CI_SFDX_HARDIS_GITHUB_TOKEN) {
+        // Auto-detect missing CI variables from git remote URL
+        if (!process.env.GITHUB_REPOSITORY) {
+          await GithubProvider.autoDetectSettings();
+        }
         return new GithubProvider();
       }
-      // Bitbucket
-      else if (process.env.BITBUCKET_WORKSPACE) {
+      // Bitbucket - detect from BITBUCKET_WORKSPACE or CI_SFDX_HARDIS_BITBUCKET_TOKEN
+      else if (process.env.BITBUCKET_WORKSPACE || process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN) {
         const token = process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || null;
         if (token == null) {
           uxLog(
@@ -64,12 +183,16 @@ export abstract class GitProvider {
           );
           return null;
         }
+        // Auto-detect missing CI variables from git remote URL
+        if (!process.env.BITBUCKET_WORKSPACE || !process.env.BITBUCKET_REPO_SLUG) {
+          await BitbucketProvider.autoDetectSettings();
+        }
         return new BitbucketProvider();
       }
       // If prompt allowed and no vars found, request to user
       else if (prompt && !isCI) {
         await GitProvider.handleManualGitServerAuth();
-        return this.getInstance(false);
+        return this.buildInstance(false);
       }
       else if (isCI) {
         uxLog(
@@ -81,82 +204,117 @@ export abstract class GitProvider {
         );
       }
     } catch (e) {
-      uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to get git provider instance:\n${(e as Error).message}. Maybe an expired Personal Access Token ?`));
+      GitProvider.lastBuildFailed = true;
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderErrorGettingInstance', { message: (e as Error).message })));
     }
     return null;
   }
 
   private static async handleManualGitServerAuth() {
     const promptRes = await prompts({
-      message: "Please select your Git Service Provider",
-      description: "Choose your git hosting service to enable CI/CD integration features",
+      message: t('pleaseSelectYourGitServiceProvider'),
+      description: t('descChooseGitProvider'),
       type: "select",
       choices: [
-        { title: "Azure DevOps", value: "azure" },
-        { title: "GitHub", value: "github" },
-        { title: "Gitlab", value: "gitlab" },
-        { title: "Bitbucket", value: "bitbucket" },
+        { title: t('choiceAzureDevOps'), value: "azure" },
+        { title: t('choiceGitHub'), value: "github" },
+        { title: t('choiceGitlab'), value: "gitlab" },
+        { title: t('choiceBitbucket'), value: "bitbucket" },
       ]
     });
     if (promptRes.value === "azure") {
       await AzureDevopsProvider.handleLocalIdentification();
     }
     else {
-      uxLog("warning", this, c.yellow(`[GitProvider] Local authentication is not yet implemented for ${promptRes.value}`));
+      uxLog("action", this, c.cyan('[GitProvider] ' + t('gitProviderLocalAuthNotImplemented', { provider: promptRes.value })));
     }
   }
 
   static async managePostPullRequestComment(checkOnly: boolean): Promise<void> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
-      uxLog("warning", this, c.yellow("[Git Provider] WARNING: No git provider found to post pull request comment. Maybe you should configure it ?"));
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfigured')));
       uxLog(
         "warning",
         this,
-        c.yellow(`[Git Provider] See documentation: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers`),
+        c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/#git-providers` })),
       );
       return;
     }
     const prData = getPullRequestData();
     const prCommentSent = globalThis.pullRequestCommentSent || false;
     if (prData && gitProvider && prCommentSent === false) {
-      uxLog("warning", this, c.yellow("[Git Provider] Try to post a pull request comment/note..."));
-      let markdownBody = "";
-      if (prData.deployErrorsMarkdownBody) {
-        markdownBody += prData.deployErrorsMarkdownBody;
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPostingPrComment')));
+      const prInfoForLayout = await GitProvider.getPullRequestInfo({ useCache: true });
+      // A validation targets the branch of the Pull Request, a deployment runs on the branch itself
+      const targetBranch = checkOnly === true
+        ? prInfoForLayout?.targetBranch || (await getCurrentGitBranch()) || ''
+        : (await getCurrentGitBranch()) || '';
+      // No promise of Quick Deploy when it is disabled or the validation ran no tests: such a
+      // validation cannot be quick-deployed
+      const quickDeployReusable = checkOnly === true && !!globalThis.pullRequestDeploymentId && prData.deployStatus === "valid"
+        && prData.checkTestLevel !== "NoTestRun"
+        && (process.env.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false';
+      // A validation says how to merge: squash a User Story, keep the commits of a major, promotion
+      // or retrofit branch
+      const sourceBranch = checkOnly === true ? prInfoForLayout?.sourceBranch || '' : '';
+      const sourceBranchKind = sourceBranch
+        ? classifyBackpromoteCurrentBranch(sourceBranch, (await listMajorOrgs()).map((org) => org.branchName))
+        : undefined;
+      const sections = buildDeploymentPrCommentSections(prData, {
+        checkOnly: checkOnly === true,
+        targetBranch,
+        prNumber: prInfoForLayout?.idNumber,
+        quickDeployReusable,
+        sourceBranch,
+        sourceBranchKind,
+      });
+      const fitted = fitPrCommentSections(sections, gitProvider.getMaxPullRequestCommentLength() - PR_COMMENT_FRAME_RESERVE, gitProvider.getMaxPullRequestCommentLength().toLocaleString('en-US'));
+      if (fitted.shortened) {
+        uxLog("warning", this, c.yellow('[Git Provider] ' + t('prCommentShortenedToFit', { limit: gitProvider.getMaxPullRequestCommentLength(), provider: gitProvider.getLabel(), sections: fitted.leftOut.join(', ') || '-' })));
       }
-      if (prData.codeCoverageMarkdownBody) {
-        markdownBody += "\n\n" + prData.codeCoverageMarkdownBody;
+      let markdownBody = removeMermaidLinks(fitted.markdown).trim(); // Remove "click" elements that are useless and ugly on some providers 😊
+      const status = resolvePrCommentStatus(prData);
+      // Not where the marker would show as text: the run is then read from the title of the comment
+      if (gitProvider.hidesHtmlCommentsInPrComments()) {
+        markdownBody += "\n\n" + await GitProvider.buildRunSummaryMarker(gitProvider, prData, checkOnly, status);
       }
-      if (prData.preDeployCommandsResultMarkdownBody) {
-        markdownBody += "\n\n" + prData.preDeployCommandsResultMarkdownBody;
-      }
-      if (prData.postDeployCommandsResultMarkdownBody) {
-        markdownBody += "\n\n" + prData.postDeployCommandsResultMarkdownBody;
-      }
-      if (prData.commitsSummary) {
-        markdownBody += "\n\n" + prData.commitsSummary;
-      }
-      if (prData?.flowDiffMarkdown?.markdownSummary) {
-        markdownBody += "\n\n" + prData.flowDiffMarkdown.markdownSummary;
-      }
-      markdownBody = removeMermaidLinks(markdownBody); // Remove "click" elements that are useless and ugly on some providers 😊
       const prMessageRequest: PullRequestMessageRequest = {
-        title: (checkOnly === true ? "Deployment Check Results" : "Deployment Results") + (prData.title ? `\n\n${prData.title}` : ""),
+        // The banner shows the type and status of the comment, the verdict line is the first section
+        title: checkOnly === true ? "🔍 Validation Results (deployment simulation)" : "🚀 Deployment Results",
         message: markdownBody,
-        status: prData.status || 'tovalidate',
+        status: status,
         messageKey: (checkOnly === true) ? `deployment-check` : `deployment`,
+        bannerKey: getDeploymentBannerKey(checkOnly, status),
+        navBlock: buildPrCommentNavBlock(checkOnly === true ? 'validation' : 'deployment'),
       };
       // Post main message
       const postResult = await gitProvider.tryPostPullRequestMessage(prMessageRequest);
       if (postResult && postResult.posted === true) {
         globalThis.pullRequestCommentSent = true;
       }
+      // On providers where the description freezes at merge time (Azure DevOps), the deployment
+      // comment link can only reach the description while the Pull Request is still open: the
+      // validation job creates the deployment comment as a pending placeholder, that the merge job
+      // will later update in place.
+      if (checkOnly === true
+        && (isPrDescriptionNavEnabled() || isPrCommentNavEnabled())
+        && gitProvider.isPrDescriptionEditableAfterMerge() === false) {
+        const prInfoForPlaceholder = await GitProvider.getPullRequestInfo({ useCache: true });
+        await GitProvider.ensurePendingDeploymentComment(gitProvider, prInfoForPlaceholder?.idNumber);
+      }
       // Post additional comments
       for (const flowDiff of prData?.flowDiffMarkdown?.flowDiffMarkdownList || []) {
-        const flowDiffMessage = removeMermaidLinks(flowDiff.markdown); // Remove "click" elements that are useless and ugly on some providers 😊
+        // The label of the Flow is the first heading of its documentation
+        const flowLabel = ((flowDiff.markdown as string).match(/^# (.+)$/m) || [])[1]?.trim() || flowDiff.name;
+        const flowDiffMessage = buildFlowDiffCommentMessage(
+          removeMermaidLinks(flowDiff.markdown), // Remove "click" elements that are useless and ugly on some providers 😊
+          flowDiff.name,
+          gitProvider.getMaxPullRequestCommentLength() - PR_COMMENT_FRAME_RESERVE,
+        );
         const prMessageRequestAdditional: PullRequestMessageRequest = {
-          title: `Differences for Flow ${flowDiff.name}`,
+          // No banner: the Flow comments follow the validation comment, which already has one
+          title: `🔀 Flow ${flowLabel}`,
           message: flowDiffMessage,
           status: "valid",
           messageKey: `sfdx-hardis-flow-diff-${flowDiff.name}`,
@@ -164,13 +322,54 @@ export abstract class GitProvider {
         };
         await gitProvider.tryPostPullRequestMessage(prMessageRequestAdditional);
       }
+      // Now that this comment exists, refresh the navigation of all the sfdx-hardis comments.
+      // The Pull Request number is passed explicitly: on a merge job, GitLab, Azure and Bitbucket
+      // have no Pull Request context in their environment variables to fall back on.
+      const prInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+      await GitProvider.refreshPullRequestNavigation(prInfo?.idNumber);
     } else {
       uxLog("error", this, c.grey(`${JSON.stringify(prData || { noPrData: "" })} && ${gitProvider} && ${prCommentSent}`));
-      uxLog("warning", this, c.yellow("[Git Provider] Skip post pull request comment"));
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderSkipPrComment')));
     }
   }
 
+  /**
+   * Create the deployment comment as a pending placeholder when it does not exist yet, so its
+   * URL can be linked from the Pull Request description before the merge freezes it.
+   */
+  private static async ensurePendingDeploymentComment(gitProvider: GitProviderRoot, prNumber?: number): Promise<void> {
+    const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber);
+    if (comments === null) {
+      return; // Listing failed: better no placeholder than a duplicated deployment comment
+    }
+    if (comments.some((comment) => getPrCommentKind(comment.body) === 'deployment')) {
+      return;
+    }
+    uxLog("log", this, c.grey('[GitProvider] ' + t('gitProviderPostingPendingDeploymentComment')));
+    // No banner: a deployment banner only exists as success or failure, and this comment has no
+    // result yet, so it displays its plain title until the merge job updates it
+    const placeholderMessage: PullRequestMessageRequest = {
+      title: "🚀 Deployment Results\n\n⏳ Waiting for the Pull Request to be merged",
+      message: "The deployment job will update this comment after the Pull Request is merged." +
+        (gitProvider.hidesHtmlCommentsInPrComments() ? "\n\n" + encodeRunSummaryMarker({ kind: 'deployment', status: 'pending' }) : ""),
+      status: "tovalidate",
+      messageKey: "deployment",
+      navBlock: buildPrCommentNavBlock('deployment'),
+      // The placeholder carries no deployment result, so it must not claim the QuickDeploy id of
+      // the validation that is running: it would outrank the validation comment on the next run.
+      skipDeploymentIdMarker: true,
+    };
+    await gitProvider.tryPostPullRequestMessage(placeholderMessage);
+  }
+
   static async getDeploymentCheckId(): Promise<string | null> {
+    // Allow to force the QuickDeploy job id, bypassing the lookup in Pull Request comments.
+    // Useful to replay a QuickDeploy manually, and to test the QuickDeploy path outside of a Pull Request context.
+    const forcedDeploymentCheckId = getEnvVar('SFDX_HARDIS_DEPLOY_CHECK_ID');
+    if (forcedDeploymentCheckId) {
+      uxLog("log", this, c.grey(t('usingForcedDeploymentCheckId', { deploymentCheckId: forcedDeploymentCheckId })));
+      return forcedDeploymentCheckId;
+    }
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       return null;
@@ -184,7 +383,7 @@ export abstract class GitProvider {
       const currentGitBranch = await getCurrentGitBranch() || "";
       return gitProvider.getBranchDeploymentCheckId(currentGitBranch);
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Error while trying to retrieve deployment check id:\n${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(t('errorWhileTryingToRetrieveDeploymentCheck', { as: (e as Error).message })));
       return null;
     }
   }
@@ -205,6 +404,172 @@ export abstract class GitProvider {
     return gitProvider.getCurrentJobUrl();
   }
 
+  // Used to turn a CI actor identifier into a displayable identity in notifications.
+  // Returns null when no provider is configured: callers fall back to other sources.
+  static async resolveUserIdentity(identifier: string): Promise<{ name: string | null; email: string | null } | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    return gitProvider.resolveUserIdentity(identifier);
+  }
+
+  static async tryGetDeploymentActionsCommentBody(): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.getPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not read Deployment Actions comment: ${(e as Error).message}`));
+      return null;
+    }
+  }
+
+  static async tryUpsertDeploymentActionsComment(body: string): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    try {
+      await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment: ${(e as Error).message}`));
+    }
+  }
+
+  static async tryGetDeploymentActionsCommentBodyForPr(prNumber: number): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.getPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not read Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+      return null;
+    }
+  }
+
+  // Returns the reason the comment could not be written (no git provider connection is one: the
+  // status then lives nowhere), null when it was. A caller whose only job is to record a status must not say
+  // it did when the provider refused, which Azure DevOps does to anyone but the author of a comment.
+  static async tryUpsertDeploymentActionsCommentForPr(prNumber: number, body: string): Promise<string | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return t('deploymentActionsNoGitProvider');
+    }
+    try {
+      const written = await gitProvider.upsertPullRequestCommentByMarker(DEPLOYMENT_ACTIONS_MARKER, body, prNumber);
+      return written ? null : t('deploymentActionsCommentNotResolved');
+    } catch (e) {
+      uxLog("warning", this, c.yellow(`[GitProvider] Could not update Deployment Actions comment for PR #${prNumber}: ${(e as Error).message}`));
+      return (e as Error).message || String(e);
+    }
+  }
+
+  // Returns null on a listing error (network, API): callers must treat null as "retry later",
+  // where an empty array means the Pull Request genuinely has no matching comment.
+  /**
+   * Refresh the navigation between the sfdx-hardis comments of a Pull Request (validation,
+   * deployment, deployment actions) and at the top of its description, so a reader jumps from one
+   * to the other instead of scrolling. The comments are posted by different jobs, so the links can
+   * only be completed once they exist: this runs after every comment post, and each run adds the
+   * comments that appeared since the previous one.
+   */
+  static async refreshPullRequestNavigation(prNumber?: number): Promise<void> {
+    if (!isPrCommentNavEnabled()) {
+      return;
+    }
+    try {
+      const comments = await GitProvider.tryListPullRequestCommentsByMarker(SFDX_HARDIS_COMMENT_MARKER, prNumber);
+      if (comments === null || comments.length === 0) {
+        return;
+      }
+      const navComments: { kind: 'validation' | 'deployment' | 'actions'; comment: PullRequestCommentRef }[] = [];
+      const links: PrCommentNavLinks = {};
+      for (const comment of comments) {
+        const kind = getPrCommentKind(comment.body);
+        if (kind === null) {
+          continue;
+        }
+        navComments.push({ kind, comment });
+        if (comment.url) {
+          links[kind] = comment.url;
+        }
+      }
+      // Keep the links for the comments rebuilt later in the same job (deployment actions state)
+      setPrCommentNavLinks(links);
+      if (navComments.length < 2) {
+        return;
+      }
+      for (const navComment of navComments) {
+        const updatedBody = replacePrCommentNavBlock(navComment.comment.body, renderPrCommentNav(links, navComment.kind));
+        if (updatedBody !== navComment.comment.body) {
+          await GitProvider.tryUpdatePullRequestCommentByRef(navComment.comment, updatedBody);
+        }
+      }
+      await GitProvider.refreshPullRequestDescriptionNavigation(links, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderNavRefreshError', { message: (e as Error).message })));
+    }
+  }
+
+  // Insert the same navigation at the very beginning of the Pull Request description.
+  // The description is re-read just before writing: it belongs to the user, and only the block
+  // between the sfdx-hardis navigation markers is replaced.
+  private static async refreshPullRequestDescriptionNavigation(links: PrCommentNavLinks, prNumber?: number): Promise<void> {
+    if (!isPrDescriptionNavEnabled()) {
+      return;
+    }
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    const prInfo = await GitProvider.getPullRequestInfo();
+    if (prInfo == null || (prNumber && prInfo.idNumber !== prNumber)) {
+      return;
+    }
+    const currentDescription = prInfo.description || '';
+    const updatedDescription = upsertNavInDescription(currentDescription, renderPrCommentNav(links, null));
+    if (updatedDescription === currentDescription) {
+      return;
+    }
+    try {
+      await gitProvider.updatePullRequestDescription(prInfo.idNumber, prInfo.title, updatedDescription);
+      prInfo.description = updatedDescription;
+      uxLog("log", this, c.grey('[GitProvider] ' + t('gitProviderNavAddedToDescription', { pr: prInfo.idStr })));
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderNavDescriptionError', { message: (e as Error).message })));
+    }
+  }
+
+  static async tryListPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[] | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return [];
+    }
+    try {
+      return await gitProvider.listPullRequestCommentsByMarker(marker, prNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderCouldNotListComments', { message: (e as Error).message })));
+      return null;
+    }
+  }
+
+  static async tryUpdatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return;
+    }
+    try {
+      await gitProvider.updatePullRequestCommentByRef(commentRef, body);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderCouldNotUpdateComment', { pr: commentRef.prNumber, message: (e as Error).message })));
+    }
+  }
+
   static async supportsMermaidInPrMarkdown(): Promise<boolean> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
@@ -222,6 +587,12 @@ export abstract class GitProvider {
   }
 
   static prInfoCache: any = null;
+  // Custom behaviors inherited by a promotion Pull Request from the stories it declares
+  // (see promotionBranchUtils.mergeInheritedCustomBehaviors). Null when nothing was inherited.
+  static inheritedCustomBehaviors: Partial<CommonPullRequestInfo['customBehaviors']> | null = null;
+  // The Pull Request the inheritance above was computed for. A process handling more than one
+  // (tests, a long-lived server) must not carry a NO_DELTA from one Pull Request to the next.
+  static inheritedCustomBehaviorsPrId: number | null = null;
 
   static async getPullRequestInfo(options: { useCache: boolean } = { useCache: false }): Promise<CommonPullRequestInfo | null> {
     // Return cached result if available and caching is enabled
@@ -238,15 +609,294 @@ export abstract class GitProvider {
     let prInfo: CommonPullRequestInfo | null = null;
     try {
       prInfo = await gitProvider.getPullRequestInfo();
+      // A promotion Pull Request inherits the custom behaviors of the stories it carries. They are
+      // re-applied on every fresh fetch, so a caller refreshing the cache cannot lose them.
+      if (prInfo && GitProvider.inheritedCustomBehaviors && GitProvider.inheritedCustomBehaviorsPrId === prInfo.idNumber) {
+        prInfo.customBehaviors = Object.assign(prInfo.customBehaviors || {}, GitProvider.inheritedCustomBehaviors);
+      }
       debug("[GitProvider][PR Info] " + JSON.stringify(prInfo, null, 2));
       GitProvider.prInfoCache = prInfo;
     } catch (e) {
-      uxLog("warning", this, c.yellow("[GitProvider] Unable to get Pull Request info: " + (e as Error).message));
-      uxLog("warning", this, c.yellow(`[GitProvider] Maybe you misconfigured your ${gitProvider.getLabel()} ?`));
-      uxLog("warning", this, c.yellow(`[GitProvider] See ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#git-providers`));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderUnableToGetPrInfo', { message: (e as Error).message })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderMayBeMisconfigured', { provider: gitProvider.getLabel() })));
+      uxLog("warning", this, c.yellow('[GitProvider] ' + t('gitProviderSeeDocumentation', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/#git-providers` })));
       prInfo = null;
     }
     return prInfo;
+  }
+
+  /**
+   * Why the last createPullRequest call did not create anything. Callers that fall back to a manual
+   * Pull Request tell the user what actually happened instead of guessing at a missing token.
+   */
+  static lastPullRequestCreationError: string | null = null;
+
+  /**
+   * Creates a Pull Request through the git provider API.
+   *
+   * `retries` exists because the branch is usually pushed a fraction of a second before: a git
+   * provider that has not yet indexed the new ref answers that the source branch does not exist
+   * (GitLab does, on a self-managed instance), and the same call succeeds a few seconds later.
+   * Each attempt starts by looking for an already open Pull Request, so a create that succeeded
+   * while reporting an error is picked up instead of being created twice.
+   */
+  static async createPullRequest(
+    request: CreatePullRequestRequest,
+    options: { retries?: number; retryDelayMs?: number } = {},
+  ): Promise<string | null> {
+    GitProvider.lastPullRequestCreationError = null;
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      GitProvider.lastPullRequestCreationError = t('gitProviderNotConfiguredForPrCreation');
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderNotConfiguredForPrCreation')));
+      return null;
+    }
+    const attempts = Math.max(1, (options.retries ?? 0) + 1);
+    const retryDelayMs = options.retryDelayMs ?? 5000;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      // Check if a PR already exists for this source→target branch (e.g. from a previous auto-fix run)
+      const existing = await gitProvider.findOpenPullRequest(request.sourceBranch, request.targetBranch);
+      if (existing) {
+        uxLog("log", this, c.grey(`[Git Provider] Found existing open PR for ${request.sourceBranch} → ${request.targetBranch}, updating description.`));
+        await gitProvider.updatePullRequestDescription(existing.id, request.title, request.body);
+        GitProvider.lastPullRequestCreationError = null;
+        return existing.pullRequestUrl;
+      }
+      try {
+        const result = await gitProvider.createPullRequest(request);
+        if (result.created && result.pullRequestUrl) {
+          GitProvider.lastPullRequestCreationError = null;
+          return result.pullRequestUrl;
+        }
+        GitProvider.lastPullRequestCreationError = t('gitProviderPrCreationFailed');
+        uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationFailed')));
+      } catch (e) {
+        GitProvider.lastPullRequestCreationError = (e as Error).message;
+        uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderPrCreationError', { message: (e as Error).message })));
+      }
+      if (attempt < attempts) {
+        uxLog("log", this, c.grey('[Git Provider] ' + t('gitProviderPrCreationRetry', { seconds: Math.round(retryDelayMs / 1000), attempt: attempt + 1, attempts })));
+        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Web URL of the "new Pull Request" form of the git provider, with the source branch, the target
+   * branch, the title and (when it fits in a URL) the description already filled in. Built from the
+   * git remote by the provider class itself, so it works with no token and no provider instance at
+   * all: that is exactly the situation where the user has to create the Pull Request by hand.
+   */
+  static async getPullRequestCreateUrl(request: CreatePullRequestRequest): Promise<PullRequestCreateUrlResult | null> {
+    try {
+      const remoteUrl = String((await git().remote(["get-url", "origin"])) || "").trim();
+      if (!remoteUrl) {
+        return null;
+      }
+      // The active provider knows what it is; without one, the remote URL is all there is to go on
+      const gitProvider = await GitProvider.getInstance();
+      const candidates: Array<typeof GitProviderRoot> = [];
+      if (gitProvider instanceof GithubProvider) {
+        candidates.push(GithubProvider);
+      } else if (gitProvider instanceof GitlabProvider) {
+        candidates.push(GitlabProvider);
+      } else if (gitProvider instanceof AzureDevopsProvider) {
+        candidates.push(AzureDevopsProvider);
+      } else if (gitProvider instanceof BitbucketProvider) {
+        candidates.push(BitbucketProvider);
+      } else {
+        candidates.push(...GitProvider.guessProviderClassesFromRemoteUrl(remoteUrl));
+      }
+      for (const providerClass of candidates) {
+        const result = providerClass.getPullRequestCreateUrl(remoteUrl, request);
+        if (result) {
+          return result;
+        }
+      }
+      return null;
+    } catch (e) {
+      debug("[Git Provider] Unable to build the Pull Request creation URL: " + (e as Error).message);
+      return null;
+    }
+  }
+
+  /**
+   * Which git provider a repository address belongs to, from the address alone: the Azure DevOps
+   * URL shapes, then the host. Returns null for a host that does not name its product (a
+   * self-managed instance), without guessing from the CI variables of the running job, so it can
+   * describe a repository other than the current one.
+   */
+  static getProviderTypeFromRemoteUrl(remoteUrl: string | null | undefined): GitProviderType | null {
+    const url = (remoteUrl || "").trim();
+    if (url === "") {
+      return null;
+    }
+    // Azure DevOps URLs are recognizable by their shape, whatever the host
+    if (AzureDevopsProvider.parseAzureRepoUrl(url)) {
+      return "azure";
+    }
+    const host = (
+      url.match(/^[a-z+]+:\/\/(?:[^@/]+@)?([^/:]+)/i)?.[1] ||
+      url.match(/^[^@]+@([^:]+):/)?.[1] ||
+      ""
+    ).toLowerCase();
+    if (host.includes("bitbucket")) {
+      return "bitbucket";
+    }
+    if (host.includes("gitlab")) {
+      return "gitlab";
+    }
+    if (host.includes("github")) {
+      return "github";
+    }
+    return null;
+  }
+
+  /**
+   * Provider of a repository other than the one of the current folder (the deployment repository,
+   * read from a monitoring repository). It is never the cached instance of the current repository.
+   *
+   * The token is options.token when given. Otherwise the token the environment holds for the
+   * provider of that repository is tried: it works when both repositories are on the same provider
+   * and the token can read both. tokenVariableName is the variable the error messages name.
+   */
+  static getInstanceForRepository(remoteUrl: string, options: { token?: string | null; tokenVariableName: string }): GitProviderRoot {
+    const environmentTokens: Record<GitProviderType, string> = {
+      azure: process.env.CI_SFDX_HARDIS_AZURE_TOKEN || process.env.SYSTEM_ACCESSTOKEN || process.env.AZURE_DEVOPS_EXT_PAT || "",
+      gitlab: process.env.CI_SFDX_HARDIS_GITLAB_TOKEN || process.env.ACCESS_TOKEN || "",
+      github: process.env.CI_SFDX_HARDIS_GITHUB_TOKEN || process.env.PAT || process.env.GITHUB_TOKEN || "",
+      bitbucket: process.env.CI_SFDX_HARDIS_BITBUCKET_TOKEN || "",
+    };
+    const typesWithToken = (Object.keys(environmentTokens) as GitProviderType[]).filter((type) => environmentTokens[type] !== "");
+    // A self-managed host does not name its product: it is then taken as the provider of the
+    // current repository, when the environment holds the token of one provider only
+    const providerType = GitProvider.getProviderTypeFromRemoteUrl(remoteUrl) || (typesWithToken.length === 1 ? typesWithToken[0] : null);
+    if (!providerType && (options.token || typesWithToken.length > 1)) {
+      throw new SfError(t('gitProviderRepositoryUrlNotRecognized', { url: remoteUrl, provider: "GitHub, GitLab, Azure DevOps or Bitbucket" }));
+    }
+    const token = options.token || (providerType ? environmentTokens[providerType] : "");
+    if (!providerType || !token) {
+      if (providerType && typesWithToken.length > 0) {
+        throw new SfError(t('gitProviderRepositoryTokenWrongProvider', {
+          currentProvider: typesWithToken[0],
+          targetProvider: providerType,
+          repository: remoteUrl,
+          tokenVariable: options.tokenVariableName,
+        }));
+      }
+      throw new SfError(t('gitProviderRepositoryNoToken', { repository: remoteUrl, tokenVariable: options.tokenVariableName }));
+    }
+    const repository = { remoteUrl, token };
+    switch (providerType) {
+      case "azure":
+        return new AzureDevopsProvider(repository);
+      case "gitlab":
+        return new GitlabProvider(repository);
+      case "github":
+        return new GithubProvider(repository);
+      default:
+        return new BitbucketProvider(repository);
+    }
+  }
+
+  /**
+   * Which provider class a remote URL belongs to, when no token tells us. The host is the only
+   * reliable signal for a self-managed instance, and the GitHub and Bitbucket URL shapes are the
+   * same, so the CI variables of the running job break the ties the host cannot.
+   */
+  private static guessProviderClassesFromRemoteUrl(remoteUrl: string): Array<typeof GitProviderRoot> {
+    const providerType = GitProvider.getProviderTypeFromRemoteUrl(remoteUrl);
+    if (providerType) {
+      return [GIT_PROVIDER_CLASSES[providerType]];
+    }
+    // Self-managed instances rarely name themselves after the product
+    if (process.env.GITLAB_CI || process.env.CI_SERVER_URL) {
+      return [GitlabProvider];
+    }
+    if (process.env.GITHUB_ACTIONS || process.env.GITHUB_SERVER_URL) {
+      return [GithubProvider];
+    }
+    if (process.env.SYSTEM_TEAMFOUNDATIONCOLLECTIONURI) {
+      return [AzureDevopsProvider];
+    }
+    if (process.env.BITBUCKET_WORKSPACE) {
+      return [BitbucketProvider];
+    }
+    return [];
+  }
+
+  /**
+   * Lists the open Pull Requests targeting a branch. Returns null when the provider cannot answer,
+   * which callers must not read as "there is none".
+   */
+  static async listOpenPullRequests(targetBranch: string): Promise<CommonPullRequestInfo[] | null> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return null;
+    }
+    try {
+      return await gitProvider.listPullRequests({ status: 'open', targetBranch: targetBranch });
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: 0, message: (e as Error).message })));
+      return null;
+    }
+  }
+
+  /** Closes an open Pull Request without merging it. Returns false when the provider refused. */
+  static async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider == null) {
+      return false;
+    }
+    try {
+      return await gitProvider.closePullRequest(pullRequestNumber);
+    } catch (e) {
+      uxLog("warning", this, c.yellow('[Git Provider] ' + t('gitProviderClosePullRequestFailed', { number: pullRequestNumber, message: (e as Error).message })));
+      return false;
+    }
+  }
+
+  static async logAutoFixRemediation(step: "push" | "pr-create"): Promise<void> {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider) {
+      gitProvider.logAutoFixRemediation(step);
+      return;
+    }
+    uxLog("log", this, "[sfdx-hardis] Unable to find a Git provider instance for auto-fix remediation guidance.");
+    return;
+  }
+
+  /**
+   * Stops the job when git refuses the checkout because another user owns it ("detected dubious
+   * ownership"), which happens in CI jobs running in a container: no git read works, so the Pull
+   * Requests of the deployment, and their deployment actions, would be skipped without a word. The
+   * error names the line to add to the CI job. Git is asked once per process.
+   */
+  static async assertGitRepositoryNotRefused(): Promise<void> {
+    if (!gitRepositoryCheck) {
+      gitRepositoryCheck = GitProvider.checkGitRepositoryNotRefused();
+    }
+    return gitRepositoryCheck;
+  }
+
+  private static async checkGitRepositoryNotRefused(): Promise<void> {
+    try {
+      await git({ output: false, displayCommand: false }).revparse(['--is-inside-work-tree']);
+    } catch (e: any) {
+      if (!/detected dubious ownership/i.test(String(e?.message || e))) {
+        // Not a git repository, or git missing: the commands that need git say so themselves
+        return;
+      }
+      let gitProvider: GitProviderRoot | null = null;
+      try {
+        gitProvider = await GitProvider.getInstance();
+      } catch {
+        gitProvider = null;
+      }
+      const command = gitProvider ? gitProvider.getSafeDirectoryCommand() : `git config --global --add safe.directory "${process.cwd()}"`;
+      throw new SfError(t('gitRepositoryRefusedDubiousOwnership', { command }));
+    }
   }
 
   static isDeployBeforeMerge(): boolean {
@@ -321,6 +971,96 @@ export abstract class GitProvider {
     // Fallback: just return null
     return null;
   }
+
+  /**
+   * Hidden summary of the run a validation or deployment comment reports, read back by
+   * `hardis:project:action:list --with-workflows`. Never fails the comment: a missing job URL or
+   * target branch is simply left out.
+   */
+  private static async buildRunSummaryMarker(
+    gitProvider: GitProviderRoot,
+    prData: Partial<PullRequestData>,
+    checkOnly: boolean,
+    status: "valid" | "invalid" | "tovalidate",
+  ): Promise<string> {
+    let targetBranch = '';
+    let jobUrl = '';
+    try {
+      // A validation targets the branch of the Pull Request, a deployment runs on the branch itself
+      targetBranch = checkOnly === true
+        ? (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch || ''
+        : (await getCurrentGitBranch()) || '';
+      jobUrl = (await gitProvider.getCurrentJobUrl()) || '';
+    } catch (e) {
+      debug('Run summary of the Pull Request comment built without job context: ' + (e as Error).message);
+    }
+    return encodeRunSummaryMarker({
+      kind: checkOnly === true ? 'validation' : 'deployment',
+      status: status === 'tovalidate' ? 'pending' : status,
+      targetBranch,
+      jobUrl,
+      date: new Date().toISOString(),
+      quickDeploy: checkOnly === false && prData.usedQuickDeploy === true,
+      testLevel: prData.checkTestLevel || '',
+      errorCount: prData.errorCount,
+      failedTestsCount: prData.failedTestsCount,
+      coverageText: markdownFirstLineAsText(prData.codeCoverageMarkdownBody),
+    });
+  }
+}
+
+/**
+ * Body of the visual diff comment of one Flow, under the size cap of the provider: the full
+ * property tables go first, then the diagram itself when it is still too large.
+ */
+export function buildFlowDiffCommentMessage(flowDiffMarkdown: string, flowName: string, budget: number): string {
+  const cleaned = cleanFlowDiffMarkdownForPrComment(flowDiffMarkdown);
+  const detailsStart = cleaned.indexOf('<details>\n<summary>All properties and elements</summary>');
+  let top = `\`${flowName}\` changed in this Pull Request.\n\n` + (detailsStart >= 0 ? cleaned.substring(0, detailsStart) : cleaned);
+  const details = detailsStart >= 0 ? cleaned.substring(detailsStart) : '';
+  // A diagram cut in the middle is a parse error on the provider: replace it whole when it alone
+  // does not fit
+  if (top.length > budget - 500) {
+    top = top.replace(/```mermaid[\s\S]*?```/, '_The diagram is too large for a Pull Request comment: open the visual git diff of this Flow in VS Code._');
+  }
+  return fitPrCommentSections(
+    [
+      { id: 'flow-changes', keep: true, markdown: top },
+      { id: 'flow-details', markdown: details, dropLabel: 'the full property tables' },
+    ],
+    budget,
+    budget.toLocaleString('en-US'),
+  ).markdown;
+}
+
+/**
+ * Status of the Pull Request comment to post. Most success paths only set deployStatus (code
+ * coverage check, project without Apex), while the failure paths set status: without this
+ * fallback a successful deployment would stay "tovalidate" and carry no banner at all.
+ */
+export function resolvePrCommentStatus(prData: Partial<PullRequestData>): "valid" | "invalid" | "tovalidate" {
+  if (prData.status) {
+    return prData.status;
+  }
+  if (prData.deployStatus === 'valid' || prData.deployStatus === 'invalid') {
+    return prData.deployStatus;
+  }
+  return 'tovalidate';
+}
+
+/**
+ * Banner identifying a validation (checkOnly deployment) or deployment results comment, with its
+ * outcome: success or failure, the only two possible statuses. A "tovalidate" comment (posted
+ * before the result is known, like the pending deployment placeholder or a draft deployment
+ * actions file stopping the job early) displays no banner, only its title.
+ */
+export function getDeploymentBannerKey(checkOnly: boolean, status: "valid" | "invalid" | "tovalidate"): PrCommentBannerKey | undefined {
+  if (status === "tovalidate") {
+    return undefined;
+  }
+  const type = checkOnly === true ? "validation" : "deployment";
+  const outcome = status === "valid" ? "success" : "failure";
+  return `${type}-${outcome}` as PrCommentBannerKey;
 }
 
 export declare type CommonPullRequestInfo = {
@@ -332,10 +1072,16 @@ export declare type CommonPullRequestInfo = {
   description: string;
   authorName: string;
   webUrl: string;
+  createdDate?: string;
+  mergedDate?: string;
+  mergeCommitSha?: string;
+  // A draft Pull Request (not ready for review), as the git provider flags it
+  isDraft?: boolean;
   customBehaviors: {
     noDeltaDeployment?: boolean,
     purgeFlowVersions?: boolean,
-    destructiveChangesAfterDeployment?: boolean
+    destructiveChangesAfterDeployment?: boolean,
+    flowDeleteInterviews?: boolean
   }
   providerInfo: any
 }
@@ -344,8 +1090,49 @@ export declare type PullRequestData = {
   messageKey: string;
   title: string;
   deployErrorsMarkdownBody?: string;
+  // A problem that stops the job before or after the deployment, with how to fix it (a draft
+  // deployment actions file...)
+  blockingIssueMarkdownBody?: string;
+  // What Salesforce did with the metadata of a deployment job: 'deployed' as soon as it accepted it,
+  // even when a post-deployment action or the code coverage check fails afterwards
+  metadataOutcome?: 'deployed' | 'nothing-to-deploy';
+  // Delta deployment (only what the Pull Requests changed) or full deployment of manifest/package.xml
+  deploymentMode?: 'delta' | 'full';
+  // Components that changed or failed, counted per metadata type (collapsible table)
+  deploymentComponentTypesMarkdownBody?: string;
+  // package-no-overwrite.xml components kept in the org or created this once
+  noOverwriteMarkdownBody?: string;
   codeCoverageMarkdownBody?: string;
-  commitsSummary?: string;
+  // Number of deployment errors and of failing Apex tests, for the run summary of the comment
+  errorCount?: number;
+  failedTestsCount?: number;
+  // Deployment errors that are Apex classes under the coverage Salesforce requires
+  coverageWarningsCount?: number;
+  // Deployment errors that are a lost connection to Salesforce, not an error of the metadata
+  networkErrorsCount?: number;
+  flowDeletionMarkdownBody?: string;
+  // Explains which Pull Requests the deployment actions and Apex test classes were collected from
+  deploymentScopeMarkdownBody?: string;
+  // True when the metadata deployment was performed with Quick Deploy (reusing the validation job result)
+  usedQuickDeploy?: boolean;
+  // Test level of the validation job, to know if it is reusable by Quick Deploy
+  checkTestLevel?: string;
+  // Fix Pull Request created by a coding agent after a failed deployment
+  autoFixPullRequestUrl?: string;
+  // Facts read by the layout of the validation and deployment comments (utilsPrCommentLayout.ts)
+  deploymentMetrics?: PrCommentDeploymentMetrics;
+  coverage?: { value: number; target: number; status: string };
+  testClasses?: string[];
+  // Why no Apex test ran, when none did
+  testsNotRunReason?: 'smart-tests' | 'coverage-skipped' | 'no-apex';
+  preDeployActions?: PrCommentActionsRun;
+  postDeployActions?: PrCommentActionsRun;
+  tickets?: Ticket[];
+  // LEGACY "MANUAL ACTION:" lines found in commit messages
+  legacyManualActions?: string[];
+  // Pull Requests whose deployment actions and test classes the job collected
+  pullRequestsInScope?: PrCommentPullRequestRef[];
+  flowChanges?: PrCommentFlowChange[];
   deployStatus?: "valid" | "invalid" | "unknown";
   status?: "valid" | "invalid" | "tovalidate";
   flowDiffMarkdown?: {
@@ -357,6 +1144,35 @@ export declare type PullRequestData = {
     }>;
   };
 }
+
+export declare type PrCommentDeploymentMetrics = {
+  deployed: number;
+  created: number;
+  updated: number;
+  deleted: number;
+  unchanged: number;
+};
+
+export declare type PrCommentActionsRun = {
+  commands: PrePostCommand[];
+  orgBranch?: string;
+};
+
+export declare type PrCommentPullRequestRef = {
+  idStr: string;
+  idNumber?: number;
+  title?: string;
+  webUrl?: string;
+  authorName?: string;
+};
+
+export declare type PrCommentFlowChange = {
+  name: string;
+  // 'diff': a visual diff comment is posted, 'status-only': only the status changed, no comment
+  kind: 'diff' | 'status-only';
+  statusBefore?: string;
+  statusAfter?: string;
+};
 
 // Global type augmentation for globalThis
 declare global {
@@ -374,10 +1190,29 @@ export declare type PullRequestMessageRequest = {
   messageKey: string;
   status: "valid" | "invalid" | "tovalidate";
   sourceFile?: string;
+  // Identifies the comment (type + status) with a banner image at the top of the comment
+  bannerKey?: PrCommentBannerKey;
+  // Navigation block linking to the other sfdx-hardis comments of the Pull Request
+  navBlock?: string;
+  // Do not tag the comment with the QuickDeploy deployment id of the running job
+  skipDeploymentIdMarker?: boolean;
 };
 
 export declare type PullRequestMessageResult = {
   posted: boolean;
   providerResult: any;
   additionalProviderResult?: any;
+};
+
+export declare type CreatePullRequestRequest = {
+  title: string;
+  body: string;
+  sourceBranch: string;
+  targetBranch: string;
+};
+
+export declare type CreatePullRequestResult = {
+  created: boolean;
+  pullRequestUrl: string | null;
+  providerResult: any;
 };

@@ -3,34 +3,107 @@
 
 ## Description
 
-Import/Load data in an org using a [SFDX Data Loader](https://help.sfdmu.com/) Project
 
-If you need to run this command in a production org, you need to either:
+## Command Behavior
 
-- Define **sfdmuCanModify** in your .sfdx-hardis.yml config file. (Example: `sfdmuCanModify: prod-instance.my.salesforce.com`)
-- Define an environment variable SFDMU_CAN_MODIFY. (Example: `SFDMU_CAN_MODIFY=prod-instance.my.salesforce.com`)
+**Imports and loads data into a Salesforce org using SFDX Data Loader (sfdmu) projects.**
+
+This command enables teams to consistently upload structured data to Salesforce orgs, supporting data seeding, configuration migrations, and test data provisioning. It provides a safe and controlled mechanism for data imports with built-in safeguards for production environments.
+
+Key functionalities:
+
+- **Data Workspace Selection:** Allows selection of SFDX Data Loader projects either by project name, file path, or through an interactive prompt.
+- **Target Org Selection:** Supports specifying the target org via command flags or interactive prompts, with default org detection.
+- **Production Safeguards:** Implements safety mechanisms to prevent accidental data modifications in production orgs:
+  - Requires explicit configuration via `sfdmuCanModify` in .sfdx-hardis.yml config file
+  - Or via `SFDMU_CAN_MODIFY` environment variable
+- **Interactive Mode:** Provides user-friendly prompts for workspace and org selection when not in CI mode.
+- **Confirmation Before Loading:** Displays a summary of the objects handled by the workspace (object, operation, external id, filter, mocked fields) followed by the full `export.json`, then asks for confirmation before writing anything to the org.
+- **CI/CD Integration:** Supports non-interactive execution with `--no-prompt` flag for automated pipelines.
+- **SFDMU Integration:** Leverages the powerful SFDX Data Loader (sfdmu) plugin for reliable data import operations.
 
 See article:
 
 [![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+The command's technical implementation involves:
+
+- **SFDX Data Loader Integration:** Requires the `sfdmu` Salesforce CLI plugin to be installed, which is verified before command execution.
+- **Workspace Discovery:** Uses `findDataWorkspaceByName()` to locate data projects by name, or `selectDataWorkspace()` for interactive selection from available SFDX Data Loader workspaces.
+- **Org Authentication:** Leverages the `target-org` flag with `requiredOrgFlagWithDeprecations` to obtain and validate org authentication.
+- **Interactive Prompting:** When not in CI mode and `--no-prompt` is not set, uses `promptOrgUsernameDefault()` to allow users to confirm or change the target org.
+- **Data Import Execution:** Delegates the actual import operation to `importData()` utility function, passing the workspace path, command context, and target username.
+- **Workspace Display and Confirmation:** `displayDataWorkspaceAndConfirm()` prints the objects summary table and the `export.json` content, then prompts for confirmation. The prompt is skipped in CI, in agent mode and with `--no-prompt`.
+- **Safety Configuration:** Checks for production org protection configuration in project settings or environment variables before allowing modification of production instances.
+- **Path Resolution:** Supports both explicit path specification via `--path` flag and project name lookup via `--project-name` flag.
+- **Result Reporting:** Returns structured output with success message and import details for programmatic consumption.
+
+The command is designed to work seamlessly in both interactive development scenarios and automated CI/CD pipelines, ensuring data consistency across different Salesforce environments.
+</details>
+
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:data:import --agent --path ./scripts/data/MyDataProject --target-org myOrg`
+
+- The `--path` flag (or `--project-name`) is required in agent mode (no interactive workspace selection).
+- The `--target-org` flag is used directly (no interactive org selection prompt).
+- The workspace content is still displayed, but its confirmation prompt is skipped.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 1.2 - Create your Dev Hub, scratch orgs and CI/CD pipeline](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-2-create-your-dev-hub-scratch-orgs-and-pipeline/)
+- [Lab 2.4 - Ship reference data and a batch with deployment actions](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-4-ship-reference-data-and-a-batch-with-deployment-actions/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+
+<!-- training-links:end -->
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| path<br/>-p       | option  | Path to the sfdmu workspace folder                            |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                |  Type   | Description                                                                                                  | Default | Required | Options |
+|:--------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json                | boolean | Format output as json.                                                                                       |         |          |         |
+| no-prompt<br/>-r    | boolean | Do not prompt for Org, use default org                                                                       |         |          |         |
+| path<br/>-p         | option  | Path to the sfdmu workspace folder                                                                           |         |          |         |
+| project-name<br/>-n | option  | Name of the sfdmu project to use (if not defined, you will be prompted to select one)                        |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o   | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:org:data:import
+```
+
+```shell
+$ sf hardis:org:data:import --project-name MyDataProject --target-org my-org@example.com
+```
+
+```shell
+$ sf hardis:org:data:import --path ./scripts/data/MyDataProject --no-prompt --target-org my-org@example.com
+```
+
+```shell
+$ SFDMU_CAN_MODIFY=prod-instance.my.salesforce.com sf hardis:org:data:import --project-name MyDataProject --target-org prod@example.com
+```
+
+```shell
+$ sf hardis:org:data:import --agent --path ./scripts/data/MyDataProject --target-org myOrg
 ```
 
 

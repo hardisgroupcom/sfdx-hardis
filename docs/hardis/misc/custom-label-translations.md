@@ -14,6 +14,19 @@ This command streamlines the process of managing and isolating specific custom l
 - **Collaboration:** Sharing only the necessary translation files with translators, reducing complexity.
 - **Debugging:** Isolating translation issues for specific labels or components.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:misc:custom-label-translations --label Label1,Label2 --agent
+sf hardis:misc:custom-label-translations --lwc MyComponent --agent
+```
+
+In agent mode:
+- Interactive selection prompts are skipped.
+- The `--label` or `--lwc` flag is **required** to specify which labels to extract.
+
 Key functionalities:
 
 - **Label Selection:** You can specify custom label names directly using the `--label` flag (comma-separated).
@@ -28,13 +41,13 @@ The command's technical implementation involves:
 
 - **File Discovery:** It uses `glob` to find all `*.translation-meta.xml` files in the `**/translations/` directory and, if an LWC is specified, it searches for the LWC's JavaScript files (`**/lwc/**/*.js`).
 - **LWC Label Extraction:** The `extractLabelsFromLwc` function uses regular expressions (`@salesforce/label/c.([a-zA-Z0-9_]+)`) to parse LWC JavaScript files and identify referenced custom labels.
-- **XML Parsing and Building:** It uses `xml2js` (`parseStringPromise` and `Builder`) to:
+- **XML Parsing and Building:** It parses and rebuilds the XML files to:
   - Read and parse existing `.translation-meta.xml` files.
   - Filter the `customLabels` array to include only the requested labels.
   - Construct a new XML structure containing only the filtered labels.
   - Build a new XML string with proper formatting and write it to a new file.
 - **Interactive Prompts:** The `prompts` library is used extensively to guide the user through the selection of extraction methods (labels or LWC) and specific labels/components.
-- **File System Operations:** It uses `fs-extra` for creating output directories (`extracted-translations/`) and writing the generated translation files.
+- **File System Operations:** It uses Node.js `fs` for creating output directories (`extracted-translations/`) and writing the generated translation files.
 - **WebSocket Communication:** It uses `WebSocketClient.requestOpenFile` to open the output directory in VS Code for easy access to the generated files.
 </details>
 
@@ -43,8 +56,9 @@ The command's technical implementation involves:
 
 | Name         |  Type   | Description                                                   | Default | Required | Options |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | label<br/>-l | option  | Developer name(s) of the custom label(s), comma-separated     |         |          |         |
 | lwc<br/>-c   | option  | Developer name of the Lightning Web Component                 |         |          |         |
@@ -63,6 +77,10 @@ $ sf hardis:misc:custom-label-translations --label Label1,Label2
 
 ```shell
 $ sf hardis:misc:custom-label-translations --lwc MyComponent
+```
+
+```shell
+$ sf hardis:misc:custom-label-translations --label Label1,Label2 --agent
 ```
 
 

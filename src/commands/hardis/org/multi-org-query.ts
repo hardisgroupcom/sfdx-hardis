@@ -4,10 +4,12 @@ import { AuthInfo, Connection, Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from "chalk";
 import { makeSureOrgIsConnected, promptOrgList } from '../../../common/utils/orgUtils.js';
+import { getOrgAccessToken } from '../../../common/utils/credentialUtils.js';
 import { isCI, uxLog } from '../../../common/utils/index.js';
 import { bulkQuery } from '../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../common/utils/filesUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
+import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -43,13 +45,24 @@ The command's technical implementation involves:
 - **Interactive Prompts:** The \`prompts\` library is used to guide the user through selecting a query template or entering a custom query, and for selecting target orgs if not provided as command-line arguments.
 - **Error Handling:** It logs errors for any orgs where the query fails, ensuring that the overall process continues and provides a clear summary of successes and failures.
 </details>
-`;
+
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:multi-org-query --agent --query "SELECT Id,Username FROM User" --target-orgs org1@example.com org2@example.com
+\`\`\`
+
+In agent mode, both \`--query\` (or \`--query-template\`) and \`--target-orgs\` flags are required. Interactive query builder and org selection prompts are skipped.`;
 
   public static examples = [
     '$ sf hardis:org:multi-org-query',
     '$ sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User"',
     '$ sf hardis:org:multi-org-query --query "SELECT Id,Username FROM User" --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat',
     '$ sf hardis:org:multi-org-query --query-template active-users --target-orgs nico@cloudity.com nico@cloudity.com.preprod nico@cloudity.com.uat',
+    '$ sf hardis:org:multi-org-query --agent --query "SELECT Id,Username FROM User" --target-orgs nico@cloudity.com',
   ];
 
   public static flags: any = {
@@ -87,6 +100,10 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
   };
 
   protected allQueryTemplates: any = {
@@ -118,12 +135,13 @@ The command's technical implementation involves:
     this.targetOrgsIds = flags["target-orgs"] || [];
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
 
     // Prompt query if not specified as input argument
-    await this.defineSoqlQuery();
+    await this.defineSoqlQuery(agentMode);
 
     // List org if not sent as input parameter
-    await this.manageSelectOrgs();
+    await this.manageSelectOrgs(agentMode);
 
     // Perform the request on orgs
     await this.performQueries();
@@ -145,15 +163,15 @@ The command's technical implementation involves:
   }
 
   private displayResults() {
-    uxLog("action", this, c.cyan(`Query results from ${this.targetOrgsIds.length} orgs`));
+    uxLog("action", this, c.cyan(t('queryResultsFromOrgs', { targetOrgsIds: this.targetOrgsIds.length })));
     if (this.successOrgs.length > 0) {
-      uxLog("success", this, c.green(`Successfully performed query on ${this.successOrgs.length} orgs`));
+      uxLog("success", this, c.green(t('successfullyPerformedQueryOnOrgs', { successOrgs: this.successOrgs.length })));
       for (const org of this.successOrgs) {
         uxLog("log", this, c.grey(`-  ${org.instanceUrl}`));
       }
     }
     if (this.errorOrgs.length > 0) {
-      uxLog("success", this, c.green(`Error while performing query on ${this.errorOrgs.length} orgs`));
+      uxLog("success", this, c.green(t('errorWhilePerformingQueryOnOrgs', { errorOrgs: this.errorOrgs.length })));
       for (const org of this.successOrgs) {
         uxLog("log", this, c.grey(`-  ${org.instanceUrl}: ${org?.error?.message}`));
       }
@@ -162,16 +180,20 @@ The command's technical implementation involves:
 
   private async performQueries() {
     for (const orgId of this.targetOrgsIds) {
-      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken);
+      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId));
       if (matchOrgs.length === 0) {
-        uxLog("warning", this, c.yellow(`Skipped ${orgId}: Unable to find authentication. Run "sf org login web" to authenticate.`));
+        uxLog("warning", this, c.yellow(t('skippedUnableToFindAuthenticationRunSf', { orgId })));
         continue;
       }
-      const accessToken = matchOrgs[0].accessToken;
       const username = matchOrgs[0].username;
       const instanceUrl = matchOrgs[0].instanceUrl;
       const loginUrl = matchOrgs[0].loginUrl || instanceUrl;
-      uxLog("action", this, c.cyan(`Performing query on ${c.bold(orgId)}...`));
+      uxLog("action", this, c.cyan(t('performingQueryOn', { orgId: c.bold(orgId) })));
+      const accessToken = await getOrgAccessToken(username, { fail: false });
+      if (!accessToken) {
+        this.errorOrgs.push({ org: orgId, error: new Error(t('unableToRetrieveCredential', { org: orgId, kind: 'access-token' })) });
+        continue;
+      }
       try {
         const authInfo = await AuthInfo.create({
           username: username
@@ -193,16 +215,16 @@ The command's technical implementation involves:
         this.allRecords.push(...records);
         this.successOrgs.push({ orgId: orgId, instanceUrl: instanceUrl, username: username })
       } catch (e: any) {
-        uxLog("error", this, c.red(`Error while querying ${orgId}: ${e.message}`));
+        uxLog("error", this, c.red(t('errorWhileQuerying', { orgId, message: e.message })));
         this.errorOrgs.push({ org: orgId, error: e })
       }
 
     }
   }
 
-  private async manageSelectOrgs() {
+  private async manageSelectOrgs(agentMode: boolean) {
     if (this.targetOrgsIds.length === 0) {
-      if (isCI) {
+      if (isCI || agentMode) {
         throw new SfError("You must provide a list of org usernames or aliases in --target-orgs")
       }
       this.targetOrgs = await promptOrgList();
@@ -211,9 +233,9 @@ The command's technical implementation involves:
 
     // Check orgs are connected
     for (const orgId of this.targetOrgsIds) {
-      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.accessToken && org.connectedStatus === 'Connected');
+      const matchOrgs = this.targetOrgs.filter(org => (org.username === orgId || org.alias === orgId) && org.connectedStatus === 'Connected');
       if (matchOrgs.length === 0) {
-        if (isCI) {
+        if (isCI || agentMode) {
           throw new SfError(`${orgId} must be authenticated using Salesforce CLI before calling this command`);
         }
         const orgRes = await makeSureOrgIsConnected(orgId);
@@ -222,20 +244,20 @@ The command's technical implementation involves:
     }
   }
 
-  private async defineSoqlQuery() {
+  private async defineSoqlQuery(agentMode: boolean) {
     // Template is sent as input
     if (this.queryTemplate) {
       this.query = this.allQueryTemplates[this.queryTemplate].query;
     }
     if (this.query == null) {
-      if (isCI) {
+      if (isCI || agentMode) {
         throw new SfError("You must provide a valid value in --query or --query-template");
       }
       const baseQueryPromptRes = await prompts({
         type: "select",
-        message: "Please select a predefined query, or custom SOQL option",
-        description: "Choose a ready-made SOQL query template or enter your own custom query",
-        placeholder: "Select a query template",
+        message: t('pleaseSelectPredefinedQueryOrCustomSoql'),
+        description: t('selectPredefinedQueryDescription'),
+        placeholder: t('selectAQueryTemplate'),
         choices: [
           ...Object.keys(this.allQueryTemplates).map(templateId => {
             return {
@@ -245,8 +267,8 @@ The command's technical implementation involves:
             }
           }),
           {
-            title: "Custom SOQL Query",
-            description: "Enter a custom SOQL query to run",
+            title: t('customSoqlQueryTitle'),
+            description: t('customSoqlQueryDescription'),
             value: "custom"
           }
         ]
@@ -254,9 +276,9 @@ The command's technical implementation involves:
       if (baseQueryPromptRes.value === "custom") {
         const queryPromptRes = await prompts({
           type: 'text',
-          message: 'Please input the SOQL Query to run in multiple orgs',
-          description: 'Enter a custom SOQL query that will be executed across all selected Salesforce orgs',
-          placeholder: 'Ex: SELECT Id, Name FROM Account LIMIT 10',
+          message: t('pleaseInputTheSoqlQueryToRun'),
+          description: t('enterCustomSoqlQueryForMultiOrg'),
+          placeholder: t('exSelectIdNameFromAccountLimit'),
         });
         this.query = queryPromptRes.value;
       }

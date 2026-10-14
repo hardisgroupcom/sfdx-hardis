@@ -1,9 +1,10 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import extractZip from 'extract-zip';
-import fs from 'fs-extra';
+import AdmZip from 'adm-zip';
+import { MetadataResolver } from '@salesforce/source-deploy-retrieve';
+import fs from '../utils/fsUtils.js';
 import * as path from 'path';
-import sortArray from 'sort-array';
+import sortArray from '../utils/sortArray.js';
 import {
   elapseEnd,
   elapseStart,
@@ -14,18 +15,24 @@ import {
   isGitRepo,
   sortCrossPlatform,
   uxLog,
-} from '../../common/utils/index.js';
+} from '../utils/index.js';
 import { getApiVersion } from '../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
 import { buildOrgManifest } from '../utils/deployUtils.js';
 import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { GLOB_IGNORE_PATTERNS, isSfdxProject } from '../utils/projectUtils.js';
+import { METADATA_DOC_GLOB_IGNORE_PATTERNS, PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS, getSfdxProjectPackageDirectories, isSfdxProject } from '../utils/projectUtils.js';
 import { prompts } from '../utils/prompts.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { listMetadataTypes } from './metadataList.js';
+import { chunkArray } from './crudMetadataApi.js';
 import { FileStatusResult } from 'simple-git';
-import { glob } from 'glob';
+import { glob, escape as globEscape } from 'glob';
+import { t } from '../utils/i18n.js';
+
+// Maximum number of metadata names matched by a single glob expression, to keep the alternation
+// pattern (and the regular expression built from it) at a reasonable size
+const MAX_GLOB_ALTERNATION_SIZE = 500;
 
 class MetadataUtils {
   // Describe packageXml <=> metadata folder correspondance
@@ -297,7 +304,7 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     await fs.copyFile('package-full.xml', 'package.xml');
     // Filter managed items if requested
     if (options.filterManagedItems) {
-      uxLog("action", commandThis, c.cyan('Filtering managed items from package.Xml manifest...'));
+      uxLog("action", commandThis, c.cyan(t('filteringManagedItemsFromPackageXmlManifest')));
       // List installed packages & collect managed namespaces
       let namespaces: any[] = [];
       if (isSfdxProject()) {
@@ -355,11 +362,11 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
 
     // Retrieve metadatas
     if (fs.readdirSync(metadataFolder).length === 0 || checkEmpty === false) {
-      uxLog("action", commandThis, c.cyan(`Retrieving metadatas in ${c.green(metadataFolder)}...`));
+      uxLog("action", commandThis, c.cyan(t('retrievingMetadatasIn', { metadataFolder: c.green(metadataFolder) })));
       const retrieveCommand =
         'sf project retrieve start' +
-        ` --target-metadata-dir ${metadataFolder}` +
-        ` --manifest ${packageXml}` +
+        ` --target-metadata-dir "${metadataFolder}"` +
+        ` --manifest "${packageXml}"` +
         ` --wait ${process.env.SFDX_RETRIEVE_WAIT_MINUTES || '60'}` +
         (debug ? ' --verbose' : '');
       const retrieveRes = await execSfdxJson(retrieveCommand, this, {
@@ -371,10 +378,9 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
         uxLog("other", commandThis, retrieveRes);
       }
       // Unzip metadatas
-      uxLog("action", commandThis, c.cyan('Unzipping metadatas...'));
-      await extractZip(path.join(metadataFolder, 'unpackaged.zip'), {
-        dir: metadataFolder,
-      });
+      uxLog("action", commandThis, c.cyan(t('unzippingMetadatas')));
+      const zip = new AdmZip(path.join(metadataFolder, 'unpackaged.zip'));
+      zip.extractAllTo(metadataFolder, true);
       await fs.unlink(path.join(metadataFolder, 'unpackaged.zip'));
     }
   }
@@ -384,8 +390,8 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const metadataTypes = sortArray(listMetadataTypes(), { by: ['xmlName'], order: ['asc'] });
     const metadataResp = await prompts({
       type: 'multiselect',
-      message: c.cyanBright('Please select metadata types'),
-      description: 'Choose the Salesforce metadata types to include in this operation',
+      message: c.cyanBright(t('pleaseSelectMetadataTypes')),
+      description: t('descChooseMetadataTypes'),
       choices: metadataTypes.map((metadataType: any) => {
         return {
           title: c.cyan(`${metadataType.xmlName || 'no xml name'} (${metadataType.directoryName || 'no dir name'})`),
@@ -425,6 +431,29 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     return filesSorted;
   }
 
+  // Resolve a local source file to its metadata component (a file of a LWC or Aura bundle resolves to the
+  // bundle, a field file to "Object.Field__c", with its object as parent). Returns null when the file
+  // is not Salesforce metadata.
+  // Pass a resolver to resolve many files: building one per file is the slow part.
+  public static resolveMetadataFromFile(
+    filePath: string,
+    resolver?: MetadataResolver
+  ): { type: string; name: string; parent: { type: string; name: string } | null } | null {
+    try {
+      // Ignore .forceignore: a file listed in .forceignore is still a component of the org
+      const component = (resolver ?? new MetadataResolver(undefined, undefined, false)).getComponentsFromPath(path.resolve(filePath))[0];
+      return component
+        ? {
+          type: component.type.name,
+          name: component.fullName,
+          parent: component.parent ? { type: component.parent.type.name, name: component.parent.fullName } : null,
+        }
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
   public static getMetadataPrettyNames(metadataFilePaths: string[], bold = false): Map<string, string> {
     const metadataList = listMetadataTypes();
     const metadataFilePathsHuman = new Map<string, string>();
@@ -454,51 +483,112 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async findMetaFileFromTypeAndName(packageXmlType: string, packageXmlName: string, packageDirectories: any[] = []) {
-    // Handle default package directory if not provided as input
-    if (packageDirectories.length === 0) {
-      packageDirectories = [
-        {
-          fullPath: path.join(process.cwd(), "force-app"),
-          path: "force-app"
-        }
-      ]
+    const metaFiles = await this.findMetaFilesFromTypeAndNames(packageXmlType, [packageXmlName], packageDirectories);
+    return metaFiles.get(packageXmlName) ?? null;
+  }
+
+  // Locates the source file of several metadatas of the same type in a single pass.
+  // Prefer it over findMetaFileFromTypeAndName in a loop: each package directory is walked once for
+  // the whole list, instead of once per metadata name.
+  // Returns a Map of packageXmlName -> source file path, with null when no source file was found.
+  public static async findMetaFilesFromTypeAndNames(packageXmlType: string, packageXmlNames: string[], packageDirectories: any[] = []): Promise<Map<string, string | null>> {
+    const metaFiles = new Map<string, string | null>(packageXmlNames.map(packageXmlName => [packageXmlName, null]));
+    if (metaFiles.size === 0) {
+      return metaFiles;
     }
-    // Find metadata type from packageXmlName
+    // Handle package directories declared in sfdx-project.json if not provided as input
+    if (packageDirectories.length === 0) {
+      packageDirectories = await getSfdxProjectPackageDirectories();
+    }
+    // Find metadata type from packageXmlType
     const metadataList = listMetadataTypes();
     const metadataTypes = metadataList.filter(metadata => metadata.xmlName === packageXmlType);
     if (metadataTypes.length === 0) {
       // Strange, we shouldn't get here, or it means listMetadataTypes content is not up to date
-      return null;
+      return metaFiles;
     }
     const metadataType = metadataTypes[0];
 
-    // Look for matching file in sources
-    const globExpressions = [
-      `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}`, // Works for not-xml files
-      `**/${metadataType.directoryName}/**/${packageXmlName}.${metadataType.suffix || ""}-meta.xml` // Works for all XML files
-    ]
+    // Look for matching files in sources. The names are matched by the glob expression itself, using an
+    // extglob alternation: much faster than globbing all the files of the type then filtering them in JS,
+    // as glob discards the non matching files without building their path.
+    const fileSuffixes = [
+      `.${metadataType.suffix || ""}`, // Works for not-xml files
+      `.${metadataType.suffix || ""}-meta.xml` // Works for all XML files
+    ];
+    // Both suffixes are in the same glob expression, so each package directory is walked only once.
+    // The suffix priority is applied afterwards, on the few files that matched.
+    const suffixAlternation = `@(${fileSuffixes.join("|")})`;
+    // The names of the folder-scoped types (Report, Dashboard, Document, EmailTemplate) carry their
+    // folder, like "MyFolder/MyReport". A slash can not go inside an extglob alternation, as the pattern
+    // is split on slashes before being parsed, so the names are grouped by folder and the folder joins
+    // the path part of the expression. The types without folders form a single group with no folder.
+    const leafNamesByFolder = new Map<string, Map<string, string>>();
+    for (const packageXmlName of metaFiles.keys()) {
+      const nameParts = packageXmlName.split("/");
+      const leafName = nameParts.pop() as string;
+      const folder = nameParts.join("/");
+      if (!leafNamesByFolder.has(folder)) {
+        leafNamesByFolder.set(folder, new Map<string, string>());
+      }
+      (leafNamesByFolder.get(folder) as Map<string, string>).set(leafName, packageXmlName);
+    }
+    let remainingNamesNb = metaFiles.size;
     for (const packageDirectory of packageDirectories) {
-      for (const globExpression of globExpressions) {
-        const sourceFiles = await glob(globExpression, {
-          cwd: packageDirectory.fullPath,
-          ignore: GLOB_IGNORE_PATTERNS
-        });
-        if (sourceFiles.length > 0) {
-          const metaFile = path.join(packageDirectory.path, sourceFiles[0]);
-          return metaFile.replace(/\\/g, "/");
+      // Files found in this package directory, each with the names of the group that matched it
+      const sourceFiles: { sourceFile: string; leafNames: Map<string, string> }[] = [];
+      for (const [folder, leafNames] of leafNamesByFolder) {
+        // The names are escaped, so a name containing glob special characters is matched literally.
+        // glob's escape() does not handle braces, hence the nobrace option below.
+        const folderPattern = folder === "" ? "" : folder.split("/").map(segment => globEscape(segment)).join("/") + "/";
+        for (const leafNamesChunk of chunkArray([...leafNames.keys()], MAX_GLOB_ALTERNATION_SIZE)) {
+          const nameAlternation = `@(${leafNamesChunk.map(leafName => globEscape(leafName)).join("|")})`;
+          const foundFiles = await glob(
+            `**/${metadataType.directoryName}/**/${folderPattern}${nameAlternation}${suffixAlternation}`,
+            {
+              cwd: packageDirectory.fullPath,
+              // Only the folders that can be found inside a package directory are worth ignoring: every
+              // additional pattern is tested against each walked path, so a useless one only costs time
+              ignore: PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS,
+              nodir: true,
+              nobrace: true
+            }
+          );
+          for (const sourceFile of foundFiles) {
+            sourceFiles.push({ sourceFile, leafNames });
+          }
         }
       }
+      // Keep the same priority as a single lookup: not-xml file first, then -meta.xml file
+      for (const fileSuffix of fileSuffixes) {
+        for (const { sourceFile, leafNames } of sourceFiles) {
+          const fileName = path.basename(sourceFile);
+          if (!fileName.endsWith(fileSuffix)) {
+            continue;
+          }
+          const packageXmlName = leafNames.get(fileName.slice(0, -fileSuffix.length));
+          // Only the first matching file of the first matching package directory is kept
+          if (packageXmlName === undefined || metaFiles.get(packageXmlName) !== null) {
+            continue;
+          }
+          metaFiles.set(packageXmlName, path.join(packageDirectory.path, sourceFile).replace(/\\/g, "/"));
+          remainingNamesNb--;
+        }
+      }
+      if (remainingNamesNb === 0) {
+        return metaFiles;
+      }
     }
-    return null;
+    return metaFiles;
   }
 
   public static async promptFlow() {
-    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
+    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'select',
-      message: 'Please select the Flow you want to visually compare',
-      description: 'Choose a Flow file to perform visual comparison operations on',
+      message: t('pleaseSelectTheFlowYouWantTo'),
+      description: t('descChooseFlowForComparison'),
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })
@@ -507,12 +597,12 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
   }
 
   public static async promptMultipleFlows() {
-    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: GLOB_IGNORE_PATTERNS });
+    const flowFiles = await glob("**/*.flow-meta.xml", { ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
     sortCrossPlatform(flowFiles);
     const flowSelectRes = await prompts({
       type: 'multiselect',
-      message: 'Please select the Flows you want to create the documentation',
-      description: 'Choose multiple Flow files to generate documentation for',
+      message: t('pleaseSelectTheFlowsYouWantTo'),
+      description: t('descChooseFlowsForDoc'),
       choices: flowFiles.map(flowFile => {
         return { value: flowFile, title: path.basename(flowFile, ".flow-meta.xml") }
       })

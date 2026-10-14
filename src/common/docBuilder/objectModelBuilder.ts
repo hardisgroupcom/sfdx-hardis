@@ -1,10 +1,11 @@
 import c from "chalk";
 import { glob } from "glob";
-import fs from "fs-extra";
+import fs from '../utils/fsUtils.js';
 import * as path from "path";
-import { XMLParser } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { GLOB_IGNORE_PATTERNS } from "../utils/projectUtils.js";
 import { uxLog } from "../utils/index.js";
+import { t } from '../utils/i18n.js';
 
 let ALL_LINKS_CACHE: any[] = [];
 let ALL_OBJECTS_CACHE: any[] = [];
@@ -45,7 +46,9 @@ export class ObjectModelBuilder {
               "customObject";
       mermaidSchema += `${object.name}["${object.label}"]:::${objectClass}\n`;
       if (fs.existsSync(`docs/objects/${object.name}.md`)) {
-        mermaidSchema += `click ${object.name} "/objects/${object.name}/"\n`;
+        // Relative to the object page holding the diagram, so the link still works on a site that
+        // is not served from the root of its domain
+        mermaidSchema += `click ${object.name} "../${object.name}/"\n`;
       }
     }
     mermaidSchema += `\n`;
@@ -99,7 +102,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
         continue;
       }
       const fieldXml = fs.readFileSync(fieldFile, "utf8").toString();
-      const fieldDetail = new XMLParser().parse(fieldXml);
+      const fieldDetail = getLargeXmlParser().parse(fieldXml);
       if (fieldDetail?.CustomField?.type === "MasterDetail" || fieldDetail?.CustomField?.type === "Lookup") {
         const fieldName = path.basename(fieldFile, ".field-meta.xml");
         if (fieldDetail?.CustomField?.referenceTo) {
@@ -113,7 +116,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
           this.allLinks.push(link);
         }
         else {
-          uxLog("warning", this, c.yellow(`Warning: ${objectName}.${fieldName} has no referenceTo value so has been ignored.`));
+          uxLog("warning", this, c.yellow(t('warningHasNoReferencetoValueSoHas', { objectName, fieldName })));
         }
       }
     }
@@ -131,7 +134,7 @@ classDef mainObject fill:#FFB3B3,stroke:#A94442,stroke-width:4px,rx:14px,ry:14px
     for (const objectFile of matchingObjectFiles) {
       const objectName = path.basename(objectFile, ".object-meta.xml");
       const objectXml = fs.readFileSync(objectFile, "utf8").toString();
-      const objectDetail = new XMLParser().parse(objectXml);
+      const objectDetail = getLargeXmlParser().parse(objectXml);
       const object = {
         name: objectName,
         label: objectDetail?.CustomObject?.label || objectName,

@@ -1,28 +1,55 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
-import { execCommand, filterPackageXml, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { CONSTANTS, getApiVersion, getConfig, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { MessageAttachment } from '@slack/web-api';
 import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../../../common/utils/notifUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
-import { countPackageXmlItems, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
+import { countPackageXmlItems, isManagedPackageMember, parsePackageXmlFile, writePackageXmlFile } from '../../../../common/utils/xmlUtils.js';
 import Project2Markdown from '../../doc/project2markdown.js';
 import MkDocsToSalesforce from '../../doc/mkdocs-to-salesforce.js';
 import MkDocsToCloudflare from '../../doc/mkdocs-to-cf.js';
+import MkDocsToConfluence from '../../doc/mkdocs-to-confluence.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
 import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
+import { reinitI18n, t } from '../../../../common/utils/i18n.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitoringAgentsMd.js';
+import { ensureMonitoringMegaLinterConfig, MEGALINTER_CONFIG_FILE } from '../../../../common/monitoring/monitoringMegaLinterConfig.js';
+import { collectProfileNames, readBackupProfiles } from '../../../../common/monitoring/monitoringBackupProfiles.js';
+import {
+  applyBackupDeletions,
+  backupChangeType,
+  BackupDeletionsSkipReason,
+  isBackupDeletionsDisabled,
+  RetrievedFilesCollector,
+  retrieveFailureMessage,
+  retrieveJsonErrorMessage,
+} from '../../../../common/monitoring/monitoringBackupDeletions.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+// The message of a failed CLI call starts with "Command failed: <full command line>" (which can
+// hold a username), then its output: the cause is at the end, so keep the end
+export function backupErrorMessage(error: any, maxLength = 2000): string {
+  let message = String(error?.message || error || 'Unknown error');
+  if (message.startsWith('Command failed:')) {
+    const firstLineEnd = message.indexOf('\n');
+    message = firstLineEnd > -1 ? message.slice(firstLineEnd + 1) : 'Command failed';
+  }
+  message = message.trim() || 'Command failed';
+  return message.length > maxLength ? '... ' + message.slice(message.length - maxLength) : message;
+}
 
 export default class MonitorBackup extends SfCommand<any> {
   public static title = 'Backup DX sources';
@@ -33,7 +60,7 @@ The command exists in 2 modes: filtered(default & recommended) and full.
 
 ## Filtered mode (default, better performances)
 
-Automatically skips metadatas from installed packages with namespace.  
+Automatically skips metadatas from installed packages with namespace.
 
 You can remove more metadata types from backup, especially in case you have too many metadatas and that provokes a crash, using:
 
@@ -42,6 +69,41 @@ You can remove more metadata types from backup, especially in case you have too 
   - Works with full wildcard (\`<members>*</members>\`) , named metadata (\`<members>Account.Name</members>\`) or partial wildcards names (\`<members>pi__*</members>\` , \`<members>*__dlm</members>\` , or \`<members>prefix*suffix</members>\`)
 
 - Environment variable MONITORING_BACKUP_SKIP_METADATA_TYPES (example: \`MONITORING_BACKUP_SKIP_METADATA_TYPES=CustomLabel,StaticResource,Translation\`): that will be applied to all monitoring branches.
+
+## Data Cloud objects backup
+
+When the org contains Data Cloud objects (\`__dlm\` and \`__dll\` suffix on CustomObjects), they are backed up by default in a **separate retrieve call**.
+
+To skip Data Cloud objects backup, use config property \`monitoringBackupSkipDataCloud: true\` or environment variable \`MONITORING_BACKUP_SKIP_DATA_CLOUD=true\`.
+
+## Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components of the same request, so a backed up Profile used to miss most of what it grants (standard objects and their fields, tabs, and in full mode everything that is in another chunk).
+
+After the retrieve, the Profiles are read again with the CRUD Metadata API, which returns them whole, and written over the retrieved files. This is what the Auto mode of the VS Code Metadata Retriever does, and what \`sf hardis:mdapi:read --metadata Profile --active-only\` does.
+
+- The entries that grant nothing are left out (field access with no read and no edit, Apex class access disabled, user permission disabled...), and so are the tab settings of tabs that do not exist. A permission that is revoked in the org shows as a removed line in the next backup.
+- Only the Profiles that were retrieved are read: a Profile skipped with \`manifest/package-skip-items.xml\` or \`MONITORING_BACKUP_SKIP_METADATA_TYPES\` stays skipped.
+- A Profile that can not be read fails the backup, with the names of the Profiles and the error. Skip it with \`manifest/package-skip-items.xml\` to let the backup go on.
+- The first backup that runs with this behavior reports every Profile as updated.
+
+Other types, including Permission Sets, come back whole from the file-based retrieve and are not read again.
+
+## Deleted components
+
+A retrieve never deletes a local file. After the retrieve, the backup deletes the files of the components that no longer exist in the org, so a component deleted in the org shows as deleted files in the next backup.
+
+- A file is deleted only when its component is not in \`manifest/package-all-org-items.xml\`, the list of everything that exists in the org. A component that still exists but is no longer retrieved (\`manifest/package-skip-items.xml\`, \`MONITORING_BACKUP_SKIP_METADATA_TYPES\`, installed package namespace) keeps the file of its last backup.
+- Before deleting, the backup asks the org for each component with the Metadata API, and deletes its files only when the org does not return it. A component the org still returns stays, and so does one the org can not be asked about (a type the Metadata API does not read, like \`Settings\`). The files kept this way are listed in the log.
+- A file that the org just returned is never deleted, and neither is a file that can not be linked to a component.
+- Some files stay when nothing proves that their component is gone: the children (fields, list views, record types...) of an object that is not retrieved, the types that the org does not list by name, and the types of which nothing is retrieved (a type skipped as a whole, like \`Report\`). For those, only the components that the previous backup listed and that the org no longer lists are deleted: the list of the org alone is not a proof, it misses components that exist, such as the reports of nested folders.
+- The files of \`GlobalValueSetTranslation\` and \`StandardValueSetTranslation\` are never deleted: the org lists one language of a value set and not the others.
+- There is no limit on the number of deleted files: a cleanup that removes a lot of metadata is mirrored by the next backup.
+- An error while deleting the files is logged as a warning: the backup goes on.
+- The first backup that runs with this behavior deletes the files of everything that was deleted in the org since the monitoring started.
+- Nothing is deleted when the run does not retrieve everything (\`--start-chunk\`, \`FULL_ORG_MANIFEST_PATH\`).
+
+To keep the files of deleted components, use config property \`monitoringBackupSkipDeletions: true\` or environment variable \`MONITORING_BACKUP_SKIP_DELETIONS=true\`.
 
 ## Full mode
 
@@ -58,7 +120,17 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 ## In CI/CD
 
-This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When the backup fails, it sends a \`BACKUP\` notification with the \`error\` severity and the error message, then exits with that error.
+
+## Coding agents
+
+After each backup, the command writes an \`AGENTS.md\` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
+
+Only the block between the \`sfdx-hardis-monitoring-agents-start\` and \`sfdx-hardis-monitoring-agents-end\` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A \`CLAUDE.md\` file that imports \`AGENTS.md\` is also created when the repository has none.
+
+## MegaLinter
+
+The MegaLinter job of a monitoring pipeline reports its findings and must not fail because of them. After each backup, the command adds \`DISABLE_ERRORS: true\` to the \`.mega-linter.yml\` of the repository when the key is missing, and creates the file when the repository has none. A \`DISABLE_ERRORS\` key that is already there is never changed: write \`DISABLE_ERRORS: false\` to make the job fail on linter errors.
 
 ## Troubleshooting
 
@@ -76,6 +148,10 @@ If you want to also upload HTML Documentation on your Salesforce Org as static r
 
 If you want to also upload HTML Documentation on Cloudflare, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE="true"**
 
+If you want to also publish Documentation on Confluence, use variable **SFDX_HARDIS_DOC_DEPLOY_TO_CONFLUENCE="true"** (see [configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-doc-confluence/))
+
+By default, only changed files are used to generate the documentation (diff-only). If you want to force the full documentation rebuild, use option **--rebuild-full-doc** or set env variable **MONITORING_BACKUP_REBUILD_FULL_DOC="true"**
+
 - If you want to generate the documentation in multiple languages, define variable SFDX_DOC_LANGUAGES (ex: SFDX_DOC_LANGUAGES=en,fr,de)
 - You can define one Cloudflare site by language, for example with the following variables:
   - CLOUDFLARE_PROJECT_NAME_EN=cloudity-demo-english
@@ -85,16 +161,33 @@ If you want to also upload HTML Documentation on Cloudflare, use variable **SFDX
 If Flow history doc always display a single state, you probably need to update your workflow configuration:
 
 - on Gitlab: Env variable [\`GIT_FETCH_EXTRA_FLAGS: --depth 10000\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.gitlab-ci.yml#L11)
-- on GitHub: [\`fetch-depth: 0\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L58)
-- on Azure: [\`fetchDepth: "0"\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L39)
-- on Bitbucket: [\`step: clone: depth: full\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L18)
+- on GitHub: [\`fetch-depth: 0\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/.github/workflows/org-monitoring.yml#L62)
+- on Azure: [\`fetchDepth: "0"\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/azure-pipelines.yml#L46)
+- on Bitbucket: [\`step: clone: depth: full\`](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/monitoring/bitbucket-pipelines.yml#L23)
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:monitor:backup --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- Documentation generation proceeds without prompting.
+- The rebuild mode defaults to diff-only (changed files only) unless \`--rebuild-full-doc\` or \`MONITORING_BACKUP_REBUILD_FULL_DOC=true\` is set.
+- All other interactive prompts are skipped.
 `;
 
   public static examples = [
     '$ sf hardis:org:monitor:backup',
     '$ sf hardis:org:monitor:backup --full',
     '$ sf hardis:org:monitor:backup --full --exclude-namespaces',
-    '$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters'
+    '$ sf hardis:org:monitor:backup --full --exclude-namespaces --full-apply-filters',
+    '$ sf hardis:org:monitor:backup --rebuild-full-doc',
+    '$ sf hardis:org:monitor:backup --agent',
+    '$ FULL_ORG_MANIFEST_PATH=manifest/package-all-org-items.xml sf hardis:org:monitor:backup'
   ];
 
   public static flags: any = {
@@ -124,6 +217,10 @@ If Flow history doc always display a single state, you probably need to update y
       default: false,
       description: 'Skip the generation of project documentation at the end of the command',
     }),
+    "rebuild-full-doc": Flags.boolean({
+      default: false,
+      description: 'Rebuild the full project documentation, not just the diff. Can also be activated using env variable MONITORING_BACKUP_REBUILD_FULL_DOC=true',
+    }),
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .csv',
@@ -138,6 +235,10 @@ If Flow history doc always display a single state, you probably need to update y
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -156,11 +257,15 @@ If Flow history doc always display a single state, you probably need to update y
   protected excludeNamespaces: boolean = false;
   protected fullApplyFilters: boolean = false;
   protected skipDoc: boolean = false;
+  protected rebuildFullDoc: boolean = false;
 
   protected packageXmlToRemove: string | null = null;
   protected extractPackageXmlChunks: any[] = [];
   protected currentPackage: any = {};
   protected currentPackageLen = 0;
+
+  protected profileNames = new Set<string>();
+  protected retrievedFiles = new RetrievedFilesCollector();
 
   protected namespaces: string[];
   protected installedPackages: any[];
@@ -168,179 +273,358 @@ If Flow history doc always display a single state, you probably need to update y
   protected outputFilesRes: any = {};
   protected debugMode = false;
 
+  protected static isDataCloudObjectName(objectName: string): boolean {
+    return objectName.endsWith('__dlm') || objectName.endsWith('__dll');
+  }
+
+  // Salesforce Metadata API includes dedicated Data Cloud metadata types
+  // that are not expressed as __dlm/__dll objects or fields.
+  protected static dataCloudMetadataTypes = new Set<string>([
+    'CustomerDataPlatformSettings',
+    'PartyDataModelSettings',
+    'DataPackageKitDefinition',
+    'DataPackageKitObject',
+    'DataSource',
+    'DataSourceBundleDefinition',
+    'DataSourceObject',
+    'DataSourceTenant',
+    'DataSrcDataModelFieldMap',
+    'DataStreamDefinition',
+    'DataStreamTemplate',
+  ]);
+
+  protected static isDataCloudMetadataType(metadataType: string): boolean {
+    if (MonitorBackup.dataCloudMetadataTypes.has(metadataType)) {
+      return true;
+    }
+    // Future-proofing for new Data Cloud metadata types with known naming families.
+    return /^(CustomerDataPlatform|PartyDataModel|DataPackageKit|DataSrcDataModel|DataSource|DataStream)/.test(metadataType);
+  }
+
+  protected static getObjectNameFromFieldMember(member: string): string {
+    const [objectName] = member.split('.');
+    return objectName || '';
+  }
+
+  private filterManagedPackageNamespacedDataCloudMetadata(metadata: {
+    objects: string[];
+    fields: string[];
+    metadataByType: Record<string, string[]>;
+  }): {
+    objects: string[];
+    fields: string[];
+    metadataByType: Record<string, string[]>;
+  } {
+    const filteredObjects = metadata.objects.filter((member: string) => !isManagedPackageMember(member, this.namespaces));
+    const filteredFields = metadata.fields.filter((member: string) => !isManagedPackageMember(member, this.namespaces));
+    const filteredMetadataByType: Record<string, string[]> = {};
+    for (const metadataType of Object.keys(metadata.metadataByType || {})) {
+      const members = metadata.metadataByType[metadataType] || [];
+      filteredMetadataByType[metadataType] = members.filter(
+        (member: string) => member === '*' || !isManagedPackageMember(member, this.namespaces)
+      );
+    }
+    return {
+      objects: filteredObjects,
+      fields: filteredFields,
+      metadataByType: filteredMetadataByType,
+    };
+  }
+
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(MonitorBackup);
+    const agentMode = flags.agent === true;
     this.full = flags.full || (process.env?.MONITORING_BACKUP_MODE_FULL === "true" ? true : false);
     this.maxByChunk = flags["max-by-chunk"] || 3000;
     this.startChunk = flags["start-chunk"] || 1;
     this.excludeNamespaces = flags["exclude-namespaces"] === true ? true : false;
     this.fullApplyFilters = flags["full-apply-filters"] === true ? true : false;
     this.skipDoc = flags["skip-doc"] === true ? true : false;
+    this.rebuildFullDoc = flags["rebuild-full-doc"] === true || process.env?.MONITORING_BACKUP_REBUILD_FULL_DOC === "true";
+    const skipDocFlagProvided = process.argv.includes("--skip-doc");
+    const rebuildFullDocFlagProvided = process.argv.includes("--rebuild-full-doc");
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
-    // Update apiVersion if necessary
-    await updateSfdxProjectApiVersion();
+    // A failed backup must be reported: without a notification, nothing tells it apart from a backup
+    // that did not run (Grafana panels and alerts, messaging channels)
+    let backupDone = false;
+    let retrieved = false;
+    try {
+      // Update apiVersion if necessary
+      await updateSfdxProjectApiVersion();
 
-    // Build target org full manifest
-    uxLog(
-      "action",
-      this,
-      c.cyan('Building full manifest for org ' + c.bold(flags['target-org'].getConnection().instanceUrl)) + ' ...'
-    );
-    const packageXmlFullFile = 'manifest/package-all-org-items.xml';
-    await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
+      // Build target org full manifest
+      uxLog(
+        "action",
+        this,
+        c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
+      );
+      const packageXmlFullFile = 'manifest/package-all-org-items.xml';
+      // What the previous backup listed: a component that is no longer listed was deleted since
+      const previousOrgManifest = fs.existsSync(packageXmlFullFile) ? await parsePackageXmlFile(packageXmlFullFile) : null;
+      await buildOrgManifest(flags['target-org'].getUsername(), packageXmlFullFile, flags['target-org'].getConnection());
 
-    // List namespaces used in the org
-    this.namespaces = [];
-    this.installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    for (const installedPackage of this.installedPackages) {
-      if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
-        this.namespaces.push(installedPackage.SubscriberPackageNamespace);
-      }
-    }
-
-    // Create force-app/main/default if not exists
-    await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
-
-    // Check if we have package-skip_items.xml
-    if (this.full) {
-      await this.extractMetadatasFull(packageXmlFullFile, flags);
-    }
-    else {
-      await this.extractMetadatasFiltered(packageXmlFullFile, flags);
-    }
-
-    // Write installed packages
-    uxLog("action", this, c.cyan(`Write installed packages ...`));
-    const installedPackagesLog: any[] = [];
-    const packageFolder = path.join(process.cwd(), 'installedPackages');
-    await fs.ensureDir(packageFolder);
-    for (const installedPackage of this.installedPackages) {
-      const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
-      const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
-      delete installedPackage.Id; // Not needed for diffs
-      await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
-      const installedPackageLog = {
-        SubscriberPackageName: installedPackage.SubscriberPackageName,
-        SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
-        SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
-        SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
-        SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
-      };
-      installedPackagesLog.push(installedPackageLog);
-      // Clean repo: Remove previous versions of file names
-      const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
-      const fileNameNoSepBad2 = fileName;
-      for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
-        if (oldFileName === fileNameNoSep) {
-          continue;
-        }
-        const oldFilePath = path.join(packageFolder, oldFileName);
-        if (fs.existsSync(oldFilePath)) {
-          await fs.remove(oldFilePath);
+      // List namespaces used in the org
+      this.namespaces = [];
+      this.installedPackages = await MetadataUtils.listInstalledPackages(flags['target-org'].getUsername(), this);
+      for (const installedPackage of this.installedPackages) {
+        if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
+          this.namespaces.push(installedPackage.SubscriberPackageNamespace);
         }
       }
 
-    }
+      // Create force-app/main/default if not exists
+      await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
 
-    this.diffFiles = await MetadataUtils.listChangedFiles();
+      // Check if we have package-skip_items.xml
+      if (this.full) {
+        await this.extractMetadatasFull(packageXmlFullFile, flags);
+      }
+      else {
+        await this.extractMetadatasFiltered(packageXmlFullFile, flags);
+      }
 
-    // Write output file
-    if (this.diffFiles.length > 0) {
-      const filesHumanUnformatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), false);
-      const severityIconLog = getSeverityIcon('log');
-      this.outputFile = await generateReportPath('backup-updated-files', this.outputFile);
-      this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
-        return {
-          File: diffFile.path.replace('force-app/main/default/', ''),
-          ChangeType: diffFile.index === '?' ? 'A' : diffFile.index,
-          FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
-          WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
-          PrevName: diffFile?.from || '',
-          severity: 'log',
-          severityIcon: severityIconLog,
+      // The file-based retrieve returns truncated Profiles: read them whole
+      await this.readCompleteProfiles(flags);
+
+      // A retrieve never deletes a file: delete those of the components that are gone from the org
+      await this.deleteFilesOfDeletedComponents(packageXmlFullFile, previousOrgManifest, flags);
+
+      // Write installed packages
+      uxLog("action", this, c.cyan(t('writeInstalledPackages')));
+      const installedPackagesLog: any[] = [];
+      const packageFolder = path.join(process.cwd(), 'installedPackages');
+      await fs.ensureDir(packageFolder);
+      for (const installedPackage of this.installedPackages) {
+        const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
+        const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
+        delete installedPackage.Id; // Not needed for diffs
+        await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
+        const installedPackageLog = {
+          SubscriberPackageName: installedPackage.SubscriberPackageName,
+          SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
+          SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
+          SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
+          SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
         };
-      });
-      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
-    }
+        installedPackagesLog.push(installedPackageLog);
+        // Clean repo: Remove previous versions of file names
+        const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
+        const fileNameNoSepBad2 = fileName;
+        for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
+          if (oldFileName === fileNameNoSep) {
+            continue;
+          }
+          const oldFilePath = path.join(packageFolder, oldFileName);
+          if (fs.existsSync(oldFilePath)) {
+            await fs.remove(oldFilePath);
+          }
+        }
 
-    // Build notifications
-    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
-    const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No updates detected in ${orgMarkdown}`;
-    let notifAttachments: MessageAttachment[] = [];
-    if (this.diffFiles.length > 0) {
-      const filesHumanFormatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), true);
-      notifSeverity = 'info';
-      notifText = `Updates detected in ${orgMarkdown}`;
-      notifAttachments = [
-        {
-          text: this.diffFiles
-            .map((diffFile) => {
-              let flag = '';
-              if (diffFile.index && diffFile.index !== ' ') {
-                flag = ` (${diffFile.index === '?' ? 'A' : diffFile.index})`;
-              }
-              const line = `• ${filesHumanFormatted.get(diffFile.path)}` + flag;
-              return line;
-            })
-            .join('\n'),
+      }
+
+      this.diffFiles = await MetadataUtils.listChangedFiles();
+      retrieved = true;
+
+      // Write output file
+      if (this.diffFiles.length > 0) {
+        const filesHumanUnformatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), false);
+        const severityIconLog = getSeverityIcon('log');
+        this.outputFile = await generateReportPath('backup-updated-files', this.outputFile);
+        this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
+          return {
+            File: diffFile.path.replace('force-app/main/default/', ''),
+            ChangeType: backupChangeType(diffFile),
+            FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
+            WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
+            PrevName: diffFile?.from || '',
+            severity: 'log',
+            severityIcon: severityIconLog,
+          };
+        });
+        this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
+      }
+
+      // Build notifications
+      const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
+      let notifSeverity: NotifSeverity = 'log';
+      let notifText = `No updates detected in ${orgMarkdown}`;
+      let notifAttachments: MessageAttachment[] = [];
+      if (this.diffFiles.length > 0) {
+        const filesHumanFormatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), true);
+        notifSeverity = 'info';
+        notifText = `Updates detected in ${orgMarkdown}`;
+        notifAttachments = [
+          {
+            text: this.diffFiles
+              .map((diffFile) => {
+                const changeType = backupChangeType(diffFile);
+                const flag = changeType && changeType !== ' ' ? ` (${changeType})` : '';
+                const line = `- ${filesHumanFormatted.get(diffFile.path)}` + flag;
+                return line;
+              })
+              .join('\n'),
+          },
+        ];
+      } else {
+        uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
+      }
+
+      // Post notifications
+      backupDone = true;
+      await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
+      await NotifProvider.postNotifications({
+        type: 'BACKUP',
+        text: notifText,
+        buttons: notifButtons,
+        attachments: notifAttachments,
+        severity: notifSeverity,
+        sideImage: 'backup',
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.diffFilesSimplified,
+        data: {
+          metric: this.diffFilesSimplified.length,
+          installedPackages: installedPackagesLog,
         },
-      ];
-    } else {
-      uxLog("log", this, c.grey("No updated metadata for today's backup 😊"));
+        metrics: {
+          UpdatedMetadatas: this.diffFilesSimplified.length,
+        },
+      });
+    } catch (e: any) {
+      if (!backupDone) {
+        await this.postBackupFailureNotification(flags, e, retrieved);
+      }
+      throw e;
     }
 
-    // Post notifications
-    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
-    await NotifProvider.postNotifications({
-      type: 'BACKUP',
-      text: notifText,
-      buttons: notifButtons,
-      attachments: notifAttachments,
-      severity: notifSeverity,
-      sideImage: 'backup',
-      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      logElements: this.diffFilesSimplified,
-      data: {
-        metric: this.diffFilesSimplified.length,
-        installedPackages: installedPackagesLog,
-      },
-      metrics: {
-        UpdatedMetadatas: this.diffFilesSimplified.length,
-      },
-    });
+    // Written after the notification, so that an update of AGENTS.md is never reported as an org change
+    await this.writeAgentsMd();
+    await this.ensureMegaLinterConfig();
+
+    // Ask interactively only after backup is done and just before doc generation.
+    if (!isCI && !agentMode && !skipDocFlagProvided) {
+      const generateDocRes = await prompts({
+        type: 'confirm',
+        name: 'generateDoc',
+        message: t('doYouWantToGenerateProjectDocumentation'),
+        description: t('documentationGeneratedFromRetrievedSourcesIfYou'),
+        initial: true,
+      });
+      this.skipDoc = generateDocRes.generateDoc !== true;
+    }
+
+    // Ask interactively if the user wants to rebuild the full documentation or just the diff.
+    if (!isCI && !agentMode && !this.skipDoc && !rebuildFullDocFlagProvided && process.env?.MONITORING_BACKUP_REBUILD_FULL_DOC == null) {
+      const rebuildFullDocRes = await prompts({
+        type: 'confirm',
+        name: 'rebuildFullDoc',
+        message: t('doYouWantToRebuildFullDocumentation'),
+        description: t('rebuildFullDocDescription'),
+        initial: false,
+      });
+      this.rebuildFullDoc = rebuildFullDocRes.rebuildFullDoc === true;
+    }
 
     // Run project documentation generation
     if (this.skipDoc !== true) {
+      const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
+      const prevSfdxHardisLang = getEnvVar('SFDX_HARDIS_LANG') || 'en';
       try {
-        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
-        const prevPromptsLanguage = getEnvVar('PROMPTS_LANGUAGE') || 'en';
+        const config = await getConfig("user");
+        const docLanguages = (getEnvVar('SFDX_DOC_LANGUAGES') || getEnvVar('PROMPTS_LANGUAGE') || config.promptsLanguage || 'en').split(",").reverse(); // Can be 'fr,en,de' for example
         for (const langKey of docLanguages) {
-          uxLog("action", this, c.cyan("Generating doc in language " + c.bold(langKey)));
+          uxLog("action", this, c.cyan(t('generatingDocInLanguage') + c.bold(langKey)));
           process.env.PROMPTS_LANGUAGE = langKey;
-          await Project2Markdown.run(["--diff-only", "--with-history"]);
-          uxLog("action", this, c.cyan("Documentation generated from retrieved sources. If you want to skip it, use option --skip-doc"));
-          const config = await getConfig("user");
+          process.env.SFDX_HARDIS_LANG = langKey;
+          reinitI18n();
+
+          await Project2Markdown.run(this.rebuildFullDoc ? ["--with-history"] : ["--diff-only", "--with-history"]);
+          uxLog("action", this, c.cyan(t('documentationGeneratedFromRetrievedSourcesIfYou')));
+
           if (config.docDeployToOrg || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_ORG === "true") {
             await MkDocsToSalesforce.run(["--type", "Monitoring"]);
           }
           else if (config.docDeployToCloudflare || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CLOUDFLARE === "true") {
             await MkDocsToCloudflare.run([]);
           }
+          if (config.docDeployToConfluence || process.env?.SFDX_HARDIS_DOC_DEPLOY_TO_CONFLUENCE === "true") {
+            await MkDocsToConfluence.run([]);
+          }
         }
-        process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
       } catch (e: any) {
-        uxLog("warning", this, c.yellow("Error while generating project documentation " + e.message));
+        uxLog("warning", this, c.yellow(t('errorWhileGeneratingProjectDocumentation') + e.message));
         uxLog("log", this, c.grey(e.stack));
+      } finally {
+        process.env.PROMPTS_LANGUAGE = prevPromptsLanguage;
+        process.env.SFDX_HARDIS_LANG = prevSfdxHardisLang;
+        reinitI18n();
       }
     }
 
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
+  }
+
+  // Never throws: the error of the backup is the one the job must fail with
+  private async postBackupFailureNotification(flags: any, error: any, retrieved = false) {
+    try {
+      const conn = flags['target-org']?.getConnection();
+      await setConnectionVariables(conn);// Required for some notifications providers like Email
+      const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
+      const errorMessage = backupErrorMessage(error);
+      await NotifProvider.postNotifications({
+        type: 'BACKUP',
+        // After the retrieve, the metadata is backed up: only the report of the changes failed
+        text: retrieved
+          ? `Metadata backup of ${orgMarkdown} retrieved, but its report of the changes failed`
+          : `Metadata backup failed in ${orgMarkdown}`,
+        buttons: await getNotificationButtons(),
+        attachments: [{ text: errorMessage }],
+        severity: 'error',
+        sideImage: 'backup',
+        attachedFiles: [],
+        logElements: [],
+        data: { error: errorMessage },
+        metrics: {},
+      });
+    } catch (notifError: any) {
+      uxLog("warning", this, c.yellow(t('backupFailureNotificationError', { message: notifError?.message || String(notifError) })));
+    }
+  }
+
+
+  private async writeAgentsMd() {
+    try {
+      const config = await getConfig('user');
+      const agentsMdResult = await writeMonitoringAgentsMd(config);
+      if (agentsMdResult.updatedFiles.length > 0) {
+        uxLog("action", this, c.cyan(t('monitoringAgentsMdUpdated', { files: agentsMdResult.updatedFiles.join(', ') })));
+      }
+      if (agentsMdResult.markersBroken) {
+        uxLog("warning", this, c.yellow(t('monitoringAgentsMdMarkersBroken')));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('errorWhileWritingMonitoringAgentsMd', { message: e.message })));
+    }
+  }
+
+  // The MegaLinter job of the pipeline pulls the branch after the backup: it reads this file
+  private async ensureMegaLinterConfig() {
+    try {
+      const megaLinterConfigResult = await ensureMonitoringMegaLinterConfig();
+      if (megaLinterConfigResult.status === 'created') {
+        uxLog("action", this, c.cyan(t('monitoringMegaLinterConfigCreated', { file: MEGALINTER_CONFIG_FILE })));
+      } else if (megaLinterConfigResult.status === 'updated') {
+        uxLog("action", this, c.cyan(t('monitoringMegaLinterConfigUpdated', { file: MEGALINTER_CONFIG_FILE })));
+      } else if (megaLinterConfigResult.status === 'unparsable') {
+        uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigUnparsable', { file: MEGALINTER_CONFIG_FILE, message: megaLinterConfigResult.message })));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigNotWritten', { file: MEGALINTER_CONFIG_FILE, message: e.message })));
+    }
   }
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
@@ -361,6 +645,9 @@ If Flow history doc always display a single state, you probably need to update y
 
     // Build packageXml chunks
     const packageElements = await parsePackageXmlFile(packageXmlToExtract);
+
+    // Extract Data Cloud objects/fields (__dlm / __dll) so they are retrieved separately
+    const dataCloudMetadataToRetrieve = await this.extractDataCloudMetadataFromElements(packageElements);
 
     // Handle predefined chunks
     const predefinedChunkTypes = [
@@ -413,13 +700,13 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlChunkFiles: string[] = [];
     const chunksFolder = path.join("manifest", "chunks");
     await fs.ensureDir(chunksFolder);
-    uxLog("action", this, c.cyan(`Building package.xml files for ${this.extractPackageXmlChunks.length} chunks...`));
+    uxLog("action", this, c.cyan(t('buildingPackageXmlFilesForChunks', { extractPackageXmlChunks: this.extractPackageXmlChunks.length })));
     for (const packageChunk of this.extractPackageXmlChunks) {
       pos++;
       const packageChunkFileName = path.join(chunksFolder, "chunk-" + pos + ".xml");
       await writePackageXmlFile(packageChunkFileName, packageChunk);
       packageXmlChunkFiles.push(packageChunkFileName);
-      uxLog("log", this, c.grey(`Chunk ${pos} -> ${packageChunkFileName}:`))
+      uxLog("log", this, c.grey(t('chunk', { pos, packageChunkFileName })))
       for (const mdType of Object.keys(packageChunk)) {
         uxLog("log", this, c.grey(`- ${mdType} (${packageChunk?.[mdType]?.length || 0} elements)`));
       }
@@ -427,16 +714,19 @@ If Flow history doc always display a single state, you probably need to update y
     }
 
     // Retrieve metadatas for each chunk
-    uxLog("action", this, c.cyan(`Starting the retrieve of ${packageXmlChunkFiles.length} chunks...`));
+    uxLog("action", this, c.cyan(t('startingTheRetrieveOfChunks', { packageXmlChunkFiles: packageXmlChunkFiles.length })));
     let posChunk = 0;
     for (const packageXmlChunkFile of packageXmlChunkFiles) {
       posChunk++;
       if (this.startChunk > posChunk) {
-        uxLog("log", this, c.grey(`Skipping chunk ${posChunk} (${packageXmlChunkFile}) according to --start-chunk option`));
+        uxLog("log", this, c.grey(t('skippingChunkAccordingToStartChunkOption', { posChunk, packageXmlChunkFile })));
         continue;
       }
       await this.retrievePackageXml(packageXmlChunkFile, flags);
     }
+
+    // Retrieve Data Cloud objects/fields (__dlm / __dll) in a separate call after chunks
+    await this.handleDataCloudRetrieve(null, dataCloudMetadataToRetrieve, flags);
   }
 
   private manageAddCurrentPackageInChunks() {
@@ -451,7 +741,7 @@ If Flow history doc always display a single state, you probably need to update y
     const packageXmlBackUpItemsFile = await this.buildFilteredManifestsForRetrieve(packageXmlFullFile);
 
     // Apply filters to package.xml
-    uxLog("action", this, c.cyan(`Reducing content of ${packageXmlFullFile} to generate ${packageXmlBackUpItemsFile} ...`));
+    uxLog("action", this, c.cyan(t('reducingContentOfToGenerate', { packageXmlFullFile, packageXmlBackUpItemsFile })));
     await filterPackageXml(packageXmlFullFile, packageXmlBackUpItemsFile, {
       removeNamespaces: this.namespaces,
       removeStandard: true,
@@ -461,6 +751,9 @@ If Flow history doc always display a single state, you probably need to update y
 
     // Retrieve sfdx sources in local git repo
     await this.retrievePackageXml(packageXmlBackUpItemsFile, flags);
+
+    // Retrieve Data Cloud objects/fields (__dlm / __dll) in a separate call
+    await this.handleDataCloudRetrieve(packageXmlFullFile, null, flags);
   }
 
   private async buildFilteredManifestsForRetrieve(packageXmlFullFile: string) {
@@ -470,9 +763,7 @@ If Flow history doc always display a single state, you probably need to update y
       uxLog(
         "log",
         this,
-        c.grey(
-          `${packageXmlSkipItemsFile} has been found and will be use to reduce the content of ${packageXmlFullFile} ...`
-        )
+        c.grey(t('packageSkipItemsFoundReducing', { packageXmlSkipItemsFile, packageXmlFullFile }))
       );
       this.packageXmlToRemove = packageXmlSkipItemsFile;
     }
@@ -483,9 +774,7 @@ If Flow history doc always display a single state, you probably need to update y
       uxLog(
         "log",
         this,
-        c.grey(
-          `En var MONITORING_BACKUP_SKIP_METADATA_TYPES has been found and will also be used to reduce the content of ${packageXmlFullFile} ...`
-        )
+        c.grey(t('monitoringBackupSkipMetadataTypesFound', { types: additionalSkipMetadataTypes, packageXmlFullFile }))
       );
       let packageSkipItems = {};
       if (fs.existsSync(this.packageXmlToRemove || '')) {
@@ -500,34 +789,169 @@ If Flow history doc always display a single state, you probably need to update y
     return packageXmlBackUpItemsFile;
   }
 
+  private async isDataCloudBackupExcluded(): Promise<boolean> {
+    if (process.env?.MONITORING_BACKUP_SKIP_DATA_CLOUD === 'true') {
+      return true;
+    }
+    const config = await getConfig('branch');
+    return config.monitoringBackupSkipDataCloud === true;
+  }
+
+  // For full mode: extract Data Cloud-related metadata from packageElements in place
+  private async extractDataCloudMetadataFromElements(
+    packageElements: any
+  ): Promise<{ objects: string[]; fields: string[]; metadataByType: Record<string, string[]> }> {
+    if (await this.isDataCloudBackupExcluded()) {
+      uxLog("log", this, c.grey(t('skippingDataCloudBackup')));
+      return { objects: [], fields: [], metadataByType: {} };
+    }
+    const customObjects: string[] = packageElements['CustomObject'] || [];
+    const customFields: string[] = packageElements['CustomField'] || [];
+    const dataCloudObjects = customObjects.filter((obj: string) =>
+      MonitorBackup.isDataCloudObjectName(obj) && !isManagedPackageMember(obj, this.namespaces)
+    );
+    const dataCloudFields = customFields.filter((fieldMember: string) =>
+      MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !isManagedPackageMember(fieldMember, this.namespaces)
+    );
+    const dataCloudMetadataByType: Record<string, string[]> = {};
+    for (const metadataType of Object.keys(packageElements)) {
+      if (MonitorBackup.isDataCloudMetadataType(metadataType)) {
+        dataCloudMetadataByType[metadataType] = (packageElements[metadataType] || []).filter(
+          (member: string) => !isManagedPackageMember(member, this.namespaces)
+        );
+      }
+    }
+
+    if (dataCloudObjects.length === 0 && dataCloudFields.length === 0 && Object.keys(dataCloudMetadataByType).length === 0) {
+      return { objects: [], fields: [], metadataByType: {} };
+    }
+    packageElements['CustomObject'] = customObjects.filter((obj: string) => !MonitorBackup.isDataCloudObjectName(obj));
+    if (packageElements['CustomObject'].length === 0) {
+      delete packageElements['CustomObject'];
+    }
+    packageElements['CustomField'] = customFields.filter((fieldMember: string) =>
+      !MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember))
+    );
+    if (packageElements['CustomField'].length === 0) {
+      delete packageElements['CustomField'];
+    }
+    for (const metadataType of Object.keys(dataCloudMetadataByType)) {
+      delete packageElements[metadataType];
+    }
+    return { objects: dataCloudObjects, fields: dataCloudFields, metadataByType: dataCloudMetadataByType };
+  }
+
+  // Orchestrate Data Cloud retrieve: for filtered mode reads from full manifest, for full mode uses already-extracted members
+  private async handleDataCloudRetrieve(
+    packageXmlFullFile: string | null,
+    dataCloudMetadata: { objects: string[]; fields: string[]; metadataByType: Record<string, string[]> } | null,
+    flags: any
+  ): Promise<void> {
+    if (await this.isDataCloudBackupExcluded()) {
+      return;
+    }
+    let metadata = dataCloudMetadata;
+    if (!metadata) {
+      // Filtered mode: read from the full manifest
+      const fullPackage = await parsePackageXmlFile(packageXmlFullFile!);
+      const customObjects: string[] = fullPackage['CustomObject'] || [];
+      const customFields: string[] = fullPackage['CustomField'] || [];
+      const metadataByType: Record<string, string[]> = {};
+      for (const metadataType of Object.keys(fullPackage)) {
+        if (MonitorBackup.isDataCloudMetadataType(metadataType)) {
+          metadataByType[metadataType] = fullPackage[metadataType] || [];
+        }
+      }
+      metadata = {
+        objects: customObjects.filter((obj: string) =>
+          MonitorBackup.isDataCloudObjectName(obj) && !isManagedPackageMember(obj, this.namespaces)
+        ),
+        fields: customFields.filter((fieldMember: string) =>
+          MonitorBackup.isDataCloudObjectName(MonitorBackup.getObjectNameFromFieldMember(fieldMember)) && !isManagedPackageMember(fieldMember, this.namespaces)
+        ),
+        metadataByType: Object.fromEntries(
+          Object.entries(metadataByType).map(([metadataType, members]) => [
+            metadataType,
+            members.filter((member: string) => !isManagedPackageMember(member, this.namespaces)),
+          ])
+        ),
+      };
+    }
+    metadata = this.filterManagedPackageNamespacedDataCloudMetadata(metadata);
+
+    const dedicatedMetadataCount = Object.values(metadata.metadataByType || {}).reduce(
+      (sum: number, members: string[]) => sum + (members?.length || 0),
+      0
+    );
+    if (metadata.objects.length === 0 && metadata.fields.length === 0 && dedicatedMetadataCount === 0) {
+      return;
+    }
+    uxLog(
+      "action",
+      this,
+      c.cyan(
+        t('backingUpDataCloudObjectsSeparately', {
+          count: metadata.objects.length + metadata.fields.length + dedicatedMetadataCount,
+        })
+      )
+    );
+    const dataCloudPackageXmlFile = 'manifest/package-backup-datacloud-items.xml';
+    const dataCloudPackageXmlContent: any = {};
+    if (metadata.objects.length > 0) {
+      dataCloudPackageXmlContent.CustomObject = metadata.objects;
+    }
+    if (metadata.fields.length > 0) {
+      dataCloudPackageXmlContent.CustomField = metadata.fields;
+    }
+    for (const metadataType of Object.keys(metadata.metadataByType || {})) {
+      const members = metadata.metadataByType[metadataType] || [];
+      if (members.length > 0) {
+        dataCloudPackageXmlContent[metadataType] = members;
+      }
+    }
+    await writePackageXmlFile(dataCloudPackageXmlFile, dataCloudPackageXmlContent);
+    await this.retrievePackageXml(dataCloudPackageXmlFile, flags);
+  }
+
   private async retrievePackageXml(packageXmlBackUpItemsFile: string, flags: any) {
     const nbRetrievedItems = await countPackageXmlItems(packageXmlBackUpItemsFile);
     const packageXml = await parsePackageXmlFile(packageXmlBackUpItemsFile);
-    uxLog("action", this, c.cyan(`Run the retrieve command for ${path.basename(packageXmlBackUpItemsFile)}, containing ${nbRetrievedItems} items:`));
+    uxLog("action", this, c.cyan(t('runTheRetrieveCommandForContainingItems', { path: path.basename(packageXmlBackUpItemsFile), nbRetrievedItems })));
     const mdTypesString = Object.keys(packageXml).map((mdType) => {
       return `- ${mdType} (${packageXml?.[mdType]?.length || 0})`;
     }).join('\n');
     uxLog("log", this, c.grey(mdTypesString));
     try {
-      await execCommand(
+      // --json: its list of written files tells which local files the org did not return
+      const retrieveResult = await execSfdxJson(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
         this,
         {
           fail: true,
-          output: true,
+          output: this.debugMode ? true : false,
           debug: this.debugMode,
         }
       );
-    } catch (e) {
+      const retrieveFailure = retrieveFailureMessage(retrieveResult);
+      if (retrieveFailure) {
+        throw new SfError(retrieveFailure);
+      }
+      this.retrievedFiles.add(retrieveResult);
+    } catch (e: any) {
+      // The output of a failed --json command is a JSON document: keep its message readable
+      const jsonErrorMessage = retrieveJsonErrorMessage(e);
+      if (jsonErrorMessage) {
+        e.message = jsonErrorMessage;
+      }
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
-      uxLog("warning", this, c.yellow('BackUp package.xml that failed to be retrieved:\n' + c.grey(failedPackageXmlContent)));
+      uxLog("warning", this, c.yellow(t('backupPackageXmlThatFailedToBe') + c.grey(failedPackageXmlContent)));
       if (this.full) {
         uxLog(
           "error",
           this,
           c.red(
             c.bold(
-              'This should not happen: Please report the issue on sfdx-hardis repository: https://github.com/hardisgroupcom/sfdx-hardis/issues'
+              t('unexpectedBackupError')
             )
           )
         );
@@ -538,7 +962,7 @@ If Flow history doc always display a single state, you probably need to update y
           this,
           c.red(
             c.bold(
-              'Crash during backup. You may exclude more metadata types by updating file manifest/package-skip-items.xml then commit and push it, or use variable MONITORING_BACKUP_SKIP_METADATA_TYPES'
+              t('crashDuringBackupExcludeMetadataTypes')
             )
           )
         );
@@ -553,6 +977,63 @@ If Flow history doc always display a single state, you probably need to update y
         )
       );
       throw e;
+    }
+    for (const profileName of collectProfileNames(packageXml)) {
+      this.profileNames.add(profileName);
+    }
+  }
+
+  // Only the Profiles of the manifests that were retrieved: package-skip-items.xml,
+  // MONITORING_BACKUP_SKIP_METADATA_TYPES and --start-chunk apply here too
+  private async readCompleteProfiles(flags: any) {
+    const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+    const defaultPackageDir =
+      (this.project?.getPackageDirectories() || []).find((dir: any) => dir.default)?.fullPath ||
+      packageDirs[0] ||
+      path.join(process.cwd(), 'force-app');
+    // Only the profiles folders are given as the existing sources to write over: resolving every
+    // file of the backup to find the Profiles takes minutes on a large org
+    const profileDirs = packageDirs
+      .map((packageDir: string) => path.join(packageDir, 'main', 'default', 'profiles'))
+      .filter((profileDir: string) => fs.existsSync(profileDir));
+    await readBackupProfiles({
+      conn: flags['target-org'].getConnection(),
+      profileNames: [...this.profileNames],
+      outputDir: defaultPackageDir,
+      packageDirs: profileDirs,
+      commandThis: this,
+      debug: this.debugMode,
+    });
+  }
+
+  // Nothing is deleted when the run can not tell what is gone from the org. Never throws: the
+  // metadata is retrieved, a cleanup that fails must not fail the backup.
+  private async deleteFilesOfDeletedComponents(packageXmlFullFile: string, previousOrgManifest: any, flags: any) {
+    try {
+      const config = await getConfig('branch');
+      let skipReason: BackupDeletionsSkipReason | null = null;
+      if (isBackupDeletionsDisabled(config)) {
+        skipReason = { kind: 'disabled' };
+      } else if (this.startChunk > 1) {
+        skipReason = { kind: 'partialRetrieve', detail: '--start-chunk' };
+      } else if (process.env.FULL_ORG_MANIFEST_PATH) {
+        skipReason = { kind: 'partialRetrieve', detail: 'FULL_ORG_MANIFEST_PATH' };
+      } else if (!this.retrievedFiles.complete) {
+        skipReason = { kind: 'noFileList' };
+      }
+      const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+      const conn = flags['target-org'].getConnection();
+      await applyBackupDeletions({
+        packageDirs: packageDirs.length > 0 ? packageDirs : [path.join(process.cwd(), 'force-app')],
+        retrieved: this.retrievedFiles,
+        currentManifest: skipReason ? null : await parsePackageXmlFile(packageXmlFullFile),
+        previousManifest: previousOrgManifest,
+        skipReason,
+        readMetadata: (type: string, fullNames: string[]) => conn.metadata.read(type, fullNames),
+        commandThis: this,
+      });
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('backupDeletionsFailed', { message: e?.message || String(e) })));
     }
   }
 }

@@ -4,44 +4,125 @@ import { AiProviderRoot } from "./aiProviderRoot.js";
 import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
-import { getEnvVar } from "../../config/index.js";
 import { LangChainProviderFactory } from "./langChainProviders/langChainProviderFactory.js";
 import { ModelConfig, ProviderType } from "./langChainProviders/langChainBaseProvider.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
+import { parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./utils/providerConfigUtils.js";
+import { t } from '../utils/i18n.js';
 
 export class LangChainProvider extends AiProviderRoot {
   private model: BaseChatModel;
   private modelName: string;
 
-  constructor() {
+  private constructor(options: LangChainResolvedConfig) {
     super();
-    const provider = getEnvVar("LANGCHAIN_LLM_PROVIDER");
-    if (!provider) {
-      throw new Error("LANGCHAIN_LLM_PROVIDER environment variable must be set to use LangChain integration");
+    if (!options.provider) {
+      throw new Error("LangChain provider must be defined (ex: openai, anthropic, google-genai, ollama)");
+    }
+    if (!options.modelName) {
+      throw new Error("LangChain model must be defined to use LangChain integration");
     }
 
-    const providerType = provider.toLowerCase() as ProviderType;
-    const modelName = getEnvVar("LANGCHAIN_LLM_MODEL");
-    const apiKey = getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY");
-
-    if (!modelName) {
-      throw new Error("LANGCHAIN_LLM_MODEL environment variable must be set to use LangChain integration");
-    }
-
-    this.modelName = modelName;
+    this.modelName = options.modelName;
+    const providerType = options.provider.toLowerCase() as ProviderType;
 
     // Common configuration for all providers
     const config: ModelConfig = {
-      temperature: Number(getEnvVar("LANGCHAIN_LLM_TEMPERATURE")) || undefined,
-      timeout: Number(getEnvVar("LANGCHAIN_LLM_TIMEOUT")) || undefined,
-      maxTokens: Number(getEnvVar("LANGCHAIN_LLM_MAX_TOKENS")) || undefined,
-      maxRetries: Number(getEnvVar("LANGCHAIN_LLM_MAX_RETRIES")) || undefined,
-      baseUrl: getEnvVar("LANGCHAIN_LLM_BASE_URL") || undefined,
-      apiKey: apiKey || undefined
+      temperature: options.temperature,
+      timeout: options.timeout,
+      maxTokens: options.maxTokens,
+      maxRetries: options.maxRetries,
+      baseUrl: options.baseUrl,
+      apiKey: options.apiKey,
+      defaultHeaders: options.defaultHeaders,
     };
 
-    // factory pattern so that adding support for new providers is easy in the future
-    const llmProvider = LangChainProviderFactory.createProvider(providerType, modelName, config);
+    const llmProvider = LangChainProviderFactory.createProvider(providerType, this.modelName, config);
     this.model = llmProvider.getModel();
+  }
+
+  public static async isConfigured(): Promise<boolean> {
+    const options = await this.resolveConfig();
+    return options != null;
+  }
+
+  public static async create(): Promise<LangChainProvider> {
+    const options = await this.resolveConfig();
+    if (!options) {
+      throw new Error("LangChain provider is not properly configured");
+    }
+    return new LangChainProvider(options);
+  }
+
+  private static async resolveConfig(): Promise<LangChainResolvedConfig | null> {
+    const projectConfig = await getConfig('user', { cache: true });
+    const rootConfig = projectConfig || {};
+    const provider = getEnvVar("LANGCHAIN_LLM_PROVIDER") || rootConfig.langchainLlmProvider || rootConfig.LANGCHAIN_LLM_PROVIDER;
+    const modelName = getEnvVar("LANGCHAIN_LLM_MODEL") || rootConfig.langchainLlmModel || rootConfig.LANGCHAIN_LLM_MODEL;
+    const configEnabled = typeof rootConfig.useLangchainLlm === "boolean"
+      ? rootConfig.useLangchainLlm
+      : (typeof rootConfig.USE_LANGCHAIN_LLM === "boolean" ? rootConfig.USE_LANGCHAIN_LLM : undefined);
+    const enabled = this.parseBoolean(getEnvVar("USE_LANGCHAIN_LLM"), configEnabled, provider && modelName);
+
+    if (!enabled || !provider || !modelName) {
+      return null;
+    }
+
+    const headerResult = parseDefaultHeaders(getEnvVar("LANGCHAIN_LLM_DEFAULT_HEADERS"));
+    if (headerResult.error) {
+      uxLog("warning", this, c.yellow(t(HEADER_PARSE_I18N_KEYS[headerResult.error], { label: "LangChain", key: headerResult.errorKey })));
+    }
+    const defaultHeaders = headerResult.headers;
+
+    return {
+      provider,
+      modelName,
+      temperature: this.parseNumber(
+        getEnvVar("LANGCHAIN_LLM_TEMPERATURE"),
+        rootConfig.langchainLlmTemperature ?? rootConfig.LANGCHAIN_LLM_TEMPERATURE
+      ),
+      timeout: this.parseNumber(
+        getEnvVar("LANGCHAIN_LLM_TIMEOUT"),
+        rootConfig.langchainLlmTimeout ?? rootConfig.LANGCHAIN_LLM_TIMEOUT
+      ),
+      maxTokens: this.parseNumber(
+        getEnvVar("LANGCHAIN_LLM_MAX_TOKENS"),
+        rootConfig.langchainLlmMaxTokens ?? rootConfig.LANGCHAIN_LLM_MAX_TOKENS
+      ),
+      maxRetries: this.parseNumber(
+        getEnvVar("LANGCHAIN_LLM_MAX_RETRIES"),
+        rootConfig.langchainLlmMaxRetries ?? rootConfig.LANGCHAIN_LLM_MAX_RETRIES
+      ),
+      baseUrl: getEnvVar("LANGCHAIN_LLM_BASE_URL") || rootConfig.langchainLlmBaseUrl || rootConfig.LANGCHAIN_LLM_BASE_URL,
+      apiKey: getEnvVar("LANGCHAIN_LLM_MODEL_API_KEY") || undefined,
+      defaultHeaders,
+    };
+  }
+
+  private static parseBoolean(envValue: string | null, configValue?: boolean, fallback?: boolean): boolean {
+    if (envValue != null) {
+      const normalized = envValue.toLowerCase();
+      if (normalized === "true") {
+        return true;
+      }
+      if (normalized === "false") {
+        return false;
+      }
+    }
+    if (configValue !== undefined) {
+      return configValue;
+    }
+    return Boolean(fallback);
+  }
+
+  private static parseNumber(envValue: string | null, configValue?: number): number | undefined {
+    if (envValue != null) {
+      const parsed = Number(envValue);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return configValue;
   }
 
   public getLabel(): string {
@@ -49,17 +130,14 @@ export class LangChainProvider extends AiProviderRoot {
   }
 
   public async promptAi(promptText: string, template: PromptTemplate | null = null): Promise<AiResponse | null> {
-    // re-use the same check for max ai calls number as in the original openai provider implementation
-    if (!this.checkMaxAiCallsNumber()) {
-      const maxCalls = this.getAiMaxCallsNumber();
-      uxLog("warning", this, c.yellow(`[LangChain] Already performed maximum ${maxCalls} calls. Increase it by defining AI_MAXIMUM_CALL_NUMBER env variable`));
+    if (!this.checkAndWarnMaxAiCalls("LangChain")) {
       return null;
     }
 
     if (process.env?.DEBUG_PROMPTS === "true") {
-      uxLog("log", this, c.grey(`[LangChain] Requesting the following prompt to ${this.modelName}${template ? ' using template ' + template : ''}:\n${promptText}`));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPromptDebug', { modelName: this.modelName, template: template ? ' using template ' + template : '', promptText })));
     } else {
-      uxLog("log", this, c.grey(`[LangChain] Requesting prompt to ${this.modelName}${template ? ' using template ' + template : ''} (define DEBUG_PROMPTS=true to see details)`));
+      uxLog("log", this, c.grey('[LangChain] ' + t('langchainRequestingPrompt', { modelName: this.modelName, template: template ? ' using template ' + template : '' })));
     }
 
     this.incrementAiCallsNumber();
@@ -73,9 +151,9 @@ export class LangChainProvider extends AiProviderRoot {
       ]);
 
       if (process.env?.DEBUG_PROMPTS === "true") {
-        uxLog("log", this, c.grey("[LangChain] Received prompt response\n" + JSON.stringify(response, null, 2)));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponseDebug', { response: JSON.stringify(response, null, 2) })));
       } else {
-        uxLog("log", this, c.grey("[LangChain] Received prompt response"));
+        uxLog("log", this, c.grey('[LangChain] ' + t('langchainReceivedResponse')));
       }
 
       const aiResponse: AiResponse = {
@@ -91,11 +169,23 @@ export class LangChainProvider extends AiProviderRoot {
       return aiResponse;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        uxLog("error", this, c.red(`[LangChain] Error while calling LLM API: ${error.message}`));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainErrorCallingLLM', { message: error.message })));
       } else {
-        uxLog("error", this, c.red(`[LangChain] Unexpected error occurred`));
+        uxLog("error", this, c.red('[LangChain] ' + t('langchainUnexpectedError')));
       }
       return null;
     }
   }
-} 
+}
+
+interface LangChainResolvedConfig {
+  provider: string;
+  modelName: string;
+  temperature?: number;
+  timeout?: number;
+  maxTokens?: number;
+  maxRetries?: number;
+  baseUrl?: string;
+  apiKey?: string;
+  defaultHeaders?: Record<string, string>;
+}

@@ -1,7 +1,8 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { execCommand, uxLog } from '../utils/index.js';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
 import c from 'chalk';
+import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
 
 export class ApexAction extends ActionsProvider {
   public getLabel(): string {
@@ -22,6 +23,11 @@ export class ApexAction extends ActionsProvider {
     return null;
   }
 
+  // ./scripts/apex/x.apex and scripts\apex\x.apex run the same script
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    return { apexScript: normalizeIdentityPath(cmd.parameters?.apexScript) };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
@@ -29,8 +35,10 @@ export class ApexAction extends ActionsProvider {
     const apexCommand = `sf apex run --file ${apexScript}` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
     const res = await execCommand(apexCommand, null, { fail: false, output: true });
     if (res.status === 0) {
-      return { statusCode: 'success', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+      return { statusCode: 'success', output: buildActionOutput(res) };
     }
-    return { statusCode: 'failed', output: (res.stdout || '') + '\n' + (res.stderr || '') };
+    // Reached only when execCommand returns instead of throwing (--json commands).
+    // Plain commands throw even with fail:false, and executePrePostCommands catches them.
+    return { statusCode: 'failed', output: buildActionOutput(res) };
   }
 }

@@ -11,6 +11,7 @@ import { wrapSfdxCoreCommand } from '../../../common/utils/wrapUtils.js';
 import { uxLog } from '../../../common/utils/index.js';
 import { CONSTANTS } from '../../../config/index.js';
 import { executePrePostCommands } from '../../../common/utils/prePostCommandUtils.js';
+import { t } from '../../../common/utils/i18n.js';
 
 // Wrapper for sfdx force:source:deploy
 export class Deploy extends SfCommand<any> {
@@ -22,9 +23,9 @@ Additional to the base command wrapper: If using **--checkonly**, add options **
 
 You can also have deployment results as pull request comments, on:
 
-- GitHub (see [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-github/))
-- Gitlab (see [Gitlab integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-gitlab/))
-- Azure DevOps (see [Azure integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-azure/))
+- GitHub (see [GitHub Pull Requests comments config](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-github/))
+- Gitlab (see [Gitlab integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-gitlab/))
+- Azure DevOps (see [Azure integration configuration](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-azure/))
 
 
 [![Assisted solving of Salesforce deployments errors](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deployment-errors.jpg)](https://nicolas.vuillamy.fr/assisted-solving-of-salesforce-deployments-errors-47f3666a9ed0)
@@ -35,34 +36,41 @@ You can define command lines to run before or after a deployment, with parameter
 
 - **id**: Unique Id for the command
 - **label**: Human readable label for the command
-- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **allowFailure**: If defined to "true", a failure of this action does not make the deployment job fail
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org - subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+
+Post-deployment actions are never run when the metadata deployment failed: they are reported as \`not run\` and are proposed again during the next successful deployment.
+
+After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of \`runOnlyOnceByOrg\`.
+
+When several Pull Requests of the same deployment carry an identical action (same type, phase, user and parameters), it runs once and the other Pull Requests record it as done: see [Identical actions run once](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once).
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
+
+You can also keep a single definition and restrict it with \`includeTargetBranches\` or \`excludeTargetBranches\` (use \`dev-sandboxes\` for developer sandboxes).
 
 Example:
 
 \`\`\`yaml
 commandsPreDeploy:
-  - id: knowledgeUnassign
+  - id: 32e7e3d7-eeeb-4162-ae9e-a4013e8439e1
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: bf114a50-8f40-4ac2-bf2b-910139292f76
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
 
 commandsPostDeploy:
-  - id: knowledgeUnassign
+  - id: ddd0d387-0b84-4ce5-8b0a-a9a370d2ece3
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: 25891b5b-6053-4f91-9416-037e3e3f6e46
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
-  - id: someActionToRunJustOneTime
+  - id: a807b752-71dd-4345-a115-413ccd3dbbcc
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
-    skipIfError: true
     context: process-deployment-only
     runOnlyOnceByOrg: true
 \`\`\`
@@ -72,6 +80,17 @@ Notes:
 - You can disable coloring of errors in red by defining env variable SFDX_HARDIS_DEPLOY_ERR_COLORS=false
 
 [See documentation of Salesforce command](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_deploy)
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:source:deploy --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
   public static readonly examples = [
     '$ sf hardis:source:deploy -x manifest/package.xml --wait 60 --ignorewarnings --testlevel RunLocalTests --postdestructivechanges ./manifest/destructiveChanges.xml --target-org nicolas.vuillamy@cloudity.com.sfdxhardis --checkonly --checkcoverage --verbose --coverageformatters json-summary',
@@ -172,6 +191,10 @@ Notes:
     }),
     junit: Flags.boolean({ description: 'junit' }),
     checkcoverage: Flags.boolean({ description: 'Check Apex org coverage' }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       default: false,
       description: 'debug',
@@ -185,8 +208,8 @@ Notes:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(Deploy);
-    uxLog("error", this, c.red('This command will be removed by Salesforce in November 2024.'));
-    uxLog("error", this, c.red('Please migrate to command sf hardis project deploy start'));
+    uxLog("error", this, c.red(t('thisCommandWillBeRemovedBySalesforce')));
+    uxLog("error", this, c.red(t('pleaseMigrateToCommandSfHardisProject')));
     uxLog(
       "error",
       this,
@@ -195,8 +218,7 @@ Notes:
       )
     );
     // Run pre deployment commands if defined
-    const conn = flags["target-org"].getConnection();
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: flags.checkonly, conn: conn });
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: flags.checkonly });
     const result = await wrapSfdxCoreCommand('sfdx force:source:deploy', this.argv, this, flags.debug);
     // Check org coverage if requested
     const checkOnly = flags.checkonly || false;
@@ -212,7 +234,7 @@ Notes:
       }
     }
     // Run post deployment commands if defined
-    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly, conn: conn });
+    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: checkOnly });
     await GitProvider.managePostPullRequestComment(checkOnly);
     return result;
   }

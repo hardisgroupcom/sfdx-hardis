@@ -23,13 +23,25 @@ The command's logic is straightforward:
 - **Configuration loading:** The `getConfig` function is responsible for finding the appropriate configuration file, reading its contents, and parsing it as YAML or JSON.
 - **Output:** The retrieved configuration is then displayed to the user as a JSON string.
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:config:get --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
 | Name         |  Type   | Description                                                   | Default | Required |           Options           |
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:---------------------------:|
+| agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |                             |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |                             |
-| flags-dir    | option  | undefined                                                     |         |          |                             |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |                             |
 | json         | boolean | Format output as json.                                        |         |          |                             |
 | level<br/>-l | option  | project,branch or user                                        | project |          | project<br/>branch<br/>user |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |                             |
@@ -39,6 +51,10 @@ The command's logic is straightforward:
 
 ```shell
 $ sf hardis:project:deploy:sources:metadata
+```
+
+```shell
+$ sf hardis:project:deploy:sources:metadata --agent
 ```
 
 

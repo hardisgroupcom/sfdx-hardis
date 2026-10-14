@@ -5,9 +5,10 @@ import { AuthInfo, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { getConfig, setConfig } from '../../../../config/index.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { uxLog } from '../../../../common/utils/index.js';
+import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { instantiateProvider, listKeyValueProviders } from '../../../../common/utils/poolUtils.js';
-import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
+import { PoolStorageInterface } from '../../../../common/utils/keyValueUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -15,25 +16,75 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 export default class ScratchPoolCreate extends SfCommand<any> {
   public static title = 'Create and configure scratch org pool';
 
-  public static description = `Select a data storage service and configure information to build a scratch org pool
+  public static description = `
+## Command Behavior
 
-  Run the command, follow instruction, then you need to schedule a daily CI job for the pool maintenance:
+**Configures a scratch org pool for the project: where the pool is stored, and how many scratch orgs it holds.**
 
-  - Define CI ENV variable SCRATCH_ORG_POOL with value "true"
+A pool keeps scratch orgs ready, so a CI job or a developer gets one in seconds instead of waiting for its creation.
 
-  - Call the following lines in the CI job:
+Key functionalities:
+
+- **Storage choice:** \`gitProvider\` stores the pool in a "Scratch Orgs Pool Dashboard" of your git provider: an issue on GitHub and GitLab, a work item on Azure DevOps, a dedicated Pull Request on Bitbucket. \`salesforce\` stores it in a custom object of the Dev Hub.
+- **Encryption (\`gitProvider\` storage):** the credentials of the scratch orgs are encrypted. The command generates the key and displays it once: store it in a masked CI variable named \`SFDX_HARDIS_POOL_ENCRYPTION_KEY\`.
+- **Pool size:** saves \`poolConfig.maxScratchOrgsNumber\` in \`.sfdx-hardis.yml\`.
+- **Existing configuration:** the command stops when a pool is already configured. Remove \`poolConfig\` from \`.sfdx-hardis.yml\` to configure it again.
+
+Once the pool is configured, schedule a CI job that fills it:
+
+- Set the CI variables \`USE_SCRATCH_ORGS\` and \`SCRATCH_ORG_POOL\` to \`true\`
+- The job runs:
 
 \`\`\`shell
-  sf hardis:auth:login --devhub
-  sf hardis:scratch:pool:refresh
+sf hardis:auth:login --devhub
+sf hardis:scratch:pool:refresh
 \`\`\`
-  `;
 
-  public static examples = ['$ sf hardis:scratch:pool:configure'];
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+- **Storage providers:** \`listKeyValueProviders\` lists the available storages, \`instantiateProvider\` builds the selected one, and its \`userSetup\` method prepares it (dashboard creation, or deployment of the custom object on the Dev Hub).
+- **Configuration:** \`poolConfig\` is written in the project configuration with \`setConfig\`.
+- **Git provider storage:** the git provider is detected from the tokens of the environment (\`GITHUB_TOKEN\`, \`CI_SFDX_HARDIS_GITLAB_TOKEN\`, \`CI_SFDX_HARDIS_AZURE_TOKEN\`, \`CI_SFDX_HARDIS_BITBUCKET_TOKEN\`), read from the \`.env\` file or sent by the VS Code extension.
+- **Encryption:** AES-256-GCM, with a key derived from \`SFDX_HARDIS_POOL_ENCRYPTION_KEY\`. A key already present in the environment is reused.
+</details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:create --agent --storage-service gitProvider --max-scratch-orgs 5
+\`\`\`
+
+In agent mode:
+
+- No prompt is displayed.
+- \`--storage-service\` defaults to \`gitProvider\`.
+- \`--max-scratch-orgs\` defaults to 5.
+`;
+
+  public static examples = [
+    '$ sf hardis:scratch:pool:create',
+    '$ sf hardis:scratch:pool:create --agent',
+    '$ sf hardis:scratch:pool:create --agent --storage-service gitProvider --max-scratch-orgs 5',
+  ];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
+    'storage-service': Flags.string({
+      options: ['gitProvider', 'salesforce', 'localtest'],
+      description: 'Where the pool is stored (asked when not set)',
+    }),
+    'max-scratch-orgs': Flags.integer({
+      min: 1,
+      description: 'Maximum number of scratch orgs in the pool (asked when not set)',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -56,6 +107,7 @@ export default class ScratchPoolCreate extends SfCommand<any> {
   public async run(): Promise<AnyJson> {
     // Get pool configuration
     const { flags } = await this.parse(ScratchPoolCreate);
+    const agentMode = flags.agent === true;
     const config = await getConfig('project');
     const poolConfig = config.poolConfig || {};
 
@@ -72,40 +124,52 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       return { outputString: 'Scratch org pool configuration already existing' };
     }
 
-    const allProviders = await listKeyValueProviders();
-    const response = await prompts([
-      {
-        type: 'select',
-        name: 'storageService',
-        message: c.cyanBright('What storage service do you want to use for your scratch orgs pool ?'),
-        description: 'Choose a storage backend for managing and tracking scratch org pools',
-        placeholder: 'Select a storage service',
-        initial: 0,
-        choices: allProviders.map((provider: KeyValueProviderInterface) => {
-          return { title: provider.name, description: provider.description, value: provider.name };
-        }),
-      },
-      {
-        type: 'number',
-        name: 'maxScratchOrgsNumber',
-        message: c.cyanBright('What is the maximum number of scratch orgs in the pool ?'),
-        description: 'Set the maximum number of scratch orgs that can exist in the pool at any time',
-        placeholder: 'Ex: 5',
-        initial: poolConfig.maxScratchOrgsNumber || 5,
-      },
-    ]);
+    let storageService: string | undefined = flags['storage-service'];
+    let maxScratchOrgsNumber: number | undefined = flags['max-scratch-orgs'];
+    if (!isCI && !agentMode) {
+      const allProviders = await listKeyValueProviders();
+      if (!storageService) {
+        const storageResponse = await prompts({
+          type: 'select',
+          name: 'storageService',
+          message: c.cyanBright(t('whatStorageServiceDoYouWantTo')),
+          description: t('chooseStorageBackendForScratchOrgPools'),
+          placeholder: t('selectAStorageService'),
+          initial: 0,
+          choices: allProviders.map((provider: PoolStorageInterface) => {
+            return { title: provider.name, description: provider.description, value: provider.name };
+          }),
+        });
+        storageService = storageResponse.storageService;
+      }
+      if (!maxScratchOrgsNumber) {
+        const maxResponse = await prompts({
+          type: 'number',
+          name: 'maxScratchOrgsNumber',
+          message: c.cyanBright(t('whatIsTheMaximumNumberOfScratch')),
+          description: t('setMaximumScratchOrgsInPool'),
+          placeholder: t('exFiveNumber'),
+          initial: poolConfig.maxScratchOrgsNumber || 5,
+        });
+        maxScratchOrgsNumber = maxResponse.maxScratchOrgsNumber;
+      }
+    }
+    storageService = storageService || 'gitProvider';
+    maxScratchOrgsNumber = maxScratchOrgsNumber || 5;
+    uxLog("action", this, c.cyan(t('poolConfiguringStorage', { storageService: c.green(storageService), max: maxScratchOrgsNumber })));
 
-    // Store updated config
-    poolConfig.maxScratchOrgsNumber = response.maxScratchOrgsNumber;
-    poolConfig.storageService = response.storageService;
-    await setConfig('project', { poolConfig: poolConfig });
-
-    // Request additional setup to the user
-    const provider = await instantiateProvider(response.storageService);
+    // Prepare the storage first: a setup that fails must not leave a pool configuration behind
+    const provider = await instantiateProvider(storageService);
     await provider.userSetup({
       devHubConn: flags['target-dev-hub'].getConnection(),
       devHubUsername: flags['target-dev-hub'].getUsername(),
+      maxScratchOrgsNumber,
     });
+
+    // Store updated config
+    poolConfig.maxScratchOrgsNumber = maxScratchOrgsNumber;
+    poolConfig.storageService = storageService;
+    await setConfig('project', { poolConfig: poolConfig });
 
     const authInfo = await AuthInfo.create({ username: flags['target-dev-hub'].getUsername() });
     const sfdxAuthUrl = authInfo.getSfdxAuthUrl();
@@ -113,23 +177,17 @@ If you really want to replace it, please remove poolConfig property from .sfdx-h
       uxLog(
         "action",
         this,
-        c.cyan(`You need to define CI masked variable ${c.green('SFDX_AUTH_URL_DEV_HUB')} = ${c.green(sfdxAuthUrl)}`)
+        c.cyan(t('youNeedToDefineCiMaskedVariableDevHub', { sfdxAuthUrl: c.green(sfdxAuthUrl) }))
       );
     } else {
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `You'll probably need to define CI masked variable ${c.green(
-            'SFDX_AUTH_URL_DEV_HUB'
-          )} with content of sfdxAuthUrl that you can retrieve with ${c.white(
-            'sf org display -o YOURDEVHUBUSERNAME --verbose --json'
-          )}`
-        )
+        c.yellow(t('youllProbablyNeedToDefineCiMaskedVar'))
       );
     }
 
     // Return an object to be displayed with --json
-    return { outputString: 'Configured scratch orgs pool' };
+    return { outputString: 'Configured scratch orgs pool', storageService, maxScratchOrgsNumber };
   }
 }

@@ -1,0 +1,9 @@
+{
+  "objects": [
+    {
+      "query": "SELECT Id, Name, Description FROM Account WHERE Name LIKE 'HardisNutDeployData%'",
+      "operation": "Upsert",
+      "externalId": "Name"
+    }
+  ]
+}

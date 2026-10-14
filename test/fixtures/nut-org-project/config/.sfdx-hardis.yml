@@ -1,0 +1,71 @@
+# sfdx-hardis configuration used by the integration tests (NUTs).
+#
+# The scratch org initialization keys below make hardis:scratch:create exercise its whole
+# pipeline: source push, permission set assignment, Apex init scripts and SFDMU data import.
+# Branch-level config (deployment actions) is written at runtime by the individual scenarios.
+developmentBranch: main
+projectName: sfdx-hardis-nut
+apexTestsMinCoverageOrgWide: 75.0
+
+# Scratch org initialization
+# NOTE: installedPackages is intentionally left empty. Installing a managed package needs a
+# real 04t SubscriberPackageVersionId; a wrong or retired id makes the whole scratch org
+# creation fail, so it is opt-in rather than guessed. Add an entry here to also cover the
+# package installation step of hardis:scratch:create.
+installedPackages: []
+initPermissionSets:
+  - HardisNutPermSet
+scratchOrgInitApexScripts:
+  - scripts/apex/init-scratch.apex
+dataPackages:
+  - dataPath: scripts/data/ScratchInit
+    importInScratchOrgs: true
+
+# Custom functions exercised by the "custom function actions" scenario of deploySmart.nut.ts.
+# They live here rather than in a branch config on purpose: a function id is a deployment action
+# type, so the catalog is project scoped and must be identical on every branch.
+customFunctions:
+  - id: nutNodeFunction
+    label: NUT node function
+    runtime: node
+    script: scripts/functions/nut-node.js
+    inputs:
+      - name: channel
+        type: string
+        required: true
+      - name: retries
+        type: number
+        default: 2
+      - name: token
+        type: secret
+        required: true
+    outputs:
+      - name: nodeMessageId
+      - name: nodeStatus
+  - id: nutBashFunction
+    label: NUT bash function
+    runtime: bash
+    script: scripts/functions/nut-bash.sh
+    inputs:
+      - name: environment
+        type: string
+    outputs:
+      - name: bashReport
+      - name: bashStatus
+  - id: nutPythonFunction
+    label: NUT python function
+    runtime: python
+    script: scripts/functions/nut-python.py
+    inputs:
+      - name: severity
+        type: select
+        options:
+          - info
+          - warning
+        default: info
+      - name: fromNode
+        type: string
+      - name: fromBash
+        type: string
+    outputs:
+      - name: pythonSummary

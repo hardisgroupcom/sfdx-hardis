@@ -1,9 +1,9 @@
 // External Libraries and Node.js Modules
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import * as path from 'path';
 import c from 'chalk';
-import open from 'open';
-import * as split from 'split';
+import { open } from './openUtils.js';
+import { createInterface } from 'readline';
 import { PromisePool } from '@supercharge/promise-pool';
 import crypto from 'crypto';
 
@@ -13,7 +13,13 @@ import Papa from 'papaparse';
 import ExcelJS from 'exceljs';
 
 // Project Specific Utilities
-import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from './index.js';
+import { getCurrentGitBranch, isAgentMode, isCI, isGitRepo, uxLog, uxLogTable } from './index.js';
+import {
+  anonymizeRows,
+  consumeAnonymizationNotice,
+  getChannelAnonymizationLevel,
+  SENSITIVE_VALUES_KEY,
+} from './anonymizeUtils.js';
 import { bulkQuery, soqlQuery, bulkQueryByChunks } from './apiUtils.js';
 import { prompts } from './prompts.js';
 import { getApiVersion, getReportDirectory } from '../../config/index.js';
@@ -21,6 +27,7 @@ import { WebSocketClient } from '../websocketClient.js';
 import { FileDownloader } from './fileDownloader.js';
 import { ApiLimitsManager } from './limitUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
+import { t } from './i18n.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -47,6 +54,7 @@ export class FilesExporter {
   private logFile: string;
   private hasExistingFiles: boolean;
   private resumeExport: boolean;
+  private agentMode: boolean;
 
   private totalRestApiCalls = 0;
   private totalBulkApiCalls = 0;
@@ -67,7 +75,7 @@ export class FilesExporter {
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number; resumeExport?: boolean },
+    options: { pollTimeout?: number; recordsChunkSize?: number; exportConfig?: any; startChunkNumber?: number; resumeExport?: boolean; agentMode?: boolean },
     commandThis: any
   ) {
     this.filesPath = filesPath;
@@ -77,6 +85,7 @@ export class FilesExporter {
     this.parentRecordsChunkSize = 100000;
     this.startChunkNumber = options?.startChunkNumber || 0;
     this.resumeExport = options?.resumeExport || false;
+    this.agentMode = options?.agentMode || false;
     this.hasExistingFiles = fs.existsSync(path.join(this.filesPath, 'export'));
     this.commandThis = commandThis;
     if (options.exportConfig) {
@@ -92,7 +101,7 @@ export class FilesExporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog("action", this.commandThis, c.cyan(`Initializing files export for workspace ${c.green(this.dtl.full_label)}.`));
+    uxLog("action", this.commandThis, c.cyan(t('initializingFilesExportForWorkspace', { dtl: c.green(this.dtl.full_label) })));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Make sure export folder for files is existing
@@ -103,7 +112,7 @@ export class FilesExporter {
     if (!this.resumeExport) {
       if (this.hasExistingFiles) {
         // Restart mode: clear the output folder
-        uxLog("action", this.commandThis, c.yellow(`Restart mode: clearing output folder ${this.exportedFilesFolder}.`));
+        uxLog("action", this.commandThis, c.yellow(t('restartModeClearingOutputFolder', { exportedFilesFolder: this.exportedFilesFolder })));
         await fs.emptyDir(this.exportedFilesFolder);
       }
     } else {
@@ -122,9 +131,9 @@ export class FilesExporter {
     await this.initializeCsvLog();
 
     // Phase 1: Calculate total files count for accurate progress tracking
-    uxLog("action", this.commandThis, c.cyan("Estimating total files to download."));
+    uxLog("action", this.commandThis, c.cyan(t('estimatingTotalFilesToDownload')));
     const totalFilesCount = await this.calculateTotalFilesCount();
-    uxLog("log", this.commandThis, c.grey(`Estimated ${totalFilesCount} files to download.`));
+    uxLog("log", this.commandThis, c.grey(t('estimatedFilesToDownload', { totalFilesCount })));
 
     // Phase 2: Process downloads with accurate progress tracking
     await this.processDownloadsWithProgress(totalFilesCount);
@@ -200,7 +209,7 @@ export class FilesExporter {
     let actualTotalFiles = estimatedFilesCount; // Start with estimation, will be adjusted as we discover actual files
 
     // Start progress tracking with estimated total files count
-    WebSocketClient.sendProgressStartMessage('Exporting files', actualTotalFiles);
+    WebSocketClient.sendProgressStartMessage(t('exportingFiles'), actualTotalFiles);
 
     // Progress callback function with total adjustment capability
     const progressCallback = (filesCompleted: number, filesDiscoveredInChunk?: number) => {
@@ -226,9 +235,9 @@ export class FilesExporter {
 
         // Get API usage for display (non-blocking)
         this.getApiUsageStatus().then(apiUsage => {
-          uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles} ${apiUsage.message}`));
+          uxLog("other", this, c.grey(t('discoveredFilesInChunkUpdatedTotalEstimate2', { filesDiscoveredInChunk, actualTotalFiles, apiUsage: apiUsage.message })));
         }).catch(() => {
-          uxLog("other", this, c.grey(`Discovered ${filesDiscoveredInChunk} files in chunk, updated total estimate to ${actualTotalFiles}`));
+          uxLog("other", this, c.grey(t('discoveredFilesInChunkUpdatedTotalEstimate', { filesDiscoveredInChunk, actualTotalFiles })));
         });
       }
 
@@ -286,7 +295,7 @@ export class FilesExporter {
     }
 
     // Request user confirmation
-    if (!isCI) {
+    if (!isCI && !this.agentMode) {
       const warningMessage = c.cyanBright(
         `This export of files could run on ${c.bold(c.yellow(countSoqlQueryRes.totalSize))} records, in ${c.bold(
           c.yellow(this.chunksNumber)
@@ -295,16 +304,16 @@ export class FilesExporter {
       const promptRes = await prompts({
         type: 'confirm',
         message: warningMessage,
-        description: 'Proceed with the operation despite API usage warnings'
+        description: t('proceedWithOperationDespiteApiUsageWarnings')
       });
       if (promptRes.value !== true) {
         throw new SfError('Command cancelled by user.');
       }
       if (this.startChunkNumber === 0) {
         uxLog(
-          "warning",
+          "action",
           this,
-          c.yellow(
+          c.cyan(
             c.italic('Use --startchunknumber command line argument if you do not want to start from first chunk')
           )
         );
@@ -360,7 +369,7 @@ export class FilesExporter {
           resolve(true);
         }
         if (globalThis.sfdxHardisFatalError === true) {
-          uxLog("error", this, c.red('Fatal error while processing chunks queue'));
+          uxLog("error", this, c.red(t('fatalErrorWhileProcessingChunksQueue')));
           process.exit(1);
         }
       }, 1000);
@@ -456,11 +465,11 @@ export class FilesExporter {
               }
             } catch (e) {
               this.filesErrors++;
-              uxLog("warning", this, c.red('Download file error: ' + attachment.Name + '\n' + e));
+              uxLog("warning", this, c.red(t('downloadFileError') + attachment.Name + '\n' + e));
             }
           });
       } else {
-        uxLog("log", this, c.grey(`No Attachments found for the ${batch.length} parent records in this batch`));
+        uxLog("log", this, c.grey(t('noAttachmentsFoundForTheParentRecords', { batch: batch.length })));
       }
     }
     for (let i = 0; i < records.length; i += contentVersionBatchSize) {
@@ -470,7 +479,7 @@ export class FilesExporter {
       const linkedEntityInQuery = `SELECT ContentDocumentId,LinkedEntityId FROM ContentDocumentLink WHERE LinkedEntityId IN (${linkedEntityIdIn})`;
       await this.waitIfApiLimitApproached('BULK');
       this.totalBulkApiCalls++;
-      uxLog("log", this, c.grey(`Querying ContentDocumentLinks for ${linkedEntityInQuery.length} parent records in this batch...`));
+      uxLog("log", this, c.grey(t('queryingContentdocumentlinksForParentRecordsInThis', { linkedEntityInQuery: linkedEntityInQuery.length })));
       const contentDocumentLinks = await bulkQueryByChunks(linkedEntityInQuery, this.conn, this.parentRecordsChunkSize);
       if (contentDocumentLinks.records.length > 0) {
         // Retrieve all ContentVersion related to ContentDocumentLink
@@ -509,7 +518,7 @@ export class FilesExporter {
             });
           });
           actualFilesInChunk += versionsAndLinks.length; // Count actual ContentVersion files discovered
-          uxLog("log", this, c.grey(`Downloading ${versionsAndLinks.length} found files...`))
+          uxLog("log", this, c.grey(t('downloadingFoundFiles', { versionsAndLinks: versionsAndLinks.length })))
           // Download files
           await PromisePool.withConcurrency(5)
             .for(versionsAndLinks)
@@ -526,12 +535,12 @@ export class FilesExporter {
                 }
               } catch (e) {
                 this.filesErrors++;
-                uxLog("warning", this, c.red('Download file error: ' + versionAndLink.contentVersion.Title + '\n' + e));
+                uxLog("warning", this, c.red(t('downloadFileError') + versionAndLink.contentVersion.Title + '\n' + e));
               }
             });
         }
       } else {
-        uxLog("log", this, c.grey('No ContentDocumentLinks found for the parent records in this batch'));
+        uxLog("log", this, c.grey(t('noContentdocumentlinksFoundForTheParentRecords')));
       }
     }
 
@@ -547,8 +556,8 @@ export class FilesExporter {
     await fs.ensureDir(path.dirname(this.logFile));
     const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentDocument Id,ContentVersion Id,Attachment Id,Validation Status,Download URL\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
-    uxLog("log", this, c.grey(`CSV log file initialized: ${this.logFile}`));
-    WebSocketClient.sendReportFileMessage(this.logFile, "Exported files report (CSV)", 'report');
+    uxLog("log", this, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
+    WebSocketClient.sendReportFileMessage(this.logFile, t('exportedFilesReportCsv'), 'report');
   }
 
   // Helper method to extract file information from output path
@@ -678,7 +687,7 @@ export class FilesExporter {
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
     } catch (e) {
-      uxLog("warning", this, c.yellow(`Error writing to CSV log: ${(e as Error).message}`));
+      uxLog("warning", this, c.yellow(t('errorWritingToCsvLog', { as: (e as Error).message })));
     }
   }
 
@@ -707,7 +716,7 @@ export class FilesExporter {
           this.filesValidated++; // Count only valid files
           // File exists and is valid - skip download
           const fileDisplay = path.join(folderPath, fileName).replace(/\\/g, '/');
-          uxLog("success", this, c.grey(`Skipped (valid existing file) ${fileDisplay}`));
+          uxLog("success", this, c.grey(t('skippedValidExistingFile', { fileDisplay })));
           this.filesIgnoredExisting++;
 
           // Write success entry to CSV log
@@ -715,10 +724,10 @@ export class FilesExporter {
           return;
         } else {
           // File exists but is invalid - will re-download
-          uxLog("log", this, c.yellow(`Existing file ${fileName} is invalid (${validation.error}) - re-downloading`));
+          uxLog("log", this, c.yellow(t('existingFileIsInvalidReDownloading', { fileName, validation: validation.error })));
         }
       } catch (e) {
-        uxLog("warning", this, c.yellow(`Could not validate existing file ${fileName}: ${(e as Error).message}`));
+        uxLog("warning", this, c.yellow(t('couldNotValidateExistingFile', { fileName, as: (e as Error).message })));
         // Continue with download if we can't validate existing file
       }
     }
@@ -756,7 +765,7 @@ export class FilesExporter {
           uxLog("warning", this, c.yellow(`⚠ Validation failed for ${fileName}: ${validation.error}`));
         }
       } catch (e) {
-        uxLog("warning", this, c.yellow(`Could not get file size for ${fileName}: ${(e as Error).message}`));
+        uxLog("warning", this, c.yellow(t('couldNotGetFileSizeFor', { fileName, as: (e as Error).message })));
         validationStatus = 'Invalid';
         validationError = (e as Error).message;
         isValidFile = false;
@@ -772,21 +781,21 @@ export class FilesExporter {
 
     // Log based on download success AND validation success
     if (downloadResult.success && isValidFile) {
-      uxLog("success", this, c.grey(`Downloaded ${fileDisplay}`));
+      uxLog("success", this, c.grey(t('downloaded', { fileDisplay })));
       this.filesDownloaded++;
 
       // Write success entry to CSV log with Salesforce IDs and validation status
       await this.writeCsvLogEntry('success', folderPath, fileName, extension, fileSizeKB, '', contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     } else if (downloadResult.success && !isValidFile) {
       // File was downloaded but validation failed
-      uxLog("warning", this, c.red(`Invalid ${fileDisplay} - validation failed`));
+      uxLog("warning", this, c.red(t('invalidValidationFailed', { fileDisplay })));
       this.filesErrors++;
 
       // Write invalid entry to CSV log with validation error details
       await this.writeCsvLogEntry('invalid', folderPath, fileName, extension, fileSizeKB, validationError, contentDocumentId, contentVersionId, attachmentId, validationStatus, fetchUrl);
     } else {
       // Download failed
-      uxLog("warning", this, c.red(`Error ${fileDisplay}`));
+      uxLog("warning", this, c.red(t('error', { fileDisplay })));
       this.filesErrors++;
 
       // Write failed entry to CSV log with Salesforce IDs and validation status
@@ -798,7 +807,7 @@ export class FilesExporter {
     // Check file size filter (BodyLength is in bytes)
     const fileSizeKB = attachment.BodyLength ? Math.round(attachment.BodyLength / 1024) : 0;
     if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
-      uxLog("log", this, c.grey(`Skipped - ${attachment.Name} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      uxLog("log", this, c.grey(t('skippedFileSizeKbBelowMinimumKb', { attachment: attachment.Name, fileSizeKB, dtl: this.dtl.fileSizeMin })));
       this.filesIgnoredSize++;
 
       // Log skipped file to CSV
@@ -835,7 +844,7 @@ export class FilesExporter {
     // Check file size filter (ContentSize is in bytes)
     const fileSizeKB = contentVersion.ContentSize ? Math.round(contentVersion.ContentSize / 1024) : 0;
     if (this.dtl.fileSizeMin && this.dtl.fileSizeMin > 0 && fileSizeKB < this.dtl.fileSizeMin) {
-      uxLog("log", this, c.grey(`Skipped - ${contentVersion.Title} - File size (${fileSizeKB} KB) below minimum (${this.dtl.fileSizeMin} KB)`));
+      uxLog("log", this, c.grey(t('skippedFileSizeKbBelowMinimumKb2', { contentVersion: contentVersion.Title, fileSizeKB, dtl: this.dtl.fileSizeMin })));
       this.filesIgnoredSize++;
 
       // Log skipped file to CSV
@@ -885,7 +894,7 @@ export class FilesExporter {
     }
     // Check file extension
     if (this.dtl.fileTypes !== 'all' && !this.dtl.fileTypes.includes(contentVersion.FileType)) {
-      uxLog("log", this, c.grey(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File type ignored`));
+      uxLog("log", this, c.grey(t('skippedFileTypeIgnored', { outputFile: outputFile.replace(this.exportedFilesFolder, '') })));
       this.filesIgnoredType++;
 
       // Log skipped file to CSV
@@ -895,7 +904,7 @@ export class FilesExporter {
     }
     // Check file overwrite (unless in resume mode where downloadFile handles existing files)
     if (this.dtl.overwriteFiles !== true && !this.resumeExport && fs.existsSync(outputFile)) {
-      uxLog("warning", this, c.yellow(`Skipped - ${outputFile.replace(this.exportedFilesFolder, '')} - File already existing`));
+      uxLog("warning", this, c.yellow(t('skippedFileAlreadyExisting', { outputFile: outputFile.replace(this.exportedFilesFolder, '') })));
       this.filesIgnoredExisting++;
 
       // Log skipped file to CSV
@@ -917,9 +926,9 @@ export class FilesExporter {
     // Display final API usage summary
     try {
       const finalApiUsage = await this.getApiUsageStatus();
-      uxLog("success", this, c.green(`Export completed! Final API usage: ${finalApiUsage.message}`));
+      uxLog("success", this, c.green(t('exportCompletedFinalApiUsage', { finalApiUsage: finalApiUsage.message })));
     } catch (error) {
-      uxLog("warning", this, c.yellow(`Could not retrieve final API usage: ${(error as Error).message}`));
+      uxLog("warning", this, c.yellow(t('couldNotRetrieveFinalApiUsage', { error: (error as Error).message })));
     }
 
     const result = {
@@ -960,6 +969,7 @@ export class FilesImporter {
   private dtl: any = null; // export config
   private exportedFilesFolder: string = '';
   private handleOverwrite = false;
+  private agentMode: boolean;
   private logFile: string;
 
   // Statistics tracking
@@ -976,12 +986,13 @@ export class FilesImporter {
   constructor(
     filesPath: string,
     conn: Connection,
-    options: { exportConfig?: any; handleOverwrite?: boolean },
+    options: { exportConfig?: any; handleOverwrite?: boolean; agentMode?: boolean },
     commandThis: any
   ) {
     this.filesPath = filesPath;
     this.exportedFilesFolder = path.join(this.filesPath, 'export');
     this.handleOverwrite = options?.handleOverwrite === true;
+    this.agentMode = options?.agentMode === true;
     this.conn = conn;
     this.commandThis = commandThis;
     if (options.exportConfig) {
@@ -1001,8 +1012,8 @@ export class FilesImporter {
     await fs.ensureDir(path.dirname(this.logFile));
     const headers = 'Status,Folder,File Name,Extension,File Size (KB),Error Detail,ContentVersion Id\n';
     await fs.writeFile(this.logFile, headers, 'utf8');
-    uxLog("log", this.commandThis, c.grey(`CSV log file initialized: ${this.logFile}`));
-    WebSocketClient.sendReportFileMessage(this.logFile, "Imported files report (CSV)", 'report');
+    uxLog("log", this.commandThis, c.grey(t('csvLogFileInitialized', { logFile: this.logFile })));
+    WebSocketClient.sendReportFileMessage(this.logFile, t('importedFilesReportCsv'), 'report');
   }
 
   // Helper method to extract file information from file path
@@ -1037,7 +1048,7 @@ export class FilesImporter {
 
       await fs.appendFile(this.logFile, csvLine, 'utf8');
     } catch (e) {
-      uxLog("warning", this.commandThis, c.yellow(`Error writing to CSV log: ${(e as Error).message}`));
+      uxLog("warning", this.commandThis, c.yellow(t('errorWritingToCsvLog', { as: (e as Error).message })));
     }
   }
 
@@ -1046,7 +1057,7 @@ export class FilesImporter {
     if (this.dtl === null) {
       this.dtl = await getFilesWorkspaceDetail(this.filesPath);
     }
-    uxLog("action", this.commandThis, c.cyan(`Importing files from ${c.green(this.dtl.full_label)} ...`));
+    uxLog("action", this.commandThis, c.cyan(t('importingFilesFrom', { dtl: c.green(this.dtl.full_label) })));
     uxLog("log", this.commandThis, c.italic(c.grey(this.dtl.description)));
 
     // Get folders and files
@@ -1068,7 +1079,7 @@ export class FilesImporter {
     await this.initializeCsvLog();
 
     // Start progress tracking
-    WebSocketClient.sendProgressStartMessage("Importing files", this.totalFiles);
+    WebSocketClient.sendProgressStartMessage(t('importingFiles'), this.totalFiles);
     const soqlQueryWithLimit = await parseSoqlAndReapplyLimit(this.dtl.soqlQuery, undefined, this);
     // Query parent objects to find Ids corresponding to field value used as folder name
     const parentObjectsRes = await bulkQuery(soqlQueryWithLimit, this.conn);
@@ -1077,7 +1088,7 @@ export class FilesImporter {
     let processedFiles = 0;
 
     for (const recordFolder of allRecordFolders) {
-      uxLog("log", this.commandThis, c.grey(`Processing record ${recordFolder} ...`));
+      uxLog("log", this.commandThis, c.grey(t('processingRecord', { recordFolder })));
       const recordFolderPath = path.join(this.exportedFilesFolder, recordFolder);
 
       // List files in folder
@@ -1091,7 +1102,7 @@ export class FilesImporter {
       );
 
       if (parentRecordIds.length === 0) {
-        uxLog("error", this.commandThis, c.red(`Unable to find Id for ${this.dtl.outputFolderNameField}=${recordFolder}`));
+        uxLog("error", this.commandThis, c.red(t('unableToFindIdFor', { dtl: this.dtl.outputFolderNameField, recordFolder })));
 
         // Log all files in this folder as skipped
         for (const file of files) {
@@ -1137,21 +1148,21 @@ export class FilesImporter {
 
           if (matchingExistingDocs.length > 0) {
             contentVersionParams.ContentDocumentId = matchingExistingDocs[0].ContentDocumentId;
-            uxLog("log", this.commandThis, c.grey(`Overwriting file ${file} ...`));
+            uxLog("log", this.commandThis, c.grey(t('overwritingFile', { file })));
             isOverwrite = true;
           } else {
             contentVersionParams.FirstPublishLocationId = parentRecordId;
-            uxLog("log", this.commandThis, c.grey(`Uploading file ${file} ...`));
+            uxLog("log", this.commandThis, c.grey(t('uploadingFile', { file })));
           }
 
           const insertResult = await this.conn.sobject('ContentVersion').create(contentVersionParams);
 
           if (Array.isArray(insertResult) && insertResult.length === 0) {
-            uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
+            uxLog("error", this.commandThis, c.red(t('unableToUploadFile', { file })));
             await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, 'Upload failed', '');
             this.filesErrors++;
           } else if (Array.isArray(insertResult) && !insertResult[0].success) {
-            uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}`));
+            uxLog("error", this.commandThis, c.red(t('unableToUploadFile', { file })));
             await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, insertResult[0].errors?.join(', ') || 'Upload failed', '');
             this.filesErrors++;
           } else {
@@ -1161,18 +1172,18 @@ export class FilesImporter {
               : (insertResult as any).id || '';
 
             if (isOverwrite) {
-              uxLog("success", this.commandThis, c.grey(`Overwritten ${file}`));
+              uxLog("success", this.commandThis, c.grey(t('overwritten', { file })));
               await this.writeCsvLogEntry('overwritten', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesOverwritten++;
             } else {
-              uxLog("success", this.commandThis, c.grey(`Uploaded ${file}`));
+              uxLog("success", this.commandThis, c.grey(t('uploaded', { file })));
               await this.writeCsvLogEntry('success', recordFolder, fileName, extension, fileSizeKB, '', contentVersionId);
               this.filesUploaded++;
             }
           }
         } catch (e) {
           const errorDetail = (e as Error).message;
-          uxLog("error", this.commandThis, c.red(`Unable to upload file ${file}: ${errorDetail}`));
+          uxLog("error", this.commandThis, c.red(t('unableToUploadFile2', { file, errorDetail })));
           await this.writeCsvLogEntry('failed', recordFolder, fileName, extension, fileSizeKB, errorDetail, '');
           this.filesErrors++;
         }
@@ -1230,7 +1241,7 @@ export class FilesImporter {
 
     // Check if there are enough API calls available
     // Request user confirmation
-    if (!isCI) {
+    if (!isCI && !this.agentMode) {
       const warningMessage = c.cyanBright(
         `Files import consumes one REST API call per uploaded file.
         (Estimation: ${bulkCallsNb} Bulks calls and ${totalFilesNumber} REST calls) Do you confirm you want to proceed ?`
@@ -1238,7 +1249,7 @@ export class FilesImporter {
       const promptRes = await prompts({
         type: 'confirm',
         message: warningMessage,
-        description: 'Confirm file import operation which will consume API calls'
+        description: t('confirmFileImportOperationWhichWillConsumeApiCalls')
       });
       if (promptRes.value !== true) {
         throw new SfError('Command cancelled by user');
@@ -1276,7 +1287,7 @@ export async function selectFilesWorkspace(opts = { selectFilesLabel: 'Please se
     type: 'select',
     name: 'value',
     message: c.cyanBright(opts.selectFilesLabel),
-    description: 'Select the files workspace configuration to use for this operation',
+    description: t('chooseFilesDataWorkspaceToUseForExport'),
     choices: choices,
   });
   return filesDirResult.value;
@@ -1286,9 +1297,9 @@ export async function getFilesWorkspaceDetail(filesWorkspace: string) {
   const exportFile = path.join(filesWorkspace, 'export.json');
   if (!fs.existsSync(exportFile)) {
     uxLog(
-      "warning",
+      "action",
       this,
-      c.yellow(
+      c.cyan(
         `Your File export folder ${c.bold(filesWorkspace)} must contain an ${c.bold('export.json')} configuration file`
       )
     );
@@ -1332,21 +1343,21 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
           message: c.cyanBright(
             'Please input the files export config folder name (PascalCase format)'
           ),
-          description: 'The folder name that will be created to store the export configuration and downloaded files',
-          placeholder: 'Ex: OpportunitiesPDF',
+          description: t('theFolderNameThatWillBeCreatedForExportConfig'),
+          placeholder: t('exOpportunitiesPdf'),
         },
         {
           type: 'text',
           name: 'sfdxHardisLabel',
-          message: c.cyanBright('Please input a label for the files export configuration'),
-          description: 'A human-readable label that will identify this export configuration',
+          message: c.cyanBright(t('pleaseInputLabelForTheFilesExport')),
+          description: t('aHumanReadableLabelForExportConfig'),
           initial: filesExportConfig.sfdxHardisLabel,
         },
         {
           type: 'text',
           name: 'sfdxHardisDescription',
-          message: c.cyanBright('Please input a description of the files export configuration'),
-          description: 'A detailed description explaining what this export configuration does',
+          message: c.cyanBright(t('pleaseInputDescriptionOfTheFilesExport')),
+          description: t('aDetailedDescriptionForExportConfig'),
           initial: filesExportConfig.sfdxHardisDescription,
         },
       ]
@@ -1359,29 +1370,29 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         name: 'soqlQuery',
         message:
           'Please input the main SOQL Query to fetch the parent records of files (ContentVersions)',
-        description: 'SOQL query that retrieves the parent records to which files are attached',
-        placeholder: 'Ex: SELECT Id,Name from Opportunity',
+        description: t('soqlQueryThatRetrievesParentRecords'),
+        placeholder: t('exSelectIdNameFromOpportunity'),
         initial: filesExportConfig.soqlQuery,
       },
       {
         type: 'text',
         name: 'outputFolderNameField',
-        message: 'Please input the field to use to build the name of the folder containing downloaded files',
-        description: 'Field name from the SOQL query result that will be used as folder name for organizing files',
-        placeholder: 'Ex: Name',
+        message: t('pleaseInputTheFieldToUseTo'),
+        description: t('fieldNameFromSoqlQueryForFolderName'),
+        placeholder: t('exName'),
         initial: filesExportConfig.outputFolderNameField,
       },
       {
         type: 'select',
         name: 'outputFileNameFormat',
         choices: [
-          { value: 'title', title: 'title (ex: "Cloudity New Project")' },
-          { value: 'title_id', title: 'title_id (ex: "Cloudity New Project_006bR00000Bet7WQAR")' },
-          { value: 'id_title', title: 'id_title (ex: "006bR00000Bet7WQAR_Cloudity New Project")' },
-          { value: 'id', title: 'id (ex: "006bR00000Bet7WQAR")' },
+          { value: 'title', title: t('choiceOutputFileNameFormatTitle') },
+          { value: 'title_id', title: t('choiceOutputFileNameFormatTitleId') },
+          { value: 'id_title', title: t('choiceOutputFileNameFormatIdTitle') },
+          { value: 'id', title: t('choiceOutputFileNameFormatId') },
         ],
-        message: 'Please select the format of output files names',
-        description: 'Choose how downloaded file names should be formatted',
+        message: t('pleaseSelectTheFormatOfOutputFiles'),
+        description: t('chooseHowDownloadedFileNamesShouldBeFormatted'),
         initial: filesExportConfig.outputFileNameFormat,
       },
       {
@@ -1389,22 +1400,22 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
         name: 'overwriteParentRecords',
         message:
           'Do you want to try to download files attached to a parent records whose folder is already existing in local folders ?',
-        description: 'Allow downloading files for records that already have a local folder',
+        description: t('allowDownloadingFilesForRecordsWithExistingFolder'),
         initial: filesExportConfig.overwriteParentRecords,
       },
       {
         type: 'confirm',
         name: 'overwriteFiles',
-        message: 'Do you want to overwrite file that has already been previously downloaded ?',
-        description: 'Replace existing local files with newly downloaded versions',
+        message: t('doYouWantToOverwriteFileThat'),
+        description: t('replaceExistingLocalFilesWithNewVersions'),
         initial: filesExportConfig.overwriteFiles,
       },
       {
         type: 'number',
         name: 'fileSizeMin',
-        message: 'Please input the minimum file size in KB (0 = no minimum)',
-        description: 'Only files with size greater than or equal to this value will be downloaded (in kilobytes)',
-        placeholder: 'Ex: 10',
+        message: t('pleaseInputTheMinimumFileSizeIn'),
+        description: t('onlyFilesWithSizeGreaterThanValueDownloaded'),
+        placeholder: t('exTen'),
         initial: filesExportConfig.fileSizeMin || 0,
         min: 0,
       },
@@ -1427,24 +1438,12 @@ export async function promptFilesExportConfiguration(filesExportConfig: any, ove
 }
 
 export async function countLinesInFile(file: string) {
-  let readError;
   let lineCount = 0;
   return await new Promise((resolve) => {
-    fs.createReadStream(file)
-      .pipe(split())
-      .on('data', () => {
-        lineCount++;
-      })
-      .on('end', () => {
-        if (readError) {
-          return;
-        }
-        resolve(lineCount - 1);
-      })
-      .on('error', (error) => {
-        readError = true;
-        resolve(error);
-      });
+    const rl = createInterface({ input: fs.createReadStream(file), crlfDelay: Infinity });
+    rl.on('line', () => { lineCount++; });
+    rl.on('close', () => { resolve(lineCount); });
+    rl.on('error', (error) => { resolve(error); });
   });
 }
 
@@ -1470,7 +1469,8 @@ export async function generateReportPath(fileNamePrefix: string, outputFile: str
     const reportDir = await getReportDirectory();
     const fileNameParts: string[] = [fileNamePrefix];
     if (withBranchName) {
-      fileNameParts.push(!isGitRepo() ? 'no-git' : process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || 'branch-not-found');
+      // No slash left in the file name part, whatever the number of slashes of the branch name
+      fileNameParts.push((!isGitRepo() ? 'no-git' : process.env.CI_COMMIT_REF_NAME || (await getCurrentGitBranch({ formatted: true })) || 'branch-not-found').replace(/[\\/]/g, '__'));
     }
     if (withDate) {
       fileNameParts.push(new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0]);
@@ -1496,6 +1496,8 @@ export interface ExcelColumnStyle {
   width?: number;
   hyperlinkFromValue?: boolean;
   maxHeight?: number;
+  horizontalAlignment?: 'left' | 'center' | 'right';
+  verticalAlignment?: 'top' | 'middle' | 'bottom';
 }
 
 export interface ExcelExportOptions {
@@ -1505,6 +1507,66 @@ export interface ExcelExportOptions {
   noExcel?: boolean;
   columnsCustomStyles?: Record<string, ExcelColumnStyle>;
   skipNotifyToWebSocket?: boolean;
+  // Maps an absolute CSV file path to an explicit worksheet name (overrides the file basename)
+  worksheetNames?: Record<string, string>;
+  // Header names (case-insensitive) whose CSV values must stay as text instead of being auto-typed.
+  // Use for identifier columns with significant leading zeros (e.g. key prefixes "001").
+  // Note: enabling this replaces date auto-detection with number-only coercion for the workbook.
+  forceTextColumns?: string[];
+  // Called with the fully built workbook just before it is written, so callers can add cross-sheet
+  // navigation (internal hyperlinks) or any other final touch. The context maps each source CSV
+  // file path to its final (sanitized and de-duplicated) worksheet name.
+  postProcessWorkbook?: (
+    workbook: ExcelJS.Workbook,
+    context: { worksheetNameByCsvFile: Record<string, string> }
+  ) => void | Promise<void>;
+  // Auto-wrap long free-text columns for readability (on by default). When a column has no explicit
+  // style in columnsCustomStyles and its longest value exceeds autoWrapThreshold characters, its width
+  // is capped to autoWrapWidth, word-wrap is enabled, and its rows are bounded to autoWrapMaxHeight.
+  // Set to false to keep the legacy behavior (width = longest value, no wrap).
+  autoWrapLongText?: boolean;
+  // Longest-value length (in characters) above which a column is considered long free text. Default 50.
+  autoWrapThreshold?: number;
+  // Capped width (in characters) applied to auto-wrapped columns. Default 60.
+  autoWrapWidth?: number;
+  // Maximum row height (in points) for auto-wrapped columns, so tall cells stay bounded. Default 150.
+  autoWrapMaxHeight?: number;
+  // Turn every cell whose whole content is a URL into a clickable hyperlink (on by default).
+  // Set to false to keep the URLs as plain text; columns with hyperlinkFromValue stay clickable.
+  autoHyperlinks?: boolean;
+}
+
+// The VS Code UI never renders more than UX_LOG_TABLE_MAX_UI_ROWS rows of a table sent by uxLogTable.
+export const UX_LOG_TABLE_MAX_UI_ROWS = 20;
+
+/**
+ * Displays a table in the console / VS Code UI, and generates a CSV + XLSX report when the table
+ * holds more rows than the VS Code UI can display, so the user can open the full list.
+ * Use it instead of uxLogTable each time the number of rows is data-driven and can exceed 20.
+ */
+export async function uxLogTableWithReport(
+  commandThis: any,
+  tableData: any[],
+  columnsOrder: string[] = [],
+  reportOptions: { fileNamePrefix: string; fileTitle?: string; outputFile?: string | null } = { fileNamePrefix: 'report' }
+): Promise<any> {
+  uxLogTable(commandThis, tableData, columnsOrder);
+  if ((tableData || []).length <= UX_LOG_TABLE_MAX_UI_ROWS) {
+    return null;
+  }
+  const reportRows =
+    columnsOrder.length > 0
+      ? tableData.map((row) => {
+        const projected: Record<string, any> = Object.fromEntries(columnsOrder.map((col) => [col, row[col] ?? '']));
+        // Keep the sensitive-values marker so the report file anonymization still sees it
+        if (row != null && typeof row === 'object' && SENSITIVE_VALUES_KEY in row) {
+          projected[SENSITIVE_VALUES_KEY] = row[SENSITIVE_VALUES_KEY];
+        }
+        return projected;
+      })
+      : tableData;
+  const outputFile = await generateReportPath(reportOptions.fileNamePrefix, reportOptions.outputFile || '');
+  return await generateCsvFile(reportRows, outputFile, { fileTitle: reportOptions.fileTitle || reportOptions.fileNamePrefix });
 }
 
 export async function generateCsvFile(
@@ -1514,11 +1576,24 @@ export async function generateCsvFile(
 ): Promise<any> {
   const result: any = {};
   try {
+    // Anonymize sensitive data in the written file (CI artifact, email attachment):
+    // level "standard" in CI by default, "off" locally, see anonymizeUtils.ts
+    const anonymizationLevel = await getChannelAnonymizationLevel('files');
+    const anonymizationNotice = consumeAnonymizationNotice(anonymizationLevel);
+    if (anonymizationNotice) {
+      uxLog("log", this, c.grey(t('anonymizationActive', { level: anonymizationLevel })));
+      if (anonymizationNotice.legacyEnvVarUsed) {
+        uxLog("warning", this, c.yellow(t('anonymizationLegacyEnvVarDeprecated')));
+      }
+    }
+    data = anonymizeRows(data, anonymizationLevel);
     const csvContent = Papa.unparse(data);
     await fs.writeFile(outputPath, csvContent, 'utf8');
-    uxLog("action", this, c.cyan(c.italic(`Please see detailed CSV log in ${c.bold(outputPath)}`)));
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
+    }
     result.csvFile = outputPath;
-    if (!WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
+    if (!isAgentMode() && !WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
       WebSocketClient.requestOpenFile(outputPath);
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
@@ -1527,11 +1602,12 @@ export async function generateCsvFile(
     }
     if (data.length > 0 && !options?.noExcel) {
       await createXlsxFromCsv(outputPath, options, result);
-    } else {
-      uxLog("other", this, c.grey(`No XLS file generated as ${outputPath} is empty`));
+    } else if (data.length === 0) {
+      // noExcel is a deliberate caller choice: only log when the skip reason really is emptiness.
+      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath })));
     }
   } catch (e) {
-    uxLog("warning", this, c.yellow('Error while generating CSV log file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+    uxLog("warning", this, c.yellow(t('errorWhileGeneratingCsvLogFile') + (e as Error).message + '\n' + (e as Error).stack));
   }
   return result;
 }
@@ -1545,16 +1621,18 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     // Delete existing file if any
     await fs.remove(xslxFile);
     await csvToXls(outputPath, xslxFile, options);
-    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     result.xlsxFile = xslxFile;
-    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
-        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
       } catch (e) {
-        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+        uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
       }
     }
   } catch (e2) {
@@ -1582,16 +1660,18 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     // Delete existing file if any
     await fs.remove(xslxFile);
     await csvFilesToXls(csvFilesPath, xslxFile, options);
-    uxLog("action", this, c.cyan(c.italic(`Please see detailed XLSX log in ${c.bold(xslxFile)}`)));
+    if (!WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
+    }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
     // result.xlsxFile = xslxFile;
-    if (!isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
+    if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
-        uxLog("other", this, c.italic(c.grey(`Opening XLSX file ${c.bold(xslxFile)}... (define NO_OPEN=true to disable this)`)));
+        uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
         await open(xslxFile, { wait: false });
       } catch (e) {
-        uxLog("warning", this, c.yellow('Error while opening XLSX file:\n' + (e as Error).message + '\n' + (e as Error).stack));
+        uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
       }
     }
   } catch (e2) {
@@ -1607,6 +1687,43 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
   const usedWorksheetNames = new Set<string>();
+  const worksheetNameByCsvFile: Record<string, string> = {};
+
+  // When some columns must stay as text (e.g. "001" key prefixes), install a custom CSV value
+  // mapper so leading zeros survive. It tracks the header row to know which column each cell is in.
+  const forceTextColumns = (options.forceTextColumns ?? []).map((name) => name.trim().toLowerCase());
+  const buildReadOptions = (): any => {
+    if (forceTextColumns.length === 0) {
+      return undefined;
+    }
+    let rowNum = -1;
+    let header: string[] | null = null;
+    return {
+      map: (datum: string, index: number, row: string[]): any => {
+        if (index === 0) {
+          rowNum++;
+        }
+        if (rowNum === 0) {
+          if (header === null) {
+            header = row.map((value) => String(value).trim().toLowerCase());
+          }
+          return datum;
+        }
+        const columnName = header ? header[index] : undefined;
+        if (columnName && forceTextColumns.includes(columnName)) {
+          return datum === '' ? null : String(datum);
+        }
+        if (datum === '') {
+          return null;
+        }
+        const datumNumber = Number(datum);
+        if (!Number.isNaN(datumNumber) && datumNumber !== Infinity) {
+          return datumNumber;
+        }
+        return datum;
+      },
+    };
+  };
 
   const sanitizeWorksheetName = (name: string): string => {
     // Excel constraints: max 31 chars, no : \ / ? * [ ] and no control chars.
@@ -1657,11 +1774,22 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
       console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
       continue;
     }
-    worksheet = await workbook.csv.readFile(csvFile);
-    const desiredWorksheetName = path.basename(csvFile).replace('.csv', '');
+    worksheet = await workbook.csv.readFile(csvFile, buildReadOptions());
+    const desiredWorksheetName = options.worksheetNames?.[csvFile] ?? path.basename(csvFile).replace('.csv', '');
     const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
     worksheet.name = worksheetName;
     usedWorksheetNames.add(worksheetName);
+    worksheetNameByCsvFile[csvFile] = worksheetName;
+    if (forceTextColumns.length > 0) {
+      // Mark the forced-text columns with Excel's text format so the values are not re-interpreted.
+      const headerRow = worksheet.getRow(1);
+      headerRow.eachCell((cell, colNumber) => {
+        const headerName = (cell?.text ?? (cell.value ?? '')).toString().trim().toLowerCase();
+        if (forceTextColumns.includes(headerName)) {
+          worksheet.getColumn(colNumber).numFmt = '@';
+        }
+      });
+    }
     applyWorksheetFormatting(worksheet, options);
     // Scan only the first row and convert string formulas
     const firstRow = worksheet.getRow(1);
@@ -1671,18 +1799,37 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
       }
     });
   }
+  if (options.postProcessWorkbook) {
+    await options.postProcessWorkbook(workbook, { worksheetNameByCsvFile });
+  }
   await workbook.xlsx.writeFile(xslxFile);
 }
 
-function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
-  worksheet.autoFilter = 'A1:Z1';
+// Extra width (in characters) reserved on auto-fit columns so the filter dropdown button does not
+// clip the header text.
+const AUTOFILTER_BUTTON_PADDING = 3;
 
+// Rough estimate of how many wrapped lines a cell text needs at a given column width. Used both to
+// size row heights and to decide vertical alignment (single line vs multi line).
+function estimateLineCount(text: string, width: number): number {
+  const charsPerLine = Math.max(1, Math.floor(width > 0 ? width : 10));
+  return (text || '')
+    .split(/\r?\n/)
+    .reduce((acc, segment) => acc + Math.max(1, Math.ceil(segment.length / charsPerLine)), 0);
+}
+
+export function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelExportOptions) {
   if (!worksheet.columns) {
     return;
   }
 
   const columnStylePreferences = new Map<string, ExcelColumnStyle>();
   const columnMaxHeightConstraints = new Map<number, number>();
+  // Columns whose URLs must be clickable even when autoHyperlinks is turned off
+  const forcedHyperlinkColumns = new Set<number>();
+  // Set to true when at least one column gets auto-wrapped, so we can top-align the whole sheet
+  // afterwards (short cells otherwise float at the bottom of rows made tall by a wrapped neighbor).
+  let sheetDidAutoWrap = false;
   Object.entries(options?.columnsCustomStyles ?? {}).forEach(([columnName, style]) => {
     if (!columnName || !style) {
       return;
@@ -1694,6 +1841,12 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
       width: typeof style.width === 'number' && style.width > 0 ? style.width : undefined,
       hyperlinkFromValue: style.hyperlinkFromValue === true,
       maxHeight: typeof style.maxHeight === 'number' && style.maxHeight > 0 ? style.maxHeight : undefined,
+      horizontalAlignment: ['left', 'center', 'right'].includes(style.horizontalAlignment as string)
+        ? style.horizontalAlignment
+        : undefined,
+      verticalAlignment: ['top', 'middle', 'bottom'].includes(style.verticalAlignment as string)
+        ? style.verticalAlignment
+        : undefined,
     };
 
     columnStylePreferences.set(normalizedName, sanitizedStyle);
@@ -1706,7 +1859,62 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
     headerByColumn.set(colNumber, headerValue);
   });
 
-  const shouldAutoFit = worksheet.rowCount < 5000;
+  const shouldAutoFit = worksheet.rowCount < 10000;
+
+  // Add an Excel table (Insert > Table equivalent) for small-to-medium datasets
+  if (shouldAutoFit && worksheet.rowCount > 1 && worksheet.columnCount > 0) {
+    const lastCol = worksheet.columnCount;
+    const lastRow = worksheet.rowCount;
+
+    // Build unique column names - Excel tables require all column names to be distinct
+    const usedColumnNames = new Set<string>();
+    const tableColumns: { name: string; filterButton: boolean }[] = [];
+    for (let colNum = 1; colNum <= lastCol; colNum++) {
+      let colName = (headerByColumn.get(colNum) ?? '').trim() || `Column${colNum}`;
+      if (usedColumnNames.has(colName)) {
+        colName = `${colName}_${colNum}`;
+      }
+      usedColumnNames.add(colName);
+      tableColumns.push({ name: colName, filterButton: true });
+    }
+
+    // Snapshot existing cell values so addTable can rewrite them into the table range
+    const tableRows: any[][] = [];
+    for (let rowNum = 2; rowNum <= lastRow; rowNum++) {
+      const row = worksheet.getRow(rowNum);
+      const rowData: any[] = [];
+      for (let colNum = 1; colNum <= lastCol; colNum++) {
+        rowData.push(row.getCell(colNum).value ?? '');
+      }
+      tableRows.push(rowData);
+    }
+
+    // Table names must be unique across the whole workbook. Worksheet names alone are not enough:
+    // two long object names that share their first characters collapse to the same truncated table
+    // name, and Excel flags such duplicates as unreadable content. Appending the worksheet id
+    // (unique per workbook) guarantees uniqueness.
+    const safeTableName = `Table_${(worksheet.name || 'Sheet').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 25)}_${worksheet.id}`;
+
+    try {
+      worksheet.addTable({
+        name: safeTableName,
+        ref: 'A1',
+        headerRow: true,
+        totalsRow: false,
+        style: {
+          theme: 'TableStyleMedium2',
+          showRowStripes: true,
+        },
+        columns: tableColumns,
+        rows: tableRows,
+      });
+    } catch (_e) {
+      // Table creation failed - fall back to a plain auto-filter
+      worksheet.autoFilter = 'A1:Z1';
+    }
+  } else {
+    worksheet.autoFilter = 'A1:Z1';
+  }
 
   worksheet.columns.forEach((column, idx) => {
     if (!column) {
@@ -1724,7 +1932,31 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
       const lengths = (column.values || []).map((value) => (value ?? '').toString().length);
       const filteredLengths = lengths.filter((len) => Number.isFinite(len));
       const maxLength = filteredLengths.length > 0 ? Math.max(...filteredLengths) : 10;
-      column.width = maxLength;
+      const autoWrapEnabled = options?.autoWrapLongText !== false;
+      const autoWrapThreshold =
+        typeof options?.autoWrapThreshold === 'number' && options.autoWrapThreshold > 0 ? options.autoWrapThreshold : 50;
+      if (autoWrapEnabled && maxLength > autoWrapThreshold) {
+        // Long free-text column (utterances, expected/actual values, descriptions, error messages...):
+        // cap the width and word-wrap instead of stretching the column to the full string length, which
+        // would make the sheet unreadable. Row height is bounded below via columnMaxHeightConstraints.
+        const autoWrapWidth =
+          typeof options?.autoWrapWidth === 'number' && options.autoWrapWidth > 0 ? options.autoWrapWidth : 60;
+        const autoWrapMaxHeight =
+          typeof options?.autoWrapMaxHeight === 'number' && options.autoWrapMaxHeight > 0 ? options.autoWrapMaxHeight : 150;
+        column.width = autoWrapWidth;
+        column.alignment = { ...(column.alignment || {}), wrapText: true, vertical: 'top' };
+        column.eachCell?.({ includeEmpty: true }, (cell) => {
+          cell.alignment = { ...(cell.alignment || {}), wrapText: true, vertical: 'top' };
+        });
+        sheetDidAutoWrap = true;
+        if (columnNumber) {
+          columnMaxHeightConstraints.set(columnNumber, autoWrapMaxHeight);
+        }
+      } else {
+        // The filter dropdown button overlaps the right side of the header cell, so a width equal to
+        // the longest value (often the header itself) clips the header text. Add room for the button.
+        column.width = maxLength + AUTOFILTER_BUTTON_PADDING;
+      }
     }
 
     if (stylePreferences?.wrap) {
@@ -1735,16 +1967,29 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
       });
     }
 
-    if (stylePreferences?.hyperlinkFromValue) {
+    if (stylePreferences?.horizontalAlignment) {
+      const horizontal = stylePreferences.horizontalAlignment;
+      column.alignment = { ...(column.alignment || {}), horizontal };
       column.eachCell?.({ includeEmpty: true }, (cell) => {
-        const hyperlinkTarget = extractHyperlinkTarget(cell);
-        if (!hyperlinkTarget) {
-          return;
-        }
-        const textValue = cell.text?.trim() || hyperlinkTarget;
-        cell.value = { text: textValue, hyperlink: hyperlinkTarget };
-        cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
+        cell.alignment = { ...(cell.alignment || {}), horizontal };
       });
+    }
+
+    if (stylePreferences?.verticalAlignment) {
+      const configured = stylePreferences.verticalAlignment;
+      const columnWidth = typeof column.width === 'number' && column.width > 0 ? column.width : 10;
+      column.alignment = { ...(column.alignment || {}), vertical: configured };
+      column.eachCell?.({ includeEmpty: true }, (cell) => {
+        // Single-line cells look better vertically centered; multi-line cells keep the configured
+        // alignment (e.g. "top") so the first line stays visible when the content is truncated.
+        const text = (cell.text ?? cell.value ?? '').toString();
+        const vertical = estimateLineCount(text, columnWidth) > 1 ? configured : 'middle';
+        cell.alignment = { ...(cell.alignment || {}), vertical };
+      });
+    }
+
+    if (stylePreferences?.hyperlinkFromValue && columnNumber) {
+      forcedHyperlinkColumns.add(columnNumber);
     }
 
     if (stylePreferences?.maxHeight && columnNumber) {
@@ -1752,44 +1997,113 @@ function applyWorksheetFormatting(worksheet: ExcelJS.Worksheet, options: ExcelEx
     }
   });
 
+  // A URL is only useful in a spreadsheet if it can be clicked
+  if (options?.autoHyperlinks !== false) {
+    linkifyWorksheetUrls(worksheet);
+  } else if (forcedHyperlinkColumns.size > 0) {
+    linkifyWorksheetUrls(worksheet, forcedHyperlinkColumns);
+  }
+
+  if (sheetDidAutoWrap) {
+    // A wrapped column makes its row tall. Cells in the other columns default to bottom alignment,
+    // so they float at the bottom of the row, detached from the first line of the wrapped content.
+    // Top-align every data cell that has no explicit vertical alignment so each row reads as one
+    // coherent horizontal record. Cells already aligned (wrapped columns, or columns with an explicit
+    // verticalAlignment style) are left untouched.
+    worksheet.columns.forEach((column) => {
+      column?.eachCell?.({ includeEmpty: true }, (cell, rowNumber) => {
+        if (rowNumber === 1 || cell.alignment?.vertical) {
+          return;
+        }
+        cell.alignment = { ...(cell.alignment || {}), vertical: 'top' };
+      });
+    });
+  }
+
   if (columnMaxHeightConstraints.size > 0) {
+    // ExcelJS never computes a row height, so we cannot just "cap" an existing one: we must
+    // estimate the height each wrapped cell needs from its text length and the column width,
+    // then keep the tallest estimate for the row, bounded by the configured maxHeight. This
+    // gives short cells a normal height and only grows (up to the cap) for long content.
+    const DEFAULT_ROW_HEIGHT = 15;
     worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
       if (rowNumber === 1 || !row) {
         return;
       }
-      let enforcedMaxHeight: number | undefined;
+      let estimatedHeight: number | undefined;
       columnMaxHeightConstraints.forEach((maxHeight, columnNumber) => {
         const cell = row.getCell(columnNumber);
         if (!cell) {
           return;
         }
-        const hasValue = cell.value !== null && cell.value !== undefined && cell.value !== '';
-        if (!hasValue) {
+        const text = (cell.text ?? cell.value ?? '').toString();
+        if (!text) {
           return;
         }
-        enforcedMaxHeight = typeof enforcedMaxHeight === 'number' ? Math.min(enforcedMaxHeight, maxHeight) : maxHeight;
+        const column = worksheet.getColumn(columnNumber);
+        const width = typeof column?.width === 'number' && column.width > 0 ? column.width : 10;
+        const lines = estimateLineCount(text, width);
+        const neededHeight = Math.min(maxHeight, lines * DEFAULT_ROW_HEIGHT);
+        estimatedHeight = typeof estimatedHeight === 'number' ? Math.max(estimatedHeight, neededHeight) : neededHeight;
       });
-      if (typeof enforcedMaxHeight === 'number') {
-        if (!row.height || row.height > enforcedMaxHeight) {
-          row.height = enforcedMaxHeight;
-        }
+      if (typeof estimatedHeight === 'number' && estimatedHeight > DEFAULT_ROW_HEIGHT) {
+        row.height = estimatedHeight;
       }
     });
   }
 }
 
+// Excel refuses to open a worksheet holding more than 65,530 hyperlinks, and truncates a link target
+// past 2084 characters. Beyond those limits the URLs stay plain text rather than break the file.
+const MAX_WORKSHEET_HYPERLINKS = 65000;
+const MAX_HYPERLINK_LENGTH = 2000;
+
+/**
+ * Turns every cell whose whole content is a URL into a clickable hyperlink, so that the URL columns
+ * of any generated report (release notes, monitoring, documentation...) can be clicked instead of
+ * being copy-pasted. Pass onlyColumns to restrict the conversion to some column numbers.
+ * Returns the number of converted cells.
+ */
+export function linkifyWorksheetUrls(worksheet: ExcelJS.Worksheet, onlyColumns?: Set<number>): number {
+  let linkCount = 0;
+  worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    // Row 1 holds the column names, not data
+    if (rowNumber === 1 || !row || linkCount >= MAX_WORKSHEET_HYPERLINKS) {
+      return;
+    }
+    row.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+      if (linkCount >= MAX_WORKSHEET_HYPERLINKS || (onlyColumns && !onlyColumns.has(colNumber))) {
+        return;
+      }
+      const hyperlinkTarget = extractHyperlinkTarget(cell);
+      if (!hyperlinkTarget) {
+        return;
+      }
+      cell.value = { text: cell.text?.trim() || hyperlinkTarget, hyperlink: hyperlinkTarget };
+      cell.font = { ...(cell.font || {}), color: { argb: 'FF0563C1' }, underline: true };
+      linkCount++;
+    });
+  });
+  if (linkCount >= MAX_WORKSHEET_HYPERLINKS) {
+    uxLog("log", this, c.grey('[XLSX] ' + t('xlsxHyperlinksLimitReached', { worksheet: worksheet.name, max: MAX_WORKSHEET_HYPERLINKS })));
+  }
+  return linkCount;
+}
+
 function extractHyperlinkTarget(cell: ExcelJS.Cell): string | null {
   const rawValue = typeof cell.value === 'string' ? cell.value : cell.text;
-  if (!rawValue) {
+  if (!rawValue || typeof rawValue !== 'string') {
     return null;
   }
   const trimmed = rawValue.trim();
-  if (!trimmed) {
+  if (!trimmed || trimmed.length > MAX_HYPERLINK_LENGTH) {
     return null;
   }
   return isLikelyHyperlink(trimmed) ? trimmed : null;
 }
 
+// The whole cell must be a single URL: a URL sitting inside a sentence, or one of several URLs
+// listed in the same cell, can not be turned into an Excel hyperlink without losing the rest.
 function isLikelyHyperlink(value: string): boolean {
-  return /^(https?:\/\/|mailto:)/i.test(value);
+  return /^(https?:\/\/|mailto:)\S+$/i.test(value);
 }

@@ -1,12 +1,13 @@
 /* jscpd:ignore-start */
-import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { SfCommand, Flags, optionalOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
-import open from 'open';
+import { open } from '../../../../common/utils/openUtils.js';
 import {
+  buildOrgSlugFromInstanceUrl,
   ensureGitBranch,
   ensureGitRepository,
   execCommand,
@@ -15,13 +16,23 @@ import {
   getGitRepoName,
   git,
   gitAddCommitPush,
+  isCI,
+  isGitWorkflowScopeError,
   uxLog,
 } from '../../../../common/utils/index.js';
+import {
+  logDeploymentRepositoryChange,
+  MONITORING_CONFIG_FILE,
+  resolveDeploymentRepositoryChange,
+} from '../../../../common/monitoring/monitoringDeploymentRepository.js';
 import { prompts } from '../../../../common/utils/prompts.js';
-import { CONSTANTS, setInConfigFile } from '../../../../config/index.js';
+import { CONSTANTS, removeFromConfigFile, setInConfigFile } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../../common/websocketClient.js';
+import { t } from '../../../../common/utils/i18n.js';
+import { buildConventionalCommitMessage } from '../../../../common/utils/gitUtils.js';
+import { addOrgToGithubMonitoringWorkflow, GITHUB_MONITORING_WORKFLOW_PATH } from '../../../../common/utils/monitoringWorkflowUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -31,6 +42,8 @@ export default class OrgConfigureMonitoring extends SfCommand<any> {
 
   public static description = `
 ## Command Behavior
+
+> **This command requires human interaction and must be called manually, preferably from the [VS Code SFDX Hardis UI](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis). It is not suitable for automation or AI agent usage.**
 
 **Configures the monitoring of a Salesforce org within a dedicated Git repository.**
 
@@ -44,9 +57,11 @@ Key functionalities include:
 - **Monitoring Branch Creation:** Creates or checks out a dedicated Git branch (e.g., \`monitoring_yourinstanceurl\`) for the monitoring configuration.
 - **SFDX Project Setup:** Initializes an SFDX project structure within the repository if it doesn't already exist, and copies default monitoring files.
 - **Configuration File Update:** Updates the local \`.sfdx-hardis.yml\` file with the target org's username and instance URL.
+- **Deployment Repository:** Asks for the address of the sfdx-hardis CI/CD repository that deploys to the org (optional, pass \`--deployment-repository\` to skip the question). It is stored as \`deploymentRepository\`, and suggested from the other monitoring branches of the repository. Emptying the answer, or passing an empty \`--deployment-repository\`, removes a value set before. The \`AGENTS.md\` file written at each backup then tells coding agents to search that repository and the pipelines of both repositories.
 - **SSL Certificate Generation:** Generates an SSL certificate for secure authentication to the monitored org.
 - **Automated Commit and Push:** Offers to automatically commit and push the generated configuration files to the remote Git repository.
-- **Scheduling Guidance:** Provides instructions and links for scheduling the monitoring job on the Git server.
+- **Scheduling:** On GitHub, writes the monitoring workflow on the default branch with this org in its matrix and its two secrets in its jobs, since GitHub only schedules, and only offers Run workflow for, the workflows of that branch. On other Git servers, gives the instructions to schedule the job.
+- **Empty repository:** A repository created empty on the Git server gets a first empty commit on \`main\`, so that the monitoring branch has something to start from.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -55,16 +70,30 @@ The command's technical implementation involves a series of Git operations, file
 
 - **Git Operations:** Utilizes \`ensureGitRepository\`, \`getGitRepoName\`, \`execCommand\` (for \`git add\`, \`git stash\`), \`ensureGitBranch\`, and \`gitAddCommitPush\` to manage the Git repository, branches, and commits.
 - **Interactive Prompts:** Employs the \`prompts\` library to interact with the user for confirmations and selections.
-- **File System Management:** Uses \`fs-extra\` for copying default monitoring files (\`defaults/monitoring\`) and managing the SFDX project structure.
+- **File System Management:** Uses Node.js \`fs\` for copying default monitoring files (\`defaults/monitoring\`) and managing the SFDX project structure.
 - **Salesforce CLI Integration:** Calls \`sf project generate\` to create a new SFDX project and uses \`promptOrg\` for Salesforce org authentication and selection.
 - **Configuration Management:** Updates the \`.sfdx-hardis.yml\` file using \`setInConfigFile\` to store org-specific monitoring configurations.
 - **SSL Certificate Generation:** Leverages \`generateSSLCertificate\` to create the necessary SSL certificates for JWT-based authentication to the Salesforce org.
 - **External Tool Integration:** Requires \`openssl\` to be installed on the system for SSL certificate generation.
-- **WebSocket Communication:** Uses \`WebSocketClient.sendRunSfdxHardisCommandMessage\` to restart the command in VS Code if the default org changes, and \`WebSocketClient.sendRefreshStatusMessage\` to update the status.
+- **Org Switch:** When the selected org differs from the one the command started with, it loads the selected org with \`Org.create\` and continues with it, instead of restarting the command.
+- **WebSocket Communication:** Uses \`WebSocketClient.sendRefreshStatusMessage\` to update the status.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.8 - Monitor your production org](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-8-monitor-your-production-org/)
+
+<!-- training-links:end -->
 `;
 
-  public static examples = ['$ sf hardis:org:configure:monitoring'];
+  public static examples = [
+    '$ sf hardis:org:configure:monitoring',
+    '$ sf hardis:org:configure:monitoring --deployment-repository https://github.com/my-company/my-project',
+  ];
 
   public static flags: any = {
     orginstanceurl: Flags.string({
@@ -81,7 +110,10 @@ The command's technical implementation involves a series of Git operations, file
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'target-org': requiredOrgFlagWithDeprecations,
+    'deployment-repository': Flags.string({
+      description: 'Address of the sfdx-hardis CI/CD repository that deploys to the monitored org, stored as deploymentRepository without prompting. An empty value removes it',
+    }),
+    'target-org': optionalOrgFlagWithDeprecations,
   };
 
   // Comment this out if your command does not require an org username
@@ -102,39 +134,40 @@ The command's technical implementation involves a series of Git operations, file
         type: 'select',
         name: 'value',
         choices: [
-          { title: "Yes, I'm sure because I know what I'm doing, like Roman 😊", value: 'yes' },
-          { title: 'Mmmmm no, let me create another repo with the word "monitoring" in its name !', value: 'no' },
+          { title: t('yesApproveSeparateMonitoringRepo'), value: 'yes' },
+          { title: t('noLetMeCreateAnotherRepo'), value: 'no' },
         ],
         message: c.cyanBright(
-          "Are you sure you want to mix monitoring and deployment sources ?"
+          t('confirmMixMonitoringDeploymentSources')
         ),
-        description: 'It is recommended to separate monitoring configuration from deployment sources in different repositories',
-        placeholder: 'Select an option',
+        description: t('separateMonitoringDeploymentDescription'),
+        placeholder: t('selectAnOption'),
       });
       if (confirmMix.value === 'no') {
         throw new SfError('Your git repository name must contain the expression "monitoring"');
       }
     }
     const preRequisitesUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    uxLog("warning", this, c.yellow('Monitoring pre-requisites documentation: ' + c.bold(preRequisitesUrl)));
-    WebSocketClient.sendReportFileMessage(preRequisitesUrl, 'Monitoring pre-requisites', "docUrl");
+    uxLog("action", this, c.cyan(t('monitoringPreRequisitesLabel')));
+    uxLog("warning", this, c.yellow(t('monitoringPreRequisitesDocumentation') + c.bold(preRequisitesUrl)));
+    WebSocketClient.sendReportFileMessage(preRequisitesUrl, t('monitoringPreRequisitesLabel'), "docUrl");
     // Confirm pre-requisites
     const confirmPreRequisites = await prompts({
       type: 'select',
       name: 'value',
       choices: [
-        { title: '😎 Yes', value: 'yes' },
-        { title: 'ℹ️ No, bring me to the documentation!', value: 'no' },
+        { title: t('promptChoiceYes'), value: 'yes' },
+        { title: t('promptChoiceNoBringToDocumentation'), value: 'no' },
       ],
-      message: c.cyanBright('Did you configure the sfdx-hardis monitoring pre-requisites on your Git server ?'),
-      description: 'Confirm that you have set up the required CI/CD variables and permissions for monitoring',
-      placeholder: 'Select an option',
+      message: c.cyanBright(t('didYouConfigureTheSfdxHardisMonitoring')),
+      description: t('confirmCiCdVariablesAndPermissionsForMonitoring'),
+      placeholder: t('selectAnOption'),
     });
     if (confirmPreRequisites.value === 'no') {
       const msg =
         'Please follow the instructions to configure the sfdx-hardis monitoring pre-requisites on your Git server\n' +
         preRequisitesUrl;
-      uxLog("warning", this, c.yellow(msg));
+      uxLog("action", this, c.cyan(msg));
       await open(preRequisitesUrl, { wait: true });
       return { outputString: msg };
     }
@@ -146,8 +179,7 @@ The command's technical implementation involves a series of Git operations, file
         "action",
         this,
         c.cyan(
-          `Default org ${flags['target-org'].getConnection()?.instanceUrl
-          } is selected, let's configure its monitoring !`
+          t('defaultOrgSelectedForMonitoring', { instanceUrl: flags['target-org'].getConnection()?.instanceUrl })
         )
       );
     } else {
@@ -160,54 +192,72 @@ The command's technical implementation involves a series of Git operations, file
         defaultOrgUsername: flags['target-org']?.getUsername(),
       });
 
-      // Restart command so the org is selected as default org (will help to select profiles)
+      // Continue with the selected org instead of restarting the command: every later step reads
+      // it from the flags. Restarting made the user pick the same org twice.
       if (currentOrgId !== org.orgId) {
-        const infoMsg =
-          'Default org changed. Please restart the same command if VS Code does not do that automatically for you 😊';
-        uxLog("warning", this, c.yellow(infoMsg));
-        const currentCommand = 'sf ' + this.id + ' ' + this.argv.join(' ') + ' --orginstanceurl ' + org.instanceUrl;
-        WebSocketClient.sendRunSfdxHardisCommandMessage(currentCommand);
-        return { outputString: infoMsg };
+        flags['target-org'] = await Org.create({ aliasOrUsername: org.username });
       }
     }
 
     // Build monitoring branch name
     const branchName =
-      'monitoring_' +
-      flags['target-org']
-        ?.getConnection()
-        .instanceUrl.replace('https://', '')
-        .replace('.my.salesforce.com', '')
-        .replace(/\./gm, '_')
-        .replace(/--/gm, '__')
-        .replace(/-/gm, '_');
+      'monitoring_' + buildOrgSlugFromInstanceUrl(flags['target-org']?.getConnection().instanceUrl);
 
-    uxLog("action", this, c.cyan(`Handling monitoring git branch ${c.bold(branchName)}...`));
+    uxLog("action", this, c.cyan(t('handlingMonitoringGitBranch', { branchName: c.bold(branchName) })));
 
-    // Checkout branch, or create it if not existing (stash before if necessary)
-    await execCommand('git add --all', this, { output: true, fail: false });
-    await execCommand('git stash', this, { output: true, fail: false });
+    // A repository created empty on the git server has no commit yet: there is nothing to stash, and
+    // no main to cut the monitoring branch from. Give it its first commit on main.
+    const hasCommit = (await git().raw(['rev-list', '-n', '1', '--all'])).trim() !== '';
+    if (!hasCommit) {
+      uxLog("action", this, c.cyan(t('monitoringRepositoryEmptyInitialCommit')));
+      await git().raw(['checkout', '-B', 'main']);
+      await git().raw(['commit', '--allow-empty', '-m', 'Initial commit']);
+      try {
+        await git().push(['-u', 'origin', 'main']);
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('monitoringInitialCommitNotPushed', { message: (e as Error).message })));
+      }
+    } else {
+      // Checkout branch, or create it if not existing (stash before if necessary)
+      try {
+        await execCommand('git add --all', this, { output: true, fail: false });
+        await execCommand('git stash', this, { output: true, fail: false });
+      } catch (e) {
+        uxLog("warning", this, c.yellow(t('monitoringStashFailed', { message: (e as Error).message })));
+      }
+    }
     await ensureGitBranch(branchName, { parent: 'main', logAsAction: true });
 
     // Create sfdx project if not existing yet
     if (!fs.existsSync('sfdx-project.json')) {
       const createCommand = 'sf project generate' + ` --name "sfdx-hardis-monitoring"`;
-      uxLog("action", this, c.cyan('Creating sfdx-project...'));
+      uxLog("action", this, c.cyan(t('creatingSfdxProject2')));
       await execCommand(createCommand, this, {
         output: true,
         fail: true,
       });
-      uxLog("action", this, c.cyan('Moving sfdx-project to root...'));
+      uxLog("action", this, c.cyan(t('movingSfdxProjectToRoot')));
       await fs.copy('sfdx-hardis-monitoring', process.cwd(), { overwrite: true });
       await fs.remove('sfdx-hardis-monitoring');
 
       // Copying monitoring folder structure
-      uxLog("other", this, 'Copying default monitoring files...');
+      uxLog("other", this, t('copyingDefaultMonitoringFiles'));
       if (fs.existsSync('README.md') && fs.readFileSync('README.md', 'utf8').toString().split('\n').length < 5) {
         // Remove default README if necessary
         await fs.remove('README.md');
       }
       await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/monitoring', '.'), process.cwd(), { overwrite: true });
+    }
+
+    // The CI/CD repository that deploys to this org: the AGENTS.md written by the backup tells coding agents to search it too
+    const deploymentRepositoryChange = await resolveDeploymentRepositoryChange(this, {
+      repository: flags['deployment-repository'],
+      interactive: !isCI,
+      currentBranch: branchName,
+    });
+    logDeploymentRepositoryChange(this, deploymentRepositoryChange);
+    if (deploymentRepositoryChange.action === 'clear') {
+      await removeFromConfigFile(MONITORING_CONFIG_FILE, ['deploymentRepository']);
     }
 
     // Update config file
@@ -216,6 +266,7 @@ The command's technical implementation involves a series of Git operations, file
       {
         targetUsername: flags['target-org'].getUsername(),
         instanceUrl: flags['target-org'].getConnection().instanceUrl,
+        ...(deploymentRepositoryChange.action === 'set' ? { deploymentRepository: deploymentRepositoryChange.value } : {}),
       },
       './.sfdx-hardis.yml'
     );
@@ -228,20 +279,20 @@ The command's technical implementation involves a series of Git operations, file
         type: 'confirm',
         initial: true,
         message: c.cyanBright(
-          `Branch ${branchName} does not exist on server. Do you want to push it now? (it is harmless but required to configure Azure Pipelines for example)`
+          t('branchNotExistsOnServerPushPrompt', { branch: branchName })
         ),
-        description: 'This will create the branch on remote origin; if you don\'t understand this, just say yes 😊',
+        description: t('pushBranchToRemoteDescription'),
       });
       if (confirmPushToRemote.value === true) {
-        uxLog("action", this, c.cyan(`Pushing branch ${c.bold(branchName)} to git remote server...`));
+        uxLog("action", this, c.cyan(t('pushingBranchToGitRemoteServer', { branchName: c.bold(branchName) })));
         await gitAddCommitPush({
-          message: '[sfdx-hardis] Update monitoring configuration',
+          commitMessage: buildConventionalCommitMessage({ subject: 'update monitoring configuration' }),
         });
       }
     }
 
     // Generate SSL certificate (requires openssl to be installed on computer)
-    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), {});
+    await generateSSLCertificate(branchName, './.ssh', this, flags['target-org'].getConnection(), { usageType: 'monitoring', workflowReferencesWrittenByCommand: true });
 
     // Confirm & push on server
     const confirmPush = await prompts({
@@ -249,50 +300,128 @@ The command's technical implementation involves a series of Git operations, file
       name: 'value',
       initial: true,
       message: c.cyanBright(
-        'Do you want sfdx-hardis to save your configuration on server ?'
+        t('saveConfigurationOnServerPrompt')
       ),
-      description: 'Automatically commit and push the monitoring configuration files to your git repository (recommended)',
+      description: t('saveConfigAutocommitDescription'),
     });
 
     if (confirmPush.value === true) {
+      uxLog("action", this, c.cyan(t('savingMonitoringConfigurationOnServer')));
       await gitAddCommitPush({
-        message: '[sfdx-hardis] Update monitoring configuration',
+        commitMessage: buildConventionalCommitMessage({ subject: 'update monitoring configuration' }),
       });
-      uxLog("success", this, c.green('Your configuration for org monitoring is now ready 😊'));
+      uxLog("success", this, c.green(t('yourConfigurationForOrgMonitoringIsNow')));
     } else {
-      uxLog("warning", this, c.yellow('Please manually git add, commit and push to the remote repository 😊'));
+      uxLog("action", this, c.cyan(t('pleaseManuallyGitAddCommitAndPush')));
     }
-    const branch = await getCurrentGitBranch();
+    // On GitHub, the scheduled run needs the workflow on the default branch: put it there.
+    // The workflow file is no signal: the monitoring templates of every git provider are
+    // copied into every monitoring repository, so the remote says which server this is
+    const scheduledFromMain = confirmPush.value === true && fs.existsSync(GITHUB_MONITORING_WORKFLOW_PATH) && (await this.isGithubRemote())
+      ? await this.scheduleGithubMonitoringFromMain(branchName)
+      : false;
+    if (!scheduledFromMain) {
+      const branch = await getCurrentGitBranch();
+      uxLog(
+        "warning",
+        this,
+        c.yellow(
+          t('scheduleMonitoringNightly', { branchName: branch })
+        )
+      );
+      const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
+      const msg = t('followScheduleInstructions') + ' ' + c.bold(scheduleMonitoringUrl);
+      uxLog("warning", this, c.yellow(msg));
+      WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, t('scheduleMonitoringLabel'), "actionUrl");
+    }
     uxLog(
       "warning",
       this,
       c.yellow(
-        `Now you must schedule monitoring to run the job automatically every night on branch ${c.bold(branch)}😊`
+        t('configureNotificationsAndGrafana')
       )
     );
-    const scheduleMonitoringUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-config-home/#instructions`;
-    const msg =
-      'Please follow the instructions to schedule sfdx-hardis monitoring on your Git server: ' +
-      c.bold(scheduleMonitoringUrl);
-    uxLog("warning", this, c.yellow(msg));
-    WebSocketClient.sendReportFileMessage(scheduleMonitoringUrl, 'Schedule sfdx-hardis monitoring', "actionUrl");
-    uxLog(
-      "warning",
-      this,
-      c.yellow(
-        'You can also configure Slack/Teams notifications and Grafana integration to visualize monitoring results more easily.'
-      )
-    );
-    const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-slack/`;
-    WebSocketClient.sendReportFileMessage(slackIntegrationUrl, 'Slack integration', "docUrl");
-    const teamsIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-ms-teams/`;
-    WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, 'Teams integration', "docUrl");
-    const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integration-api/`;
-    WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, 'Grafana integration', "docUrl");
-    uxLog("log", this, 'Slack integration doc: ' + slackIntegrationUrl);
-    uxLog("log", this, 'Teams integration doc: ' + teamsIntegrationUrl);
-    uxLog("log", this, 'Grafana integration doc: ' + grafanaIntegrationUrl);
+    const slackIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-slack/`;
+    WebSocketClient.sendReportFileMessage(slackIntegrationUrl, t('slackIntegrationLabel'), "docUrl");
+    const teamsIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-ms-teams/`;
+    WebSocketClient.sendReportFileMessage(teamsIntegrationUrl, t('teamsIntegrationLabel'), "docUrl");
+    const grafanaIntegrationUrl = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integration-api/`;
+    WebSocketClient.sendReportFileMessage(grafanaIntegrationUrl, t('grafanaIntegrationLabel'), "docUrl");
+    uxLog("log", this, t('slackIntegrationDoc') + ' ' + slackIntegrationUrl);
+    uxLog("log", this, t('teamsIntegrationDoc') + ' ' + teamsIntegrationUrl);
+    uxLog("log", this, t('grafanaIntegrationDoc') + ' ' + grafanaIntegrationUrl);
     // Return an object to be displayed with --json
     return { outputString: 'Configured branch for authentication' };
+  }
+
+  // GitHub schedules, and offers "Run workflow" for, the workflows of the default branch only. Write
+  // the monitoring workflow there with this org in it, keeping the orgs it already monitors.
+  private async isGithubRemote(): Promise<boolean> {
+    try {
+      const remote = (await git().remote(['get-url', 'origin'])) || '';
+      return /github/i.test(remote);
+    } catch {
+      return false;
+    }
+  }
+
+  private async scheduleGithubMonitoringFromMain(branchName: string): Promise<boolean> {
+    let stashed = false;
+    try {
+      // The command has just rewritten the certificate key of this branch, so the
+      // working tree is dirty and git refuses to switch branches. Put the changes
+      // aside for the two commits below and give them back afterwards: without
+      // this the workflow never reaches main and the scheduled run never starts.
+      const dirty = await git().status();
+      if (dirty.files.length > 0) {
+        await git().stash(['push', '--include-untracked', '-m', `sfdx-hardis monitoring ${branchName}`]);
+        stashed = true;
+      }
+      await git().checkout('main');
+      try {
+        await git().pull('origin', 'main');
+        // Read after the pull, never before: an org a colleague added since the
+        // last fetch would be missing from the copy this clone had, and writing
+        // that copy back would drop it from every matrix and stop its backup.
+        let workflow = '';
+        try {
+          workflow = await fs.readFile(GITHUB_MONITORING_WORKFLOW_PATH, 'utf8');
+        } catch {
+          // The first org configured in a repository: main has no workflow yet,
+          // so the one to start from is the template just committed on the
+          // monitoring branch. Reading origin/main here would look for the file
+          // that is missing, which is why we are in this branch at all.
+          workflow = await git().show([`${branchName}:${GITHUB_MONITORING_WORKFLOW_PATH}`]);
+        }
+        const updated = addOrgToGithubMonitoringWorkflow(workflow, branchName);
+        await fs.ensureDir(path.dirname(GITHUB_MONITORING_WORKFLOW_PATH));
+        await fs.writeFile(GITHUB_MONITORING_WORKFLOW_PATH, updated, 'utf8');
+        const status = await git().status();
+        if (status.files.some((file) => file.path === GITHUB_MONITORING_WORKFLOW_PATH)) {
+          await git().add([GITHUB_MONITORING_WORKFLOW_PATH]);
+          await git().commit(buildConventionalCommitMessage({ subject: `run the monitoring of ${branchName}` }), [GITHUB_MONITORING_WORKFLOW_PATH]);
+          await git().push('origin', 'main');
+        }
+      } finally {
+        await git().checkout(branchName);
+      }
+      uxLog("success", this, c.green(t('monitoringWorkflowScheduledFromMain', { branchName })));
+      return true;
+    } catch (e) {
+      uxLog("warning", this, c.yellow(t('monitoringWorkflowNotScheduled', { message: (e as Error).message })));
+      if (isGitWorkflowScopeError(e)) {
+        uxLog("action", this, c.yellow(t('gitPushRefusedWorkflowScope')), { alwaysVisible: true });
+      }
+      return false;
+    } finally {
+      // Whatever happened above, the learner gets their working tree back
+      if (stashed) {
+        try {
+          await git().stash(['pop']);
+        } catch (e) {
+          uxLog("warning", this, c.yellow(t('monitoringStashNotRestored', { message: (e as Error).message })));
+        }
+      }
+    }
   }
 }

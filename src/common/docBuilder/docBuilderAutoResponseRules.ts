@@ -1,6 +1,7 @@
-import {DocBuilderRoot} from "./docBuilderRoot.js";
-import {PromptTemplate} from "../aiProvider/promptTemplates.js";
-import {RulesBuilderUtil} from "../utils/rulesBuilderUtil.js";
+import { DocBuilderRoot } from "./docBuilderRoot.js";
+import { PromptTemplate } from "../aiProvider/promptTemplates.js";
+import { RulesBuilderUtil } from "../utils/rulesBuilderUtil.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderAutoResponseRules extends DocBuilderRoot {
 
@@ -10,15 +11,15 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
   public xmlRootKey = "autoResponseRule";
 
   public static buildIndexTable(prefix: string, autoResponseRulesDescriptions: any, filterObject: string | null = null) {
-    const filteredAutoResponseRules = filterObject ? autoResponseRulesDescriptions.filter(autoResponseRule => autoResponseRule.impactedObjects.includes(filterObject)) : autoResponseRulesDescriptions;
+    const filteredAutoResponseRules = filterObject ? autoResponseRulesDescriptions.filter(autoResponseRule => (autoResponseRule.impactedObjects || []).includes(filterObject)) : autoResponseRulesDescriptions;
     if (filteredAutoResponseRules.length === 0) {
       return [];
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related AutoResponse Rules" : "## AutoResponse Rules",
+      filterObject ? `## ${t('docMdRelatedAutoResponseRules')}` : `## ${t('docMdAutoResponseRules')}`,
       "",
-      "| AutoResponse Rule | Is Active |",
+      `| ${t('docMdColAutoResponseRule')} | ${t('docMdColIsActive')} |`,
       "|     :----       |  :--: | "
     ]);
 
@@ -37,13 +38,13 @@ export class DocBuilderAutoResponseRules extends DocBuilderRoot {
 
     const ruleBuilderUtil = new RulesBuilderUtil();
     await ruleBuilderUtil.buildInitialMarkDownLinesFoAutoResponseRules(this.parsedXmlObject);
-    const autoResponseRuleTableLines: string [] = [...ruleBuilderUtil.globalRuleTableLines];
+    const autoResponseRuleTableLines: string[] = [...ruleBuilderUtil.globalRuleTableLines];
 
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<!-- AutoResponse Rules description -->',
-      '## AutoResponse Rules list',
+      `## ${t('docMdAutoResponseRulesList')}`,
       ...autoResponseRuleTableLines
     ];
   }

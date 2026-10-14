@@ -11,7 +11,7 @@ This command provides a convenient way to host your project's documentation dire
 
 Key operations performed:
 
-- **MkDocs HTML Generation:** Builds the MkDocs project into static HTML pages. It can use a locally installed `mkdocs-material` or a `mkdocs` Docker image.
+- **HTML Generation:** Builds the documentation project into static HTML pages with Zensical. It can use a locally installed `zensical` or the `zensical/zensical` Docker image.
 - **Salesforce Metadata Creation:** Creates the necessary Salesforce metadata components:
   - A **Static Resource** to store the generated HTML, CSS, and JavaScript files.
   - A **Visualforce Page** that embeds the static resource, allowing it to be displayed within Salesforce.
@@ -28,39 +28,55 @@ Key operations performed:
 - You can specify the type of documentation to generate (e.g., `CICD` or `Monitoring`) using the `--type` flag. The default is `CICD`.
 - You can override default styles by customizing your `mkdocs.yml` file.
 
-More information can be found in the [Documentation section](${CONSTANTS.DOC_URL_ROOT}/salesforce-project-documentation/).
+More information can be found in the [Documentation section](https://sfdx-hardis.cloudity.com/salesforce-project-documentation/).
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 The command orchestrates interactions with MkDocs, Salesforce CLI, and file system operations:
 
-- **MkDocs Integration:** It first modifies the `mkdocs.yml` file to ensure compatibility with Salesforce static resources (e.g., setting `use_directory_urls` to `false`). Then, it calls `generateMkDocsHTML()` to build the static HTML content.
+- **Zensical Integration:** It first modifies the `mkdocs.yml` file to ensure compatibility with Salesforce static resources (e.g., setting `use_directory_urls` to `false`). Then, it calls `generateMkDocsHTML()` to build the static HTML content with Zensical.
 - **Temporary SFDX Project:** It creates a temporary SFDX project using `createTempDir` and `createBlankSfdxProject` to stage the generated Salesforce metadata before deployment.
-- **Metadata Generation:** It dynamically creates the XML metadata files for the Static Resource, Visualforce Page, Custom Tab, and Permission Set. The HTML content from the MkDocs build is moved into the static resource folder.
+- **Metadata Generation:** It dynamically creates the XML metadata files for the Static Resource, Visualforce Page, Custom Tab, and Permission Set. The HTML content from the Zensical build is moved into the static resource folder.
 - **Salesforce CLI Deployment:** It constructs and executes a `sf project deploy start` command to deploy the generated metadata to the target Salesforce org. It intelligently adds `--test-level RunLocalTests` for production orgs and `--test-level NoTestRun` for sandboxes.
 - **Permission Set Assignment:** After successful deployment, it calls `initPermissionSetAssignments` to assign the newly created permission set to the current user.
 - **Browser Launch:** For non-CI environments, it uses `execCommand` to open the deployed Custom Tab in the user's default browser.
 - **Error Handling and Cleanup:** It includes error handling for deployment failures (e.g., static resource size limits) and ensures that the `mkdocs.yml` file is restored to its original state after execution.
-- **File System Operations:** It extensively uses `fs-extra` for file manipulation, including creating directories, moving files, and writing XML content.
+- **File System Operations:** It extensively uses Node.js `fs` for file manipulation, including creating directories, moving files, and writing XML content.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:doc:mkdocs-to-salesforce --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required |       Options       |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------------------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |                     |
-| flags-dir         | option  | undefined                                                     |         |          |                     |
-| json              | boolean | Format output as json.                                        |         |          |                     |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |                     |
-| target-org<br/>-o | option  | undefined                                                     |         |          |                     |
-| type<br/>-t       | option  | Type of the documentation to generate. Default is "all"       |  CICD   |          | CICD<br/>Monitoring |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |                     |
+| Name              |  Type   | Description                                                                                                  | Default | Required |       Options       |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |                     |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |                     |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |                     |
+| json              | boolean | Format output as json.                                                                                       |         |          |                     |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |                     |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |                     |
+| type<br/>-t       | option  | Type of the documentation to generate. Default is "all"                                                      |  CICD   |          | CICD<br/>Monitoring |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |                     |
 
 ## Examples
 
 ```shell
 $ sf hardis:doc:mkdocs-to-salesforce
+```
+
+```shell
+$ sf hardis:doc:mkdocs-to-salesforce --agent
 ```
 
 

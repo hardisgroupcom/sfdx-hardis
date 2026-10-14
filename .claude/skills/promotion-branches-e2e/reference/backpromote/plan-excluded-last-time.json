@@ -1,0 +1,15 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "selected": "{{S10}}",
+  "backpromoted": [
+    "{{S10}}"
+  ],
+  "items": [
+    "StaticResource:E2E_S5",
+    "StaticResource:E2E_S6"
+  ],
+  "excludedLastTime": [
+    "StaticResource:E2E_S6"
+  ]
+}

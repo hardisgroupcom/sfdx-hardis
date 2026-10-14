@@ -35,14 +35,26 @@ The command's technical implementation involves:
 
 - **XML Parsing:** It reads the content of the specified \`package.xml\` file and parses its XML structure to extract the metadata types and their members.
 - **Markdown Generation:** It utilizes the \`DocBuilderPackageXML.generatePackageXmlMarkdown\` utility to transform the parsed \`package.xml\` data into a structured Markdown format. This utility handles the formatting and organization of the metadata information.
-- **File System Operations:** It uses \`fs-extra\` (implicitly through \`DocBuilderPackageXML\`) to read the input \`package.xml\` and write the generated Markdown file.
+- **File System Operations:** It uses Node.js \`fs\` (implicitly through \`DocBuilderPackageXML\`) to read the input \`package.xml\` and write the generated Markdown file.
 - **WebSocket Communication:** It interacts with a WebSocket client (\`WebSocketClient.requestOpenFile\`) to open the generated Markdown file in a VS Code tab, enhancing user experience.
 - **Salesforce Org Context:** It can optionally use the \`target-org\` flag to provide context, such as the instance URL, which might be used for generating links or additional information within the Markdown.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:doc:packagexml2markdown --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static examples = [
     '$ sf hardis:doc:packagexml2markdown',
+    '$ sf hardis:doc:packagexml2markdown --agent',
     '$ sf hardis:doc:packagexml2markdown --inputfile manifest/package-all.xml'
   ];
 
@@ -54,6 +66,10 @@ The command's technical implementation involves:
     outputfile: Flags.string({
       char: 'f',
       description: 'Force the path and name of output report file. Must end with .md',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',

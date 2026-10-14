@@ -1,4 +1,4 @@
-import sortArray from "sort-array";
+import sortArray from '../utils/sortArray.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
@@ -6,6 +6,7 @@ import { DocBuilderPackageXML } from "./docBuilderPackageXml.js";
 import fs from "fs";
 import { parsePackageXmlFile } from "../utils/xmlUtils.js";
 import { makeFileNameGitCompliant } from "../utils/gitUtils.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPackage extends DocBuilderRoot {
 
@@ -22,9 +23,9 @@ export class DocBuilderPackage extends DocBuilderRoot {
     }
     const lines: string[] = [];
     lines.push(...[
-      "## Installed packages",
+      `## ${t('docMdInstalledPackages')}`,
       "",
-      "| Name  | Namespace | Version | Version Name |",
+      `| ${t('docMdColName')} | ${t('docMdColNamespace')} | ${t('docMdColVersion')} | ${t('docMdColVersionName')} |`,
       "| :---- | :-------- | :------ | :----------: | "
     ]);
     for (const pckg of sortArray(filteredPackages, { by: ['namespace', 'name'], order: ['asc', 'asc'] }) as any[]) {
@@ -39,13 +40,13 @@ export class DocBuilderPackage extends DocBuilderRoot {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<!-- Package description -->',
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["SubscriberPackageName", "SubscriberPackageNamespace", "SubscriberPackageVersionNumber", "SubscriberPackageVersionId", "SubscriberPackageVersionName", "SubscriberPackageId"], "## Package attributes", []),
+      buildGenericMarkdownTable(this.parsedXmlObject, ["SubscriberPackageName", "SubscriberPackageNamespace", "SubscriberPackageVersionNumber", "SubscriberPackageVersionId", "SubscriberPackageVersionName", "SubscriberPackageId"], `## ${t('docMdPackageAttributes')}`, []),
       '',
-      '## Package Metadatas',
+      `## ${t('docMdPackageMetadatas')}`,
       '',
       '<div id="jstree-container"></div>',
       ''

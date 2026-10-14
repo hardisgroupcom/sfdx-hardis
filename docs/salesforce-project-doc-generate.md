@@ -1,27 +1,37 @@
 ---
 title: Generate Salesforce Project Documentation
-description: Learn how to generate Salesforce project documentation, including Flows Visual Differences in History
+description: With sfdx-hardis, learn how to generate Salesforce project documentation, including Flows Visual Differences in History
 ---
 <!-- markdownlint-disable MD013 -->
 
-## How To generate
+## How to generate
 
-- Use the Git repository containing your SFDX project, or create it easily using [sfdx-hardis Monitoring](salesforce-monitoring-home.md), or simply calling [BackUp command](hardis/org/monitor/backup.md)
+- Use the git repository containing your SFDX project, or create it easily with [sfdx-hardis Monitoring](salesforce-monitoring-home.md), or simply by calling the [Backup command](hardis/org/monitor/backup.md)
 
-- [Activate AI Integration](salesforce-ai-setup.md) (Optional but recommended)
+- [Activate AI integration](salesforce-ai-setup.md) (optional but recommended)
 
-- Call VsCode SFDX-Hardis command [**Documentation Generation > Generate Project Documentation (with history)**](hardis/doc/project2markdown.md)
+- In the VS Code SFDX Hardis extension, run the command [**Documentation Generation > Generate Project Documentation (with history)**](hardis/doc/project2markdown.md)
   - Corresponding command line: `sf hardis:doc:project2markdown --with-history`
 
-Here is a click by click tutorial to generate your documentation locally (but it's best to use sfdx-hardis monitoring once you are convinced ^^)
+Here is a click-by-click tutorial to generate your documentation locally (once you are convinced, the best option is to let sfdx-hardis Monitoring generate it for you):
 
 <div style="text-align:center"><iframe width="560" height="315" src="https://www.youtube.com/embed/ZrVPN3jp1Ac" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
 
 ## Run Locally
 
-- Run command **Documentation Generation > Run local HTML Doc Pages** (Note: you need  [Python](https://www.python.org/downloads/) on your computer)
-  - Corresponding command lines: `pip install mkdocs-material mdx_truly_sane_lists`, then `mkdocs serve -v`
-  - Alternative 1: `python -m pip install mkdocs-material mdx_truly_sane_lists`, then `python -m mkdocs serve -v`
-  - Alternative 2: `py -m pip install mkdocs-material mdx_truly_sane_lists`, then `py -m mkdocs serve -v`
+- Run command **Documentation Generation > Run local HTML Doc Pages** (Note: you need [Python](https://www.python.org/downloads/) on your computer)
+  - Corresponding command lines: `pip install zensical mdx_truly_sane_lists`, then `zensical serve`
+  - Alternative 1: `python -m pip install zensical mdx_truly_sane_lists`, then `python -m zensical serve`
+  - Alternative 2: `py -m pip install zensical mdx_truly_sane_lists`, then `py -m zensical serve`
 
-- Open <http://127.0.0.1:8000/> in your Web Browser
+- Open <http://127.0.0.1:8000/> in your web browser
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
+
+- [Lab 3.9 - Generate the Salesforce project documentation](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-9-generate-the-project-documentation/)
+
+<!-- training-links:end -->

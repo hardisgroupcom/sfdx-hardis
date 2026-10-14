@@ -1,14 +1,14 @@
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from './fsUtils.js';
 import { glob } from 'glob';
 import puppeteer, { Browser } from 'puppeteer-core';
-import sortArray from 'sort-array';
+import sortArray from './sortArray.js';
 import * as chromeLauncher from 'chrome-launcher';
 import * as yaml from 'js-yaml';
 import { uxLog } from './index.js';
-import { Connection, SfError } from '@salesforce/core';
-import { DescribeSObjectResult } from '@jsforce/jsforce-node';
+import { SfError } from '@salesforce/core';
 import { GLOB_IGNORE_PATTERNS } from './projectUtils.js';
+import { t } from './i18n.js';
 
 const listViewRegex = /objects\/(.*)\/listViews\/(.*)\.listView-meta\.xml/gi;
 
@@ -57,17 +57,28 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   } catch (e: any) {
     uxLog("error", this, c.red("List view 'Mine' has not been restored: error while trying to launch Puppeteer (browser simulator)."));
     uxLog("error", this, c.red(e.message));
-    uxLog("error", this, c.red("You might need to set the PUPPETEER_EXECUTABLE_PATH environment variable to a Chrome/Chromium executable path. Example: /usr/bin/chromium-browser."));
+    uxLog("error", this, c.red(t('youMightNeedToSetThePuppeteerexecutablepath')));
     return { error: e };
   }
   const page = await browser.newPage();
-
-  // Process login page
-  await page.goto(loginUrl, { waitUntil: ['domcontentloaded', 'networkidle0'] });
-
   const success: any[] = [];
   const failed: any[] = [];
   const unnecessary: any[] = [];
+
+  // Process login page. A Lightning page keeps connections open for as long as it lives, so
+  // waiting for the network to go idle only ever ends with a timeout: wait for the page load, which
+  // also lets frontdoor.jsp finish the redirect that sets the session cookie.
+  try {
+    await page.goto(loginUrl, { waitUntil: 'load', timeout: 60000 });
+  } catch (e: any) {
+    // The url this failed on is the frontdoor one, and its sid parameter is a
+    // live access token: a navigation error carries the whole url in its
+    // message, and this message goes to the CI log.
+    const reason = String(e.message || e).replace(/sid=[^&\s'"]+/g, 'sid=[redacted]');
+    uxLog("warning", this, c.yellow(`List views 'Mine' have not been restored: the org could not be opened in the browser simulator (${reason}).`));
+    await browser.close();
+    return { success, failed: listViewItems.map((item) => `${item.object}:${item.listViewName}`), unnecessary, error: e };
+  }
 
   // Restore list views with Mine option
   for (const listView of listViewItems) {
@@ -79,13 +90,14 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
     const setupObjectUrl = `${instanceUrl}/lightning/o/${objectName}/list?filterName=${listViewName}`;
 
     try {
-      // Open ListView url in org
-      const navigationPromise = page.waitForNavigation();
-      await page.goto(setupObjectUrl);
-      await navigationPromise;
+      // Open ListView url in org. goto() already waits for its own navigation: waiting for another
+      // one on top of it timed out whenever Lightning did not navigate a second time.
+      await page.goto(setupObjectUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
 
       // Open ListView settings
-      const filterButton = await page.waitForSelector('.filterButton');
+      // Lightning renders its controls before it shows them: a hidden one is found at once and then
+      // refuses the click ("Node is either not clickable"), so every wait is for a visible element
+      const filterButton = await page.waitForSelector('.filterButton', { visible: true });
       if (filterButton) {
         await filterButton.click();
       } else {
@@ -93,7 +105,7 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       }
 
       // Open Filter by owner popup
-      const filterByOwnerButtons = await page.waitForSelector("xpath///div[contains(text(), 'Filter by Owner')]");
+      const filterByOwnerButtons = await page.waitForSelector("xpath///div[contains(text(), 'Filter by Owner')]", { visible: true });
       if (filterByOwnerButtons) {
         await filterByOwnerButtons.click();
       } else {
@@ -103,16 +115,18 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Select Mine value
       const mineValue = await page.waitForSelector('input[value="mine"]');
       if (mineValue) {
-        const mineValueClickableLabel = await mineValue.$('following-sibling::*');
-        if (mineValueClickableLabel) {
-          await mineValueClickableLabel[0].click();
-        }
+        // The radio input itself is hidden by the Lightning styling: click the element drawn next to it
+        await mineValue.evaluate((input) => {
+          const clickable = (input.nextElementSibling ?? input) as unknown as { click: () => void };
+          clickable.click();
+        });
       } else {
         throw new SfError('Puppeteer: input[value="mine"] not found');
       }
 
       // Click done
-      const doneButtons = await page.waitForSelector("xpath///span[contains(text(), 'Done')]");
+      // The label is the button's own text now; older Lightning releases wrapped it in a span
+      const doneButtons = await page.waitForSelector("xpath///button[normalize-space()='Done'] | //span[contains(text(), 'Done')]", { visible: true });
       if (doneButtons) {
         await doneButtons.click();
       } else {
@@ -121,7 +135,8 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
 
       // Save
       try {
-        const saveButton = await page.waitForSelector('.saveButton', { timeout: 3000 });
+        // Lightning dropped the saveButton class: the button is found by its label as well
+        const saveButton = await page.waitForSelector("xpath///button[normalize-space()='Save'] | //button[contains(@class, 'saveButton')]", { timeout: 3000, visible: true });
         if (saveButton) {
           await saveButton.click();
         } else {
@@ -142,11 +157,11 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
       // Confirmed saved toast
       await page.waitForSelector("xpath///span[contains(text(), 'List view updated.')]");
       success.push(`${objectName}:${listViewName}`);
-      uxLog("success", this, c.green(`Successfully set ${objectName}.${listViewName} as "Mine"`));
+      uxLog("success", this, c.green(t('successfullySetAsMine', { objectName, listViewName })));
     } catch (e) {
       // Unexpected puppeteer error
       failed.push(`${objectName}:${listViewName}`);
-      uxLog("error", this, c.red(`Puppeteer error while processing ${objectName}:${listViewName}: ${(e as Error).message}`));
+      uxLog("error", this, c.red(t('puppeteerErrorWhileProcessing', { objectName, listViewName, as: (e as Error).message })));
     }
   }
   // Close puppeteer browser
@@ -154,8 +169,22 @@ export async function restoreListViewMine(listViewStrings: Array<string>, conn: 
   return { success, failed, unnecessary };
 }
 
+// listMajorOrgs globs the whole repository for branch config files and parses them all, and its
+// callers invoke it repeatedly in the same process (scope computation, branch filters, comment
+// scans): the result is computed once and reused. Every branch config file writer clears the
+// cache (setInConfigFile in src/config/index.ts, writeActions / writeTestClasses in
+// actionUtils.ts). A deep copy is returned so callers cannot alter the cached orgs.
+let listMajorOrgsCache: any[] | null = null;
+
+export function clearListMajorOrgsCache() {
+  listMajorOrgsCache = null;
+}
+
 // List all yml files in config/branches and build list of major orgs from them
-export async function listMajorOrgs() {
+export async function listMajorOrgs(): Promise<any[]> {
+  if (listMajorOrgsCache) {
+    return structuredClone(listMajorOrgsCache);
+  }
   const majorOrgs: any[] = [];
   const branchConfigPattern = '**/config/branches/.sfdx-hardis.*.yml';
   const configFiles = await glob(branchConfigPattern, { ignore: GLOB_IGNORE_PATTERNS });
@@ -217,10 +246,15 @@ export async function listMajorOrgs() {
     if (majorOrg?.mergeTargets?.length > 0) {
       return majorOrg;
     }
+    const declaredAsFinal = Array.isArray(majorOrg.mergeTargets) || isProduction(majorOrg.branchName);
     majorOrg.mergeTargets = guessMatchingMergeTargets(majorOrg.branchName, majorOrgs);
+    // Lets hardis:project:pipeline:describe tell a declared step from a guessed one. A branch
+    // that declares an empty list, or a production branch, is final on purpose: nothing was guessed.
+    majorOrg.mergeTargetsGuessed = majorOrg.mergeTargets.length > 0 || !declaredAsFinal;
     return majorOrg;
   });
-  return completedMajorOrgs;
+  listMajorOrgsCache = completedMajorOrgs;
+  return structuredClone(completedMajorOrgs);
 }
 
 function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string[] {
@@ -240,7 +274,7 @@ function guessMatchingMergeTargets(branchName: string, majorOrgs: any[]): string
     return majorOrgs.filter(org => isUat(org.branchName)).map(org => org.branchName);
   }
   if (branchName.toLowerCase().includes('training')) {
-    uxLog('log', this, c.grey(`Branch ${branchName} appears to be a training branch, that's probably ok to have no merge targets.`));
+    uxLog('log', this, c.grey(t('branchAppearsToBeTrainingBranchThat', { branchName })));
     return [];
   }
   uxLog("warning", this, c.yellow(`Unable to guess merge targets for ${branchName}.
@@ -272,20 +306,17 @@ export function isUatRun(branchName) {
   return (branchName.toLowerCase().startsWith("uat") || branchName.toLowerCase().startsWith("recette")) && branchName.toLowerCase().includes("run");
 }
 
-export async function checkSfdxHardisTraceAvailable(conn: Connection) {
-  let traceObject: DescribeSObjectResult;
-  try {
-    traceObject = await conn.sobject("SfdxHardisTrace__c").describe();
-  } catch (e: any) {
-    throw new SfError("You need a Custom Setting of type List (activate through Schema Settings), named SfdxHardisTrace__c, with Type__c and Key__c fields (both string, length 80)\n" + e.message);
-  }
-  const traceObjectFields = traceObject.fields;
-  if (traceObjectFields.filter(field => field.name === "Type__c").length === 0) {
-    throw new SfError("You need a field Type__c (string, length 80) on SfdxHardisTrace__c in target org");
-  }
-  if (traceObjectFields.filter(field => field.name === "Key__c").length === 0) {
-    throw new SfError("You need a field Key__c (string, length 80) on SfdxHardisTrace__c in target org");
-  }
+/**
+ * A retrofit branch carries the changes of an upstream major branch down to another one
+ * (ex: main is merged into retrofit/from-main, which is then merged into integration).
+ * Retrofit branches have no org config file, so they never appear in listMajorOrgs():
+ * they are identified by their name, like the other branch kinds above.
+ */
+export function isRetrofit(branchName: string): boolean {
+  // Matches the retrofit/<name> convention produced by hardis:work:new, so an ordinary branch
+  // named retrofit-JIRA-123 or retrofitting-legacy is not mistaken for one.
+  const name = (branchName || "").toLowerCase();
+  return name === "retrofit" || name.startsWith("retrofit/");
 }
 
 /**

@@ -1,0 +1,14 @@
+{
+  "exitStatus": 0,
+  "status": "nothingToDo",
+  "scanFound": true,
+  "backpromoted": [
+    "{{S3}}"
+  ],
+  "selected": 0,
+  "windowNull": true,
+  "beforeLastBackpromote": [
+    "{{S1}}",
+    "{{S2}}"
+  ]
+}

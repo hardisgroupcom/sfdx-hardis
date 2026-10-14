@@ -64,6 +64,15 @@ function listAllTips() {
 THIS MAY BE A FALSE POSITIVE if you are just testing the deployment, as destructiveChanges are deployed separately from updated items deployment check`,
     },
     {
+      name: "flow-interviews-block-deletion",
+      label: "Flow Interviews block Flow deletion",
+      context: "destructiveChange",
+      expressionString: ["Flow Interview - "],
+      tip: `A Flow version can not be deleted because Flow Interviews are still running on it.
+- To let sfdx-hardis delete these Flow Interviews before deleting the Flow, set FLOW_DELETE_INTERVIEWS=true (or add FLOW_DELETE_INTERVIEWS on its own line in your Pull Request description, or set flowDeleteInterviews: true in .sfdx-hardis.yml)
+- Caution: deleting Flow Interviews is irreversible and destroys in-flight process state`,
+    },
+    {
       name: "can-not-delete-record-type",
       label: "Can not delete record type",
       context: "destructiveChange",
@@ -231,6 +240,16 @@ Example of element to delete:
       expressionRegex: [/In field: template - no EmailTemplate named (.*) found/gm],
       tip: `An email template should be present in the sources. To retrieve it, you can run:
 sf project retrieve start -m EmailTemplate:{1} -o YOUR_ORG_USERNAME`,
+    },
+    {
+      name: "empty-custom-object",
+      label: "Empty custom object",
+      expressionRegex: [/Error (.*) Must specify a non-empty label for the CustomObject/gm],
+      tip: `The CustomObject {1} has been committed without its attributes: its .object-meta.xml has no label, so the target org can not create it.
+This usually happens when an object is retrieved empty, for example an object owned by a managed package.
+- Either retrieve {1} again and check that its .object-meta.xml really contains a label and the other object attributes:
+  sf project retrieve start -m CustomObject:{1} -o SOURCE_ORG_USERNAME
+- Or, if {1} does not belong to your project, remove it from the source files (objects/{1} folder) AND from the CustomObject section of manifest/package.xml`,
     },
     {
       name: "empty-item",
@@ -748,4 +767,3 @@ If you see two {2} XML blocks with {3}, please decide which one you keep and rem
     },
   ];
 }
-

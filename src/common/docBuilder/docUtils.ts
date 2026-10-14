@@ -1,39 +1,450 @@
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../utils/fsUtils.js';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { createHash } from 'crypto';
 
 import * as yaml from 'js-yaml';
+import { parseDocument as parseYamlDocument, isMap as isYamlMap, isSeq as isYamlSeq } from 'yaml';
+import { glob } from 'glob';
 import { SfError } from "@salesforce/core";
-import { UtilsAi } from "../aiProvider/utils.js";
+import { UtilsAi } from "../aiProvider/utils/utils.js";
 import { AiProvider } from "../aiProvider/index.js";
 import { uxLog, execCommand } from "../utils/index.js";
+import { SUPPORTED_LOCALES, t } from '../utils/i18n.js';
 
 
-export function readMkDocsFile(mkdocsYmlFile: string): any {
-  const mkdocsYml: any = yaml.load(
-    fs
-      .readFileSync(mkdocsYmlFile, 'utf-8')
-      .replace('!!python/name:materialx.emoji.twemoji', "!!python/name:material.extensions.emoji.twemoji")
-      .replace('!!python/name:materialx.emoji.to_svg', "!!python/name:material.extensions.emoji.to_svg")
-      .replace('!!python/name:material.extensions.emoji.twemoji', "'!!python/name:material.extensions.emoji.twemoji'")
-      .replace('!!python/name:material.extensions.emoji.to_svg', "'!!python/name:material.extensions.emoji.to_svg'")
-      .replace('!!python/name:pymdownx.superfences.fence_code_format', "'!!python/name:pymdownx.superfences.fence_code_format'")
-  );
-  if (!mkdocsYml.nav) {
-    mkdocsYml.nav = {}
+// The two lines every generated page starts with. Whoever writes in a page sets the second one
+// to TRUE, and the next generation leaves that page alone.
+export const DOC_PROTECTION_HEADER_LINES = [
+  '<!-- This file is auto-generated. if you do not want it to be overwritten, set TRUE in the line below -->',
+  '<!-- DO_NOT_OVERWRITE_DOC=FALSE -->',
+];
+
+// Only the head of a page is read: an Apex page embeds the source of its class, which may well
+// quote these markers, and must not freeze itself or lose its own lines because of it
+const DOC_PROTECTION_HEAD_LENGTH = 1024;
+const DOC_PROTECTED_REGEX = /<!--\s*DO_NOT_OVERWRITE_DOC\s*=\s*TRUE\s*-->/i;
+const DOC_PROTECTION_LINE_REGEX = /<!--\s*DO_NOT_OVERWRITE_DOC\s*=\s*(TRUE|FALSE)\s*-->/i;
+
+/** True when a generated page exists and its author marked it DO_NOT_OVERWRITE_DOC=TRUE */
+export function isDocProtected(file: string): boolean {
+  if (!fs.existsSync(file)) {
+    return false;
   }
+  const head = Buffer.alloc(DOC_PROTECTION_HEAD_LENGTH);
+  const fd = fs.openSync(file, 'r');
+  try {
+    const bytesRead = fs.readSync(fd, head, 0, DOC_PROTECTION_HEAD_LENGTH, 0);
+    return DOC_PROTECTED_REGEX.test(head.toString('utf8', 0, bytesRead));
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
+/** The page with the two protection lines on top, unless it already has them */
+export function withDocProtectionHeader(markdown: string): string {
+  return DOC_PROTECTION_LINE_REGEX.test(markdown.slice(0, DOC_PROTECTION_HEAD_LENGTH))
+    ? markdown
+    : [...DOC_PROTECTION_HEADER_LINES, '', markdown].join('\n');
+}
+
+/**
+ * Builds a Set of all known translated values for docMdMenu* and docMdAll* i18n keys
+ * across all supported locales. Used to detect and remove stale nav entries in mkdocs.yml
+ * when the documentation language changes between runs.
+ */
+export function buildAllKnownNavLabels(keyPrefixes: string[] = ['docMdMenu', 'docMdAll']): Set<string> {
+  const labels = new Set<string>();
+  /* jscpd:ignore-start */
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  /* jscpd:ignore-end */
+  for (const locale of SUPPORTED_LOCALES) {
+    const localeFile = path.join(__dirname, '..', '..', 'i18n', `${locale}.json`);
+    if (fs.existsSync(localeFile)) {
+      try {
+        const translations: Record<string, string> = JSON.parse(fs.readFileSync(localeFile, 'utf-8'));
+        for (const [key, value] of Object.entries(translations)) {
+          if (keyPrefixes.some(keyPrefix => key.startsWith(keyPrefix))) {
+            labels.add(value);
+          }
+        }
+      } catch {
+        // Ignore unreadable locale files
+      }
+    }
+  }
+  return labels;
+}
+
+// Zensical reads the same mkdocs.yml file, but resolves emoji helpers from its own
+// namespace. Older configs written for materialx or material for MkDocs are upgraded
+// on read, so an existing repository picks up the new namespace on its next doc build.
+const EMOJI_TWEMOJI_TAG = '!!python/name:zensical.extensions.emoji.twemoji';
+const EMOJI_TO_SVG_TAG = '!!python/name:zensical.extensions.emoji.to_svg';
+const FENCE_CODE_FORMAT_TAG = '!!python/name:pymdownx.superfences.fence_code_format';
+
+const LEGACY_EMOJI_TWEMOJI_TAGS = [
+  '!!python/name:materialx.emoji.twemoji',
+  '!!python/name:material.extensions.emoji.twemoji',
+];
+const LEGACY_EMOJI_TO_SVG_TAGS = [
+  '!!python/name:materialx.emoji.to_svg',
+  '!!python/name:material.extensions.emoji.to_svg',
+];
+
+// MkDocs documents a nav sub-section as a LIST of single-key mappings. Historic
+// versions of this command wrote sub-menus as one flat mapping instead, which
+// MkDocs tolerated but Zensical rejects with
+// "TypeError: Unknown nav item value type: <class 'dict'>".
+// Nav is normalized on read, so an existing project is upgraded in place on its
+// next doc command: every entry keeps its label, its target and its position,
+// including sub-menus a user added by hand after the documentation was generated.
+//
+// A nav has two kinds of node, and they are NOT interchangeable:
+//  - an item, an element of a nav list, written { Label: target }
+//  - a target, the value of an item: a page path, or a sub-menu of items
+// A one-child sub-menu is indistinguishable from an item by shape alone, so the
+// two roles are normalized by two functions rather than guessed from the keys.
+
+// Normalize the value side of a nav item: a page path, or a sub-menu.
+export function normalizeMkDocsNavTarget(target: any): any {
+  if (Array.isArray(target)) {
+    return normalizeMkDocsNav(target);
+  }
+  if (target && typeof target === 'object') {
+    // Sub-menu written the legacy way: every key of the mapping is an item
+    return Object.entries(target).map(([label, child]) => ({ [label]: normalizeMkDocsNavTarget(child) }));
+  }
+  // Page path, or anything else we do not have to touch
+  return target;
+}
+
+// Normalize a nav list: every element is an item.
+export function normalizeMkDocsNav(nav: any): any[] {
+  if (nav === null || nav === undefined) {
+    return [];
+  }
+  if (!Array.isArray(nav)) {
+    // Whole nav written as a mapping: each of its keys is a root item
+    return normalizeMkDocsNavTarget(nav);
+  }
+  const items: any[] = [];
+  for (const item of nav) {
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      // A well-formed item holds one key; a multi-key mapping found in item
+      // position is expanded into one item per key so nothing is dropped.
+      for (const [label, target] of Object.entries(item)) {
+        items.push({ [label]: normalizeMkDocsNavTarget(target) });
+      }
+    }
+    else {
+      // Bare page path used as an item
+      items.push(item);
+    }
+  }
+  return items;
+}
+
+// Menu entries are collected while metadata files are walked, so their order follows the
+// file system and is neither stable between runs nor alphabetical (packages and Lightning
+// Web Components came out reversed, for instance). A generated menu is therefore sorted by
+// label, case-insensitively, before it is written. The "All <type>" index page of a menu
+// keeps its place at the top, and nested sub-menus are sorted the same way.
+let allKnownNavIndexLabels: Set<string> | null = null;
+
+function getMkDocsNavItemLabel(item: any): string {
+  if (item && typeof item === 'object' && !Array.isArray(item)) {
+    return Object.keys(item)[0] ?? '';
+  }
+  return String(item ?? '');
+}
+
+export function sortMkDocsNavItems(target: any): any {
+  if (!Array.isArray(target)) {
+    // Page path, or anything else that has no children to sort
+    return target;
+  }
+  if (allKnownNavIndexLabels === null) {
+    allKnownNavIndexLabels = buildAllKnownNavLabels(['docMdAll']);
+  }
+  const indexItems: any[] = [];
+  const otherItems: any[] = [];
+  for (const item of target) {
+    const label = getMkDocsNavItemLabel(item);
+    if (item && typeof item === 'object' && !Array.isArray(item)) {
+      item[label] = sortMkDocsNavItems(item[label]);
+    }
+    if (allKnownNavIndexLabels.has(label)) {
+      indexItems.push(item);
+    }
+    else {
+      otherItems.push(item);
+    }
+  }
+  otherItems.sort((a, b) =>
+    getMkDocsNavItemLabel(a).toLowerCase().localeCompare(getMkDocsNavItemLabel(b).toLowerCase(), 'en', { sensitivity: 'base' })
+  );
+  return [...indexItems, ...otherItems];
+}
+
+// Folders of the documentation that project2markdown writes itself. Pages a user added by
+// hand outside of them are never rewritten by the dead link cleanup below.
+export const GENERATED_DOC_FOLDERS = [
+  'apex',
+  'approvalProcesses',
+  'assignmentRules',
+  'aura',
+  'autoResponseRules',
+  'escalationRules',
+  'flows',
+  'lwc',
+  'objects',
+  'packages',
+  'pages',
+  'permissionsetgroups',
+  'permissionsets',
+  'processBuilders',
+  'profiles',
+  'visualforce',
+  'workflowRules',
+];
+
+// [label](target.md) or [label](target.md#anchor), the only link shape the generated pages use
+const MARKDOWN_PAGE_LINK_REGEX = /\[([^\]\n]*)\]\(([^)\s#]+\.md)(#[^)\s]*)?\)/g;
+
+// A page whose name holds a space is linked as profiles/Chatter%20Free%20User.md
+function decodeMarkdownLinkPath(linkPath: string): string {
+  try {
+    return decodeURIComponent(linkPath);
+  } catch {
+    // Percent sign that is not an escape sequence: the path is already the one to look for
+    return linkPath;
+  }
+}
+
+function encodeMarkdownLinkPath(linkPath: string): string {
+  return linkPath.replaceAll(' ', '%20');
+}
+
+// A generated page regularly links to a page that was never generated: a permission set the
+// org owns but the project does not, an Apex class ApexDocGen skipped, a component another
+// one references but that is absent from the repository. Zensical reports each of them as
+// "page does not exist" and the reader gets a link leading nowhere, so all the links are
+// checked once the whole documentation is written. A target that exists under another case
+// is repaired (a Visualforce page declares standardController="account", the page is
+// objects/Account.md), a target that does not exist at all loses its link and keeps its
+// label. Case matters even on Windows: the site generator resolves page paths itself, and
+// a link the local file system happily opens still breaks once the site is built.
+export async function removeDeadDocumentationLinks(docsRoot: string): Promise<number> {
+  if (!fs.existsSync(docsRoot)) {
+    return 0;
+  }
+  const allPages = (await glob('**/*.md', { cwd: docsRoot, nodir: true })).map(page => page.replace(/\\/g, '/'));
+  const pagesByLowerCase = new Map<string, string>();
+  for (const page of allPages) {
+    pagesByLowerCase.set(page.toLowerCase(), page);
+  }
+  const existingPages = new Set(allPages);
+  let fixedLinksNb = 0;
+  for (const page of allPages) {
+    if (!GENERATED_DOC_FOLDERS.includes(page.split('/')[0])) {
+      continue;
+    }
+    const pageFile = path.join(docsRoot, page);
+    const pageContent = await fs.readFile(pageFile, 'utf8');
+    const pageDir = path.posix.dirname(page);
+    let pageFixedLinksNb = 0;
+    const updatedContent = pageContent.replace(MARKDOWN_PAGE_LINK_REGEX, (link, label, target, anchor) => {
+      if (target.includes('://') || target.startsWith('/')) {
+        // External link, or a link the site generator resolves from its own root
+        return link;
+      }
+      const targetPage = path.posix.normalize(
+        path.posix.join(pageDir, decodeMarkdownLinkPath(target.replace(/\\/g, '/')))
+      );
+      if (existingPages.has(targetPage)) {
+        return link;
+      }
+      pageFixedLinksNb++;
+      const targetPageOtherCase = pagesByLowerCase.get(targetPage.toLowerCase());
+      if (targetPageOtherCase) {
+        return `[${label}](${encodeMarkdownLinkPath(path.posix.relative(pageDir, targetPageOtherCase))}${anchor || ''})`;
+      }
+      // Nothing to link to: keep the label, unless it is only an icon that would be left alone
+      return /[\p{L}\p{N}]/u.test(label) ? label : '';
+    });
+    if (pageFixedLinksNb > 0) {
+      await fs.writeFile(pageFile, updatedContent);
+      fixedLinksNb += pageFixedLinksNb;
+    }
+  }
+  return fixedLinksNb;
+}
+
+// js-yaml cannot parse unquoted "!!python/name:" tags, so they are quoted before load
+// and unquoted again on dump, which keeps the file readable by Zensical.
+export function readMkDocsFile(mkdocsYmlFile: string): any {
+  let mkdocsYmlStr = fs.readFileSync(mkdocsYmlFile, 'utf-8');
+  for (const legacyTag of LEGACY_EMOJI_TWEMOJI_TAGS) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(legacyTag, EMOJI_TWEMOJI_TAG);
+  }
+  for (const legacyTag of LEGACY_EMOJI_TO_SVG_TAGS) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(legacyTag, EMOJI_TO_SVG_TAG);
+  }
+  for (const tag of [EMOJI_TWEMOJI_TAG, EMOJI_TO_SVG_TAG, FENCE_CODE_FORMAT_TAG]) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(tag, `'${tag}'`);
+  }
+  const mkdocsYml: any = yaml.load(mkdocsYmlStr);
+  mkdocsYml.nav = normalizeMkDocsNav(mkdocsYml.nav);
   return mkdocsYml;
 }
 
+/**
+ * Writes `value` over a YAML text and keeps what a person wrote in it: only what changed is touched,
+ * maps are merged key by key, and a list that only gained items keeps its existing items, with the
+ * comments around them, and gets the new ones inserted where they belong. A list that lost or
+ * reordered items, or a value that changed type, is replaced.
+ */
+export function mergeIntoYamlText(yamlText: string, value: any): string {
+  const doc = parseYamlDocument(yamlText);
+  const asJson = (node: any) => (node && typeof node.toJSON === 'function' ? node.toJSON() : node);
+  const same = (a: any, b: any) => JSON.stringify(a) === JSON.stringify(b);
+  const merge = (keyPath: (string | number)[], wanted: any): void => {
+    const node: any = keyPath.length > 0 ? doc.getIn(keyPath, true) : doc.contents;
+    if (same(asJson(node), wanted)) {
+      return;
+    }
+    if (isYamlMap(node) && wanted && typeof wanted === 'object' && !Array.isArray(wanted)) {
+      for (const [key, child] of Object.entries(wanted)) {
+        merge([...keyPath, key], child);
+      }
+      for (const key of Object.keys(asJson(node) || {})) {
+        if (!(key in wanted)) {
+          doc.deleteIn([...keyPath, key]);
+        }
+      }
+      return;
+    }
+    if (isYamlSeq(node) && Array.isArray(wanted)) {
+      const items: any[] = node.items;
+      const existing = items.map((item) => JSON.stringify(asJson(item)));
+      const wantedKeys = wanted.map((item) => JSON.stringify(item));
+      // Only additions, in an order that keeps the existing items where they are
+      if (existing.every((key, index) => wantedKeys.indexOf(key) >= 0 && (index === 0 || wantedKeys.indexOf(key) > wantedKeys.indexOf(existing[index - 1])))) {
+        let position = 0;
+        for (let index = 0; index < wanted.length; index++) {
+          if (position < items.length && JSON.stringify(asJson(items[position])) === wantedKeys[index]) {
+            position++;
+            continue;
+          }
+          items.splice(position, 0, doc.createNode(wanted[index]));
+          position++;
+        }
+        return;
+      }
+    }
+    if (keyPath.length > 0) {
+      doc.setIn(keyPath, wanted);
+    } else {
+      doc.contents = doc.createNode(wanted) as any;
+    }
+  };
+  merge([], value);
+  return doc.toString({ lineWidth: 0 });
+}
+
+// The id a project that never configured anything still carries.
+export const GTAG_PLACEHOLDER_ID = 'G-XXXXXXXXXX';
+const GTAG_JS_ENTRY = 'javascripts/gtag.js';
+const GTAG_ID_REGEX = /gtag_id\s*=\s*["'](G-[A-Za-z0-9_-]+)["']/;
+
+export type GtagMigrationResult = {
+  /** The measurement id that was moved into extra.analytics, if any */
+  movedProperty: string | null;
+  /** The id already in extra.analytics, when gtag.js declared a different one */
+  conflictingProperty: string | null;
+  fileRemoved: boolean;
+  entryRemoved: boolean;
+};
+
+/**
+ * Moves the Google Analytics measurement id of a project documentation out of
+ * docs/javascripts/gtag.js and into extra.analytics of its mkdocs.yml.
+ *
+ * Analytics used to be a script sfdx-hardis copied into the project, which the project
+ * owner edited to put their id in. It did all of its work inside location$.subscribe, and
+ * location$ is a plain Subject: it emits when the theme swaps the body for an instant
+ * navigation and stays silent for the page that is already open. The page a reader landed
+ * on was never counted, and a reader who landed and left was never counted at all.
+ *
+ * The theme has done this properly for a while through extra.analytics, so the script is
+ * gone and the id moves to where the theme reads it. mkdocsYml is mutated, and the caller
+ * writes it. Nothing is deleted until the id it held has somewhere else to live.
+ */
+export async function migrateGtagJsToMkDocsAnalytics(projectDir: string, mkdocsYml: any): Promise<GtagMigrationResult> {
+  const result: GtagMigrationResult = { movedProperty: null, conflictingProperty: null, fileRemoved: false, entryRemoved: false };
+  const gtagFile = path.join(projectDir, 'docs', 'javascripts', 'gtag.js');
+  const gtagFileExists = fs.existsSync(gtagFile);
+  const listedEntry = (mkdocsYml?.extra_javascript || []).includes(GTAG_JS_ENTRY);
+  if (!gtagFileExists && !listedEntry) {
+    return result;
+  }
+
+  const declaredId = gtagFileExists ? (GTAG_ID_REGEX.exec(await fs.readFile(gtagFile, 'utf8'))?.[1] ?? null) : null;
+  const configuredId = declaredId && declaredId !== GTAG_PLACEHOLDER_ID ? declaredId : null;
+  const alreadyInMkDocs = mkdocsYml?.extra?.analytics?.property ?? null;
+
+  // Two different ids, one in each place: the project site is counting twice and only its
+  // owner knows which one is theirs. Nothing is touched, and both are named in the log.
+  if (configuredId && alreadyInMkDocs && alreadyInMkDocs !== configuredId) {
+    result.conflictingProperty = alreadyInMkDocs;
+    uxLog("warning", this, c.yellow(t('gtagJsAndMkDocsAnalyticsDisagree', {
+      gtagFile: c.green(gtagFile),
+      gtagProperty: c.green(configuredId),
+      mkdocsProperty: c.green(alreadyInMkDocs),
+    })));
+    return result;
+  }
+
+  if (configuredId && !alreadyInMkDocs) {
+    mkdocsYml.extra = mkdocsYml.extra || {};
+    mkdocsYml.extra.analytics = { provider: 'google', property: configuredId };
+    result.movedProperty = configuredId;
+  }
+
+  if (listedEntry) {
+    mkdocsYml.extra_javascript = mkdocsYml.extra_javascript.filter((jsItem: string) => jsItem !== GTAG_JS_ENTRY);
+    result.entryRemoved = true;
+  }
+  if (gtagFileExists) {
+    await fs.remove(gtagFile);
+    result.fileRemoved = true;
+  }
+
+  if (result.movedProperty) {
+    uxLog("action", this, c.cyan(t('googleAnalyticsMovedToMkDocsYml', { property: c.green(result.movedProperty) })));
+  }
+  return result;
+}
+
 export async function writeMkDocsFile(mkdocsYmlFile: string, mkdocsYml: any) {
-  const mkdocsYmlStr = yaml
-    .dump(mkdocsYml, { lineWidth: -1 })
-    .replace("!!python/name:materialx.emoji.twemoji", '!!python/name:material.extensions.emoji.twemoji')
-    .replace("!!python/name:materialx.emoji.to_svg", '!!python/name:material.extensions.emoji.to_svg')
-    .replace("'!!python/name:material.extensions.emoji.twemoji'", '!!python/name:material.extensions.emoji.twemoji')
-    .replace("'!!python/name:material.extensions.emoji.to_svg'", '!!python/name:material.extensions.emoji.to_svg')
-    .replace("'!!python/name:pymdownx.superfences.fence_code_format'", '!!python/name:pymdownx.superfences.fence_code_format');
+  let mkdocsYmlStr: string;
+  // The file is edited in place when it already exists: a mkdocs.yml is written
+  // by hand, and rebuilding it from the parsed object drops every comment in it
+  // and rewraps what is left.
+  if (fs.existsSync(mkdocsYmlFile)) {
+    mkdocsYmlStr = mergeIntoYamlText(fs.readFileSync(mkdocsYmlFile, 'utf-8'), mkdocsYml);
+  } else {
+    mkdocsYmlStr = yaml.dump(mkdocsYml, { lineWidth: -1 });
+  }
+  for (const tag of [EMOJI_TWEMOJI_TAG, EMOJI_TO_SVG_TAG, FENCE_CODE_FORMAT_TAG]) {
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(`'${tag}'`, tag);
+    mkdocsYmlStr = mkdocsYmlStr.replaceAll(`"${tag}"`, tag);
+  }
   await fs.writeFile(mkdocsYmlFile, mkdocsYmlStr);
-  uxLog("action", this, c.cyan(`Updated mkdocs-material config file at ${c.green(mkdocsYmlFile)}`));
+  uxLog("action", this, c.cyan(t('updatedZensicalConfigFileAt', { mkdocsYmlFile: c.green(mkdocsYmlFile) })));
 }
 
 const alreadySaid: string[] = [];
@@ -122,7 +533,7 @@ export class SalesforceSetupUrlBuilder {
 
     if (!pathTemplate) {
       if (!alreadySaid.includes(metadataType)) {
-        uxLog("log", this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
+        //        uxLog("log", this, c.grey(`Unsupported metadata type for doc quick link: ${metadataType}`));
         alreadySaid.push(metadataType);
       }
       return null;
@@ -140,7 +551,7 @@ export class SalesforceSetupUrlBuilder {
       .replace(/\{apiName\}/g, apiNameFinal || '');
 
     if (urlPath.includes('{apiName}') || urlPath.includes('{objectName}')) {
-      uxLog("log", this, c.grey(`Wrong replacement in ${urlPath} with values apiName:${apiNameFinal} and objectName:${objectName}`));
+      uxLog("log", this, c.grey(t('wrongReplacementInWithValuesApinameAnd', { urlPath, apiNameFinal, objectName })));
     }
 
     return urlPath;
@@ -153,16 +564,16 @@ export async function completeAttributesDescriptionWithAi(attributesMarkdown: st
   }
   const aiCache = await UtilsAi.findAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName);
   if (aiCache.success === true) {
-    uxLog("log", this, c.grey("Used AI cache for attributes completion (set IGNORE_AI_CACHE=true to force call to AI)"));
+    uxLog("log", this, c.grey(t('usedAiCacheForAttributesCompletionSet')));
     return aiCache.cacheText ? includeFromFile(aiCache.aiCacheDirFile, aiCache.cacheText) : attributesMarkdown;
   }
-  if (AiProvider.isAiAvailable()) {
+  if (await AiProvider.isAiAvailable()) {
     // Invoke AI Service
-    const prompt = AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
+    const prompt = await AiProvider.buildPrompt("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", { "MARKDOWN": attributesMarkdown, "OBJECT_NAME": objectName });
     const aiResponse = await AiProvider.promptAi(prompt, "PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD");
     // Replace description in markdown
     if (aiResponse?.success) {
-      const responseText = aiResponse.promptResponse || "No AI description available";
+      const responseText = aiResponse.promptResponse || t('docMdNoAiDescriptionAvailable');
       await UtilsAi.writeAiCache("PROMPT_COMPLETE_OBJECT_ATTRIBUTES_MD", [attributesMarkdown], objectName, responseText);
       attributesMarkdown = includeFromFile(aiCache.aiCacheDirFile, responseText);
     }
@@ -176,40 +587,143 @@ export async function replaceInFile(filePath: string, stringToReplace: string, r
   await fs.writeFile(filePath, newContent);
 }
 
+// Python packages needed to build the site with Zensical.
+// Zensical reads mkdocs.yml directly, so no config conversion is required.
+const ZENSICAL_PIP_PACKAGES = "zensical mdx_truly_sane_lists";
+const ZENSICAL_DOCKER_IMAGE = "zensical/zensical";
+
 export async function generateMkDocsHTML() {
-  const mkdocsLocalOk = await installMkDocs();
-  if (mkdocsLocalOk) {
-    // Generate MkDocs HTML pages with local MkDocs
-    uxLog("action", this, c.cyan("Generating HTML pages with mkdocs..."));
-    const mkdocsBuildRes = await execCommand("mkdocs build -v || python -m mkdocs build -v || py -m mkdocs build -v", this, { fail: false, output: true, debug: false });
-    if (mkdocsBuildRes.status !== 0) {
-      throw new SfError('MkDocs build failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
+  const zensicalLocalOk = await installMkDocs();
+  if (zensicalLocalOk) {
+    // Generate HTML pages with local Zensical
+    uxLog("action", this, c.cyan(t('generatingHtmlPagesWithZensical')));
+    const buildCommands = ["zensical build", "python -m zensical build", "py -m zensical build"];
+    const zensicalBuildRes = await execCommand(buildCommands.join(" || "), this, { fail: false, output: true, debug: false });
+    if (zensicalBuildRes.status !== 0) {
+      throw new SfError('Zensical build failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
     }
   }
   else {
-    // Generate MkDocs HTML pages with Docker
-    uxLog("action", this, c.cyan("Generating HTML pages with Docker..."));
-    const mkdocsBuildRes = await execCommand("docker run --rm -v $(pwd):/docs squidfunk/mkdocs-material build -v", this, { fail: false, output: true, debug: false });
-    if (mkdocsBuildRes.status !== 0) {
-      throw new SfError('MkDocs build with docker failed:\n' + mkdocsBuildRes.stderr + "\n" + mkdocsBuildRes.stdout);
+    // Generate HTML pages with Docker
+    uxLog("action", this, c.cyan(t('generatingHtmlPagesWithDocker')));
+    const zensicalBuildRes = await execCommand(`docker run --rm -v $(pwd):/docs ${ZENSICAL_DOCKER_IMAGE} build`, this, { fail: false, output: true, debug: false });
+    if (zensicalBuildRes.status !== 0) {
+      throw new SfError('Zensical build with docker failed:\n' + zensicalBuildRes.stderr + "\n" + zensicalBuildRes.stdout);
     }
   }
 }
 
 export async function installMkDocs() {
-  uxLog("action", this, c.cyan("Managing mkdocs-material local installation..."));
-  let mkdocsLocalOk = false;
-  const installMkDocsRes = await execCommand("pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || python3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists || py3 -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists", this, { fail: false, output: true, debug: false });
-  if (installMkDocsRes.status === 0) {
-    mkdocsLocalOk = true;
+  uxLog("action", this, c.cyan(t('managingZensicalLocalInstallation')));
+  let zensicalLocalOk = false;
+  const pipCommands = ["pip", "python -m pip", "py -m pip", "python3 -m pip", "py3 -m pip"]
+    .map((pipCmd) => `${pipCmd} install ${ZENSICAL_PIP_PACKAGES}`);
+  const installZensicalRes = await execCommand(pipCommands.join(" || "), this, { fail: false, output: true, debug: false });
+  if (installZensicalRes.status === 0) {
+    zensicalLocalOk = true;
   }
-  return mkdocsLocalOk;
+  return zensicalLocalOk;
 }
 
-export function getMetaHideLines(): string {
+// Index tables used to be rendered in the order the metadata files happened to be walked in:
+// the Lightning Web Components table came out reversed, and an object page listed its related
+// components in an order that matched neither the menu nor the section index. Sorted in place,
+// so the arrays that feed several tables are only ever sorted once.
+export function sortDescriptionsByName(descriptions: any[]): any[] {
+  return descriptions.sort((a, b) =>
+    String(a?.name ?? "").localeCompare(String(b?.name ?? ""), 'en', { sensitivity: 'base' })
+  );
+}
+
+// [Label](Something.md) or [Label](../flows/Something.md), never an http(s) link of the page footer.
+// A page name can hold a space ("Case.Case creation Auto-Response.md"), so only the closing
+// parenthesis and the end of the line stop the target.
+const MARKDOWN_PAGE_LINK_IN_INDEX_REGEX = /\]\((?!\w+:)[^)\n]+\.md[)#]/;
+
+// A section index page is written even when its section stayed empty, so its existence says
+// nothing. It counts as documented once it lists at least one page. Counting the files of its
+// folder would not do: Process Builders have an index of their own, but their pages are written
+// among the Flows.
+export function indexPageListsPages(indexContent: string): boolean {
+  return MARKDOWN_PAGE_LINK_IN_INDEX_REGEX.test(indexContent);
+}
+
+// A section that documents nothing still kept an index.md carrying a title and a footer and not a
+// single link: a page missing from the navigation and from the home page, that the site generator
+// still built and that a search engine could still send a reader to. Sections whose metadata is
+// gone since the last run leave the same page behind. Both are removed here, along with the folder
+// once nothing is left in it. Only the folders sfdx-hardis writes itself are looked at, so a page
+// someone added by hand is never touched.
+export async function removeEmptySectionIndexPages(docsRoot: string): Promise<string[]> {
+  const removedSections: string[] = [];
+  for (const folder of GENERATED_DOC_FOLDERS) {
+    const sectionFolder = path.join(docsRoot, folder);
+    if (!fs.existsSync(sectionFolder)) {
+      continue;
+    }
+    const indexFile = path.join(sectionFolder, 'index.md');
+    if (fs.existsSync(indexFile) && !indexPageListsPages(await fs.readFile(indexFile, 'utf8'))) {
+      await fs.remove(indexFile);
+      removedSections.push(folder);
+    }
+    // A section that documents nothing is still given its folder before it gives up, and an empty
+    // folder left in the documentation is one more thing to wonder about when reading the diff.
+    if ((await fs.readdir(sectionFolder)).length === 0) {
+      await fs.remove(sectionFolder);
+    }
+  }
+  return removedSections;
+}
+
+// Checksum of the home page a run wrote, so a later run can tell a page nobody touched from a page
+// the project made its own. Git can check the page out with CRLF line endings, and an editor can
+// leave a blank line at the end, so neither counts as a change.
+const HOME_PAGE_STAMP_REGEX = /^<!-- sfdx-hardis-home-page: ([0-9a-f]{64}) -->\r?$/m;
+
+// Link of the footer every generated page ends with, the only mark a home page written before the
+// stamp existed carries.
+const GENERATED_PAGE_FOOTER_MARK = 'hardis/doc/project2markdown/';
+
+function homePageChecksum(homePageContent: string): string {
+  return createHash('sha256').update(homePageContent.replace(/\r\n/g, '\n').trimEnd()).digest('hex');
+}
+
+export function stampGeneratedHomePage(homePageContent: string): string {
+  return `${homePageContent.trimEnd()}\n\n<!-- sfdx-hardis-home-page: ${homePageChecksum(homePageContent)} -->\n`;
+}
+
+// DO_NOT_OVERWRITE_INDEX_MD keeps the home page a project wrote for itself. A project that set the
+// variable and then never touched the page used to stay forever on the home page of the sfdx-hardis
+// version that generated it: the page is refreshed as long as it is still, to the character, what a
+// previous run wrote. Editing it, even by a word, hands it over to the project for good.
+export function isUntouchedGeneratedHomePage(homePageContent: string): boolean {
+  const stamp = HOME_PAGE_STAMP_REGEX.exec(homePageContent);
+  if (stamp) {
+    return homePageChecksum(homePageContent.replace(HOME_PAGE_STAMP_REGEX, '')) === stamp[1];
+  }
+  // Written before the stamp existed: the sfdx-hardis footer is all there is to go on
+  return homePageContent.includes(GENERATED_PAGE_FOOTER_MARK);
+}
+
+// A page takes its title from its first level 1 heading, and falls back to the file name when
+// it has none. Every generated index.md was therefore called "Index": in the browser tab, in
+// the search results and as the heading at the top of the page. The table that opens a section
+// index already carries the section name as a level 2 heading, so it is promoted to level 1.
+export function promoteSectionIndexTitle(indexLines: string[]): string[] {
+  const promoted = [...indexLines];
+  const titleIndex = promoted.findIndex(line => line.startsWith("## "));
+  if (titleIndex > -1) {
+    promoted[titleIndex] = promoted[titleIndex].slice(1);
+  }
+  return promoted;
+}
+
+// Zensical has no glob-based search exclusion (the mkdocs-exclude-search plugin has no
+// equivalent yet), so noisy generated pages opt out one by one with page front matter.
+export function getSearchExcludeLines(): string {
   return `---
-hide:
-  - path
+search:
+  exclude: true
 ---
 
 `;
@@ -226,8 +740,8 @@ export function includeFromFile(cacheFilePath: string, content: string): string 
   if (isValidFingerprint) {
     // Remove the fingerprint from the cacheFilePath
     const cacheFilePathOverridden = fileNameWithoutExtension.substring(0, lastDashIndex) + fileExtensionWithDot;
-    return `<!-- The following part has been generated by AI. -->
-<!-- If you want to override it manually, rename the cache file into ${cacheFilePathOverridden} then update it with the content you want. -->
+    return `<!-- ${t('docMdAiGeneratedPartComment')} -->
+<!-- ${t('docMdOverrideManuallyHint', { cacheFilePathOverridden: cacheFilePathOverridden })} -->
 <!-- Cache file start: ${cacheFilePath} -->
 
 ${content}
@@ -236,8 +750,8 @@ ${content}
 `
   }
   else {
-    return `<!-- The following part has been generated by AI then manually updated -->
-<!-- If you want AI to recalculate it again, you can delete file ${cacheFilePath} -->
+    return `<!-- ${t('docMdAiGeneratedThenManuallyUpdated')} -->
+<!-- ${t('docMdAiRecalculateHint', { cacheFilePath: cacheFilePath })} -->
 <!-- Cache file: ${cacheFilePath} -->
 
 ${content}

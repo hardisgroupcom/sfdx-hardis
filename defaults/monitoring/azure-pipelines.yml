@@ -34,6 +34,10 @@ jobs:
   - job: BackupSfdxHardis
     pool:
       vmImage: "ubuntu-latest"
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
+    # Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis-ubuntu:latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
 
     steps:
       - checkout: self
@@ -46,14 +50,6 @@ jobs:
           git config --global user.name "sfdx-hardis monitoring"
         workingDirectory: $(System.DefaultWorkingDirectory)
         displayName: Git config
-
-      - script: |
-          npm install @salesforce/cli -g
-          sf plugins install @salesforce/plugin-packaging
-          echo y | sf plugins install sfdx-hardis
-          sf version --verbose --json
-        workingDirectory: $(System.DefaultWorkingDirectory)
-        displayName: Install @salesforce/cli & sfdx-hardis
 
       - script: |
           git checkout -b "$BRANCH_NAME"
@@ -107,7 +103,7 @@ jobs:
       - script: |
           git status
           git add --all
-          git commit -m "Org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
+          git commit -m "chore(monitoring): org state on $(date -u +'%Y-%m-%d %H:%M') for $BRANCH_NAME [skip ci]" || echo "No changes to commit"
           git push --set-upstream origin "$BRANCH_NAME"
         displayName: Add new commit to Monitoring Repo
         workingDirectory: $(System.DefaultWorkingDirectory)
@@ -127,6 +123,8 @@ jobs:
     dependsOn: BackupSfdxHardis
     pool:
       vmImage: "ubuntu-latest"
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     timeoutInMinutes: "120"
 
     steps:
@@ -135,15 +133,7 @@ jobs:
         displayName: Git checkout
 
       - script: |
-          npm install @salesforce/cli -g
-          sf plugins install @salesforce/plugin-packaging
-          echo y | sf plugins install sfdx-hardis
-          sf version --verbose --json
-        workingDirectory: $(System.DefaultWorkingDirectory)
-        displayName: Install @salesforce/cli & sfdx-hardis
-
-      - script: |
-          git pull origin "${BRANCH_NAME}"
+          git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
         displayName: Pull git branch latest commit
         env:
           CI: "true"
@@ -206,12 +196,12 @@ jobs:
       - script: |
           git config --global user.email "contact@cloudity.com"
           git config --global user.name "sfdx-hardis monitoring"
-          git pull origin "${BRANCH_NAME}"
+          git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
         workingDirectory: $(System.DefaultWorkingDirectory)
         displayName: Git config & pull latest commit
 
       # Pull MegaLinter docker image
-      - script: docker pull oxsecurity/megalinter-salesforce:latest
+      - script: docker pull ghcr.io/oxsecurity/megalinter-salesforce:latest
         displayName: Pull MegaLinter
       # Run MegaLinter
       - script: |
@@ -227,7 +217,7 @@ jobs:
             -e NOTIF_API_METRICS_URL=$(NOTIF_API_METRICS_URL) \
             -e NOTIF_API_METRICS_BASIC_AUTH_USERNAME=$(NOTIF_API_METRICS_BASIC_AUTH_USERNAME) \
             -e NOTIF_API_METRICS_BASIC_AUTH_PASSWORD=$(NOTIF_API_METRICS_BASIC_AUTH_PASSWORD) \
-            oxsecurity/megalinter-salesforce:latest
+            ghcr.io/oxsecurity/megalinter-salesforce:latest
         continueOnError: "true"
         displayName: Run MegaLinter
 
@@ -245,6 +235,8 @@ jobs:
     dependsOn: BackupSfdxHardis
     pool:
       vmImage: "ubuntu-latest"
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
 
     steps:
       - checkout: self
@@ -252,17 +244,9 @@ jobs:
         displayName: Git checkout
 
       - script: |
-          npm install @salesforce/cli -g
-          sf plugins install @salesforce/plugin-packaging
-          echo y | sf plugins install sfdx-hardis
-          sf version --verbose --json
-        workingDirectory: $(System.DefaultWorkingDirectory)
-        displayName: Install @salesforce/cli & sfdx-hardis
-
-      - script: |
           git config --global user.email "contact@cloudity.com"
           git config --global user.name "sfdx-hardis monitoring"
-          git pull origin "${BRANCH_NAME}"
+          git pull origin "${BRANCH_NAME}" || echo "Issue when pulling latest branch state, but that should be ok"
         displayName: Pull git branch latest commit
         env:
           CI: "true"

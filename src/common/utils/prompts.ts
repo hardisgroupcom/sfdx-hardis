@@ -1,30 +1,56 @@
 import c from "chalk";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-import inquirer from "inquirer";
+import checkbox from "@inquirer/checkbox";
+import input from "@inquirer/input";
+import number from "@inquirer/number";
+import select from "@inquirer/select";
 import { SfError } from "@salesforce/core";
 import { isCI, uxLog } from "./index.js";
 import { WebSocketClient } from "../websocketClient.js";
+import { t } from './i18n.js';
+
+export interface PromptChoice<T = unknown> {
+  title: string;
+  value?: T;
+  description?: string;
+}
 
 export interface PromptsQuestion {
   message: string;
   description: string;
   placeholder?: string;
   type: "select" | "multiselect" | "confirm" | "text" | "number";
+  /** Set to true when the answer is a secret (token, password...): the echo of the answer is hidden */
+  sensitive?: boolean;
   name?: string;
+  /** Array of choices. Use `PromptChoice` for proper typing. */
   choices?: Array<any>;
-  default?: any;
-  validate?: any;
-  initial?: any;
+  default?: unknown;
+  validate?: (value: any) => boolean | string | Promise<boolean | string>;
+  initial?: unknown;
   optionsPerPage?: number;
 }
 
+/**
+ * Test seam over the question reformatting below: it is the step that has to keep the terminal
+ * prompt and the VS Code QuickPick in agreement about defaults and preselection.
+ */
+export function prepareQuestionsForTests(questions: PromptsQuestion[]): any[] {
+  return reformatQuestions(questions);
+}
+
 // Centralized prompts function
-export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
+export async function prompts(options: PromptsQuestion | PromptsQuestion[]): Promise<Record<string, any>> {
   if (isCI) {
     uxLog("log", this, c.grey(JSON.stringify(options, null, 2)));
     throw new SfError("Nothing should be prompted during CI!");
   }
   const questionsRaw = Array.isArray(options) ? options : [options];
+  const questionsReformatted: any = reformatQuestions(questionsRaw);
+  // Prompt user
+  return promptWithReformattedQuestions(questionsReformatted);
+}
+
+function reformatQuestions(questionsRaw: PromptsQuestion[]): any[] {
   const questionsReformatted: any = [];
   for (const question of questionsRaw) {
     if (!question.message.startsWith("🦙")) {
@@ -34,8 +60,8 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     if (question.type === "confirm") {
       question.type = "select";
       question.choices = [
-        { title: "✅ Yes", value: true },
-        { title: "❌ No", value: false },
+        { title: t('promptChoiceYes'), value: true },
+        { title: t('promptChoiceNo'), value: false },
       ];
       question.initial = question.initial === false ? 1 : 0;
     }
@@ -46,14 +72,29 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
     // Add exit option when possible
     if (question.type === "select" && !WebSocketClient.isAliveWithLwcUI()) {
       question.choices = question.choices || [];
-      question.choices.push({ title: "⛔ Exit this script", value: "exitNow" });
+      question.choices.push({ title: t('promptChoiceExit'), value: "exitNow" });
     }
     if (["select", "multiselect"].includes(question.type) && question.optionsPerPage == null) {
       question.optionsPerPage = 9999;
     }
+    // The VS Code QuickPick pre-selects from choice.selected, while the terminal prompt reads
+    // question.initial: mark the choices so a preselection reaches both. Without this, a caller
+    // passing initial (ex: the stories ticked in the DevOps Pipeline, sent by
+    // hardis:project:promotion:create --pull-requests) sees them unselected in VS Code.
+    if (["select", "multiselect"].includes(question.type) && question.initial != null && Array.isArray(question.choices)) {
+      const initialValues = Array.isArray(question.initial) ? question.initial : [question.initial];
+      for (const choice of question.choices as any[]) {
+        if (choice && choice.selected !== true && initialValues.includes(choice.value)) {
+          choice.selected = true;
+        }
+      }
+    }
     questionsReformatted.push(question);
   }
-  // Prompt user
+  return questionsReformatted;
+}
+
+async function promptWithReformattedQuestions(questionsReformatted: any): Promise<Record<string, any>> {
   let answers: any = {};
   if (WebSocketClient.isAlive()) {
     // Use UI prompt
@@ -66,8 +107,10 @@ export async function prompts(options: PromptsQuestion | PromptsQuestion[]) {
       const answerKey = Object.keys(questionAnswer)[0];
       const answerValue = questionAnswer[answerKey];
       const answerLabel = getAnswerLabel(answerValue, question.choices);
-      if (JSON.stringify(answerLabel).toLowerCase().includes("token")) {
-        uxLog("log", this, c.grey("Selection hidden because it contains sensitive information."));
+      // question.sensitive is locale-independent (a translated message may not contain
+      // the word "token"); the answer-content check stays as a safety net
+      if (question.sensitive === true || JSON.stringify(answerLabel).toLowerCase().includes("token")) {
+        uxLog("log", this, c.grey(t('selectionHiddenBecauseItContainsSensitiveInformation')));
       } else {
         uxLog("log", this, c.grey(answerLabel));
       }
@@ -127,7 +170,7 @@ function checkStopPrompts(answers: any) {
 }
 
 function stopPrompt() {
-  uxLog("error", this, c.red("Script terminated at user request."));
+  uxLog("error", this, c.red(t('scriptTerminatedAtUserRequest')));
   // Send close client message with aborted status if WebSocket is alive
   if (WebSocketClient.isAlive()) {
     WebSocketClient.sendCloseClientMessage("aborted");
@@ -135,34 +178,96 @@ function stopPrompt() {
   process.exit(0);
 }
 
-async function terminalPrompts(questions: PromptsQuestion[]) {
-  const inquirerQuestions: any = [];
-  for (const question of questions) {
-    const inquirerQuestion: any = {
-      name: question.name,
-      type: question.type === "text" ? "input" : question.type === "multiselect" ? "checkbox" : question.type === "select" ? "list" : question.type,
-      message: question.message,
-    };
-    if (question.choices) {
-      inquirerQuestion.choices = question.choices.map((qstn) => {
-        return {
-          name: qstn.title,
-          value: qstn.value,
-        };
-      });
-    }
-    if (question.default) {
-      inquirerQuestion.default = question.default;
-    } else if (question.initial) {
-      inquirerQuestion.default = question.initial;
-    }
-    if (question.validate) {
-      inquirerQuestion.validate = question.validate;
-    }
-    inquirerQuestions.push(inquirerQuestion);
+// Resolves the default of a choice-based question: callers pass either a choice value
+// or (legacy behavior) the index of the choice in the list
+export function resolveDefaultChoiceValue(defaultValue: unknown, choices: Array<any>): unknown {
+  if (defaultValue === undefined || defaultValue === null) {
+    return undefined;
   }
+  if (choices.some((choice) => choice.value === defaultValue)) {
+    return defaultValue;
+  }
+  if (typeof defaultValue === "number" && Number.isInteger(defaultValue) && choices[defaultValue] !== undefined) {
+    return choices[defaultValue].value;
+  }
+  return defaultValue;
+}
+
+export function getQuestionDefault(question: PromptsQuestion): unknown {
+  // Same precedence as before: default first, then initial (0 and "" are treated as unset)
+  if (question.default) {
+    return question.default;
+  }
+  if (question.initial) {
+    return question.initial;
+  }
+  return undefined;
+}
+
+export interface TerminalPromptFunctions {
+  select: (config: any) => Promise<any>;
+  checkbox: (config: any) => Promise<any>;
+  input: (config: any) => Promise<any>;
+  number: (config: any) => Promise<any>;
+}
+
+let terminalPromptFunctions: TerminalPromptFunctions = { select, checkbox, input, number };
+
+/** Replaces the terminal prompt implementations (unit tests only). Pass null to restore the defaults. */
+export function setTerminalPromptFunctionsForTests(functions: TerminalPromptFunctions | null): void {
+  terminalPromptFunctions = functions || { select, checkbox, input, number };
+}
+
+// Builds the @inquirer configuration of a question and asks it in the terminal
+export async function askTerminalQuestion(question: PromptsQuestion): Promise<any> {
+  const defaultValue = getQuestionDefault(question);
+  const validate = question.validate ? (value: any) => question.validate!(value) : undefined;
+  const choices = (question.choices || []).map((choice) => ({
+    name: choice.title,
+    value: choice.value,
+    description: choice.description,
+  }));
+  const pageSize = question.optionsPerPage || 9999;
+  if (question.type === "select") {
+    return terminalPromptFunctions.select({
+      message: question.message,
+      choices: choices,
+      default: resolveDefaultChoiceValue(defaultValue, choices),
+      pageSize: pageSize,
+    });
+  }
+  if (question.type === "multiselect") {
+    const defaultValues = Array.isArray(defaultValue) ? defaultValue : [];
+    return terminalPromptFunctions.checkbox({
+      message: question.message,
+      choices: choices.map((choice) => ({ ...choice, checked: defaultValues.includes(choice.value) })),
+      pageSize: pageSize,
+      validate: validate,
+    });
+  }
+  if (question.type === "number") {
+    return terminalPromptFunctions.number({
+      message: question.message,
+      default: typeof defaultValue === "number" ? defaultValue : undefined,
+      validate: validate,
+    });
+  }
+  return terminalPromptFunctions.input({
+    message: question.message,
+    // A secret is never shown in the terminal: not while it is typed, not once it is given, and
+    // not as a default value, which inquirer prints next to the question as it is
+    default: typeof defaultValue === "string" && question.sensitive !== true ? defaultValue : undefined,
+    validate: validate,
+    ...(question.sensitive === true ? { transformer: (value: string) => "*".repeat((value || "").length) } : {}),
+  });
+}
+
+async function terminalPrompts(questions: PromptsQuestion[]) {
+  const answers: Record<string, any> = {};
   try {
-    const answers = await (inquirer as any).prompt(inquirerQuestions);
+    for (const question of questions) {
+      answers[question.name || "value"] = await askTerminalQuestion(question);
+    }
     return answers;
   } catch (e) {
     throw new SfError("Error while prompting: " + (e as Error).message);

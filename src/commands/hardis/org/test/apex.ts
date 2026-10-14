@@ -1,15 +1,17 @@
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Connection, Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
-import { execCommand, extractRegexMatchesMultipleGroups, uxLog } from '../../../../common/utils/index.js';
+import { extractRegexMatchesMultipleGroups, isMonitoringJob, uxLog } from '../../../../common/utils/index.js';
 import { getNotificationButtons, getOrgMarkdown } from '../../../../common/utils/notifUtils.js';
 import { CONSTANTS, getConfig, getEnvVar, getReportDirectory } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
 import { generateApexCoverageOutputFile } from '../../../../common/utils/deployUtils.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
+import { ApexTestNoResultReason, extractErrorSummary, parseWaitMinutes, runApexTestsResilient } from '../../../../common/utils/apexTestUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -24,12 +26,42 @@ If following configuration is defined, it will fail if apex coverage target is n
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 - Env \`APEX_TESTS_MIN_COVERAGE_ORG_WIDE\` or \`.sfdx-hardis\` property \`apexTestsMinCoverageOrgWide\`
 
+In a monitoring job, failing tests or a coverage under the target do not fail the job: the result is in the notification and the reports. A test run that stops without a result (expired session, timeout, network errors) still fails it. Everywhere else, the command exits with code 1.
+
 You can override env var SFDX_TEST_WAIT_MINUTES to wait more than 120 minutes.
 
+## Command Behavior
+
+- Starts the Apex tests asynchronously, then checks every 30 seconds whether the test run is over.
+- Network errors while talking to the org (for example \`fetch failed\` during a long nightly run) are retried, so a short outage does not fail the job.
+- If the test run does not end in time, or if its results cannot be retrieved, the notification says so with the test run id, and no failing classes or coverage are sent, instead of reporting failed tests and a 0% coverage.
+
 This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-apex-tests/) and can output Grafana, Slack and MsTeams Notifications.
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:test:apex --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+<details markdown="1">
+<summary>Technical explanations</summary>
+
+- Runs \`sf apex run test --test-level <level> --code-coverage --json\` without \`--wait\` to get the test run id.
+- Polls \`ApexTestRunResult.Status\` until the run is over, within \`SFDX_TEST_WAIT_MINUTES\` (default 120, also used when the value is not a positive integer).
+- Downloads results with \`sf apex get test --test-run-id <id> --code-coverage --result-format human --output-dir <reportDir>\`.
+- Transient network errors (\`fetch failed\`, \`ECONNRESET\`, \`ETIMEDOUT\`, \`socket hang up\`...) are retried on every call to the org.
+- The download of the results is retried up to 4 times, 30 seconds apart, as long as it returns no test outcome.
+
+</details>
 `;
 
-  public static examples = ['$ sf hardis:org:test:apex'];
+  public static examples = ['$ sf hardis:org:test:apex',
+    '$ sf hardis:org:test:apex --agent',];
 
   public static flags: any = {
     testlevel: Flags.string({
@@ -37,6 +69,10 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       default: 'RunLocalTests',
       options: ['NoTestRun', 'RunSpecifiedTests', 'RunLocalTests', 'RunAllTestsInOrg'],
       description: messages.getMessage('testLevel'),
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -58,10 +94,15 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
   protected configInfo: any = {};
   protected testRunOutcome: string;
   protected testRunOutputString: string;
+  protected testRunId: string | null = null;
+  protected testRunNoResultReason: ApexTestNoResultReason | null = null;
+  protected waitMinutes = 120;
   protected statusMessage: string;
   protected coverageTarget = 75.0;
   protected coverageValue = 0.0;
   protected failingTestClasses: any[] = [];
+  // False when the test run gave no test result (expired session, timeout, network errors, crash)
+  protected testRunCompleted = true;
   private notifSeverity: NotifSeverity = 'log';
   private notifText: string;
   private notifAttachments: any = [];
@@ -80,9 +121,9 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     this.orgMarkdown = await getOrgMarkdown(orgInstanceUrl);
     this.notifButtons = await getNotificationButtons();
     /* jscpd:ignore-end */
-    uxLog("action", this, c.cyan(`Running Apex tests in org ${orgInstanceUrl} with test level: ${testlevel}`));
-    await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername());
-    uxLog("action", this, c.cyan(`Apex tests completed with outcome: ${this.testRunOutcome}`));
+    uxLog("action", this, c.cyan(t('runningApexTestsInOrgWithTest', { orgInstanceUrl, testlevel })));
+    await this.runApexTests(testlevel, debugMode, flags['target-org']?.getUsername(), flags['target-org']?.getConnection());
+    uxLog("action", this, c.cyan(t('apexTestsCompletedWithOutcome', { testRunOutcome: this.testRunOutcome })));
     // No Apex
     if (this.testRunOutcome === 'NoApex') {
       this.notifSeverity = 'log';
@@ -94,14 +135,18 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     else if (this.testRunOutcome === 'Failed') {
       await this.processApexTestsFailure();
     }
+    // Tests results could not be retrieved: do not report fake failures or a 0% coverage
+    else if (this.testRunOutcome === 'NoResult') {
+      this.processApexTestsNoResult();
+    }
     else if (this.testRunOutcome === 'Passed') {
-      uxLog("success", this, c.green(`Apex tests passed (${this.testRunOutcome})`));
+      uxLog("success", this, c.green(t('apexTestsPassed', { testRunOutcome: this.testRunOutcome })));
     }
     // Get test coverage (and fail if not reached)
     await this.checkOrgWideCoverage();
     await this.checkTestRunCoverage();
 
-    if (this.testRunOutcome !== 'NoApex') {
+    if (this.testRunOutcome !== 'NoApex' && this.testRunOutcome !== 'NoResult') {
       uxLog("other", this, `Apex coverage: ${this.coverageValue}% (target: ${this.coverageTarget}%)`);
     }
 
@@ -114,12 +159,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       severity: this.notifSeverity,
       attachedFiles: this.notifAttachedFiles,
       logElements: this.failingTestClasses,
-      data: {
+      // No values when results could not be retrieved, so Grafana does not show a fake 0% coverage
+      data: this.testRunOutcome === 'NoResult' ? {} : {
         metric: this.failingTestClasses.length,
         coverageTarget: this.coverageTarget,
         coverageValue: this.coverageValue,
       },
-      metrics: {
+      metrics: this.testRunOutcome === 'NoResult' ? {} : {
         ApexTestsFailingClasses: this.failingTestClasses.length,
         ApexTestsCodeCoverage: this.coverageValue,
       },
@@ -127,8 +173,14 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
 
     // Handle output message & exit code
     if (this.notifSeverity === 'error') {
-      process.exitCode = 1;
       uxLog("error", this, c.red(this.statusMessage));
+      // A monitoring job that ran to its end does not fail: the notification and the reports carry the result.
+      // A test run that gave no result did not run to its end
+      if (this.testRunCompleted && (await isMonitoringJob())) {
+        uxLog("warning", this, c.yellow(t('monitoringFindingsDoNotFailJob', { command: c.bold('hardis:org:test:apex') })));
+      } else {
+        process.exitCode = 1;
+      }
     } else {
       uxLog("success", this, c.green(this.statusMessage));
     }
@@ -136,45 +188,63 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     return { orgId: flags['target-org'].getOrgId(), outputString: this.statusMessage, statusCode: process.exitCode };
   }
 
-  private async runApexTests(testlevel: any, debugMode: any, orgUsername: string | null) {
-    // Run tests with SFDX commands
+  private async runApexTests(testlevel: any, debugMode: any, orgUsername: string | null, conn: Connection) {
     const reportDir = await getReportDirectory();
-    const testCommand =
-      'sf apex run test' +
-      ' --code-coverage' +
-      ' --result-format human' +
-      ` --output-dir ${reportDir}` +
-      ` --wait ${getEnvVar("SFDX_TEST_WAIT_MINUTES") || '60'}` +
-      ` --test-level ${testlevel}` +
-      (orgUsername ? ` --target-org ${orgUsername}` : '') +
-      (debugMode ? ' --verbose' : '');
-    try {
-      const execCommandRes = await execCommand(testCommand, this, {
-        output: true,
-        debug: debugMode,
-        fail: true,
-      });
-      // Parse outcome value from logs with Regex
-      this.testRunOutcome = (/Outcome *(.*) */.exec(execCommandRes.stdout + execCommandRes.stderr) || '')[1].trim();
-      this.testRunOutputString = execCommandRes.stdout + execCommandRes.stderr;
-      await generateApexCoverageOutputFile();
-    } catch (e) {
-      // No Apex in the org
-      const errorMessage = (e as Error).message;
-      if (
-        errorMessage.includes('Toujours fournir une propriété classes, suites, tests ou testLevel') ||
-        errorMessage.includes('Always provide a classes, suites, tests, or testLevel property') ||
-        errorMessage.includes('No tests found for category') ||
-        errorMessage.includes('Aucun test trouvé pour category') ||
-        errorMessage.includes('Error (INVALID_INPUT)')
-      ) {
-        this.testRunOutcome = 'NoApex';
-      } else {
-        // Failing Apex tests
-        this.testRunOutputString = (e as Error).message;
-        this.testRunOutcome = 'Failed';
-        await generateApexCoverageOutputFile();
-      }
+    const waitMinutesEnv = getEnvVar("SFDX_TEST_WAIT_MINUTES");
+    this.waitMinutes = parseWaitMinutes(waitMinutesEnv);
+    if (waitMinutesEnv && String(this.waitMinutes) !== waitMinutesEnv.trim()) {
+      uxLog("warning", this, c.yellow(t('apexTestsInvalidWaitMinutes', { value: waitMinutesEnv, waitMinutes: this.waitMinutes })));
+    }
+    const testRunRes = await runApexTestsResilient({
+      testLevel: testlevel,
+      orgUsername,
+      conn,
+      reportDir,
+      waitMinutes: this.waitMinutes,
+      debugMode,
+      commandThis: this,
+    });
+    this.testRunOutputString = testRunRes.outputString;
+    if (testRunRes.status === 'noApex') {
+      this.testRunOutcome = 'NoApex';
+      return;
+    }
+    if (testRunRes.status === 'noResult') {
+      this.testRunOutcome = 'NoResult';
+      this.testRunNoResultReason = testRunRes.reason;
+      this.testRunId = testRunRes.testRunId;
+      this.testRunCompleted = false;
+      return;
+    }
+    // Parse outcome value from logs with Regex
+    const outcomeMatch = /Outcome *(.*) */.exec(testRunRes.outputString);
+    this.testRunOutcome = outcomeMatch ? outcomeMatch[1].trim() : 'Failed';
+    // A run that could not give a result prints no outcome
+    this.testRunCompleted = outcomeMatch !== null;
+    if (testRunRes.commandFailed && this.testRunOutcome === 'Passed') {
+      this.testRunOutcome = 'Failed';
+    }
+    await generateApexCoverageOutputFile();
+  }
+
+  private processApexTestsNoResult() {
+    this.notifSeverity = 'error';
+    const testRunInfo = this.testRunId ? ` Check test run ${this.testRunId} in Setup > Apex Test Execution.` : '';
+    if (this.testRunNoResultReason === 'timeout') {
+      uxLog("warning", this, c.yellow(this.testRunOutputString));
+      this.statusMessage = `Apex test run did not complete within ${this.waitMinutes} minutes: tests may still be running in the org. Increase SFDX_TEST_WAIT_MINUTES to wait longer.${testRunInfo}`;
+      this.notifText = `Apex test run did not complete within ${this.waitMinutes} minutes in org ${this.orgMarkdown} (tests may still be running in the org).${testRunInfo}`;
+    }
+    else if (this.testRunNoResultReason === 'networkError') {
+      uxLog("warning", this, c.yellow(t('apexTestsNetworkErrorUnableToGetResults', { testRunId: this.testRunId || '-' })));
+      this.statusMessage = `Unable to get Apex test results because of network errors: tests may still have run in the org.${testRunInfo}`;
+      this.notifText = `Unable to get Apex test results in org ${this.orgMarkdown} because of network errors (tests may still have run in the org).${testRunInfo}`;
+    }
+    else {
+      const errorSummary = extractErrorSummary(this.testRunOutputString).replace(/\.+$/, '');
+      uxLog("warning", this, c.yellow(t('apexTestsUnableToGetResults', { testRunId: this.testRunId || '-', message: errorSummary })));
+      this.statusMessage = `Unable to get Apex test results: ${errorSummary}.${testRunInfo}`;
+      this.notifText = `Unable to get Apex test results in org ${this.orgMarkdown}: ${errorSummary}.${testRunInfo}`;
     }
   }
 
@@ -196,23 +266,23 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       {
         text: this.failingTestClasses
           .map((failingTestClass) => {
-            return '• *' + failingTestClass.name + '*: ' + failingTestClass.error;
+            return '- **' + failingTestClass.name + '**: ' + failingTestClass.error;
           })
           .join('\n'),
       },
     ];
     this.statusMessage = `Apex tests failed (${this.failingTestClasses.length}). (Outcome: ${this.testRunOutcome})`;
-    this.notifText = `Apex tests failed (${this.failingTestClasses.length}) in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
+    this.notifText = `Apex tests failed (**${this.failingTestClasses.length}**) in org ${this.orgMarkdown} (Outcome: ${this.testRunOutcome})`;
     const failedTestsString = this.failingTestClasses
       .map((failingTestClass) => {
         return `- ${failingTestClass.name}: ${failingTestClass.error}`;
       })
       .join('\n');
-    uxLog("warning", this, c.yellow("Failing Apex tests:\n" + failedTestsString));
+    uxLog("warning", this, c.yellow(t('failingApexTests') + failedTestsString));
   }
 
   private async checkOrgWideCoverage() {
-    if (this.testRunOutcome === 'NoApex') {
+    if (this.testRunOutcome === 'NoApex' || this.testRunOutcome === 'NoResult') {
       return;
     }
     // Safely extract org-wide coverage from output to avoid crashes when regex doesn't match
@@ -223,7 +293,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
         : 0.0;
     if (coverageOrgWide === 0.0) {
       this.notifSeverity = 'error';
-      uxLog("warning", this, c.yellow('Warning: Unable to extract org wide coverage from test run output.\n' + this.testRunOutputString));
+      uxLog("warning", this, c.yellow(t('warningUnableToExtractOrgWideCoverage') + this.testRunOutputString));
     }
     const minCoverageOrgWide = parseFloat(
       process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
@@ -247,19 +317,19 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
     // Min coverage not reached
     else if (coverageOrgWide < minCoverageOrgWide) {
       this.notifSeverity = 'error';
-      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* should be > to ${minCoverageOrgWide}%`;
+      this.statusMessage = `Test run coverage (org wide) **${coverageOrgWide}%** should be > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
     // We are good !
     else {
       this.notifSeverity = 'log';
-      this.statusMessage = `Test run coverage (org wide) *${coverageOrgWide}%* is > to ${minCoverageOrgWide}%`;
+      this.statusMessage = `Test run coverage (org wide) **${coverageOrgWide}%** is > to ${minCoverageOrgWide}%`;
       this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
     }
   }
 
   private async checkTestRunCoverage() {
-    if (this.testRunOutcome === 'NoApex') {
+    if (this.testRunOutcome === 'NoApex' || this.testRunOutcome === 'NoResult') {
       return;
     }
     if (this.testRunOutputString.includes('Test Run Coverage')) {
@@ -269,7 +339,7 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       const coverageTestRun = parseFloat(coverageTestRunRaw) || 0.0;
       if (coverageTestRun === 0.0) {
         this.notifSeverity = 'error';
-        uxLog("warning", this, c.yellow('Warning: Unable to extract test run coverage from test run output.\n' + this.testRunOutputString));
+        uxLog("warning", this, c.yellow(t('warningUnableToExtractTestRunCoverage') + this.testRunOutputString));
       }
       const minCoverageTestRun = parseFloat(
         process.env.APEX_TESTS_MIN_COVERAGE_TEST_RUN ||
@@ -292,13 +362,13 @@ This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/sales
       // Min coverage not reached
       else if (coverageTestRun < minCoverageTestRun) {
         this.notifSeverity = 'error';
-        this.statusMessage = `Test run coverage *${coverageTestRun}%* should be > to ${minCoverageTestRun}%`;
+        this.statusMessage = `Test run coverage **${coverageTestRun}%** should be > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
       // We are good !
       else {
         this.notifSeverity = 'log';
-        this.statusMessage = `Test run coverage *${coverageTestRun}%* is > to ${minCoverageTestRun}%`;
+        this.statusMessage = `Test run coverage **${coverageTestRun}%** is > to ${minCoverageTestRun}%`;
         this.notifText = `${this.statusMessage} in ${this.orgMarkdown}`;
       }
     }

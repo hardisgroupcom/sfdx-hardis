@@ -14,7 +14,7 @@ Key features and considerations:
 
 - **Underlying Command:** Internally, this command executes `sf project retrieve start` to fetch the metadata.
 - **Error Handling:** If the pull operation encounters errors, it offers to automatically add the problematic items to your `.forceignore` file and then attempts to pull again, helping you resolve conflicts and ignore unwanted metadata.
-- **Missing Updates:** If you don't see certain updated items in the pull results, you might need to manually retrieve them using the Salesforce Extension's **Org Browser** or the **Salesforce CLI** directly. Refer to the [Retrieve Metadatas documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas) for more details.
+- **Missing Updates:** If you don't see certain updated items in the pull results, you might need to manually retrieve them using the Salesforce Extension's **Org Browser** or the **Salesforce CLI** directly. Refer to the [Retrieve Metadatas documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/#retrieve-metadatas) for more details.
 - **Automatic Retrieval:** You can configure the `autoRetrieveWhenPull` property in your `.sfdx-hardis.yml` file to always retrieve specific metadata types (e.g., `CustomApplication`) that might not always be detected as updates by `project:retrieve:start`.
 
 Example `.sfdx-hardis.yml` configuration for `autoRetrieveWhenPull`:
@@ -40,22 +40,38 @@ The command's technical implementation focuses on robust metadata synchronizatio
 - **User Feedback:** Provides clear messages to the user regarding the pull status and guidance for troubleshooting.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:scratch:pull --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:scratch:pull
+```
+
+```shell
+$ sf hardis:scratch:pull --agent
 ```
 
 

@@ -1,7 +1,9 @@
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { XMLBuilder } from "fast-xml-parser";
+import { getLargeXmlParser } from '../utils/xmlUtils.js';
 import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { buildGenericMarkdownTable, prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
 import { DocBuilderProfile } from "./docBuilderProfile.js";
+import { t } from '../utils/i18n.js';
 
 export class DocBuilderPermissionSet extends DocBuilderProfile {
 
@@ -18,15 +20,15 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
     }
     const lines: string[] = [];
     lines.push(...[
-      filterObject ? "## Related Permission Sets" : "## Permission Sets",
+      filterObject ? `## ${t('docMdRelatedPermissionSets')}` : `## ${t('docMdPermissionSets')}`,
       "",
-      "| Permission Set | User License |",
+      `| ${t('docMdColPermissionSet')} | ${t('docMdColUserLicense')} |`,
       "| :----      | :--: | "
     ]);
     for (const pSet of filteredPsets) {
       const pSetNameCell = `[${pSet.name}](${prefix}${encodeURIComponent(pSet.name)}.md)`;
       lines.push(...[
-        `| ${pSetNameCell} | ${pSet.license || "None"} |`
+        `| ${pSetNameCell} | ${pSet.license || t('docMdNone')} |`
       ]);
     }
     lines.push("");
@@ -35,11 +37,11 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
 
   public async buildInitialMarkdownLines(): Promise<string[]> {
     return [
-      `## ${this.metadataName}`,
+      `# ${this.metadataName}`,
       '',
       '<div id="jstree-container"></div>',
       '',
-      buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "license", "hasActivationRequired"], "## Permission Set attributes", []),
+      buildGenericMarkdownTable(this.parsedXmlObject, ["label", "description", "license", "hasActivationRequired"], `## ${t('docMdPermissionSetAttributes')}`, []),
       '',
       '<!-- Permission Set Groups table -->',
       '',
@@ -48,8 +50,8 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
     ];
   }
 
-  public stripXmlForAi(): Promise<string> {
-    const xmlObj = new XMLParser().parse(this.metadataXml);
+  public async stripXmlForAi(): Promise<string> {
+    const xmlObj = getLargeXmlParser().parse(this.metadataXml);
     // Remove class access: not relevant for prompt
     if (xmlObj?.PermissionSet?.classAccesses) {
       delete xmlObj.PermissionSet.classAccesses;
@@ -59,12 +61,12 @@ export class DocBuilderPermissionSet extends DocBuilderProfile {
       delete xmlObj.PermissionSet.flowAccesses;
     }
     const xmlStripped = new XMLBuilder().build(xmlObj);
-    return xmlStripped
+    return xmlStripped;
   }
 
   // Generate json for display with jsTree npm library 
   public async generateJsonTree(): Promise<any> {
-    const xmlObj = new XMLParser().parse(this.metadataXml);
+    const xmlObj = getLargeXmlParser().parse(this.metadataXml);
     const treeElements: any[] = [];
     for (const psRootAttribute of Object.keys(xmlObj?.PermissionSet || {})) {
       if (["label", "license", "hasActivationRequired", "description"].includes(psRootAttribute)) {

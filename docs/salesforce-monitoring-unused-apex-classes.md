@@ -1,14 +1,14 @@
 ---
 title: Detect unused Apex Classes (Salesforce monitoring)
-description: Schedule weekly checks of which Batch, Schedulable and Queueable classes are never called and could be deleted to improve Apex Test Classes performances
+description: With sfdx-hardis, schedule weekly checks of which Batch, Schedulable and Queueable classes are never called and could be deleted to improve Apex Test Classes performances
 ---
 <!-- markdownlint-disable MD013 -->
 
 ## Detect unused Apex Classes
 
-List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days.
-  
-The result class list probably can be removed from the project, and that will improve your test classes performances :)
+Lists all async Apex classes (Batch, Queueable, Schedulable) that have not been called for more than 365 days.
+
+The resulting classes can probably be removed from the project, which will improve the performance of your test classes.
 
 The command uses queries on AsyncApexJob and CronTrigger technical tables to build the result.
 

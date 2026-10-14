@@ -1,0 +1,55 @@
+{
+  "{{S1}}": {
+    "comment": true,
+    "sandboxRowCount": 1,
+    "sandboxes": [
+      {
+        "name": "{{SANDBOX}}",
+        "status": "complete",
+        "noLeftOut": true
+      }
+    ],
+    "actions": [
+      {
+        "id": "e2e-pre-{{S1}}",
+        "status": "success"
+      },
+      {
+        "id": "e2e-manual-{{S1}}",
+        "status": "pending"
+      }
+    ]
+  },
+  "{{S2}}": {
+    "comment": true,
+    "sandboxRowCount": 1,
+    "sandboxes": [
+      {
+        "name": "{{SANDBOX}}",
+        "status": "complete"
+      }
+    ],
+    "actions": [
+      {
+        "id": "e2e-post-{{S2}}",
+        "status": "success"
+      }
+    ]
+  },
+  "{{S3}}": {
+    "comment": true,
+    "sandboxRowCount": 1,
+    "sandboxes": [
+      {
+        "name": "{{SANDBOX}}",
+        "status": "complete"
+      }
+    ],
+    "actions": [
+      {
+        "id": "e2e-pre-{{S3}}",
+        "status": "success"
+      }
+    ]
+  }
+}

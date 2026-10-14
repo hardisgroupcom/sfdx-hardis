@@ -1,9 +1,88 @@
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { CommonPullRequestInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
-import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utilsMarkdown.js";
-import { getEnvVar } from "../../config/index.js";
+import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utils/utilsMarkdown.js";
+import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
+import { t } from '../utils/i18n.js';
+import { enforceCommentLengthLimit } from "./utils/utilsPrCommentSizeGuard.js";
+
+// Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
+// a PR is always updated when it is merged, so its update date cannot be older than the commits
+// its merge brought. Each provider passes its own commit date accessor (created_at on GitLab,
+// date on Bitbucket). Returns null when no commit carries a parseable date.
+export function getOldestCommitDateWithMargin(commits: any[], getCommitDate: (commit: any) => string | undefined): string | null {
+  const timestamps = (commits || [])
+    .map((commit) => Date.parse(getCommitDate(commit) || ''))
+    .filter((time) => !isNaN(time));
+  if (timestamps.length === 0) {
+    return null;
+  }
+  return new Date(Math.min(...timestamps) - 24 * 60 * 60 * 1000).toISOString();
+}
+
+// Interview deletion is irreversible, so a passing mention in prose must not authorize it: only a
+// standalone directive, an affirmative assignment, a bullet or a checked Markdown checkbox count.
+// Non-semantic Markdown regions do not count either: a documentation example in a fenced or
+// indented code block, or a directive hidden in a PR-template HTML comment, is not an opt-in.
+export function hasAffirmativeFlowInterviewDeletionDirective(description: string): boolean {
+  const withoutNonSemanticRegions = (description || "")
+    .replace(/<!--[\s\S]*?(?:-->|$)/g, "")
+    .replace(/```[\s\S]*?(?:```|$)/g, "")
+    .replace(/~~~[\s\S]*?(?:~~~|$)/g, "");
+  return withoutNonSemanticRegions.split(/\r?\n/).some((rawLine) => {
+    if (/^(?:\t| {4})/.test(rawLine)) {
+      return false; // indented code block
+    }
+    const line = rawLine.trim();
+    return (
+      /^FLOW_DELETE_INTERVIEWS(?:\s*=\s*true)?$/.test(line) ||
+      /^[-*]\s+FLOW_DELETE_INTERVIEWS(?:\s*=\s*true)?$/.test(line) ||
+      /^[-*]\s+\[[xX]\]\s+FLOW_DELETE_INTERVIEWS(?:\s*=\s*true)?$/.test(line)
+    );
+  });
+}
+
+/**
+ * Web URL of the "new Pull Request" form of a git provider, with the source branch, the target
+ * branch, the title and (when it fits) the description already filled in. Each provider builds its
+ * own with `getPullRequestCreateUrl`; this is what they return.
+ */
+export declare type PullRequestCreateUrlResult = {
+  url: string;
+  /**
+   * False when the description is not in the URL: too long for it, or a provider whose form does
+   * not take one. The caller must then tell the user to paste the description by hand.
+   */
+  bodyIncluded: boolean;
+};
+
+/**
+ * Query strings longer than this are refused or truncated somewhere along the way (GitHub answers
+ * 414 above 8KB, and proxies have their own limits). Above it the description is left out of the
+ * link rather than producing a URL that opens on an error page.
+ */
+export const MAX_PR_CREATE_URL_LENGTH = 7500;
+
+/**
+ * Builds the Pull Request creation URL with the description, and again without it when the first
+ * one is too long for a URL: half the information in a link that opens beats all of it in a link
+ * that does not.
+ */
+export function buildPrCreateUrl(build: (body: string) => string, body: string): PullRequestCreateUrlResult {
+  if (body) {
+    const urlWithBody = build(body);
+    if (urlWithBody.length <= MAX_PR_CREATE_URL_LENGTH) {
+      return { url: urlWithBody, bodyIncluded: true };
+    }
+  }
+  return { url: build(""), bodyIncluded: false };
+}
+
+/** Encodes a branch name for a URL path, keeping the slashes a branch name is allowed to have */
+export function encodePrUrlPathBranch(branch: string): string {
+  return branch.split("/").map((part) => encodeURIComponent(part)).join("/");
+}
 
 export abstract class GitProviderRoot {
   public serverUrl: string | null;
@@ -59,11 +138,11 @@ export abstract class GitProviderRoot {
   public async listPullRequests(filters: {
     status?: string,
     targetBranch?: string,
-    minDate?: Date
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } = {}, options: {
-    formatted?: boolean
-  } = { formatted: false }): Promise<any | null> {
+    minDate?: Date,
+    // Only what the listing gives: no comment, no completed description. Much faster on a provider
+    // that needs a call per Pull Request for them
+    withoutComments?: boolean
+  } = {}): Promise<CommonPullRequestInfo[] | null> {
     uxLog("other", this, `Method listPullRequests is not implemented yet on ${this.getLabel()}`);
     return null;
   }
@@ -79,10 +158,153 @@ export abstract class GitProviderRoot {
     return [];
   }
 
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  public async listPullRequestsInGoLive(
+    _branchName: string,
+    _childBranchesNames: string[],
+    _mergeCommitId: string,
+  ): Promise<CommonPullRequestInfo[]> {
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    uxLog("other", this, `Method listPullRequestsInGoLive is not implemented yet on ${this.getLabel()}`);
+    return [];
+  }
+
+  /**
+   * Fetch a single Pull Request by its provider-native number (GitHub number, GitLab iid, Azure id,
+   * Bitbucket id). Used to resolve the stories declared by a promotion Pull Request, whose
+   * cherry-picked commits cannot be matched by merge commit SHA. Returns null when not found.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getPullRequestById(_prNumber: number): Promise<CommonPullRequestInfo | null> {
+    uxLog("other", this, `Method getPullRequestById is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
   public async postPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
-    uxLog("warning", this, c.yellow("Method postPullRequestMessage is not yet implemented on " + this.getLabel() + " to post " + JSON.stringify(prMessage)));
+    uxLog("warning", this, c.yellow(t('methodPostpullrequestmessageIsNotYetImplementedOn') + this.getLabel() + " to post " + JSON.stringify(prMessage)));
     return { posted: false, providerResult: { error: "Not implemented in sfdx-hardis" } };
   }
+
+  // False when the provider shows HTML comments as text in a Pull Request comment (Bitbucket
+  // Cloud): a long hidden marker would be a line of gibberish under every comment there.
+  public hidesHtmlCommentsInPrComments(): boolean {
+    return true;
+  }
+
+  // False when the provider refuses to edit the description of a merged Pull Request (Azure
+  // DevOps): the description navigation must then be completed before the merge, so the check
+  // job creates the deployment comment as a pending placeholder.
+  public isPrDescriptionEditableAfterMerge(): boolean {
+    return true;
+  }
+
+  // How long a Pull Request description may be, when the provider caps it (Azure DevOps refuses
+  // anything over 4000 characters). Null means no known limit. A promotion carrying a conflict
+  // prompt is the one description that gets near it, and being refused there would leave a
+  // release manager with a pushed branch and no Pull Request at all.
+  public getMaxPullRequestDescriptionLength(): number | null {
+    return null;
+  }
+
+  // Largest Pull Request comment sfdx-hardis writes, with a margin under the limit of the provider:
+  // GitHub refuses comments over 65,536 characters, Azure DevOps over 150,000, GitLab over 1,000,000.
+  public getMaxPullRequestCommentLength(): number {
+    return 50000;
+  }
+
+  /**
+   * Last check before a comment is sent: a body still over the size cap is cut before its footer
+   * and hidden markers, so the provider accepts it and sfdx-hardis can still read it back.
+   */
+  protected enforceHardCommentLimit(body: string): string {
+    const limit = this.getMaxPullRequestCommentLength();
+    const result = enforceCommentLengthLimit(body, limit);
+    if (result.cut) {
+      uxLog("warning", this, c.yellow(t('prCommentStillTooLong', { length: body.length, limit, provider: this.getLabel() })));
+    }
+    return result.body;
+  }
+
+  /**
+   * Common header of a sfdx-hardis Pull Request comment: the navigation between the sfdx-hardis
+   * comments first, then the banner image identifying the comment type and status. The banner
+   * replaces the title heading, which stays as the image alt text so it only shows when the image
+   * is hidden or cannot be loaded; without a banner the title heading is kept. The lines following
+   * the first title line (the deployment outcome) are rendered after the banner in both cases.
+   */
+  protected buildPrCommentBodyHeader(prMessage: PullRequestMessageRequest): string {
+    const titleLines = (prMessage.title || '').split('\n');
+    const titleLine = (titleLines[0] || '').trim();
+    const titleRest = titleLines.slice(1).join('\n').trim();
+    const bannerMarkdown = getPrCommentBannerMarkdown(prMessage.bannerKey, titleLine);
+    const headingMarkdown = bannerMarkdown === '' ? `## ${titleLine}\n\n` : '';
+    return `${prMessage.navBlock || ''}${bannerMarkdown}${headingMarkdown}${titleRest ? `${titleRest}\n\n` : ''}`;
+  }
+
+  /**
+   * The "Powered by sfdx-hardis" footer of a Pull Request comment, with the link to the CI job that
+   * wrote it.
+   *
+   * The job name and its URL come from CI variables that only exist inside the CI system: a run
+   * from a developer machine, or from a CI system other than the git provider's own, has neither.
+   * Interpolating them anyway printed `from job [null](null)` on GitHub and
+   * `from job [undefined](undefined)` on GitLab in EVERY comment, which is a dead link in the face
+   * of every reviewer. When there is no job to point at, the footer simply does not mention one.
+   */
+  protected buildPoweredByFooter(jobName: string | null | undefined, jobUrl: string | null | undefined): string {
+    const poweredBy = `_Powered by [sfdx-hardis](${CONSTANTS.DOC_URL_ROOT})`;
+    const name = (jobName ?? '').toString().trim();
+    const url = (jobUrl ?? '').toString().trim();
+    if (name === '' || name === 'null' || name === 'undefined' || url === '' || url === 'null' || url === 'undefined') {
+      return `${poweredBy}_`;
+    }
+    return `${poweredBy} from job [${name}](${url})_`;
+  }
+
+  /**
+   * The job part of the message key that identifies an sfdx-hardis comment, so a re-run updates the
+   * comment it wrote instead of adding a second one.
+   *
+   * The key is written into the comment, so an absent job name used to bake the literal `null` or
+   * `undefined` into it. That is not only ugly to read in the page source: a project whose jobs
+   * sometimes carry a job name and sometimes do not would produce two different keys for the same
+   * comment. A stable placeholder keeps the key comparable in both cases.
+   */
+  protected jobMessageKeySegment(jobName: string | null | undefined): string {
+    const name = (jobName ?? '').toString().trim();
+    return name === '' || name === 'null' || name === 'undefined' ? 'job' : name;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createPullRequest(request: CreatePullRequestRequest): Promise<CreatePullRequestResult> {
+    uxLog("warning", this, c.yellow(`[GitProvider] createPullRequest is not yet implemented on ${this.getLabel()}`));
+    return { created: false, pullRequestUrl: null, providerResult: { error: "Not implemented in sfdx-hardis" } };
+  }
+
+  /**
+   * Closes an open Pull Request without merging it (abandon on Azure DevOps, decline on Bitbucket).
+   * Used to keep a single open promotion Pull Request between two major branches, so the DevOps
+   * Pipeline shows one promotion in flight per pipeline step.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async closePullRequest(pullRequestNumber: number): Promise<boolean> {
+    uxLog("warning", this, c.yellow(`[GitProvider] closePullRequest is not yet implemented on ${this.getLabel()}`));
+    return false;
+  }
+
+  public logAutoFixRemediation(step: "push" | "pr-create"): void {
+    const stepLabel = step === "push" ? "git push" : "pull request creation";
+    uxLog("log", this, `\n[sfdx-hardis] Auto-fix ${stepLabel} remediation guide`);
+    uxLog("log", this, "1) Update workflow: ensure the CI identity can push branches and create PR/MR.");
+    uxLog("log", this, "2) Set provider token variable: GitHub=GITHUB_TOKEN, GitLab=CI_SFDX_HARDIS_GITLAB_TOKEN, Azure=SYSTEM_ACCESSTOKEN/CI_SFDX_HARDIS_AZURE_TOKEN, Bitbucket=CI_SFDX_HARDIS_BITBUCKET_TOKEN.");
+    uxLog("log", this, "3) How to get value: create a CI service token/PAT with repository write + pull request/merge request permissions, then store it as a masked secret variable.");
+  }
+  // The line that declares the checkout safe for git, with the workspace variable of this provider's
+  // CI jobs, so it can be pasted in the workflow as it is
+  public getSafeDirectoryCommand(): string {
+    return `git config --global --add safe.directory "${process.cwd()}"`;
+  }
+
   /* jscpd:ignore-start */
   // Do not make crash the whole process in case there is an issue with integration
   public async tryPostPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
@@ -135,6 +357,256 @@ export abstract class GitProviderRoot {
     ) {
       pullRequestInfo.customBehaviors.destructiveChangesAfterDeployment = true;
     }
+    if (hasAffirmativeFlowInterviewDeletionDirective(desc)
+      || getEnvVar("FLOW_DELETE_INTERVIEWS") === "true"
+      || getEnvVar("FLOW_DELETE_INTERVIEWS_" + pullRequestInfo.targetBranch) === "true"
+    ) {
+      pullRequestInfo.customBehaviors.flowDeleteInterviews = true;
+    }
     return pullRequestInfo;
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async findOpenPullRequest(sourceBranch: string, targetBranch: string): Promise<{ pullRequestUrl: string; id: any } | null> {
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async updatePullRequestDescription(id: any, title: string, body: string): Promise<void> {
+    // Default no-op - providers may override
+  }
+
+  // Resolve a CI actor identifier (a GitHub login, a Bitbucket account UUID) into a real
+  // identity, so notifications can name the person who triggered a run. Best-effort by design:
+  // callers must tolerate null and fall back to another source.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async resolveUserIdentity(identifier: string): Promise<{ name: string | null; email: string | null } | null> {
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getPullRequestCommentByMarker(marker: string, prNumber?: number): Promise<string | null> {
+    uxLog("other", this, `Method getPullRequestCommentByMarker is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
+  // Returns false when nothing was written: the Pull Request or the repository could not be
+  // resolved, or the provider does not implement it
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async upsertPullRequestCommentByMarker(marker: string, body: string, prNumber?: number): Promise<boolean> {
+    uxLog("other", this, `Method upsertPullRequestCommentByMarker is not implemented yet on ${this.getLabel()} for marker ${marker} body length ${body.length}`);
+    return false;
+  }
+
+  // Returns ALL the comments of a Pull Request containing the marker, with an opaque
+  // provider-specific ref so the caller can update a precise comment later.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listPullRequestCommentsByMarker(marker: string, prNumber?: number): Promise<PullRequestCommentRef[]> {
+    uxLog("other", this, `Method listPullRequestCommentsByMarker is not implemented yet on ${this.getLabel()}`);
+    return [];
+  }
+
+  /**
+   * Web URL of the "new Pull Request" form of this provider, with the source branch, the target
+   * branch, the title and (when it fits in a URL) the description already filled in. Static because
+   * it is needed exactly when no token is configured and no provider instance exists: the git
+   * remote is all it takes.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public static getPullRequestCreateUrl(remoteUrl: string, request: CreatePullRequestRequest): PullRequestCreateUrlResult | null {
+    return null;
+  }
+
+  // Updates the body of one precise comment, identified by the ref returned by
+  // listPullRequestCommentsByMarker.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async updatePullRequestCommentByRef(commentRef: PullRequestCommentRef, body: string): Promise<void> {
+    uxLog("other", this, `Method updatePullRequestCommentByRef is not implemented yet on ${this.getLabel()}`);
+  }
+
+  // True when the artifacts of a CI job can be listed and downloaded through the API of the provider
+  public supportsJobArtifacts(): boolean {
+    return false;
+  }
+
+  // Artifacts of the job a Pull Request comment links to. Throws when the URL is not a job of
+  // this repository: the token must never be used for another one.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listJobArtifacts(jobUrl: string): Promise<JobArtifactsListing> {
+    return { status: 'unsupported', jobKey: '', artifacts: [] };
+  }
+
+  // Writes the zip of one artifact returned by listJobArtifacts into targetZipFile
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async downloadJobArtifact(jobUrl: string, artifact: JobArtifact, targetZipFile: string): Promise<void> {
+    throw new SfError(`Method downloadJobArtifact is not implemented on ${this.getLabel()}`);
+  }
+
+  // Finished CI runs since minDate: the deployment jobs of the branches asked for, and the
+  // deployment checks of the Pull Requests. DORA metrics are computed from them, so an API error
+  // is thrown, never turned into an empty list that would read as "no deployment"
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listCiRuns(filters: CiRunFilters): Promise<CommonCiRun[]> {
+    throw new SfError(`Method listCiRuns is not implemented on ${this.getLabel()}`);
+  }
+
+  // A dashboard is the object of the provider that holds a body and comments outside of any Pull
+  // Request of the project: an issue (GitHub, GitLab), a work item (Azure DevOps), a dedicated
+  // Pull Request (Bitbucket, which has no issues). The scratch org pool is stored in one.
+  public supportsDashboard(): boolean {
+    return false;
+  }
+
+  // Title a dashboard is created with and found by. A provider whose dashboards are not held by
+  // the repository (Azure DevOps work items belong to the project) adds the repository to it.
+  public getDashboardTitle(title: string): string {
+    return title;
+  }
+
+  // Markup of the dashboard body and comments: Azure DevOps work items are HTML
+  public getDashboardFormat(): DashboardFormat {
+    return 'markdown';
+  }
+
+  // Open dashboard with exactly this title, the oldest one when several exist. Null when none.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async findDashboard(title: string): Promise<DashboardRef | null> {
+    throw new SfError(`Method findDashboard is not implemented on ${this.getLabel()}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createDashboard(title: string, body: string): Promise<DashboardRef> {
+    throw new SfError(`Method createDashboard is not implemented on ${this.getLabel()}`);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
+    throw new SfError(`Method updateDashboardBody is not implemented on ${this.getLabel()}`);
+  }
+
+  // All the comments that are not deleted, oldest first. The ids grow with the creation order.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
+    throw new SfError(`Method listDashboardComments is not implemented on ${this.getLabel()}`);
+  }
+
+  // Returns the id of the new comment
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async createDashboardComment(dashboard: DashboardRef, body: string): Promise<number> {
+    throw new SfError(`Method createDashboardComment is not implemented on ${this.getLabel()}`);
+  }
+
+  // False when the comment was already gone
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async deleteDashboardComment(dashboard: DashboardRef, commentId: number): Promise<boolean> {
+    throw new SfError(`Method deleteDashboardComment is not implemented on ${this.getLabel()}`);
+  }
+
+  // True when the dashboard must be replaced by a new one: Bitbucket keeps deleted comments in
+  // its listings forever, and an Azure DevOps work item accepts a limited number of revisions
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async isDashboardWornOut(dashboard: DashboardRef): Promise<boolean> {
+    return false;
+  }
+
+  // False when a second dashboard cannot be opened while the first one is (Bitbucket accepts one
+  // open Pull Request per pair of branches): a replacement then closes before it creates
+  public allowsTwoOpenDashboards(): boolean {
+    return true;
+  }
+
+  // Closes a dashboard so findDashboard does not return it anymore
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async closeDashboard(dashboard: DashboardRef): Promise<void> {
+    throw new SfError(`Method closeDashboard is not implemented on ${this.getLabel()}`);
+  }
 }
+
+export type DashboardFormat = 'markdown' | 'html';
+
+export interface DashboardRef {
+  id: number;
+  url: string;
+}
+
+export interface DashboardComment {
+  id: number;
+  body: string;
+  createdDate: string;
+}
+
+// A repository other than the one of the current folder (the deployment repository, read from a
+// monitoring repository). Every provider takes it as its optional constructor argument
+export interface GitProviderRepositorySettings {
+  remoteUrl: string;
+  token: string;
+}
+
+export type CiRunKind = 'deployment' | 'validation';
+
+export type CiRunStatus = 'succeeded' | 'failed' | 'canceled';
+
+export interface CiRunFilters {
+  // Branches whose deployment runs are wanted
+  branches: string[];
+  minDate: Date;
+  kinds: CiRunKind[];
+}
+
+export interface CommonCiRun {
+  id: string;
+  name: string;
+  kind: CiRunKind;
+  // deployment: the branch deployed. validation: the target branch of the Pull Request, empty when
+  // the provider does not say it (the caller then finds it from pullRequestId or sourceBranch)
+  branch: string;
+  // deployment only: the run was triggered by a push to the branch but its job is not named as a
+  // deployment. It counts when no run of the branch is named as one (a project that renamed its jobs)
+  unnamed?: boolean;
+  // validation only: provider-native number of the Pull Request, as a string
+  pullRequestId?: string;
+  // validation only: the branch of the Pull Request, when the provider names neither its target
+  // nor its number (GitHub forgets both once the Pull Request is closed)
+  sourceBranch?: string;
+  status: CiRunStatus;
+  // ISO dates. queuedAt is when the run was asked for, startedAt when a runner picked it
+  queuedAt: string;
+  startedAt: string;
+  finishedAt: string;
+  commitSha: string;
+  triggeredBy: string;
+  webUrl: string;
+}
+
+export interface JobArtifact {
+  // Provider-specific id, as a string
+  id: string;
+  name: string;
+  sizeBytes: number;
+  expired: boolean;
+  // Changes when the artifact is replaced (a job run again keeps its URL)
+  updatedAt: string;
+}
+
+// expired: the job had artifacts and the provider deleted them. none: it never published any
+export type JobArtifactsStatus = 'success' | 'expired' | 'none' | 'unsupported';
+
+export interface JobArtifactsListing {
+  status: JobArtifactsStatus;
+  // Folder-safe identifier of the job, for example github-run-123456
+  jobKey: string;
+  artifacts: JobArtifact[];
+}
+
+// Opaque handle on a precise Pull Request comment: `ref` is provider-specific
+// (thread/comment ids on Azure, comment id on GitHub/Bitbucket, note id on GitLab).
+export declare type PullRequestCommentRef = {
+  prNumber: number;
+  ref: any;
+  body: string;
+  // Permalink of the comment, used to navigate from one sfdx-hardis comment to another.
+  // Empty when the provider cannot build it.
+  url?: string;
+  // Last update of the comment (ISO date), when the provider returns it
+  updatedAt?: string;
+};

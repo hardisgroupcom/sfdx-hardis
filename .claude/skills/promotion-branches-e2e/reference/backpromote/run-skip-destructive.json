@@ -1,0 +1,13 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "result": {
+    "deleted": 0,
+    "excludedReasons": {
+      "StaticResource:E2E_S4": "excluded"
+    },
+    "commentedPullRequests": [
+      "{{S9}}"
+    ]
+  }
+}

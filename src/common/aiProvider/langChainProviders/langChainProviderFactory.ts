@@ -1,4 +1,4 @@
-import { BaseLLMProvider, ModelConfig, ProviderType } from "./langChainBaseProvider.js";
+import { BaseLLMProvider, CodingAgentInfo, ModelConfig, ProviderType } from "./langChainBaseProvider.js";
 import { LangChainOllamaProvider } from "./langChainOllamaProvider.js";
 import { LangChainOpenAIProvider } from "./langChainOpenAIProvider.js";
 import { LangChainAnthropicProvider } from "./langChainAnthropicProvider.js";
@@ -19,6 +19,25 @@ export class LangChainProviderFactory {
         return new LangChainGoogleGenAiProvider(modelName, config);
       default:
         throw new Error(`Unsupported LLM provider: ${providerType}. Supported providers are: ${ALL_PROVIDERS.join(", ")}`);
+    }
+  }
+
+  /**
+   * Get the coding agent info for a given LangChain provider type.
+   * Returns null if the provider has no associated coding agent CLI.
+   */
+  static getCodingAgentInfo(providerType: string): CodingAgentInfo | null {
+    switch (providerType.toLowerCase()) {
+      case "anthropic":
+        return LangChainAnthropicProvider.getCodingAgentInfo();
+      case "google-genai":
+        return LangChainGoogleGenAiProvider.getCodingAgentInfo();
+      case "openai":
+        return LangChainOpenAIProvider.getCodingAgentInfo();
+      case "ollama":
+        return LangChainOllamaProvider.getCodingAgentInfo();
+      default:
+        return null;
     }
   }
 } 

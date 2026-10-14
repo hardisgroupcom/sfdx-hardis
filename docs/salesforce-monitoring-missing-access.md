@@ -6,7 +6,7 @@ description: Schedule daily checks of metadata without access with sfdx-hardis M
 
 ## Detect custom elements with no access rights defined in permission sets
 
-If there are elements that nobody has access to (not existing on any Profile or Permission Set), maybe they should be removed !
+If there are elements that nobody has access to (not referenced in any Profile or Permission Set), maybe they should be removed.
 
 Sfdx-hardis command: [sf hardis:lint:access](https://sfdx-hardis.cloudity.com/hardis/lint/access/)
 

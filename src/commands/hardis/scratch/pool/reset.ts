@@ -3,10 +3,11 @@ import c from 'chalk';
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
-import { getPoolStorage, setPoolStorage } from '../../../../common/utils/poolUtils.js';
+import { listPoolOrgs, removePoolOrgs } from '../../../../common/utils/poolUtils.js';
 import { getConfig } from '../../../../config/index.js';
 import { execCommand, uxLog } from '../../../../common/utils/index.js';
 import { authenticateWithSfdxUrlStore } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -36,17 +37,33 @@ Key functionalities:
 The command's technical implementation involves:
 
 - **Configuration Loading:** It retrieves the \`poolConfig\` from the project's .sfdx-hardis.yml file to ensure a pool is configured.
-- **Pool Storage Interaction:** It uses \`getPoolStorage\` to retrieve the current list of scratch orgs in the pool and \`setPoolStorage\` to clear the pool's record.
+- **Pool Storage Interaction:** It uses \`listPoolOrgs\` to retrieve the current list of scratch orgs in the pool and \`removePoolOrgs\` to remove them from the storage. With the \`gitProvider\` storage, the encryption key of the pool is required.
 - **Scratch Org Deletion:** It iterates through each scratch org in the retrieved list. For each org, it authenticates to it using \`authenticateWithSfdxUrlStore\` and then executes \`sf org delete scratch\` via \`execCommand\`.
 - **Logging:** Provides clear messages about the deletion process and the status of each scratch org.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:reset --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:refresh'];
+  public static examples = ['$ sf hardis:scratch:pool:reset',
+    '$ sf hardis:scratch:pool:reset --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -77,31 +94,25 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow('Configuration file must contain a poolConfig property') +
+        c.yellow(t('configFileMustContainPoolConfigProperty')) +
         '\n' +
         c.grey(JSON.stringify(config, null, 2))
       );
       return { outputString: 'Configuration file must contain a poolConfig property' };
     }
-    uxLog("action", this, c.cyan(`Reseting scratch org pool on org ${c.green(flags['target-dev-hub'].getUsername())}...`));
-    uxLog("log", this, c.grey('Pool config: ' + JSON.stringify(config.poolConfig)));
+    uxLog("action", this, c.cyan(t('resetingScratchOrgPoolOnOrg', { flags: c.green(flags['target-dev-hub'].getUsername()) })));
+    uxLog("log", this, c.grey(t('poolConfig') + JSON.stringify(config.poolConfig)));
 
-    // Get pool storage
-    const poolStorage = await getPoolStorage({
+    // Get the scratch orgs of the pool
+    const poolOptions = {
       devHubConn: flags['target-dev-hub'].getConnection(),
       devHubUsername: flags['target-dev-hub'].getUsername(),
-    });
-    let scratchOrgs = poolStorage.scratchOrgs || [];
+    };
+    const scratchOrgsToDelete = await listPoolOrgs(poolOptions);
 
     // Delete existing scratch orgs
     /* jscpd:ignore-start */
-    const scratchOrgsToDelete = [...scratchOrgs];
-    scratchOrgs = [];
-    poolStorage.scratchOrgs = scratchOrgs;
-    await setPoolStorage(poolStorage, {
-      devHubConn: flags['target-dev-hub'].getConnection(),
-      devHubUsername: flags['target-dev-hub'].getUsername(),
-    });
+    await removePoolOrgs(scratchOrgsToDelete, poolOptions);
     for (const scratchOrgToDelete of scratchOrgsToDelete) {
       // Authenticate to scratch org to delete
       await authenticateWithSfdxUrlStore(scratchOrgToDelete);
@@ -112,8 +123,7 @@ The command's technical implementation involves:
         "action",
         this,
         c.cyan(
-          `Scratch org ${c.green(scratchOrgToDelete.scratchOrgUsername)} at ${scratchOrgToDelete?.authFileJson?.result?.instanceUrl
-          } has been deleted`
+          t('scratchOrgHasBeenDeleted', { username: c.green(scratchOrgToDelete.scratchOrgUsername), instanceUrl: scratchOrgToDelete?.authFileJson?.result?.instanceUrl })
         )
       );
     }

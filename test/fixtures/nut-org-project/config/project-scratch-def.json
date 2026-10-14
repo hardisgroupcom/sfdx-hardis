@@ -1,0 +1,10 @@
+{
+  "orgName": "sfdx-hardis NUT",
+  "edition": "Developer",
+  "features": [],
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    }
+  }
+}

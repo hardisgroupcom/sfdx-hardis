@@ -1,0 +1,47 @@
+{
+  "CustomObjectTranslation": {
+    "$": {
+      "xmlns": "http://soap.sforce.com/2006/04/metadata",
+      "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance"
+    },
+    "fields": [
+      {
+        "help": [
+          {
+            "$": {
+              "xsi:nil": "true"
+            }
+          }
+        ],
+        "label": [
+          "Type de client"
+        ],
+        "name": [
+          "Client_Type__c"
+        ],
+        "picklistValues": [
+          {
+            "masterLabel": [
+              "Gold & Platinum"
+            ],
+            "translation": [
+              "Or & Platine"
+            ]
+          }
+        ]
+      },
+      {
+        "label": [
+          {
+            "$": {
+              "xsi:nil": "true"
+            }
+          }
+        ],
+        "name": [
+          "Revenue__c"
+        ]
+      }
+    ]
+  }
+}

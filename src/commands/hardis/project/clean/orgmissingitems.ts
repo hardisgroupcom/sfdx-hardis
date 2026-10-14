@@ -1,11 +1,11 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import fs from 'fs-extra';
+import fs from '../../../../common/utils/fsUtils.js';
 import { glob } from 'glob';
-import { mergeObjectPropertyLists, uxLog } from '../../../../common/utils/index.js';
+import { isCI, mergeObjectPropertyLists, uxLog } from '../../../../common/utils/index.js';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
 import { promptOrg } from '../../../../common/utils/orgUtils.js';
 import { parsePackageXmlFile, parseXmlFile, writeXmlFile } from '../../../../common/utils/xmlUtils.js';
@@ -44,12 +44,25 @@ The command's technical implementation involves several steps:
 - **Metadata Analysis:** It iterates through specific metadata types (currently \`reportType-meta.xml\` files) within the configured source folder.
 - **Field and Object Validation:** For each \`reportType-meta.xml\` file, it examines the columns and filters out references to custom fields or objects that are not found in the merged \`package.xml\` content or are marked for destruction.
 - **XML Modification:** If changes are detected, it updates the \`reportType-meta.xml\` file by writing the modified XML content back to the file using \`writeXmlFile\`.
-- **File System Operations:** It uses \`fs-extra\` for file system operations and \`glob\` for pattern matching to find relevant metadata files.
+- **File System Operations:** It uses Node.js \`fs\` for file system operations and \`glob\` for pattern matching to find relevant metadata files.
 - **SOQL Queries:** The \`buildOrgManifest\` utility (used internally) performs SOQL queries to retrieve metadata information from the Salesforce org.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:clean:orgmissingitems --agent --packagexmltargetorg myorg@example.com
+\`\`\`
+
+In agent mode:
+
+- The interactive org prompt is skipped; \`--packagexmltargetorg\` or \`--packagexmlfull\` flag is required.
+- If neither flag is provided, an error is thrown.
 `;
 
-  public static examples = ['$ sf hardis:project:clean:orgmissingitems'];
+  public static examples = ['$ sf hardis:project:clean:orgmissingitems', '$ sf hardis:project:clean:orgmissingitems --agent'];
 
   public static flags: any = {
     folder: Flags.string({
@@ -66,6 +79,10 @@ The command's technical implementation involves several steps:
       char: 't',
       description:
         'Target org username or alias to build package.xml (SF CLI must be authenticated).\nIf not provided, will be prompted to the user.',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
     }),
     debug: Flags.boolean({
       char: 'd',
@@ -118,12 +135,16 @@ The command's technical implementation involves several steps:
     const { flags } = await this.parse(OrgMissingItems);
     this.folder = flags.folder || './force-app';
     this.debugMode = flags.debug || false;
+    const agentMode = flags.agent === true;
     this.targetOrgUsernameAlias = flags.packagexmltargetorg || null;
     this.packageXmlFull = flags.packagexmlfull || null;
 
     if (this.packageXmlFull === null) {
       // Request user to select an org if not provided
       if (this.targetOrgUsernameAlias == null) {
+        if (isCI || agentMode) {
+          throw new SfError('In agent/CI mode, --packagexmltargetorg or --packagexmlfull flag is required.');
+        }
         const targetOrg = await promptOrg(this, { devHub: false, setDefault: false, defaultOrgUsername: flags['target-org']?.getUsername() });
         this.targetOrgUsernameAlias = targetOrg.username;
       }
@@ -153,7 +174,7 @@ The command's technical implementation involves several steps:
       cwd: process.cwd(),
       ignore: GLOB_IGNORE_PATTERNS
     });
-    uxLog("log", this, `Processing reportTypes...`);
+    uxLog("action", this, c.cyan(`Processing reportTypes...`));
     for (const reportTypeFile of matchFilesPattern) {
       if (this.debugMode) {
         uxLog("other", this, `Processing ${reportTypeFile}...`);

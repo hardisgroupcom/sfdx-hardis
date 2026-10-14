@@ -2,15 +2,32 @@ import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
-import { UtilsNotifs as utilsNotifs } from "./utils.js";
+import { UtilsNotifs as utilsNotifs } from "./utils/utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
+import { GoogleChatProvider } from "./googleChatProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
 import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 import type { NotifMessage } from "./types.js";
+import { t } from '../utils/i18n.js';
+import { writeMonitoringNotifFile } from './utils/monitoringNotifWriter.js';
+import {
+  getChannelThreshold,
+  getEffectiveNotificationConfig,
+  severityMeetsThreshold,
+} from "./utils/notificationConfig.js";
+import {
+  AnonymizationChannel,
+  AnonymizationLevel,
+  anonymizeNotifMessage,
+  consumeAnonymizationNotice,
+  getAnonymizationLevel,
+  getChannelAnonymizationLevel,
+  isTextScrubbingSkipped,
+} from "../utils/anonymizeUtils.js";
 
 export abstract class NotifProvider {
-  static getInstances(): NotifProviderRoot[] {
+  static getInstances(userConfig?: { notificationConfig?: any[] }): NotifProviderRoot[] {
     const notifProviders: NotifProviderRoot[] = [];
     // Slack
     if (UtilsNotifs.isSlackAvailable()) {
@@ -20,8 +37,12 @@ export abstract class NotifProvider {
     if (UtilsNotifs.isMsTeamsAvailable()) {
       notifProviders.push(new TeamsProvider());
     }
-    // Email
-    if (UtilsNotifs.isEmailAvailable()) {
+    // Google Chat
+    if (UtilsNotifs.isGoogleChatAvailable()) {
+      notifProviders.push(new GoogleChatProvider());
+    }
+    // Email -- enabled by NOTIF_EMAIL_ADDRESS or by per-type recipients in user config
+    if (UtilsNotifs.isEmailAvailable(userConfig)) {
       notifProviders.push(new EmailProvider());
     }
     // Api
@@ -38,16 +59,39 @@ export abstract class NotifProvider {
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);
     uxLog("log", this, c.grey(`[NotifProvider] Handling notification of type ${notifMessage.type}...`));
-    const notifProviders = this.getInstances();
+    const notifProviders = this.getInstances(config);
     if (notifProviders.length === 0 && isCI) {
       uxLog(
         "log",
         this,
         c.grey(
-          `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+          `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/#message-notifications`,
         ),
       );
     }
+    // Resolve the effective per-channel routing config for this notification type once
+    const effectiveConfig = await getEffectiveNotificationConfig(notifMessage.type);
+    const failedChannels: string[] = [];
+    // Anonymize the message once per required level (channels can raise the global level),
+    // so every provider receives data matching its channel's anonymization level
+    const globalAnonymizationLevel = await getAnonymizationLevel();
+    const anonymizationNotice = consumeAnonymizationNotice(globalAnonymizationLevel);
+    if (anonymizationNotice) {
+      uxLog("log", this, c.grey(t('anonymizationActive', { level: globalAnonymizationLevel })));
+      if (anonymizationNotice.legacyEnvVarUsed) {
+        uxLog("warning", this, c.yellow(t('anonymizationLegacyEnvVarDeprecated')));
+      }
+    }
+    const anonymizedViews = new Map<string, NotifMessage>();
+    const getViewForLevel = (level: AnonymizationLevel, channel: AnonymizationChannel | null = null): NotifMessage => {
+      // Views only differ by channel when the message keeps user names readable in its text
+      const viewChannel = isTextScrubbingSkipped(notifMessage, level, channel) ? channel : null;
+      const viewKey = `${level}|${viewChannel || ""}`;
+      if (!anonymizedViews.has(viewKey)) {
+        anonymizedViews.set(viewKey, anonymizeNotifMessage(notifMessage, level, viewChannel));
+      }
+      return anonymizedViews.get(viewKey) as NotifMessage;
+    };
     for (const notifProvider of notifProviders) {
       uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
       // Skip if matching NOTIFICATIONS_DISABLE except for Api
@@ -59,13 +103,63 @@ export abstract class NotifProvider {
             `[NotifProvider] Skip notification of type ${notifMessage.type} according to configuration (NOTIFICATIONS_DISABLE env var or notificationsDisable .sfdx-hardis.yml property)`,
           ),
         );
+        continue;
+      }
+      // Per-channel severity threshold filter (alwaysSend bypasses)
+      const channel = notifProvider.getChannel();
+      const threshold = getChannelThreshold(effectiveConfig, channel);
+      if (!notifMessage.alwaysSend && !severityMeetsThreshold(notifMessage.severity, threshold)) {
+        if (threshold === "off") {
+          uxLog(
+            "log",
+            this,
+            c.grey(t("notificationChannelDisabledForType", { channel, type: notifMessage.type })),
+          );
+        } else {
+          uxLog(
+            "log",
+            this,
+            c.grey(
+              t("skippedNotificationChannel", {
+                channel,
+                type: notifMessage.type,
+                severity: notifMessage.severity,
+                threshold,
+              }),
+            ),
+          );
+        }
+        continue;
       }
       // Do not send notifs for level "log" to Users, but just to logs/metrics API
-      else if (notifProvider.isApplicableForNotif(notifMessage)) {
-        await notifProvider.postNotification(notifMessage);
+      if (notifProvider.isApplicableForNotif(notifMessage)) {
+        // Isolate each provider: a misconfigured or failing channel (e.g. email without
+        // NOTIF_EMAIL_ADDRESS, Slack token expired...) must not prevent the other channels
+        // from receiving the notification, nor make the calling command fail.
+        try {
+          const channelAnonymizationLevel = await getChannelAnonymizationLevel(channel);
+          await notifProvider.postNotification(getViewForLevel(channelAnonymizationLevel, channel));
+        } catch (e) {
+          failedChannels.push(notifProvider.getLabel());
+          uxLog(
+            "warning",
+            this,
+            c.yellow(t('notifProviderSendFailed', { label: notifProvider.getLabel(), type: notifMessage.type, message: (e as Error).message })),
+          );
+        }
       } else {
         uxLog("error", this, c.grey(`[NotifProvider] - Skipped: ${notifProvider.getLabel()} as not applicable for notification severity`));
       }
+    }
+    // Write notification to file if monitoring aggregation is active. Failed channels are
+    // persisted so monitor:all can expose a ChannelsFailed metric: channel failures no
+    // longer fail commands, so they must stay detectable in observability backends.
+    const notifOutputDir = process.env.MONITORING_NOTIF_OUTPUT_DIR;
+    if (notifOutputDir) {
+      // Written at the API channel level: these files feed the AI summary prompt,
+      // the PPTX report and the health score, which follow the API channel decision
+      const apiAnonymizationLevel = await getChannelAnonymizationLevel('api');
+      await writeMonitoringNotifFile(notifOutputDir, getViewForLevel(apiAnonymizationLevel), failedChannels);
     }
   }
 
@@ -75,7 +169,7 @@ export abstract class NotifProvider {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postNotification(notifMessage: string, buttons: any[] = [], attachments: any[] = []): Promise<void> {
-    uxLog("log", this, c.grey("method postNotification is not implemented on " + this.getLabel()));
+    uxLog("log", this, c.grey(t('methodPostnotificationIsNotImplementedOn') + this.getLabel()));
   }
 }
 

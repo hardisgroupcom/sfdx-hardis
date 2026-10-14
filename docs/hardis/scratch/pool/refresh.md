@@ -15,6 +15,8 @@ Key functionalities:
 - **Pool Replenishment:** Creates new scratch orgs to replace expired ones and to reach the `maxScratchOrgsNumber` defined in the pool configuration.
 - **Parallel Creation:** New scratch orgs are created in parallel using child processes, optimizing the replenishment process.
 - **Authentication Handling:** Authenticates to scratch orgs before deletion or creation, ensuring proper access.
+- **Dashboard Update (`gitProvider` storage):** Records the refresh, the failed creations and the scratch org limits of the Dev Hub, then rebuilds the "Scratch Orgs Pool Dashboard" of the git provider.
+- **Housekeeping (`gitProvider` storage):** In a CI job, removes the entries encrypted with a previous key before the pool is counted, and deletes their scratch orgs from the Dev Hub when `SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY` proves they are genuine. A refresh run from a computer keeps them and stops. Comments that the key of the pool did not sign are ignored. Removes the entries of the scratch orgs already taken.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -22,7 +24,7 @@ Key functionalities:
 The command's technical implementation involves:
 
 - **Configuration Loading:** It retrieves the `poolConfig` from the project's `.sfdx-hardis.yml` file to get parameters like `maxScratchOrgsNumber`, `maxScratchOrgsNumberToCreateOnce`, and `minScratchOrgRemainingDays`.
-- **Pool Storage Interaction:** It uses `getPoolStorage` and `setPoolStorage` to interact with the configured storage service (e.g., Salesforce Custom Object, Redis) to retrieve and update the list of scratch orgs in the pool.
+- **Pool Storage Interaction:** It uses `listPoolOrgs`, `removePoolOrgs` and `addScratchOrgToPool` to interact with the configured storage service (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub). With the `gitProvider` storage, the encryption key of the pool (`SFDX_HARDIS_POOL_ENCRYPTION_KEY`) is required.
 - **Expiration Check:** It calculates the remaining days for each scratch org in the pool using moment and flags those below the `minScratchOrgRemainingDays` threshold for deletion.
 - **Scratch Org Deletion:** For expired orgs, it authenticates to them using `authenticateWithSfdxUrlStore` and then executes `sf org delete scratch` via `execCommand`.
 - **Scratch Org Creation:** To replenish the pool, it spawns new child processes that run the `sf hardis:scratch:create --pool` command. This allows for parallel creation of multiple scratch orgs.
@@ -30,22 +32,38 @@ The command's technical implementation involves:
 - **Logging:** Provides detailed logs about the status of scratch orgs (kept, deleted, created, failed creations) and a summary of the refresh operation.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:scratch:pool:refresh --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:scratch:pool:refresh
+```
+
+```shell
+$ sf hardis:scratch:pool:refresh --agent
 ```
 
 

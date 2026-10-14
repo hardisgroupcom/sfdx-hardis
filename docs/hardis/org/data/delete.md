@@ -14,12 +14,16 @@ This command provides a powerful and controlled way to remove data from your Sal
 - **Environment Reset:** Preparing sandboxes for new development cycles by clearing specific data sets.
 - **Compliance:** Deleting data to meet regulatory requirements.
 
+Before anything is deleted, the command displays a summary of the objects handled by the workspace (object, operation, external id, filter) followed by the full `export.json`, then asks for confirmation.
+
 **Important Considerations for Production Environments:**
 
 If you intend to run this command in a production environment, you must:
 
 - Set `runnableInProduction` to `true` in your `export.json` file within the SFDMU workspace.
 - Define `sfdmuCanModify: YOUR_INSTANCE_URL` in your branch-specific configuration file (e.g., `config/branches/.sfdx-hardis.YOUR_BRANCH.yml`) to explicitly authorize data modification for that instance.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/p4E2DUGZ3bs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -34,23 +38,38 @@ The command's technical implementation relies heavily on the SFDMU plugin:
 - **Required Plugin:** It explicitly lists `sfdmu` as a required plugin, ensuring that the necessary dependency is in place before execution.
 </details>
 
+### Agent Mode
+
+Use `--agent` to disable all prompts. Typical usage:
+
+`sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg`
+
+- The `--path` flag is required in agent mode (no interactive workspace selection).
+- The `--target-org` flag is used directly (no interactive org selection prompt).
+- The workspace content is still displayed, but its confirmation prompt is skipped.
+
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required | Options |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir         | option  | undefined                                                     |         |          |         |
-| json              | boolean | Format output as json.                                        |         |          |         |
-| path<br/>-p       | option  | Path to the sfdmu workspace folder                            |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-org<br/>-o | option  | undefined                                                     |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| path<br/>-p       | option  | Path to the sfdmu workspace folder                                                                           |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:org:data:delete
+```
+
+```shell
+$ sf hardis:org:data:delete --agent --path ./scripts/data/MyDataProject --target-org myOrg
 ```
 
 

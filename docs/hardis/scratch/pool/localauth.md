@@ -8,7 +8,9 @@
 
 **Authenticates a local user to the configured scratch org pool storage service, enabling them to fetch and manage scratch orgs from the pool.**
 
-This command is essential for developers who want to utilize a shared scratch org pool for their local development. It establishes the necessary authentication with the backend storage service (e.g., Salesforce Custom Object, Redis) that manages the pool's state, allowing the user to retrieve available scratch orgs for their work.
+This command is for developers who want to take scratch orgs from a shared pool on their workstation. It checks the access to the storage service that holds the pool (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub).
+
+With the `gitProvider` storage there is nothing to log in to: the command checks that a git provider token and the encryption key of the pool (`SFDX_HARDIS_POOL_ENCRYPTION_KEY`) are available, and tells where to set them when they are not: the `.env` file of the project, or the secrets of the VS Code extension.
 
 Key functionalities:
 
@@ -27,22 +29,38 @@ The command's technical implementation involves:
 - **Error Handling:** It checks for the absence of a configured scratch org pool and provides a user-friendly message.
 </details>
 
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:scratch:pool:localauth --agent
+```
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
+
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                   | Default | Required | Options |
-|:----------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir             | option  | undefined                                                     |         |          |         |
-| json                  | boolean | Format output as json.                                        |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                     |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 
 ```shell
 $ sf hardis:scratch:pool:localauth
+```
+
+```shell
+$ sf hardis:scratch:pool:localauth --agent
 ```
 
 

@@ -13,6 +13,8 @@ Define the following environment variables (in CICD variables or locally in a **
 
 You also need to define JSON configuration file(e) in folder **config/user-stories/**
 
+When a user story carries several tickets in the field named by `ticketField`, separate them with a comma, a semicolon or a space. The command splits on all three, and on a mix of them, so each ticket becomes its own report row and is looked up in ServiceNow on its own.
+
 Example:
 
 ```json
@@ -52,25 +54,39 @@ Example:
     },
     "serviceNowConfig": {
         "tables": [
-            { "tableName": "demand" },
+            { "tableName": "dmn_demand" },
             { "tableName": "incident" }
         ]
     }
 }
 ```
+
+### Agent Mode
+
+Supports non-interactive execution with `--agent`:
+
+```sh
+sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all" --agent
+```
+
+In agent mode:
+- The `--config` flag is recommended. If not provided and multiple config files exist, the first one found is used automatically.
+- The `--where-choice` flag is recommended. If not provided and multiple WHERE choices exist, the first one is used automatically.
+- All interactive prompts are skipped.
   
 
 ## Parameters
 
 | Name                |  Type   | Description                                                                                                 | Default | Required | Options |
 |:--------------------|:-------:|:------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                       |         |          |         |
 | config<br/>-c       | option  | Path to JSON config file containing user stories and ServiceNow configuration                               |         |          |         |
 | debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                             |         |          |         |
-| flags-dir           | option  | undefined                                                                                                   |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                        |         |          |         |
 | json                | boolean | Format output as json.                                                                                      |         |          |         |
 | outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv                                           |         |          |         |
 | skipauth            | boolean | Skip authentication check when a default username is required                                               |         |          |         |
-| target-org<br/>-o   | option  | undefined                                                                                                   |         |          |         |
+| target-org<br/>-o   | option  | Username or alias of the target org.                                                                        |         |          |         |
 | websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                   |         |          |         |
 | where-choice<br/>-w | option  | Where selection for user stories. If not provided, you will be prompted to select one from the config file. |         |          |         |
 
@@ -78,6 +94,14 @@ Example:
 
 ```shell
 $ sf hardis:misc:servicenow-report
+```
+
+```shell
+$ sf hardis:misc:servicenow-report --config config/user-stories/my-config.json --where-choice "UAT all"
+```
+
+```shell
+$ sf hardis:misc:servicenow-report --agent
 ```
 
 

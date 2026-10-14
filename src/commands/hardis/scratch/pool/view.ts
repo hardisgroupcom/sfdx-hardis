@@ -1,11 +1,15 @@
 /* jscpd:ignore-start */
 import c from 'chalk';
-import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
+import { SfCommand, Flags, optionalHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { getConfig } from '../../../../config/index.js';
 import { uxLog } from '../../../../common/utils/index.js';
-import { getPoolStorage } from '../../../../common/utils/poolUtils.js';
+import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
+import { PoolSummary } from '../../../../common/utils/poolDashboardUtils.js';
+import { POOL_ENCRYPTION_KEY_ENV_VAR } from '../../../../common/utils/poolCryptoUtils.js';
+import { getPoolSummary } from '../../../../common/utils/poolUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -23,8 +27,9 @@ This command provides visibility into your scratch org pool, allowing you to mon
 Key functionalities:
 
 - **Pool Configuration Display:** Shows the \`poolConfig\` defined in your ".sfdx-hardis.yml" file, including the chosen storage service and the maximum number of scratch orgs.
-- **Pool Storage Content:** Displays the raw content of the pool storage, which includes details about each scratch org in the pool (e.g., alias, username, expiration date).
+- **Pool Content:** Lists the scratch orgs available in the pool (alias, username, expiration date), the last scratch orgs taken from it, the last failed creations and the scratch org limits of the Dev Hub.
 - **Available Scratch Org Count:** Provides a summary of how many scratch orgs are currently available in the pool.
+- **No credential in the output:** The result never contains the credentials of a scratch org. With the \`gitProvider\` storage, the counts are available even without the encryption key.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -32,17 +37,34 @@ Key functionalities:
 The command's technical implementation involves:
 
 - **Configuration Loading:** It retrieves the \`poolConfig\` from the project's ".sfdx-hardis.yml" file using \`getConfig\`.
-- **Pool Storage Retrieval:** It uses \`getPoolStorage\` to connect to the configured storage service (e.g., Salesforce Custom Object, Redis) and retrieve the current state of the scratch org pool.
-- **Data Display:** It logs the retrieved pool configuration and pool storage content to the console in a human-readable format.
-- **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not.
+- **Pool Summary Retrieval:** It uses \`getPoolSummary\` to read the configured storage service (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub) and build a summary of the pool.
+- **JSON Output:** With \`--json\`, the \`pool\` property holds the summary read by the VS Code extension panel. \`errorKind\` is \`noGitProvider\` when the storage cannot be reached.
+- **Data Display:** It logs the pool configuration and the available scratch orgs to the console in a human-readable format.
+- **Error Handling:** It checks if a scratch org pool is configured for the project and provides a warning message if it's not (\`errorKind\` is then \`noPool\`). The Dev Hub is optional. The scratch org limits shown are the ones recorded by the last pool refresh; with a storage that records none, they are read from the connected Dev Hub.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:view --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:view'];
+  public static examples = ['$ sf hardis:scratch:pool:view',
+    '$ sf hardis:scratch:pool:view --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -54,7 +76,7 @@ The command's technical implementation involves:
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
-    'target-dev-hub': requiredHubFlagWithDeprecations,
+    'target-dev-hub': optionalHubFlagWithDeprecations,
   };
 
   // Set this to true if your command requires a project workspace; 'requiresProject' is false by default
@@ -67,39 +89,67 @@ The command's technical implementation involves:
     // Get pool configuration
     const config = await getConfig('project');
     const poolConfig = config.poolConfig || {};
-    uxLog("log", this, 'Pool config: ' + c.grey(JSON.stringify(poolConfig, null, 2)));
+    uxLog("log", this, t('poolConfig') + c.grey(JSON.stringify(poolConfig, null, 2)));
 
     // Missing scratch orgs pool configuration
     if (!poolConfig.storageService) {
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
-        )
+        c.yellow(t('noScratchOrgsPoolConfiguredLocalAuth'))
       );
-      return { status: 1, outputString: 'Scratch org pool configuration to create' };
+      return { status: 1, outputString: 'Scratch org pool configuration to create', errorKind: 'noPool' };
     }
 
-    // Query pool storage
-    const poolStorage = await getPoolStorage({
-      devHubConn: flags['target-dev-hub']?.getConnection(),
-      devHubUsername: flags['target-dev-hub']?.getUsername(),
-    });
-    uxLog("other", this, 'Pool storage: ' + c.grey(JSON.stringify(poolStorage, null, 2)));
-
-    const scratchOrgs = poolStorage.scratchOrgs || [];
-    const availableNumber = scratchOrgs.length;
+    // Read the pool. A storage that cannot be reached is an answer, not a question to the user
+    let pool: PoolSummary | null = null;
+    try {
+      pool = await getPoolSummary({
+        devHubConn: flags['target-dev-hub']?.getConnection(),
+        devHubUsername: flags['target-dev-hub']?.getUsername(),
+        noPrompt: true,
+      });
+    } catch (e) {
+      uxLog("warning", this, c.yellow((e as Error).message));
+      return {
+        status: 1,
+        outputString: 'Scratch org pool storage can not be reached',
+        errorKind: poolConfig.storageService === 'gitProvider' ? 'noGitProvider' : 'storageError',
+        errorMessage: (e as Error).message,
+        storageService: poolConfig.storageService,
+      };
+    }
+    if (pool === null) {
+      return { status: 1, outputString: 'Scratch org pool storage can not be reached', errorKind: 'storageError', storageService: poolConfig.storageService };
+    }
 
     // Display logs
-    uxLog("action", this, c.cyan(`There are ${c.bold(availableNumber)} available scratch orgs`));
+    if (pool.orgs.length > 0) {
+      await uxLogTableWithReport(
+        this,
+        pool.orgs.map((org) => ({ alias: org.alias, username: org.username, expirationDate: org.expirationDate, daysLeft: org.daysLeft })),
+        ['alias', 'username', 'expirationDate', 'daysLeft'],
+        { fileNamePrefix: 'scratch-org-pool', fileTitle: 'Scratch org pool' },
+      );
+    }
+    if (pool.dashboardUrl) {
+      uxLog("log", this, c.grey(t('poolDashboardUrl', { url: pool.dashboardUrl })));
+    }
+    if (pool.keyStatus === 'missing') {
+      uxLog("warning", this, c.yellow(t('poolEncryptionKeyMissing', { variable: POOL_ENCRYPTION_KEY_ENV_VAR })));
+    } else if (pool.keyStatus === 'mismatch') {
+      uxLog("warning", this, c.yellow(t('poolEncryptionKeyMismatch', { variable: POOL_ENCRYPTION_KEY_ENV_VAR })));
+    }
+    uxLog("action", this, c.cyan(t('thereAreAvailableScratchOrgs', { availableNumber: c.bold(pool.available) })));
 
-    // Return an object to be displayed with --json
+    // Return an object to be displayed with --json. It never holds the credentials of a scratch org.
     return {
       status: 0,
       outputString: 'Viewed scratch org pool',
-      poolStorage: poolStorage,
-      availableScratchOrgs: availableNumber,
+      pool: pool as any,
+      storageService: pool.storageService,
+      dashboardUrl: pool.dashboardUrl,
+      availableScratchOrgs: pool.available,
       maxScratchOrgs: poolConfig.maxScratchOrgsNumber,
     };
   }

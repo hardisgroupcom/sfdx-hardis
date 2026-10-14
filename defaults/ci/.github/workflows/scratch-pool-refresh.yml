@@ -1,0 +1,63 @@
+---
+# Scratch org pool refresh: deletes the scratch orgs about to expire and creates new ones, so jobs
+# and developers get a scratch org in seconds.
+#
+# Runs only when the repository variable SCRATCH_ORG_POOL is "true"
+# (Settings -> Secrets and variables -> Actions -> Variables)
+#
+# Configure the pool first with: sf hardis:scratch:pool:create
+# More info at https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # Every night. Scheduled workflows run on the default branch only
+  workflow_dispatch:
+permissions: read-all
+name: Refresh scratch org pool (sfdx-hardis)
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  refresh_scratch_org_pool:
+    if: ${{ vars.SCRATCH_ORG_POOL == 'true' }}
+    runs-on: ubuntu-latest
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    name: Refresh scratch org pool
+    permissions:
+      issues: write # Allows sfdx-hardis to update the "Scratch Orgs Pool Dashboard" issue
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Login & refresh scratch org pool
+        env:
+          # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+          # and replace DEVHUB by the alias of your Dev Hub
+          SFDX_AUTH_URL_DEV_HUB: ${{ secrets.SFDX_AUTH_URL_DEV_HUB }}
+          SFDX_CLIENT_ID_DEVHUB: ${{ secrets.SFDX_CLIENT_ID_DEVHUB }}
+          SFDX_CLIENT_KEY_DEVHUB: ${{ secrets.SFDX_CLIENT_KEY_DEVHUB }}
+          # Key that encrypts the scratch orgs of a pool stored in the git provider
+          SFDX_HARDIS_POOL_ENCRYPTION_KEY: ${{ secrets.SFDX_HARDIS_POOL_ENCRYPTION_KEY }}
+          # Only during a key rotation: the key the pool had before
+          SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY: ${{ secrets.SFDX_HARDIS_POOL_PREVIOUS_ENCRYPTION_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCRATCH_ORG_POOL: "true"
+          FORCE_COLOR: "1"
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:pool:refresh
+
+      - name: Archive sfdx-hardis reports
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfdx-hardis reports
+          path: hardis-report

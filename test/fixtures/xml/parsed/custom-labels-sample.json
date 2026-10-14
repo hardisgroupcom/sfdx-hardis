@@ -1,0 +1,46 @@
+{
+  "CustomLabels": {
+    "$": {
+      "xmlns": "http://soap.sforce.com/2006/04/metadata"
+    },
+    "labels": [
+      {
+        "fullName": [
+          "WelcomeMessage"
+        ],
+        "categories": [
+          "Général"
+        ],
+        "language": [
+          "fr"
+        ],
+        "protected": [
+          "false"
+        ],
+        "shortDescription": [
+          "Message d'accueil & bienvenue"
+        ],
+        "value": [
+          "Bonjour <utilisateur> & bienvenue à l'application \"sfdx-hardis\" !"
+        ]
+      },
+      {
+        "fullName": [
+          "EmptyShortDesc"
+        ],
+        "language": [
+          "en"
+        ],
+        "protected": [
+          "true"
+        ],
+        "shortDescription": [
+          ""
+        ],
+        "value": [
+          ""
+        ]
+      }
+    ]
+  }
+}

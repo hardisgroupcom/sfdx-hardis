@@ -6,7 +6,8 @@ import { AnyJson } from '@salesforce/ts-types';
 import { getConfig } from '../../../../config/index.js';
 import { uxLog } from '../../../../common/utils/index.js';
 import { instantiateProvider } from '../../../../common/utils/poolUtils.js';
-import { KeyValueProviderInterface } from '../../../../common/utils/keyValueUtils.js';
+import { PoolStorageInterface } from '../../../../common/utils/keyValueUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -19,7 +20,9 @@ export default class ScratchPoolLocalAuth extends SfCommand<any> {
 
 **Authenticates a local user to the configured scratch org pool storage service, enabling them to fetch and manage scratch orgs from the pool.**
 
-This command is essential for developers who want to utilize a shared scratch org pool for their local development. It establishes the necessary authentication with the backend storage service (e.g., Salesforce Custom Object, Redis) that manages the pool's state, allowing the user to retrieve available scratch orgs for their work.
+This command is for developers who want to take scratch orgs from a shared pool on their workstation. It checks the access to the storage service that holds the pool (dashboard of the git provider, or Salesforce Custom Object on the Dev Hub).
+
+With the \`gitProvider\` storage there is nothing to log in to: the command checks that a git provider token and the encryption key of the pool (\`SFDX_HARDIS_POOL_ENCRYPTION_KEY\`) are available, and tells where to set them when they are not: the \`.env\` file of the project, or the secrets of the VS Code extension.
 
 Key functionalities:
 
@@ -37,13 +40,29 @@ The command's technical implementation involves:
 - **User Authentication:** It then calls the \`userAuthenticate()\` method on the instantiated provider. This method encapsulates the specific logic for authenticating with the chosen storage service (e.g., prompting for API keys, performing OAuth flows).
 - **Error Handling:** It checks for the absence of a configured scratch org pool and provides a user-friendly message.
 </details>
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:scratch:pool:localauth --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
-  public static examples = ['$ sf hardis:scratch:pool:localauth'];
+  public static examples = ['$ sf hardis:scratch:pool:localauth',
+    '$ sf hardis:scratch:pool:localauth --agent',];
 
   // public static args = [{name: 'file'}];
 
   public static flags: any = {
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       char: 'd',
       default: false,
@@ -73,18 +92,22 @@ The command's technical implementation involves:
       uxLog(
         "warning",
         this,
-        c.yellow(
-          `There is not scratch orgs pool configured on this project. Please see with your tech lead about using command hardis:scratch:pool:configure`
-        )
+        c.yellow(t('noScratchOrgsPoolConfiguredLocalAuth'))
       );
       return { outputString: 'Scratch org pool configuration to create' };
     }
 
     // Request additional setup to the user
-    const provider: KeyValueProviderInterface = await instantiateProvider(poolConfig.storageService);
-    await provider.userAuthenticate();
+    const provider: PoolStorageInterface = await instantiateProvider(poolConfig.storageService);
+    const { flags } = await this.parse(ScratchPoolLocalAuth);
+    const authenticated = await provider.userAuthenticate({
+      devHubConn: flags['target-dev-hub']?.getConnection(),
+      devHubUsername: flags['target-dev-hub']?.getUsername(),
+    });
 
     // Return an object to be displayed with --json
-    return { outputString: 'Locally authenticated with scratch org pool' };
+    return authenticated
+      ? { status: 0, outputString: 'Locally authenticated with scratch org pool' }
+      : { status: 1, outputString: 'Scratch org pool can not be used from this workstation yet' };
   }
 }

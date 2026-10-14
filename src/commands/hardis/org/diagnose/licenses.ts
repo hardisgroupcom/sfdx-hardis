@@ -8,6 +8,7 @@ import { soqlQuery } from '../../../../common/utils/apiUtils.js';
 import { generateCsvFile, generateReportPath } from '../../../../common/utils/filesUtils.js';
 import { NotifProvider } from '../../../../common/notifProvider/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -45,9 +46,19 @@ The command's technical implementation involves:
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Feedback:** Provides clear messages to the user about the license extraction process and the used licenses.
 </details>
-`;
 
-  public static examples = ['$ sf hardis:org:diagnose:licenses'];
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:licenses --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the command runs fully automatically with no interactive prompts.`;
+
+  public static examples = ['$ sf hardis:org:diagnose:licenses', '$ sf hardis:org:diagnose:licenses --agent'];
 
   //Comment default values to test the prompts
   public static flags: any = {
@@ -70,6 +81,10 @@ The command's technical implementation involves:
     }),
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
+    }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation. Uses default values and skips prompts.',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -94,7 +109,7 @@ The command's technical implementation involves:
 
     // Retrieve the list of users who haven't logged in for a while
     const conn = flags['target-org'].getConnection();
-    uxLog("action", this, c.cyan(`Extracting Licenses from ${conn.instanceUrl} ...` + this.usedOnly ? '(used only)' : ''));
+    uxLog("action", this, c.cyan(t('extractingLicenses')));
 
     const licensesByKey = {};
     const usedLicenses: any[] = [];
@@ -145,7 +160,7 @@ The command's technical implementation involves:
     this.licenses.push(...pslLicenses);
 
     sortCrossPlatform(usedLicenses);
-    uxLog("action", this, c.cyan('Used licenses: ' + usedLicenses.join(', ')));
+    uxLog("action", this, c.cyan(t('usedLicenses') + usedLicenses.join(', ')));
     uxLogTable(this, this.licenses);
 
 

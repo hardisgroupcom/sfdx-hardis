@@ -11,6 +11,7 @@ import { getNotificationButtons, getOrgMarkdown, getSeverityIcon } from '../../.
 import { prompts } from '../../../../common/utils/prompts.js';
 import { CONSTANTS } from '../../../../config/index.js';
 import { setConnectionVariables } from '../../../../common/utils/orgUtils.js';
+import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -53,9 +54,19 @@ The command's technical implementation involves extensive querying of Salesforce
 - **Notification Integration:** It integrates with the \`NotifProvider\` to send notifications, including attachments of the generated CSV report and metrics for monitoring dashboards.
 - **User Interaction:** Uses \`prompts\` for interactive confirmation before performing deletion operations.
 </details>
-`;
 
-  public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix'];
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:org:diagnose:unusedlicenses --agent --target-org myorg@example.com
+\`\`\`
+
+In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs are deleted automatically). Use \`--fix\` together with \`--agent\` to delete them without prompting.`;
+
+  public static examples = ['$ sf hardis:org:diagnose:unusedlicenses', '$ sf hardis:org:diagnose:unusedlicenses --fix', '$ sf hardis:org:diagnose:unusedlicenses --agent'];
 
   public static flags: any = {
     outputfile: Flags.string({
@@ -73,6 +84,10 @@ The command's technical implementation involves extensive querying of Salesforce
     skipauth: Flags.boolean({
       description: 'Skip authentication check when a default username is required',
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
   public static requiresProject = false;
@@ -88,6 +103,7 @@ The command's technical implementation involves extensive querying of Salesforce
   protected static alwaysExcludeForActiveUsersPermissionSetLicenses = ['IdentityConnect'];
 
   protected debugMode = false;
+  protected agentMode = false;
   protected outputFile;
   protected outputFilesRes: any = {};
   protected permissionSetLicenseAssignmentsActive: any[] = [];
@@ -104,6 +120,7 @@ The command's technical implementation involves extensive querying of Salesforce
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(DiagnoseUnusedLicenses);
+    this.agentMode = flags.agent === true;
     this.debugMode = flags.debug || false;
     this.outputFile = flags.outputfile || null;
 
@@ -230,7 +247,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listAllPermissionSetLicenseAssignments(conn: any) {
-    uxLog("action", this, c.cyan(`Extracting all active Permission Sets Licenses Assignments...`));
+    uxLog("action", this, c.cyan(t('extractAllActivePermissionSetsLicenses')));
     const pslaQueryRes = await bulkQuery(
       `
     SELECT Id,PermissionSetLicenseId, PermissionSetLicense.DeveloperName, PermissionSetLicense.MasterLabel, AssigneeId, Assignee.Username, Assignee.IsActive, Assignee.Profile.Name
@@ -257,7 +274,7 @@ The command's technical implementation involves extensive querying of Salesforce
       );
     const psLicensesIds = relatedPermissionSetLicenses.map((psl) => psl.Id);
     if (relatedPermissionSetLicenses.length > 0) {
-      uxLog("action", this, c.cyan(`Extracting related Permission Sets Licenses...`));
+      uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsLicenses')));
       const pslQueryRes = await bulkQueryChunksIn(
         `SELECT Id,DeveloperName,MasterLabel,UsedLicenses,TotalLicenses
          FROM PermissionSetLicense
@@ -271,7 +288,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listRelatedPermissionSets(psLicensesIds: string[], conn) {
-    uxLog("action", this, c.cyan(`Extracting related Permission Sets...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSets')));
     const psQueryRes = await bulkQueryChunksIn(
       `SELECT Id,Label,Name,LicenseId
        FROM PermissionSet
@@ -290,7 +307,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listRelatedPermissionSetGroupsComponents(permissionSetsIds: string[], conn) {
-    uxLog("action", this, c.cyan(`Extracting related Permission Sets Group Components...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsGroupComponents')));
     const psgcQueryRes = await bulkQueryChunksIn(
       `SELECT Id,PermissionSetId,PermissionSetGroupId,PermissionSet.LicenseId,PermissionSet.Name,PermissionSetGroup.DeveloperName
          FROM PermissionSetGroupComponent
@@ -306,7 +323,7 @@ The command's technical implementation involves extensive querying of Salesforce
       ...new Set(this.permissionSetsGroupMembers.map((psgc) => psgc.PermissionSetGroupId)),
     ];
     if (permissionSetsGroupIds.length > 0) {
-      uxLog("action", this, c.cyan(`Extracting related Permission Set Group Assignments...`));
+      uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsGroupAssignments')));
       const psgaQueryRes = await bulkQueryChunksIn(
         `SELECT Id,Assignee.Username,PermissionSetGroupId,PermissionSetGroup.DeveloperName
            FROM PermissionSetAssignment
@@ -332,7 +349,7 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async listRelatedPermissionSetAssignmentsToPs(permissionSetsIds: string[], conn) {
-    uxLog("action", this, c.cyan(`Extracting related Permission Sets Assignments...`));
+    uxLog("action", this, c.cyan(t('extractingRelatedPermissionSetsAssignments')));
     const psaQueryRes = await bulkQueryChunksIn(
       `SELECT Id,Assignee.Username,PermissionSetId,PermissionSet.LicenseId,PermissionSet.Name
        FROM PermissionSetAssignment
@@ -361,10 +378,10 @@ The command's technical implementation involves extensive querying of Salesforce
     let attachments: any[] = [];
     if (unusedPermissionSetLicenseAssignments.length > 0) {
       notifSeverity = 'warning';
-      notifText = `${unusedPermissionSetLicenseAssignments.length} unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;
+      notifText = `**${unusedPermissionSetLicenseAssignments.length}** unused Permission Set Licenses Assignments have been found in ${orgMarkdown}`;
       for (const pslMasterLabel of Object.keys(summary).sort()) {
         const psl = this.getPermissionSetLicenseByMasterLabel(pslMasterLabel);
-        notifDetailText += `• ${pslMasterLabel}: ${summary[pslMasterLabel]} (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)\n`;
+        notifDetailText += `- **${pslMasterLabel}**: **${summary[pslMasterLabel]}** (${psl.UsedLicenses} used on ${psl.TotalLicenses} available)\n`;
       }
       attachments = [{ text: notifDetailText }];
     }
@@ -387,18 +404,18 @@ The command's technical implementation involves extensive querying of Salesforce
   }
 
   private async managePermissionSetLicenseAssignmentsDeletion(conn) {
-    if (!isCI && this.unusedPermissionSetLicenseAssignments.length) {
+    if (!isCI && !this.agentMode && this.unusedPermissionSetLicenseAssignments.length) {
       const confirmRes = await prompts({
         type: 'select',
-        message: 'Do you want to delete unused Permission Set License Assignments ?',
-        description: 'Remove permission set license assignments that are not being used, freeing up licenses for other users',
-        placeholder: 'Select an option',
+        message: t('doYouWantToDeleteUnusedPermission'),
+        description: t('removeUnusedPermissionSetLicenseDescription'),
+        placeholder: t('selectAnOption'),
         choices: [
           {
-            title: `Yes, delete the ${this.unusedPermissionSetLicenseAssignments.length} useless Permission Set License Assignments !`,
+            title: t('deleteUnusedPslYes'),
             value: 'all',
           },
-          { title: 'No' },
+          { title: t('deleteUnusedPslNo') },
         ],
       });
       if (confirmRes.value === 'all') {
@@ -408,12 +425,12 @@ The command's technical implementation involves extensive querying of Salesforce
         const deleteRes = await bulkUpdate('PermissionSetLicenseAssign', 'delete', pslaToDelete, conn);
         const deleteSuccessNb = deleteRes.successfulResults.length;
         const deleteErrorNb = deleteRes.failedResults.length;
-        uxLog("action", this, "Deletions Summary");
+        uxLog("action", this, t('deletionsSummary'));
         if (deleteErrorNb > 0) {
           uxLog(
             "warning",
             this,
-            c.yellow(`Warning: ${c.red(c.bold(deleteErrorNb))} assignments has not been deleted (bulk API errors)`)
+            c.yellow(t('assignmentsDeletionErrors', { count: c.red(c.bold(deleteErrorNb)) }))
           );
           uxLogTable(this, deleteRes.failedResults);
           this.outputFile = await generateReportPath('failed-delete-ps-license-assignments', this.outputFile);
@@ -423,7 +440,7 @@ The command's technical implementation involves extensive querying of Salesforce
           this.statusCode = 0;
         }
         // Build results summary
-        uxLog("success", this, c.green(`${c.bold(deleteSuccessNb)} assignments has been deleted.`));
+        uxLog("success", this, c.green(t('assignmentsDeletedSuccess', { count: c.bold(deleteSuccessNb) })));
         if (deleteSuccessNb) {
           uxLogTable(this, deleteRes.successfulResults);
           this.outputFile = await generateReportPath('deleted-ps-license-assignments', this.outputFile);

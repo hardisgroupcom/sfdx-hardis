@@ -1,0 +1,12 @@
+{
+  "exitStatus": 0,
+  "status": "ok",
+  "result": {
+    "deployed": 1,
+    "pushed": false,
+    "noExclusion": true,
+    "commentedPullRequests": [
+      "{{S4}}"
+    ]
+  }
+}

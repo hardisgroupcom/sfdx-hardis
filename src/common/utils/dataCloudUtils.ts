@@ -1,11 +1,14 @@
 import { Connection, SfError } from "@salesforce/core";
 import { AnyJson } from "@salesforce/ts-types";
 import { uxLog } from "./index.js";
-import fs from "fs-extra";
+import { startQueryLog } from "./apiUtils.js";
+import { CommandLogLineQuery } from "../websocketClient.js";
+import fs from './fsUtils.js';
 import path from "path";
 
 export const DATA_CLOUD_QUERIES_FOLDER_ROOT = path.join(process.cwd(), 'scripts', 'data-cloud-queries');
 const QUERY_CONNECT_PATH = "ssot/query-sql";
+const METADATA_CONNECT_PATH = "ssot/metadata";
 const DEFAULT_DATASPACE = "default";
 const DEFAULT_WORKLOAD_NAME = "sfdx-hardis-cli";
 const DEFAULT_ROW_LIMIT = 2000;
@@ -82,6 +85,81 @@ interface QueryConnectRowsResponse {
   data?: AnyJson[][];
 }
 
+export type DataCloudEntityType = "DataModelObject" | "DataLakeObject" | "CalculatedInsight";
+
+export interface DataCloudObjectSummary {
+  name: string;
+  displayName?: string;
+}
+
+export interface DataCloudAvailability {
+  available: boolean;
+  // Human readable explanation when `available` is false, safe to log at "log" level.
+  reason?: string;
+  objectNames: string[];
+}
+
+// Salesforce answers with this message on every Data Cloud endpoint when Data Cloud (CDP) has
+// never been provisioned on the org. It is the reliable "not enabled here" signal, as opposed to
+// a transient failure which callers should still surface.
+const CDP_NOT_ENABLED_MARKER = "cdp tenant id";
+
+function errorText(error: unknown): string {
+  const err = error as { message?: string; body?: any } | undefined;
+  const parts: string[] = [];
+  if (err?.message) {
+    parts.push(String(err.message));
+  }
+  if (err?.body) {
+    parts.push(typeof err.body === "string" ? err.body : JSON.stringify(err.body));
+  }
+  return parts.join(" ");
+}
+
+export function isDataCloudNotEnabledError(error: unknown): boolean {
+  return errorText(error).toLowerCase().includes(CDP_NOT_ENABLED_MARKER);
+}
+
+// Lists the Data Cloud objects of a given type. This is the only enumeration mechanism available:
+// SHOW TABLES is disabled (PERMISSION_DENIED) and information_schema does not exist on the
+// Data Cloud SQL engine, so table existence has to be checked against this listing.
+export async function listDataCloudObjects(
+  conn: Connection,
+  entityType: DataCloudEntityType = "DataModelObject",
+): Promise<DataCloudObjectSummary[]> {
+  const base = conn.baseUrl().replace(/\/$/, "");
+  const response = await conn.request<any>({
+    method: "GET",
+    url: `${base}/${METADATA_CONNECT_PATH}?entityType=${encodeURIComponent(entityType)}`,
+  });
+  const items = Array.isArray(response) ? response : (response?.metadata ?? []);
+  return (items as any[])
+    .filter((item) => item && item.name)
+    .map((item) => ({ name: String(item.name), displayName: item.displayName ? String(item.displayName) : undefined }));
+}
+
+// Probes whether Data Cloud can be queried on this org, without ever throwing for the
+// "not provisioned" case. Monitoring runs on many orgs without Data Cloud, so callers are
+// expected to skip quietly rather than fail the job.
+export async function getDataCloudAvailability(
+  conn: Connection,
+  entityType: DataCloudEntityType = "DataModelObject",
+): Promise<DataCloudAvailability> {
+  try {
+    const objects = await listDataCloudObjects(conn, entityType);
+    return { available: true, objectNames: objects.map((obj) => obj.name) };
+  } catch (error: any) {
+    if (isDataCloudNotEnabledError(error)) {
+      return { available: false, reason: "Data Cloud (Data 360) is not enabled on this org", objectNames: [] };
+    }
+    return {
+      available: false,
+      reason: `Unable to reach Data Cloud: ${error?.message || error}`,
+      objectNames: [],
+    };
+  }
+}
+
 export async function listAvailableDataCloudQueries(): Promise<string[]> {
   // List folders in DATA_CLOUD_QUERIES_FOLDER_ROOT
   const queries: string[] = [];
@@ -128,9 +206,10 @@ export async function dataCloudSqlQuery(
   }
 
   const settings = resolveOptions(options);
+  const queryLog = startQueryLog('datacloud');
 
   try {
-    const initialChunk = await submitInitialQuery(query.trim(), conn, settings);
+    const initialChunk = await submitInitialQuery(query.trim(), conn, settings, queryLog);
     if (!initialChunk.metadata.length) {
       throw new SfError(`[DataCloudSqlQuery] Data Cloud SQL query did not return column metadata.\n${JSON.stringify(initialChunk)}`);
     }
@@ -162,7 +241,9 @@ export async function dataCloudSqlQuery(
       rawData.push(...pagination.rawData);
     }
 
-    uxLog("log", this, `[DataCloudSqlQuery] Retrieved ${records.length} records.`);
+    uxLog("log", this, `[DataCloudSqlQuery] Retrieved ${records.length} records.`, {
+      query: { ...queryLog, status: 'completed', recordCount: records.length },
+    });
 
     return {
       queryId: status.queryId,
@@ -177,7 +258,9 @@ export async function dataCloudSqlQuery(
       hasMoreRows: false,
     };
   } catch (error) {
-    throw wrapQueryError(error);
+    const wrappedError = wrapQueryError(error);
+    uxLog("log", this, `[DataCloudSqlQuery] Query failed: ${wrappedError.message}`, { query: { ...queryLog, status: 'error' } });
+    throw wrappedError;
   }
 }
 
@@ -185,9 +268,10 @@ async function submitInitialQuery(
   query: string,
   conn: Connection,
   options: RequiredQueryOptions,
+  queryLog: CommandLogLineQuery,
 ): Promise<DataCloudSqlQueryResult> {
   const endpoint = buildQueryConnectUrl(conn, options);
-  uxLog("log", this, `[DataCloudSqlQuery] Submitting initial query to ${endpoint}:\n${query}`);
+  uxLog("log", this, `[DataCloudSqlQuery] Submitting initial query to ${endpoint}:\n${query}`, { query: queryLog });
   const response = await conn.request<QueryConnectResponse>({
     method: "POST",
     url: endpoint,

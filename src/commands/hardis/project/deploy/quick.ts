@@ -23,37 +23,55 @@ You can define command lines to run before or after a deployment, with parameter
 
 - **id**: Unique Id for the command
 - **label**: Human readable label for the command
-- **skipIfError**: If defined to "true", the post-command won't be run if there is a deployment failure
+- **allowFailure**: If defined to "true", a failure of this action does not make the deployment job fail
 - **context**: Defines the context where the command will be run. Can be **all** (default), **check-deployment-only** or **process-deployment-only**
-- **runOnlyOnceByOrg**: If set to true, the command will be run only one time per org. A record of SfdxHardisTrace__c is stored to make that possible (it needs to be existing in target org)
+- **runOnlyOnceByOrg**: If set to true (default), the action runs only once per target org - subsequent deployments skip it. State is tracked in the "Deployment Actions" PR comment.
+
+Post-deployment actions are never run when the metadata deployment failed: they are reported as \`not run\` and are proposed again during the next successful deployment.
+
+After every action runs, its result (✅ success, ❌ failed, 👋 manual) is recorded in a dedicated **"Deployment Actions"** PR comment - ordered by org (integration → uat → preprod → prod) - regardless of \`runOnlyOnceByOrg\`.
+
+When several Pull Requests of the same deployment carry an identical action (same type, phase, user and parameters), it runs once and the other Pull Requests record it as done: see [Identical actions run once](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once).
 
 If the commands are not the same depending on the target org, you can define them into **config/branches/.sfdx-hardis-BRANCHNAME.yml** instead of root **config/.sfdx-hardis.yml**
+
+You can also keep a single definition and restrict it with \`includeTargetBranches\` or \`excludeTargetBranches\` (use \`dev-sandboxes\` for developer sandboxes).
 
 Example:
 
 \`\`\`yaml
 commandsPreDeploy:
-  - id: knowledgeUnassign
+  - id: 32e7e3d7-eeeb-4162-ae9e-a4013e8439e1
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: bf114a50-8f40-4ac2-bf2b-910139292f76
     label: Assign Knowledge user to the deployment user
     command: sf data update record --sobject User --where "Username='deploy.github@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
 
 commandsPostDeploy:
-  - id: knowledgeUnassign
+  - id: ddd0d387-0b84-4ce5-8b0a-a9a370d2ece3
     label: Remove KnowledgeUser right to the user who has it
     command: sf data update record --sobject User --where "UserPermissionsKnowledgeUser='true'" --values "UserPermissionsKnowledgeUser='false'" --json
-  - id: knowledgeAssign
+  - id: 25891b5b-6053-4f91-9416-037e3e3f6e46
     label: Assign Knowledge user to desired username
     command: sf data update record --sobject User --where "Username='admin-yser@myclient.com'" --values "UserPermissionsKnowledgeUser='true'" --json
-  - id: someActionToRunJustOneTime
+  - id: a807b752-71dd-4345-a115-413ccd3dbbcc
     label: And to run only if deployment is success
     command: sf sfdmu:run ...
-    skipIfError: true
     context: process-deployment-only
     runOnlyOnceByOrg: true
 \`\`\`
+
+### Agent Mode
+
+Supports non-interactive execution with \`--agent\`:
+
+\`\`\`sh
+sf hardis:project:deploy:quick --agent
+\`\`\`
+
+In agent mode, all interactive prompts are skipped and default values are used.
+
 `;
 
   public static aliases = [
@@ -88,6 +106,10 @@ commandsPostDeploy:
       description: "wait",
       exclusive: ["async"],
     }),
+    agent: Flags.boolean({
+      default: false,
+      description: 'Run in non-interactive mode for agents and automation',
+    }),
     debug: Flags.boolean({
       default: false,
       description: "debug",
@@ -98,10 +120,9 @@ commandsPostDeploy:
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ProjectDeployStart);
-    const conn = flags["target-org"].getConnection();
     await setConnectionVariables(flags['target-org']?.getConnection(), true);
     // Run pre deployment commands if defined
-    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: false, conn: conn });
+    await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: false });
     const result = await wrapSfdxCoreCommand("sf project deploy start", this.argv, this, flags.debug);
     // Check org coverage if requested
     if (flags['coverage-formatters'] && result.stdout) {
@@ -117,7 +138,7 @@ commandsPostDeploy:
       }
     }
     // Run post deployment commands if defined
-    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: false, conn: conn });
+    await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: false });
     // Post success deployment notifications
     if (process.exitCode === 0) {
       await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);

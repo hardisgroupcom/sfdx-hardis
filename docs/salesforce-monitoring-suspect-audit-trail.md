@@ -6,7 +6,7 @@ description: Schedule daily checks of suspect actions in setup with sfdx-hardis 
 
 ## Detect suspect setup actions in major org
 
-Will extract from audit trail all actions that are considered as suspect, excepted the ones related to the deployment user and a given list of users, like the release manager.
+Extracts from the Audit Trail all actions that are considered suspect, except the ones related to the deployment user and to a given list of users, such as the release manager.
 
 Sfdx-hardis command: [sf hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/)
 
