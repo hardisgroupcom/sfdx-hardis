@@ -549,6 +549,7 @@ describe('Identical actions in a backpromote', () => {
         alreadyRun: new Map(),
         sandboxName: 'dev1',
         orgId: '00D000000000001',
+        orgLabel: 'dev1',
         user: 'tester',
         conn: {},
         store: { update: async () => undefined } as any,

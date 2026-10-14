@@ -155,13 +155,13 @@ describe('Backpromotes comment', () => {
   // Two developer orgs of one person can share a label: the org id tells them apart
   it('adds the org id only when two orgs share a label', () => {
     const state = upsertActionRow(
-      upsertSandboxRow(upsertSandboxRow(emptyBackpromotesState(), { ...sandboxRow, orgLabel: 'dev1' }), { ...sandboxRow, orgId: '00D5j000000ZZZZEAA', orgLabel: 'dev1', date: '2026-09-13T10:15:00.000Z' }),
-      { ...actionRow, orgId: '00D5j000000ZZZZEAA', orgLabel: 'dev1' }
+      upsertSandboxRow(upsertSandboxRow(emptyBackpromotesState(), { ...sandboxRow, orgLabel: 'dev1' }), { ...sandboxRow, orgId: '00D5j00000000002AA', orgLabel: 'dev1', date: '2026-09-13T10:15:00.000Z' }),
+      { ...actionRow, orgId: '00D5j00000000002AA', orgLabel: 'dev1' }
     );
     const body = renderBackpromotesComment(state);
     expect(body).to.contain('| dev1 (00D5j000000ABCDEAA) |');
-    expect(body).to.contain('| dev1 (00D5j000000ZZZZEAA) |');
-    expect(body).to.contain('#### Deployment actions in dev1 (00D5j000000ZZZZEAA)');
+    expect(body).to.contain('| dev1 (00D5j00000000002AA) |');
+    expect(body).to.contain('#### Deployment actions in dev1 (00D5j00000000002AA)');
   });
 
   // The navigation is completed by GitProvider.refreshPullRequestNavigation once the comment exists:
