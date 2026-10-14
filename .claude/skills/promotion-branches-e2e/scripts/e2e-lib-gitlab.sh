@@ -184,7 +184,9 @@ body = io.open(sys.argv[4], encoding='utf-8').read() if sys.argv[4] != '-' else 
 print(json.dumps({'source_branch': sys.argv[1], 'target_branch': sys.argv[2], 'title': sys.argv[3],
                   'description': body, 'squash': False, 'remove_source_branch': False}))
 " "$source" "$target" "$title" "$body_file")
-  curl -sS -X POST -H "PRIVATE-TOKEN: $GL_TOKEN" -H "Content-Type: application/json" \
+  # --max-time: on 2026-10-14 this call hung for minutes on a workstation whose resolver threads
+  # failed to start, while the same call from another shell answered in 0.3 s; p_open retries
+  curl -sS --max-time 120 -X POST -H "PRIVATE-TOKEN: $GL_TOKEN" -H "Content-Type: application/json" \
     -d "$payload" "$GL_HOST/api/v4/projects/$PROJECT_ID/merge_requests" |
     python -c "import json,sys; print(json.load(sys.stdin)['iid'])"
 }

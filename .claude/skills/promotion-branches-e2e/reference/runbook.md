@@ -1065,7 +1065,8 @@ What `ci-provider-azure.sh` does, in order:
    `trigger: none` in the checks file, a CI trigger on the four major branches and `pr: none` in
    the deployment file. These triggers are what the setup comments of the templates ask to set by
    hand in the UI. The MegaLinter job is left out: with one parallel job it would double the queue
-   and the minutes. The files are parsed back as YAML and checked before the script ends.
+   and the minutes. So is the scratch org tests job of the 8.18.0 template (no Dev Hub in this
+   test). The files are parsed back as YAML and checked before the script ends.
 3. Creates the repository, pushes `main` and the major branches. No pipeline exists yet, so nothing
    runs. The PAT sits in an `http.extraHeader` of the clone, the remote URL stays clean.
 4. The token of the jobs. `AZURE_E2E_CI_TOKEN=system` (default): the templates pass
@@ -1164,7 +1165,8 @@ What `ci-provider-bitbucket.sh` does, in order:
    the link commands before `sf hardis:auth:login` in both steps, in the sfdx-hardis image, with a
    cache `sfdxhardislink` on `/tmp/sfdx-hardis` (a later step fetches the branch into the cached
    clone and reuses `node_modules`). The MegaLinter step and its `parallel` block are left out: they
-   would cost minutes on every Pull Request. The file is parsed back, checked, and validated against
+   would cost minutes on every Pull Request. So is the scratch org tests step of the 8.18.0 template
+   (no Dev Hub in this test). The file is parsed back, checked, and validated against
    `https://api.bitbucket.org/schemas/pipelines-configuration` (Atlassian's JSON schema: it catches
    wrong types, not unknown keys). Bitbucket has no lint API; this happens before the repository
    exists, so no minute goes to a syntax error.
@@ -1289,6 +1291,22 @@ Traps:
   and `sf data delete record --sobject ActiveScratchOrg --record-id <id>` frees the slot of a CI org
   whose run is over. Check it before `backpromote-setup.sh`: the setup merges its stories before it
   creates the orgs, so a failure there costs a repository.
+- **An expired scratch org keeps answering for days, then dies in the middle of a run.** The two
+  developer orgs of 2026-10-10 (one day) expired on 10-12 and still took the GitHub and GitLab
+  backpromotes of 10-14 until 04:35; at 06:05 the Azure one got `INVALID_CROSS_REFERENCE_KEY:
+  invalid cross reference id` on its first deploy, and every SOQL after it, with `sf org display`
+  saying `Deleted`. Salesforce deletes lazily. Before a run, read `expirationDate` in
+  `sf org list --json` and treat a past date as a dead org: `sf org logout --target-org <alias>
+  --no-prompt` so that `backpromote-setup.sh` creates a new one (`sf org display` still exits 0
+  on a deleted org, so the setup alone does not notice), and write the new username where
+  `DEV_ORG` is read from. Count the `ActiveScratchOrgs` and `DailyScratchOrgs` limits first.
+- **The e2e Chrome profile logs out of Azure DevOps and Bitbucket on its own.** When it is, the
+  visual check reports every comment "not found on the page" and the page reached is a sign-in URL
+  (`login.microsoftonline.com`, `vssps.visualstudio.com/_signin`), or, on Bitbucket, the Pull
+  Request URL itself showing "404 Repository not found" (a private repository answers 404 to an
+  anonymous visitor). Open one Pull Request URL in that Chrome before the run. Nobody can
+  log in during an unattended run: record the section as not covered, not failed, and log in by
+  hand (CDP port 9222) before the next run. The GitHub and GitLab pictures need no login.
 - **The simulators run the TypeScript sources as they are on disk** (`bin/dev.js`). A source file
   saved half way through a fix, while a section runs, fails the job that starts at that moment with
   `command hardis:project:deploy:smart not found` and exit code 2 (2026-10-09, check A5 on GitHub).
@@ -1382,6 +1400,11 @@ Traps:
   1 Pull Request where 27 are expected), a failed `curl` loses a merge request creation and every
   section after it. Before a run, close what holds the memory, and after it
   `grep -c getaddrinfo` every output file: one match means the section around it is to replay.
+  Memory is not the only cause: on 2026-10-14 the message came five times with 4.5 to 6 GB free,
+  always on a `curl` or `git` of a chain that had been running for hours next to two others, and
+  once a `curl` POST hung for minutes instead of failing (the same call from a fresh shell answered
+  in 0.3 s). Read the check lines around each match: a poll that failed once and went on changed
+  nothing, a failed push or merge request creation did.
 - **A merge ref wait that times out does not stop the script.** `p_wait_merge_ref` returns 1 and
   the next job validates the previous merge. On GitHub the ref took more than 90 seconds once
   (checks 32 and 37 of the run of 2026-10-10); on GitLab the merge request API answered the
@@ -1407,6 +1430,25 @@ Traps:
   between comments was empty, and only the real CI section could show it (sfdx-hardis #2307,
   2026-10-07). `e2e_check` / `e2e_deploy` now set `GITHUB_WORKFLOW`, `gl_check` / `gl_deploy`
   `CI_JOB_NAME`, to the names of the templates. Keep them in step with `defaults/ci`.
+- **A CI template that gains a job stops the real CI section before any repository exists.**
+  `ci-workflows-prepare.cjs` checks what it wrote: one job in the Azure checks pipeline, one step
+  in the Bitbucket pull request pipeline. When 8.18.0 added the scratch org tests job to every
+  template (#2343), the Azure and Bitbucket runs of 2026-10-14 died at that check (`expected one
+  job, found 2`, `the pull request pipeline is not one single step`) half a minute after they
+  started, and the CI chain went on to the next provider as if they had run. The fix belongs in the
+  writer (leave the new job out, as the MegaLinter one), never in the check: a job the test does
+  not want still spends a parallel slot or build minutes, and a job cut by half leaves its steps in
+  the job before it (an Azure job body holds blank lines; cut to the next line indented by less,
+  not to the first blank one). The GitHub and GitLab writers are not affected: the GitHub job is
+  gated by `vars.USE_SCRATCH_ORGS`, the GitLab one by the `USE_SCRATCH_ORGS: "false"` variable the
+  writer sets. Read the end of every `ci-<provider>.out` before trusting a chain: a provider that
+  ends in thirty seconds did not run.
+- **A shared GitLab runner with a full disk fails every job that lands on it**, and the failure
+  looks like a product defect: the link step dies in `yarn install` with `ENOSPC`, the job is red,
+  the section records a FAIL. The runners of the test group share their tags, so one full runner
+  takes a share of the jobs at random. Read the job trace before blaming the branch: `ENOSPC`,
+  `No space left on device`. Do not pause the runner (shared infrastructure); rerun the section
+  later, or record the checks as not covered.
 
 ## 7bis. Checking the "one place in the diagram" rule
 
