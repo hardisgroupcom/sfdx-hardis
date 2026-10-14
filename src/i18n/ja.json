@@ -2923,6 +2923,7 @@
   "openExternalClientAppManager": "External Client App Manager を開く",
   "openExternalClientAppSettings": "External Client App の設定を開く",
   "openOrgButton": "ブラウザーで組織を開く",
+  "openOrgDomainNotResolved": "組織のドメインはまだ名前解決できません ({{message}})。このまま開きます。ブラウザーにエラーが表示された場合は、1 分後にページを再読み込みしてください。",
   "openOrgWithLink": "ここからブラウザーを開くことはできません。今すぐこのリンクで組織を開いてください。リンクには数分で期限切れになるワンタイムコードが含まれています。{{url}}",
   "openTheSandboxOrgInYourWebBrowser": "作業を開始するために Web ブラウザで Sandbox 組織を開きます",
   "openaiReceivedResponse": "{{modelName}} からプロンプトの応答を受信しました",

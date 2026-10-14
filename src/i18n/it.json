@@ -2925,6 +2925,7 @@
   "openExternalClientAppManager": "Apri External Client App Manager",
   "openExternalClientAppSettings": "Apri le impostazioni External Client App",
   "openOrgButton": "Apri l'org nel tuo browser",
+  "openOrgDomainNotResolved": "Il dominio dell'org non viene ancora risolto ({{message}}). Lo apro comunque: se il browser mostra un errore, ricarica la pagina tra un minuto.",
   "openOrgWithLink": "Da qui non è possibile aprire un browser. Apri la tua org con questo link, adesso: contiene un codice monouso che scade dopo pochi minuti. {{url}}",
   "openTheSandboxOrgInYourWebBrowser": "Apri la sandbox org nel browser web per iniziare a lavorarci",
   "openaiReceivedResponse": "Risposta al prompt ricevuta da {{modelName}}",
