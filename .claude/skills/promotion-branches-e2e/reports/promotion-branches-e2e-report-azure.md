@@ -27,22 +27,22 @@ ___
 
 ## Counts
 
-| Section                                                                             | Checks                            | OK  | FAIL | Not covered |
-|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|-------------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |             |
-| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |             |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |             |
-| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |             |
-| Visual fixtures (VE, VG)                                                            | 2                                 | 2   | 0    |             |
-| 6bis: backpromote B0 to B16, C1 to C4 (`az-13`)                                     | 63                                | 63  | 0    |             |
-| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-az-7`)                                   | 22                                | 21  | 0    | 1 SKIP by design (W8) |
-| 4ter: single Pull Request window, simulated jobs (`az-11`)                          | 48 Pull Requests                  | 48  | 0    |             |
-| 4ter: single Pull Request window, real CI jobs (`ci-az-7`, X1)                      | 1                                 | 1   | 0    |             |
-| 5bis: comment audit (`az-11`)                                                       | 1238 checks over 55 Pull Requests | all | 0    |             |
+| Section                                                                             | Checks                            | OK  | FAIL | Not covered                           |
+|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|---------------------------------------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |                                       |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |                                       |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |                                       |
+| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |                                       |
+| Visual fixtures (VE, VG)                                                            | 2                                 | 2   | 0    |                                       |
+| 6bis: backpromote B0 to B16, C1 to C4 (`az-13`)                                     | 63                                | 63  | 0    |                                       |
+| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-az-7`)                                   | 22                                | 21  | 0    | 1 SKIP by design (W8)                 |
+| 4ter: single Pull Request window, simulated jobs (`az-11`)                          | 48 Pull Requests                  | 48  | 0    |                                       |
+| 4ter: single Pull Request window, real CI jobs (`ci-az-7`, X1)                      | 1                                 | 1   | 0    |                                       |
+| 5bis: comment audit (`az-11`)                                                       | 1238 checks over 55 Pull Requests | all | 0    |                                       |
 | 5quater: visual check of the comments (`az-11`, fixtures included)                  | 12 types                          |     |      | 12: Chrome logged out of Azure DevOps |
-| 5quater: visual check (`az-13`, backpromote)                                        | 1 type                            |     |      | 1: same sign-in page |
-| 7bis: single place in the diagram (`az-11`)                                         | 1                                 | 1   | 0    |             |
-| 7ter: flag-off A/B against `origin/main`                                            | see "What this run did not cover" |     |      |             |
+| 5quater: visual check (`az-13`, backpromote)                                        | 1 type                            |     |      | 1: same sign-in page                  |
+| 7bis: single place in the diagram (`az-11`)                                         | 1                                 | 1   | 0    |                                       |
+| 7ter: flag-off A/B against `origin/main`                                            | see "What this run did not cover" |     |      |                                       |
 
 No SKIP line in sections 6quater and 6sexies: the developer org groups ran, two hours before the
 org died. No `getaddrinfo` or fork failure in the Azure outputs.
@@ -110,12 +110,12 @@ ___
 
 ## What the run found
 
-| Finding                                                                                                                                                       | Status                                              |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| `ci-workflows-prepare.cjs` refused `azure-pipelines-checks.yml` of 8.18.0: "expected one job, found 2" (the scratch org tests job): the real CI run died in 30 s | test script defect, fixed during the run: the job is left out like the MegaLinter one |
-| The first cut of that fix left the steps of the removed job inside the kept one (an Azure job body holds blank lines): a check now refuses a kept job that runs `hardis:scratch:create` | test script defect, fixed before any repository existed |
-| An expired scratch org keeps answering for days, then dies in the middle of a run with `INVALID_CROSS_REFERENCE_KEY`                                            | environment; runbook trap added                     |
-| The e2e Chrome profile is logged out of Azure DevOps: the visual check reports every comment "not found" and a sign-in URL                                     | environment; runbook trap added, preflight to extend |
+| Finding                                                                                                                                                                                                                                     | Status                                                                                                                                  |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| `ci-workflows-prepare.cjs` refused `azure-pipelines-checks.yml` of 8.18.0: "expected one job, found 2" (the scratch org tests job): the real CI run died in 30 s                                                                            | test script defect, fixed during the run: the job is left out like the MegaLinter one                                                   |
+| The first cut of that fix left the steps of the removed job inside the kept one (an Azure job body holds blank lines): a check now refuses a kept job that runs `hardis:scratch:create`                                                     | test script defect, fixed before any repository existed                                                                                 |
+| An expired scratch org keeps answering for days, then dies in the middle of a run with `INVALID_CROSS_REFERENCE_KEY`                                                                                                                        | environment; runbook trap added                                                                                                         |
+| The e2e Chrome profile is logged out of Azure DevOps: the visual check reports every comment "not found" and a sign-in URL                                                                                                                  | environment; runbook trap added, preflight to extend                                                                                    |
 | The wording findings of the GitHub and GitLab readings (Pull Request lists not in numeric order, "Deployment failed" banner, done-only "To do by hand" section, "Pull Request(s)", off-by-one counts) could not be checked on pictures here | not covered on Azure; the audit saw the same comment texts. Three of them are fixed on `fix/pr-comment-wording` (see the GitHub report) |
 
 No product defect found on Azure DevOps.

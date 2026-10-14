@@ -24,22 +24,22 @@ ___
 
 ## Counts
 
-| Section                                                                             | Checks                            | OK  | FAIL | Not covered |
-|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|-------------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |             |
-| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |             |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |             |
-| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |             |
-| Visual fixtures (VE, VG)                                                            | 2                                 | 2   | 0    |             |
-| 6bis: backpromote B0 to B16, C1 to C4 (`bb-11`)                                     | 63                                | 63  | 0    |             |
-| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-bb-6`)                                   | 22                                | 21  | 0    | 1 SKIP by design (W8) |
-| 4ter: single Pull Request window, simulated jobs (`bb-10`)                          | 51 Pull Requests                  | 51  | 0    |             |
-| 4ter: single Pull Request window, real CI jobs (`ci-bb-6`, X1)                      | 1                                 | 1   | 0    |             |
-| 5bis: comment audit (`bb-10`)                                                       | 1142 checks over 55 Pull Requests | all | 0    |             |
+| Section                                                                             | Checks                            | OK  | FAIL | Not covered                        |
+|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|------------------------------------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |                                    |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |                                    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |                                    |
+| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |                                    |
+| Visual fixtures (VE, VG)                                                            | 2                                 | 2   | 0    |                                    |
+| 6bis: backpromote B0 to B16, C1 to C4 (`bb-11`)                                     | 63                                | 63  | 0    |                                    |
+| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-bb-6`)                                   | 22                                | 21  | 0    | 1 SKIP by design (W8)              |
+| 4ter: single Pull Request window, simulated jobs (`bb-10`)                          | 51 Pull Requests                  | 51  | 0    |                                    |
+| 4ter: single Pull Request window, real CI jobs (`ci-bb-6`, X1)                      | 1                                 | 1   | 0    |                                    |
+| 5bis: comment audit (`bb-10`)                                                       | 1142 checks over 55 Pull Requests | all | 0    |                                    |
 | 5quater: visual check of the comments (`bb-10`, fixtures included)                  | 12 types                          |     |      | 12: Chrome logged out of Bitbucket |
-| 5quater: visual check (`bb-11`, backpromote)                                        | 1 type                            |     |      | 1: same, logged out |
-| 7bis: single place in the diagram (`bb-10`)                                         | 1                                 | 1   | 0    |             |
-| 7ter: flag-off A/B against `origin/main`                                            | see "What this run did not cover" |     |      |             |
+| 5quater: visual check (`bb-11`, backpromote)                                        | 1 type                            |     |      | 1: same, logged out                |
+| 7bis: single place in the diagram (`bb-10`)                                         | 1                                 | 1   | 0    |                                    |
+| 7ter: flag-off A/B against `origin/main`                                            | see "What this run did not cover" |     |      |                                    |
 
 No SKIP line in sections 6quater and 6sexies: the developer org groups ran on the new scratch org.
 One `getaddrinfo() thread failed to start` on a `curl` poll of section 6 (group g5, after check 46):
@@ -97,11 +97,11 @@ ___
 
 ## What the run found
 
-| Finding                                                                                                                                                       | Status                                              |
-|---------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------|
-| `ci-workflows-prepare.cjs` refused `bitbucket-pipelines.yml` of 8.18.0: "the pull request pipeline is not one single step" (the scratch org tests step): the real CI run died in 30 s | test script defect, fixed during the run: the step is left out like the MegaLinter one, and a check refuses a kept step that runs `hardis:scratch:create` |
-| The e2e Chrome profile is logged out of Bitbucket (and of Azure DevOps): the visual check reports every comment "not found"                                     | environment; runbook trap added, preflight to extend |
-| The wording findings of the GitHub and GitLab readings (Pull Request lists not in numeric order, "Deployment failed" banner, done-only "To do by hand" section, "Pull Request(s)", off-by-one counts) could not be checked on pictures here | not covered on Bitbucket; the audit saw the same comment texts. Three of them are fixed on `fix/pr-comment-wording` (see the GitHub report) |
+| Finding                                                                                                                                                                                                                                     | Status                                                                                                                                                    |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ci-workflows-prepare.cjs` refused `bitbucket-pipelines.yml` of 8.18.0: "the pull request pipeline is not one single step" (the scratch org tests step): the real CI run died in 30 s                                                       | test script defect, fixed during the run: the step is left out like the MegaLinter one, and a check refuses a kept step that runs `hardis:scratch:create` |
+| The e2e Chrome profile is logged out of Bitbucket (and of Azure DevOps): the visual check reports every comment "not found"                                                                                                                 | environment; runbook trap added, preflight to extend                                                                                                      |
+| The wording findings of the GitHub and GitLab readings (Pull Request lists not in numeric order, "Deployment failed" banner, done-only "To do by hand" section, "Pull Request(s)", off-by-one counts) could not be checked on pictures here | not covered on Bitbucket; the audit saw the same comment texts. Three of them are fixed on `fix/pr-comment-wording` (see the GitHub report)               |
 
 No product defect found on Bitbucket Cloud.
 

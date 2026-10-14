@@ -24,22 +24,22 @@ ___
 
 ## Counts
 
-| Section                                                                             | Checks                            | OK  | FAIL | Not covered |
-|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|-------------|
-| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |             |
-| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |             |
-| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |             |
-| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |             |
-| Visual fixtures (VE, VG)                                                            | 2                                 | 2   | 0    |             |
-| 6bis: backpromote B0 to B16, C1 to C4 (`gl-22`)                                     | 63                                | 63  | 0    |             |
+| Section                                                                             | Checks                            | OK  | FAIL | Not covered                       |
+|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|-----------------------------------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |                                   |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |                                   |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |                                   |
+| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |                                   |
+| Visual fixtures (VE, VG)                                                            | 2                                 | 2   | 0    |                                   |
+| 6bis: backpromote B0 to B16, C1 to C4 (`gl-22`)                                     | 63                                | 63  | 0    |                                   |
 | 6quinquies: real CI, W0 to W9, X1, X2 (`ci-gl-4`)                                   | 22                                | 19  | 0    | 2 (W3, W5), 1 SKIP by design (W8) |
-| 4ter: single Pull Request window, simulated jobs (`gl-21`)                          | 49 Pull Requests                  | 49  | 0    |             |
-| 4ter: single Pull Request window, real CI jobs (`ci-gl-4`, X1)                      | 1                                 | 1   | 0    |             |
-| 5bis: comment audit (`gl-21`)                                                       | 1142 checks over 55 Pull Requests | all | 0    |             |
-| 5quater: visual check of the comments (`gl-21`, fixtures included)                  | 12 types, 1 warning               | 12  | 0    |             |
-| 5quater: visual check (`gl-22`, backpromote)                                        | 1 type                            | 1   | 0    |             |
-| 7bis: single place in the diagram (`gl-21`)                                         | 1                                 | 1   | 0    |             |
-| 7ter: flag-off A/B against `origin/main`                                            | see "What this run did not cover" |     |      |             |
+| 4ter: single Pull Request window, simulated jobs (`gl-21`)                          | 49 Pull Requests                  | 49  | 0    |                                   |
+| 4ter: single Pull Request window, real CI jobs (`ci-gl-4`, X1)                      | 1                                 | 1   | 0    |                                   |
+| 5bis: comment audit (`gl-21`)                                                       | 1142 checks over 55 Pull Requests | all | 0    |                                   |
+| 5quater: visual check of the comments (`gl-21`, fixtures included)                  | 12 types, 1 warning               | 12  | 0    |                                   |
+| 5quater: visual check (`gl-22`, backpromote)                                        | 1 type                            | 1   | 0    |                                   |
+| 7bis: single place in the diagram (`gl-21`)                                         | 1                                 | 1   | 0    |                                   |
+| 7ter: flag-off A/B against `origin/main`                                            | see "What this run did not cover" |     |      |                                   |
 
 No SKIP line in sections 6quater and 6sexies: the developer org groups ran. Two
 `getaddrinfo() thread failed to start` in the whole output: one on the `git pull` of the retrofit
@@ -84,21 +84,21 @@ attempt (`ci-gl-4`, 04:03 to 04:54) got 15 jobs, all real CI, none simulated: 9 
 and 6 on the full one. The last job of the run (`ci-deploy-uat-identical`, 04:50) landed on the
 full runner and passed: its disk had room again by then.
 
-| Job                            | Runner | Result                 | Check            |
-|--------------------------------|--------|------------------------|------------------|
-| ci-check-c1                    | lv001  | failed, as expected    | W0, W1, W1b OK   |
-| ci-check-c1-rerun              | lv001  | success                | W2 OK            |
-| ci-check-c2-draft              | lv002  | `ENOSPC`               | W3 not covered   |
-| ci-deploy-integration-c1       | lv001  | failed, as expected    | W4, W4b OK       |
-| ci-check-c3                    | lv002  | `ENOSPC`               | no check on it   |
-| ci-deploy-integration-c3       | lv001  | success                | W4c OK           |
-| ci-check-promotion-uat         | lv002  | `ENOSPC`               | W5 not covered   |
-| ci-check-promotion-uat-rerun   | lv001  | success                | W6b OK           |
-| ci-deploy-uat-promotion        | lv001  | success                | W7, W7b OK       |
-| ci-check-c5, ci-check-c6       | lv002  | `ENOSPC`               | no check on them |
-| ci-deploy-integration-c5, -c6  | lv001  | success                | W9a OK           |
-| ci-check-promotion-identical   | lv001  | success                | (W9 setup)       |
-| ci-deploy-uat-identical        | lv002  | success                | W9, W9b OK       |
+| Job                           | Runner | Result              | Check            |
+|-------------------------------|--------|---------------------|------------------|
+| ci-check-c1                   | lv001  | failed, as expected | W0, W1, W1b OK   |
+| ci-check-c1-rerun             | lv001  | success             | W2 OK            |
+| ci-check-c2-draft             | lv002  | `ENOSPC`            | W3 not covered   |
+| ci-deploy-integration-c1      | lv001  | failed, as expected | W4, W4b OK       |
+| ci-check-c3                   | lv002  | `ENOSPC`            | no check on it   |
+| ci-deploy-integration-c3      | lv001  | success             | W4c OK           |
+| ci-check-promotion-uat        | lv002  | `ENOSPC`            | W5 not covered   |
+| ci-check-promotion-uat-rerun  | lv001  | success             | W6b OK           |
+| ci-deploy-uat-promotion       | lv001  | success             | W7, W7b OK       |
+| ci-check-c5, ci-check-c6      | lv002  | `ENOSPC`            | no check on them |
+| ci-deploy-integration-c5, -c6 | lv001  | success             | W9a OK           |
+| ci-check-promotion-identical  | lv001  | success             | (W9 setup)       |
+| ci-deploy-uat-identical       | lv002  | success             | W9, W9b OK       |
 
 28 seconds queued and 2633 seconds run in total. The checks whose job landed on the full runner
 are **not covered**, not failed: W3 (a GitLab draft is warned about, not stopped) and W5 (the
@@ -130,23 +130,23 @@ ___
 
 ## What the run found
 
-| Finding                                                                                                                                                                                                         | Status                                             |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
-| The e2e script `ci-workflows-prepare.cjs` refused the Azure and Bitbucket templates of 8.18.0 (a scratch org tests job was added to them): the real CI runs of those two providers died before any repository existed | test script defect, fixed during the run (see the Azure and Bitbucket reports) |
-| A shared GitLab runner with a full disk fails every job it gets, and the section records a FAIL that reads like a product defect                                                                                 | infrastructure; runbook trap added                 |
-| The "N Pull Requests" lists of the validation and deployment comments are not in numeric order (#1, #2, #3, #13, ..., #4, #5)                                                                                  | fixed on `fix/pr-comment-wording`, see the GitHub report |
-| The banner of a deployment whose metadata deployed and whose post-deployment action failed reads "Deployment failed", while the headline says "Deployed to integration, but..."                                | open, wording, same as GitHub                      |
-| The banner of a validation stopped by the manual action gate reads "Deployment simulation failed" while its Metadata row says "Not validated": nothing was simulated                                             | open, wording, same as GitHub                      |
-| "To do by hand in uat before the deployment" of a validation lists only an action already ticked as done                                                                                                        | open, wording, same as GitHub                      |
-| "N Pull Request(s)" with a known count                                                                                                                                                                          | fixed on `fix/pr-comment-wording`                  |
-| A fold says "26 Pull Requests" where the line under it says "collected from 27"; on the validation of the same merge request, "24 Pull Requests" against "(25 Pull Requests)"                                   | fixed on `fix/pr-comment-wording`: the fold says "other" |
-| The "already deployed through a promotion branch" lists of the validation and of the deployment of !36 (into preprod) differ: the validation names the branches into preprod and into main, the deployment only those into main, and leaves out #2 | open, to look at (may be by design)       |
-| In the Deployment Actions comment of !37, a manual action of the developer org row shows "to do by hand" together with a local job id and "Run locally by ... on ..." (the developer org run of 6quater D)       | open, data wording, new                            |
-| The two "Results by org" tables of the action details are squeezed by a long Note column                                                                                                                        | open, cosmetic, same as GitHub                     |
-| The Backpromotes comment of `gl-21` names the developer org by a lowercase id; the same org is "dev-sandboxes" in the Deployment Actions comment and "devorg1 (00D...)" in the backpromote run                     | open, cosmetic, same as GitHub                     |
-| The Backpromotes comment of `gl-22` lists two sandboxes both named `devorg1` with different ids, and an empty "Left out" column                                                                                  | test setup (both scratch orgs carry the same name in the plan); column empty when nothing is left out |
-| The Backpromotes comment has no banner and no navigation line, and the navigation lines of the other comments never link to it                                                                                 | open, consistency, new                             |
-| The Job column of the simulated runs is empty on the integration rows: the simulator sets no job URL                                                                                                            | test artifact; a real job fills it (W4b)           |
+| Finding                                                                                                                                                                                                                                            | Status                                                                                                |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| The e2e script `ci-workflows-prepare.cjs` refused the Azure and Bitbucket templates of 8.18.0 (a scratch org tests job was added to them): the real CI runs of those two providers died before any repository existed                              | test script defect, fixed during the run (see the Azure and Bitbucket reports)                        |
+| A shared GitLab runner with a full disk fails every job it gets, and the section records a FAIL that reads like a product defect                                                                                                                   | infrastructure; runbook trap added                                                                    |
+| The "N Pull Requests" lists of the validation and deployment comments are not in numeric order (#1, #2, #3, #13, ..., #4, #5)                                                                                                                      | fixed on `fix/pr-comment-wording`, see the GitHub report                                              |
+| The banner of a deployment whose metadata deployed and whose post-deployment action failed reads "Deployment failed", while the headline says "Deployed to integration, but..."                                                                    | open, wording, same as GitHub                                                                         |
+| The banner of a validation stopped by the manual action gate reads "Deployment simulation failed" while its Metadata row says "Not validated": nothing was simulated                                                                               | open, wording, same as GitHub                                                                         |
+| "To do by hand in uat before the deployment" of a validation lists only an action already ticked as done                                                                                                                                           | open, wording, same as GitHub                                                                         |
+| "N Pull Request(s)" with a known count                                                                                                                                                                                                             | fixed on `fix/pr-comment-wording`                                                                     |
+| A fold says "26 Pull Requests" where the line under it says "collected from 27"; on the validation of the same merge request, "24 Pull Requests" against "(25 Pull Requests)"                                                                      | fixed on `fix/pr-comment-wording`: the fold says "other"                                              |
+| The "already deployed through a promotion branch" lists of the validation and of the deployment of !36 (into preprod) differ: the validation names the branches into preprod and into main, the deployment only those into main, and leaves out #2 | open, to look at (may be by design)                                                                   |
+| In the Deployment Actions comment of !37, a manual action of the developer org row shows "to do by hand" together with a local job id and "Run locally by ... on ..." (the developer org run of 6quater D)                                         | open, data wording, new                                                                               |
+| The two "Results by org" tables of the action details are squeezed by a long Note column                                                                                                                                                           | open, cosmetic, same as GitHub                                                                        |
+| The Backpromotes comment of `gl-21` names the developer org by a lowercase id; the same org is "dev-sandboxes" in the Deployment Actions comment and "devorg1 (00D...)" in the backpromote run                                                     | open, cosmetic, same as GitHub                                                                        |
+| The Backpromotes comment of `gl-22` lists two sandboxes both named `devorg1` with different ids, and an empty "Left out" column                                                                                                                    | test setup (both scratch orgs carry the same name in the plan); column empty when nothing is left out |
+| The Backpromotes comment has no banner and no navigation line, and the navigation lines of the other comments never link to it                                                                                                                     | open, consistency, new                                                                                |
+| The Job column of the simulated runs is empty on the integration rows: the simulator sets no job URL                                                                                                                                               | test artifact; a real job fills it (W4b)                                                              |
 
 No product defect. Three wording findings were fixed after the runs on `fix/pr-comment-wording`
 (see the GitHub report); the one defect found during the run was in the test scripts.
