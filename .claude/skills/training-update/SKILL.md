@@ -558,10 +558,10 @@ What follows from it:
 - a lab keeps one `**Time**: ~N min` line, and a level page one `**Time**: about N h` line and
   one `N min` cell per lab row. A page that loses one fails the generator, by name;
 - never write a duration of a level in prose ("it is four hours"): nothing updates a sentence;
-- the generator changes the English page and its translations together, so commit `labs/en/`
-  first, then `node scripts/build/lab-times.mjs --stamp`: it stamps the translations that were
-  current before the run, and only those. Stamp once the English commit has its final name: a
-  rebase renames it, and a stamp written before names a commit that no longer exists;
+- the generator changes the English page and its translations together, and restamps the
+  translations that were current before the run, and only those, with the content hash of the
+  rewritten English page. Nothing to commit first and nothing to stamp afterwards; a translation
+  that was already behind stays behind, this run did not catch it up;
 - `doc-links.mjs` writes the `duration` of the universe into the product documentation, which
   therefore shows estimates, not observed times.
 
