@@ -47,7 +47,8 @@ pipeline {
     }
 
     options {
-        timeout(time: 120, unit: 'MINUTES')
+        // Deployments can be long: raise this value if the build is aborted before the deployment ends
+        timeout(time: 150, unit: 'MINUTES')
         disableConcurrentBuilds()
         // Keep build logs for 30 days
         buildDiscarder(logRotator(daysToKeepStr: '30'))

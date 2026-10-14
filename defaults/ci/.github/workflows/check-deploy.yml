@@ -22,6 +22,9 @@ concurrency:
 jobs:
   check_deployment:
     runs-on: ubuntu-latest
+    # Job timeout, in minutes: define the repository variable CI_JOB_TIMEOUT_MINUTES to change it.
+    # Keep it above SFDX_DEPLOY_WAIT_MINUTES (120 by default) to leave room for checkout, login and the delta computation.
+    timeout-minutes: ${{ fromJSON(vars.CI_JOB_TIMEOUT_MINUTES || '150') }}
     # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
     # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
     # Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis-ubuntu:latest
@@ -106,7 +109,7 @@ jobs:
 
       # Upload sfdx-hardis reports, including the complete deployment result JSON
       - name: Archive sfdx-hardis reports
-        if: success() || failure()
+        if: always() # Also when the job was stopped by the timeout
         uses: actions/upload-artifact@v4
         with:
           name: sfdx-hardis reports
@@ -120,6 +123,8 @@ jobs:
   scratch_org_tests:
     if: ${{ vars.USE_SCRATCH_ORGS == 'true' && !startsWith(github.head_ref, 'auto-fix/') }}
     runs-on: ubuntu-latest
+    # Job timeout, in minutes: keep it above SFDX_TEST_WAIT_MINUTES (120 by default)
+    timeout-minutes: ${{ fromJSON(vars.CI_JOB_TIMEOUT_MINUTES || '150') }}
     container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
     name: Scratch org tests
     permissions:
@@ -160,7 +165,7 @@ jobs:
         if: ${{ success() && env.CI_DELETE_SCRATCH_ORG != 'false' }}
         run: sf org delete scratch --no-prompt || true
       - name: Archive sfdx-hardis reports
-        if: success() || failure()
+        if: always() # Also when the job was stopped by the timeout
         uses: actions/upload-artifact@v4
         with:
           name: sfdx-hardis scratch org reports

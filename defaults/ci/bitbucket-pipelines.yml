@@ -33,6 +33,9 @@ pipelines:
           # Simulate deployment
           - step:
               name: Simulate SFDX deployment
+              # Maximum duration of the step, in minutes. Bitbucket Cloud does not allow more than 120,
+              # so SFDX_DEPLOY_WAIT_MINUTES must stay below this value.
+              max-time: 120
               clone:
                 depth: full
               script:
@@ -134,6 +137,9 @@ pipelines:
     "{integration,uat,preprod,production,main}":
       - step:
           name: Deploy to major org
+          # Maximum duration of the step, in minutes. Bitbucket Cloud does not allow more than 120,
+          # so SFDX_DEPLOY_WAIT_MINUTES must stay below this value.
+          max-time: 120
           clone:
             depth: full
           script:
