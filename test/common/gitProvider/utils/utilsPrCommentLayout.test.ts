@@ -68,7 +68,7 @@ describe('Pull Request comment layout', () => {
       },
       false
     );
-    expect(body).to.contain('### ❌ Deployed to `integration`, but an action failed after the deployment');
+    expect(body).to.contain('### ⚠️ Deployed to `integration`, but an action failed after the deployment');
     expect(body).to.contain('The org has the new metadata.');
     expect(body).to.contain('| Metadata | ✅ Deployed: 4 components changed (1 created, 3 updated) |');
     expect(body).to.contain('| Apex tests | ⚪ Not needed');
@@ -131,7 +131,7 @@ describe('Pull Request comment layout', () => {
       },
       true
     );
-    expect(body).to.contain('### ❌ Cannot merge into `integration`: Manual actions to perform before the merge');
+    expect(body).to.contain('### ⚠️ Cannot merge into `integration`: Manual actions to perform before the merge');
     expect(body).to.contain('Do the steps below in the org, tick their boxes, then run the validation again.');
     expect(body).to.not.contain('commit and push');
   });

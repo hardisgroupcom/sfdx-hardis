@@ -145,15 +145,20 @@ function buildVerdict(prData: Partial<PullRequestData>, commands: PhasedCommand[
   } else if (status === 'invalid') {
     const reason = describeFailure(prData, failedActions);
     if (options.checkOnly) {
-      verdict = `❌ Cannot merge into ${target}: ${reason}`;
-      next = isWaitingForManualSteps(prData, commands)
+      // Waiting for manual actions is orange, like its banner: nothing is broken yet
+      const waiting = isWaitingForManualSteps(prData, commands);
+      verdict = `${waiting ? '⚠️' : '❌'} Cannot merge into ${target}: ${reason}`;
+      next = waiting
         ? TICK_THEN_VALIDATE_AGAIN
         : isNetworkFailure(prData)
           ? 'Nothing points to an error in the metadata: run the validation job again.'
           : 'Fix it, commit and push: the validation runs again.';
     } else if (prData.metadataOutcome === 'deployed') {
-      // Salesforce accepted the deployment: what failed came after it (an action, the coverage check)
-      verdict = `❌ Deployed to ${target}, but ${failedActions.length > 0 ? `${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment` : reason}`;
+      // Salesforce accepted the deployment: what failed came after it (an action, the coverage check).
+      // A failed action is orange, like its banner; a coverage failure stays red, the code is to fix
+      verdict = failedActions.length > 0
+        ? `⚠️ Deployed to ${target}, but ${failedActions.length === 1 ? 'an action' : `${failedActions.length} actions`} failed after the deployment`
+        : `❌ Deployed to ${target}, but ${reason}`;
       next = failedActions.length > 0
         ? `The org has the new metadata. Rerun or fix the failed ${failedActions.length === 1 ? 'action' : 'actions'} below.`
         : 'The org has the new metadata.';
