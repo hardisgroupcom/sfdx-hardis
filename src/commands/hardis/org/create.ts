@@ -14,10 +14,10 @@ import {
   initApexScripts,
   initOrgData,
   initPermissionSetAssignments,
+  openOrgInBrowser,
   promptUserEmail,
 } from '../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { openOrgInBrowser } from '../../../common/utils/orgUtils.js';
 import { getConfig } from '../../../config/index.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -224,7 +224,7 @@ In agent mode:
     // Trigger a status refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshStatusMessage();
 
-    // Open sandbox org for user if not in CI
+    // Open sandbox org for user (in CI and container mode, log the link instead)
     await openOrgInBrowser(this, { debug: this.debugMode });
     uxLog(
       "action",

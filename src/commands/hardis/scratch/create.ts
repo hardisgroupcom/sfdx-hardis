@@ -460,17 +460,9 @@ In agent mode:
         });
         this.authFileJson = displayResult;
       }
-      // Display org URL
-      const openRes = await execSfdxJson('sf org open --url-only', this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
-      });
-      uxLog("action", this, c.cyan(t('openScratchOrgWithUrl2', { openRes: c.green(openRes?.result?.url) })));
-    } else {
-      // Open scratch org for user if not in CI
-      await openOrgInBrowser(this, { debug: this.debugMode });
     }
+    // Open scratch org for user (in CI and container mode, log the link instead)
+    await openOrgInBrowser(this, { debug: this.debugMode });
     uxLog(
       "action",
       this,

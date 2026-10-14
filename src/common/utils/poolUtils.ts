@@ -16,6 +16,7 @@ import { GitProvider } from '../gitProvider/index.js';
 import { PoolSummary } from './poolDashboardUtils.js';
 import { getDevHubScratchLimits } from './poolDevHubUtils.js';
 import { t } from './i18n.js';
+import { openOrgInBrowser } from './orgUtils.js';
 
 let poolStorage: PoolStorageInterface;
 
@@ -183,11 +184,7 @@ export async function tryFetchScratchOrg(options: any) {
       await setConfig('user', { sfdxAuthUrl: authFileContent });
     }
     // Display org URL
-    const openRes = await execSfdxJson(`sf org open --url-only --target-org ${scratchOrg.scratchOrgAlias}`, this, {
-      fail: false,
-      output: false,
-    });
-    uxLog("action", this, c.cyan(t('openScratchOrgWithUrl', { openRes: c.green(openRes?.result?.url) })));
+    await openOrgInBrowser(this, { username: scratchOrg.scratchOrgAlias, fail: false });
     // Return scratch org
     await updateActiveScratchOrg(scratchOrg, {
       Description: `Authenticated by ${os.userInfo().username} on ${dateHelper().format('YYYYMMDD_hhmm')}`,
