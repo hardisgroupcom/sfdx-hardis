@@ -134,9 +134,10 @@ is what keeps the two from disagreeing about what a button does. So:
 - **Never rename a file, an `id` or a slug in one locale.** The structure is English everywhere:
   same file names, same folders, same `id`, `level`, `lab`, `screenshots` and `depends_on`, same
   URLs. Only the prose, the `title` and the `description` are translated
-- **A translation is allowed to lag.** `source_rev` in the front matter names the commit of the
-  English file it was made from, and `node scripts/i18n/check-translations.mjs` lists the ones the
-  source has moved past. That list is what to re-read, and CI reports it without failing
+- **A translation is allowed to lag.** `source_rev` in the front matter names the content hash of
+  the English file it was made from (`git hash-object`, not a commit: a squash merge renames every
+  commit of a branch and leaves the content alone), and `node scripts/i18n/check-translations.mjs`
+  lists the ones the source has moved past. That list is what to re-read, and CI reports it without failing
 - **A translation is not allowed to lose things.** Staleness is the loud failure; a paragraph
   skipped or an "Under the hood" block never carried over is the quiet one, and nothing else shows
   it. `node scripts/i18n/check-structure.mjs` compares headings, images, code fences, `<details>`
@@ -155,26 +156,27 @@ is what keeps the two from disagreeing about what a button does. So:
 The order when a change touches a lab:
 
 ```bash
-# 1. English first, and commit it, because the stamp reads git
+# 1. English first
 $EDITOR labs/en/level-2-contributor-advanced/2-3-*.md
-git add labs/en && git commit -m "..."
 
 # 2. the same edit in each other locale
 $EDITOR labs/fr/level-2-contributor-advanced/2-3-*.md
 
-# 3. the three generators that are locale aware
+# 3. the three generators that are locale aware, then the stamp
 node scripts/build/lab-crossrefs.mjs        # "Lab 2.7, étape 3" becomes a link, per locale
 node scripts/build/lab-command-links.mjs   # each sf hardis command an Under the hood block names, linked
 node scripts/i18n/align-tables.mjs          # MD060: a translated cell moves every pipe under it
-node scripts/i18n/stamp-source-rev.mjs fr   # write source_rev from the commit of step 1
+node scripts/i18n/stamp-source-rev.mjs fr   # write source_rev from the English file as it is on disk
 
 # 4. what always runs
 node scripts/build/universe.mjs
 ```
 
-`stamp-source-rev.mjs` reads the last commit that touched the English file, so **running it before
-committing the English change stamps the version before yours** and quietly claims the translation
-is current. Commit first.
+`stamp-source-rev.mjs` hashes the English file **as it is on disk**, committed or not, so run it
+once the translation matches that text and after every generator that rewrites the English page
+(the cross references, the command links, the table alignment): a stamp taken before one of them
+names a text the file no longer has, and the translation reads as behind. Stamp only the files you
+translated: a stamp says "this translation was made from that English text".
 
 **Adding a locale** is additive, and `TRANSLATION.md` in the training repository is the procedure.
 Three things worth knowing from here:
@@ -556,10 +558,10 @@ What follows from it:
 - a lab keeps one `**Time**: ~N min` line, and a level page one `**Time**: about N h` line and
   one `N min` cell per lab row. A page that loses one fails the generator, by name;
 - never write a duration of a level in prose ("it is four hours"): nothing updates a sentence;
-- the generator changes the English page and its translations together, so commit `labs/en/`
-  first, then `node scripts/build/lab-times.mjs --stamp`: it stamps the translations that were
-  current before the run, and only those. Stamp once the English commit has its final name: a
-  rebase renames it, and a stamp written before names a commit that no longer exists;
+- the generator changes the English page and its translations together, and restamps the
+  translations that were current before the run, and only those, with the content hash of the
+  rewritten English page. Nothing to commit first and nothing to stamp afterwards; a translation
+  that was already behind stays behind, this run did not catch it up;
 - `doc-links.mjs` writes the `duration` of the universe into the product documentation, which
   therefore shows estimates, not observed times.
 
@@ -645,7 +647,7 @@ a thing happened, tell them where to look in the org.
 cd ../sfdx-hardis-training
 node scripts/build/lab-crossrefs.mjs       # first: link every mention of another lab, per locale
 node scripts/i18n/align-tables.mjs         # a translated cell moves every pipe under it
-node scripts/i18n/stamp-source-rev.mjs     # after the English commit, never before
+node scripts/i18n/stamp-source-rev.mjs     # after the generators above, for the files you translated
 node scripts/build/universe.mjs           # regenerate, because lab front matter feeds the manifest
 node scripts/build/universe.mjs --check    # generated files up to date, fiction consistent
 node scripts/build/annotate.mjs            # every annotated image matches its spec
