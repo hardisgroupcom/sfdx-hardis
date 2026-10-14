@@ -6,7 +6,7 @@ import * as path from 'path';
 import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isAgentMode, isCI, uxLog } from './index.js';
 import { getOrgAccessToken } from './credentialUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { getConfig, setConfig } from '../../config/index.js';
+import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
 import { isValidEmail } from './stringUtils.js';
 import sortArray from './sortArray.js';
 import { AuthInfo, Connection, SfError } from '@salesforce/core';
@@ -878,4 +878,48 @@ async function reconnectExpiredOrg(
     throw new SfError(t('authenticationDidNotConnectAnyOrg'));
   }
   return { ...loginResult.result, alias: alias || loginResult.result.alias || null };
+}
+
+/**
+ * Open an org in the user's browser, the way `sf org open` does, except where no browser can be
+ * opened: with SF_CONTAINER_MODE or SFDX_CONTAINER_MODE set (Agentforce Vibes, a dev container,
+ * Codespaces), the Salesforce CLI only prints the login link and returns. A command that hid that
+ * output left the user with nothing, so here the link is logged and sent to the VS Code panel as a
+ * button. The link holds a one-time code: it must be clicked right away.
+ * @param commandThis The running command
+ * @param options username: the org to open (the default org when omitted), path: the page to open
+ * @returns The login URL when it was printed instead of opened, null otherwise
+ */
+export async function openOrgInBrowser(
+  commandThis: any,
+  options: { username?: string; path?: string; debug?: boolean } = {}
+): Promise<string | null> {
+  const target = options.username ? ` --target-org ${options.username}` : '';
+  const openPath = options.path ? ` --path ${options.path}` : '';
+  if (!isContainerMode()) {
+    await execSfdxJson(`sf org open${target}${openPath}`, commandThis, {
+      fail: true,
+      output: false,
+      debug: options.debug === true,
+    });
+    return null;
+  }
+  const openRes = await execSfdxJson(`sf org open --url-only${target}${openPath}`, commandThis, {
+    fail: true,
+    output: false,
+    debug: options.debug === true,
+  });
+  const url: string | null = openRes?.result?.url || null;
+  if (url) {
+    uxLog("action", commandThis, c.cyan(t('openOrgWithLinkContainerMode', { url: c.green(url) })));
+    WebSocketClient.sendReportFileMessage(url, t('openOrgButton'), 'actionUrl');
+  }
+  return url;
+}
+
+// The Salesforce CLI reads these two variables the same way: `sf org open` then prints the link
+// instead of opening a browser
+export function isContainerMode(): boolean {
+  const value = (getEnvVar('SF_CONTAINER_MODE') || getEnvVar('SFDX_CONTAINER_MODE') || '').toLowerCase();
+  return ['true', '1', 'yes'].includes(value);
 }

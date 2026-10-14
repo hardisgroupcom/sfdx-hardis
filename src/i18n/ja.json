@@ -2922,6 +2922,8 @@
   "openDevOpsPipelineForManualActions": "DevOps Pipelineパネルを開いて、プルリクエストの手動アクションを確認・更新してください。",
   "openExternalClientAppManager": "External Client App Manager を開く",
   "openExternalClientAppSettings": "External Client App の設定を開く",
+  "openOrgButton": "ブラウザーで組織を開く",
+  "openOrgWithLinkContainerMode": "ここからブラウザーを開くことはできません (コンテナーモード)。今すぐこのリンクで組織を開いてください。リンクには数分で期限切れになるワンタイムコードが含まれています。{{url}}",
   "openScratchOrgWithUrl": "URL でスクラッチ組織を開きます: {{openRes}}",
   "openScratchOrgWithUrl2": "URL でスクラッチ組織を開きます: {{openRes}}",
   "openTheSandboxOrgInYourWebBrowser": "作業を開始するために Web ブラウザで Sandbox 組織を開きます",

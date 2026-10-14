@@ -2924,6 +2924,8 @@
   "openDevOpsPipelineForManualActions": "Apri il pannello DevOps Pipeline per esaminare e aggiornare le azioni manuali per la tua pull request.",
   "openExternalClientAppManager": "Apri External Client App Manager",
   "openExternalClientAppSettings": "Apri le impostazioni External Client App",
+  "openOrgButton": "Apri l'org nel tuo browser",
+  "openOrgWithLinkContainerMode": "Da qui non è possibile aprire un browser (container mode). Apri la tua org con questo link, adesso: contiene un codice monouso che scade dopo pochi minuti. {{url}}",
   "openScratchOrgWithUrl": "Apri la scratch org con URL: {{openRes}}",
   "openScratchOrgWithUrl2": "Apri la scratch org con url: {{openRes}}",
   "openTheSandboxOrgInYourWebBrowser": "Apri la sandbox org nel browser web per iniziare a lavorarci",

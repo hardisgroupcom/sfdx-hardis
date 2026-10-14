@@ -17,6 +17,7 @@ import {
   promptUserEmail,
 } from '../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
+import { openOrgInBrowser } from '../../../common/utils/orgUtils.js';
 import { getConfig } from '../../../config/index.js';
 import { t } from '../../../common/utils/i18n.js';
 
@@ -224,11 +225,7 @@ In agent mode:
     WebSocketClient.sendRefreshStatusMessage();
 
     // Open sandbox org for user if not in CI
-    await execSfdxJson('sf org open', this, {
-      fail: true,
-      output: false,
-      debug: this.debugMode,
-    });
+    await openOrgInBrowser(this, { debug: this.debugMode });
     uxLog(
       "action",
       this,

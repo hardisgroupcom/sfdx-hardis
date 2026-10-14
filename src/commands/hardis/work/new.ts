@@ -9,7 +9,6 @@ import {
   checkGitClean,
   createWorkBranchFromTarget,
   execCommand,
-  execSfdxJson,
   getGitRepoUrl,
   isCI,
   uxLog,
@@ -24,6 +23,7 @@ import {
   initPermissionSetAssignments,
   installPackages,
   makeSureOrgIsConnected,
+  openOrgInBrowser,
   promptOrg,
 } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -741,11 +741,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       });
       // Open selected org
       uxLog("action", this, c.cyan(t('openingScratchOrgInBrowser')));
-      await execSfdxJson('sf org open', this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
-      });
+      await openOrgInBrowser(this, { debug: this.debugMode });
       // Trigger a status refresh on VS Code WebSocket Client
       WebSocketClient.sendRefreshStatusMessage();
       return {
@@ -867,11 +863,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 
       if (shouldOpenOrg) {
         uxLog("action", this, c.cyan(t('openingOrg', { orgUsername: c.green(orgUsername) })));
-        await execSfdxJson('sf org open', this, {
-          fail: true,
-          output: false,
-          debug: this.debugMode,
-        });
+        await openOrgInBrowser(this, { debug: this.debugMode });
       }
     }
 
