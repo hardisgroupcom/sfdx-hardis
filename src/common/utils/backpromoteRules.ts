@@ -620,7 +620,7 @@ export function buildBackpromoteDeployErrorsPrompt(options: {
     }
     lines.push(`- Error returned by Salesforce: ${error.problem}`);
     if (error.pullRequests.length > 0) {
-      lines.push(`- Merged in \`${options.parentBranch}\` by the Pull Request(s): ${error.pullRequests.map((number) => `#${number}`).join(', ')}`);
+      lines.push(`- Merged in \`${options.parentBranch}\` by the Pull Request${error.pullRequests.length === 1 ? '' : 's'} ${error.pullRequests.map((number) => `#${number}`).join(', ')}`);
     }
     if (error.tip) {
       lines.push(`- sfdx-hardis deployment hint "${error.tip.label}"${error.tip.docUrl ? ` (documentation: ${error.tip.docUrl})` : ''}:`);
@@ -698,7 +698,7 @@ export function buildBackpromoteMergePrompt(options: {
       lines.push(`  - common base (the version at the start of the window, both sides were changed from it): \`${file.versions.base}\``);
     }
     if (file.pullRequests.length > 0) {
-      lines.push(`  - changed in ${options.parentBranch} by the Pull Request(s) ${file.pullRequests.map((number) => `#${number}`).join(', ')}`);
+      lines.push(`  - changed in ${options.parentBranch} by the Pull Request${file.pullRequests.length === 1 ? '' : 's'} ${file.pullRequests.map((number) => `#${number}`).join(', ')}`);
     }
   }
   lines.push('');

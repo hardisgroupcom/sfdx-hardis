@@ -165,13 +165,33 @@ describe('Pull Request comment layout', () => {
       },
       true
     );
-    expect(body).to.contain('<summary>🎫 1 ticket · 1 Pull Request</summary>');
+    // "other": the Pull Request being read (#12) is in the scope but not in the list
+    expect(body).to.contain('<summary>🎫 1 ticket · 1 other Pull Request</summary>');
     expect(body).to.contain('- [PROJ-1](https://jira/PROJ-1) Invoice reminder');
     expect(body).to.contain('- [#7](https://x/7) Carried, by Mariia');
     expect(body).to.not.contain('This one');
     // Two lists in the fold: one short header each
     expect(body).to.contain('**Tickets**\n\n- [PROJ-1]');
     expect(body).to.contain('**Pull Requests**\n\n- [#7]');
+  });
+
+  it('lists the carried Pull Requests in numeric order, whatever the order of the window', () => {
+    const body = render(
+      {
+        status: 'valid',
+        pullRequestsInScope: [
+          { idStr: '13', idNumber: 13, title: 'Thirteen' },
+          { idStr: '4', idNumber: 4, title: 'Four' },
+          { idStr: '12', idNumber: 12, title: 'This one' },
+          { idStr: '33', idNumber: 33, title: 'Thirty-three' },
+          { idStr: '5', idNumber: 5, title: 'Five' },
+        ],
+      },
+      false
+    );
+    expect(body).to.contain('<summary>🎫 4 other Pull Requests</summary>');
+    expect(body).to.contain('- #4 Four\n- #5 Five\n- #13 Thirteen\n- #33 Thirty-three');
+    expect(body).to.not.contain('This one');
   });
 
   it('does not repeat the summary as a header when the fold holds only one list', () => {

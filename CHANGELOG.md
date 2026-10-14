@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Pull Request comments: the carried Pull Requests are listed in numeric order, the fold says "N other Pull Requests" when the one being read is left out, and no sentence writes "Pull Request(s)" anymore
+
 ## [8.18.0] 2026-10-13
 
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):

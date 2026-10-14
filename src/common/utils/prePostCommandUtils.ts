@@ -905,7 +905,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
         paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch but none of the Pull Requests it declares (\`promotionPullRequests\`) could be used, so only its own deployment actions and Apex test classes ${checkOnly ? 'are' : 'were'} processed.`);
       } else {
         const subjectsSentence = subjects.length > 0 ? `${subjectsLabel} ${checkOnly ? 'are' : 'were'} collected from them` : `They carry no deployment action and no Apex test class`;
-        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${carried.length} Pull Request(s) declared in its description. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
+        paragraphs.push(`ℹ️ ${branchLabel} is a promotion branch carrying ${pullRequestsLabel(carried.length)} declared in its description. ${subjectsSentence}${subjects.includes('Deployment actions') ? ', and each action keeps its tracked state on its own Pull Request' : ''}.`);
       }
       const inheritedMarkdown = buildInheritedBehaviorsMarkdown(promotionDetails.inheritedBehaviors, scopeInfo.pullRequests);
       if (inheritedMarkdown) {
@@ -924,7 +924,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
         const promotionLink = carriedBy.webUrl ? `[#${carriedBy.idStr}](${carriedBy.webUrl})` : `#${carriedBy.idStr}`;
         promotions.set(carriedBy.idStr, `\`${carriedBy.sourceBranch}\` ${promotionLink}`);
       }
-      paragraphs.push(`ℹ️ ${carriedByPromotion.length} Pull Request(s) of this window were carried by ${promotions.size === 1 ? 'the promotion branch' : 'the promotion branches'} ${[...promotions.values()].join(', ')}.`);
+      paragraphs.push(`ℹ️ ${pullRequestsLabel(carriedByPromotion.length)} of this window ${carriedByPromotion.length === 1 ? 'was' : 'were'} carried by ${promotions.size === 1 ? 'the promotion branch' : 'the promotion branches'} ${[...promotions.values()].join(', ')}.`);
     }
     const alreadyPromotedMarkdown = buildAlreadyPromotedMarkdown(promotionDetails.alreadyPromoted);
     if (alreadyPromotedMarkdown) {
@@ -959,7 +959,7 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
       }
       // Tense-neutral wording: this paragraph is also posted when the metadata deployment failed,
       // in which case the actions were collected but deliberately not run (see fix #2053)
-      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${scopeInfo.pullRequests.length} Pull Request(s).`;
+      let collectedSentence = `ℹ️ ${subjectsLabel} were collected from ${pullRequestsLabel(scopeInfo.pullRequests.length)}.`;
       if (subjects.includes('Deployment actions')) {
         collectedSentence += ` Each action keeps its tracked state on its own Pull Request.`;
       }
@@ -972,6 +972,11 @@ async function addDeploymentScopeMarkdownToPrData(checkOnly: boolean): Promise<v
   } catch (e) {
     uxLog("warning", this, c.yellow('[DeploymentActions] ' + t('deploymentActionsScopeError', { message: (e as Error).message })));
   }
+}
+
+// "1 Pull Request", "3 Pull Requests": the comments know the count, so they never write "(s)"
+function pullRequestsLabel(count: number): string {
+  return `${count} Pull ${count === 1 ? 'Request' : 'Requests'}`;
 }
 
 async function completeWithCommandsFromPullRequests(property: 'commandsPreDeploy' | 'commandsPostDeploy', commands: PrePostCommand[], checkOnly: boolean, deploySuccess: boolean) {

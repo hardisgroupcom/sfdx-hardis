@@ -535,8 +535,15 @@ function buildActionsDetails(commands: PhasedCommand[], options: PrCommentLayout
 // Tickets and Pull Requests of the deployment, one per line
 function buildReferencesSection(prData: Partial<PullRequestData>, options: PrCommentLayoutOptions): PrCommentSection | null {
   const tickets = prData.tickets || [];
-  // The Pull Request being read is not listed: only the ones it carries
-  const pullRequests = (prData.pullRequestsInScope || []).filter((pr) => !options.prNumber || pr.idNumber !== options.prNumber);
+  // The Pull Request being read is not listed: only the ones it carries, in numeric order (the
+  // scope lists them in the order of the promotion window, which a reader looking for one cannot follow)
+  const allPullRequests = prData.pullRequestsInScope || [];
+  const pullRequests = allPullRequests
+    .filter((pr) => !options.prNumber || pr.idNumber !== options.prNumber)
+    .sort((a, b) => (a.idNumber ?? 0) - (b.idNumber ?? 0) || a.idStr.localeCompare(b.idStr));
+  // The summary says "other" when the Pull Request being read was left out, so that its count
+  // agrees with the scope sentence, which counts that Pull Request too
+  const others = pullRequests.length < allPullRequests.length;
   if (tickets.length === 0 && pullRequests.length === 0) {
     return null;
   }
@@ -564,7 +571,7 @@ function buildReferencesSection(prData: Partial<PullRequestData>, options: PrCom
     }
     const summary = [
       tickets.length > 0 ? `${tickets.length} ${tickets.length === 1 ? 'ticket' : 'tickets'}` : '',
-      pullRequests.length > 0 ? `${pullRequests.length} Pull ${pullRequests.length === 1 ? 'Request' : 'Requests'}` : '',
+      pullRequests.length > 0 ? `${pullRequests.length} ${others ? 'other ' : ''}Pull ${pullRequests.length === 1 ? 'Request' : 'Requests'}` : '',
     ].filter((part) => part !== '').join(' · ');
     return folded(`🎫 ${summary}`, parts.join('\n').trim());
   };

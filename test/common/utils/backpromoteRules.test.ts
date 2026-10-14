@@ -328,7 +328,7 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('Invalid field:SOLUTION.ISSUE in related list:RelatedSolutionList');
     expect(prompt).to.contain('sfdx-hardis deployment hint "Invalid field in related list"');
     expect(prompt).to.contain('  > - Activate the related feature');
-    expect(prompt).to.contain('Merged in `integration` by the Pull Request(s): #415');
+    expect(prompt).to.contain('Merged in `integration` by the Pull Request #415');
     expect(prompt).to.contain('### Average test coverage 60%');
     expect(prompt).to.contain('  > Add tests for InvoiceCalculator.');
     expect(prompt).to.contain('Fix the files in this checkout, on `backpromote/integration/dev1`');
@@ -361,7 +361,7 @@ describe('backpromote command and prompt', () => {
     expect(prompt).to.contain('`force-app/main/default/flows/Quote_Approval.flow-meta.xml` (2 conflict block(s))');
     expect(prompt).to.contain('common base');
     expect(prompt).to.contain('`force-app/main/default/classes/A.cls` (1 conflict block(s))');
-    expect(prompt).to.contain('changed in integration by the Pull Request(s) #482');
+    expect(prompt).to.contain('changed in integration by the Pull Request #482');
     expect(prompt).to.contain('backpromote/integration/dev1');
     expect(prompt).to.contain('#482 Quote approval process (https://github.com/acme/crm/pull/482)');
     expect(prompt).to.contain('then to commit the solved files on `backpromote/integration/dev1`');
