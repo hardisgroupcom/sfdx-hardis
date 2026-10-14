@@ -1884,6 +1884,20 @@ export function listMetadataTypes() {
         xmlName: 'ExternalStoragePrvdConfig',
       },
       {
+        directoryName: 'extlClntAppAttestPolicies',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'ecaAttestPlcy',
+        xmlName: 'ExtlClntAppAttestConfigurablePolicies',
+      },
+      {
+        directoryName: 'extlClntAppAttestSettings',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'ecaAttest',
+        xmlName: 'ExtlClntAppAttestSettings',
+      },
+      {
         directoryName: 'extlClntAppCanvasSettings',
         inFolder: false,
         metaFile: false,
