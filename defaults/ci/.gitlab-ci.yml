@@ -72,6 +72,9 @@ check_quality:
 # If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/
 check_deploy_to_target_branch_org:
   stage: build
+  # Deployments can be long: raise this value if a job is killed before the deployment ends.
+  # It cannot exceed the maximum job timeout of the runner, raise that one too if needed.
+  timeout: 150 minutes
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
@@ -173,6 +176,7 @@ refresh_scratch_org_pool:
 # Run apex unit tests in testing scratch org
 test_apex:
   stage: test
+  timeout: 150 minutes # Raise it if the job is killed before the Apex tests end
   when: delayed # Orgs just created can be not ready yet, let's wait a while before running tests
   start_in: 2 minutes
   tags:
@@ -252,6 +256,7 @@ clean:
 # Is triggered only when scheduled, or via manual launch
 check_deploy_to_current_branch_org:
   stage: check_deploy
+  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
@@ -291,6 +296,7 @@ check_deploy_to_current_branch_org:
 # Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
 deploy_to_org:
   stage: deploy
+  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu

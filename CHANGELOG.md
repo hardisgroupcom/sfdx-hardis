@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- CI/CD pipeline templates: the check deploy, deployment and Apex test jobs now declare a job timeout above the deployment wait on every git platform, with a comment telling where to raise it.
+
 ## [8.18.0] 2026-10-13
 
 - [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
