@@ -174,7 +174,7 @@ export async function getDataModelObjectRelationships(conn: Connection, dmoName:
   return relationships;
 }
 
-// Salesforce predefines relationships between standard DMOs. Until the org activates one, it is
+// Salesforce ships relationships between standard DMOs. Until the org activates one, it is
 // listed with creationType "Standard" and status "INACTIVE": it says nothing about the org's model.
 export function isDataCloudCatalogRelationship(relationship: any): boolean {
   return relationship?.creationType === "Standard" && relationship?.status === "INACTIVE";

@@ -1745,6 +1745,12 @@
     "être",
     "ìntegration",
     "ciphertext",
-    "mainbranch"
+    "mainbranch",
+    "ONETOONE",
+    "ONETOMANY",
+    "MANYTOONE",
+    "NTOONE",
+    "MANYTOMANY",
+    "DEACTIVATEDBYUSER"
   ]
 }
