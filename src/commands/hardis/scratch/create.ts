@@ -584,7 +584,7 @@ In agent mode:
     }
     try {
       const { snapshot, reason } = await resolveScratchSnapshot(flags['target-dev-hub'].getConnection());
-      if (!snapshot) {
+      if (!snapshot && reason) {
         uxLog("log", this, c.grey(t('scratchSnapshotNotUsed', { reason })));
       }
       return snapshot || null;

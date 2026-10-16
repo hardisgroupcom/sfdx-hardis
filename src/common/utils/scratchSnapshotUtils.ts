@@ -16,9 +16,12 @@ export const SCRATCH_SNAPSHOT_DISABLED_ENV = 'SFDX_HARDIS_SCRATCH_SNAPSHOT_DISAB
 
 export type ScratchSnapshot = { name: string; sha: string };
 
-// The newest Active snapshot of the target branch whose commit is in the history of HEAD,
-// or the reason why the scratch org must be created empty
+// The newest Active snapshot of the target branch whose commit is in the history of HEAD, or the reason why
+// the scratch org must be created empty. No reason when no branch uses snapshots: nothing to explain then
 export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapshot?: ScratchSnapshot; reason?: string }> {
+  if (!(await listMajorOrgs()).some((majorOrg) => majorOrg.useScratchOrgSnapshot === true)) {
+    return {};
+  }
   const targetBranch = process.env.FORCE_TARGET_BRANCH || (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch;
   if (!targetBranch) {
     return { reason: t('scratchSnapshotNoTargetBranch') };
