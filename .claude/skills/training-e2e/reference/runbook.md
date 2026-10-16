@@ -334,6 +334,11 @@ Traps that cost earlier runs time:
   `delete_repo` scope). Create another one whose name still contains `monitoring`, and pass it:
   `MONREPO=<login>/sfdx-hardis-training-monitoring-run3 MONRUN=C:/git/training-monitoring-run3 node
   scripts/mon.mjs`. Point the `github-run-workflow` web capture at it.
+  **Disable its workflow when the lab is done** (`gh workflow disable "Org Monitoring sfdx-hardis"
+  -R <repo>`): every repository of an earlier run keeps a nightly schedule against `helios-prod`,
+  and on 2026-10-16 seven of them still failed every night (`-run2` to `-run5`, `-0925`, `-0926`
+  and the unsuffixed one), spending the Dev Hub's API calls. `gh repo list <login> | grep
+  training-monitoring` then `gh workflow list -R <repo> --all` shows which still run.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
@@ -715,8 +720,10 @@ names instead.
 Lab 3.8 runs in a **second repository**, the monitoring one, with its own secrets
 (`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Two things about its first run:
 
-- **It is supposed to be red.** The Monitoring job fails on `ActiveScratchOrgs`, 3 of 3 at 100%, and
-  the lab names that limit in advance and builds its triage exercise on it. Do not go fixing it.
+- **It is supposed to report `ActiveScratchOrgs`, 3 of 3 at 100%**, and the lab names that limit in
+  advance and builds its triage exercise on it. Do not go fixing it. Since 2026-10-16 the run stays
+  **green** with that finding (a monitoring job that ran to its end is green, the lab says so); a red
+  Monitoring job is now a real failure.
 - **Read the first lines of each step anyway.** "dubious ownership" inside the container has twice
   hidden a real defect behind a green-looking job: once a backup that silently never committed, once
   (2026-09-21) a `git pull` that ran before `safe.directory` was set and so never refreshed the
