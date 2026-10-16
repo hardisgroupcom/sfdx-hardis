@@ -363,8 +363,9 @@ In agent mode:
       uxLog("action", this, c.cyan(t('reusingOrgWithUser', { scratchOrgAlias: c.green(this.scratchOrgAlias), scratchOrgUsername: c.green(this.scratchOrgUsername) })));
       return;
     }
-    // Try to fetch a scratch org from the pool
-    if (this.pool === false && this.configInfo.poolConfig && !this.snapshot) {
+    // Try to fetch a scratch org from the pool. Never for the source org of a snapshot, which must start empty
+    const buildingSnapshotSource = process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] === 'true';
+    if (this.pool === false && this.configInfo.poolConfig && !this.snapshot && !buildingSnapshotSource) {
       this.scratchOrgFromPool = await fetchScratchOrg({
         devHubConn: flags['target-dev-hub'].getConnection(),
         devHubUsername: flags['target-dev-hub'].getUsername(),
