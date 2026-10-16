@@ -873,6 +873,7 @@
   "creatingPromptTemplatesAndVariables": "プロンプトテンプレートと変数を作成しています。",
   "creatingPromptTemplatesDirectory": "プロンプトテンプレートディレクトリを作成しています。",
   "creatingSalesforcePackage": "パッケージ {{packageName}} を作成しています...",
+  "creatingScratchOrgFromSnapshot": "スナップショット {{snapshot}} からスクラッチ組織を作成しています。スナップショットが受け付けない定義キーは除外されます: {{droppedKeys}}",
   "creatingSfdxProject": "SFDX プロジェクトを作成しています...",
   "creatingSfdxProject2": "sfdx-project を作成しています...",
   "creatingStaticResourceMetadata": "静的リソース {{resName}} のメタデータを作成しています。",

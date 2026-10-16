@@ -875,6 +875,7 @@
   "creatingPromptTemplatesAndVariables": "Prompt-sjablonen en variabelen aanmaken.",
   "creatingPromptTemplatesDirectory": "Map voor prompt-sjablonen aanmaken.",
   "creatingSalesforcePackage": "Package {{packageName}} aanmaken...",
+  "creatingScratchOrgFromSnapshot": "De scratch org wordt gemaakt vanuit snapshot {{snapshot}}. Definitiesleutels die een snapshot niet accepteert, worden weggelaten: {{droppedKeys}}",
   "creatingSfdxProject": "SFDX-project aanmaken...",
   "creatingSfdxProject2": "sfdx-project aanmaken...",
   "creatingStaticResourceMetadata": "Metadata voor Static Resource {{resName}} aanmaken.",

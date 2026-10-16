@@ -19,6 +19,7 @@ import {
   uxLog,
 } from '../../../common/utils/index.js';
 import {
+  buildSnapshotScratchDef,
   getScratchSignupEnv,
   initApexScripts,
   initOrgData,
@@ -313,10 +314,18 @@ In agent mode:
     if (process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape) {
       this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
     }
-    uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(this.projectScratchDef, null, 2)));
+    // A pool keeps empty scratch orgs, so the pool refresh never creates them from a snapshot
+    const snapshot = this.pool === false ? process.env.SCRATCH_ORG_SNAPSHOT : undefined;
+    let scratchDefToWrite = this.projectScratchDef;
+    if (snapshot) {
+      const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, snapshot);
+      scratchDefToWrite = scratchDef;
+      uxLog("action", this, c.cyan(t('creatingScratchOrgFromSnapshot', { snapshot: c.green(snapshot), droppedKeys: droppedKeys.join(', ') || '-' })));
+    }
+    uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(scratchDefToWrite, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
-    await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
+    await fs.writeFile(projectScratchDefLocal, JSON.stringify(scratchDefToWrite, null, 2));
     WebSocketClient.sendReportFileMessage(projectScratchDefLocal, t('scratchOrgDefinition'), "report");
 
     // Check current scratch org
@@ -334,7 +343,7 @@ In agent mode:
       return;
     }
     // Try to fetch a scratch org from the pool
-    if (this.pool === false && this.configInfo.poolConfig) {
+    if (this.pool === false && this.configInfo.poolConfig && !snapshot) {
       this.scratchOrgFromPool = await fetchScratchOrg({
         devHubConn: flags['target-dev-hub'].getConnection(),
         devHubUsername: flags['target-dev-hub'].getUsername(),

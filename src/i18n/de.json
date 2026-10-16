@@ -874,6 +874,7 @@
   "creatingPromptTemplatesAndVariables": "Prompt-Vorlagen und Variablen werden erstellt.",
   "creatingPromptTemplatesDirectory": "Verzeichnis für Prompt-Vorlagen wird erstellt.",
   "creatingSalesforcePackage": "Package {{packageName}} wird erstellt...",
+  "creatingScratchOrgFromSnapshot": "Die Scratch Org wird aus dem Snapshot {{snapshot}} erstellt. Definitionsschlüssel, die ein Snapshot nicht akzeptiert, werden weggelassen: {{droppedKeys}}",
   "creatingSfdxProject": "SFDX-Projekt wird erstellt...",
   "creatingSfdxProject2": "sfdx-project wird erstellt...",
   "creatingStaticResourceMetadata": "Static Resource {{resName}}-Metadaten werden erstellt.",

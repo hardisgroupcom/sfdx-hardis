@@ -852,6 +852,7 @@
   "creatingPromptTemplatesAndVariables": "Criando modelos de prompt e variáveis.",
   "creatingPromptTemplatesDirectory": "Criando diretório de modelos de prompt.",
   "creatingSalesforcePackage": "Criando o pacote {{packageName}}...",
+  "creatingScratchOrgFromSnapshot": "Criando a scratch org a partir do snapshot {{snapshot}}. As chaves de definição que um snapshot não aceita são omitidas: {{droppedKeys}}",
   "creatingSfdxProject": "Criando projeto SFDX...",
   "creatingSfdxProject2": "Criando sfdx-project...",
   "creatingStaticResourceMetadata": "Criando metadados do Recurso Estático {{resName}}.",
