@@ -1,12 +1,13 @@
 // Lab 3.1 step 7 in the browser: Setup > External Client App Manager > the app > Policies.
-// usage: node l31-policies.mjs <org> <appName>
-// Prints the Permitted Users line and the profiles of the Policies tab, and takes a screenshot
-// into SHOTS (see cdp.mjs) as l31-policies-<org>.png.
+// usage: node l31-policies.mjs <org> <appName> <profile>
+// Prints the App Authorization line, the App Policies > Selected Profiles section and whether
+// <profile> is among them, and takes a screenshot into SHOTS (see cdp.mjs) as
+// l31-policies-<org>.png. Exits 1 when the profile is not found.
 // Attaches to the Chrome that already runs with --remote-debugging-port=9222 and opens a tab of
 // its own, which it closes whatever happens: a tab left open by a script that threw is what
 // wedges the next CDP attach.
 import { openPage, text, SHOTS } from "./cdp.mjs";
-const [org, app] = process.argv.slice(2);
+const [org, app, profile] = process.argv.slice(2);
 const log = (m) => console.log(new Date().toTimeString().slice(0, 8), m);
 let step = "open";
 let page = null;
@@ -45,10 +46,14 @@ try {
   step = "read";
   let all = "";
   for (const f of page.frames()) all += " " + (await text(f).catch(() => ""));
-  for (const re of [/Permitted Users[^.]{0,80}/, /pre-authorized[^.]{0,60}/i, /System Administrator/]) {
+  for (const re of [/App Authorization[^.]{0,80}/, /Selected Profiles[^.]{0,200}/]) {
     const m = all.match(re);
     log(`${re}: ${m ? m[0] : "NOT FOUND"}`);
   }
+  const selected = all.match(/Selected Profiles(.{0,400})/)?.[1] || "";
+  const found = !!profile && selected.includes(profile);
+  log(`profile ${profile} among the selected profiles: ${found}`);
+  if (!found) code = 1;
 } catch (e) {
   log(`FAILED at ${step}: ${e.message.split("\n")[0]}`);
   code = 1;

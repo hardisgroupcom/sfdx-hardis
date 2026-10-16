@@ -818,7 +818,9 @@ Level 3 straight after Level 2, Labs 3.1 to 3.6, on 2026-10-16 (helpers in `scri
   same org, and the org list of Add/Configure Org shows one alias only, here `(DevHub)`:
   `auth.mjs helios-preprod ...` then stops on "No choice matching". Pass the alias the list shows
   (`sf alias list` says which). A learner has one alias.
-- **Step 7 of Lab 3.1 is readable over CDP** (`l31-policies.mjs`): the External Client App list
+- **Step 7 of Lab 3.1 is readable over CDP** (`l31-policies.mjs <org> <app> <profile>`, which
+  reads **App Authorization** and **App Policies > Selected Profiles** and fails when the profile
+  is not selected): the External Client App list
   and the app page sit in frames and shadow roots, so only `getByText(app, { exact: true })`,
   searched in every frame, finds the link. Two first drafts threw and left their tabs open, and
   the next attach hung: every new helper closes its tab in `finally`.
