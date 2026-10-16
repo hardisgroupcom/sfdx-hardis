@@ -30,6 +30,12 @@ import {
   promptUserEmail,
 } from '../../../common/utils/orgUtils.js';
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
+import {
+  deploySnapshotDelta,
+  resolveScratchSnapshot,
+  SCRATCH_SNAPSHOT_DISABLED_ENV,
+  ScratchSnapshot,
+} from '../../../common/utils/scratchSnapshotUtils.js';
 import { getOrgSfdxAuthUrl } from '../../../common/utils/credentialUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -166,6 +172,7 @@ In agent mode:
   protected authFileJson: any;
   protected projectName: string;
   protected scratchOrgFromPool: any;
+  protected snapshot: ScratchSnapshot | null = null;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ScratchCreate);
@@ -180,19 +187,26 @@ In agent mode:
       await this.updateScratchOrgUser();
       await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
       if (this.pool === false) {
-        await initOrgMetadatas(
-          this.configInfo,
-          this.scratchOrgUsername,
-          this.scratchOrgAlias,
-          this.projectScratchDef,
-          this.debugMode,
-          {
-            scratch: true,
-          }
-        );
+        if (this.snapshot?.sha) {
+          await deploySnapshotDelta(this.snapshot, this.scratchOrgUsername, this, this.debugMode);
+        } else {
+          await initOrgMetadatas(
+            this.configInfo,
+            this.scratchOrgUsername,
+            this.scratchOrgAlias,
+            this.projectScratchDef,
+            this.debugMode,
+            {
+              scratch: true,
+            }
+          );
+        }
         await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.scratchOrgUsername);
-        await initApexScripts(this.configInfo.scratchOrgInitApexScripts || [], this.scratchOrgUsername);
-        await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), this.scratchOrgUsername);
+        // A snapshot already holds the results of the Apex init scripts and of the init data
+        if (!this.snapshot) {
+          await initApexScripts(this.configInfo.scratchOrgInitApexScripts || [], this.scratchOrgUsername);
+          await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), this.scratchOrgUsername);
+        }
       }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
@@ -316,12 +330,14 @@ In agent mode:
       this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
     }
     // A pool keeps empty scratch orgs, so the pool refresh never creates them from a snapshot
-    const snapshot = this.pool === false ? process.env.SCRATCH_ORG_SNAPSHOT : undefined;
+    if (this.pool === false) {
+      this.snapshot = await this.resolveSnapshot(flags);
+    }
     let scratchDefToWrite = this.projectScratchDef;
-    if (snapshot) {
-      const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, snapshot);
+    if (this.snapshot) {
+      const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, this.snapshot.name);
       scratchDefToWrite = scratchDef;
-      uxLog("action", this, c.cyan(t('creatingScratchOrgFromSnapshot', { snapshot: c.green(snapshot), droppedKeys: droppedKeys.join(', ') || '-' })));
+      uxLog("action", this, c.cyan(t('creatingScratchOrgFromSnapshot', { snapshot: c.green(this.snapshot.name), droppedKeys: droppedKeys.join(', ') || '-' })));
     }
     uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(scratchDefToWrite, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
@@ -344,7 +360,7 @@ In agent mode:
       return;
     }
     // Try to fetch a scratch org from the pool
-    if (this.pool === false && this.configInfo.poolConfig && !snapshot) {
+    if (this.pool === false && this.configInfo.poolConfig && !this.snapshot) {
       this.scratchOrgFromPool = await fetchScratchOrg({
         devHubConn: flags['target-dev-hub'].getConnection(),
         devHubUsername: flags['target-dev-hub'].getUsername(),
@@ -538,5 +554,29 @@ In agent mode:
     }
     const userUpdateCommand = `sf data update record --sobject User --record-id ${userQueryRes.result.Id} --values "${updatedUserValues}" --target-org ${this.scratchOrgAlias}`;
     await execSfdxJson(userUpdateCommand, this, { fail: false, output: true, debug: this.debugMode });
+  }
+
+  // SCRATCH_ORG_SNAPSHOT names a snapshot (no known commit, so a full push). Otherwise, in CI, the newest usable
+  // snapshot of the Pull Request's target branch. Any failure falls back to an empty scratch org.
+  protected async resolveSnapshot(flags): Promise<ScratchSnapshot | null> {
+    if (process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] === 'true') {
+      return null;
+    }
+    if (process.env.SCRATCH_ORG_SNAPSHOT) {
+      return { name: process.env.SCRATCH_ORG_SNAPSHOT, sha: '' };
+    }
+    if (!isCI) {
+      return null;
+    }
+    try {
+      const { snapshot, reason } = await resolveScratchSnapshot(flags['target-dev-hub'].getConnection());
+      if (!snapshot) {
+        uxLog("log", this, c.grey(t('scratchSnapshotNotUsed', { reason })));
+      }
+      return snapshot || null;
+    } catch (e) {
+      uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: (e as Error).message })));
+      return null;
+    }
   }
 }
