@@ -11,6 +11,14 @@ import {
   generateReportPath,
 } from './filesUtils.js';
 import { t } from './i18n.js';
+import {
+  DataCloudEntityType,
+  getDataCloudAvailability,
+  getDataCloudObjectsMetadata,
+  getDataModelObjectRelationships,
+  isDataCloudCatalogRelationship,
+  isDataCloudNotEnabledError,
+} from './dataCloudUtils.js';
 
 // Picklists with hundreds of values would produce unreadable cells: cap the listing and flag the overflow.
 export const MAX_PICKLIST_VALUES_IN_CELL = 50;
@@ -21,7 +29,39 @@ export interface ObjectDataDictionary {
   custom: boolean;
   keyPrefix: string;
   fields: Record<string, string>[];
+  // Set for Data Cloud objects only: "Data Model Object" or "Data Lake Object", and the ssot category.
+  objectType?: string;
+  category?: string;
 }
+
+const DATA_CLOUD_OBJECT_TYPE_LABELS: Record<string, string> = {
+  DataModelObject: 'Data Model Object',
+  DataLakeObject: 'Data Lake Object',
+};
+
+const DATA_CLOUD_FIELD_TYPE_LABELS: Record<string, string> = {
+  TEXT: 'Text',
+  NUMBER: 'Number',
+  DATE: 'Date',
+  DATE_TIME: 'DateTime',
+  DATETIME: 'DateTime',
+  BOOLEAN: 'Boolean',
+  EMAIL: 'Email',
+  PHONE: 'Phone',
+  URL: 'Url',
+  PERCENT: 'Percent',
+  CURRENCY: 'Currency',
+};
+
+const DATA_CLOUD_CARDINALITY_LABELS: Record<string, string> = {
+  ONETOONE: 'One to One',
+  ONETOMANY: 'One to Many',
+  MANYTOONE: 'Many to One',
+  NTOONE: 'Many to One',
+  MANYTOMANY: 'Many to Many',
+};
+
+export const DATA_CLOUD_RELATIONSHIPS_SHEET_NAME = 'Data Cloud Relationships';
 
 const NUMERIC_FIELD_TYPES = new Set(['currency', 'double', 'int', 'percent', 'long']);
 
@@ -32,6 +72,18 @@ const yesNo = (value: boolean): string => (value ? 'Yes' : 'No');
 // second "__" (e.g. "ns__Field__c"). Standard names carry none.
 export function isLocallyCustomApiName(apiName: string): boolean {
   return ((apiName || '').match(/__/g) || []).length === 1;
+}
+
+// Data Cloud objects are not sObjects: Data Model Objects end with "__dlm", Data Lake Objects with "__dll".
+export function getDataCloudEntityType(apiName: string): DataCloudEntityType | null {
+  const lowerName = (apiName || '').toLowerCase();
+  if (lowerName.endsWith('__dlm')) {
+    return 'DataModelObject';
+  }
+  if (lowerName.endsWith('__dll')) {
+    return 'DataLakeObject';
+  }
+  return null;
 }
 
 // An object has local customizations when it is itself a local custom object, or when it carries at
@@ -232,6 +284,102 @@ export async function collectObjectDictionary(
   }
 }
 
+// Names of the Data Model Objects and Data Lake Objects the org lists, for the object selection
+// prompt. Orgs without Data Cloud return an empty list without any warning.
+export async function listDataCloudObjectNamesForPrompt(conn: Connection): Promise<string[]> {
+  const names: string[] = [];
+  for (const entityType of ['DataModelObject', 'DataLakeObject'] as DataCloudEntityType[]) {
+    const availability = await getDataCloudAvailability(conn, entityType);
+    if (!availability.available) {
+      break;
+    }
+    names.push(...availability.objectNames);
+  }
+  return names;
+}
+
+// Builds the dictionaries of Data Cloud objects from ssot/metadata, one call per object type.
+// Requested names that the org does not list are reported and skipped. With includeAll, every
+// Data Model Object and Data Lake Object listed by the org is returned.
+export async function collectDataCloudDictionaries(
+  conn: Connection,
+  objectNames: string[],
+  includeAll: boolean,
+  commandThis: any
+): Promise<ObjectDataDictionary[]> {
+  const requestedNames = new Set(objectNames);
+  const entityTypes: DataCloudEntityType[] = includeAll
+    ? ['DataModelObject', 'DataLakeObject']
+    : Array.from(
+      new Set(objectNames.map((name) => getDataCloudEntityType(name)).filter((type): type is DataCloudEntityType => type !== null))
+    );
+  const dicts: ObjectDataDictionary[] = [];
+  const foundNames = new Set<string>();
+  const unavailableTypes = new Set<DataCloudEntityType>();
+  for (const entityType of entityTypes) {
+    let items: any[];
+    try {
+      items = await getDataCloudObjectsMetadata(conn, entityType);
+    } catch (e) {
+      unavailableTypes.add(entityType);
+      if (isDataCloudNotEnabledError(e)) {
+        // Same answer for every object type: say it once.
+        entityTypes.forEach((type) => unavailableTypes.add(type));
+        uxLog('warning', commandThis, c.yellow(t('unableToListDataCloudObjects', { entityType, error: t('dataCloudNotEnabledOnOrg') })));
+        break;
+      }
+      uxLog('warning', commandThis, c.yellow(t('unableToListDataCloudObjects', { entityType, error: (e as Error).message })));
+      continue;
+    }
+    for (const item of items) {
+      if (includeAll || requestedNames.has(item.name)) {
+        dicts.push(buildDataCloudObjectDictionary(item, entityType));
+        foundNames.add(item.name);
+      }
+    }
+  }
+  for (const name of objectNames) {
+    const entityType = getDataCloudEntityType(name);
+    if (!foundNames.has(name) && entityType && !unavailableTypes.has(entityType)) {
+      uxLog('warning', commandThis, c.yellow(t('dataCloudObjectNotFoundInOrg', { name })));
+    }
+  }
+  return dicts.sort((a, b) => a.apiName.localeCompare(b.apiName));
+}
+
+export function buildDataCloudObjectDictionary(item: any, entityType: DataCloudEntityType): ObjectDataDictionary {
+  const primaryKeys = new Set(
+    (Array.isArray(item?.primaryKeys) ? item.primaryKeys : []).map((key: any) => key?.name).filter(Boolean)
+  );
+  const fields = (Array.isArray(item?.fields) ? item.fields : [])
+    .map((field: any) => ({
+      'API Name': field?.name || '',
+      'Label': field?.displayName || '',
+      'Type': formatDataCloudFieldType(field?.businessType || field?.type),
+      'Data Type': field?.type || '',
+      'Primary Key': yesNo(primaryKeys.has(field?.name)),
+      'Key Qualifier': field?.keyQualifier || '',
+      'Custom': yesNo(isDataCloudCustomName(field?.name || '')),
+    }))
+    .sort((a: Record<string, string>, b: Record<string, string>) =>
+      (a['API Name'] || '').localeCompare(b['API Name'] || '')
+    );
+  return {
+    apiName: item?.name || '',
+    label: item?.displayName || item?.name || '',
+    custom: isDataCloudCustomName(item?.name || ''),
+    keyPrefix: '',
+    fields,
+    objectType: DATA_CLOUD_OBJECT_TYPE_LABELS[entityType] || entityType,
+    category: item?.category || '',
+  };
+}
+
+export function formatDataCloudFieldType(type: string): string {
+  const key = (type || '').toUpperCase();
+  return DATA_CLOUD_FIELD_TYPE_LABELS[key] || type || '';
+}
+
 export async function fetchValidationRules(
   conn: Connection,
   objectNames: string[],
@@ -300,6 +448,58 @@ export async function fetchRecordTypes(
   }
 }
 
+// Relationships of the given DMOs, read one DMO at a time. A relationship is listed by both of its
+// DMOs, so it is kept once. The standard relationships the org never activated are left out.
+export async function fetchDataCloudRelationships(
+  conn: Connection,
+  dmoNames: string[],
+  commandThis: any
+): Promise<Record<string, string>[]> {
+  const rows: Record<string, string>[] = [];
+  const seen = new Set<string>();
+  for (const dmoName of dmoNames) {
+    let relationships: any[];
+    try {
+      relationships = await getDataModelObjectRelationships(conn, dmoName);
+    } catch (e) {
+      uxLog('warning', commandThis, c.yellow(t('unableToRetrieveDataCloudRelationships', { name: dmoName, error: (e as Error).message })));
+      continue;
+    }
+    for (const relationship of relationships) {
+      if (isDataCloudCatalogRelationship(relationship)) {
+        continue;
+      }
+      const row = buildDataCloudRelationshipRow(relationship);
+      const key = relationship?.id || [row['Name'], row['From Object'], row['From Field'], row['To Object'], row['To Field']].join('|');
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      rows.push(row);
+    }
+  }
+  return rows.sort((a, b) =>
+    [a['From Object'], a['From Field'], a['To Object'], a['Name']].join('|').localeCompare(
+      [b['From Object'], b['From Field'], b['To Object'], b['Name']].join('|')
+    )
+  );
+}
+
+export function buildDataCloudRelationshipRow(relationship: any): Record<string, string> {
+  const cardinality = String(relationship?.cardinality || '');
+  return {
+    'From Object': relationship?.sourceObject?.name || '',
+    'From Field': relationship?.sourceField?.name || '',
+    'To Object': relationship?.targetObject?.name || '',
+    'To Field': relationship?.targetField?.name || '',
+    'To Object Type': relationship?.targetField?.type === 'SObjectField' ? 'CRM Object' : 'Data Model Object',
+    'Cardinality': DATA_CLOUD_CARDINALITY_LABELS[cardinality.toUpperCase().replace(/[_\s-]/g, '')] || cardinality,
+    'Status': relationship?.status || '',
+    'Origin': relationship?.creationType || '',
+    'Name': relationship?.name || '',
+  };
+}
+
 // Blue underlined style matching Excel's default hyperlink look.
 const HYPERLINK_FONT = { color: { argb: 'FF0563C1' }, underline: true };
 
@@ -314,6 +514,7 @@ function addDataDictionaryNavigation(
     objectCsvByApiName: Record<string, string>;
     vrPath: string | null;
     rtPath: string | null;
+    relPath: string | null;
   }
 ): void {
   const indexName = worksheetNameByCsvFile[nav.indexPath];
@@ -346,8 +547,10 @@ function addDataDictionaryNavigation(
     const fieldsCol = columnByHeader['Fields'];
     const vrCol = columnByHeader['Validation Rules'];
     const rtCol = columnByHeader['Record Types'];
+    const relCol = columnByHeader['Relationships'];
     const vrName = nav.vrPath ? worksheetNameByCsvFile[nav.vrPath] : null;
     const rtName = nav.rtPath ? worksheetNameByCsvFile[nav.rtPath] : null;
+    const relName = nav.relPath ? worksheetNameByCsvFile[nav.relPath] : null;
 
     for (let rowNumber = 2; rowNumber <= indexWs.rowCount; rowNumber++) {
       const row = indexWs.getRow(rowNumber);
@@ -375,6 +578,12 @@ function addDataDictionaryNavigation(
         }
         rightAlign(row.getCell(rtCol));
       }
+      if (relCol) {
+        if (relName) {
+          linkCell(row.getCell(relCol), relName);
+        }
+        rightAlign(row.getCell(relCol));
+      }
     }
   }
 
@@ -396,7 +605,8 @@ export async function writeDataDictionaryReports(
   objectDicts: ObjectDataDictionary[],
   validationRules: Record<string, string>[],
   recordTypes: Record<string, string>[],
-  outputFile: string | null
+  outputFile: string | null,
+  dataCloudRelationships: Record<string, string>[] = []
 ): Promise<any[]> {
   const reportFiles: any[] = [];
   const csvFiles: string[] = [];
@@ -406,17 +616,22 @@ export async function writeDataDictionaryReports(
   const objectCsvByApiName: Record<string, string> = {};
   let vrPath: string | null = null;
   let rtPath: string | null = null;
+  let relPath: string | null = null;
 
   const validationRulesByObject = countByObject(validationRules);
   const recordTypesByObject = countByObject(recordTypes);
 
-  // Index sheet
+  // Index sheet. The Data Cloud columns are only added when the workbook documents Data Cloud objects.
+  const hasDataCloudObjects = objectDicts.some((dict) => dict.objectType);
+  const relationshipsByObject = countRelationshipsByObject(dataCloudRelationships);
   const indexRows = objectDicts.map((dict) => ({
     'API Name': dict.apiName,
     'Label': dict.label,
+    ...(hasDataCloudObjects ? { 'Object Type': dict.objectType || 'sObject', 'Category': dict.category || '' } : {}),
     'Fields': String(dict.fields.length),
     'Validation Rules': String(validationRulesByObject[dict.apiName] || 0),
     'Record Types': String(recordTypesByObject[dict.apiName] || 0),
+    ...(hasDataCloudObjects ? { 'Relationships': String(relationshipsByObject[dict.apiName] || 0) } : {}),
     'Custom': yesNo(dict.custom),
     'Key Prefix': dict.keyPrefix,
   }));
@@ -457,6 +672,15 @@ export async function writeDataDictionaryReports(
     reportFiles.push({ type: 'csv', file: rtPath });
   }
 
+  // Consolidated Data Cloud Relationships sheet
+  if (dataCloudRelationships.length > 0) {
+    relPath = await generateReportPath('data-dictionary-data-cloud-relationships', '', { withDate: true });
+    await writeSheetCsv(dataCloudRelationships, relPath);
+    worksheetNames[relPath] = DATA_CLOUD_RELATIONSHIPS_SHEET_NAME;
+    csvFiles.push(relPath);
+    reportFiles.push({ type: 'csv', file: relPath });
+  }
+
   const consolidatedBase =
     outputFile || (await generateReportPath('data-dictionary', '', { withDate: true }));
   // Wrapped columns are capped in height, so top-align them: when the content is taller than the cap
@@ -485,6 +709,7 @@ export async function writeDataDictionaryReports(
         objectCsvByApiName,
         vrPath,
         rtPath,
+        relPath,
       }),
   });
   const consolidatedXlsx = path.join(
@@ -514,4 +739,23 @@ function countByObject(rows: Record<string, string>[]): Record<string, number> {
     counts[objectName] = (counts[objectName] || 0) + 1;
   }
   return counts;
+}
+
+// A relationship counts for both of its objects (once when it links an object to itself).
+function countRelationshipsByObject(rows: Record<string, string>[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    for (const objectName of new Set([row['From Object'], row['To Object']])) {
+      if (objectName) {
+        counts[objectName] = (counts[objectName] || 0) + 1;
+      }
+    }
+  }
+  return counts;
+}
+
+// Standard Data Cloud names carry the "ssot__" prefix (ssot__Individual__dlm, ssot__Id__c).
+// Objects and fields created in the org do not.
+function isDataCloudCustomName(apiName: string): boolean {
+  return apiName.includes('__') && !apiName.startsWith('ssot__');
 }

@@ -9,6 +9,8 @@ import path from "path";
 export const DATA_CLOUD_QUERIES_FOLDER_ROOT = path.join(process.cwd(), 'scripts', 'data-cloud-queries');
 const QUERY_CONNECT_PATH = "ssot/query-sql";
 const METADATA_CONNECT_PATH = "ssot/metadata";
+const DMO_RELATIONSHIPS_PAGE_SIZE = 500;
+const DMO_RELATIONSHIPS_MAX_PAGES = 20;
 const DEFAULT_DATASPACE = "default";
 const DEFAULT_WORKLOAD_NAME = "sfdx-hardis-cli";
 const DEFAULT_ROW_LIMIT = 2000;
@@ -127,15 +129,55 @@ export async function listDataCloudObjects(
   conn: Connection,
   entityType: DataCloudEntityType = "DataModelObject",
 ): Promise<DataCloudObjectSummary[]> {
+  const items = await getDataCloudObjectsMetadata(conn, entityType);
+  return items.map((item) => ({ name: String(item.name), displayName: item.displayName ? String(item.displayName) : undefined }));
+}
+
+// Full ssot/metadata entries of a given type: name, displayName, category, fields (with type,
+// businessType and keyQualifier) and primaryKeys. The listing only contains the objects the org
+// uses: a standard DMO that nothing is mapped to is not returned.
+export async function getDataCloudObjectsMetadata(
+  conn: Connection,
+  entityType: DataCloudEntityType = "DataModelObject",
+): Promise<any[]> {
   const base = conn.baseUrl().replace(/\/$/, "");
   const response = await conn.request<any>({
     method: "GET",
     url: `${base}/${METADATA_CONNECT_PATH}?entityType=${encodeURIComponent(entityType)}`,
   });
   const items = Array.isArray(response) ? response : (response?.metadata ?? []);
-  return (items as any[])
-    .filter((item) => item && item.name)
-    .map((item) => ({ name: String(item.name), displayName: item.displayName ? String(item.displayName) : undefined }));
+  return (items as any[]).filter((item) => item && item.name);
+}
+
+// Relationships of one DMO, in both directions, as returned by the Data Cloud API. Unlike the
+// relationships listed by ssot/metadata, these carry a status and include the relationships to CRM
+// objects. The response also contains the standard relationships the org never activated: filter
+// them with isDataCloudCatalogRelationship.
+export async function getDataModelObjectRelationships(conn: Connection, dmoName: string): Promise<any[]> {
+  const base = conn.baseUrl().replace(/\/$/, "");
+  const relationships: any[] = [];
+  for (let page = 0; page < DMO_RELATIONSHIPS_MAX_PAGES; page++) {
+    const offset = page * DMO_RELATIONSHIPS_PAGE_SIZE;
+    const response = await conn.request<any>({
+      method: "GET",
+      url:
+        `${base}/ssot/data-model-objects/${encodeURIComponent(dmoName)}/relationships` +
+        `?limit=${DMO_RELATIONSHIPS_PAGE_SIZE}${offset > 0 ? `&offset=${offset}` : ""}`,
+    });
+    const batch = Array.isArray(response?.relationships) ? response.relationships : [];
+    relationships.push(...batch);
+    const total = typeof response?.totalSize === "number" ? response.totalSize : null;
+    if (batch.length === 0 || total === null || relationships.length >= total) {
+      break;
+    }
+  }
+  return relationships;
+}
+
+// Salesforce predefines relationships between standard DMOs. Until the org activates one, it is
+// listed with creationType "Standard" and status "INACTIVE": it says nothing about the org's model.
+export function isDataCloudCatalogRelationship(relationship: any): boolean {
+  return relationship?.creationType === "Standard" && relationship?.status === "INACTIVE";
 }
 
 // Probes whether Data Cloud can be queried on this org, without ever throwing for the

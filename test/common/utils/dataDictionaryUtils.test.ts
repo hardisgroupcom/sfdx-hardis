@@ -1,8 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import { expect } from 'chai';
 import {
+  buildDataCloudObjectDictionary,
+  buildDataCloudRelationshipRow,
+  collectDataCloudDictionaries,
   collectObjectDictionary,
+  fetchDataCloudRelationships,
+  formatDataCloudFieldType,
   formatFieldType,
+  getDataCloudEntityType,
   formatPicklistValues,
   hasLocalCustomizations,
   isLocallyCustomApiName,
@@ -208,6 +214,216 @@ describe('dataDictionaryUtils', () => {
     it('excludes a managed object whose only custom fields are managed', () => {
       const dict = { apiName: 'ns__Obj__c', label: 'Managed', custom: true, keyPrefix: 'a01', fields: [field('ns__ManagedField__c', true)] };
       expect(hasLocalCustomizations(dict)).to.equal(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Data Cloud objects
+  // ---------------------------------------------------------------------------
+  const BASE_URL = 'https://example.my.salesforce.com/services/data/v64.0';
+
+  const dmoMetadata = {
+    name: 'ssot__Individual__dlm',
+    displayName: 'Individual',
+    category: 'Profile',
+    primaryKeys: [{ name: 'ssot__Id__c', displayName: 'Individual Id', indexOrder: '1' }],
+    fields: [
+      { name: 'ssot__Id__c', displayName: 'Individual Id', type: 'STRING', businessType: 'TEXT', keyQualifier: 'KQ_Id__c' },
+      { name: 'Loyalty_Tier__c', displayName: 'Loyalty Tier', type: 'STRING', businessType: 'TEXT' },
+      { name: 'ssot__BirthDate__c', displayName: 'Birth Date', type: 'DATE', businessType: 'DATE' },
+    ],
+  };
+  const dloMetadata = {
+    name: 'Crm_Contact__dll',
+    displayName: 'Crm Contact',
+    category: 'Profile',
+    primaryKeys: [{ name: 'Id__c' }],
+    fields: [{ name: 'Id__c', displayName: 'Id', type: 'STRING', businessType: 'TEXT' }],
+  };
+
+  const relationship = (overrides: any) => ({
+    id: overrides.id,
+    name: overrides.name || overrides.id,
+    cardinality: 'ManyToOne',
+    creationType: 'Custom',
+    status: 'ACTIVE',
+    sourceObject: { name: overrides.from || 'Crm_Order__dlm' },
+    sourceField: { name: overrides.fromField || 'Customer_Id__c', type: 'MktDataModelField' },
+    targetObject: { name: overrides.to || 'ssot__Individual__dlm' },
+    targetField: { name: overrides.toField || 'ssot__Id__c', type: overrides.toType || 'MktDataModelField' },
+    ...overrides.extra,
+  });
+
+  // Serves ssot/metadata by entityType and the relationships endpoint by DMO name and offset.
+  const dataCloudConn = (routes: { metadata?: Record<string, any>; relationships?: Record<string, any[]>; failMetadata?: string }) => {
+    const calls: string[] = [];
+    const conn: any = {
+      baseUrl: () => BASE_URL,
+      request: async ({ url }: { url: string }) => {
+        calls.push(url);
+        if (url.includes('/ssot/metadata?')) {
+          if (routes.failMetadata) {
+            throw new Error(routes.failMetadata);
+          }
+          const entityType = new URL(url).searchParams.get('entityType') || '';
+          return { metadata: routes.metadata?.[entityType] || [] };
+        }
+        const match = url.match(/data-model-objects\/([^/]+)\/relationships/);
+        if (match) {
+          const all = routes.relationships?.[decodeURIComponent(match[1])] || [];
+          const params = new URL(url).searchParams;
+          const offset = Number(params.get('offset') || 0);
+          const limit = Number(params.get('limit') || 500);
+          return { relationships: all.slice(offset, offset + limit), totalSize: all.length };
+        }
+        throw new Error(`Unexpected URL ${url}`);
+      },
+    };
+    return { conn, calls };
+  };
+
+  describe('getDataCloudEntityType()', () => {
+    it('recognizes Data Model Objects and Data Lake Objects by suffix', () => {
+      expect(getDataCloudEntityType('ssot__Individual__dlm')).to.equal('DataModelObject');
+      expect(getDataCloudEntityType('Crm_Contact__DLL')).to.equal('DataLakeObject');
+      expect(getDataCloudEntityType('Account')).to.equal(null);
+      expect(getDataCloudEntityType('MyObject__c')).to.equal(null);
+    });
+  });
+
+  describe('buildDataCloudObjectDictionary()', () => {
+    it('maps fields with type, primary key, key qualifier and custom flag, sorted by API name', () => {
+      const dict = buildDataCloudObjectDictionary(dmoMetadata, 'DataModelObject');
+      expect(dict.apiName).to.equal('ssot__Individual__dlm');
+      expect(dict.label).to.equal('Individual');
+      expect(dict.custom).to.equal(false);
+      expect(dict.keyPrefix).to.equal('');
+      expect(dict.objectType).to.equal('Data Model Object');
+      expect(dict.category).to.equal('Profile');
+      expect(dict.fields.map((f) => f['API Name'])).to.deep.equal(['Loyalty_Tier__c', 'ssot__BirthDate__c', 'ssot__Id__c']);
+      const id = dict.fields.find((f) => f['API Name'] === 'ssot__Id__c')!;
+      expect(id).to.deep.equal({
+        'API Name': 'ssot__Id__c',
+        'Label': 'Individual Id',
+        'Type': 'Text',
+        'Data Type': 'STRING',
+        'Primary Key': 'Yes',
+        'Key Qualifier': 'KQ_Id__c',
+        'Custom': 'No',
+      });
+      expect(dict.fields.find((f) => f['API Name'] === 'Loyalty_Tier__c')!['Custom']).to.equal('Yes');
+    });
+
+    it('marks a Data Lake Object as custom', () => {
+      const dict = buildDataCloudObjectDictionary(dloMetadata, 'DataLakeObject');
+      expect(dict.objectType).to.equal('Data Lake Object');
+      expect(dict.custom).to.equal(true);
+      expect(hasLocalCustomizations(dict)).to.equal(true);
+    });
+
+    it('keeps a standard DMO with a custom field for --customizedonly, and drops one without', () => {
+      expect(hasLocalCustomizations(buildDataCloudObjectDictionary(dmoMetadata, 'DataModelObject'))).to.equal(true);
+      const standardOnly = { ...dmoMetadata, fields: dmoMetadata.fields.filter((f) => f.name.startsWith('ssot__')) };
+      expect(hasLocalCustomizations(buildDataCloudObjectDictionary(standardOnly, 'DataModelObject'))).to.equal(false);
+    });
+  });
+
+  describe('formatDataCloudFieldType()', () => {
+    it('maps Data Cloud business types and keeps unknown ones', () => {
+      expect(formatDataCloudFieldType('DATE_TIME')).to.equal('DateTime');
+      expect(formatDataCloudFieldType('email')).to.equal('Email');
+      expect(formatDataCloudFieldType('SOMETHING_NEW')).to.equal('SOMETHING_NEW');
+      expect(formatDataCloudFieldType('')).to.equal('');
+    });
+  });
+
+  describe('collectDataCloudDictionaries()', () => {
+    const metadata = { DataModelObject: [dmoMetadata], DataLakeObject: [dloMetadata] };
+
+    it('documents the requested objects with one metadata call per object type', async () => {
+      const { conn, calls } = dataCloudConn({ metadata });
+      const dicts = await collectDataCloudDictionaries(conn, ['ssot__Individual__dlm'], false, {});
+      expect(dicts.map((d) => d.apiName)).to.deep.equal(['ssot__Individual__dlm']);
+      expect(calls).to.deep.equal([`${BASE_URL}/ssot/metadata?entityType=DataModelObject`]);
+    });
+
+    it('documents every listed object with includeAll', async () => {
+      const { conn, calls } = dataCloudConn({ metadata });
+      const dicts = await collectDataCloudDictionaries(conn, [], true, {});
+      expect(dicts.map((d) => d.apiName)).to.deep.equal(['Crm_Contact__dll', 'ssot__Individual__dlm']);
+      expect(calls).to.have.length(2);
+    });
+
+    it('skips requested objects the org does not list', async () => {
+      const { conn } = dataCloudConn({ metadata });
+      const dicts = await collectDataCloudDictionaries(conn, ['Unknown__dlm', 'Crm_Contact__dll'], false, {});
+      expect(dicts.map((d) => d.apiName)).to.deep.equal(['Crm_Contact__dll']);
+    });
+
+    it('returns nothing without throwing when Data Cloud is not enabled', async () => {
+      const { conn } = dataCloudConn({ failMetadata: 'No CDP tenant id found for this org' });
+      const dicts = await collectDataCloudDictionaries(conn, [], true, {});
+      expect(dicts).to.deep.equal([]);
+    });
+  });
+
+  describe('fetchDataCloudRelationships()', () => {
+    it('leaves out the never activated standard catalog and keeps everything else', async () => {
+      const { conn } = dataCloudConn({
+        relationships: {
+          'ssot__Individual__dlm': [
+            relationship({ id: 'catalog', from: 'ssot__AbnExperimentLog__dlm', extra: { creationType: 'Standard', status: 'INACTIVE' } }),
+            relationship({ id: 'standardActive', from: 'ssot__ContactPointEmail__dlm', fromField: 'ssot__PartyId__c', extra: { creationType: 'Standard' } }),
+            relationship({ id: 'customInactive', extra: { status: 'INACTIVE' } }),
+            relationship({ id: 'deactivated', from: 'Survey_Answer__dlm', extra: { status: 'DEACTIVATEDBYUSER', cardinality: 'OneToOne' } }),
+          ],
+        },
+      });
+      const rows = await fetchDataCloudRelationships(conn, ['ssot__Individual__dlm'], {});
+      expect(rows.map((r) => r['Name'])).to.have.members(['standardActive', 'customInactive', 'deactivated']);
+      const deactivated = rows.find((r) => r['Name'] === 'deactivated')!;
+      expect(deactivated['Status']).to.equal('DEACTIVATEDBYUSER');
+      expect(deactivated['Cardinality']).to.equal('One to One');
+    });
+
+    it('lists a relationship shared by two documented DMOs once', async () => {
+      const shared = relationship({ id: 'shared' });
+      const { conn } = dataCloudConn({ relationships: { 'ssot__Individual__dlm': [shared], 'Crm_Order__dlm': [shared] } });
+      const rows = await fetchDataCloudRelationships(conn, ['ssot__Individual__dlm', 'Crm_Order__dlm'], {});
+      expect(rows).to.have.length(1);
+    });
+
+    it('follows offset paging until totalSize', async () => {
+      const many = Array.from({ length: 501 }, (_, i) => relationship({ id: `rel${i}`, fromField: `Field${i}__c` }));
+      const { conn, calls } = dataCloudConn({ relationships: { 'ssot__Individual__dlm': many } });
+      const rows = await fetchDataCloudRelationships(conn, ['ssot__Individual__dlm'], {});
+      expect(rows).to.have.length(501);
+      expect(calls[1]).to.contain('offset=500');
+    });
+
+    it('logs and skips a DMO whose relationships cannot be read', async () => {
+      const conn: any = { baseUrl: () => BASE_URL, request: async () => { throw new Error('boom'); } };
+      const rows = await fetchDataCloudRelationships(conn, ['ssot__Individual__dlm'], {});
+      expect(rows).to.deep.equal([]);
+    });
+  });
+
+  describe('buildDataCloudRelationshipRow()', () => {
+    it('marks relationships to CRM objects', () => {
+      const row = buildDataCloudRelationshipRow(
+        relationship({ id: 'crm', from: 'ssot__Individual__dlm', fromField: 'Crm_Account_Id__c', to: 'Account', toField: 'Id', toType: 'SObjectField' })
+      );
+      expect(row).to.deep.equal({
+        'From Object': 'ssot__Individual__dlm',
+        'From Field': 'Crm_Account_Id__c',
+        'To Object': 'Account',
+        'To Field': 'Id',
+        'To Object Type': 'CRM Object',
+        'Cardinality': 'Many to One',
+        'Status': 'ACTIVE',
+        'Origin': 'Custom',
+        'Name': 'crm',
+      });
     });
   });
 });
