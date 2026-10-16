@@ -41,6 +41,9 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      # Set env branch variable (github.ref_name seems to not work)
+      - name: Set env.BRANCH
+        run: echo "BRANCH=$(echo "$GITHUB_REF" | cut -d'/' -f 3)" >> "$GITHUB_ENV"
       - name: Login & refresh scratch org snapshot
         env:
           # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
@@ -49,6 +52,7 @@ jobs:
           SFDX_CLIENT_ID_DEVHUB: ${{ secrets.SFDX_CLIENT_ID_DEVHUB }}
           SFDX_CLIENT_KEY_DEVHUB: ${{ secrets.SFDX_CLIENT_KEY_DEVHUB }}
           SCRATCH_ORG_SNAPSHOT_WAIT: ${{ vars.SCRATCH_ORG_SNAPSHOT_WAIT || '60' }}
+          CI_COMMIT_REF_NAME: ${{ env.BRANCH }} # The branch whose snapshot is refreshed
           FORCE_COLOR: "1"
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
