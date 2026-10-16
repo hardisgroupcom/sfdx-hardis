@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): new env var **SCRATCH_ORG_SNAPSHOT** to create the scratch org from a Dev Hub org snapshot. The keys a snapshot does not accept are left out of the definition file, and the scratch org pool is not used for that scratch org.
+
 ## [8.18.1] 2026-10-15
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/), [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/), [hardis:org:create](https://sfdx-hardis.cloudity.com/hardis/org/create/) and [hardis:org:connect](https://sfdx-hardis.cloudity.com/hardis/org/connect/): where no browser can be opened (Agentforce Vibes, a dev container, CI), the login link of the org is shown with a button to open it, instead of nothing. The link is kept out of the log file. On Windows, the browser now opens every time: `sf org open` run by a command exited before its browser launcher had run, so the org opened only sometimes.
