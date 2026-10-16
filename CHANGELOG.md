@@ -2,7 +2,11 @@
 
 ## [beta] (main)
 
-- [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): new env var **SCRATCH_ORG_SNAPSHOT** to create the scratch org from a Dev Hub org snapshot. The keys a snapshot does not accept are left out of the definition file, and the scratch org pool is not used for that scratch org.
+- Scratch org snapshots for Pull Requests, off by default ([doc](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-scratch-org-pool/#use-scratch-org-snapshots-for-pull-requests)):
+  - Branch config `useScratchOrgSnapshot: true` on a major branch: the scratch orgs of Pull Requests to that branch are created from a Dev Hub org snapshot of the branch, and only what changed since the commit of the snapshot is deployed, instead of the whole project.
+  - New command [hardis:scratch:snapshot:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/): on a push to the branch, deploys it into an empty scratch org, takes the snapshot and keeps the newest `scratchOrgSnapshotKeep` (default 2).
+  - CI/CD pipeline templates: a job that runs it on every git platform, and the scratch org jobs pass the target branch in `FORCE_TARGET_BRANCH`.
+  - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): new env var **SCRATCH_ORG_SNAPSHOT** to create the scratch org from a snapshot given by name.
 
 ## [8.18.1] 2026-10-15
 

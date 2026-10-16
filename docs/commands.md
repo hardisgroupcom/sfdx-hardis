@@ -246,17 +246,18 @@
 
 ## hardis:scratch
 
-| Command                                                               | Title                                    |
-|:----------------------------------------------------------------------|:-----------------------------------------|
-| [**hardis:scratch:create**](hardis/scratch/create.md)                 | Create and initialize scratch org        |
-| [**hardis:scratch:delete**](hardis/scratch/delete.md)                 | Delete scratch orgs(s)                   |
-| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)       | Create and configure scratch org pool    |
-| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md) | Authenticate locally to scratch org pool |
-| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)     | Refresh scratch org pool                 |
-| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)         | Reset scratch org pool                   |
-| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)           | View scratch org pool info               |
-| [**hardis:scratch:pull**](hardis/scratch/pull.md)                     | Scratch PULL                             |
-| [**hardis:scratch:push**](hardis/scratch/push.md)                     | Scratch PUSH                             |
+| Command                                                                   | Title                                        |
+|:--------------------------------------------------------------------------|:---------------------------------------------|
+| [**hardis:scratch:create**](hardis/scratch/create.md)                     | Create and initialize scratch org            |
+| [**hardis:scratch:delete**](hardis/scratch/delete.md)                     | Delete scratch orgs(s)                       |
+| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)           | Create and configure scratch org pool        |
+| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md)     | Authenticate locally to scratch org pool     |
+| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)         | Refresh scratch org pool                     |
+| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)             | Reset scratch org pool                       |
+| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)               | View scratch org pool info                   |
+| [**hardis:scratch:pull**](hardis/scratch/pull.md)                         | Scratch PULL                                 |
+| [**hardis:scratch:push**](hardis/scratch/push.md)                         | Scratch PUSH                                 |
+| [**hardis:scratch:snapshot:refresh**](hardis/scratch/snapshot/refresh.md) | Refresh the scratch org snapshot of a branch |
 
 ## hardis:source
 
