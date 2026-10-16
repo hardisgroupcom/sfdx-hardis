@@ -22,26 +22,26 @@ Labs 3.1 to 3.6, Level 3 Labs 3.7 to 3.11. Every CI job of the fork ran the **re
 
 ## Versions under test
 
-| Thing              | Version                                                                                                       |
-|--------------------|---------------------------------------------------------------------------------------------------------------|
-| sfdx-hardis        | `main` at `1aa09d537` (v8.18.1), linked (`sf plugins link`), `yarn compile` at the start of the run          |
-| vscode-sfdx-hardis | `main` at `a67c69ed`, `yarn compile` then `yarn dev`                                                          |
-| Course             | `main` at `026e4bb`, branch `fix/e2e-2026-10-16` cut from it                                                  |
+| Thing              | Version                                                                                                                     |
+|--------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| sfdx-hardis        | `main` at `1aa09d537` (v8.18.1), linked (`sf plugins link`), `yarn compile` at the start of the run                         |
+| vscode-sfdx-hardis | `main` at `a67c69ed`, `yarn compile` then `yarn dev`                                                                        |
+| Course             | `main` at `026e4bb`, branch `fix/e2e-2026-10-16` cut from it                                                                |
 | CI image           | the released `sfdx-hardis-ubuntu:latest`, 8.18.1, pushed 2026-10-14 23:31 UTC, on the fork and on the monitoring repository |
-| Published site     | `main` at `026e4bb`. Pass A read the published text. The fixes of this run are on the course branch, ahead of the site |
+| Published site     | `main` at `026e4bb`. Pass A read the published text. The fixes of this run are on the course branch, ahead of the site      |
 
 The sfdx-hardis branch `fix/training-e2e-2026-10-16` changes no product code: `1e9393798`,
 `fff013e59`, `0c181942d`, `077e1a3f5` are helpers and runbook, then this report.
 
 ## Environment
 
-| Item            | State                                                                                                                                       |
-|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| Fork            | `nvuillam/sfdx-hardis-training`, **reset, not recreated** (`reset-fork.sh` closed #22 of the last run). Pull Request numbers start at #44 |
+| Item            | State                                                                                                                                                                                                                 |
+|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Fork            | `nvuillam/sfdx-hardis-training`, **reset, not recreated** (`reset-fork.sh` closed #22 of the last run). Pull Request numbers start at #44                                                                             |
 | Orgs            | `helios-dev`, `helios-integration`, `helios-uat` (scratch), `helios-preprod`, `helios-prod` (Developer Editions, users in English, `helios-prod` is the Dev Hub). All five torn down before Level 1, each with exit 0 |
-| Monitoring repo | `nvuillam/sfdx-hardis-training-monitoring-run7`, new and private                                                                            |
-| Learner clone   | `C:/git/training-run`, cloned by `reset-fork.sh` at `026e4bb`                                                                               |
-| Browser on CDP  | the e2e Chrome profile (`%LOCALAPPDATA%\sfdx-hardis-e2e-chrome`) on port 9222, signed in to GitHub, not to Salesforce (frontdoor URLs)     |
+| Monitoring repo | `nvuillam/sfdx-hardis-training-monitoring-run7`, new and private                                                                                                                                                      |
+| Learner clone   | `C:/git/training-run`, cloned by `reset-fork.sh` at `026e4bb`                                                                                                                                                         |
+| Browser on CDP  | the e2e Chrome profile (`%LOCALAPPDATA%\sfdx-hardis-e2e-chrome`) on port 9222, signed in to GitHub, not to Salesforce (frontdoor URLs)                                                                                |
 
 Started clean: the fork and the orgs, yes. Two traces of earlier walks stayed:
 
@@ -60,64 +60,64 @@ Fidelity: **1** lab driver (real VS Code panel, real CLI), **2** headless panel 
 `panel-node.mjs` for the Training menu, `auth.mjs`, `mon.mjs`), **3** direct `sf` / `git` / `gh` /
 API or a file edit, **browser** the real page over CDP.
 
-| Lab  | Fidelity                                                                                                         | A   | B              | C                    | Findings           |
-|------|------------------------------------------------------------------------------------------------------------------|-----|----------------|----------------------|--------------------|
-| 1.1  | read only                                                                                                        | ok  | not covered    | ok (8)               | L1-O1              |
-| 1.2  | 1 (`init`, 514 s), then 2 to read its output; steps 1 to 4 done before, step 7 not drivable                      | ok  | ok, partly     | 9, one stale         | L1-S1, L1-O2, L1-O3 |
-| 1.3  | 1                                                                                                                | ok  | ok             | ok (6)               |                    |
-| 1.4  | browser (field wizard clicked, grants, record values); step 1 by frontdoor URL                                   | ok  | ok             | ok (4)               |                    |
-| 1.5  | 3 (retrieve, staging, commit), 1 (Save / Publish)                                                                | ok  | ok             | 10, one off by one   | L1-S2              |
-| 1.6  | browser (Pull Request creation, merge box), 3 (merge, comments, Files)                                           | ok  | ok             | ok (11)              | L1-F1, L1-O4, L1-O5 |
-| 1.7  | 2, browser (field, grant, list view, Pull Request), 3 (retrieve, merge)                                          | ok  | ok             | ok (1)               | L1-P1              |
-| 2.1  | 2 (simulate), 3 (`backpromote --plan` then `--auto`, Back, merge question)                                       | ok  | ok             | ok (8)               | L2-F1              |
-| 2.2  | 2, browser (field, record test, Pull Request), 3 (flow as XML)                                                   | ok  | ok             | 9 of 12              | L2-S1, L2-O1       |
-| 2.3  | 2, browser (Required, refused save, Pull Request), 3 (retrieve, `action:create`, merge)                          | ok  | ok             | ok (5)               | L2-P1, L2-P2       |
-| 2.4  | 2 (records, export), 3 (object, fields, tab as XML, `action:create`, rerun), browser (grants, tick, Pull Requests) | ok | ok            | 6 of 9               | L2-P3, L2-S2, L2-O2 |
-| 2.5  | 2 (Apex Tests card), 3 (pastes, deploy to the org), browser (Pull Request)                                       | ok  | ok             | ok (2)               | L2-P4              |
-| 2.6  | 2, browser (field security, permission set grant), 3 (Auto retrieve, dry-runs)                                   | ok  | ok after the lab's own "If it goes wrong" | ok (3) | L2-F2, L2-P5     |
-| 2.7  | 2 (simulate, Save / Publish), browser (grant, Pull Request), 3 (flows as XML, merge by git)                      | ok  | ok             | 4 of 11              | L2-P6              |
-| 2.8  | 2 (`resetselection`), 3 (layout as XML, over-wide selection by script, discard)                                  | ok  | ok             | ok (4)               |                    |
-| 2.9  | 2, 3 (object, flow, records from the Level 3 start state), browser (grant, Pull Request)                        | ok  | ok             | 0 of 1               | L2-P7              |
-| 3.1  | 2 (seed x2, `work:new`, `auth.mjs` x2, Save / Publish), browser (branch, rule up to Create, Policies page, Pull Request), 3 (rules, secrets, Pipeline Settings as files) | ok | ok | ok (18) | L3-P1, L3-O1, L3-E1 |
-| 3.2  | 2 (simulate), 3 (review, Files, merge)                                                                           | ok  | ok             | ok (4)               |                    |
-| 3.3  | log read, 2 (simulate, Retry, Mark as done), 3 (review, group, merges)                                           | ok  | ok             | ok (9)               | L3-O2, L3-O3       |
-| 3.4  | 2 (simulate x2), 3 (review)                                                                                      | ok  | ok             | ok (2)               |                    |
-| 3.5  | 3 (remote site, no-overwrite entry, rerun, description), 2 (publish, release notes), browser (Pull Request, Deliverability, tick) | ok | ok | ok (7) | L3-P2, L3-O4, L3-O5 |
-| 3.6  | browser (Pull Requests, Deliverability, ticks), 3 (DORA call, rerun, merges), 2 (export)                         | ok  | ok             | ok (5)               | L3-E2              |
-| 3.7  | 3 (reproduce in prod, merges, merge of `origin/main`), 2 (simulate, `work:new`, Save / Publish), browser (Pull Requests) | ok | ok    | ok (12)              | L3-O6, L3-S1       |
-| 3.8  | 2 (`mon.mjs`, publish), 3 (repository, secret, config edits, Run workflow, Pipeline Settings); steps 5, 6 read against the log | ok | ok | ok (4) | L3-O7, L3-O8     |
-| 3.9  | 2 (`project2markdown --with-history`), paragraphs written by script                                              | ok  | ok             | ok (1)               |                    |
-| 3.10 | 2 (simulate x5, `promotion:create`, `work:new`), browser (Pull Requests), 3 (resolutions by file edit, description, merges) | ok | ok  | ok (10)              | L3-P3, L3-O9, L3-O10, L3-E3 |
-| 3.11 | 2 (simulate, release notes, DORA export), browser (Pull Requests), 3 (merges, DORA call)                         | ok  | ok             | ok (1)               | L3-O11, L3-O12, L3-E4, L3-E5 |
+| Lab  | Fidelity                                                                                                                                                                 | A  | B                                         | C                  | Findings                     |
+|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----|-------------------------------------------|--------------------|------------------------------|
+| 1.1  | read only                                                                                                                                                                | ok | not covered                               | ok (8)             | L1-O1                        |
+| 1.2  | 1 (`init`, 514 s), then 2 to read its output; steps 1 to 4 done before, step 7 not drivable                                                                              | ok | ok, partly                                | 9, one stale       | L1-S1, L1-O2, L1-O3          |
+| 1.3  | 1                                                                                                                                                                        | ok | ok                                        | ok (6)             |                              |
+| 1.4  | browser (field wizard clicked, grants, record values); step 1 by frontdoor URL                                                                                           | ok | ok                                        | ok (4)             |                              |
+| 1.5  | 3 (retrieve, staging, commit), 1 (Save / Publish)                                                                                                                        | ok | ok                                        | 10, one off by one | L1-S2                        |
+| 1.6  | browser (Pull Request creation, merge box), 3 (merge, comments, Files)                                                                                                   | ok | ok                                        | ok (11)            | L1-F1, L1-O4, L1-O5          |
+| 1.7  | 2, browser (field, grant, list view, Pull Request), 3 (retrieve, merge)                                                                                                  | ok | ok                                        | ok (1)             | L1-P1                        |
+| 2.1  | 2 (simulate), 3 (`backpromote --plan` then `--auto`, Back, merge question)                                                                                               | ok | ok                                        | ok (8)             | L2-F1                        |
+| 2.2  | 2, browser (field, record test, Pull Request), 3 (flow as XML)                                                                                                           | ok | ok                                        | 9 of 12            | L2-S1, L2-O1                 |
+| 2.3  | 2, browser (Required, refused save, Pull Request), 3 (retrieve, `action:create`, merge)                                                                                  | ok | ok                                        | ok (5)             | L2-P1, L2-P2                 |
+| 2.4  | 2 (records, export), 3 (object, fields, tab as XML, `action:create`, rerun), browser (grants, tick, Pull Requests)                                                       | ok | ok                                        | 6 of 9             | L2-P3, L2-S2, L2-O2          |
+| 2.5  | 2 (Apex Tests card), 3 (pastes, deploy to the org), browser (Pull Request)                                                                                               | ok | ok                                        | ok (2)             | L2-P4                        |
+| 2.6  | 2, browser (field security, permission set grant), 3 (Auto retrieve, dry-runs)                                                                                           | ok | ok after the lab's own "If it goes wrong" | ok (3)             | L2-F2, L2-P5                 |
+| 2.7  | 2 (simulate, Save / Publish), browser (grant, Pull Request), 3 (flows as XML, merge by git)                                                                              | ok | ok                                        | 4 of 11            | L2-P6                        |
+| 2.8  | 2 (`resetselection`), 3 (layout as XML, over-wide selection by script, discard)                                                                                          | ok | ok                                        | ok (4)             |                              |
+| 2.9  | 2, 3 (object, flow, records from the Level 3 start state), browser (grant, Pull Request)                                                                                 | ok | ok                                        | 0 of 1             | L2-P7                        |
+| 3.1  | 2 (seed x2, `work:new`, `auth.mjs` x2, Save / Publish), browser (branch, rule up to Create, Policies page, Pull Request), 3 (rules, secrets, Pipeline Settings as files) | ok | ok                                        | ok (18)            | L3-P1, L3-O1, L3-E1          |
+| 3.2  | 2 (simulate), 3 (review, Files, merge)                                                                                                                                   | ok | ok                                        | ok (4)             |                              |
+| 3.3  | log read, 2 (simulate, Retry, Mark as done), 3 (review, group, merges)                                                                                                   | ok | ok                                        | ok (9)             | L3-O2, L3-O3                 |
+| 3.4  | 2 (simulate x2), 3 (review)                                                                                                                                              | ok | ok                                        | ok (2)             |                              |
+| 3.5  | 3 (remote site, no-overwrite entry, rerun, description), 2 (publish, release notes), browser (Pull Request, Deliverability, tick)                                        | ok | ok                                        | ok (7)             | L3-P2, L3-O4, L3-O5          |
+| 3.6  | browser (Pull Requests, Deliverability, ticks), 3 (DORA call, rerun, merges), 2 (export)                                                                                 | ok | ok                                        | ok (5)             | L3-E2                        |
+| 3.7  | 3 (reproduce in prod, merges, merge of `origin/main`), 2 (simulate, `work:new`, Save / Publish), browser (Pull Requests)                                                 | ok | ok                                        | ok (12)            | L3-O6, L3-S1                 |
+| 3.8  | 2 (`mon.mjs`, publish), 3 (repository, secret, config edits, Run workflow, Pipeline Settings); steps 5, 6 read against the log                                           | ok | ok                                        | ok (4)             | L3-O7, L3-O8                 |
+| 3.9  | 2 (`project2markdown --with-history`), paragraphs written by script                                                                                                      | ok | ok                                        | ok (1)             |                              |
+| 3.10 | 2 (simulate x5, `promotion:create`, `work:new`), browser (Pull Requests), 3 (resolutions by file edit, description, merges)                                              | ok | ok                                        | ok (10)            | L3-P3, L3-O9, L3-O10, L3-E3  |
+| 3.11 | 2 (simulate, release notes, DORA export), browser (Pull Requests), 3 (merges, DORA call)                                                                                 | ok | ok                                        | ok (1)             | L3-O11, L3-O12, L3-E4, L3-E5 |
 
 Every "ok" in column B ended with the lab's own `Check my work` passing. At the end, from the
 clone: `check --level 1` 6 of 6, `--level 2` 9 of 9, `--level 3` 11 of 11.
 
 Fork Pull Requests, by lab:
 
-| Lab  | Pull Requests of the fork                                                                                      |
-|------|----------------------------------------------------------------------------------------------------------------|
-| 1.6  | #44 US-014                                                                                                     |
-| 1.7  | #45 US-016                                                                                                     |
-| 2.1  | #46 US-017 (simulate)                                                                                          |
-| 2.2  | #47 US-021                                                                                                     |
-| 2.3  | #48 US-024                                                                                                     |
-| 2.4  | #49 US-026 metadata, #50 US-026 actions                                                                        |
-| 2.5  | #51 US-027                                                                                                     |
-| 2.6  | #52 US-033 profile, #53 US-033 permission set                                                                  |
-| 2.7  | #54 US-018 (simulate), #55 US-034                                                                              |
-| 2.8  | #56 US-038                                                                                                     |
-| 2.9  | #57 US-019 (simulate), #58 US-041                                                                              |
-| 3.1  | #59 US-050 configuration                                                                                       |
-| 3.2  | #60 US-052                                                                                                     |
-| 3.3  | #61 US-056, #62 US-062, #63 US-062 fix                                                                         |
-| 3.4  | #64 US-020, left open on purpose                                                                               |
-| 3.5  | #65 no-overwrite configuration, #66 integration to uat                                                         |
-| 3.6  | #67 uat to preprod, #68 release 2026-09                                                                        |
-| 3.7  | #69 US-045 hotfix, #70 hotfix to production, #71 retrofit US-045                                               |
-| 3.8  | #72 `monitoringRepository` configuration                                                                       |
+| Lab  | Pull Requests of the fork                                                                                              |
+|------|------------------------------------------------------------------------------------------------------------------------|
+| 1.6  | #44 US-014                                                                                                             |
+| 1.7  | #45 US-016                                                                                                             |
+| 2.1  | #46 US-017 (simulate)                                                                                                  |
+| 2.2  | #47 US-021                                                                                                             |
+| 2.3  | #48 US-024                                                                                                             |
+| 2.4  | #49 US-026 metadata, #50 US-026 actions                                                                                |
+| 2.5  | #51 US-027                                                                                                             |
+| 2.6  | #52 US-033 profile, #53 US-033 permission set                                                                          |
+| 2.7  | #54 US-018 (simulate), #55 US-034                                                                                      |
+| 2.8  | #56 US-038                                                                                                             |
+| 2.9  | #57 US-019 (simulate), #58 US-041                                                                                      |
+| 3.1  | #59 US-050 configuration                                                                                               |
+| 3.2  | #60 US-052                                                                                                             |
+| 3.3  | #61 US-056, #62 US-062, #63 US-062 fix                                                                                 |
+| 3.4  | #64 US-020, left open on purpose                                                                                       |
+| 3.5  | #65 no-overwrite configuration, #66 integration to uat                                                                 |
+| 3.6  | #67 uat to preprod, #68 release 2026-09                                                                                |
+| 3.7  | #69 US-045 hotfix, #70 hotfix to production, #71 retrofit US-045                                                       |
+| 3.8  | #72 `monitoringRepository` configuration                                                                               |
 | 3.10 | #73 US-058, #74 US-057, #75 US-059, #76 US-060, #77 US-061, #78 integration to uat, #79 promotion branch, #80 retrofit |
-| 3.11 | #81 US-055, #82 integration to uat, #83 uat to preprod, #84 release 2026-10 week 4                             |
+| 3.11 | #81 US-055, #82 integration to uat, #83 uat to preprod, #84 release 2026-10 week 4                                     |
 
 What the walk showed, on the released image:
 
