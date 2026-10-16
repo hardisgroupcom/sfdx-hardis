@@ -1,4 +1,3 @@
-/* jscpd:ignore-start */
 import c from 'chalk';
 import { SfCommand, Flags, requiredHubFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { Messages, SfError } from '@salesforce/core';
@@ -62,6 +61,7 @@ The command has no prompt.
 
   public static examples = ['$ sf hardis:scratch:snapshot:refresh', '$ sf hardis:scratch:snapshot:refresh --agent'];
 
+  /* jscpd:ignore-start */
   public static flags: any = {
     agent: Flags.boolean({
       default: false,
@@ -80,6 +80,7 @@ The command has no prompt.
     }),
     'target-dev-hub': requiredHubFlagWithDeprecations,
   };
+  /* jscpd:ignore-end */
 
   public static requiresProject = true;
 
@@ -157,4 +158,3 @@ The command has no prompt.
     }
   }
 }
-/* jscpd:ignore-end */
