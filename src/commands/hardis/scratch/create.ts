@@ -358,6 +358,8 @@ In agent mode:
     if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool == false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
+      // A reused scratch org was not created from the snapshot: it gets the full initialization
+      this.snapshot = null;
       uxLog("action", this, c.cyan(t('reusingOrgWithUser', { scratchOrgAlias: c.green(this.scratchOrgAlias), scratchOrgUsername: c.green(this.scratchOrgUsername) })));
       return;
     }
