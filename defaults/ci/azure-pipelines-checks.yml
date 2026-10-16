@@ -158,6 +158,8 @@ jobs:
           # Key that decrypts the scratch orgs of a pool stored in the git provider
           SFDX_HARDIS_POOL_ENCRYPTION_KEY: $(SFDX_HARDIS_POOL_ENCRYPTION_KEY)
           CI_DELETE_SCRATCH_ORG: $(CI_DELETE_SCRATCH_ORG)
+          # Target branch, to find its scratch org snapshot (useScratchOrgSnapshot)
+          FORCE_TARGET_BRANCH: $(BRANCH_NAME)
           CI: "true"
           # The "Scratch Orgs Pool Dashboard" is a work item: the Build Service user needs the
           # permission to edit work items in the project

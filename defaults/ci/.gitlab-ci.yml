@@ -133,6 +133,11 @@ create_scratch_org:
   # Merge Requests taking a scratch org from the pool at the same time are queued, so two of them
   # never get the same one. Remove this line if you do not use a scratch org pool.
   resource_group: scratch_org_pool
+  variables:
+    # Target branch, to find its scratch org snapshot (useScratchOrgSnapshot), and the full git history the
+    # deployment of the changes since the snapshot needs
+    FORCE_TARGET_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    GIT_DEPTH: 0
   script:
     - |
       if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
@@ -172,6 +177,34 @@ refresh_scratch_org_pool:
     - sf hardis:scratch:pool:refresh
   artifacts:
     when: always
+
+# Refresh the scratch org snapshot of a major branch that sets useScratchOrgSnapshot: true in its branch config,
+# so that the scratch orgs of Merge Requests to that branch are created from it
+# More info at https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/
+refresh_scratch_org_snapshot:
+  stage: deploy
+  tags:
+    # Change or even remove tags if standard runners
+    - ubuntu
+  only:
+    - pushes
+    - web
+  except:
+    variables:
+      - $CI_COMMIT_REF_NAME !~ $DEPLOY_BRANCHES
+      - $SCRATCH_ORG_POOL == "true"
+      - $USE_SCRATCH_ORGS == "false"
+  # A snapshot in progress is never cancelled: a newer push waits for it
+  interruptible: false
+  resource_group: scratch_org_snapshot_$CI_COMMIT_REF_NAME
+  script:
+    - |
+      if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
+        echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
+        exit 0
+      fi
+    - sf hardis:auth:login --devhub
+    - sf hardis:scratch:snapshot:refresh
 
 # Run apex unit tests in testing scratch org
 test_apex:

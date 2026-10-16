@@ -102,3 +102,38 @@ jobs:
         continueOnError: true
         artifact: hardis-report
         displayName: Publish sfdx-hardis reports
+
+  # Refresh the scratch org snapshot of a major branch that sets useScratchOrgSnapshot: true in its branch config,
+  # so that the scratch orgs of Pull Requests to that branch are created from it.
+  # Runs only when the pipeline variable USE_SCRATCH_ORGS is "true"
+  # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/
+  - job: ScratchOrgSnapshotRefresh
+    condition: eq(variables['USE_SCRATCH_ORGS'], 'true')
+    timeoutInMinutes: 150
+    pool:
+      vmImage: ubuntu-latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    steps:
+      - checkout: self
+        fetchDepth: 0
+        displayName: Git Checkout
+
+      - script: |
+          set -e
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:snapshot:refresh
+        env:
+          # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+          # and replace DEVHUB by the alias of your Dev Hub
+          SFDX_AUTH_URL_DEV_HUB: $(SFDX_AUTH_URL_DEV_HUB)
+          SFDX_CLIENT_ID_DEVHUB: $(SFDX_CLIENT_ID_DEVHUB)
+          SFDX_CLIENT_KEY_DEVHUB: $(SFDX_CLIENT_KEY_DEVHUB)
+          SCRATCH_ORG_SNAPSHOT_WAIT: $(SCRATCH_ORG_SNAPSHOT_WAIT)
+          CI_COMMIT_REF_NAME: $(BRANCH_NAME)
+          CI: "true"
+        displayName: "Refresh scratch org snapshot"
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: hardis-report-scratch-org-snapshot
+        displayName: Publish sfdx-hardis reports
