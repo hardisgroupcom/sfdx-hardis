@@ -334,6 +334,11 @@ Traps that cost earlier runs time:
   `delete_repo` scope). Create another one whose name still contains `monitoring`, and pass it:
   `MONREPO=<login>/sfdx-hardis-training-monitoring-run3 MONRUN=C:/git/training-monitoring-run3 node
   scripts/mon.mjs`. Point the `github-run-workflow` web capture at it.
+  **Disable its workflow when the lab is done** (`gh workflow disable "Org Monitoring sfdx-hardis"
+  -R <repo>`): every repository of an earlier run keeps a nightly schedule against `helios-prod`,
+  and on 2026-10-16 seven of them still failed every night (`-run2` to `-run5`, `-0925`, `-0926`
+  and the unsuffixed one), spending the Dev Hub's API calls. `gh repo list <login> | grep
+  training-monitoring` then `gh workflow list -R <repo> --all` shows which still run.
 
 **Always start from a reset fork.** `bash scripts/reset-fork.sh` closes the open Pull Requests,
 deletes every branch but `main` and `training/start-level-*`, deletes the secrets, restores those
@@ -506,6 +511,21 @@ and all but `ps-grant.mjs` and `page.mjs` log their steps, carry a watchdog and 
   comboboxes, **Select Fields to Display**. The filter popup and the panel both have a **Save**
   button: save the popup first. Never press Escape in the popup, it drops the filter. The retrieved
   XML is the same as the file earlier runs deployed.
+- **Lab 1.4 step 2 and Lab 1.7's field are clickable** with `l14-field.mjs` (2026-10-16): Fields &
+  Relationships, **New** (`button[title="Custom Field"]`), the data type radio found by its
+  `label` text, details, the Visible header box clicked twice, the layout page, Save. The long
+  text type is labelled **Text Area (Long)** in the wizard, not "Long Text Area". It logs how many
+  Visible boxes the FLS screen arrived with (19 of 23 that day), which is a sentence of the lab.
+- **The lab driver's log does not carry the command's output** (2026-10-16): only the questions
+  and the answers. To compare what `init` prints with the eight steps of Lab 1.2, run it a second
+  time headless (`walk/panel-node.mjs -- scripts/training.mjs init`, under 3 minutes when
+  everything exists), which also proves the lab's "running it twice is harmless".
+- **A reset fork keeps counting Pull Requests**: the first one of a walk after a reset is the
+  next number after the last run's (#44 on 2026-10-16), never #1. Only a deleted fork starts at #1.
+- **Read the MegaLinter comment of the first Pull Request, not only its colour.** It lints the
+  whole course, so a lab defect shows up there: on 2026-10-16 markdownlint warned on a `# 65`
+  line of Lab 3.10 that a reflow plus `markdownlint --fix` (MD018) had turned into a heading.
+  Every learner's Pull Request carried that ⚠️ line until the course was fixed.
 - **The picture retake can run while the orgs are torn down**: the teardown is CLI calls, the
   retake is one hidden VS Code. Three captures are flaky and need a second `shots.mjs <name>`:
   the two Metadata Retriever ones (org combo reading *Select an Option*), and
@@ -580,6 +600,39 @@ Level 2 straight after Level 1, with no **Reset this level**, since 2026-10-12 (
 - **`helios-integration` shows the 12 Crew Capacity records under Recently Viewed** only because
   the CI user is the scratch org user the walk opens the org with. No **All** list view travels
   unless the walk retrieves `ListView:Crew_Capacity__c.All`.
+
+Level 2 at browser fidelity, 2026-10-16 (helpers in `scripts/walk/`):
+
+- **Lab 2.2's checkbox field** is `l22-field.mjs`: Checkbox, the Visible header cleared, one
+  profile ticked, every layout unticked. On the layout screen the first checkbox is the header of
+  the column: unticking it unticks the rows.
+- **Lab 2.3's Required** is `l23-required.mjs`. Salesforce opens its *Potential Integration
+  Impact* modal **when the box is ticked**, over the form: click its **Confirm** first, or the
+  Save click is intercepted by the overlay and times out.
+- **`l14-record.mjs` types into the field the label names** since 2026-10-16. It used to type into
+  `Panels_Required__c` whatever label was given: "Crew Size" 2 went into Panels Required. With a
+  picture argument it also captures the error box of a refused save (`<shot>-error.png`).
+- **Deliverability is read with `deliv-read.mjs`**: the access level is a `select` of the
+  classic iframe, so a regex on the page text finds nothing.
+- **`sfshot.mjs` needs `MSYS_NO_PATHCONV=1` when the path has no `?`**: `/lightning/setup/...`
+  becomes a Windows path and Salesforce answers *Invalid Page Redirection*. A path with a query
+  string happens to survive.
+- **Recent Changes of the Metadata Retriever leaves out `LightningComponentResource`.** A
+  script that picks "the twenty newest rows" from `SourceMember` must leave it out too, and
+  `sf project retrieve start` refuses that type anyway (*Missing metadata type definition*).
+- **Prove a Profile against an org with the whole package, never the file alone**:
+  `sf project deploy start --manifest manifest/package.xml --dry-run --test-level NoTestRun`. The
+  file alone fails on the tabs of objects the package brings (`no CustomTab named
+  Crew_Capacity__c`). Loop it, removing the block each error names: one name per deployment.
+- **The two "new org" layouts follow the scratch org that was created last.** `helios-dev`,
+  recreated on 2026-10-12, had `ContactPointOttSvc` and `SecurityDefenseActionEventStore`
+  layouts that `helios-integration` lacked, so Lab 2.6's own Pull Request went red on them. A
+  learner's three scratch orgs come from one Lab 1.2 and meet it at Lab 3.1 instead. `SELECT Name
+  FROM Layout WHERE TableEnumOrId IN ('ContactPointOttSvc','SecurityDefenseActionEventStore')`
+  (tooling) on each org says who has them.
+- **Accept Incoming on each conflict** of the merge editor is `git merge-file --theirs` on the
+  three stages, not always the whole incoming file: compare the two before replacing a click
+  with `git checkout --theirs`.
 
 ## 7. Level 3, eleven labs
 
@@ -667,8 +720,10 @@ names instead.
 Lab 3.8 runs in a **second repository**, the monitoring one, with its own secrets
 (`scripts/mon.mjs` then `scripts/setsecrets-mon.mjs`). Two things about its first run:
 
-- **It is supposed to be red.** The Monitoring job fails on `ActiveScratchOrgs`, 3 of 3 at 100%, and
-  the lab names that limit in advance and builds its triage exercise on it. Do not go fixing it.
+- **It is supposed to report `ActiveScratchOrgs`, 3 of 3 at 100%**, and the lab names that limit in
+  advance and builds its triage exercise on it. Do not go fixing it. Since 2026-10-16 the run stays
+  **green** with that finding (a monitoring job that ran to its end is green, the lab says so); a red
+  Monitoring job is now a real failure.
 - **Read the first lines of each step anyway.** "dubious ownership" inside the container has twice
   hidden a real defect behind a green-looking job: once a backup that silently never committed, once
   (2026-09-21) a `git pull` that ran before `safe.directory` was set and so never refreshed the
@@ -753,6 +808,33 @@ Level 3 straight after Level 2, with no **Reset this level**, since 2026-10-12 (
   `simulate` reads `integration`, the retrofits merge `origin/main` and `origin/preprod`, rule
   3.10 finds the promotion in the history of `preprod`. The clone stays on a branch that no longer
   exists on the fork until the next **New User Story**, which does not mind.
+
+Level 3 straight after Level 2, Labs 3.1 to 3.6, on 2026-10-16 (helpers in `scripts/walk/`):
+
+- **The whole Profile of Lab 2.6 goes to production as written**, once Lab 2.6 removed the
+  layouts only its scratch org had: both seeds of Lab 3.1, then the promotions to `uat`,
+  `preprod` and `main`, all green, no cleaning rule.
+- **One username can carry two aliases on the workstation.** `helios-preprod` and `DevHub` were the
+  same org, and the org list of Add/Configure Org shows one alias only, here `(DevHub)`:
+  `auth.mjs helios-preprod ...` then stops on "No choice matching". Pass the alias the list shows
+  (`sf alias list` says which). A learner has one alias.
+- **Step 7 of Lab 3.1 is readable over CDP** (`l31-policies.mjs <org> <app> <profile>`, which
+  reads **App Authorization** and **App Policies > Selected Profiles** and fails when the profile
+  is not selected): the External Client App list
+  and the app page sit in frames and shadow roots, so only `getByText(app, { exact: true })`,
+  searched in every frame, finds the link. Two first drafts threw and left their tabs open, and
+  the next attach hung: every new helper closes its tab in `finally`.
+- **Deliverability is set over CDP** by `deliv-set.mjs <org>`, which leaves an org that already
+  reads *All email* alone. A teardown does not undo that setting, so on orgs of an earlier walk the
+  promotions of Labs 3.5 and 3.6 still stop red until the box is ticked, with nothing to click in
+  the org.
+- **A fork that was reset rather than recreated keeps its Actions runs and its Pull Requests.**
+  DORA reads them all: on 2026-10-16 `main` read 0.4 deployment a week after one release, from the
+  releases of the 10-12 walk. Compare the shapes of Lab 3.6, not its numbers, unless the fork is
+  new.
+- **Tickets travel with the commit, not with the branch.** A squashed feature whose single commit
+  message has no `US-nnn` loses its ticket once GitHub deletes the branch: the promotion comment of
+  Lab 3.5 counted 16 tickets without US-050 (fixed in Lab 3.1, which now commits as US-050).
 
 ### Lab 3.10: the five stories, the conflict, the retrofit
 
