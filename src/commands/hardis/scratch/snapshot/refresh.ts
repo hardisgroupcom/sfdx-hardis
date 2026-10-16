@@ -141,7 +141,8 @@ The command has no prompt.
       );
       if (snapshotResult?.status !== 0) {
         const message = String(snapshotResult?.message || snapshotResult?.errorMessage || '');
-        if (/limit/i.test(message)) {
+        // LIMIT_EXCEEDED is the Salesforce error code of org limits; a broader match would hide real failures
+        if (/LIMIT_EXCEEDED/.test(message)) {
           uxLog("warning", this, c.yellow(t('scratchSnapshotLimitReached', { message })));
           return false;
         }
