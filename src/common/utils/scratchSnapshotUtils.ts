@@ -40,7 +40,7 @@ export async function getScratchSnapshotBranchConfig(branch: string): Promise<{ 
   const branchConfig = (await listMajorOrgs()).find((majorOrg) => majorOrg.branchName === branch.replace('/', '__'));
   return {
     enabled: branchConfig?.useScratchOrgSnapshot === true,
-    keep: Math.max(1, Math.floor(Number(branchConfig?.scratchOrgSnapshotKeep)) || 2),
+    keep: parsePositiveSetting(branchConfig?.scratchOrgSnapshotKeep, 2),
   };
 }
 

@@ -60,4 +60,8 @@ describe('parsePositiveSetting', () => {
     expect(parsePositiveSetting('', 60)).to.equal(60);
     expect(parsePositiveSetting('$(SCRATCH_ORG_SNAPSHOT_WAIT)', 60)).to.equal(60);
   });
+
+  it('raises a number below 1 to 1 instead of giving the default', () => {
+    expect(parsePositiveSetting(0, 2)).to.equal(1);
+  });
 });
