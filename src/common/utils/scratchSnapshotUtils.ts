@@ -68,7 +68,8 @@ export function pickScratchSnapshot(
   for (const record of snapshotRecords) {
     const description: string = record.Description || '';
     const sha = description.startsWith(prefix) ? description.slice(prefix.length) : '';
-    if (/^[0-9a-f]{40}$/.test(sha) && isAncestor(sha)) {
+    // 40 characters, or 64 in a repository using the SHA-256 object format
+    if (/^([0-9a-f]{40}|[0-9a-f]{64})$/.test(sha) && isAncestor(sha)) {
       return { name: record.SnapshotName, sha };
     }
   }

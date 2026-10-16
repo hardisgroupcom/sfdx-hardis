@@ -28,6 +28,12 @@ describe('pickScratchSnapshot', () => {
     expect(pickScratchSnapshot(other, 'main', () => true)).to.equal(null);
   });
 
+  it('accepts the 64 character commit sha of a SHA-256 repository', () => {
+    const sha256 = 'c'.repeat(64);
+    const records256 = [record('SHccccccccccccc', `sfdx-hardis branch=main sha=${sha256}`)];
+    expect(pickScratchSnapshot(records256, 'main', () => true)).to.deep.equal({ name: 'SHccccccccccccc', sha: sha256 });
+  });
+
   it('ignores a description without a full commit sha', () => {
     const broken = [record('SHddddddddddddd', 'sfdx-hardis branch=main sha=abc123')];
     expect(pickScratchSnapshot(broken, 'main', () => true)).to.equal(null);
