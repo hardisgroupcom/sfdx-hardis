@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): in a production org without `sfdmuCanModify`, the command asks to confirm the modification of the org and authorizes SFDMU to modify it, instead of failing with "Entered instance URL '' does not match" ([vscode-sfdx-hardis#499](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/499)). As in SFDMU, a Developer Edition org is not a production org: deleting its data no longer requires `"runnableInProduction": true`. hardis:org:data:delete now also reads the `SFDMU_CAN_MODIFY` environment variable, as hardis:org:data:import already did
+
 ## [8.18.1] 2026-10-15
 
 - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/), [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/), [hardis:org:create](https://sfdx-hardis.cloudity.com/hardis/org/create/) and [hardis:org:connect](https://sfdx-hardis.cloudity.com/hardis/org/connect/): where no browser can be opened (Agentforce Vibes, a dev container, CI), the login link of the org is shown with a button to open it, instead of nothing. The link is kept out of the log file. On Windows, the browser now opens every time: `sf org open` run by a command exited before its browser launcher had run, so the org opened only sometimes.
