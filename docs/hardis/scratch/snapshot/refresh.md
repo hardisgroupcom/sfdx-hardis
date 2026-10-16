@@ -12,7 +12,7 @@ Run it in CI on every push to a major branch. It does nothing unless the branch 
 Key functionalities:
 
 - **Snapshot of the branch head:** Creates an empty scratch org with [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/) (full deployment, permission sets, Apex init scripts, init data), takes a snapshot of it, waits until the snapshot is Active, then deletes the scratch org.
-- **One snapshot per commit:** The snapshot is named after the commit (`SH` and the first 13 characters of the commit sha), and its description holds the branch and the full sha. Running it again on the same commit does nothing.
+- **One snapshot per branch and commit:** The snapshot name is `SH`, the first 7 characters of the commit sha and 6 characters of a hash of the branch name, and its description holds the branch and the full sha. Running it again on the same commit does nothing.
 - **Pruning:** Keeps the newest `scratchOrgSnapshotKeep` Active snapshots of the branch (default 2) and deletes the older ones. Keeping more lets Pull Requests whose branch is behind the target branch use a snapshot too, but every snapshot counts in the active snapshots allocation of the Dev Hub.
 - **Daily limit:** When the Dev Hub refuses the snapshot because of a limit, it logs a warning and ends without error: Pull Requests keep using the previous snapshot, with a larger delta.
 

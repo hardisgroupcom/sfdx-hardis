@@ -36,7 +36,12 @@ describe('pickScratchSnapshot', () => {
 
 describe('snapshot name and description', () => {
   it('names the snapshot with 15 alphanumeric characters, as Salesforce requires', () => {
-    expect(getSnapshotName('0123456789abcdef0123456789abcdef01234567')).to.equal('SH0123456789abc');
+    expect(getSnapshotName('main', '0123456789abcdef0123456789abcdef01234567')).to.match(/^SH0123456[0-9a-f]{6}$/);
+  });
+
+  it('gives two branches at the same commit different snapshot names', () => {
+    const sha = '0123456789abcdef0123456789abcdef01234567';
+    expect(getSnapshotName('uat', sha)).to.not.equal(getSnapshotName('integration', sha));
   });
 
   it('writes a description that the Pull Request side reads back', () => {

@@ -1,6 +1,7 @@
 import c from 'chalk';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
+import { createHash } from 'crypto';
 import { SfError } from '@salesforce/core';
 import { createTempDir, execSfdxJson, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
@@ -89,9 +90,10 @@ export async function deploySnapshotDelta(snapshot: ScratchSnapshot, targetUsern
   await execSfdxJson(deployCommand, commandThis, { fail: true, output: true, debug: debugMode });
 }
 
-// Snapshot names are 15 alphanumeric characters at most
-export function getSnapshotName(sha: string): string {
-  return 'SH' + sha.slice(0, 13);
+// Snapshot names are 15 alphanumeric characters at most. The branch is part of the name, as two major branches
+// can have the same head commit and each needs its own snapshot
+export function getSnapshotName(branch: string, sha: string): string {
+  return 'SH' + sha.slice(0, 7) + createHash('sha1').update(branch).digest('hex').slice(0, 6);
 }
 
 export async function getSnapshotRecord(devHubConn: any, name: string): Promise<any | null> {
