@@ -802,6 +802,31 @@ Level 3 straight after Level 2, with no **Reset this level**, since 2026-10-12 (
   3.10 finds the promotion in the history of `preprod`. The clone stays on a branch that no longer
   exists on the fork until the next **New User Story**, which does not mind.
 
+Level 3 straight after Level 2, Labs 3.1 to 3.6, on 2026-10-16 (helpers in `scripts/walk/`):
+
+- **The whole Profile of Lab 2.6 goes to production as written**, once Lab 2.6 removed the
+  layouts only its scratch org had: both seeds of Lab 3.1, then the promotions to `uat`,
+  `preprod` and `main`, all green, no cleaning rule.
+- **One username can carry two aliases on the workstation.** `helios-preprod` and `DevHub` were the
+  same org, and the org list of Add/Configure Org shows one alias only, here `(DevHub)`:
+  `auth.mjs helios-preprod ...` then stops on "No choice matching". Pass the alias the list shows
+  (`sf alias list` says which). A learner has one alias.
+- **Step 7 of Lab 3.1 is readable over CDP** (`l31-policies.mjs`): the External Client App list
+  and the app page sit in frames and shadow roots, so only `getByText(app, { exact: true })`,
+  searched in every frame, finds the link. Two first drafts threw and left their tabs open, and
+  the next attach hung: every new helper closes its tab in `finally`.
+- **Deliverability is set over CDP** by `deliv-set.mjs <org>`, which leaves an org that already
+  reads *All email* alone. A teardown does not undo that setting, so on orgs of an earlier walk the
+  promotions of Labs 3.5 and 3.6 still stop red until the box is ticked, with nothing to click in
+  the org.
+- **A fork that was reset rather than recreated keeps its Actions runs and its Pull Requests.**
+  DORA reads them all: on 2026-10-16 `main` read 0.4 deployment a week after one release, from the
+  releases of the 10-12 walk. Compare the shapes of Lab 3.6, not its numbers, unless the fork is
+  new.
+- **Tickets travel with the commit, not with the branch.** A squashed feature whose single commit
+  message has no `US-nnn` loses its ticket once GitHub deletes the branch: the promotion comment of
+  Lab 3.5 counted 16 tickets without US-050 (fixed in Lab 3.1, which now commits as US-050).
+
 ### Lab 3.10: the five stories, the conflict, the retrofit
 
 The lab was proven on a synthetic repository (`node scripts/verify/prove-promotion-conflict.mjs`
