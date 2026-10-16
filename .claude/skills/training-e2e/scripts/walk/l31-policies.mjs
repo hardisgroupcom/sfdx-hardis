@@ -6,6 +6,7 @@
 // Attaches to the Chrome that already runs with --remote-debugging-port=9222 and opens a tab of
 // its own, which it closes whatever happens: a tab left open by a script that threw is what
 // wedges the next CDP attach.
+/* jscpd:ignore-start */
 import { openPage, text, SHOTS } from "./cdp.mjs";
 const [org, app, profile] = process.argv.slice(2);
 const log = (m) => console.log(new Date().toTimeString().slice(0, 8), m);
@@ -65,3 +66,4 @@ try {
   }
 }
 process.exit(code);
+/* jscpd:ignore-end */

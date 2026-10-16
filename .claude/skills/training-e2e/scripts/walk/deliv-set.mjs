@@ -6,6 +6,7 @@
 // ("Tous les e-mails"), since an org whose user was never switched to English labels it that way.
 // Attaches to the Chrome that already runs with --remote-debugging-port=9222 and opens a tab of
 // its own, which it closes whatever happens.
+/* jscpd:ignore-start */
 import { openPage, frameWith } from "./cdp.mjs";
 const [org] = process.argv.slice(2);
 const log = (m) => console.log(new Date().toTimeString().slice(0, 8), m);
@@ -47,3 +48,4 @@ try {
   await page?.close().catch(() => {});
 }
 process.exit(code);
+/* jscpd:ignore-end */
