@@ -1,6 +1,7 @@
 import c from 'chalk';
 import * as path from 'path';
 import { spawnSync } from 'child_process';
+import { SfError } from '@salesforce/core';
 import { createTempDir, execSfdxJson, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
 import { callSfdxGitDelta } from './gitUtils.js';
@@ -13,6 +14,15 @@ import { t } from './i18n.js';
 export const SCRATCH_SNAPSHOT_DISABLED_ENV = 'SFDX_HARDIS_SCRATCH_SNAPSHOT_DISABLED';
 
 export type ScratchSnapshot = { name: string; sha: string };
+
+// Snapshot names are 15 alphanumeric characters at most
+export function getSnapshotName(sha: string): string {
+  return 'SH' + sha.slice(0, 13);
+}
+
+export function getSnapshotDescription(branch: string, sha: string): string {
+  return `${getSnapshotDescriptionPrefix(branch)}${sha}`;
+}
 
 export function getSnapshotDescriptionPrefix(branch: string): string {
   return `sfdx-hardis branch=${branch} sha=`;
@@ -90,6 +100,51 @@ export async function deploySnapshotDelta(snapshot: ScratchSnapshot, targetUsern
     deployCommand += ` --post-destructive-changes "${destructiveChangesXml}"`;
   }
   await execSfdxJson(deployCommand, commandThis, { fail: true, output: true, debug: debugMode });
+}
+
+export async function getSnapshotRecord(devHubConn: any, name: string): Promise<any | null> {
+  const res = await soqlQuery(`SELECT Id, SnapshotName, Status, Error FROM OrgSnapshot WHERE SnapshotName = '${name}'`, devHubConn);
+  return res.records?.[0] || null;
+}
+
+// sf org create snapshot has no --wait
+export async function waitSnapshotActive(devHubConn: any, name: string, timeoutMinutes: number, commandThis: any) {
+  const deadline = Date.now() + timeoutMinutes * 60000;
+  for (; ;) {
+    const record = await getSnapshotRecord(devHubConn, name);
+    if (record?.Status === 'Active') {
+      return record;
+    }
+    if (record?.Status === 'Error') {
+      throw new SfError(t('scratchSnapshotFailed', { name, error: record.Error || '' }));
+    }
+    if (Date.now() > deadline) {
+      throw new SfError(t('scratchSnapshotTimeout', { name, minutes: timeoutMinutes }));
+    }
+    uxLog("log", commandThis, c.grey(t('scratchSnapshotWaiting', { name, status: record?.Status || '?' })));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
+  }
+}
+
+// Keeps the newest Active snapshots of the branch: a Pull Request behind its target branch uses an older one
+export async function pruneScratchSnapshots(devHubConn: any, devHubUsername: string, branch: string, keep: number, commandThis: any): Promise<string[]> {
+  const prefix = getSnapshotDescriptionPrefix(branch);
+  const branchSnapshots = (await listActiveSnapshots(devHubConn, branch)).filter((record) => (record.Description || '').startsWith(prefix));
+  const deleted: string[] = [];
+  for (const record of branchSnapshots.slice(keep)) {
+    uxLog("action", commandThis, c.cyan(t('scratchSnapshotDeleting', { name: record.SnapshotName })));
+    const deleteRes = await execSfdxJson(
+      `sf org delete snapshot --snapshot ${record.SnapshotName} --target-dev-hub ${devHubUsername} --no-prompt`,
+      commandThis,
+      { fail: false, output: true }
+    );
+    if (deleteRes?.status === 0) {
+      deleted.push(record.SnapshotName);
+    } else {
+      uxLog("warning", commandThis, c.yellow(t('scratchSnapshotDeleteFailed', { name: record.SnapshotName, message: deleteRes?.message || '' })));
+    }
+  }
+  return deleted;
 }
 
 function isAncestorOfHead(sha: string): boolean {

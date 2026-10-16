@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { pickScratchSnapshot } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getSnapshotDescription, getSnapshotName, pickScratchSnapshot } from '../../../src/common/utils/scratchSnapshotUtils.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
@@ -31,5 +31,16 @@ describe('pickScratchSnapshot', () => {
   it('ignores a description without a full commit sha', () => {
     const broken = [record('SHddddddddddddd', 'sfdx-hardis branch=main sha=abc123')];
     expect(pickScratchSnapshot(broken, 'main', () => true)).to.equal(null);
+  });
+});
+
+describe('snapshot name and description', () => {
+  it('names the snapshot with 15 alphanumeric characters, as Salesforce requires', () => {
+    expect(getSnapshotName('0123456789abcdef0123456789abcdef01234567')).to.equal('SH0123456789abc');
+  });
+
+  it('writes a description that the Pull Request side reads back', () => {
+    const record = { SnapshotName: 'SHaaaaaaaaaaaaa', Description: getSnapshotDescription('release/1.0', shaNew) };
+    expect(pickScratchSnapshot([record], 'release/1.0', () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
   });
 });
