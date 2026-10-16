@@ -48,13 +48,14 @@ export async function getScratchSnapshotBranchConfig(branch: string): Promise<{ 
 }
 
 export async function listActiveSnapshots(devHubConn: any, branch: string): Promise<any[]> {
-  // The LIKE only narrows the query: pickScratchSnapshot matches the exact prefix
-  const likePrefix = getSnapshotDescriptionPrefix(branch).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  // LIKE treats _ as a wildcard, so the exact prefix is checked again on the records
+  const prefix = getSnapshotDescriptionPrefix(branch);
+  const likePrefix = prefix.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const res = await soqlQuery(
     `SELECT Id, SnapshotName, Description, CreatedDate FROM OrgSnapshot WHERE Status = 'Active' AND Description LIKE '${likePrefix}%' ORDER BY CreatedDate DESC`,
     devHubConn
   );
-  return res.records || [];
+  return (res.records || []).filter((record) => (record.Description || '').startsWith(prefix));
 }
 
 // Records must be sorted newest first
@@ -129,8 +130,7 @@ export async function waitSnapshotActive(devHubConn: any, name: string, timeoutM
 
 // Keeps the newest Active snapshots of the branch: a Pull Request behind its target branch uses an older one
 export async function pruneScratchSnapshots(devHubConn: any, devHubUsername: string, branch: string, keep: number, commandThis: any): Promise<string[]> {
-  const prefix = getSnapshotDescriptionPrefix(branch);
-  const branchSnapshots = (await listActiveSnapshots(devHubConn, branch)).filter((record) => (record.Description || '').startsWith(prefix));
+  const branchSnapshots = await listActiveSnapshots(devHubConn, branch);
   const deleted: string[] = [];
   for (const record of branchSnapshots.slice(keep)) {
     uxLog("action", commandThis, c.cyan(t('scratchSnapshotDeleting', { name: record.SnapshotName })));
