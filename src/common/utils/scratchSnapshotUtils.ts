@@ -15,29 +15,6 @@ export const SCRATCH_SNAPSHOT_DISABLED_ENV = 'SFDX_HARDIS_SCRATCH_SNAPSHOT_DISAB
 
 export type ScratchSnapshot = { name: string; sha: string };
 
-// Snapshot names are 15 alphanumeric characters at most
-export function getSnapshotName(sha: string): string {
-  return 'SH' + sha.slice(0, 13);
-}
-
-export function getSnapshotDescription(branch: string, sha: string): string {
-  return `${getSnapshotDescriptionPrefix(branch)}${sha}`;
-}
-
-export function getSnapshotDescriptionPrefix(branch: string): string {
-  return `sfdx-hardis branch=${branch} sha=`;
-}
-
-// useScratchOrgSnapshot and scratchOrgSnapshotKeep are read from the branch's own config file:
-// a Pull Request job loads the config of its source branch, not of its target branch
-export async function getScratchSnapshotBranchConfig(branch: string): Promise<{ enabled: boolean; keep: number }> {
-  const branchConfig = (await listMajorOrgs()).find((majorOrg) => majorOrg.branchName === branch.replace('/', '__'));
-  return {
-    enabled: branchConfig?.useScratchOrgSnapshot === true,
-    keep: Math.max(1, Math.floor(Number(branchConfig?.scratchOrgSnapshotKeep)) || 2),
-  };
-}
-
 // The newest Active snapshot of the target branch whose commit is in the history of HEAD,
 // or the reason why the scratch org must be created empty
 export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapshot?: ScratchSnapshot; reason?: string }> {
@@ -56,6 +33,26 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
   return { snapshot };
 }
 
+// useScratchOrgSnapshot and scratchOrgSnapshotKeep are read from the branch's own config file:
+// a Pull Request job loads the config of its source branch, not of its target branch
+export async function getScratchSnapshotBranchConfig(branch: string): Promise<{ enabled: boolean; keep: number }> {
+  const branchConfig = (await listMajorOrgs()).find((majorOrg) => majorOrg.branchName === branch.replace('/', '__'));
+  return {
+    enabled: branchConfig?.useScratchOrgSnapshot === true,
+    keep: Math.max(1, Math.floor(Number(branchConfig?.scratchOrgSnapshotKeep)) || 2),
+  };
+}
+
+export async function listActiveSnapshots(devHubConn: any, branch: string): Promise<any[]> {
+  // The LIKE only narrows the query: pickScratchSnapshot matches the exact prefix
+  const likePrefix = getSnapshotDescriptionPrefix(branch).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const res = await soqlQuery(
+    `SELECT Id, SnapshotName, Description, CreatedDate FROM OrgSnapshot WHERE Status = 'Active' AND Description LIKE '${likePrefix}%' ORDER BY CreatedDate DESC`,
+    devHubConn
+  );
+  return res.records || [];
+}
+
 // Records must be sorted newest first
 export function pickScratchSnapshot(
   snapshotRecords: any[],
@@ -71,16 +68,6 @@ export function pickScratchSnapshot(
     }
   }
   return null;
-}
-
-export async function listActiveSnapshots(devHubConn: any, branch: string): Promise<any[]> {
-  // The LIKE only narrows the query: pickScratchSnapshot matches the exact prefix
-  const likePrefix = getSnapshotDescriptionPrefix(branch).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  const res = await soqlQuery(
-    `SELECT Id, SnapshotName, Description, CreatedDate FROM OrgSnapshot WHERE Status = 'Active' AND Description LIKE '${likePrefix}%' ORDER BY CreatedDate DESC`,
-    devHubConn
-  );
-  return res.records || [];
 }
 
 // Deploys what changed between the commit of the snapshot and HEAD, deletions included
@@ -102,9 +89,18 @@ export async function deploySnapshotDelta(snapshot: ScratchSnapshot, targetUsern
   await execSfdxJson(deployCommand, commandThis, { fail: true, output: true, debug: debugMode });
 }
 
+// Snapshot names are 15 alphanumeric characters at most
+export function getSnapshotName(sha: string): string {
+  return 'SH' + sha.slice(0, 13);
+}
+
 export async function getSnapshotRecord(devHubConn: any, name: string): Promise<any | null> {
   const res = await soqlQuery(`SELECT Id, SnapshotName, Status, Error FROM OrgSnapshot WHERE SnapshotName = '${name}'`, devHubConn);
   return res.records?.[0] || null;
+}
+
+export function getSnapshotDescription(branch: string, sha: string): string {
+  return `${getSnapshotDescriptionPrefix(branch)}${sha}`;
 }
 
 // sf org create snapshot has no --wait
@@ -145,6 +141,10 @@ export async function pruneScratchSnapshots(devHubConn: any, devHubUsername: str
     }
   }
   return deleted;
+}
+
+export function getSnapshotDescriptionPrefix(branch: string): string {
+  return `sfdx-hardis branch=${branch} sha=`;
 }
 
 function isAncestorOfHead(sha: string): boolean {
