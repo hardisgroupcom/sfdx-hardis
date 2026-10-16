@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getSnapshotDescription, getSnapshotName, pickScratchSnapshot } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot } from '../../../src/common/utils/scratchSnapshotUtils.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
@@ -47,5 +47,17 @@ describe('snapshot name and description', () => {
   it('writes a description that the Pull Request side reads back', () => {
     const record = { SnapshotName: 'SHaaaaaaaaaaaaa', Description: getSnapshotDescription('release/1.0', shaNew) };
     expect(pickScratchSnapshot([record], 'release/1.0', () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
+  });
+});
+
+describe('parsePositiveSetting', () => {
+  it('keeps a whole number of at least 1', () => {
+    expect(parsePositiveSetting('90', 60)).to.equal(90);
+  });
+
+  it('gives the default when unset or not a number, as an undefined Azure variable is', () => {
+    expect(parsePositiveSetting(undefined, 60)).to.equal(60);
+    expect(parsePositiveSetting('', 60)).to.equal(60);
+    expect(parsePositiveSetting('$(SCRATCH_ORG_SNAPSHOT_WAIT)', 60)).to.equal(60);
   });
 });

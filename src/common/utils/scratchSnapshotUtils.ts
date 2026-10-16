@@ -145,6 +145,16 @@ export async function pruneScratchSnapshots(devHubConn: any, devHubUsername: str
   return deleted;
 }
 
+// A whole number of at least 1. Unset or not a number (Azure passes an undefined variable as its literal
+// "$(NAME)") gives the default; a number below 1 gives 1
+export function parsePositiveSetting(value: unknown, defaultValue: number): number {
+  const parsed = Math.floor(Number(value));
+  if (value == null || value === '' || !Number.isFinite(parsed)) {
+    return defaultValue;
+  }
+  return Math.max(1, parsed);
+}
+
 export function getSnapshotDescriptionPrefix(branch: string): string {
   return `sfdx-hardis branch=${branch} sha=`;
 }

@@ -9,6 +9,7 @@ import {
   getSnapshotDescription,
   getSnapshotName,
   getSnapshotRecord,
+  parsePositiveSetting,
   pruneScratchSnapshots,
   SCRATCH_SNAPSHOT_DISABLED_ENV,
   waitSnapshotActive,
@@ -94,7 +95,7 @@ The command has no prompt.
     }
     const sha = (await git().revparse(['HEAD'])).trim();
     const name = getSnapshotName(branch, sha);
-    const timeoutMinutes = Number(process.env.SCRATCH_ORG_SNAPSHOT_WAIT || 60);
+    const timeoutMinutes = parsePositiveSetting(process.env.SCRATCH_ORG_SNAPSHOT_WAIT, 60);
 
     const existing = await getSnapshotRecord(devHubConn, name);
     if (existing?.Status === 'Active') {
