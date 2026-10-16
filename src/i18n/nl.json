@@ -978,6 +978,7 @@
   "dataCloudNotEnabledOnOrg": "Data Cloud (Data 360) is niet ingeschakeld in deze org",
   "dataCloudObjectNotFoundInOrg": "Data Cloud-object {{name}} staat niet in de Data Cloud-metadata van de org en wordt overgeslagen.",
   "dataCloudObjectsCollected": "{{count}} Data Cloud-objecten verzameld.",
+  "dataCloudRelationshipsTruncated": "Alleen de eerste {{count}} relaties van {{name}} zijn gelezen: het blad Data Cloud Relationships is mogelijk onvolledig.",
   "dataDeletedSuccessfullyFrom": "Gegevens succesvol verwijderd uit {{dtl}}",
   "dataDictionaryGeneratedForObjects": "Datawoordenboek gegenereerd voor {{count}} objecten.",
   "dataExportedSuccessfullyFrom": "Gegevens succesvol geëxporteerd uit {{dtl}}",

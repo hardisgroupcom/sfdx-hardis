@@ -43,7 +43,7 @@ Each object sheet details its fields (type, required, unique, reference target, 
 - **Object selection:** Provide one or more API names via \`--objects\` (comma-separated, e.g. \`Account,Contact,MyObject__c\`). If omitted in interactive mode, a prompt lists available objects.
 - **Data Cloud objects:** Data Model Objects (\`__dlm\`) and Data Lake Objects (\`__dll\`) can be listed in \`--objects\` like any other object. Use \`--datacloud\` to document every Data Model Object and Data Lake Object the org lists. In interactive mode, the prompt also lists them when Data Cloud is enabled.
 - **Customized objects only:** Use \`--customizedonly\` to exclude objects that have no local customizations. This drops standard objects without custom fields and managed package objects without local custom fields, while keeping local custom objects and any object that has at least one local custom field. In interactive mode, a prompt offers the same filter.
-- **Workbook structure:** One \`Index\` sheet listing the objects, one fields sheet per object, plus consolidated \`Validation Rules\` and \`Record Types\` sheets. When Data Cloud objects are documented, the \`Index\` sheet also shows their object type, category and relationship count, and a \`Data Cloud Relationships\` sheet lists the relationships of the Data Model Objects (from and to object and field, cardinality, status, origin), including relationships to CRM objects.
+- **Workbook structure:** One \`Index\` sheet listing the objects, one fields sheet per object, plus consolidated \`Validation Rules\` and \`Record Types\` sheets. When Data Cloud objects are documented, the \`Index\` sheet also shows their object type, category and relationship count, and a \`Data Cloud Relationships\` sheet lists the relationships of the Data Model Objects (from and to object, field and object type, cardinality, status, origin), including relationships to CRM objects on either side.
 - **Navigation:** The \`Index\` sheet links to each object, Validation Rules and Record Types sheet, and every other sheet has a "Back to Index" link below its data.
 - **Fields detail:** API name, label, type, required, unique, external id, length/precision, reference target, picklist values, default value, formula, help text, description, and custom flag. Fields are sorted alphabetically by API name.
 - **Data Cloud fields detail:** API name, label, type, data type, primary key, key qualifier, and custom flag.
@@ -141,7 +141,7 @@ In agent mode:
           .filter((apiName: string) => !apiName.endsWith('__Share') && !apiName.endsWith('__ChangeEvent'))
           .sort();
         // Data Cloud objects are not in EntityDefinition: list them from Data Cloud when it is enabled.
-        sObjectApiNames.push(...(await listDataCloudObjectNamesForPrompt(conn)).sort());
+        sObjectApiNames.push(...(await listDataCloudObjectNamesForPrompt(conn, this)).sort());
 
         const promptObjectsRes = await prompts({
           type: 'multiselect',

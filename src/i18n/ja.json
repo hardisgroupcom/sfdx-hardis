@@ -976,6 +976,7 @@
   "dataCloudNotEnabledOnOrg": "この org では Data Cloud (Data 360) が有効になっていません",
   "dataCloudObjectNotFoundInOrg": "Data Cloud オブジェクト {{name}} は org の Data Cloud メタデータに含まれていないため、スキップします。",
   "dataCloudObjectsCollected": "{{count}} 件の Data Cloud オブジェクトを収集しました。",
+  "dataCloudRelationshipsTruncated": "{{name}} のリレーションは最初の {{count}} 件のみ読み取りました。Data Cloud Relationships シートは不完全な可能性があります。",
   "dataDeletedSuccessfullyFrom": "{{dtl}} からデータを正常に削除しました",
   "dataDictionaryGeneratedForObjects": "{{count}} 個のオブジェクトのデータディクショナリを生成しました。",
   "dataExportedSuccessfullyFrom": "{{dtl}} からデータを正常にエクスポートしました",

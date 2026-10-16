@@ -13,12 +13,16 @@ import {
 import { t } from './i18n.js';
 import {
   DataCloudEntityType,
-  getDataCloudAvailability,
+  DataModelObjectRelationships,
   getDataCloudObjectsMetadata,
   getDataModelObjectRelationships,
   isDataCloudCatalogRelationship,
   isDataCloudNotEnabledError,
 } from './dataCloudUtils.js';
+import { mapInAdaptiveBatchesSettled } from './adaptiveBatch.js';
+
+// Relationship calls run in parallel, in batches that shrink when the org throttles them.
+const DATA_CLOUD_RELATIONSHIPS_BATCH_SIZES = [10, 5, 2, 1];
 
 // Picklists with hundreds of values would produce unreadable cells: cap the listing and flag the overflow.
 export const MAX_PICKLIST_VALUES_IN_CELL = 50;
@@ -285,15 +289,21 @@ export async function collectObjectDictionary(
 }
 
 // Names of the Data Model Objects and Data Lake Objects the org lists, for the object selection
-// prompt. Orgs without Data Cloud return an empty list without any warning.
-export async function listDataCloudObjectNamesForPrompt(conn: Connection): Promise<string[]> {
+// prompt. Orgs without Data Cloud return an empty list without any warning; any other error is
+// reported, so an empty list is never mistaken for an org without Data Cloud objects. The listing
+// is cached on the connection and reused by collectDataCloudDictionaries.
+export async function listDataCloudObjectNamesForPrompt(conn: Connection, commandThis: any): Promise<string[]> {
   const names: string[] = [];
   for (const entityType of ['DataModelObject', 'DataLakeObject'] as DataCloudEntityType[]) {
-    const availability = await getDataCloudAvailability(conn, entityType);
-    if (!availability.available) {
-      break;
+    try {
+      const items = await getDataCloudObjectsMetadata(conn, entityType, { useCache: true });
+      names.push(...items.map((item) => String(item.name)));
+    } catch (e) {
+      if (isDataCloudNotEnabledError(e)) {
+        break;
+      }
+      uxLog('warning', commandThis, c.yellow(t('unableToListDataCloudObjects', { entityType, error: (e as Error).message })));
     }
-    names.push(...availability.objectNames);
   }
   return names;
 }
@@ -319,7 +329,7 @@ export async function collectDataCloudDictionaries(
   for (const entityType of entityTypes) {
     let items: any[];
     try {
-      items = await getDataCloudObjectsMetadata(conn, entityType);
+      items = await getDataCloudObjectsMetadata(conn, entityType, { useCache: true });
     } catch (e) {
       unavailableTypes.add(entityType);
       if (isDataCloudNotEnabledError(e)) {
@@ -448,24 +458,32 @@ export async function fetchRecordTypes(
   }
 }
 
-// Relationships of the given DMOs, read one DMO at a time. A relationship is listed by both of its
+// Relationships of the given DMOs, read in parallel batches. A relationship is listed by both of its
 // DMOs, so it is kept once. The standard relationships the org never activated are left out.
 export async function fetchDataCloudRelationships(
   conn: Connection,
   dmoNames: string[],
   commandThis: any
 ): Promise<Record<string, string>[]> {
+  const results = await mapInAdaptiveBatchesSettled<string, DataModelObjectRelationships>(
+    dmoNames,
+    (dmoName) => getDataModelObjectRelationships(conn, dmoName),
+    {
+      sizes: DATA_CLOUD_RELATIONSHIPS_BATCH_SIZES,
+      onError: (e, dmoName) =>
+        uxLog('warning', commandThis, c.yellow(t('unableToRetrieveDataCloudRelationships', { name: dmoName, error: (e as Error).message }))),
+    }
+  );
   const rows: Record<string, string>[] = [];
   const seen = new Set<string>();
-  for (const dmoName of dmoNames) {
-    let relationships: any[];
-    try {
-      relationships = await getDataModelObjectRelationships(conn, dmoName);
-    } catch (e) {
-      uxLog('warning', commandThis, c.yellow(t('unableToRetrieveDataCloudRelationships', { name: dmoName, error: (e as Error).message })));
-      continue;
+  results.forEach((result, index) => {
+    if (!result) {
+      return;
     }
-    for (const relationship of relationships) {
+    if (result.truncated) {
+      uxLog('warning', commandThis, c.yellow(t('dataCloudRelationshipsTruncated', { name: dmoNames[index], count: result.relationships.length })));
+    }
+    for (const relationship of result.relationships) {
       if (isDataCloudCatalogRelationship(relationship)) {
         continue;
       }
@@ -477,7 +495,7 @@ export async function fetchDataCloudRelationships(
       seen.add(key);
       rows.push(row);
     }
-  }
+  });
   return rows.sort((a, b) =>
     [a['From Object'], a['From Field'], a['To Object'], a['Name']].join('|').localeCompare(
       [b['From Object'], b['From Field'], b['To Object'], b['Name']].join('|')
@@ -490,9 +508,10 @@ export function buildDataCloudRelationshipRow(relationship: any): Record<string,
   return {
     'From Object': relationship?.sourceObject?.name || '',
     'From Field': relationship?.sourceField?.name || '',
+    'From Object Type': formatRelationshipObjectType(relationship?.sourceField),
     'To Object': relationship?.targetObject?.name || '',
     'To Field': relationship?.targetField?.name || '',
-    'To Object Type': relationship?.targetField?.type === 'SObjectField' ? 'CRM Object' : 'Data Model Object',
+    'To Object Type': formatRelationshipObjectType(relationship?.targetField),
     'Cardinality': DATA_CLOUD_CARDINALITY_LABELS[cardinality.toUpperCase().replace(/[_\s-]/g, '')] || cardinality,
     'Status': relationship?.status || '',
     'Origin': relationship?.creationType || '',
@@ -758,4 +777,10 @@ function countRelationshipsByObject(rows: Record<string, string>[]): Record<stri
 // Objects and fields created in the org do not.
 function isDataCloudCustomName(apiName: string): boolean {
   return apiName.includes('__') && !apiName.startsWith('ssot__');
+}
+
+// The relationships endpoint returns both directions: either side can be a CRM object, whose field
+// type is SObjectField.
+function formatRelationshipObjectType(field: any): string {
+  return field?.type === 'SObjectField' ? 'CRM Object' : 'Data Model Object';
 }

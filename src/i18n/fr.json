@@ -978,6 +978,7 @@
   "dataCloudNotEnabledOnOrg": "Data Cloud (Data 360) n'est pas activé sur cette org",
   "dataCloudObjectNotFoundInOrg": "L'objet Data Cloud {{name}} n'est pas listé dans les métadonnées Data Cloud de l'org, il sera ignoré.",
   "dataCloudObjectsCollected": "{{count}} objet(s) Data Cloud collecté(s).",
+  "dataCloudRelationshipsTruncated": "Seules les {{count}} premières relations de {{name}} ont été lues : la feuille Data Cloud Relationships est peut-être incomplète.",
   "dataDeletedSuccessfullyFrom": "Données supprimées avec succès depuis {{dtl}}",
   "dataDictionaryGeneratedForObjects": "Dictionnaire de données généré pour {{count}} objets.",
   "dataExportedSuccessfullyFrom": "Données exportées avec succès depuis {{dtl}}",

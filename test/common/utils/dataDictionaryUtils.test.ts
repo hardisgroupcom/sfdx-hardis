@@ -12,8 +12,10 @@ import {
   formatPicklistValues,
   hasLocalCustomizations,
   isLocallyCustomApiName,
+  listDataCloudObjectNamesForPrompt,
   MAX_PICKLIST_VALUES_IN_CELL,
 } from '../../../src/common/utils/dataDictionaryUtils.js';
+import { getDataModelObjectRelationships } from '../../../src/common/utils/dataCloudUtils.js';
 
 describe('dataDictionaryUtils', () => {
   // ---------------------------------------------------------------------------
@@ -255,17 +257,24 @@ describe('dataDictionaryUtils', () => {
   });
 
   // Serves ssot/metadata by entityType and the relationships endpoint by DMO name and offset.
-  const dataCloudConn = (routes: { metadata?: Record<string, any>; relationships?: Record<string, any[]>; failMetadata?: string }) => {
+  const dataCloudConn = (routes: {
+    metadata?: Record<string, any>;
+    relationships?: Record<string, any[]>;
+    failMetadata?: string;
+    failMetadataFor?: Record<string, string>;
+    omitTotalSize?: boolean;
+  }) => {
     const calls: string[] = [];
     const conn: any = {
       baseUrl: () => BASE_URL,
       request: async ({ url }: { url: string }) => {
         calls.push(url);
         if (url.includes('/ssot/metadata?')) {
-          if (routes.failMetadata) {
-            throw new Error(routes.failMetadata);
-          }
           const entityType = new URL(url).searchParams.get('entityType') || '';
+          const failure = routes.failMetadata || routes.failMetadataFor?.[entityType];
+          if (failure) {
+            throw new Error(failure);
+          }
           return { metadata: routes.metadata?.[entityType] || [] };
         }
         const match = url.match(/data-model-objects\/([^/]+)\/relationships/);
@@ -274,7 +283,8 @@ describe('dataDictionaryUtils', () => {
           const params = new URL(url).searchParams;
           const offset = Number(params.get('offset') || 0);
           const limit = Number(params.get('limit') || 500);
-          return { relationships: all.slice(offset, offset + limit), totalSize: all.length };
+          const relationships = all.slice(offset, offset + limit);
+          return routes.omitTotalSize ? { relationships } : { relationships, totalSize: all.length };
         }
         throw new Error(`Unexpected URL ${url}`);
       },
@@ -365,6 +375,35 @@ describe('dataDictionaryUtils', () => {
       const dicts = await collectDataCloudDictionaries(conn, [], true, {});
       expect(dicts).to.deep.equal([]);
     });
+
+    it('reuses the listing downloaded for the prompt', async () => {
+      const { conn, calls } = dataCloudConn({ metadata });
+      await listDataCloudObjectNamesForPrompt(conn, {});
+      const dicts = await collectDataCloudDictionaries(conn, [], true, {});
+      expect(dicts).to.have.length(2);
+      expect(calls).to.have.length(2);
+    });
+  });
+
+  describe('listDataCloudObjectNamesForPrompt()', () => {
+    it('lists the Data Model Objects and Data Lake Objects', async () => {
+      const { conn } = dataCloudConn({ metadata: { DataModelObject: [dmoMetadata], DataLakeObject: [dloMetadata] } });
+      expect(await listDataCloudObjectNamesForPrompt(conn, {})).to.deep.equal(['ssot__Individual__dlm', 'Crm_Contact__dll']);
+    });
+
+    it('stops quietly after one call when Data Cloud is not enabled', async () => {
+      const { conn, calls } = dataCloudConn({ failMetadata: 'No CDP tenant id found for this org' });
+      expect(await listDataCloudObjectNamesForPrompt(conn, {})).to.deep.equal([]);
+      expect(calls).to.have.length(1);
+    });
+
+    it('still lists the Data Lake Objects when the Data Model Objects cannot be read', async () => {
+      const { conn } = dataCloudConn({
+        metadata: { DataLakeObject: [dloMetadata] },
+        failMetadataFor: { DataModelObject: 'Request failed with status code 403' },
+      });
+      expect(await listDataCloudObjectNamesForPrompt(conn, {})).to.deep.equal(['Crm_Contact__dll']);
+    });
   });
 
   describe('fetchDataCloudRelationships()', () => {
@@ -401,6 +440,33 @@ describe('dataDictionaryUtils', () => {
       expect(calls[1]).to.contain('offset=500');
     });
 
+    it('follows offset paging until an empty page when totalSize is missing', async () => {
+      const many = Array.from({ length: 501 }, (_, i) => relationship({ id: `rel${i}`, fromField: `Field${i}__c` }));
+      const { conn, calls } = dataCloudConn({ relationships: { 'ssot__Individual__dlm': many }, omitTotalSize: true });
+      const rows = await fetchDataCloudRelationships(conn, ['ssot__Individual__dlm'], {});
+      expect(rows).to.have.length(501);
+      expect(calls).to.have.length(3);
+    });
+
+    it('stops at the page cap and flags the listing as truncated', async () => {
+      const many = Array.from({ length: 10_001 }, (_, i) => relationship({ id: `rel${i}`, fromField: `Field${i}__c` }));
+      const { conn } = dataCloudConn({ relationships: { 'ssot__Individual__dlm': many } });
+      const result = await getDataModelObjectRelationships(conn, 'ssot__Individual__dlm');
+      expect(result.truncated).to.equal(true);
+      expect(result.relationships).to.have.length(10_000);
+    });
+
+    it('reads the relationships of several DMOs in parallel and keeps a stable order', async () => {
+      const { conn } = dataCloudConn({
+        relationships: {
+          'B__dlm': [relationship({ id: 'b', from: 'B__dlm', to: 'Z__dlm' })],
+          'A__dlm': [relationship({ id: 'a', from: 'A__dlm', to: 'Z__dlm' })],
+        },
+      });
+      const rows = await fetchDataCloudRelationships(conn, ['B__dlm', 'A__dlm'], {});
+      expect(rows.map((r) => r['Name'])).to.deep.equal(['a', 'b']);
+    });
+
     it('logs and skips a DMO whose relationships cannot be read', async () => {
       const conn: any = { baseUrl: () => BASE_URL, request: async () => { throw new Error('boom'); } };
       const rows = await fetchDataCloudRelationships(conn, ['ssot__Individual__dlm'], {});
@@ -416,6 +482,7 @@ describe('dataDictionaryUtils', () => {
       expect(row).to.deep.equal({
         'From Object': 'ssot__Individual__dlm',
         'From Field': 'Crm_Account_Id__c',
+        'From Object Type': 'Data Model Object',
         'To Object': 'Account',
         'To Field': 'Id',
         'To Object Type': 'CRM Object',
@@ -424,6 +491,14 @@ describe('dataDictionaryUtils', () => {
         'Origin': 'Custom',
         'Name': 'crm',
       });
+    });
+
+    it('marks a CRM object on the source side', () => {
+      const crmSource = relationship({ id: 'crmSource', from: 'Account', fromField: 'Id', to: 'ssot__Individual__dlm', toField: 'Crm_Account_Id__c' });
+      crmSource.sourceField.type = 'SObjectField';
+      const row = buildDataCloudRelationshipRow(crmSource);
+      expect(row['From Object Type']).to.equal('CRM Object');
+      expect(row['To Object Type']).to.equal('Data Model Object');
     });
   });
 });

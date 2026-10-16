@@ -136,24 +136,41 @@ export async function listDataCloudObjects(
 // Full ssot/metadata entries of a given type: name, displayName, category, fields (with type,
 // businessType and keyQualifier) and primaryKeys. The listing only contains the objects the org
 // uses: a standard DMO that nothing is mapped to is not returned.
+// With useCache, the answer (or the error) is kept for the lifetime of the connection, so a command
+// that lists the objects for a prompt and then documents them downloads the payload once.
 export async function getDataCloudObjectsMetadata(
   conn: Connection,
   entityType: DataCloudEntityType = "DataModelObject",
+  options: { useCache?: boolean } = {},
 ): Promise<any[]> {
-  const base = conn.baseUrl().replace(/\/$/, "");
-  const response = await conn.request<any>({
-    method: "GET",
-    url: `${base}/${METADATA_CONNECT_PATH}?entityType=${encodeURIComponent(entityType)}`,
-  });
-  const items = Array.isArray(response) ? response : (response?.metadata ?? []);
-  return (items as any[]).filter((item) => item && item.name);
+  if (!options.useCache) {
+    return fetchDataCloudObjectsMetadata(conn, entityType);
+  }
+  let cacheByType = objectsMetadataCache.get(conn);
+  if (!cacheByType) {
+    cacheByType = new Map();
+    objectsMetadataCache.set(conn, cacheByType);
+  }
+  let pending = cacheByType.get(entityType);
+  if (!pending) {
+    pending = fetchDataCloudObjectsMetadata(conn, entityType);
+    cacheByType.set(entityType, pending);
+  }
+  return pending;
+}
+
+export interface DataModelObjectRelationships {
+  relationships: any[];
+  // True when the page cap was reached before the end of the listing.
+  truncated: boolean;
 }
 
 // Relationships of one DMO, in both directions, as returned by the Data Cloud API. Unlike the
 // relationships listed by ssot/metadata, these carry a status and include the relationships to CRM
 // objects. The response also contains the standard relationships the org never activated: filter
 // them with isDataCloudCatalogRelationship.
-export async function getDataModelObjectRelationships(conn: Connection, dmoName: string): Promise<any[]> {
+// Paging stops at totalSize when the API sends it, otherwise at the first empty page.
+export async function getDataModelObjectRelationships(conn: Connection, dmoName: string): Promise<DataModelObjectRelationships> {
   const base = conn.baseUrl().replace(/\/$/, "");
   const relationships: any[] = [];
   for (let page = 0; page < DMO_RELATIONSHIPS_MAX_PAGES; page++) {
@@ -167,11 +184,11 @@ export async function getDataModelObjectRelationships(conn: Connection, dmoName:
     const batch = Array.isArray(response?.relationships) ? response.relationships : [];
     relationships.push(...batch);
     const total = typeof response?.totalSize === "number" ? response.totalSize : null;
-    if (batch.length === 0 || total === null || relationships.length >= total) {
-      break;
+    if (batch.length === 0 || (total !== null && relationships.length >= total)) {
+      return { relationships, truncated: false };
     }
   }
-  return relationships;
+  return { relationships, truncated: true };
 }
 
 // Salesforce ships relationships between standard DMOs. Until the org activates one, it is
@@ -304,6 +321,18 @@ export async function dataCloudSqlQuery(
     uxLog("log", this, `[DataCloudSqlQuery] Query failed: ${wrappedError.message}`, { query: { ...queryLog, status: 'error' } });
     throw wrappedError;
   }
+}
+
+const objectsMetadataCache = new WeakMap<Connection, Map<DataCloudEntityType, Promise<any[]>>>();
+
+async function fetchDataCloudObjectsMetadata(conn: Connection, entityType: DataCloudEntityType): Promise<any[]> {
+  const base = conn.baseUrl().replace(/\/$/, "");
+  const response = await conn.request<any>({
+    method: "GET",
+    url: `${base}/${METADATA_CONNECT_PATH}?entityType=${encodeURIComponent(entityType)}`,
+  });
+  const items = Array.isArray(response) ? response : (response?.metadata ?? []);
+  return (items as any[]).filter((item) => item && item.name);
 }
 
 async function submitInitialQuery(
