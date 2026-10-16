@@ -417,12 +417,21 @@ In agent mode:
       `--wait ${waitTime} ` +
       `--target-dev-hub ${this.devHubAlias} ` +
       `--duration-days ${this.scratchOrgDuration}`;
-    const createResult = await execSfdxJson(createCommand, this, {
-      fail: false,
-      output: false,
-      debug: this.debugMode,
-      env: getScratchSignupEnv(),
-    });
+    const runCreateCommand = () =>
+      execSfdxJson(createCommand, this, {
+        fail: false,
+        output: false,
+        debug: this.debugMode,
+        env: getScratchSignupEnv(),
+      });
+    let createResult = await runCreateCommand();
+    // A resolved snapshot can be pruned or expire between its lookup and the signup: then create an empty scratch org
+    if ((!createResult || createResult.status !== 0 || !createResult.result) && this.snapshot?.sha) {
+      uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: this.buildScratchCreateErrorMessage(createResult) })));
+      this.snapshot = null;
+      await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
+      createResult = await runCreateCommand();
+    }
     await clearCache('sf org list');
     if (!createResult || createResult.status !== 0 || !createResult.result) {
       uxLog("error", this, this.buildScratchCreateErrorMessage(createResult));
