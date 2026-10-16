@@ -13,11 +13,12 @@ Labs 3.1 to 3.6, Level 3 Labs 3.7 to 3.11. Every CI job of the fork ran the **re
   already teaches: two layout blocks that only one scratch org has (L2-F2).
 - **One defect every learner meets (L2-F1)**: after the backpromote of Lab 2.1, the extension offers
   to merge `integration` into the Level 1 story branch, already squash merged, and that merge stops
-  on a conflict. Worked around in the course; the extension is not fixed.
+  on a conflict. Fixed in the extension (vscode-sfdx-hardis, `isOriginalBranchGone`), and Lab 2.1
+  covers the extensions released before the fix.
 - **One defect every learner's first Pull Request shows (L1-F1)**: a line of Lab 3.10 rendered as a
   heading, which markdownlint reports in MegaLinter on every Pull Request of the fork. Fixed.
-- Thirteen course fixes in all, English and French. No defect was fixed in sfdx-hardis or in the
-  extension: the sfdx-hardis branch carries walk helpers, runbook traps and this report.
+- Fourteen course fixes in all, English and French, and one extension fix (L2-F1). No defect was
+  fixed in sfdx-hardis: its branch carries walk helpers, runbook traps and this report.
 
 ## Versions under test
 
@@ -165,14 +166,17 @@ picture, O an observation, E a harness question, X maintenance.
 
 ### Defects a learner meets
 
-- **L2-F1 (Lab 2.1, course fixed in `3fedb4d`; extension not fixed)**: Back returns to
+- **L2-F1 (Lab 2.1, fixed in the extension, course `3fedb4d` then reworded)**: Back returns to
   `features/US-016-crew-notes`, the Level 1 story, squash merged and deleted on the fork. The
   extension asks *Merge integration into it?*, because `shouldOfferParentMerge` only tests whether
   `origin/integration` is an ancestor, which a squash-merged branch never is. **Merge integration**,
   as the lab said, stops on a conflict in the Installation layout and leaves the clone mid-merge.
   Every learner who did Level 1 meets this. The lab now says to close the question when the branch
-  is a story already merged. In the extension, the merge should not be offered when the branch's
-  upstream is gone or its Pull Request is merged.
+  is a story already merged. Fixed in the extension after the walk: Back no longer offers the merge
+  when the branch tracks a remote that no longer has it (`git config branch.<b>.remote`, then
+  `git ls-remote --heads`). Unit tests 946 passing; the signal was read on the walk's clone
+  (`features/US-016-crew-notes` gone, `integration` present). The panel was not driven again with
+  the fix. Lab 2.1 now says recent extensions no longer ask, and to close the question otherwise.
 - **L2-F2 (Lab 2.6, open)**: only `helios-dev` has the `ContactPointOttSvc` and
   `SecurityDefenseActionEventStore` layouts (Tooling `Layout` query on the five orgs). It was
   recreated on 2026-10-12, the other orgs are older. Here it showed on Lab 2.6's own Pull Request; a
@@ -292,8 +296,8 @@ green now, the scratch org limit shows in the report.
 
 ## Open decisions for the maintainer
 
-- **L2-F1**: the extension's `shouldOfferParentMerge` offers a merge into a squash-merged branch.
-  An extension fix, then the warning of Lab 2.1 can go.
+- **L2-F1**: fixed in the extension. The sentence of Lab 2.1 for older extensions can go once
+  most learners run the release that carries it.
 - **L2-F2**: scratch orgs newer than the Developer Edition orgs carry two layouts the others lack.
   The lab covers it; whether to align orgs some other way is open.
 - **Pictures**: L1-S1, L1-S2, L2-S1, L2-S2, L3-S1, and S3 of 2026-10-12.
