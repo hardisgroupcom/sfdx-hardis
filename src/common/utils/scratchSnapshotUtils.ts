@@ -139,7 +139,7 @@ export async function pruneScratchSnapshots(devHubConn: any, devHubUsername: str
     if (deleteRes?.status === 0) {
       deleted.push(record.SnapshotName);
     } else {
-      uxLog("warning", commandThis, c.yellow(t('scratchSnapshotDeleteFailed', { name: record.SnapshotName, message: deleteRes?.message || '' })));
+      uxLog("warning", commandThis, c.yellow(t('scratchSnapshotDeleteFailed', { name: record.SnapshotName, message: deleteRes?.errorMessage || deleteRes?.message || '' })));
     }
   }
   return deleted;
