@@ -36,15 +36,16 @@ const pencil = page.locator(`button[title="Edit ${label}"]`).first();
 await pencil.scrollIntoViewIfNeeded();
 await pencil.click();
 step = "type";
-const input = page.locator(`input[name="Panels_Required__c"], input[name="Crew_Notes__c"]`).first();
+const input = page.locator(`input[name="${label.replace(/ /g, "_")}__c"]`).first();
 await input.waitFor({ timeout: 15000 });
 await input.fill(value);
 step = "save";
 await page.locator('button[name="SaveEdit"]').first().click();
 await page.waitForTimeout(6000);
 const after = (await page.evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
-const err = after.match(/(We hit a snag|Review the errors)[^.]{0,200}/);
+const err = after.match(/(We hit a snag|Review the errors).{0,300}/);
 log(err ? "ERROR " + err[0] : "saved");
+if (err && shot) { await page.screenshot({ path: shot.replace(/\.png$/, "-error.png") }); log("shot " + shot.replace(/\.png$/, "-error.png")); }
 await page.close();
 log("org value: " + JSON.stringify(q(`SELECT Name, ${label.replace(/ /g, "_")}__c FROM Installation__c WHERE Id = '${rec.Id}'`)[0]));
 process.exit(0);

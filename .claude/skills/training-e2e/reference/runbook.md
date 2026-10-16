@@ -596,6 +596,39 @@ Level 2 straight after Level 1, with no **Reset this level**, since 2026-10-12 (
   the CI user is the scratch org user the walk opens the org with. No **All** list view travels
   unless the walk retrieves `ListView:Crew_Capacity__c.All`.
 
+Level 2 at browser fidelity, 2026-10-16 (helpers in `scripts/walk/`):
+
+- **Lab 2.2's checkbox field** is `l22-field.mjs`: Checkbox, the Visible header cleared, one
+  profile ticked, every layout unticked. On the layout screen the first checkbox is the header of
+  the column: unticking it unticks the rows.
+- **Lab 2.3's Required** is `l23-required.mjs`. Salesforce opens its *Potential Integration
+  Impact* modal **when the box is ticked**, over the form: click its **Confirm** first, or the
+  Save click is intercepted by the overlay and times out.
+- **`l14-record.mjs` types into the field the label names** since 2026-10-16. It used to type into
+  `Panels_Required__c` whatever label was given: "Crew Size" 2 went into Panels Required. With a
+  picture argument it also captures the error box of a refused save (`<shot>-error.png`).
+- **Deliverability is read with `deliv-read.mjs`**: the access level is a `select` of the
+  classic iframe, so a regex on the page text finds nothing.
+- **`sfshot.mjs` needs `MSYS_NO_PATHCONV=1` when the path has no `?`**: `/lightning/setup/...`
+  becomes a Windows path and Salesforce answers *Invalid Page Redirection*. A path with a query
+  string happens to survive.
+- **Recent Changes of the Metadata Retriever leaves out `LightningComponentResource`.** A
+  script that picks "the twenty newest rows" from `SourceMember` must leave it out too, and
+  `sf project retrieve start` refuses that type anyway (*Missing metadata type definition*).
+- **Prove a Profile against an org with the whole package, never the file alone**:
+  `sf project deploy start --manifest manifest/package.xml --dry-run --test-level NoTestRun`. The
+  file alone fails on the tabs of objects the package brings (`no CustomTab named
+  Crew_Capacity__c`). Loop it, removing the block each error names: one name per deployment.
+- **The two "new org" layouts follow the scratch org that was created last.** `helios-dev`,
+  recreated on 2026-10-12, had `ContactPointOttSvc` and `SecurityDefenseActionEventStore`
+  layouts that `helios-integration` lacked, so Lab 2.6's own Pull Request went red on them. A
+  learner's three scratch orgs come from one Lab 1.2 and meet it at Lab 3.1 instead. `SELECT Name
+  FROM Layout WHERE TableEnumOrId IN ('ContactPointOttSvc','SecurityDefenseActionEventStore')`
+  (tooling) on each org says who has them.
+- **Accept Incoming on each conflict** of the merge editor is `git merge-file --theirs` on the
+  three stages, not always the whole incoming file: compare the two before replacing a click
+  with `git checkout --theirs`.
+
 ## 7. Level 3, eleven labs
 
 The release manager. This is the level where the course touches the orgs and the repository hardest.
