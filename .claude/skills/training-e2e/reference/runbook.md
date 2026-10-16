@@ -506,6 +506,21 @@ and all but `ps-grant.mjs` and `page.mjs` log their steps, carry a watchdog and 
   comboboxes, **Select Fields to Display**. The filter popup and the panel both have a **Save**
   button: save the popup first. Never press Escape in the popup, it drops the filter. The retrieved
   XML is the same as the file earlier runs deployed.
+- **Lab 1.4 step 2 and Lab 1.7's field are clickable** with `l14-field.mjs` (2026-10-16): Fields &
+  Relationships, **New** (`button[title="Custom Field"]`), the data type radio found by its
+  `label` text, details, the Visible header box clicked twice, the layout page, Save. The long
+  text type is labelled **Text Area (Long)** in the wizard, not "Long Text Area". It logs how many
+  Visible boxes the FLS screen arrived with (19 of 23 that day), which is a sentence of the lab.
+- **The lab driver's log does not carry the command's output** (2026-10-16): only the questions
+  and the answers. To compare what `init` prints with the eight steps of Lab 1.2, run it a second
+  time headless (`walk/panel-node.mjs -- scripts/training.mjs init`, under 3 minutes when
+  everything exists), which also proves the lab's "running it twice is harmless".
+- **A reset fork keeps counting Pull Requests**: the first one of a walk after a reset is the
+  next number after the last run's (#44 on 2026-10-16), never #1. Only a deleted fork starts at #1.
+- **Read the MegaLinter comment of the first Pull Request, not only its colour.** It lints the
+  whole course, so a lab defect shows up there: on 2026-10-16 markdownlint warned on a `# 65`
+  line of Lab 3.10 that a reflow plus `markdownlint --fix` (MD018) had turned into a heading.
+  Every learner's Pull Request carried that ⚠️ line until the course was fixed.
 - **The picture retake can run while the orgs are torn down**: the teardown is CLI calls, the
   retake is one hidden VS Code. Three captures are flaky and need a second `shots.mjs <name>`:
   the two Metadata Retriever ones (org combo reading *Select an Option*), and
