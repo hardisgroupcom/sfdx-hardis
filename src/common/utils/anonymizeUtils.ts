@@ -516,7 +516,13 @@ export function scrubText(text: string, replacementMap: Map<string, string>): st
 // Anonymize a whole notification message for a given level: logElements rows, data payload,
 // then free-text fields (text, attachments[].text) scrubbed with the collected values.
 // Returns a copy; the input message is never mutated.
-export function anonymizeNotifMessage(notifMessage: NotifMessage, level: AnonymizationLevel): NotifMessage {
+// When the channel is given and the message sets keepUsersReadableInText, see
+// isTextScrubbingSkipped: rows and data are still anonymized, only free texts are kept.
+export function anonymizeNotifMessage(
+  notifMessage: NotifMessage,
+  level: AnonymizationLevel,
+  channel: AnonymizationChannel | null = null
+): NotifMessage {
   if (level === 'off') {
     if (Array.isArray(notifMessage.logElements) && rowsHaveMarkers(notifMessage.logElements)) {
       return { ...notifMessage, logElements: stripSensitiveValues(notifMessage.logElements) };
@@ -532,7 +538,7 @@ export function anonymizeNotifMessage(notifMessage: NotifMessage, level: Anonymi
   if (result.data != null && typeof result.data === 'object') {
     result.data = anonymizeData(result.data, level, replacementMap, salt);
   }
-  if (replacementMap.size > 0) {
+  if (replacementMap.size > 0 && !isTextScrubbingSkipped(notifMessage, level, channel)) {
     if (typeof result.text === 'string') {
       result.text = scrubText(result.text, replacementMap);
     }
@@ -545,4 +551,19 @@ export function anonymizeNotifMessage(notifMessage: NotifMessage, level: Anonymi
     }
   }
   return result;
+}
+
+// Human channels only (messaging, email), level "standard" only, and only for messages that opt in.
+// The API channel feeds Loki, the monitoring notification files and the AI summary: its text is
+// always scrubbed. Level "strict" always scrubs too, like it does for technical actor fields.
+export function isTextScrubbingSkipped(
+  notifMessage: NotifMessage,
+  level: AnonymizationLevel,
+  channel: AnonymizationChannel | null
+): boolean {
+  return (
+    notifMessage.keepUsersReadableInText === true &&
+    level === 'standard' &&
+    (channel === 'messaging' || channel === 'email')
+  );
 }

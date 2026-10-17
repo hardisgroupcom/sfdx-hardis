@@ -19,11 +19,13 @@ import {
   uxLog,
 } from '../../../common/utils/index.js';
 import {
+  getScratchSignupEnv,
   initApexScripts,
   initOrgData,
   initOrgMetadatas,
   initPermissionSetAssignments,
   installPackages,
+  openOrgInBrowser,
   promptUserEmail,
 } from '../../../common/utils/orgUtils.js';
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
@@ -65,6 +67,7 @@ The command configuration can be customized using:
 
 - \`config/.sfdx-hardis.yml\` file with properties like \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, and \`dataPackages\`.
 - Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
+- Environment variables **SF_SCRATCH_SIGNUP_CONNECTED_APP** and **SF_SCRATCH_SIGNUP_CALLBACK_URL**: by default the new org is signed up with the Salesforce CLI built-in app (\`PlatformCLI\`), so a Dev Hub authenticated through an External Client App works (Salesforce CLI 2.147.7 or later). Not applied when you set **SF_SCRATCH_SIGNUP_CONNECTED_APP** or **SFDX_CLIENT_SECRET**.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -358,11 +361,7 @@ In agent mode:
             ' ' +
             c.yellow('(The org is not ready to work in until this script is completed !)')
           );
-          await execSfdxJson('sf org open', this, {
-            fail: true,
-            output: false,
-            debug: this.debugMode,
-          });
+          await openOrgInBrowser(this, { debug: this.debugMode });
           // Trigger a status refresh on VS Code WebSocket Client
           WebSocketClient.sendRefreshStatusMessage();
         }
@@ -391,6 +390,7 @@ In agent mode:
       fail: false,
       output: false,
       debug: this.debugMode,
+      env: getScratchSignupEnv(),
     });
     await clearCache('sf org list');
     if (!createResult || createResult.status !== 0 || !createResult.result) {
@@ -460,21 +460,9 @@ In agent mode:
         });
         this.authFileJson = displayResult;
       }
-      // Display org URL
-      const openRes = await execSfdxJson('sf org open --url-only', this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
-      });
-      uxLog("action", this, c.cyan(t('openScratchOrgWithUrl2', { openRes: c.green(openRes?.result?.url) })));
-    } else {
-      // Open scratch org for user if not in CI
-      await execSfdxJson('sf org open', this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
-      });
     }
+    // Open scratch org for user (in CI and container mode, log the link instead)
+    await openOrgInBrowser(this, { debug: this.debugMode });
     uxLog(
       "action",
       this,

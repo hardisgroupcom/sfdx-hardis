@@ -40,7 +40,7 @@ When in doubt, grep the extension for the command id, the flag, the config key o
 | Commands, their flags and their `--json` output                                        | `execSfdxJson()` / `execCommandWithProgress()` calls, `src/hardis-commands-provider.ts`, LWC `runCommand` messages                       |
 | Read-only JSON commands meant for a UI (`hardis:config:monitoring-defaults`)           | Panels that load data first, then run the real command (`src/utils/monitoringConfigUtils.ts`)                                            |
 | `colorClass` values of categories, notifications and commands                          | Tile hues of the LWC catalogs: the CLI sets them, the extension reads them                                                               |
-| Extension screenshots in `docs/assets/images`                                          | `yarn screenshots` regenerates them and copies them into this repository                                                                 |
+| Extension screenshots in `docs/assets/images`                                          | `yarn screenshots` regenerates them and copies them into this repository. On Windows it shows no window (VS Code runs on a desktop of its own) and can run in the background; on macOS and Linux a window opens, ask first |
 | `src/i18n/*.json` (CLI messages shown in the command runner)                           | Its own `src/i18n/*.json` for the extension labels, same 9 locales, case-sensitive key order                                             |
 
 ## Rules
@@ -49,14 +49,14 @@ When in doubt, grep the extension for the command id, the flag, the config key o
 2. **Flags, JSON fields and events are an API.** Renaming or removing one breaks the extensions already installed. Add, deprecate, then remove.
 3. **Minimum CLI version.** When the extension starts using a new flag, command or JSON field, raise `RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION` in the extension's `src/constants.ts` to the sfdx-hardis version that ships it.
 4. **Schema first.** A config property the extension edits must be merged in `config/sfdx-hardis.jsonschema.json` on sfdx-hardis `main` before `yarn sync:schema` can pick it up.
-5. **Two pull requests, linked.** Use the same branch name in both repositories, open one PR in each, link each description to the other, and add a CHANGELOG entry in each (`## [beta] (master)` here, `## Unreleased` there).
+5. **Two pull requests, linked.** Use the same branch name in both repositories, open one PR in each, link each description to the other, and add a CHANGELOG entry in each (`## [beta] (main)` here, `## Unreleased` there).
 
 ## Working on the extension side
 
 The extension has its own agent setup. For every file under `vscode-sfdx-hardis`, read and follow it instead of the sfdx-hardis conventions:
 
 - `vscode-sfdx-hardis/CLAUDE.md`: build commands, architecture, LWC and styling rules (theme-aware `resources/global-theme.css` kit, no hardcoded colors, `s-hardis-datatable`, tinted neutral buttons), i18n key order, panel performance rules.
-- `vscode-sfdx-hardis/.claude/skills/`: `analyze`, `design`, `implement`, `test`, `document`, `pr-watch-fix`, `megalinter`, `megalinter-check`, `megalinter-fix`, `megalinter-setup`, `fix-duplicate`, `fix-security`, `monitoring`.
+- `vscode-sfdx-hardis/.claude/skills/`: `analyze`, `design`, `implement`, `test`, `document`, `pr-watch-fix`, `fix-duplicate`, `fix-security`, `monitoring`. MegaLinter skills come from the `megalinter` plugin, enabled in `.claude/settings.json`.
 - `vscode-sfdx-hardis/.claude/agents/`: `analyze`, `design`, `implement`, `test`, `document`, `pr-fix`, `pr-watch`, and the MegaLinter agents.
 
 Each phase of the sfdx-hardis workflow has its extension counterpart:

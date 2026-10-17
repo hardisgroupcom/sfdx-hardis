@@ -76,6 +76,14 @@ export class RemovePackageXmlItemsAction extends ActionsProvider {
     return null;
   }
 
+  // The items to remove, whatever their order: "ApexClass:B,A" removes what "ApexClass:A,B" removes
+  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
+    const packageXmlItems = parsePackageXmlItems(normalizePackageXmlItems(cmd.parameters?.packageXmlItems))
+      .map((type) => ({ name: type.name[0], members: [...type.members].sort() }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    return { packageXmlItems };
+  }
+
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;

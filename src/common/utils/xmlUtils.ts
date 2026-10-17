@@ -136,7 +136,13 @@ export function buildXmlString(xmlObject: any, indent?: string): string {
 }
 
 export async function writeXmlFile(xmlFile: string, xmlObject: any) {
-  const updatedFileContent = buildXmlString(xmlObject);
+  let updatedFileContent = buildXmlString(xmlObject);
+  // Keep the final line break the file had (Salesforce writes one), so that cleaning a file
+  // does not show up in git as a change of its last line
+  const hadFinalNewline = fs.existsSync(xmlFile) && /\r?\n$/.test(await fs.readFile(xmlFile, 'utf8'));
+  if (hadFinalNewline && !updatedFileContent.endsWith('\n')) {
+    updatedFileContent += '\n';
+  }
   await fs.ensureDir(path.dirname(xmlFile));
   await fs.writeFile(xmlFile, updatedFileContent);
 }
@@ -491,6 +497,32 @@ export async function listDuplicateFolderMetadataApiNames(
     }
   }
   return duplicates;
+}
+
+// Lists the members of a deployment package.xml that package-no-overwrite.xml could protect, whatever the
+// target org content. It matches like the 'no-overwrite-remove' filtering, which only removes items matching
+// a subset of package-no-overwrite.xml: when nothing is returned, listing the target org would protect nothing.
+export async function listPackageXmlItemsMatchingNoOverwrite(
+  packageXmlFile: string,
+  packageNoOverwriteFile: string
+): Promise<{ type: string; member: string }[]> {
+  const packageContent = await parsePackageXmlFile(packageXmlFile);
+  const noOverwriteContent = await parsePackageXmlFile(packageNoOverwriteFile);
+  const items = Object.keys(packageContent).flatMap((type) => packageContent[type].map((member: string) => ({ type: type, member: member })));
+  return filterItemsMatchingNoOverwrite(items, noOverwriteContent);
+}
+
+// Keeps the items that the parsed content of a package-no-overwrite.xml protects, with the same matching
+// as the deployment filtering: * wildcards, and API name only for the folder types unique in the org.
+export function filterItemsMatchingNoOverwrite<T extends { type: string; member: string }>(
+  items: T[],
+  noOverwriteContent: Record<string, string[]>
+): T[] {
+  return items.filter((item) => {
+    const patterns: string[] = noOverwriteContent[item.type] || [];
+    const apiNameOnly = ORG_UNIQUE_FOLDER_METADATA_TYPES.includes(item.type);
+    return patterns.some((pattern) => memberMatchesPattern(item.member, pattern, apiNameOnly));
+  });
 }
 
 // Returns true when member matches pattern, supporting * as a glob wildcard (e.g. "*__dlm", "Account*").

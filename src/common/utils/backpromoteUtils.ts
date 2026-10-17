@@ -9,9 +9,10 @@ import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvi
 import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { parsePromotionBranchName } from './promotionBranchUtils.js';
-import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter } from './actionUtils.js';
+import { DEV_SANDBOXES_BRANCH_NAME, evaluateActionBranchFilter, getEffectiveActionContext } from './actionUtils.js';
 import { t } from './i18n.js';
-import { BackpromoteActionRow, BackpromoteCommentStore, upsertActionRow } from './backpromoteCommentUtils.js';
+import { BackpromoteActionRow, BackpromoteCommentStore, backpromoteActionKey, upsertActionRow } from './backpromoteCommentUtils.js';
+import { buildIdentityKeyFromProvider, findIdenticalActionRun, formatIdenticalActionSource, markIdentitySeen, recordSuccessfulActionRun } from './deploymentActionIdentityUtils.js';
 
 // ---- Interfaces ----
 
@@ -134,6 +135,8 @@ export function attributeCommitsToFirstParents<T extends { hash: string }>(
 
 /** How many times a vehicle merge may be opened up again: integration -> uat -> preprod is 2 */
 const MAX_VEHICLE_SPLIT_DEPTH = 5;
+// Numbers read in messages but missed by the listing of merged Pull Requests, asked for one by one
+const MAX_PULL_REQUESTS_FETCHED_BY_NUMBER = 50;
 
 /**
  * The branches a merge commit merged in, as far as they can be read: the message ("Merge branch
@@ -148,6 +151,7 @@ export function mergedSourceBranches(
   commit: { hash: string; message: string; body?: string },
   mergeCommitToPr: Map<string, number>,
   prDetailsMap: Map<number, any>,
+  isPullRequestOf: (num: number, commit: { hash: string; message: string; body?: string }) => boolean = () => true,
 ): string[] {
   const branches: string[] = [];
   const messageBranch = extractSourceBranchFromMessage(commit.message);
@@ -166,7 +170,7 @@ export function mergedSourceBranches(
   if (azureMatch) {
     branches.push(azureMatch[1]);
   }
-  const prNumber = mergeCommitToPr.get(commit.hash) ?? extractPrNumbersFromCommit(commit)[0];
+  const prNumber = mergeCommitToPr.get(commit.hash) ?? extractPrNumbersFromCommit(commit).find((num) => isPullRequestOf(num, commit));
   const pullRequest = prNumber ? prDetailsMap.get(prNumber) : null;
   if (pullRequest?.sourceBranch) {
     branches.push(pullRequest.sourceBranch);
@@ -199,6 +203,13 @@ export function isVehicleMerge(branches: string[], majorBranchNames: string[]): 
  * vehicle they came from. The loop runs again over what it produced, so a promotion merged into
  * `integration` and carried to `uat` by a sync is opened up in turn. Only a merge with exactly two
  * parents is opened up: an octopus merge would lose every side but the second one.
+ *
+ * A sub-commit already listed elsewhere is never added a second time. Branches merged both ways
+ * produce exactly that: `main` merged into `uat` opens up into the first-parent commits of `main`,
+ * one of which is a `uat` -> `main` back-merge, and opening that one up in turn gives back the
+ * `uat` commits the list started from. The repeats were offered twice in the promotion prompt, and
+ * a vehicle whose whole content is already listed carries nothing, so it is dropped rather than
+ * kept as a row that cherry-picks a merge commit.
  */
 export async function splitVehicleMerges<T extends { hash: string; message: string }>(
   firstParentCommits: T[],
@@ -212,6 +223,9 @@ export async function splitVehicleMerges<T extends { hash: string; message: stri
   for (let depth = 0; depth < MAX_VEHICLE_SPLIT_DEPTH; depth++) {
     let changed = false;
     const next: T[] = [];
+    // What the list already holds: the commits still to be walked at this depth, plus the ones
+    // already pushed. The vehicle being opened up is leaving the list, so it never counts itself.
+    const presentHashes = new Set(current.map((commit) => commit.hash));
     for (const commit of current) {
       const parents = parentsByHash.get(commit.hash) || [];
       if (parents.length !== 2 || !isVehicleMerge(vehicleBranchesOf(commit), majorBranchNames)) {
@@ -226,8 +240,18 @@ export async function splitVehicleMerges<T extends { hash: string; message: stri
         next.push(commit);
         continue;
       }
+      const newSubCommits = subCommits.filter(
+        (subCommit) => subCommit.hash !== commit.hash && !presentHashes.has(subCommit.hash)
+      );
       changed = true;
-      next.push(...subCommits);
+      if (newSubCommits.length === 0) {
+        // Everything this vehicle carries is already listed on its own rows: it adds nothing.
+        continue;
+      }
+      for (const subCommit of newSubCommits) {
+        presentHashes.add(subCommit.hash);
+      }
+      next.push(...newSubCommits);
     }
     current = next;
     if (!changed) {
@@ -288,6 +312,9 @@ export async function listMergedPrsWithCommits(
   const prDetailsMap = new Map<number, any>();
   const mergeCommitToPr = new Map<string, number>();
   const sourceBranchToPr = new Map<string, number>();
+  // Whether the merged Pull Requests of this repository could be listed: only then can a number read
+  // in a commit message be told apart from one that is not a Pull Request here
+  let mergedPrsListed = false;
 
   if (gitProvider) {
     try {
@@ -300,7 +327,28 @@ export async function listMergedPrsWithCommits(
       // GitHub, Bitbucket and Azure DevOps filter on the creation date: a long-lived Pull Request is
       // created long before the merge that puts it in the window
       const minDate = oldestCommitDate ? new Date(oldestCommitDate.getTime() - 180 * 24 * 60 * 60 * 1000) : undefined;
-      const allMergedPrs = (await gitProvider.listPullRequests({ status: 'merged', ...(minDate ? { minDate } : {}) })) || [];
+      const listedPrs = await gitProvider.listPullRequests({ status: 'merged', ...(minDate ? { minDate } : {}) });
+      // GitHub and GitLab answer null when the API call failed: nothing can be told apart then
+      mergedPrsListed = Array.isArray(listedPrs);
+      const allMergedPrs = [...(listedPrs || [])];
+      // The listing is bounded (pages, creation date, and Azure DevOps answers [] when its
+      // repository is not configured), so a number it misses may still be a Pull Request here. Those
+      // are asked for one by one: every number when nothing was listed, else only the numbers up to
+      // the highest one listed. A number above it is not a Pull Request merged here, which is the
+      // fork case, and asking would cost one call per upstream Pull Request.
+      if (mergedPrsListed) {
+        const listedNumbers = new Set(allMergedPrs.map((pr) => pr.idNumber).filter((num) => num));
+        const highestListed = Math.max(0, ...listedNumbers);
+        const toFetch = [...prNumbersFromCommits]
+          .filter((num) => !listedNumbers.has(num) && (listedNumbers.size === 0 || num <= highestListed))
+          .slice(0, MAX_PULL_REQUESTS_FETCHED_BY_NUMBER);
+        const fetched = await Promise.all(toFetch.map((num) => gitProvider.getPullRequestById(num).catch(() => null)));
+        for (const pr of fetched) {
+          if (pr?.idNumber && pr.mergedDate) {
+            allMergedPrs.push(pr);
+          }
+        }
+      }
       for (const pr of allMergedPrs) {
         const prNum = pr.idNumber;
         if (!prNum) continue;
@@ -319,6 +367,8 @@ export async function listMergedPrsWithCommits(
       uxLog('warning', commandThis, c.yellow(`[Backpromote] Unable to list pull requests: ${(e as Error).message}`));
     }
   }
+  const isPullRequestOf = (num: number, commit: { hash: string; message: string; body?: string }) =>
+    messageNumberIsPullRequestOf(num, commit, mergedPrsListed, prDetailsMap, commitShaSet);
 
   // A merge that only moves other merges (integration -> uat, a promotion merged into its target)
   // is opened up into the commits it brought in, so a promotion can carry one User Story instead
@@ -333,7 +383,7 @@ export async function listMergedPrsWithCommits(
       splitFrom,
       parentsByHash,
       windowHashes,
-      (commit) => mergedSourceBranches(commit, mergeCommitToPr, prDetailsMap),
+      (commit) => mergedSourceBranches(commit, mergeCommitToPr, prDetailsMap, isPullRequestOf),
       async (fromCommit, toCommit) => {
         const log = await git().log(['--first-parent', `${fromCommit}..${toCommit}`]).catch(() => null);
         return [...(log?.all || [])];
@@ -376,9 +426,15 @@ export async function listMergedPrsWithCommits(
 
     for (const childCommit of childCommits) {
       let prNum: number | null = null;
-      const prNumbersInMsg = extractPrNumbersFromCommit(childCommit);
-      if (prNumbersInMsg.length > 0) prNum = prNumbersInMsg[0];
-      if (prNum === null && mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
+      // The provider naming this very commit as the merge of a Pull Request is the surest answer
+      if (mergeCommitToPr.has(childCommit.hash)) prNum = mergeCommitToPr.get(childCommit.hash)!;
+      // A number in a message is only a Pull Request of this repository when the provider knows it.
+      // A fork carries the squash commits of the repository it was forked from, "(#41)" included:
+      // taken as is, that number sent the reads of the Backpromotes comments to a Pull Request that
+      // does not exist here, and the whole plan stopped on a 404.
+      if (prNum === null) {
+        prNum = extractPrNumbersFromCommit(childCommit).find((num) => isPullRequestOf(num, childCommit)) ?? null;
+      }
       const sourceBranch = extractSourceBranchFromMessage(childCommit.message);
       if (prNum === null && sourceBranch && sourceBranchToPr.has(sourceBranch)) prNum = sourceBranchToPr.get(sourceBranch)!;
 
@@ -424,6 +480,48 @@ export async function listMergedPrsWithCommits(
   }
 
   return prGroups;
+}
+
+/**
+ * Whether a number read in the message of a commit names a Pull Request of this repository that
+ * this commit belongs to.
+ *
+ * A fork carries the history of the repository it was forked from, with that repository's numbers
+ * in its squash subjects: "(#41)" can name no Pull Request here at all, and "(#1)" can name one of
+ * the fork's own that has nothing to do with the commit. The provider tells the two apart: a
+ * number it does not list is not a Pull Request here, and a number whose merge commit is another
+ * commit of the same window is not this commit's, unless this commit is a cherry-pick of work from
+ * it, which is what a promotion branch is made of. A merge commit outside the window proves
+ * nothing on its own (Azure DevOps can report one that never reached the target branch), so there
+ * the title of the Pull Request has to be in the message: the fork's own #1, merged before the
+ * window, does not carry the title of the course's #1. The message is trusted as it is when the
+ * Pull Requests could not be listed at all.
+ */
+export function messageNumberIsPullRequestOf(
+  num: number,
+  commit: { hash: string; message?: string; body?: string },
+  mergedPrsListed: boolean,
+  prDetailsMap: Map<number, { mergeCommitSha?: string; title?: string }>,
+  windowShas: Set<string>,
+): boolean {
+  if (!mergedPrsListed) {
+    return true;
+  }
+  const pr = prDetailsMap.get(num);
+  if (!pr) {
+    return false;
+  }
+  if (!pr.mergeCommitSha || pr.mergeCommitSha === commit.hash) {
+    return true;
+  }
+  if (/\(cherry picked from commit [0-9a-f]{7,40}\)/.test(commit.body || '')) {
+    return true;
+  }
+  if (windowShas.has(pr.mergeCommitSha)) {
+    return false;
+  }
+  const title = (pr.title || '').trim().toLowerCase();
+  return !title || `${commit.message || ''}\n${commit.body || ''}`.toLowerCase().includes(title);
 }
 
 // Extract all source branch names from merge commit messages
@@ -501,8 +599,11 @@ export function extractPrNumbersFromMessage(message: string): number[] {
     // Azure DevOps completing a Pull Request without fast-forward, which is what keeps the -x
     // trailers of a cherry-pick: "Merge pull request 52 from feature/X into integration", with no #
     /Merge pull request (\d+) from \S+ into \S+/g,
-    // Generic #NNN reference (but avoid matching issue numbers in the middle of words)
-    /(?:^|\s)#(\d+)(?:\s|$|[,.):])/g,
+    // Generic #NNN reference (but avoid matching issue numbers in the middle of words).
+    // An opening bracket counts as a boundary: a GitHub squash merge writes the number as
+    // "US-057 Park an installation that is waiting for parts (#7)", so requiring whitespace
+    // before the # missed the most common commit subject GitHub produces.
+    /(?:^|[\s([])#(\d+)(?:\s|$|[,.):\]])/g,
   ];
   for (const pattern of patterns) {
     let match;
@@ -577,8 +678,10 @@ export function collectBackpromoteActions(
 ): BackpromoteActionCandidate[] {
   const allActions: BackpromoteActionCandidate[] = [];
   const targetBranchCandidates = [DEV_SANDBOXES_BRANCH_NAME, parentBranch];
-  // Newest first: when two Pull Requests declare the same action id, the newest one owns it (and
-  // its comment gets the row); the result goes back to the chronological order of the groups
+  // Newest first, so an action moved to a fix Pull Request (movedFrom) drops its original copy of an
+  // older Pull Request, and a Pull Request listed twice keeps one copy of its action. Two Pull
+  // Requests reusing one id (a copied actions file) both keep theirs: an identical one runs once at
+  // execution time. The result goes back to the chronological order of the groups
   const groupIndex = new Map(selectedPrs.map((group, index) => [group.commit.hash, index]));
   for (const prGroup of [...selectedPrs].reverse()) {
     for (const { config: prConfig, prId, prTitle } of prGroup.prConfigs) {
@@ -587,7 +690,7 @@ export function collectBackpromoteActions(
       const prLabel = prId > 0 ? `#${prId} - ${prTitle}` : prTitle;
       for (const cmd of commands) {
         if (!cmd || !cmd.id) continue;
-        if (cmd.context === 'check-deployment-only') continue;
+        if (getEffectiveActionContext(cmd, phase === 'commandsPreDeploy' ? 'pre-deploy' : 'post-deploy') === 'check-deployment-only') continue;
         const branchFilterVerdict = evaluateActionBranchFilter(cmd, targetBranchCandidates);
         if (branchFilterVerdict.run === false) {
           if (branchFilterVerdict.invalid) {
@@ -597,7 +700,7 @@ export function collectBackpromoteActions(
           }
           continue;
         }
-        if (allActions.some((action) => action.id === cmd.id)) {
+        if (allActions.some((action) => action.id === cmd.id && (action.prId === prId || Number(action.movedFrom) === prId))) {
           continue;
         }
         allActions.push({ ...cmd, prLabel, prId, commitHash: prGroup.commit.hash });
@@ -607,11 +710,19 @@ export function collectBackpromoteActions(
   return allActions.sort((a, b) => (groupIndex.get(a.commitHash) ?? 0) - (groupIndex.get(b.commitHash) ?? 0));
 }
 
+/** What happened to one action of a backpromote. identical: done by an identical action of the same run */
+export type BackpromoteActionOutcome = 'run' | 'skipped' | 'failed' | 'pending' | 'identical';
+
 export interface BackpromoteActionsOutcome {
   run: string[];
   skipped: string[];
   failed: string[];
   pending: string[];
+  // The skipped actions that an identical action of the same backpromote did (also in skipped)
+  identical: string[];
+  // The outcome of each action by its key (<Pull Request>:<pre|post>:<id>): the lists above hold ids,
+  // which two Pull Requests can reuse
+  byKey: Record<string, BackpromoteActionOutcome>;
 }
 
 /**
@@ -628,18 +739,29 @@ export async function executeBackpromoteActions(options: {
   alreadyRun: Map<string, BackpromoteActionRow>;
   sandboxName: string;
   orgId: string;
+  orgLabel: string;
   user: string;
   conn: any;
   store: BackpromoteCommentStore;
   commandThis: any;
 }): Promise<BackpromoteActionsOutcome> {
-  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [] };
+  const outcome: BackpromoteActionsOutcome = { run: [], skipped: [], failed: [], pending: [], identical: [], byKey: {} };
   const phase: 'pre' | 'post' = options.phase === 'commandsPreDeploy' ? 'pre' : 'post';
+  // Into the id lists that panels already read, and under the key of the action
+  const settle = (action: BackpromoteActionCandidate, result: BackpromoteActionOutcome) => {
+    outcome.byKey[backpromoteActionKey(action.prId, phase, action.id)] = result;
+    if (result === 'identical') {
+      outcome.skipped.push(action.id);
+      outcome.identical.push(action.id);
+    } else {
+      outcome[result].push(action.id);
+    }
+  };
   const record = async (action: BackpromoteActionCandidate, status: BackpromoteActionRow['status']) => {
     if (action.prId <= 0) {
       return;
     }
-    const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase, sandboxName: options.sandboxName, orgId: options.orgId, date: new Date().toISOString(), status, user: options.user };
+    const row: BackpromoteActionRow = { actionId: action.id, label: action.label, phase, sandboxName: options.sandboxName, orgId: options.orgId, orgLabel: options.orgLabel, date: new Date().toISOString(), status, user: options.user };
     try {
       await options.store.update(action.prId, (state) => upsertActionRow(state, row));
     } catch (e) {
@@ -653,19 +775,34 @@ export async function executeBackpromoteActions(options: {
   uxLog('action', options.commandThis, c.cyan(t('backpromoteExecutingActions', { count: toRun.length, phase: phase === 'pre' ? t('actionWhenPreDeploy') : t('actionWhenPostDeploy') })));
   globalThis.jsForceConn = options.conn;
   for (const action of toRun) {
-    const previous = options.alreadyRun.get(action.id);
+    const previous = options.alreadyRun.get(backpromoteActionKey(action.prId, phase, action.id));
     if (previous && previous.status === 'success' && action.runOnlyOnceByOrg !== false) {
       uxLog('log', options.commandThis, c.grey(t('backpromoteActionAlreadyRun', { label: action.label, date: previous.date.substring(0, 10) })));
-      outcome.skipped.push(action.id);
+      settle(action, 'skipped');
       continue;
     }
     if (action.type === 'manual') {
       uxLog('warning', options.commandThis, c.yellow(t('backpromoteManualActionPending', { label: action.label })));
-      outcome.pending.push(action.id);
+      settle(action, 'pending');
       await record(action, 'pending');
       continue;
     }
-    let actionInstance: any = null;
+    const actionInstance: any = await ActionsProvider.buildActionInstance(action);
+    if (!actionInstance) {
+      settle(action, 'skipped');
+      continue;
+    }
+    // An identical action (same type, phase, user and parameters) of another Pull Request already ran
+    // in this backpromote: its work is in the sandbox, so this one is written as done without logging
+    // in nor running. An action written twice in one Pull Request runs twice.
+    const identityKey = buildIdentityKeyFromProvider(actionInstance, action, phase === 'pre' ? 'pre-deploy' : 'post-deploy');
+    const identicalRun = markIdentitySeen(identityKey, action.prId) ? null : findIdenticalActionRun(identityKey);
+    if (identicalRun) {
+      uxLog('log', options.commandThis, c.grey(t('backpromoteActionIdentical', { label: action.label, identicalLabel: identicalRun.ref.label, source: formatIdenticalActionSource(identicalRun.ref) })));
+      settle(action, 'identical');
+      await record(action, 'success');
+      continue;
+    }
     if (action.customUsername) {
       const user = await findUserByUsernameLike(action.customUsername, options.conn).catch(() => null);
       let authenticated = false;
@@ -678,19 +815,12 @@ export async function executeBackpromoteActions(options: {
       }
       if (!user || !authenticated) {
         uxLog('warning', options.commandThis, c.yellow(t('backpromoteActionLoginAsFailed', { username: action.customUsername, label: action.label })));
-        outcome.pending.push(action.id);
+        settle(action, 'pending');
         await record(action, 'pending');
         continue;
       }
       uxLog('log', options.commandThis, c.green(t('backpromoteActionLoginAsSuccess', { username: user.Username, label: action.label })));
-      actionInstance = await ActionsProvider.buildActionInstance(action);
       actionInstance.customUsernameToUse = user.Username;
-    } else {
-      actionInstance = await ActionsProvider.buildActionInstance(action);
-    }
-    if (!actionInstance) {
-      outcome.skipped.push(action.id);
-      continue;
     }
     let status: BackpromoteActionRow['status'] = 'success';
     try {
@@ -702,7 +832,7 @@ export async function executeBackpromoteActions(options: {
       } else if (['failed', 'not-run'].includes(code)) {
         status = 'failed';
       } else if (code === 'skipped') {
-        outcome.skipped.push(action.id);
+        settle(action, 'skipped');
         continue;
       }
     } catch (e) {
@@ -711,11 +841,12 @@ export async function executeBackpromoteActions(options: {
     }
     if (status === 'success') {
       uxLog('success', options.commandThis, c.green(`[Backpromote] ${t('backpromoteActionCompletedSuccessfully', { label: action.label })}`));
-      outcome.run.push(action.id);
+      settle(action, 'run');
+      recordSuccessfulActionRun(identityKey, { ref: { actionId: action.id, label: action.label, pr: action.prId } });
     } else if (status === 'pending') {
-      outcome.pending.push(action.id);
+      settle(action, 'pending');
     } else {
-      outcome.failed.push(action.id);
+      settle(action, 'failed');
     }
     await record(action, status);
   }

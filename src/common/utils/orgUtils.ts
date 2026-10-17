@@ -3,22 +3,23 @@ import { prompts } from './prompts.js';
 import c from 'chalk';
 import fs from './fsUtils.js';
 import * as path from 'path';
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isCI, uxLog } from './index.js';
+import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isAgentMode, isCI, uxLog } from './index.js';
 import { getOrgAccessToken } from './credentialUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { getConfig, setConfig } from '../../config/index.js';
+import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
 import { isValidEmail } from './stringUtils.js';
 import sortArray from './sortArray.js';
-import { AuthInfo, Connection, SfError } from '@salesforce/core';
+import { AuthInfo, Connection, SfdcUrl, SfError } from '@salesforce/core';
 import { importData } from './dataUtils.js';
 import { soqlQuery, soqlQueryTooling } from './apiUtils.js';
+import { open } from './openUtils.js';
 import { isSfdxProject } from './projectUtils.js';
 import { deployMetadatas, smartDeploy, forceSourcePush } from './deployUtils.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { clearCache } from '../cache/index.js';
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { t } from './i18n.js';
-import { runAuthHook } from './authUtils.js';
+import { decideOrgAlias, getAliasOfUsername, nameConnectedOrg, promptOrgAlias, runAuthHook } from './authUtils.js';
 
 export async function listProfiles(conn: any) {
   if (conn in [null, undefined]) {
@@ -232,6 +233,7 @@ export async function promptOrg(
       Command: commandThis,
       devHub: options.devHub === true,
       setDefault: options.setDefault !== false,
+      alias: options.alias,
     });
     const justConnectedOrg = globalThis.justConnectedOrg;
     if (!justConnectedOrg?.username) {
@@ -249,15 +251,15 @@ export async function promptOrg(
   // Token is expired: login again to refresh it
   if (org?.connectedStatus === 'RefreshTokenAuthError' || org?.connectedStatus?.includes('expired')) {
     uxLog("action", this, c.yellow('⚠️ ' + t('authenticationHasExpiredPleaseLogIn')));
-    const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}`;
-    const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    org = loginResult.result;
-    if (!org?.username) {
-      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
-    }
+    org = await reconnectExpiredOrg(org, { nameOrg: options.nameOrg === true });
   }
 
   uxLog("action", commandThis, c.cyan(t('selectedOrg', { org: c.green(org.username), org1: c.green(org.instanceUrl) })));
+
+  // Offer to name an org that has no alias yet
+  if (options.nameOrg === true && !org.alias) {
+    org.alias = await nameConnectedOrg(org.username, org.instanceUrl);
+  }
 
   if (options.setDefault === true) {
     // Set default username
@@ -345,10 +347,12 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Get connected Status and instance URL
   let connectedStatus;
   let instanceUrl;
+  let scratchOrgStatus;
   let orgResult: any;
   if (typeof targetOrg !== 'string') {
     instanceUrl = targetOrg.instanceUrl;
     connectedStatus = targetOrg.connectedStatus;
+    scratchOrgStatus = targetOrg.status;
     orgResult = targetOrg;
     targetOrg = targetOrg.username;
   }
@@ -362,6 +366,7 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
     });
     connectedStatus = displayResult?.result?.connectedStatus || "error";
     instanceUrl = displayResult?.result?.instanceUrl || "error";
+    scratchOrgStatus = displayResult?.result?.status;
     orgResult = displayResult.result
   }
   // Org is connected ("Unknown" is the status reported for scratch orgs)
@@ -371,14 +376,18 @@ export async function makeSureOrgIsConnected(targetOrg: string | any) {
   // Authentication is necessary
   if (connectedStatus?.includes("expired") || connectedStatus === "RefreshTokenAuthError") {
     uxLog("action", this, c.yellow(t('yourAuthTokenHasExpiredYouNeed')));
+    // Read the alias before the auth file is deleted
+    const alias = orgResult?.alias || (await getAliasOfUsername(targetOrg));
     await deleteRottenAuthFile(targetOrg);
     // Authenticate again
-    const loginCommand = 'sf org login web' + ` --instance-url ${instanceUrl}`;
-    const loginRes = await execSfdxJson(loginCommand, this, { fail: true, output: false });
-    if (!loginRes?.result?.username) {
-      throw new SfError(t('authenticationDidNotConnectAnyOrg'));
-    }
-    return loginRes.result;
+    return await reconnectExpiredOrg({ username: targetOrg, instanceUrl, alias });
+  }
+  // A scratch org reports no connectedStatus at all: sf org display gives its
+  // lifecycle in "status" instead. Read after the checks above, never before,
+  // so that a scratch org still inside its 30 days but whose token was revoked
+  // is sent to re-authenticate rather than reported as working.
+  if (scratchOrgStatus === "Active") {
+    return orgResult;
   }
   // We shouldn't be here 😊
   uxLog("warning", this, c.yellow(t('whatAreWeDoingHerePleaseCreate') + instanceUrl + ":" + connectedStatus));
@@ -543,6 +552,18 @@ export async function managePackageConfig(installedPackages, packagesToInstallCo
     const configFile = await setConfig('project', { installedPackages: projectPackages });
     WebSocketClient.sendReportFileMessage(`${configFile!}#installedPackages`, t('packageConfigInSfdxHardisYml'), "report");
   }
+}
+
+// A Dev Hub authenticated through an External Client App fails scratch signup with C-1016 unless the CLI's built-in app
+// is used. Nothing is added when the user chose an app, or set SFDX_CLIENT_SECRET, which the CLI would send with it.
+export function getScratchSignupEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  if (env.SF_SCRATCH_SIGNUP_CONNECTED_APP || env.SFDX_CLIENT_SECRET) {
+    return {};
+  }
+  return {
+    SF_SCRATCH_SIGNUP_CONNECTED_APP: 'PlatformCLI',
+    SF_SCRATCH_SIGNUP_CALLBACK_URL: env.SF_SCRATCH_SIGNUP_CALLBACK_URL || 'http://localhost:1717/OauthRedirect',
+  };
 }
 
 export async function installPackages(installedPackages: any[], orgAlias: string) {
@@ -835,4 +856,87 @@ export async function listOrgSObjectsFilteredWithQualifiedNames(connection: Conn
   return sObjectResults.records.filter((record) =>
     !record.QualifiedApiName.endsWith("__Share") && !record.QualifiedApiName.endsWith("__ChangeEvent")
   );
+}
+
+/**
+ * Open an org in the user's browser, the way `sf org open` does, except where no browser can be
+ * opened: in CI, and in container mode (Agentforce Vibes, a dev container, Codespaces), where the
+ * Salesforce CLI only prints the login link and returns. A command that hid that output left the
+ * user with nothing, so there the link is logged and sent to the VS Code panel as a button. The link
+ * holds a one-time code: it must be clicked right away, and it is kept out of the log file.
+ *
+ * The link is always asked with --url-only and the browser launched from here, never by
+ * `sf org open` itself: run as a child process, that command exits right after it spawned its
+ * browser launcher, and on Windows the launcher dies with it (every child of a Node process is
+ * killed when the process exits, unless detached) before it had time to open anything. The
+ * launcher used here is waited for.
+ * @param commandThis The running command
+ * @param options username: the org to open (the default org when omitted), fail: throw when
+ * `sf org open` fails (default true)
+ */
+export async function openOrgInBrowser(
+  commandThis: any,
+  options: { username?: string; debug?: boolean; fail?: boolean } = {}
+): Promise<void> {
+  const target = options.username ? ` --target-org ${options.username}` : '';
+  const openRes = await execSfdxJson(`sf org open --url-only${target}`, commandThis, {
+    fail: options.fail !== false,
+    output: false,
+    debug: options.debug === true,
+  });
+  const url: string | null = openRes?.result?.url || null;
+  if (!url) {
+    return;
+  }
+  if (isCI || isContainerMode()) {
+    // <copy> shows the link with a copy button in the VS Code UI. The line stays out of the log file.
+    const displayedUrl = WebSocketClient.isAliveWithLwcUI() ? `<copy>${url}</copy>` : url;
+    uxLog("action", commandThis, c.cyan(t('openOrgWithLink', { url: c.green(displayedUrl) })), { sensitive: true });
+    WebSocketClient.sendReportFileMessage(url, t('openOrgButton'), 'actionUrl');
+    return;
+  }
+  await waitForLightningDomain(url, commandThis);
+  // The launcher hands the link to the browser and exits within a second. Not waiting longer than
+  // a few seconds: a launcher that stays alive (some Linux desktops) must not block the command.
+  await Promise.race([open(url, { wait: true }), new Promise((resolve) => setTimeout(resolve, 5000))]);
+}
+
+// Container mode: `sf org open` prints the link instead of opening a browser. The Salesforce CLI
+// reads SF_CONTAINER_MODE (SFDX_CONTAINER_MODE before) and accepts `true` or `1`, nothing else.
+export function isContainerMode(): boolean {
+  const value = (getEnvVar('SF_CONTAINER_MODE') || getEnvVar('SFDX_CONTAINER_MODE') || '').toLowerCase();
+  return value === 'true' || value === '1';
+}
+
+// Logs in again to an org whose token expired, keeping its alias, or naming it in the same call
+async function reconnectExpiredOrg(
+  org: { username?: string; instanceUrl: string; alias?: string | null },
+  options: { nameOrg?: boolean } = {}
+) {
+  const aliasDecision = decideOrgAlias({
+    existingAlias: org.alias || (await getAliasOfUsername(org.username)),
+    instanceUrl: org.instanceUrl,
+    interactive: options.nameOrg === true && !isCI && !isAgentMode(),
+  });
+  const alias = aliasDecision.ask === 'before' ? await promptOrgAlias(org.instanceUrl) : aliasDecision.alias;
+  if (aliasDecision.ask === 'before') {
+    // The VS Code UI hides everything after a prompt until the next action log
+    uxLog("action", this, c.cyan(t('authenticatingUsingWebLogin')));
+  }
+  const loginCommand = 'sf org login web' + ` --instance-url ${org.instanceUrl}` + (alias ? ` --alias ${alias}` : '');
+  const loginResult = await execSfdxJson(loginCommand, this, { fail: true, output: false });
+  if (!loginResult?.result?.username) {
+    throw new SfError(t('authenticationDidNotConnectAnyOrg'));
+  }
+  return { ...loginResult.result, alias: alias || loginResult.result.alias || null };
+}
+
+// `sf org open` waits for the My Domain of a new org to resolve before opening it (up to
+// SF_DOMAIN_RETRY seconds, 240 by default): so does this, and the org is opened anyway on timeout
+async function waitForLightningDomain(url: string, commandThis: any): Promise<void> {
+  try {
+    await new SfdcUrl(url).checkLightningDomain();
+  } catch (error: any) {
+    uxLog("warning", commandThis, c.yellow(t('openOrgDomainNotResolved', { message: error?.message || String(error) })));
+  }
 }

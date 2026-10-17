@@ -76,6 +76,30 @@ export async function getSfdxProjectPackageDirectories(cwd = process.cwd()): Pro
   return defaultPackageDirectories;
 }
 
+/**
+ * The metadata files matching a glob pattern, searched in the package directories of
+ * sfdx-project.json only, and returned relative to cwd. A repository can hold other copies of the
+ * same metadata (fixtures, samples, backups, training start states) that are not the project:
+ * documenting them too writes the same page several times, from whichever copy comes last.
+ * Outside of an SFDX project, the whole folder is searched as before.
+ */
+export async function globMetadataInPackageDirectories(pattern: string, cwd = process.cwd()): Promise<string[]> {
+  if (!isSfdxProject(cwd)) {
+    return await glob(pattern, { cwd, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
+  }
+  const files = new Set<string>();
+  for (const packageDirectory of await getSfdxProjectPackageDirectories(cwd)) {
+    if (!(await fs.pathExists(packageDirectory.fullPath))) {
+      continue;
+    }
+    const found = await glob(pattern, { cwd: packageDirectory.fullPath, ignore: METADATA_DOC_GLOB_IGNORE_PATTERNS });
+    for (const file of found) {
+      files.add(path.join(packageDirectory.path, file));
+    }
+  }
+  return [...files];
+}
+
 export async function createBlankSfdxProject(cwd = process.cwd(), debug = false) {
   uxLog("log", this, c.cyan(t('creatingBlankSfdxProject')));
   const projectCreateCommand = 'sf project generate --name "sfdx-hardis-blank-project"';

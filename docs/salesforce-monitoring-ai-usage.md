@@ -1,6 +1,6 @@
 ---
 title: Agentforce and Data 360 credit usage (Salesforce monitoring)
-description: Break down Agentforce and Data 360 credit consumption by agent and action
+description: With sfdx-hardis, break down Agentforce and Data 360 credit consumption by agent and action
 ---
 <!-- markdownlint-disable MD013 -->
 

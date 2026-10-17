@@ -1,6 +1,6 @@
 ---
 title: sfdx-hardis with AI Coding Agents
-description: How to drive Salesforce DevOps tasks non-interactively with Claude Code, GitHub Copilot, Gemini CLI, Cursor, and other AI coding agents using the --agent flag
+description: With sfdx-hardis, how to drive Salesforce DevOps tasks non-interactively with Claude Code, GitHub Copilot, Gemini CLI, Cursor, and other AI coding agents using the --agent flag
 ---
 <!-- markdownlint-disable MD013 -->
 
@@ -8,7 +8,7 @@ description: How to drive Salesforce DevOps tasks non-interactively with Claude 
 
 sfdx-hardis is built to work with **AI coding agents** such as [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [GitHub Copilot](https://github.com/features/copilot), [Gemini CLI](https://github.com/google-gemini/gemini-cli), [Cursor](https://www.cursor.com/), [OpenAI Codex](https://openai.com/codex), and any other agent that can run shell commands and understands skills.
 
-Over **130 commands** expose an `--agent` flag that switches to a fully **non-interactive, automation-safe** execution mode: no prompts, no blocking, predictable outputs.
+Over **170 commands** expose an `--agent` flag that switches to a fully **non-interactive, automation-safe** execution mode: no prompts, no blocking, predictable outputs.
 
 ---
 
@@ -21,6 +21,7 @@ Salesforce DevOps involves many repetitive, multi-step operations: creating feat
 - **Fail fast**: if a required parameter is missing, the command exits immediately with a descriptive error listing available options.
 - **Composable**: commands can be chained as agent tool calls or shell scripts.
 - **Works everywhere**: any agent that understands skills and can run shell commands can drive sfdx-hardis: Claude Code, Copilot, Gemini, Cursor, Codex, or your own automation.
+- **Answers about your orgs**: a monitoring repository explains itself to agents, so they can answer what changed in an org, when, and through which Pull Request. See [below](#ask-questions-about-your-org-history-and-deployments).
 
 ---
 
@@ -51,9 +52,14 @@ In agent mode:
 
 All major coding agents support **skills**, markdown files that describe how to perform a task. Create skill files in your project and the agent will know how to drive sfdx-hardis.
 
-**`<skills-folder>/new-user-story.md`**
+**`<skills-folder>/new-user-story/SKILL.md`**
 
 ```markdown
+---
+name: new-user-story
+description: Start a new Salesforce User Story by creating a feature branch. Use when the user wants to start working on a new feature, bug fix, or task.
+---
+
 # New Salesforce User Story
 
 When the user asks to start a new Salesforce User Story, run:
@@ -65,9 +71,14 @@ sf hardis:work:new --agent --task-name "<TICKET-ID> <description>" --target-bran
 - Do not pass --open-org unless explicitly asked.
 ```
 
-**`<skills-folder>/save-work.md`**
+**`<skills-folder>/save-work/SKILL.md`**
 
 ```markdown
+---
+name: save-work
+description: Save and push Salesforce work by cleaning sources, updating package.xml, committing, and pushing. Use when the user asks to save, publish, or push their Salesforce changes.
+---
+
 # Save Salesforce User Story
 
 When the user asks to save or publish their Salesforce work:
@@ -79,17 +90,19 @@ This will clean sources, update package.xml, and push to the remote.
 If the target branch cannot be auto-resolved, add --targetbranch <branch>.
 ```
 
-The skills folder depends on your agent:
+Each skill is a folder holding a `SKILL.md` file, whose `name` and `description` tell the agent when to use it. The skills folder depends on your agent:
 
-| Agent          | Skills folder      |
-|----------------|--------------------|
-| Claude Code    | `.claude/skills/`  |
-| GitHub Copilot | `.github/copilot/` |
-| Gemini CLI     | `.gemini/skills/`  |
-| Cursor         | `.cursor/skills/`  |
-| OpenAI Codex   | `.codex/skills/`   |
+| Agent          | Skills folder     |
+|----------------|-------------------|
+| Claude Code    | `.claude/skills/` |
+| GitHub Copilot | `.github/skills/` |
+| Gemini CLI     | `.gemini/skills/` |
+| Cursor         | `.cursor/skills/` |
+| OpenAI Codex   | `.agents/skills/` |
 
-See [Using AI Coding Agents](salesforce-ci-cd-agent-skills.md) for more detailed skill examples including org diagnostics.
+GitHub Copilot also reads `.claude/skills/` and `.agents/skills/`, so one folder can serve several agents.
+
+See [Using AI Coding Agents](salesforce-devops-agent-skills.md) for more detailed skill examples: deployment simulation, package configuration, and deployment actions (create, read the status in each org, try in a developer org, retry or close a failed one).
 
 ---
 
@@ -114,25 +127,66 @@ See [Installation](installation.md) for all available image variants.
 
 ---
 
+## Ask Questions About Your Org History and Deployments
+
+A [monitoring repository](salesforce-monitoring-home.md) holds a nightly backup of each org, one commit per day with changes. At each backup, sfdx-hardis writes an `AGENTS.md` file at its root, with a `CLAUDE.md` pointing to it. It explains to the agent how the monitoring works, what each file holds, what the backup skips, and how to read the git history. There are no skills to install: open the monitoring repository with your agent and ask.
+
+- "What changed in production last week?"
+- "When was the `Check_VAT` validation rule last modified, and what changed?"
+- "Write the report of the changes between March 1 and March 31." The agent writes a markdown file grouping the Added, Removed and Updated components by metadata type
+- "Which monitoring checks run on this org, and on which day?"
+
+Set `deploymentRepository` in the `.sfdx-hardis.yml` of the monitoring branch to the address of your sfdx-hardis CI/CD repository, and the agent also searches it. It clones it next to the monitoring repository, read-only, finds the branch that deploys to the org, and reads the Pull Requests and the pipeline logs of both repositories with `gh`, `glab`, `az` or the Bitbucket API:
+
+- "Was this Flow change deployed by the pipeline, or made directly in production?"
+- "Which Pull Request brought this Apex class to production, and when?"
+- "Why did last night's deployment to UAT fail?"
+- "Why did last night's backup fail?"
+
+Set `grafanaUrl` too, and the agent also queries the logs and metrics the monitoring sends to [Grafana](salesforce-monitoring-grafana-v2.md), through the Grafana API: "How did the API requests limit evolve this quarter?", "On which days did Apex errors spike?".
+
+The agent uses a git provider CLI you are already logged in with, or tokens from a `.env` file (a read-only `GRAFANA_API_TOKEN` for Grafana). It only reads: it never pushes, comments, starts a pipeline or changes Grafana. See [Ask questions with a coding agent](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent).
+
+---
+
 ## All Agent-Ready Commands
 
 The table below lists every sfdx-hardis command that supports `--agent`. Click the command name to open its full reference page.
 
 ### Devops
 
-| Command                                                                               | What an agent can do                                                                                                                                                |
-|---------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)         | Retrieve installed packages from an org and optionally update project config                                                                                        |
-| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md) | Retrieve the full CRM Analytics configuration from an org                                                                                                           |
-| [**hardis:project:create**](hardis/project/create.md)                                 | Scaffold a new SFDX project with sfdx-hardis configuration                                                                                                          |
-| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                     | Smart-deploy SFDX sources with delta, dependency resolution, and pre/post hooks                                                                                     |
-| [**hardis:scratch:pull**](hardis/scratch/pull.md)                                     | Pull the latest metadata changes from a scratch org into the local SFDX project                                                                                     |
-| [**hardis:scratch:push**](hardis/scratch/push.md)                                     | Push local SFDX project metadata to the scratch org                                                                                                                 |
-| [**hardis:work:new**](hardis/work/new.md)                                             | Create a new User Story git branch and optionally provision a scratch org or sandbox. Required flags: `--task-name`, `--target-branch`; optional: `--branch-prefix` |
-| [**hardis:work:resetselection**](hardis/work/resetselection.md)                       | Soft-reset staged commits to re-evaluate which changes go into the Pull Request                                                                                     |
-| [**hardis:work:save**](hardis/work/save.md)                                           | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push. Optional: `--targetbranch`, `--noclean`, `--nogit`                               |
-| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                           | Generate release notes with tickets, Pull Requests, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main`           |
-| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                               | Generate a DORA metrics report (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent --target-org`                                |
+| Command                                                                                     | What an agent can do                                                                                                                                                                                              |
+|---------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)               | Retrieve installed packages from an org and optionally update project config                                                                                                                                      |
+| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)       | Retrieve the full CRM Analytics configuration from an org                                                                                                                                                         |
+| [**hardis:project:create**](hardis/project/create.md)                                       | Scaffold a new SFDX project with sfdx-hardis configuration                                                                                                                                                        |
+| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                           | Smart-deploy SFDX sources with delta, dependency resolution, and pre/post hooks                                                                                                                                   |
+| [**hardis:scratch:pull**](hardis/scratch/pull.md)                                           | Pull the latest metadata changes from a scratch org into the local SFDX project                                                                                                                                   |
+| [**hardis:scratch:push**](hardis/scratch/push.md)                                           | Push local SFDX project metadata to the scratch org                                                                                                                                                               |
+| [**hardis:work:new**](hardis/work/new.md)                                                   | Create a new User Story git branch and optionally provision a scratch org or sandbox. Required flags: `--task-name`, `--target-branch`; optional: `--branch-prefix`                                               |
+| [**hardis:work:resetselection**](hardis/work/resetselection.md)                             | Soft-reset staged commits to re-evaluate which changes go into the Pull Request                                                                                                                                   |
+| [**hardis:work:save**](hardis/work/save.md)                                                 | Clean metadata, update `package.xml` / `destructiveChanges.xml`, commit, and push. Optional: `--targetbranch`, `--noclean`, `--nogit`                                                                             |
+| [**hardis:work:backpromote**](hardis/work/backpromote.md)                                   | Bring into a developer sandbox what was merged in the parent branch since the last backpromote (Beta). Replaces `hardis:work:refresh`. Use `--auto` to decide everything from flags                               |
+| [**hardis:project:pipeline:describe**](hardis/project/pipeline/describe.md)                 | Describe the major branches of the project and the steps between them, read-only, with `--json`. Call it before choosing a branch instead of assuming the pipeline                                                |
+| [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md) | List the User Stories that could be promoted from a major branch, read-only, with `--source-branch` and `--json`. Creates and closes nothing (Beta)                                                               |
+| [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                   | Assemble a promotion branch carrying only the chosen User Stories, and open its Pull Request, with `--agent --source-branch --pull-requests` (Beta)                                                               |
+| [**hardis:project:action:list**](hardis/project/action/list.md)                             | List the deployment actions of a scope with `--scope --when`, or read their status in each org with `--with-status --pr-ids`, and what the next promotion will do with `--forecast`                               |
+| [**hardis:project:action:create**](hardis/project/action/create.md)                         | Create a pre- or post-deployment action. Required: `--scope --when --type --label`, plus the flags of the type                                                                                                    |
+| [**hardis:project:action:update**](hardis/project/action/update.md)                         | Change an action, move it to the other phase with `--new-when`, or to a fix Pull Request with `--move-to-pr`. Required: `--scope --when --action-id`                                                              |
+| [**hardis:project:action:delete**](hardis/project/action/delete.md)                         | Delete a deployment action. Required: `--scope --when --action-id`                                                                                                                                                |
+| [**hardis:project:action:reorder**](hardis/project/action/reorder.md)                       | Change the order the actions run in, with `--action-id --position` or `--order`                                                                                                                                   |
+| [**hardis:project:action:link-pull-request**](hardis/project/action/link-pull-request.md)   | Attach the draft actions of a branch to its Pull Request, with `--pr-id`                                                                                                                                          |
+| [**hardis:project:action:run**](hardis/project/action/run.md)                               | Try the actions of a Pull Request in a developer org before the merge (`--pr --all`), or retry a failed post-deployment action in the org of a major branch without redeploying (`--pr --action-id --org-branch`) |
+| [**hardis:project:action:set-status**](hardis/project/action/set-status.md)                 | Record an action done by hand as done in an org, so later deployments skip it. Required: `--pr --action-id`, and `--org-branch` or `--target-org`                                                                 |
+| [**hardis:project:action:test-class:list**](hardis/project/action/test-class/list.md)       | List the Apex test classes a deployment runs, at project, branch or Pull Request scope                                                                                                                            |
+| [**hardis:project:action:test-class:add**](hardis/project/action/test-class/add.md)         | Add Apex test classes to that list, with `--scope --class-name`                                                                                                                                                   |
+| [**hardis:project:action:test-class:remove**](hardis/project/action/test-class/remove.md)   | Remove Apex test classes from that list, with `--class-name` or `--all-class`                                                                                                                                     |
+| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                                 | Generate release notes with tickets, Pull Requests, metadata changes, deployment actions, and AI summary using `--agent --mode post --target-branch main`                                                         |
+| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                                     | Compute the DORA metrics of each major branch from the git provider (Deployment Frequency, Lead Time, Change Failure Rate, MTTR, Rework Rate) with `--agent`, as JSON only with `--data-only`                     |
+| [**hardis:project:function:create**](hardis/project/function/create.md)                     | Declare a node, python or bash script as a deployment action type, with `--id --label --runtime --script --inputs --outputs`                                                                                      |
+| [**hardis:project:function:list**](hardis/project/function/list.md)                         | List the custom functions of the project and check their runtimes, with `--json` and `--check-runtimes`                                                                                                           |
+| [**hardis:project:function:update**](hardis/project/function/update.md)                     | Change a custom function definition. Required: `--id`                                                                                                                                                             |
+| [**hardis:project:function:delete**](hardis/project/function/delete.md)                     | Remove a custom function. Required: `--id`; `--force` to delete one still used by deployment actions                                                                                                              |
 | [**hardis:ticket:test-cases:init**](hardis/ticket/test-cases/init.md) | Write the test cases drafted for a ticket into a notebook. `--agent` skips the prompts; required then: `--testsjsonfile`, or `--kind` + `--ticket-number` for a blank one |
 | [**hardis:ticket:test-cases:upsert**](hardis/ticket/test-cases/upsert.md) | Send the test cases of a notebook to Azure DevOps or Xray. `--agent` skips the confirmation asked before any write. Required: `--notebook` or `--testsjsonfile`, and `--provider` unless `testCasesProvider` is configured; optional: `--dry-run` |
 
@@ -144,6 +198,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:lint:metadatastatus**](hardis/lint/metadatastatus.md)                                     | Detect inactive metadata components in local project files                                                                                                       |
 | [**hardis:lint:missingattributes**](hardis/lint/missingattributes.md)                               | Identify custom fields that have no description (documentation enforcement)                                                                                      |
 | [**hardis:lint:unusedmetadatas**](hardis/lint/unusedmetadatas.md)                                   | Find custom labels and permissions that are defined but never referenced in code                                                                                 |
+| [**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md)                       | Return the built-in monitoring commands and notification defaults as JSON. Read-only, no org needed                                                              |
 | [**hardis:org:configure:grafana-dashboards**](hardis/org/configure/grafana-dashboards.md)           | Install the Org Monitoring Grafana dashboards (and paused alert pack with `--with-alerts`) on a Grafana instance. Requires `--grafana-url` and `--grafana-token` |
 | [**hardis:org:diagnose:ai-usage**](hardis/org/diagnose/ai-usage.md)                                 | Break down Agentforce and Data 360 credit consumption by agent and action. Flag: `--days` (default 30)                                                           |
 | [**hardis:org:diagnose:apex-api-version**](hardis/org/diagnose/apex-api-version.md)                 | Find Apex classes deployed with API versions below a configurable threshold                                                                                      |
@@ -180,47 +235,49 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 ### Documentation
 
-| Command                                                                               | What an agent can do                                                                                                    |
-|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)                       | Export an Excel data dictionary of objects with fields, validation rules, and record types. Flag: `--objects`           |
-| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)           | Generate a detailed report of Permission Set Group assignments and included permission sets                             |
-| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                                 | Display where custom fields are referenced across metadata components (impact analysis)                                 |
-| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                           | Convert a Salesforce Flow metadata file into a human-readable Markdown description                                      |
-| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                             | Publish MkDocs-generated documentation to Cloudflare Pages                                                              |
-| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)             | Synchronize MkDocs documentation to a Confluence space                                                                  |
-| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)             | Publish MkDocs documentation inside a Salesforce org (static resource, Visualforce page and Custom Tab)                 |
-| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)                 | Measure field-level data completeness across sObjects for documentation and cleanup planning                            |
-| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)                     | Manage prompt override files for customizing AI-generated documentation output                                          |
-| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)               | Convert a `package.xml` into a human-readable Markdown change summary                                                   |
-| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)                       | Generate reference documentation for a Salesforce CLI plugin                                                            |
-| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)                     | Generate the full Salesforce project documentation as Markdown: objects, flows, profiles, Apex, LWC, packages, and more |
-| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md) | Generate a visual Flow diff markdown between two commits for deployment review                                          |
+| Command                                                                               | What an agent can do                                                                                                                                            |
+|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)                       | Export an Excel data dictionary of objects with fields, validation rules, and record types. Flag: `--objects`                                                   |
+| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md)           | Generate a detailed report of Permission Set Group assignments and included permission sets                                                                     |
+| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                                 | Display where custom fields are referenced across metadata components (impact analysis)                                                                         |
+| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                           | Convert a Salesforce Flow metadata file into a human-readable Markdown description                                                                              |
+| [**hardis:doc:metadata-deps**](hardis/doc/metadata-deps.md)                           | Find which metadata components use a selected component, or what it uses. Flags: `--type`, `--name`, `--id`, `--source-file`, `--direction`, `--component-type` |
+| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                             | Publish MkDocs-generated documentation to Cloudflare Pages                                                                                                      |
+| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)             | Synchronize MkDocs documentation to a Confluence space                                                                                                          |
+| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)             | Publish MkDocs documentation inside a Salesforce org (static resource, Visualforce page and Custom Tab)                                                         |
+| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)                 | Measure field-level data completeness across sObjects for documentation and cleanup planning                                                                    |
+| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)                     | Manage prompt override files for customizing AI-generated documentation output                                                                                  |
+| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)               | Convert a `package.xml` into a human-readable Markdown change summary                                                                                           |
+| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)                       | Generate reference documentation for a Salesforce CLI plugin                                                                                                    |
+| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)                     | Generate the full Salesforce project documentation as Markdown: objects, flows, profiles, Apex, LWC, packages, and more                                         |
+| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md) | Generate a visual Flow diff markdown between two commits for deployment review                                                                                  |
 
 ### Org Utils
 
-| Command                                                                                                       | What an agent can do                                                                |
-|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [**hardis:datacloud:extract:agentforce-conversations**](hardis/datacloud/extract/agentforce-conversations.md) | Export Agentforce conversation logs from Data Cloud for analysis                    |
-| [**hardis:datacloud:extract:agentforce-feedback**](hardis/datacloud/extract/agentforce-feedback.md)           | Export user feedback records from Agentforce sessions in Data Cloud                 |
-| [**hardis:datacloud:sql-query**](hardis/datacloud/sql-query.md)                                               | Run ad-hoc or predefined SQL queries on Data Cloud objects                          |
-| [**hardis:org:community:update**](hardis/org/community/update.md)                                             | Programmatically publish or unpublish a Salesforce Community                        |
-| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                                       | Delete data from a Salesforce org using an SFDMU workspace configuration            |
-| [**hardis:org:data:export**](hardis/org/data/export.md)                                                       | Export data from a Salesforce org using an SFDMU workspace configuration            |
-| [**hardis:org:data:import**](hardis/org/data/import.md)                                                       | Import structured data into a Salesforce org from an SFDMU workspace                |
-| [**hardis:org:files:export**](hardis/org/files/export.md)                                                     | Mass-download files attached to Salesforce records                                  |
-| [**hardis:org:files:import**](hardis/org/files/import.md)                                                     | Mass-upload files and attach them to Salesforce records                             |
-| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                             | Fix list views whose scope `Mine` must be replaced with `Everything` for deployment |
-| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                               | Run a SOQL query against multiple orgs and aggregate results                        |
-| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                                   | Delete accumulated Apex debug logs from an org                                      |
-| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                                         | Delete obsolete Flow versions to reduce storage and technical debt                  |
-| [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                                   | Remove permission attributes from Profiles after migrating to Permission Sets       |
-| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                                       | Run Agentforce agent tests in the target org and report pass / fail results         |
-| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                           | Run Apex tests in the target org and report pass / fail / coverage results          |
-| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                                     | Fix `.invalid` email suffixes on sandbox users so they can log in                   |
-| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                                       | Freeze user logins (temporarily suspend access without deactivating)                |
-| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                                   | Unfreeze previously frozen users to restore their access                            |
-| [**hardis:org:user:unlink-security-key**](hardis/org/user/unlink-security-key.md)                             | Disconnect U2F / MFA registrations from users via automated Salesforce Setup        |
-| [**hardis:org:diagnose:mfa**](hardis/org/diagnose/mfa.md)                                                     | Audit MFA configuration gaps (enforcement, bypass perms, privileged users, SSO)     |
+| Command                                                                                                       | What an agent can do                                                                                                              |
+|---------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:datacloud:extract:agentforce-conversations**](hardis/datacloud/extract/agentforce-conversations.md) | Export Agentforce conversation logs from Data Cloud for analysis                                                                  |
+| [**hardis:datacloud:extract:agentforce-feedback**](hardis/datacloud/extract/agentforce-feedback.md)           | Export user feedback records from Agentforce sessions in Data Cloud                                                               |
+| [**hardis:datacloud:sql-query**](hardis/datacloud/sql-query.md)                                               | Run ad-hoc or predefined SQL queries on Data Cloud objects                                                                        |
+| [**hardis:org:community:update**](hardis/org/community/update.md)                                             | Programmatically publish or unpublish a Salesforce Community                                                                      |
+| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                                       | Delete data from a Salesforce org using an SFDMU workspace configuration                                                          |
+| [**hardis:org:data:export**](hardis/org/data/export.md)                                                       | Export data from a Salesforce org using an SFDMU workspace configuration                                                          |
+| [**hardis:org:data:import**](hardis/org/data/import.md)                                                       | Import structured data into a Salesforce org from an SFDMU workspace                                                              |
+| [**hardis:org:files:export**](hardis/org/files/export.md)                                                     | Mass-download files attached to Salesforce records                                                                                |
+| [**hardis:org:files:import**](hardis/org/files/import.md)                                                     | Mass-upload files and attach them to Salesforce records                                                                           |
+| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                             | Fix list views whose scope `Mine` must be replaced with `Everything` for deployment                                               |
+| [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                                   | List the metadata components of a type (names and Ids), or the folders of a folder type. Flags: `--type`, `--folder`, `--refresh` |
+| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                               | Run a SOQL query against multiple orgs and aggregate results                                                                      |
+| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                                   | Delete accumulated Apex debug logs from an org                                                                                    |
+| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                                         | Delete obsolete Flow versions to reduce storage and technical debt                                                                |
+| [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                                   | Remove permission attributes from Profiles after migrating to Permission Sets                                                     |
+| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                                       | Run Agentforce agent tests in the target org and report pass / fail results                                                       |
+| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                           | Run Apex tests in the target org and report pass / fail / coverage results                                                        |
+| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                                     | Fix `.invalid` email suffixes on sandbox users so they can log in                                                                 |
+| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                                       | Freeze user logins (temporarily suspend access without deactivating)                                                              |
+| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                                   | Unfreeze previously frozen users to restore their access                                                                          |
+| [**hardis:org:user:unlink-security-key**](hardis/org/user/unlink-security-key.md)                             | Disconnect U2F / MFA registrations from users via automated Salesforce Setup                                                      |
+| [**hardis:org:diagnose:mfa**](hardis/org/diagnose/mfa.md)                                                     | Audit MFA configuration gaps (enforcement, bypass perms, privileged users, SSO)                                                   |
 
 ### Metadata Utils
 
@@ -265,47 +322,52 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 
 ### Miscellaneous
 
-| Command                                                                                 | What an agent can do                                                                                          |
-|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| [**hardis:auth:login**](hardis/auth/login.md)                                           | Log in to a Salesforce org interactively or via JWT / connected-app OAuth                                     |
-| [**hardis:cache:clear**](hardis/cache/clear.md)                                         | Clear the sfdx-hardis local cache (useful when encountering stale metadata or config data)                    |
-| [**hardis:config:get**](hardis/config/get.md)                                           | Read and display the merged project / branch / user configuration for the current project                     |
-| [**hardis:doctor**](hardis/doctor.md)                                                   | Gather local install info and print a ready-to-paste report plus a pre-filled GitHub issue URL                |
-| [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md)             | Extract Pull Request data from GitHub, GitLab, or Azure DevOps for reporting and auditing                     |
-| [**hardis:mdapi:deploy**](hardis/mdapi/deploy.md)                                       | Deploy a Metadata API format directory or zip to a Salesforce org                                             |
-| [**hardis:misc:custom-label-translations**](hardis/misc/custom-label-translations.md)   | Isolate and export specific custom label translations                                                         |
-| [**hardis:misc:servicenow-report**](hardis/misc/servicenow-report.md)                   | Retrieve Salesforce user stories and enrich them with ServiceNow data                                         |
-| [**hardis:misc:toml2csv**](hardis/misc/toml2csv.md)                                     | Convert TOML structured data files to CSV format for reporting                                                |
-| [**hardis:org:connect**](hardis/org/connect.md)                                         | Authenticate to an existing Salesforce org and register it in the local project config                        |
-| [**hardis:org:create**](hardis/org/create.md)                                           | Provision a new sandbox with the automated setup steps defined in project config                              |
-| [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                 | Retrieve metadata from an org in SFDX source format                                                           |
-| [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)               | Pull metadata from any org with fine-grained control via `package.xml`                                        |
-| [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)     | Retrieve metadata using Metadata API format into the local project                                            |
-| [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)     | Retrofit an existing org into an SFDX project by retrieving all current metadata                              |
-| [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                     | Send deployment or simulation status notifications to configured team channels                                |
-| [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                       | Quickly deploy a previously validated set of changes                                                          |
-| [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                 | Dry-run a deployment to check what would be deployed without touching the org                                 |
-| [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md) | Deploy sources in Metadata API format to a target org                                                         |
-| [**hardis:project:deploy:start**](hardis/project/deploy/start.md)                       | Run a full deployment pipeline (sfdx-hardis wrapper for `sf project deploy start`) with error tips            |
-| [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                 | Check-only validate a deployment without applying changes to the org                                          |
-| [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)             | Generate a `package.xml` delta from git history using sfdx-git-delta                                          |
-| [**hardis:project:skills:import**](hardis/project/skills/import.md)                     | Import AI coding agent skill configurations from a remote repository into `.claude/`                          |
-| [**hardis:scratch:create**](hardis/scratch/create.md)                                   | Provision a complete scratch org including package installation, metadata deployment, and data initialization |
-| [**hardis:scratch:delete**](hardis/scratch/delete.md)                                   | Delete one or more scratch orgs to free up limits                                                             |
-| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md)                   | Authenticate locally to a scratch org fetched from the pool                                                   |
-| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)                       | Rebuild and replenish all scratch orgs in the configured pool                                                 |
-| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)                           | Empty and reinitialize the scratch org pool (full rebuild)                                                    |
-| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)                             | Display pool status: capacity, available, expired, and in-use orgs                                            |
-| [**hardis:source:deploy**](hardis/source/deploy.md)                                     | Deploy local SFDX project sources to a Salesforce org                                                         |
-| [**hardis:source:push**](hardis/source/push.md)                                         | Push local SFDX sources to a scratch org                                                                      |
-| [**hardis:source:retrieve**](hardis/source/retrieve.md)                                 | Retrieve metadata from an org and update local SFDX sources                                                   |
-| [**hardis:work:refresh**](hardis/work/refresh.md)                                       | Pull latest changes from target branch, merge, and push to the current scratch org or sandbox                 |
+| Command                                                                                 | What an agent can do                                                                                                                        |
+|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:auth:login**](hardis/auth/login.md)                                           | Log in to a Salesforce org interactively or via JWT / connected-app OAuth                                                                   |
+| [**hardis:cache:clear**](hardis/cache/clear.md)                                         | Clear the sfdx-hardis local cache (useful when encountering stale metadata or config data)                                                  |
+| [**hardis:config:get**](hardis/config/get.md)                                           | Read and display the merged project / branch / user configuration for the current project                                                   |
+| [**hardis:doctor**](hardis/doctor.md)                                                   | Gather local install info and print a ready-to-paste report plus a pre-filled GitHub issue URL                                              |
+| [**hardis:git:artifacts:download**](hardis/git/artifacts/download.md)                   | Download the report files a CI job published as artifacts (GitHub, GitLab, Azure DevOps)                                                    |
+| [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md)             | Extract Pull Request data from GitHub, GitLab, or Azure DevOps for reporting and auditing                                                   |
+| [**hardis:mdapi:deploy**](hardis/mdapi/deploy.md)                                       | Deploy a Metadata API format directory or zip to a Salesforce org                                                                           |
+| [**hardis:mdapi:read**](hardis/mdapi/read.md)                                           | Read complete metadata files with the CRUD-based Metadata API, for types a file-based retrieve returns incomplete (Profile, Permission Set) |
+| [**hardis:mdapi:upsert**](hardis/mdapi/upsert.md)                                       | Push local source files whole with the CRUD-based Metadata API, the mirror of `hardis:mdapi:read`                                           |
+| [**hardis:misc:custom-label-translations**](hardis/misc/custom-label-translations.md)   | Isolate and export specific custom label translations                                                                                       |
+| [**hardis:misc:servicenow-report**](hardis/misc/servicenow-report.md)                   | Retrieve Salesforce user stories and enrich them with ServiceNow data                                                                       |
+| [**hardis:misc:toml2csv**](hardis/misc/toml2csv.md)                                     | Convert TOML structured data files to CSV format for reporting                                                                              |
+| [**hardis:org:connect**](hardis/org/connect.md)                                         | Authenticate to an existing Salesforce org and register it in the local project config                                                      |
+| [**hardis:org:configure:generic-prompt**](hardis/org/configure/generic-prompt.md)       | Deploy the `SfdxHardisGenericPrompt` prompt template to the org given by `--target-org`                                                     |
+| [**hardis:org:create**](hardis/org/create.md)                                           | Provision a new sandbox with the automated setup steps defined in project config                                                            |
+| [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                 | Retrieve metadata from an org in SFDX source format                                                                                         |
+| [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)               | Pull metadata from any org with fine-grained control via `package.xml`                                                                      |
+| [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)     | Retrieve metadata using Metadata API format into the local project                                                                          |
+| [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)     | Retrofit an existing org into an SFDX project by retrieving all current metadata                                                            |
+| [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                     | Send deployment or simulation status notifications to configured team channels                                                              |
+| [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                       | Quickly deploy a previously validated set of changes                                                                                        |
+| [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                 | Dry-run a deployment to check what would be deployed without touching the org                                                               |
+| [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md) | Deploy sources in Metadata API format to a target org                                                                                       |
+| [**hardis:project:deploy:start**](hardis/project/deploy/start.md)                       | Run a full deployment pipeline (sfdx-hardis wrapper for `sf project deploy start`) with error tips                                          |
+| [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                 | Check-only validate a deployment without applying changes to the org                                                                        |
+| [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)             | Generate a `package.xml` delta from git history using sfdx-git-delta                                                                        |
+| [**hardis:project:skills:import**](hardis/project/skills/import.md)                     | Import AI coding agent skill configurations from a remote repository into `.claude/`                                                        |
+| [**hardis:scratch:create**](hardis/scratch/create.md)                                   | Provision a complete scratch org including package installation, metadata deployment, and data initialization                               |
+| [**hardis:scratch:delete**](hardis/scratch/delete.md)                                   | Delete one or more scratch orgs to free up limits                                                                                           |
+| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)                         | Configure a scratch org pool. Optional flags: `--storage-service` (default `gitProvider`), `--max-scratch-orgs` (default 5)                 |
+| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md)                   | Authenticate locally to a scratch org fetched from the pool                                                                                 |
+| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)                       | Rebuild and replenish all scratch orgs in the configured pool                                                                               |
+| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)                           | Empty and reinitialize the scratch org pool (full rebuild)                                                                                  |
+| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)                             | Display pool status: capacity, available, expired, and in-use orgs                                                                          |
+| [**hardis:source:deploy**](hardis/source/deploy.md)                                     | Deploy local SFDX project sources to a Salesforce org                                                                                       |
+| [**hardis:ticket:get**](hardis/ticket/get.md)                                           | Fetch one JIRA, Azure Boards, ServiceNow or Aha! ticket in full, as JSON and optionally as a markdown extract, before implementing it       |
+| [**hardis:source:push**](hardis/source/push.md)                                         | Push local SFDX sources to a scratch org                                                                                                    |
+| [**hardis:source:retrieve**](hardis/source/retrieve.md)                                 | Retrieve metadata from an org and update local SFDX sources                                                                                 |
 
 ---
 
 ## See Also
 
-- [Using AI Coding Agents (Detailed Guide)](salesforce-ci-cd-agent-skills.md): step-by-step skills for Claude Code, Copilot, and other agents
+- [Using AI Coding Agents (Detailed Guide)](salesforce-devops-agent-skills.md): step-by-step skills for Claude Code, Copilot, and other agents
 - [Coding Agent Auto-Fix](salesforce-deployment-agent-autofix.md): auto-fix deployment errors with AI agents
 - [AI Setup](salesforce-ai-setup.md): configure LLM providers (Claude, OpenAI, Gemini, Ollama) for sfdx-hardis AI features
 - [Deployment Agent](salesforce-deployment-agent-home.md): AI-assisted deployment error resolution

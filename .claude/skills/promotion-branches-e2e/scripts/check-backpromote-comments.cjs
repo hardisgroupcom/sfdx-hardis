@@ -66,7 +66,13 @@ for (const pr of dump.prs || []) {
     for (const row of data?.sandboxRows || []) {
       check(`#${pr.number}: sandbox row ${row.sandboxName} is complete`, !!row.sandboxName && !!row.orgId && /^\d{4}-\d{2}-\d{2}T/.test(row.date || ''), JSON.stringify(row));
     }
-    check(`#${pr.number}: the visible table names every sandbox`, (data?.sandboxRows || []).every((row) => comments[0].body.includes(`| ${row.sandboxName} <sub>${row.orgId}</sub> |`)));
+    // The visible table names the org by its label (sandbox part of the URL, else alias, else host), the key stays in the data.
+    // The org id only shows when two orgs share a label: a refreshed sandbox that kept its name, two orgs with one alias
+    const sandboxRows = data?.sandboxRows || [];
+    const label = (row) => row.orgLabel || row.sandboxName;
+    const visibleName = (row) => (sandboxRows.some((other) => label(other) === label(row) && other.orgId !== row.orgId) ? `${label(row)} (${row.orgId})` : label(row));
+    check(`#${pr.number}: the visible table names every sandbox by its label`, sandboxRows.every((row) => comments[0].body.includes(`| ${visibleName(row)} |`)), sandboxRows.map(visibleName).join(', '));
+    check(`#${pr.number}: no org id in the visible text of a single sandbox`, sandboxRows.every((row) => visibleName(row) !== label(row) || !comments[0].body.split('-->').slice(-1)[0].includes(row.orgId)));
   }
   byNumber.set(String(pr.number), { comment: comments[0] || null, data });
 }

@@ -631,5 +631,6 @@ export function buildAlreadyPromotedMarkdown(
   if (lines.length === 0) {
     return '';
   }
-  return `ℹ️ Some Pull Requests of this promotion window were already deployed through a promotion branch. Their metadata is redeployed as a no-op and their actions are skipped where already performed:\n${lines.join('\n')}`;
+  // The blank line before the list is needed by Bitbucket, which otherwise draws it as one paragraph
+  return `ℹ️ Some Pull Requests of this promotion window were already deployed through a promotion branch. Their metadata is redeployed as a no-op and their actions are skipped where already performed:\n\n${lines.join('\n')}`;
 }

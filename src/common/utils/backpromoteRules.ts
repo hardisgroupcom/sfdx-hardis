@@ -264,6 +264,30 @@ export function deriveSandboxName(options: { instanceUrl: string; username: stri
 }
 
 /**
+ * Name a developer org is shown by, in the comments and the panels: the sandbox part of its instance
+ * URL (`dev1` for `mycompany--dev1.sandbox.my.salesforce.com`), else its alias (the name the owner
+ * of a scratch org knows it by: its host is random), else the first label of the URL (a Developer
+ * Edition with its own domain), else the username. Never the org id. Unlike deriveSandboxName, it
+ * is not a key: two orgs can share it, and the org id tells them apart where it matters.
+ */
+export function deriveOrgLabel(options: { instanceUrl?: string | null; alias?: string | null; username?: string | null }): string {
+  const host = (options.instanceUrl || '').replace(/^https?:\/\//i, '').split('/')[0];
+  const firstLabel = host.split('.')[0] || '';
+  const doubleDash = firstLabel.indexOf('--');
+  if (doubleDash > 0 && doubleDash < firstLabel.length - 2) {
+    return firstLabel.substring(doubleDash + 2);
+  }
+  const alias = (options.alias || '').trim();
+  if (alias) {
+    return alias;
+  }
+  if (firstLabel && !['login', 'test', 'www'].includes(firstLabel.toLowerCase())) {
+    return firstLabel;
+  }
+  return (options.username || '').trim();
+}
+
+/**
  * Why a backpromote must not deploy to this org, or null when it may. Only developer sandboxes and
  * scratch orgs receive a backpromote: a production org, or the org of a major branch, is deployed by
  * the CI/CD pipeline. A major org matches on its username, on the sandbox that username belongs to
@@ -272,6 +296,13 @@ export function deriveSandboxName(options: { instanceUrl: string; username: stri
  */
 export function findBackpromoteTargetOrgRefusal(options: {
   isSandbox: boolean;
+  /**
+   * A Developer Edition org used as a personal development environment. It is not a sandbox, and it
+   * is not production either: refusing it would rule out every project whose developers work in
+   * Developer Edition orgs rather than in sandboxes. A Developer Edition org that IS a major org is
+   * still refused, by the check above.
+   */
+  isDeveloperEdition?: boolean;
   username: string;
   instanceUrl: string;
   majorOrgs: Array<{ branchName?: string; targetUsername?: string; instanceUrl?: string }>;
@@ -295,7 +326,7 @@ export function findBackpromoteTargetOrgRefusal(options: {
   if (majorOrg) {
     return { reason: 'majorOrg', branchName: majorOrg.branchName || '' };
   }
-  if (options.isSandbox !== true) {
+  if (options.isSandbox !== true && options.isDeveloperEdition !== true) {
     return { reason: 'production' };
   }
   return null;
@@ -613,7 +644,7 @@ export function buildBackpromoteDeployErrorsPrompt(options: {
     }
     lines.push(`- Error returned by Salesforce: ${error.problem}`);
     if (error.pullRequests.length > 0) {
-      lines.push(`- Merged in \`${options.parentBranch}\` by the Pull Request(s): ${error.pullRequests.map((number) => `#${number}`).join(', ')}`);
+      lines.push(`- Merged in \`${options.parentBranch}\` by the Pull Request${error.pullRequests.length === 1 ? '' : 's'} ${error.pullRequests.map((number) => `#${number}`).join(', ')}`);
     }
     if (error.tip) {
       lines.push(`- sfdx-hardis deployment hint "${error.tip.label}"${error.tip.docUrl ? ` (documentation: ${error.tip.docUrl})` : ''}:`);
@@ -691,7 +722,7 @@ export function buildBackpromoteMergePrompt(options: {
       lines.push(`  - common base (the version at the start of the window, both sides were changed from it): \`${file.versions.base}\``);
     }
     if (file.pullRequests.length > 0) {
-      lines.push(`  - changed in ${options.parentBranch} by the Pull Request(s) ${file.pullRequests.map((number) => `#${number}`).join(', ')}`);
+      lines.push(`  - changed in ${options.parentBranch} by the Pull Request${file.pullRequests.length === 1 ? '' : 's'} ${file.pullRequests.map((number) => `#${number}`).join(', ')}`);
     }
   }
   lines.push('');

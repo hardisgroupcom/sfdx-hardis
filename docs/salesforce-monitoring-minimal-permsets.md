@@ -1,6 +1,6 @@
 ---
 title: Detect permission sets with minimal permissions (Salesforce monitoring)
-description: Schedule weekly checks for permission sets in the project with very few permissions
+description: With sfdx-hardis, schedule weekly checks for permission sets in the project with very few permissions
 ---
 <!-- markdownlint-disable MD013 -->
 

@@ -10,7 +10,8 @@ import { PROMOTION_PULL_REQUESTS_KEY } from '../../../../common/utils/promotionB
 import {
   abortPromotion,
   assertPromotionBranchesEnabled,
-  buildPromotionPullRequestBody,
+  requireGitProviderForPromotion,
+  buildPromotionPullRequestDescription,
   buildPromotionPullRequestTitle,
   checkGitCleanForPromotion,
   closeSupersededPromotionPullRequests,
@@ -42,19 +43,20 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class PromotionCreate extends SfCommand<any> {
-  public static title = 'Create a promotion branch (experimental)';
+  public static title = 'Create a promotion branch (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
 
-**Experimental feature.** Promotion branches are new and switched off by default; their behavior may still change from feedback.
+**This feature is in Beta.** Promotion branches are switched off by default; their behavior may still change from feedback. Please report any issue or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Assembles a promotion branch: a branch carrying only the approved User Stories of a major branch (ex: uat), so they reach the next major branch (ex: preprod) before the rest of the promotion window.**
 
-This is the only supported way to create a [promotion branch (experimental)](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/). The command:
+This is the only supported way to create a [promotion branch (Beta)](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/). The command:
 
 - checks that \`enablePromotionBranches: true\` is set in the sfdx-hardis configuration;
 - checks that \`allowedPromotionSteps\` declares the steps promotions may run on (ex: \`- source: uat\` / \`target: preprod\`), and keeps to them: only those source and target branches are offered, and naming another one fails;
+- requires the [git provider connection](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/) (GitHub, GitLab, Bitbucket or Azure DevOps) and refuses to run without it: the carried Pull Requests are read from the provider, so the command behaves the same on every platform and every carried Pull Request gets its real title and author. From VS Code, the extension passes its own connection; from a terminal, an agent or CI, set the provider token as an environment variable or in a \`.env\` file at the repository root;
 - lists the Pull Requests merged into the source branch and not yet promoted to the target branch, and lets you select the ones to carry (or takes them from \`--pull-requests\`). A Pull Request another promotion branch already carries to the same target is left out, unless \`--include-already-promoted\` is passed;
 - creates the branch from the target branch, named \`promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>\` (UTC, ex: \`promotion/uat/preprod/2026-09-06-1430\`), with \`-2\`, \`-3\`... added only when that name is already taken;
 - cherry-picks the merge commit of each selected Pull Request, oldest first, with \`-x\` so each commit keeps a pointer to its origin;
@@ -64,15 +66,15 @@ The deployment jobs then treat the declared Pull Requests as the scope of the pr
 
 On a cherry-pick conflict, you choose (or \`--on-conflict\` decides) to:
 
-- **skip**: leave the story out, it is listed as such in the Pull Request description;
+- **commit-with-markers, and all the following conflicts** (**recommended**, the first answer offered): same as below, and the command stops asking for the rest of the promotion. A promotion window conflicts on the same files story after story, so the promotion is assembled in one go and every conflict is then solved in a single pass by a coding agent: copy the prompt from the Pull Request description (also saved in \`hardis-report/\`) and paste it to Claude Code, Codex, Copilot... This is a prompt answer only, \`--on-conflict commit-with-markers\` already applies to every conflict;
 - **commit-with-markers**: commit the story anyway with its git conflict markers, so the conflicts can be solved later on the branch, by hand or with a coding agent. The Pull Request description lists the files to fix and embeds a ready-to-paste prompt for a coding agent (Claude Code, Codex, Copilot...), also saved as a markdown report in \`hardis-report/\`. The validation job fails until the markers are gone;
-- **commit-with-markers, and all the following conflicts**: same, and the command stops asking for the rest of the promotion (the prompt only, \`--on-conflict commit-with-markers\` already applies to every conflict);
+- **skip**: leave the story out, it is listed as such in the Pull Request description;
 - **abort**: stop, the branch is deleted and nothing is pushed.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
-- Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API when a token is available).
+- Candidates are the first-parent commits of \`origin/<source>\` since its merge base with \`origin/<target>\`, grouped with their Pull Requests like \`hardis:work:backpromote\` does (Pull Request numbers read from the merge commit messages and completed by the git provider API, whose connection this command requires).
 - A first-parent commit that only moves other merges (a major-to-major sync like \`integration -> uat\`, a promotion branch merged into its target) is opened up into the first-parent commits it brought in, so each User Story is a candidate of its own instead of the whole sync window being a single row.
 - The branch is created with \`git checkout -b <name> origin/<target>\`, commits are applied with \`git cherry-pick -x\` (\`-m 1\` for merge commits).
 - The Pull Request is created through the git provider API (GitHub, GitLab, Azure DevOps, Bitbucket token), or with the \`gh\` CLI on GitHub. The creation is retried a few times: the branch is pushed a fraction of a second before, and a provider that has not indexed the new ref yet answers that the source branch does not exist. Without either, the branch is pushed and the description is saved under \`hardis-report/\` to create the Pull Request by hand, and the message names the reason the provider gave.
@@ -93,6 +95,17 @@ In agent mode:
 - Every number of \`--pull-requests\` must match a Pull Request merged into the source branch and not yet promoted, otherwise the command fails before touching git.
 - A cherry-pick conflict undoes the whole promotion (branch deleted, nothing pushed) and fails the command naming the conflicting Pull Request, unless \`--on-conflict skip\` or \`--on-conflict commit-with-markers\` is passed.
 - To choose those numbers first, list what can be promoted with \`sf hardis:project:promotion:list-candidates --agent --source-branch uat --json\`: same candidates, nothing created.
+- The git provider token must be available (ex: \`GITHUB_TOKEN\`), from the environment or from a \`.env\` file at the repository root: agent mode never prompts for the connection, it stops without it.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own:
+
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
@@ -156,6 +169,11 @@ In agent mode:
     // The feature switch and the steps a promotion may run on: a promotion branch is meaningless
     // for a project that did not opt in and did not say what may be promoted
     const promotionConfig = await assertPromotionBranchesEnabled(this);
+
+    // The git provider is required, not optional: the carried Pull Requests are read from it, so
+    // the command behaves the same on GitHub, GitLab, Bitbucket and Azure DevOps instead of
+    // depending on how each platform writes its merge commits.
+    await requireGitProviderForPromotion(this, agentMode);
 
     // Not checkGitClean: the reports sfdx-hardis writes inside the repository are not changes the
     // user has to commit, and this command writes one of them itself before the cherry-picks.
@@ -252,7 +270,7 @@ In agent mode:
     // prompt gets there: the description is trimmed to fit rather than the Pull Request being
     // refused, which would leave the branch pushed and nothing to review
     const bodyProvider = await GitProvider.getInstance();
-    const body = buildPromotionPullRequestBody({
+    const bodyOptions = {
       sourceBranch,
       targetBranch,
       branchName,
@@ -261,7 +279,8 @@ In agent mode:
       ticketIds,
       alreadyThere: alreadyThereStories,
       maxLength: bodyProvider?.getMaxPullRequestDescriptionLength() ?? null,
-    });
+    };
+    const { body, promptEmbedded } = buildPromotionPullRequestDescription(bodyOptions);
 
     const result = await pushAndCreatePromotionPullRequest({
       branchName,
@@ -286,7 +305,9 @@ In agent mode:
         files: [...new Set(conflicted.flatMap((entry) => entry.files))].join(', ') || '-',
       })));
       // Ready-to-paste prompt for a coding agent, also embedded in the Pull Request description
+      // unless the provider caps its length (Azure DevOps)
       conflictPromptFile = await writeConflictResolutionPrompt({
+        embeddedInDescription: promptEmbedded,
         sourceBranch,
         targetBranch,
         branchName,

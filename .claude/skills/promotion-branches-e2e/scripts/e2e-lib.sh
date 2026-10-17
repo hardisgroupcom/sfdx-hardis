@@ -13,6 +13,11 @@
 #   LOGS  folder where each job log is written
 #   DEV   path to bin/dev.js of the sfdx-hardis working copy under test
 
+# Settings from the environment, else .env, else derived (env-lib.sh): ORG defaults to E2E_ORG
+# shellcheck source=/dev/null
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/env-lib.sh"
+e2e_defaults
+
 : "${ORG:?set ORG to the target org}"
 : "${REPO:?set REPO to owner/name of the test repository}"
 : "${WORK:?set WORK to the local clone}"
@@ -33,19 +38,36 @@ e2e_ci_env() {
     "$@"
 }
 
+# GitHub writes refs/pull/<N>/merge a few seconds after the Pull Request is opened: a validation
+# started right after p_open finds no ref. Retry for a while, and say so in the job log when it never
+# comes, so a missing log is never the only trace of it.
+# Usage: e2e_fetch_merge_ref <pr number> <local branch> <log label>
+e2e_fetch_merge_ref() {
+  local pr="$1" branch="$2" label="$3"
+  for _ in $(seq 1 20); do
+    if git fetch -q origin "+refs/pull/$pr/merge:refs/heads/$branch" 2>/dev/null; then
+      return 0
+    fi
+    sleep 3
+  done
+  echo "refs/pull/$pr/merge could not be fetched: GitHub never wrote it (conflicting or closed Pull Request?)" >"$LOGS/$label.log"
+  return 1
+}
+
 # Validation job: GitHub Actions checks out refs/pull/<N>/merge
 # Usage: e2e_check <pr number> <target branch> <log label>
 e2e_check() {
   local pr="$1" target="$2" label="$3" code
   cd "$WORK" || return 1
   git checkout -q -f --detach HEAD
-  git fetch -q origin "+refs/pull/$pr/merge:refs/heads/prmerge-$pr" || return 1
+  e2e_fetch_merge_ref "$pr" "prmerge-$pr" "$label" || return 1
   git checkout -q -f "prmerge-$pr" || return 1
   local start
   start=$(e2e_now_ms)
   e2e_ci_env \
     GITHUB_REF_NAME="$pr/merge" \
     GITHUB_REF="refs/pull/$pr/merge" \
+    GITHUB_WORKFLOW="Simulate Deployment (sfdx-hardis)" \
     FORCE_TARGET_BRANCH="$target" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --check --target-org "$ORG" \
@@ -56,7 +78,9 @@ e2e_check() {
   return $code
 }
 
-# Deployment job: GitHub Actions checks out the target branch at the merge commit
+# Deployment job: GitHub Actions checks out the target branch at the merge commit. GITHUB_WORKFLOW, here
+# and in e2e_check, is the name of the sfdx-hardis workflow templates, spaces included: it goes into the
+# message key of the comments, and a key with spaces once hid them all from the DevOps Pipeline (#2307)
 # Usage: e2e_deploy <target branch> <log label>
 e2e_deploy() {
   local target="$1" label="$2" code
@@ -67,6 +91,7 @@ e2e_deploy() {
   e2e_ci_env \
     GITHUB_REF_NAME="$target" \
     GITHUB_REF="refs/heads/$target" \
+    GITHUB_WORKFLOW="Process Deployment (sfdx-hardis)" \
     CONFIG_BRANCH="$target" \
     node "$DEV" hardis:project:deploy:smart --target-org "$ORG" \
     >"$LOGS/$label.log" 2>&1
@@ -196,7 +221,7 @@ E2E_SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Usage: pipeline_check <log label> [expectations file]
 pipeline_check() {
   local label="$1" expect="${2:-}" code
-  env -u NODE_OPTIONS EXT="${EXT:-C:/git/vscode-sfdx-hardis}" WORK="$WORK" PROVIDER_TOKEN="$(gh auth token)" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
+  env -u NODE_OPTIONS EXT="$EXT" WORK="$WORK" PROVIDER_TOKEN="$(gh auth token)" node "$E2E_SCRIPTS_DIR/check-pipeline.cjs" ${expect:+"$expect"} >"$LOGS/$label.log" 2>&1
   code=$?
   cat "$LOGS/$label.log"
   echo "$label exit=$code log=$LOGS/$label.log"

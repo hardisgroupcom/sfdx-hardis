@@ -25,6 +25,33 @@ When the org contains Data Cloud objects (`__dlm` and `__dll` suffix on CustomOb
 
 To skip Data Cloud objects backup, use config property `monitoringBackupSkipDataCloud: true` or environment variable `MONITORING_BACKUP_SKIP_DATA_CLOUD=true`.
 
+## Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components of the same request, so a backed up Profile used to miss most of what it grants (standard objects and their fields, tabs, and in full mode everything that is in another chunk).
+
+After the retrieve, the Profiles are read again with the CRUD Metadata API, which returns them whole, and written over the retrieved files. This is what the Auto mode of the VS Code Metadata Retriever does, and what `sf hardis:mdapi:read --metadata Profile --active-only` does.
+
+- The entries that grant nothing are left out (field access with no read and no edit, Apex class access disabled, user permission disabled...), and so are the tab settings of tabs that do not exist. A permission that is revoked in the org shows as a removed line in the next backup.
+- Only the Profiles that were retrieved are read: a Profile skipped with `manifest/package-skip-items.xml` or `MONITORING_BACKUP_SKIP_METADATA_TYPES` stays skipped.
+- A Profile that can not be read fails the backup, with the names of the Profiles and the error. Skip it with `manifest/package-skip-items.xml` to let the backup go on.
+- The first backup that runs with this behavior reports every Profile as updated.
+
+Other types, including Permission Sets, come back whole from the file-based retrieve and are not read again.
+
+## Deleted components
+
+A retrieve never deletes a local file. After the retrieve, the backup deletes the files of the components that no longer exist in the org, so a component deleted in the org shows as deleted files in the next backup.
+
+- A file is deleted only when its component is not in `manifest/package-all-org-items.xml`, the list of everything that exists in the org. A component that still exists but is no longer retrieved (`manifest/package-skip-items.xml`, `MONITORING_BACKUP_SKIP_METADATA_TYPES`, installed package namespace) keeps the file of its last backup.
+- A file that the org just returned is never deleted, and neither is a file that can not be linked to a component.
+- Some files stay when nothing proves that their component is gone: the children (fields, list views, record types...) of an object that is not retrieved, the types that the org does not list by name, and the types of which nothing is retrieved (a type skipped as a whole, like `Report`). For those, only the components that the previous backup listed and that the org no longer lists are deleted: the list of the org alone is not a proof, it misses components that exist, such as the reports of nested folders.
+- The files of `GlobalValueSetTranslation` and `StandardValueSetTranslation` are never deleted: the org lists one language of a value set and not the others.
+- There is no limit on the number of deleted files: a cleanup that removes a lot of metadata is mirrored by the next backup. If the org returns an incomplete list of its components one day, the files of the missing ones are deleted, and the next backup brings them back.
+- The first backup that runs with this behavior deletes the files of everything that was deleted in the org since the monitoring started.
+- Nothing is deleted when the run does not retrieve everything (`--start-chunk`, `FULL_ORG_MANIFEST_PATH`).
+
+To keep the files of deleted components, use config property `monitoringBackupSkipDeletions: true` or environment variable `MONITORING_BACKUP_SKIP_DELETIONS=true`.
+
 ## Full mode
 
 Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
@@ -40,7 +67,17 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 ## In CI/CD
 
-This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When the backup fails, it sends a `BACKUP` notification with the `error` severity and the error message, then exits with that error.
+
+## Coding agents
+
+After each backup, the command writes an `AGENTS.md` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
+
+Only the block between the `sfdx-hardis-monitoring-agents-start` and `sfdx-hardis-monitoring-agents-end` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A `CLAUDE.md` file that imports `AGENTS.md` is also created when the repository has none.
+
+## MegaLinter
+
+The MegaLinter job of a monitoring pipeline reports its findings and must not fail because of them. After each backup, the command adds `DISABLE_ERRORS: true` to the `.mega-linter.yml` of the repository when the key is missing, and creates the file when the repository has none. A `DISABLE_ERRORS` key that is already there is never changed: write `DISABLE_ERRORS: false` to make the job fail on linter errors.
 
 ## Troubleshooting
 
@@ -97,7 +134,7 @@ In agent mode:
 | agent                     | boolean | Run in non-interactive mode for agents and automation                                                                                       |         |          |         |
 | debug<br/>-d              | boolean | Activate debug mode (more logs)                                                                                                             |         |          |         |
 | exclude-namespaces<br/>-e | boolean | If mode --full is activated, exclude namespaced metadatas                                                                                   |         |          |         |
-| flags-dir                 | option  | undefined                                                                                                                                   |         |          |         |
+| flags-dir                 | option  | Import flag values from a directory.                                                                                                        |         |          |         |
 | full                      | boolean | Dot not take in account filtering using package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES. Efficient but much much slower !  |         |          |         |
 | full-apply-filters<br/>-z | boolean | If mode --full is activated, apply filters of manifest/package-skip-items.xml and MONITORING_BACKUP_SKIP_METADATA_TYPES anyway              |         |          |         |
 | json                      | boolean | Format output as json.                                                                                                                      |         |          |         |
@@ -107,7 +144,7 @@ In agent mode:
 | skip-doc                  | boolean | Skip the generation of project documentation at the end of the command                                                                      |         |          |         |
 | skipauth                  | boolean | Skip authentication check when a default username is required                                                                               |         |          |         |
 | start-chunk               | option  | Use this parameter to troubleshoot a specific chunk. It will be used as the first chunk to retrieve                                         |    1    |          |         |
-| target-org<br/>-o         | option  | undefined                                                                                                                                   |         |          |         |
+| target-org<br/>-o         | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                |         |   true   |         |
 | websocket                 | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                   |         |          |         |
 
 ## Examples

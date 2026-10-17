@@ -4,10 +4,12 @@
 
 **New:** [**What's new in sfdx-hardis v8**](https://sfdx-hardis.cloudity.com/sfdx-hardis-v8/) - Deployment Actions are generally available, Pull Request comments are redesigned, and the VS Code extension is rebuilt.
 
+**New:** [**Free Salesforce DevOps course**](https://sfdx-hardis.cloudity.com/salesforce-devops-training/): build a complete pipeline on free orgs, one click at a time, and earn a badge per level.
+
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-216.6k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-265.0k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![MegaLinter](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml?query=branch%3Amain)
@@ -15,13 +17,13 @@
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce).
+Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce), with a [**free hands-on training and shareable badges**](https://sfdx-hardis.cloudity.com/salesforce-devops-training/).
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
 It is free and open-source, and lets you:
 
-- [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 
 ![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/sfdx-hardis-pipeline-view.gif)
 
@@ -36,6 +38,14 @@ It is free and open-source, and lets you:
 - Use many commands that **save minutes, hours or even days** of your daily **admin or developer** work.
 
 ![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
+
+<!-- training-teaser:start -->
+
+- [**Learn Salesforce DevOps hands-on** with a free course and shareable badges](https://sfdx-hardis.cloudity.com/salesforce-devops-training/)
+
+![Salesforce DevOps with sfdx-hardis, the free course](https://sfdx-hardis-training.cloudity.com/_assets/social/course.png)
+
+<!-- training-teaser:end -->
 
 If you need help to get the most out of sfdx-hardis, Cloudity's international teams of business and technical experts can help: [contact us](https://cloudity.com/contact-us/).
 
@@ -124,7 +134,7 @@ Go back to the Welcome page and click **Connect** to log in to your first org. T
 Where to go next:
 
 - [What you can do from the VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/)
-- [Set up a Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- [Set up a Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 - [Monitor a Salesforce org](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
 
 #### Video tutorial
@@ -255,6 +265,18 @@ _See [Dockerfile-ubuntu](https://github.com/hardisgroupcom/sfdx-hardis/blob/main
 ```sh-session
 sf hardis:<COMMAND> <OPTIONS>
 ```
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+[Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+
+- [Level 1 - Contributor basics](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
+
+<!-- training-links:end -->
 
 ## Events
 
@@ -414,11 +436,6 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 [![Reactivate all the sandbox users with .invalid emails in 3 clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
 [![Invalid scope:Mine, not allowed ? Deploy your ListViews anyway !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-scope-mine.jpg)](https://nicolas.vuillamy.fr/invalid-scope-mine-not-allowed-deploy-your-listviews-anyway-443aceca8ac7)
 
-- French
-  - [Versions d'API Salesforce décommissionnées: Que faire ?](https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/)
-  - [Exporter en masse les fichiers d’une org Salesforce](https://leblog.hardis-group.com/portfolio/exporter-en-masse-les-fichiers-dune-org-salesforce/)
-  - [Suspendre l’accès aux utilisateurs lors d’une mise en production Salesforce](https://leblog.hardis-group.com/portfolio/suspendre-lacces-aux-utilisateurs-lors-dune-mise-en-production-salesforce/)
-
 ### Recorded Conferences
 
 #### Dreamforce Sessions
@@ -475,27 +492,27 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 #### CI/CD Workflows
 
-- Complete CI/CD workflow for Salesforce projects - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- Complete CI/CD workflow for Salesforce projects - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 
 [![Dreamforce demo video: Easy Salesforce CI/CD with sfdx-hardis and open-source only !](https://img.youtube.com/vi/zEYqTd2txU4/0.jpg)](https://www.youtube.com/watch?v=zEYqTd2txU4){target=blank}
 
-- How to start a new User Story in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+- How to start a new User Story in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-create-new-user-story/)
 
 [![Create New User Story](https://img.youtube.com/vi/WOqssZwjPhw/0.jpg)](https://www.youtube.com/watch?v=WOqssZwjPhw){target=blank}
 
-- How to commit updates and create merge requests - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
+- How to commit updates and create merge requests - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/)
 
 [![Publish User Story Tutorial](https://img.youtube.com/vi/Ik6whtflmfY/0.jpg)](https://www.youtube.com/watch?v=Ik6whtflmfY){target=blank}
 
-- How to resolve git merge conflicts in Visual Studio Code - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-validate-merge-request/)
+- How to resolve git merge conflicts in Visual Studio Code - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-validate-merge-request/)
 
 [![Merge Conflicts Resolution](https://img.youtube.com/vi/lz5OuKzvadQ/0.jpg)](https://www.youtube.com/watch?v=lz5OuKzvadQ){target=blank}
 
-- How to install packages in your org - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/)
+- How to install packages in your org - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/)
 
 [![Install Packages Tutorial](https://img.youtube.com/vi/5-MgqoSLUls/0.jpg)](https://www.youtube.com/watch?v=5-MgqoSLUls){target=blank}
 
-- Configure CI server authentication to Salesforce orgs - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/)
+- Configure CI server authentication to Salesforce orgs - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/)
 
 [![Configure CI Authentication](https://img.youtube.com/vi/OzREUu5utVI/0.jpg)](https://www.youtube.com/watch?v=OzREUu5utVI){target=blank}
 
@@ -507,11 +524,11 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 #### Integrations
 
-- Configure Slack integration for deployment notifications - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
+- Configure Slack integration for deployment notifications - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-slack/)
 
 [![Slack Integration](https://img.youtube.com/vi/se292ABGUmI/0.jpg)](https://www.youtube.com/watch?v=se292ABGUmI){target=blank}
 
-- How to create a Personal Access Token in GitLab - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-clone-repository/)
+- How to create a Personal Access Token in GitLab - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-clone-repository/)
 
 [![GitLab Personal Access Token](https://img.youtube.com/vi/9y5VmmYHuIg/0.jpg)](https://www.youtube.com/watch?v=9y5VmmYHuIg){target=blank}
 
@@ -627,13 +644,13 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Quentin Tiercelin](https://github.com/TiercelinQ), for the commands to [detect unsecure permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/) and [generate a data dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/)
 - [Pranay Jaiswal](https://github.com/pranayjswl007), for smarter [audit trail monitoring](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) with allowed actions per user
 - [Maciej Ptak](https://github.com/0ptaq0), for fixing Flow git diff on projects with custom package directories
-- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-activate-org/)
+- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-activate-org/)
 - [Maxime Guenego](https://github.com/maximeg44), for the metadata lint commands: [unused metadata](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/), [inactive metadata](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/) and [missing descriptions](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
 - [Meric Asaner](https://github.com/masaner), for the [unused users detection](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) and bulkified Flow deletions
 - [Brahim Laissaoui](https://github.com/laissaouibrahim), for major [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) improvements (batched processing, Attachments support)
 - [Dimitri Monge](https://github.com/dimitrimonge), for the [user freeze/unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) commands and the Jenkins and GitHub Actions pipeline templates
 - [zzyviolette](https://github.com/zzyviolette), for restoring Connected Apps after a [sandbox refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
-- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-ms-teams/)
 - [Maksym Petrov](https://github.com/maksym-petrov-ct), for Apex Trigger support in [project documentation generation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and CI runner cost savings
 - [Manoel Calixto](https://github.com/manoelcalixto), for robustness fixes on sources cleaning and Flow documentation
 - [Piotr](https://github.com/piotrekkr), for the [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) filename format options
@@ -648,6 +665,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Mehdi](https://github.com/Mehdi-Cloudity), for the [bypass generation command](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) and its application to Flows, Validation Rules and Triggers
 - [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
 - [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
+- [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.cloudity.com/)
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 

@@ -15,6 +15,10 @@ import { GitProvider } from '../gitProvider/index.js';
 import { retryOnThrottling } from './adaptiveBatch.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
+import { formatShortDate } from '../gitProvider/utils/utilsPrCommentDates.js';
+import { buildPrCommentNavBlock, extractPrCommentNavLine, isPrCommentNavEnabled, wrapPrCommentNav } from '../gitProvider/utils/prCommentNav.js';
+import { parsePromotionBranchName } from './promotionBranchUtils.js';
+import { listMajorOrgs } from './orgConfigUtils.js';
 
 export const BACKPROMOTES_MARKER = '<!-- sfdx-hardis backpromotes -->';
 const DATA_START = '<!-- sfdx-hardis backpromotes-data ';
@@ -30,8 +34,11 @@ export interface BackpromoteLeftOutItem {
 }
 
 export interface BackpromoteSandboxRow {
+  /** The key of the org, shared with the backpromote branch name (deriveSandboxName) */
   sandboxName: string;
   orgId: string;
+  /** The name the org is shown by (deriveOrgLabel); rows written before 8.19 have none */
+  orgLabel?: string;
   date: string;
   user: string;
   parentBranch: string;
@@ -46,6 +53,7 @@ export interface BackpromoteActionRow {
   phase: 'pre' | 'post';
   sandboxName: string;
   orgId: string;
+  orgLabel?: string;
   date: string;
   status: 'success' | 'failed' | 'pending';
   user: string;
@@ -97,6 +105,7 @@ export function parseBackpromotesComment(body: string | null | undefined): Backp
     state.sandboxRows.push({
       sandboxName: entry.sandboxName,
       orgId: entry.orgId,
+      ...(typeof entry.orgLabel === 'string' && entry.orgLabel ? { orgLabel: entry.orgLabel } : {}),
       date: String(entry.date || ''),
       user: String(entry.user || ''),
       parentBranch: String(entry.parentBranch || ''),
@@ -121,6 +130,7 @@ export function parseBackpromotesComment(body: string | null | undefined): Backp
       phase: entry.phase === 'pre' ? 'pre' : 'post',
       sandboxName: entry.sandboxName,
       orgId: entry.orgId,
+      ...(typeof entry.orgLabel === 'string' && entry.orgLabel ? { orgLabel: entry.orgLabel } : {}),
       date: String(entry.date || ''),
       status: entry.status === 'success' ? 'success' : entry.status === 'pending' ? 'pending' : 'failed',
       user: String(entry.user || ''),
@@ -139,8 +149,9 @@ function cellText(text: string): string {
   return (text || '').replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;');
 }
 
+// "Sep 12, 18:25 UTC": the hidden data keeps the ISO date
 function shortDate(date: string): string {
-  return (date || '').substring(0, 16).replace('T', ' ');
+  return formatShortDate(date, { withTime: true });
 }
 
 const LEFT_OUT_LABELS: Record<BackpromoteLeftOutReason, string> = {
@@ -150,35 +161,80 @@ const LEFT_OUT_LABELS: Record<BackpromoteLeftOutReason, string> = {
   noOverwrite: 'no overwrite',
 };
 
-/** The comment body: marker, hidden data, the sandbox table and the actions table */
-export function renderBackpromotesComment(state: BackpromotesCommentState): string {
+/**
+ * The comment body: the navigation to the other sfdx-hardis comments of the Pull Request, the
+ * marker, the hidden data, a verdict, the sandbox table and the actions per sandbox.
+ * The navigation line is the one the comment already held (GitProvider.refreshPullRequestNavigation
+ * completes it once the comment exists), or the links known in this process for a new comment.
+ */
+export function renderBackpromotesComment(state: BackpromotesCommentState, navLine: string | null = null): string {
   const lines: string[] = [];
+  if (isPrCommentNavEnabled()) {
+    lines.push(navLine !== null ? wrapPrCommentNav(navLine) : buildPrCommentNavBlock('backpromotes').trimEnd(), '');
+  }
   lines.push(BACKPROMOTES_MARKER);
   lines.push(`${DATA_START}${encodeCommentData(JSON.stringify({ sandboxRows: state.sandboxRows, actionRows: state.actionRows }))}${DATA_END}`);
-  lines.push('## :arrow_heading_down: Backpromotes');
+  const failed = state.actionRows.filter((row) => row.status === 'failed').length;
+  const pending = state.actionRows.filter((row) => row.status === 'pending').length;
+  // No banner: this comment is mostly the storage of the backpromote history, read by the CLI
+  lines.push('### ⤵️ Backpromotes', '');
+  const sandboxCount = new Set(state.sandboxRows.map((row) => `${row.sandboxName}|${row.orgId}`)).size;
+  const actionOrgCount = new Set(state.actionRows.map((row) => `${row.sandboxName}|${row.orgId}`)).size;
+  const verdictParts = [
+    sandboxCount > 0
+      ? `Received by ${sandboxCount} ${sandboxCount === 1 ? 'sandbox' : 'sandboxes'}`
+      : actionOrgCount > 0
+        ? // Actions run in a developer org with action:run, without a backpromote: the org got the
+          // actions of the Pull Request, not its metadata
+          `Deployment actions tried in ${actionOrgCount} developer ${actionOrgCount === 1 ? 'org' : 'orgs'}, not backpromoted there yet`
+        : 'No sandbox received this Pull Request yet',
+    failed > 0 ? `❌ ${failed} ${failed === 1 ? 'action' : 'actions'} failed` : '',
+    pending > 0 ? `👋 ${pending} to do by hand` : '',
+  ].filter((part) => part !== '');
+  lines.push(`**${verdictParts.join(' · ')}**`);
   lines.push('');
-  lines.push('_Written by `sf hardis:work:backpromote`: which developer sandboxes received this Pull Request, and which of its deployment actions ran there._');
+  lines.push('_Developer sandboxes that got this Pull Request with `sf hardis:work:backpromote`, and the deployment actions it ran there._');
   lines.push('');
-  if (state.sandboxRows.length === 0) {
-    lines.push('No sandbox received this Pull Request yet.');
-  } else {
-    lines.push('| Sandbox | Date | By | From | Status | Left out |');
-    lines.push('|---------|------|----|------|--------|----------|');
-    for (const row of [...state.sandboxRows].sort((a, b) => a.sandboxName.localeCompare(b.sandboxName) || a.date.localeCompare(b.date))) {
+  // The org is shown by its label (rows written before 8.19 only have the key). Two orgs can share
+  // a label (a sandbox refreshed since, two scratch orgs of one developer): the org id then tells
+  // them apart
+  const rowsOf = (sandboxName: string, orgId: string) => [...state.sandboxRows, ...state.actionRows].filter((row) => row.sandboxName === sandboxName && row.orgId === orgId);
+  const labelOf = (sandboxName: string, orgId: string) => rowsOf(sandboxName, orgId).find((row) => row.orgLabel)?.orgLabel || sandboxName;
+  const sandboxLabel = (sandboxName: string, orgId: string) => {
+    const label = labelOf(sandboxName, orgId);
+    const shared = [...state.sandboxRows, ...state.actionRows].some((row) => row.orgId !== orgId && labelOf(row.sandboxName, row.orgId) === label);
+    return shared ? `${cellText(label)} (${cellText(orgId)})` : cellText(label);
+  };
+  if (state.sandboxRows.length > 0) {
+    lines.push('| Sandbox | From | When | By | Result | Left out |');
+    lines.push('|---------|------|------|----|--------|----------|');
+    for (const row of [...state.sandboxRows].sort((a, b) => labelOf(a.sandboxName, a.orgId).localeCompare(labelOf(b.sandboxName, b.orgId)) || a.date.localeCompare(b.date))) {
       const leftOut = row.leftOut.length === 0 ? '' : row.leftOut.map((item) => `${cellText(item.key)} (${LEFT_OUT_LABELS[item.reason]})`).join('<br/>');
-      const status = row.status === 'complete' ? ':white_check_mark: complete' : ':warning: partial';
-      lines.push(`| ${cellText(row.sandboxName)} <sub>${cellText(row.orgId)}</sub> | ${shortDate(row.date)} | ${cellText(row.user)} | ${cellText(row.parentBranch)} | ${status} | ${leftOut} |`);
+      const status = row.status === 'complete' ? '✅ complete' : '⚠️ partial';
+      lines.push(`| ${sandboxLabel(row.sandboxName, row.orgId)} | ${cellText(row.parentBranch)} | ${shortDate(row.date)} | ${cellText(row.user)} | ${status} | ${leftOut} |`);
     }
   }
-  if (state.actionRows.length > 0) {
+  // One table per sandbox, failures first, done actions folded
+  const statusOrder = { failed: 0, pending: 1, success: 2 };
+  const sandboxes = [...new Map(state.actionRows.map((row) => [`${row.sandboxName}|${row.orgId}`, row])).values()]
+    .sort((a, b) => labelOf(a.sandboxName, a.orgId).localeCompare(labelOf(b.sandboxName, b.orgId)));
+  for (const sandbox of sandboxes) {
+    const rows = state.actionRows
+      .filter((row) => row.sandboxName === sandbox.sandboxName && row.orgId === sandbox.orgId)
+      // Failures first, then before the deployment ahead of after it, in the order the actions run
+      .sort((a, b) => statusOrder[a.status] - statusOrder[b.status] || (a.phase === b.phase ? 0 : a.phase === 'pre' ? -1 : 1) || a.date.localeCompare(b.date));
+    const open = rows.filter((row) => row.status !== 'success');
+    const done = rows.filter((row) => row.status === 'success');
+    const actionLine = (row: BackpromoteActionRow) =>
+      `| ${row.status === 'failed' ? '❌ failed' : row.status === 'pending' ? '👋 to do by hand' : '✅ done'} | ${cellText(row.label)} | ${row.phase === 'pre' ? 'before' : 'after'} | ${shortDate(row.date)} |`;
     lines.push('');
-    lines.push('### Deployment actions run by backpromotes');
+    lines.push(`#### Deployment actions in ${sandboxLabel(sandbox.sandboxName, sandbox.orgId)}`);
     lines.push('');
-    lines.push('| Action | When | Sandbox | Date | By | Status |');
-    lines.push('|--------|------|---------|------|----|--------|');
-    for (const row of [...state.actionRows].sort((a, b) => a.sandboxName.localeCompare(b.sandboxName) || a.phase.localeCompare(b.phase) || a.actionId.localeCompare(b.actionId))) {
-      const status = row.status === 'success' ? ':white_check_mark: done' : row.status === 'pending' ? ':wave: to do by hand' : ':x: failed';
-      lines.push(`| ${cellText(row.label)} <sub>${cellText(row.actionId)}</sub> | ${row.phase === 'pre' ? 'pre-deploy' : 'post-deploy'} | ${cellText(row.sandboxName)} <sub>${cellText(row.orgId)}</sub> | ${shortDate(row.date)} | ${cellText(row.user)} | ${status} |`);
+    if (open.length > 0) {
+      lines.push('| Result | Action | When | Date |', '|--------|--------|------|------|', ...open.map(actionLine));
+    }
+    if (done.length > 0) {
+      lines.push('', '<details>', `<summary>✅ Done (${done.length})</summary>`, '', '| Result | Action | When | Date |', '|--------|--------|------|------|', ...done.map(actionLine), '', '</details>');
     }
   }
   lines.push('');
@@ -205,6 +261,14 @@ export function findActionRow(state: BackpromotesCommentState | null | undefined
   return (state?.actionRows || []).find((row) => row.actionId === actionId && row.sandboxName === sandboxName && row.orgId === orgId) || null;
 }
 
+/**
+ * "<Pull Request>:<pre|post>:<action id>": unique in a backpromote, where two Pull Requests can reuse
+ * one action id, and one Pull Request can use it in both phases
+ */
+export function backpromoteActionKey(prId: number, phase: 'pre' | 'post', actionId: string): string {
+  return `${prId}:${phase}:${actionId}`;
+}
+
 // ---- Provider access, with the run cache ----
 
 export class BackpromoteCommentStore {
@@ -212,6 +276,9 @@ export class BackpromoteCommentStore {
   private readonly memory = new Map<number, BackpromotesCommentState>();
   // Reads in flight, so that two parallel readers of the same Pull Request cost one API call
   private readonly pending = new Map<number, Promise<BackpromotesCommentState>>();
+  // Source branch of each Pull Request looked up from the provider, for the vehicle guard of update()
+  private readonly sourceBranches = new Map<number, string | null>();
+  private majorBranchNames: string[] | null = null;
 
   /** The reads of a run are cached under its id, so --plan then --auto do not read a comment twice */
   constructor(runId: string | null, private readonly commandThis: any = null) {
@@ -261,15 +328,27 @@ export class BackpromoteCommentStore {
   /**
    * Change the comment of a Pull Request: the comment is read again right before writing so that
    * a row another developer wrote meanwhile is kept, then the change is applied and written back.
+   * A backpromote only concerns feature and fix Pull Requests: a promotion vehicle or a major
+   * branch never gets this comment, whatever the caller asks (sourceBranch, else the provider).
+   * The first write of a comment refreshes the navigation of the other sfdx-hardis comments of
+   * the Pull Request, so they link to it.
    */
-  async update(prNumber: number, change: (state: BackpromotesCommentState) => BackpromotesCommentState): Promise<BackpromotesCommentState> {
+  async update(prNumber: number, change: (state: BackpromotesCommentState) => BackpromotesCommentState, options: { sourceBranch?: string | null } = {}): Promise<BackpromotesCommentState> {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider == null) {
       throw new Error(t('backpromoteGitProviderRequired'));
     }
-    const current = await this.read(prNumber, { fresh: true });
+    const refusal = await this.findVehicleRefusal(gitProvider, prNumber, options.sourceBranch);
+    if (refusal) {
+      uxLog('warning', this.commandThis, c.yellow(t('backpromoteCommentRefusedOnVehicle', { pr: prNumber, branch: refusal })));
+      return await this.read(prNumber);
+    }
+    const existingBody = await gitProvider.getPullRequestCommentByMarker(BACKPROMOTES_MARKER, prNumber);
+    const current = parseBackpromotesComment(existingBody);
+    this.memory.set(prNumber, current);
     const next = change(current);
-    await gitProvider.upsertPullRequestCommentByMarker(BACKPROMOTES_MARKER, renderBackpromotesComment(next), prNumber);
+    const navLine = existingBody ? extractPrCommentNavLine(existingBody) || '' : null;
+    await gitProvider.upsertPullRequestCommentByMarker(BACKPROMOTES_MARKER, renderBackpromotesComment(next, navLine), prNumber);
     // Some providers return without writing when their repository context is missing: the comment
     // is read back, and the run only trusts (and caches) what the provider really holds
     const written = parseBackpromotesComment(await gitProvider.getPullRequestCommentByMarker(BACKPROMOTES_MARKER, prNumber));
@@ -280,7 +359,41 @@ export class BackpromoteCommentStore {
     this.memory.set(prNumber, next);
     await this.writeCacheFile(prNumber, next);
     uxLog('log', this.commandThis, c.grey(t('backpromoteCommentUpdated', { pr: prNumber })));
+    if (!existingBody) {
+      await GitProvider.refreshPullRequestNavigation(prNumber);
+    }
     return next;
+  }
+
+  // The branch a Backpromotes comment must not be written for: a promotion vehicle or a major
+  // branch. The source branch comes from the caller, else from the provider (once per Pull
+  // Request); when neither knows it, the write goes on: a lost lookup must not stop a backpromote.
+  private async findVehicleRefusal(gitProvider: { getPullRequestById(prNumber: number): Promise<{ sourceBranch: string } | null> }, prNumber: number, sourceBranch?: string | null): Promise<string | null> {
+    let branch = (sourceBranch || '').trim();
+    if (!branch) {
+      if (!this.sourceBranches.has(prNumber)) {
+        let found: string | null = null;
+        try {
+          found = (await gitProvider.getPullRequestById(prNumber))?.sourceBranch || null;
+        } catch {
+          found = null;
+        }
+        this.sourceBranches.set(prNumber, found);
+      }
+      branch = this.sourceBranches.get(prNumber) || '';
+    }
+    if (!branch) {
+      return null;
+    }
+    if (this.majorBranchNames === null) {
+      try {
+        this.majorBranchNames = (await listMajorOrgs()).map((org) => org.branchName);
+      } catch {
+        this.majorBranchNames = [];
+      }
+    }
+    const isVehicle = parsePromotionBranchName(branch) !== null || this.majorBranchNames.some((major) => (major || '').toLowerCase() === branch.toLowerCase());
+    return isVehicle ? branch : null;
   }
 
   private cacheFile(prNumber: number): string | null {

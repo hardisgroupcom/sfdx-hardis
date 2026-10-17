@@ -29,6 +29,7 @@ The command configuration can be customized using:
 
 - `config/.sfdx-hardis.yml` file with properties like `installedPackages`, `initPermissionSets`, `scratchOrgInitApexScripts`, and `dataPackages`.
 - Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
+- Environment variables **SF_SCRATCH_SIGNUP_CONNECTED_APP** and **SF_SCRATCH_SIGNUP_CALLBACK_URL**: by default the new org is signed up with the Salesforce CLI built-in app (`PlatformCLI`), so a Dev Hub authenticated through an External Client App works (Salesforce CLI 2.147.7 or later). Not applied when you set **SF_SCRATCH_SIGNUP_CONNECTED_APP** or **SFDX_CLIENT_SECRET**.
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -67,17 +68,17 @@ In agent mode:
 
 ## Parameters
 
-| Name                  |  Type   | Description                                                             | Default | Required | Options |
-|:----------------------|:-------:|:------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                 | boolean | Run in non-interactive mode for agents and automation                   |         |          |         |
-| debug<br/>-d          | boolean | Activate debug mode (more logs)                                         |         |          |         |
-| flags-dir             | option  | undefined                                                               |         |          |         |
-| forcenew<br/>-n       | boolean | If an existing scratch org exists, do not reuse it but create a new one |         |          |         |
-| json                  | boolean | Format output as json.                                                  |         |          |         |
-| pool                  | boolean | Creates the scratch org for a scratch org pool                          |         |          |         |
-| skipauth              | boolean | Skip authentication check when a default username is required           |         |          |         |
-| target-dev-hub<br/>-v | option  | undefined                                                               |         |          |         |
-| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration               |         |          |         |
+| Name                  |  Type   | Description                                                                                                       | Default | Required | Options |
+|:----------------------|:-------:|:------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                 | boolean | Run in non-interactive mode for agents and automation                                                             |         |          |         |
+| debug<br/>-d          | boolean | Activate debug mode (more logs)                                                                                   |         |          |         |
+| flags-dir             | option  | Import flag values from a directory.                                                                              |         |          |         |
+| forcenew<br/>-n       | boolean | If an existing scratch org exists, do not reuse it but create a new one                                           |         |          |         |
+| json                  | boolean | Format output as json.                                                                                            |         |          |         |
+| pool                  | boolean | Creates the scratch org for a scratch org pool                                                                    |         |          |         |
+| skipauth              | boolean | Skip authentication check when a default username is required                                                     |         |          |         |
+| target-dev-hub<br/>-v | option  | Username or alias of the Dev Hub org. Not required if the `target-dev-hub` configuration variable is already set. |         |   true   |         |
+| websocket             | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                         |         |          |         |
 
 ## Examples
 

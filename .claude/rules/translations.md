@@ -4,8 +4,11 @@ When translating, look at other translations in the same language file for consi
 
 ## French (fr)
 
-- Use the official Salesforce French translations (e.g. `Permission Set` -> `Ensemble d'autorisations`, `Record Type` -> `Type d'enregistrement`, `Flow` -> `Flux`, `Object` -> `Objet`, `Field` -> `Champ`, `Profile` -> `Profil`).
+- Use the official Salesforce French translations (e.g. `Record Type` -> `Type d'enregistrement`, `Object` -> `Objet`, `Field` -> `Champ`, `Profile` -> `Profil`).
 - Keep `flag` untranslated (do NOT translate as `drapeau`). Same for other developer/IT terms commonly used in English by French developers.
+- Keep `repository` untranslated (do NOT translate as `dépôt`). It is masculine and takes the English plural: `le repository`, `du repository`, `ce repository`, `des repositories`.
+- Keep `Flow` untranslated (do NOT translate as `flux`), including `Flow Builder` and a JWT flow: `le flow`, `les flows`.
+- The test for this family of words is what a French developer says out loud, not whether a dictionary or the official glossary has an entry. A term they say in English stays in English.
 
 ## German (de)
 

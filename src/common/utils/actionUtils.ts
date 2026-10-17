@@ -10,6 +10,7 @@ import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { clearListMajorOrgsCache } from './orgConfigUtils.js';
 import { t } from './i18n.js';
+import { dumpRepositoryYaml } from './yamlUtils.js';
 
 export type ActionScope = 'project' | 'branch' | 'pr';
 export type { ActionWhen };
@@ -42,7 +43,9 @@ export async function getActionConfigFilePath(scope: ActionScope, branch?: strin
     return path.join('config', '.sfdx-hardis.yml');
   }
   if (scope === 'branch') {
-    const branchName = branch || await getCurrentGitBranch({ formatted: true }) || 'main';
+    // A branch name read from git or from a Pull Request target (release/uat) is written in the file
+    // name the way the config loader reads it (release__uat), as getCurrentGitBranch formats it
+    const branchName = (branch || await getCurrentGitBranch({ formatted: true }) || 'main').replace('/', '__');
     return path.join('config', 'branches', `.sfdx-hardis.${branchName}.yml`);
   }
   // scope === 'pr'
@@ -77,9 +80,15 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
   if (fs.existsSync(configFile)) {
     doc = yaml.load(fs.readFileSync(configFile, 'utf-8')) || {};
   }
-  doc[configKey] = actions;
+  // The key the actions are stored under already says when they run: readActions sets
+  // "when" on each of them for its callers, and it must not be written back into the file
+  doc[configKey] = actions.map((action) => {
+    const stored: any = { ...action };
+    delete stored.when;
+    return stored;
+  });
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   // A created or updated branch config file changes the major orgs list: drop its cache.
   if (scope === 'branch') {
     clearListMajorOrgsCache();
@@ -94,6 +103,22 @@ export async function writeActions(scope: ActionScope, when: ActionWhen, actions
  */
 export function normalizeBranchName(name: string): string {
   return String(name || '').trim().toLowerCase().replace(/\//g, '__');
+}
+
+/**
+ * Context an action really runs in. A run-batch action changes the data of the org: it is a
+ * deployment-only action, whatever its context holds. A manual step to do before the deployment
+ * runs nothing and has to be done before the merge: the validation job always lists it, whatever
+ * its context holds, or a step declared for the deployment job only would never hold the merge.
+ */
+export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context' | 'when'>, when?: ActionWhen): PrePostCommand['context'] {
+  if (cmd.type === "run-batch") {
+    return "process-deployment-only";
+  }
+  if (cmd.type === "manual" && (when || cmd.when) === "pre-deploy") {
+    return "all";
+  }
+  return cmd.context || "all";
 }
 
 /**
@@ -206,9 +231,12 @@ export async function listActionTargetBranchChoices(): Promise<{ title: string; 
  * Validate type-specific parameters for an action.
  * Returns an array of error messages (empty if valid).
  */
-export async function validateActionParameters(action: Partial<PrePostCommand>): Promise<string[]> {
+export async function validateActionParameters(action: Partial<PrePostCommand>, when?: ActionWhen): Promise<string[]> {
   const errors: string[] = [];
   const type = action.type || 'command';
+  // Actions read from a config file carry `when`; a freshly built one does not, so the caller
+  // passes the phase it is being saved into.
+  const actionWhen = when || action.when;
 
   if ((action.includeTargetBranches || []).length > 0 && (action.excludeTargetBranches || []).length > 0) {
     errors.push(t('actionValidationBranchFiltersMutuallyExclusive'));
@@ -250,6 +278,9 @@ export async function validateActionParameters(action: Partial<PrePostCommand>):
     if (!action.parameters?.cronExpression) {
       errors.push(t('actionValidationNoCronExpression'));
     }
+  } else if (type === 'run-batch') {
+    const { listRunBatchParameterErrors } = await import('../actionsProvider/runBatchAction.js');
+    errors.push(...listRunBatchParameterErrors(action));
   } else if (type === 'remove-packagexml-items') {
     const { findInvalidPackageXmlItems, normalizePackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
     const items = normalizePackageXmlItems(action.parameters?.packageXmlItems);
@@ -261,12 +292,164 @@ export async function validateActionParameters(action: Partial<PrePostCommand>):
         errors.push(t('actionValidationInvalidPackageXmlItems', { items: invalidItems.join(' | ') }));
       }
     }
-    if (action.when === 'post-deploy') {
+    if (actionWhen === 'post-deploy') {
       errors.push(t('actionValidationPackageXmlItemsPreDeployOnly'));
     }
+  } else {
+    errors.push(...(await validateCustomFunctionAction(action, type, actionWhen)));
   }
 
   return errors;
+}
+
+/**
+ * A movedFrom written as a quoted number in YAML ("12") is the number 12: coerced in place
+ */
+export function normalizeMovedFrom(action: Partial<PrePostCommand>): void {
+  if (typeof action.movedFrom === 'string' && /^\d+$/.test((action.movedFrom as string).trim())) {
+    action.movedFrom = parseInt(action.movedFrom as string, 10);
+  }
+}
+
+/**
+ * Validate the movedFrom property of an action: the number of the Pull Request it was moved from.
+ * Only an action of a Pull Request can be moved, and never from its own Pull Request.
+ * Returns an array of error messages (empty if valid).
+ */
+export function validateMovedFrom(action: Partial<PrePostCommand>, scope: ActionScope, prId?: string): string[] {
+  if (action.movedFrom === undefined || action.movedFrom === null) {
+    return [];
+  }
+  normalizeMovedFrom(action);
+  if (!Number.isInteger(action.movedFrom) || action.movedFrom < 1) {
+    return [t('actionValidationMovedFromInvalid', { value: String(action.movedFrom) })];
+  }
+  if (scope !== 'pr') {
+    return [t('actionValidationMovedFromPrScopeOnly')];
+  }
+  if (prId && prId === String(action.movedFrom)) {
+    return [t('actionValidationMovedFromSamePr', { pr: prId })];
+  }
+  return [];
+}
+
+/**
+ * Actions declared in the YAML block of a Pull Request description, for the given phase.
+ * Each one carries its Pull Request, like the actions collected by a deployment job.
+ */
+export async function readPullRequestDescriptionActions(prNumber: number, when: ActionWhen): Promise<PrePostCommand[]> {
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider) {
+    return [];
+  }
+  const pr = await gitProvider.getPullRequestById(prNumber);
+  if (!pr) {
+    return [];
+  }
+  const { getYamlFromPrDescription } = await import('./pullRequestUtils.js');
+  const config: any = getYamlFromPrDescription(pr) || {};
+  const property = when === 'pre-deploy' ? 'commandsPreDeploy' : 'commandsPostDeploy';
+  const actions: PrePostCommand[] = Array.isArray(config[property]) ? config[property] : [];
+  return actions.map((action) => ({ ...action, when, pullRequest: pr }));
+}
+
+/**
+ * Validate an action whose type is not built-in: it must be the id of a project custom function,
+ * and it must respect the contract that function declares (required inputs, allowed values,
+ * phase and context restrictions).
+ */
+async function validateCustomFunctionAction(
+  action: Partial<PrePostCommand>,
+  type: string,
+  actionWhen?: ActionWhen
+): Promise<string[]> {
+  const errors: string[] = [];
+  const { getCustomFunctionById } = await import('./customFunctionUtils.js');
+  const definition = await getCustomFunctionById(type);
+  if (!definition) {
+    errors.push(t('actionValidationUnknownType', { type }));
+    return errors;
+  }
+
+  if (definition.when && actionWhen && definition.when !== actionWhen) {
+    errors.push(t('actionValidationFunctionWrongPhase', { id: definition.id, when: definition.when }));
+  }
+
+  const allowedContexts = definition.allowedContexts || [];
+  if (allowedContexts.length > 0 && action.context && !allowedContexts.includes(action.context)) {
+    errors.push(
+      t('actionValidationFunctionContextNotAllowed', {
+        id: definition.id,
+        context: action.context,
+        contexts: allowedContexts.join(', '),
+      })
+    );
+  }
+
+  for (const input of definition.inputs || []) {
+    const rawValue = action.parameters?.[input.name] ?? input.default;
+    const isEmpty = rawValue === undefined || rawValue === null || String(rawValue).trim() === '';
+    if (input.required === true && isEmpty) {
+      errors.push(t('actionValidationFunctionMissingInput', { name: input.name, id: definition.id }));
+      continue;
+    }
+    if (isEmpty) {
+      continue;
+    }
+    // A value carrying a reference is only known at run time, so it cannot be checked here
+    if (typeof rawValue === 'string' && rawValue.includes('${{')) {
+      continue;
+    }
+    if (input.type === 'select' && !(input.options || []).includes(String(rawValue))) {
+      errors.push(
+        t('actionValidationFunctionInvalidSelectValue', {
+          name: input.name,
+          value: String(rawValue),
+          options: (input.options || []).join(', '),
+        })
+      );
+    }
+    if (input.type === 'number' && !Number.isFinite(Number(rawValue))) {
+      errors.push(t('actionValidationFunctionInvalidNumber', { name: input.name, value: String(rawValue) }));
+    }
+  }
+
+  const declaredInputNames = (definition.inputs || []).map((input) => input.name);
+  const unknownParameters = Object.keys(action.parameters || {}).filter(
+    (parameterName) => !declaredInputNames.includes(parameterName)
+  );
+  if (unknownParameters.length > 0) {
+    errors.push(
+      t('actionValidationFunctionUnknownParameters', {
+        names: unknownParameters.join(', '),
+        id: definition.id,
+        declared: declaredInputNames.join(', ') || '-',
+      })
+    );
+  }
+
+  return errors;
+}
+
+/**
+ * Action types offered by the current project: the built-in ones plus one per custom function.
+ * `when` filters out the functions restricted to the other deployment phase.
+ */
+export async function listAvailableActionTypes(when?: ActionWhen): Promise<{ title: string; value: string; description?: string }[]> {
+  const { listCustomFunctions } = await import('./customFunctionUtils.js');
+  const choices: { title: string; value: string; description?: string }[] = ACTION_TYPES.map((actionType) => ({
+    title: String(actionType),
+    value: String(actionType),
+  }));
+  const customFunctions = (await listCustomFunctions()).filter((fn) => !when || !fn.when || fn.when === when);
+  for (const customFunction of customFunctions) {
+    choices.push({
+      title: `${customFunction.label || customFunction.id} (${t('actionTypeCustomFunctionSuffix')})`,
+      value: customFunction.id,
+      description: customFunction.description || customFunction.script,
+    });
+  }
+  return choices;
 }
 
 /**
@@ -468,7 +651,7 @@ export async function getPrIdFromUserConfig(): Promise<string | null> {
   }
 }
 
-export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'];
+export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'run-batch', 'remove-packagexml-items'];
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];
@@ -496,7 +679,7 @@ export async function writeTestClasses(scope: ActionScope, classes: string[], br
   }
   doc['deploymentApexTestClasses'] = classes;
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  await fs.writeFile(configFile, dumpRepositoryYaml(doc));
   // A created or updated branch config file changes the major orgs list: drop its cache.
   if (scope === 'branch') {
     clearListMajorOrgsCache();

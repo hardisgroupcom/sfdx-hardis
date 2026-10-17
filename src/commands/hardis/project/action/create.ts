@@ -10,10 +10,10 @@ import { WebSocketClient } from '../../../../common/websocketClient.js';
 import { t } from '../../../../common/utils/i18n.js';
 import {
   ACTION_CONTEXTS,
-  ACTION_TYPES,
   ActionScope,
   ActionWhen,
   buildAction,
+  listAvailableActionTypes,
   logActionSummary,
   parseBranchListFlag,
   readActions,
@@ -21,7 +21,10 @@ import {
   validateActionParameters,
   writeActions,
 } from '../../../../common/utils/actionUtils.js';
+import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
+import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
+import { hasRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -34,7 +37,7 @@ export default class ActionCreate extends ActionCommandBase {
 
 **Creates a new deployment action in the project configuration.**
 
-Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, or package.xml items removal) and store them at project, branch, or pull request scope.
+Deployment actions are pre- or post-deployment steps that run automatically during CI/CD pipelines. This command lets you define new actions of various types (shell command, data import, Apex script, community publish, manual instructions, batch scheduling, immediate batch run, or package.xml items removal) and store them at project, branch, or pull request scope.
 
 New actions are appended to the end of the action list. Use \`hardis:project:action:reorder\` to change position.
 
@@ -51,7 +54,7 @@ Branch names are matched exactly, ignoring case. The virtual name \`dev-sandboxe
 
 \`\`\`yaml
 commandsPostDeploy:
-  - id: publishCommunity
+  - id: 6e9749de-d7e7-4e44-8742-f8cae3e2142e
     label: Publish the customer community
     type: publish-community
     parameters:
@@ -61,6 +64,19 @@ commandsPostDeploy:
 \`\`\`
 
 When an action does not apply to the branch being deployed, it is reported as skipped in the Pull Request comment, with the reason.
+
+### Run a batch
+
+A \`run-batch\` action runs a \`Database.Batchable\` Apex class once, before or after the metadata deployment. A pre-deploy batch needs its class to be in the target org already.
+
+- \`runMode: wait\` (default) follows the job until it ends. The action fails when the job fails, is aborted, has batches in error, or is not over after \`waitTimeoutMinutes\` (60 by default).
+- \`successEvenIfBatchErrors: true\` keeps the action successful when the job completes with batches in error.
+- \`runMode: no-wait\` launches the batch and goes on with the deployment.
+- No batch is launched when a job of the class is still running, or completed less than 3 hours ago with a result the action accepts: that job stands for this run.
+
+A run-batch action only runs in the \`process-deployment-only\` context, never during a deployment check.
+
+A manual action declared \`pre-deploy\` is always stored with the \`all\` context: it has to be done before the merge, so the deployment check lists it too.
 
 ### Agent Mode
 
@@ -73,7 +89,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--packagexml-items\` for remove-packagexml-items
+- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items
 
 In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
@@ -94,6 +110,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     '$ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type command --label "Disable triggers" --command "sf apex run --file scripts/disable-triggers.apex"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type data --label "Import test data" --sfdmu-project TestData',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
   ];
 
@@ -107,8 +124,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      options: ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'remove-packagexml-items'],
-      description: 'Type of action',
+      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'Human-readable label for the action',
@@ -135,7 +151,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'Manual instructions text (for manual type)',
     }),
     'class-name': Flags.string({
-      description: 'Apex batch class name (for schedule-batch type)',
+      description: 'Apex batch class name (for schedule-batch and run-batch types). Write a global class of a managed package with its namespace: ns.ClassName',
     }),
     'cron-expression': Flags.string({
       description: 'Cron expression (for schedule-batch type)',
@@ -143,8 +159,25 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     'job-name': Flags.string({
       description: 'Job name for schedule-batch (optional, defaults to <className>_Schedule)',
     }),
+    'run-mode': Flags.string({
+      options: ['wait', 'no-wait'],
+      description: 'For run-batch type: wait for the batch to succeed, or launch it without waiting for its result (default: wait)',
+    }),
+    'batch-size': Flags.integer({
+      description: 'Batch size for run-batch type (optional, 1 to 2000, defaults to 200)',
+    }),
+    'wait-timeout': Flags.integer({
+      description: 'Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)',
+    }),
+    'success-even-if-batch-errors': Flags.boolean({
+      description: 'For run-batch type in wait mode: keep the action successful when the batch completes with errors',
+    }),
     'packagexml-items': Flags.string({
       description: 'Semicolon-separated list of package.xml items to remove before deployment, each in format TypeName:Member1,Member2 (for remove-packagexml-items type). Example: "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    }),
+    'function-input': Flags.string({
+      multiple: true,
+      description: 'Value of a custom function input, as name=value. Repeat the flag once per input',
     }),
     context: Flags.string({
       options: ['all', 'check-deployment-only', 'process-deployment-only'],
@@ -201,7 +234,11 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     // Collect type
     const type: PrePostCommand['type'] = agentMode || isCI
       ? this.requireFlag(flags.type, 'type') as PrePostCommand['type']
-      : flags.type || await this.promptType();
+      : flags.type || await this.promptType(when);
+
+    if (type !== 'run-batch' && hasRunBatchFlags(flags)) {
+      throw new SfError(t('actionRunBatchFlagsOnOtherType', { type }));
+    }
 
     // Collect label
     const label: string = agentMode || isCI
@@ -247,6 +284,11 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
           parameters.jobName = jobName;
         }
       }
+    } else if (type === 'run-batch') {
+      parameters.className = agentMode || isCI
+        ? this.requireFlag(flags['class-name'], 'class-name')
+        : flags['class-name'] || await this.promptText(t('enterClassName'), '');
+      Object.assign(parameters, await this.collectRunBatchParameters(flags, agentMode || isCI));
     } else if (type === 'remove-packagexml-items') {
       if (when !== 'pre-deploy') {
         throw new SfError(t('actionValidationPackageXmlItemsPreDeployOnly'));
@@ -258,31 +300,71 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
         .split(/[;\n]/)
         .map((item: string) => item.trim())
         .filter(Boolean);
+    } else if (!isBuiltInActionType(type)) {
+      // Custom function: the type is the function id, and its declared inputs become parameters
+      const definition = await getCustomFunctionById(type);
+      if (!definition) {
+        throw new SfError(t('actionValidationUnknownType', { type }));
+      }
+      // Values passed with --function-input pre-fill the prompts rather than replacing them, so
+      // supplying one input interactively does not skip the questions for the others.
+      const flagInputs = castFunctionInputValues(
+        parseFunctionInputFlags(flags['function-input'] || []),
+        definition
+      );
+      const collectedInputs = agentMode || isCI
+        ? flagInputs
+        : await this.promptCustomFunctionInputs(definition, flagInputs);
+      Object.assign(parameters, collectedInputs);
     }
+
+    // A custom function may ship defaults for the action fields, which flags and prompts override
+    const functionDefaults = isBuiltInActionType(type) ? undefined : (await getCustomFunctionById(type))?.defaults;
 
     // Collect context
     // remove-packagexml-items must also run during deployment checks, so it defaults to all contexts
-    const defaultContext = type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only';
-    const context = (flags.context || (!agentMode && !isCI ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
+    const defaultContext = functionDefaults?.context
+      || (type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only');
+    // run-batch only runs in one context: there is nothing to ask. Neither for a manual step to do
+    // before the deployment: the validation job lists it whatever its context, so it is stored as
+    // what it does, and a --context passed for it is not kept.
+    const manualBeforeDeployment = type === 'manual' && when === 'pre-deploy';
+    const context = (manualBeforeDeployment
+      ? 'all'
+      : flags.context || (!agentMode && !isCI && type !== 'run-batch' ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
-    let allowFailure = flags['allow-failure'];
+    let allowFailure = flags['allow-failure'] === true ? true : functionDefaults?.allowFailure === true;
     let runOnlyOnceByOrg = flags['run-only-once-by-org'];
+    if (functionDefaults?.runOnlyOnceByOrg !== undefined && flags['run-only-once-by-org'] === true) {
+      // true is also the flag default, so it cannot be told apart from "not passed": let the
+      // function default win, and --no-run-only-once-by-org still forces false.
+      runOnlyOnceByOrg = functionDefaults.runOnlyOnceByOrg;
+    }
     let customUsername = flags['custom-username'] || '';
-    let includeTargetBranches = parseBranchListFlag(flags['include-target-branches']);
-    let excludeTargetBranches = parseBranchListFlag(flags['exclude-target-branches']);
+    let includeTargetBranches = flags['include-target-branches'] !== undefined
+      ? parseBranchListFlag(flags['include-target-branches'])
+      : functionDefaults?.includeTargetBranches || [];
+    let excludeTargetBranches = flags['exclude-target-branches'] !== undefined
+      ? parseBranchListFlag(flags['exclude-target-branches'])
+      : functionDefaults?.excludeTargetBranches || [];
 
     if (!agentMode && !isCI) {
+      // Each prompt is seeded with the value resolved so far, so the defaults a custom function
+      // declares are what the user is offered instead of being silently dropped.
       if (!flags['allow-failure']) {
-        allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'));
+        allowFailure = await this.promptConfirm(t('actionPromptAllowFailure'), allowFailure);
       }
       if (!flags['include-target-branches'] && !flags['exclude-target-branches']) {
-        const branchFilter = await this.promptTargetBranchFilter();
+        const branchFilter = await this.promptTargetBranchFilter({
+          includeTargetBranches,
+          excludeTargetBranches,
+        });
         includeTargetBranches = branchFilter.includeTargetBranches || [];
         excludeTargetBranches = branchFilter.excludeTargetBranches || [];
       }
       if (type !== 'remove-packagexml-items') {
-        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), flags['run-only-once-by-org']);
+        runOnlyOnceByOrg = await this.promptConfirm(t('actionPromptRunOnlyOnceByOrg'), runOnlyOnceByOrg);
       }
       if (!flags['custom-username']) {
         customUsername = await this.promptText(t('actionPromptCustomUsername'), '');
@@ -309,7 +391,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     });
 
     // Validate parameters
-    const validationErrors = await validateActionParameters(action);
+    const validationErrors = await validateActionParameters(action, when);
     if (validationErrors.length > 0) {
       throw new SfError(t('actionValidationErrors', { errors: validationErrors.join('\n') }));
     }
@@ -361,12 +443,12 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     return response.value as ActionWhen;
   }
 
-  private async promptType(): Promise<PrePostCommand['type']> {
+  private async promptType(when: ActionWhen): Promise<PrePostCommand['type']> {
     const response = await prompts({
       type: 'select',
       name: 'value',
       message: c.cyanBright(t('selectActionType')),
-      choices: ACTION_TYPES.map(t2 => ({ title: t2, value: t2 })),
+      choices: await listAvailableActionTypes(when),
       description: t('selectActionType'),
     });
     return response.value as PrePostCommand['type'];

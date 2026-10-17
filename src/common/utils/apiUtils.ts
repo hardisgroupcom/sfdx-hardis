@@ -1,6 +1,7 @@
 import { uxLog } from './index.js';
 import c from 'chalk';
 import { randomUUID } from 'crypto';
+import Papa from 'papaparse';
 import { Connection } from '@salesforce/core';
 import { createSpinner, Spinner } from './spinner.js';
 import { CommandLogLineQuery, WebSocketClient } from '../websocketClient.js';
@@ -175,6 +176,112 @@ export async function bulkQuery(soqlQuery: string, conn: Connection, retries = 3
     } else {
       throw e;
     }
+  }
+}
+
+// One page of Bulk API 2.0 results: the CSV body and the Sforce-Locator of the next page. It goes through
+// the connection transport, the one conn.request uses, so the proxy settings (HTTP_PROXY / HTTPS_PROXY)
+// apply; conn.request itself hides the response headers. Plain fetch only if that transport is missing.
+async function getBulkResultsPage(
+  conn: Connection,
+  url: string
+): Promise<{ status: number; body: string; locator: string }> {
+  const headers = { Authorization: `Bearer ${conn.accessToken}`, Accept: 'text/csv' };
+  const transport = (conn as any)._transport;
+  if (transport && typeof transport.httpRequest === 'function') {
+    const response: any = await transport.httpRequest({ method: 'GET', url, headers });
+    const responseHeaders = response?.headers ?? {};
+    return {
+      status: Number(response?.statusCode ?? 0),
+      body: String(response?.body ?? ''),
+      locator: String(responseHeaders['sforce-locator'] ?? responseHeaders['Sforce-Locator'] ?? ''),
+    };
+  }
+  const response = await fetch(url, { headers });
+  return {
+    status: response.status,
+    body: await response.text(),
+    locator: response.headers.get('sforce-locator') ?? '',
+  };
+}
+
+// Same as bulkQuery, on the Tooling API (/tooling/jobs/query). jsforce bulk2 only targets /jobs/query,
+// and sf data query has no Tooling bulk mode.
+export async function bulkQueryTooling(soqlQuery: string, conn: Connection): Promise<any> {
+  registerAnonymizationSalt(conn?.instanceUrl);
+  const queryLabel = soqlQuery.length > 500 ? soqlQuery.substr(0, 500) + '...' : soqlQuery;
+  const query = startQueryLog('bulk');
+  uxLog("log", this, c.grey('[BulkApiV2 Tooling] ' + c.italic(queryLabel)), { query });
+  const pollInterval = process.env.BULKAPIV2_POLL_INTERVAL ? Number(process.env.BULKAPIV2_POLL_INTERVAL) : 5000; // 5 sec
+  // Tooling jobs on MetadataComponentDependency can run for minutes on large orgs
+  const pollTimeout = process.env.BULKAPIV2_POLL_TIMEOUT ? Number(process.env.BULKAPIV2_POLL_TIMEOUT) : 600000; // 10 min
+  const jobsPath = `/services/data/v${conn.getApiVersion()}/tooling/jobs/query`;
+  let jobId = '';
+  spinnerQ = createSpinner({ text: `[BulkApiV2 Tooling] Bulk Query: ${queryLabel}` }).start();
+  try {
+    let jobInfo: any = await conn.request({
+      method: 'POST',
+      url: jobsPath,
+      body: JSON.stringify({ operation: 'query', query: soqlQuery }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    jobId = jobInfo.id;
+    const startTime = Date.now();
+    while (jobInfo.state !== 'JobComplete') {
+      if (['Failed', 'Aborted'].includes(jobInfo.state)) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: jobInfo.state, message: jobInfo.errorMessage ?? '' }));
+      }
+      if (Date.now() - startTime > pollTimeout) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: jobInfo.state, message: 'Polling timed out' }));
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      jobInfo = await conn.request({ method: 'GET', url: `${jobsPath}/${jobId}` });
+    }
+    // Results are paged with the Sforce-Locator response header, which conn.request does not expose
+    const records: any[] = [];
+    let locator = '';
+    do {
+      const locatorParam = locator ? `?locator=${encodeURIComponent(locator)}` : '';
+      const resultsUrl = `${conn.instanceUrl}${jobsPath}/${jobId}/results${locatorParam}`;
+      let page = await getBulkResultsPage(conn, resultsUrl);
+      if (page.status === 401) {
+        // Expired session: a request through the connection refreshes the access token, then try again
+        await conn.request({ method: 'GET', url: `${jobsPath}/${jobId}` });
+        page = await getBulkResultsPage(conn, resultsUrl);
+      }
+      if (page.status < 200 || page.status >= 300) {
+        throw new Error(t('toolingBulkQueryJobFailed', { state: page.status, message: page.body }));
+      }
+      const parsed = Papa.parse(page.body, { header: true, skipEmptyLines: true });
+      records.push(...parsed.data);
+      locator = page.locator;
+    } while (locator && locator !== 'null');
+    spinnerQ.succeed(`[BulkApiV2 Tooling] Bulk Query completed with ${records.length} results.`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2 Tooling] Bulk Query completed with ${records.length} results.`), {
+        query: { ...query, status: 'completed', recordCount: records.length },
+      });
+    }
+    return { records };
+  } catch (e: any) {
+    // Do not leave the job running in the org
+    if (jobId) {
+      try {
+        await conn.request({
+          method: 'PATCH',
+          url: `${jobsPath}/${jobId}`,
+          body: JSON.stringify({ state: 'Aborted' }),
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch {
+        // Already complete, failed or aborted
+      }
+    }
+    spinnerQ.fail(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`);
+    if (WebSocketClient.isAliveWithLwcUI()) {
+      uxLog("log", this, c.grey(`[BulkApiV2 Tooling] Bulk query error: ${e.message}`), { query: { ...query, status: 'error' } });
+    }
+    throw e;
   }
 }
 

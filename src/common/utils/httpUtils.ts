@@ -5,6 +5,8 @@
 // - params / auth (basic) / headers / timeout config options
 // - HTTP_PROXY / HTTPS_PROXY / NO_PROXY env vars are honored (like axios and
 //   make-fetch-happen did) through undici's EnvHttpProxyAgent
+import fs from 'fs';
+import * as path from 'path';
 import { fetch as undiciFetch, EnvHttpProxyAgent, FormData as UndiciFormData } from 'undici';
 
 let envProxyAgent: EnvHttpProxyAgent | null = null;
@@ -47,10 +49,10 @@ export interface HttpResponse<T = any> {
 }
 
 export class HttpError extends Error {
-  public response: { status: number; statusText: string; data: any };
+  public response: { status: number; statusText: string; data: any; headers?: Record<string, string> };
   public status: number;
 
-  constructor(message: string, response: { status: number; statusText: string; data: any }) {
+  constructor(message: string, response: { status: number; statusText: string; data: any; headers?: Record<string, string> }) {
     super(message);
     this.name = 'HttpError';
     this.response = response;
@@ -146,6 +148,8 @@ async function request<T = any>(method: string, url: string, data?: any, config:
       status: response.status,
       statusText: response.statusText,
       data: responseData,
+      // Read by the adaptive batches, to wait the delay of a Retry-After
+      headers,
     });
   }
   return { status: response.status, statusText: response.statusText, headers, data: responseData as T };
@@ -169,6 +173,24 @@ export async function httpPatch<T = any>(url: string, data?: any, config: HttpRe
 
 export async function httpDelete<T = any>(url: string, config: HttpRequestConfig = {}): Promise<HttpResponse<T>> {
   return request<T>('DELETE', url, undefined, config);
+}
+
+/**
+ * Downloads a binary payload into a file. Redirects are followed, and the Authorization header is
+ * not sent to another origin (the signed storage URL a provider redirects an artifact download to).
+ */
+export async function httpDownloadFile(url: string, targetFile: string, config: HttpRequestConfig = {}): Promise<void> {
+  const response = await proxyFetch(buildUrl(url, config.params), {
+    method: 'GET',
+    headers: buildHeaders(config, false),
+    signal: config.timeout ? AbortSignal.timeout(config.timeout) : undefined,
+  });
+  if (!response.ok) {
+    const data = await response.text().catch(() => '');
+    throw new HttpError(`Request failed with status code ${response.status}`, { status: response.status, statusText: response.statusText, data });
+  }
+  await fs.promises.mkdir(path.dirname(targetFile), { recursive: true });
+  await fs.promises.writeFile(targetFile, Buffer.from(await response.arrayBuffer()));
 }
 
 export interface HttpClient {

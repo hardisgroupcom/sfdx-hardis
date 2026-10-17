@@ -4,7 +4,7 @@
     "stat::Monitored orgs": 3,
     "stat::Fleet avg health score": 4,
     "stat::Apex + Flow errors (7d)": 5,
-    "stat::Orgs with backup failures (7d)": 6,
+    "stat::Orgs without backup (36h)": 6,
     "stat::Orgs reporting (36h)": 7,
     "stat::Silent orgs (36h)": 8,
     "row::Monitored orgs": 19,
@@ -22,7 +22,7 @@
     "row::Freshness and backups": 23,
     "table::Silent orgs (no notification for 36h)": 1,
     "table::Orgs reporting in the last 36h": 17,
-    "table::Orgs with backup failures (7d)": 2
+    "table::Orgs without backup for 36h": 2
   },
   "sfdx-hardis-v2-org-home": {
     "row::Health score (weekly)": 51,

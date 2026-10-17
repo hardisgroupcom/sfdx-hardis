@@ -45,7 +45,7 @@ Defaults applied: validates each class exists in sources before adding.
 | branch       | option  | Target branch name (for branch scope, defaults to current branch)                        |         |          |                           |
 | class-name   | option  | Apex test class name(s) to add (required in agent mode; can be specified multiple times) |         |          |                           |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                                          |         |          |                           |
-| flags-dir    | option  | undefined                                                                                |         |          |                           |
+| flags-dir    | option  | Import flag values from a directory.                                                     |         |          |                           |
 | json         | boolean | Format output as json.                                                                   |         |          |                           |
 | pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                                        |         |          |                           |
 | scope        | option  | Configuration scope: project, branch, or pr                                              |         |          | project<br/>branch<br/>pr |

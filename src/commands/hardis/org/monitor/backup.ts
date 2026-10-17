@@ -1,12 +1,12 @@
 /* jscpd:ignore-start */
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages } from '@salesforce/core';
+import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
 import * as path from 'path';
 import { buildOrgManifest } from '../../../../common/utils/deployUtils.js';
-import { execCommand, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
+import { execSfdxJson, filterPackageXml, isCI, uxLog } from '../../../../common/utils/index.js';
 import { MetadataUtils } from '../../../../common/metadata-utils/index.js';
 import { CONSTANTS, getApiVersion, getConfig, getEnvVar } from '../../../../config/index.js';
 import { NotifProvider, NotifSeverity } from '../../../../common/notifProvider/index.js';
@@ -23,9 +23,33 @@ import { makeFileNameGitCompliant } from '../../../../common/utils/gitUtils.js';
 import { updateSfdxProjectApiVersion } from '../../../../common/utils/projectUtils.js';
 import { reinitI18n, t } from '../../../../common/utils/i18n.js';
 import { prompts } from '../../../../common/utils/prompts.js';
+import { writeMonitoringAgentsMd } from '../../../../common/monitoring/monitoringAgentsMd.js';
+import { ensureMonitoringMegaLinterConfig, MEGALINTER_CONFIG_FILE } from '../../../../common/monitoring/monitoringMegaLinterConfig.js';
+import { collectProfileNames, readBackupProfiles } from '../../../../common/monitoring/monitoringBackupProfiles.js';
+import {
+  applyBackupDeletions,
+  backupChangeType,
+  BackupDeletionsSkipReason,
+  isBackupDeletionsDisabled,
+  RetrievedFilesCollector,
+  retrieveFailureMessage,
+  retrieveJsonErrorMessage,
+} from '../../../../common/monitoring/monitoringBackupDeletions.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
+
+// The message of a failed CLI call starts with "Command failed: <full command line>" (which can
+// hold a username), then its output: the cause is at the end, so keep the end
+export function backupErrorMessage(error: any, maxLength = 2000): string {
+  let message = String(error?.message || error || 'Unknown error');
+  if (message.startsWith('Command failed:')) {
+    const firstLineEnd = message.indexOf('\n');
+    message = firstLineEnd > -1 ? message.slice(firstLineEnd + 1) : 'Command failed';
+  }
+  message = message.trim() || 'Command failed';
+  return message.length > maxLength ? '... ' + message.slice(message.length - maxLength) : message;
+}
 
 export default class MonitorBackup extends SfCommand<any> {
   public static title = 'Backup DX sources';
@@ -52,6 +76,35 @@ When the org contains Data Cloud objects (\`__dlm\` and \`__dll\` suffix on Cust
 
 To skip Data Cloud objects backup, use config property \`monitoringBackupSkipDataCloud: true\` or environment variable \`MONITORING_BACKUP_SKIP_DATA_CLOUD=true\`.
 
+## Complete Profiles
+
+A file-based retrieve returns a Profile with only the permissions related to the other components of the same request, so a backed up Profile used to miss most of what it grants (standard objects and their fields, tabs, and in full mode everything that is in another chunk).
+
+After the retrieve, the Profiles are read again with the CRUD Metadata API, which returns them whole, and written over the retrieved files. This is what the Auto mode of the VS Code Metadata Retriever does, and what \`sf hardis:mdapi:read --metadata Profile --active-only\` does.
+
+- The entries that grant nothing are left out (field access with no read and no edit, Apex class access disabled, user permission disabled...), and so are the tab settings of tabs that do not exist. A permission that is revoked in the org shows as a removed line in the next backup.
+- Only the Profiles that were retrieved are read: a Profile skipped with \`manifest/package-skip-items.xml\` or \`MONITORING_BACKUP_SKIP_METADATA_TYPES\` stays skipped.
+- A Profile that can not be read fails the backup, with the names of the Profiles and the error. Skip it with \`manifest/package-skip-items.xml\` to let the backup go on.
+- The first backup that runs with this behavior reports every Profile as updated.
+
+Other types, including Permission Sets, come back whole from the file-based retrieve and are not read again.
+
+## Deleted components
+
+A retrieve never deletes a local file. After the retrieve, the backup deletes the files of the components that no longer exist in the org, so a component deleted in the org shows as deleted files in the next backup.
+
+- A file is deleted only when its component is not in \`manifest/package-all-org-items.xml\`, the list of everything that exists in the org. A component that still exists but is no longer retrieved (\`manifest/package-skip-items.xml\`, \`MONITORING_BACKUP_SKIP_METADATA_TYPES\`, installed package namespace) keeps the file of its last backup.
+- Before deleting, the backup asks the org for each component with the Metadata API, and deletes its files only when the org does not return it. A component the org still returns stays, and so does one the org can not be asked about (a type the Metadata API does not read, like \`Settings\`). The files kept this way are listed in the log.
+- A file that the org just returned is never deleted, and neither is a file that can not be linked to a component.
+- Some files stay when nothing proves that their component is gone: the children (fields, list views, record types...) of an object that is not retrieved, the types that the org does not list by name, and the types of which nothing is retrieved (a type skipped as a whole, like \`Report\`). For those, only the components that the previous backup listed and that the org no longer lists are deleted: the list of the org alone is not a proof, it misses components that exist, such as the reports of nested folders.
+- The files of \`GlobalValueSetTranslation\` and \`StandardValueSetTranslation\` are never deleted: the org lists one language of a value set and not the others.
+- There is no limit on the number of deleted files: a cleanup that removes a lot of metadata is mirrored by the next backup.
+- An error while deleting the files is logged as a warning: the backup goes on.
+- The first backup that runs with this behavior deletes the files of everything that was deleted in the org since the monitoring started.
+- Nothing is deleted when the run does not retrieve everything (\`--start-chunk\`, \`FULL_ORG_MANIFEST_PATH\`).
+
+To keep the files of deleted components, use config property \`monitoringBackupSkipDeletions: true\` or environment variable \`MONITORING_BACKUP_SKIP_DELETIONS=true\`.
+
 ## Full mode
 
 Activate it with **--full** parameter, or variable MONITORING_BACKUP_MODE_FULL=true
@@ -67,7 +120,17 @@ _With those both options, it's like if you are not using --full, but with chunke
 
 ## In CI/CD
 
-This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications.
+This command is part of [sfdx-hardis Monitoring](${CONSTANTS.DOC_URL_ROOT}/salesforce-monitoring-metadata-backup/) and can output Grafana, Slack and MsTeams Notifications. When the backup fails, it sends a \`BACKUP\` notification with the \`error\` severity and the error message, then exits with that error.
+
+## Coding agents
+
+After each backup, the command writes an \`AGENTS.md\` file at the root of the repository. It explains to a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each file and folder holds, what is not backed up, how to use the git history to answer questions about the org, and which monitoring checks are configured on the branch.
+
+Only the block between the \`sfdx-hardis-monitoring-agents-start\` and \`sfdx-hardis-monitoring-agents-end\` markers is rewritten: notes written after the end marker are kept. When the markers are broken (one of them deleted, or several pairs), the file is left untouched and the command logs a warning. A \`CLAUDE.md\` file that imports \`AGENTS.md\` is also created when the repository has none.
+
+## MegaLinter
+
+The MegaLinter job of a monitoring pipeline reports its findings and must not fail because of them. After each backup, the command adds \`DISABLE_ERRORS: true\` to the \`.mega-linter.yml\` of the repository when the key is missing, and creates the file when the repository has none. A \`DISABLE_ERRORS\` key that is already there is never changed: write \`DISABLE_ERRORS: false\` to make the job fail on linter errors.
 
 ## Troubleshooting
 
@@ -201,6 +264,9 @@ In agent mode:
   protected currentPackage: any = {};
   protected currentPackageLen = 0;
 
+  protected profileNames = new Set<string>();
+  protected retrievedFiles = new RetrievedFilesCollector();
+
   protected namespaces: string[];
   protected installedPackages: any[];
   protected outputFile;
@@ -282,139 +348,162 @@ In agent mode:
     this.outputFile = flags.outputfile || null;
     this.debugMode = flags.debug || false;
 
-    // Update apiVersion if necessary
-    await updateSfdxProjectApiVersion();
+    // A failed backup must be reported: without a notification, nothing tells it apart from a backup
+    // that did not run (Grafana panels and alerts, messaging channels)
+    let backupDone = false;
+    let retrieved = false;
+    try {
+      // Update apiVersion if necessary
+      await updateSfdxProjectApiVersion();
 
-    // Build target org full manifest
-    uxLog(
-      "action",
-      this,
-      c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
-    );
-    const packageXmlFullFile = 'manifest/package-all-org-items.xml';
-    await buildOrgManifest('', packageXmlFullFile, flags['target-org'].getConnection());
+      // Build target org full manifest
+      uxLog(
+        "action",
+        this,
+        c.cyan(t('buildingFullManifestForOrg', { orgAlias: c.bold(flags['target-org'].getConnection().instanceUrl) }))
+      );
+      const packageXmlFullFile = 'manifest/package-all-org-items.xml';
+      // What the previous backup listed: a component that is no longer listed was deleted since
+      const previousOrgManifest = fs.existsSync(packageXmlFullFile) ? await parsePackageXmlFile(packageXmlFullFile) : null;
+      await buildOrgManifest(flags['target-org'].getUsername(), packageXmlFullFile, flags['target-org'].getConnection());
 
-    // List namespaces used in the org
-    this.namespaces = [];
-    this.installedPackages = await MetadataUtils.listInstalledPackages(null, this);
-    for (const installedPackage of this.installedPackages) {
-      if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
-        this.namespaces.push(installedPackage.SubscriberPackageNamespace);
-      }
-    }
-
-    // Create force-app/main/default if not exists
-    await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
-
-    // Check if we have package-skip_items.xml
-    if (this.full) {
-      await this.extractMetadatasFull(packageXmlFullFile, flags);
-    }
-    else {
-      await this.extractMetadatasFiltered(packageXmlFullFile, flags);
-    }
-
-    // Write installed packages
-    uxLog("action", this, c.cyan(t('writeInstalledPackages')));
-    const installedPackagesLog: any[] = [];
-    const packageFolder = path.join(process.cwd(), 'installedPackages');
-    await fs.ensureDir(packageFolder);
-    for (const installedPackage of this.installedPackages) {
-      const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
-      const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
-      delete installedPackage.Id; // Not needed for diffs
-      await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
-      const installedPackageLog = {
-        SubscriberPackageName: installedPackage.SubscriberPackageName,
-        SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
-        SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
-        SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
-        SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
-      };
-      installedPackagesLog.push(installedPackageLog);
-      // Clean repo: Remove previous versions of file names
-      const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
-      const fileNameNoSepBad2 = fileName;
-      for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
-        if (oldFileName === fileNameNoSep) {
-          continue;
-        }
-        const oldFilePath = path.join(packageFolder, oldFileName);
-        if (fs.existsSync(oldFilePath)) {
-          await fs.remove(oldFilePath);
+      // List namespaces used in the org
+      this.namespaces = [];
+      this.installedPackages = await MetadataUtils.listInstalledPackages(flags['target-org'].getUsername(), this);
+      for (const installedPackage of this.installedPackages) {
+        if (installedPackage?.SubscriberPackageNamespace !== '' && installedPackage?.SubscriberPackageNamespace != null) {
+          this.namespaces.push(installedPackage.SubscriberPackageNamespace);
         }
       }
 
-    }
+      // Create force-app/main/default if not exists
+      await fs.ensureDir(path.join(process.cwd(), 'force-app', 'main', 'default'));
 
-    this.diffFiles = await MetadataUtils.listChangedFiles();
+      // Check if we have package-skip_items.xml
+      if (this.full) {
+        await this.extractMetadatasFull(packageXmlFullFile, flags);
+      }
+      else {
+        await this.extractMetadatasFiltered(packageXmlFullFile, flags);
+      }
 
-    // Write output file
-    if (this.diffFiles.length > 0) {
-      const filesHumanUnformatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), false);
-      const severityIconLog = getSeverityIcon('log');
-      this.outputFile = await generateReportPath('backup-updated-files', this.outputFile);
-      this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
-        return {
-          File: diffFile.path.replace('force-app/main/default/', ''),
-          ChangeType: diffFile.index === '?' ? 'A' : diffFile.index,
-          FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
-          WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
-          PrevName: diffFile?.from || '',
-          severity: 'log',
-          severityIcon: severityIconLog,
+      // The file-based retrieve returns truncated Profiles: read them whole
+      await this.readCompleteProfiles(flags);
+
+      // A retrieve never deletes a file: delete those of the components that are gone from the org
+      await this.deleteFilesOfDeletedComponents(packageXmlFullFile, previousOrgManifest, flags);
+
+      // Write installed packages
+      uxLog("action", this, c.cyan(t('writeInstalledPackages')));
+      const installedPackagesLog: any[] = [];
+      const packageFolder = path.join(process.cwd(), 'installedPackages');
+      await fs.ensureDir(packageFolder);
+      for (const installedPackage of this.installedPackages) {
+        const fileName = (installedPackage.SubscriberPackageName || installedPackage.SubscriberPackageId) + '.json';
+        const fileNameNoSep = makeFileNameGitCompliant(fileName); // Handle case when package name contains slashes or colon
+        delete installedPackage.Id; // Not needed for diffs
+        await fs.writeFile(path.join(packageFolder, fileNameNoSep), JSON.stringify(installedPackage, null, 2));
+        const installedPackageLog = {
+          SubscriberPackageName: installedPackage.SubscriberPackageName,
+          SubscriberPackageNamespace: installedPackage.SubscriberPackageNamespace,
+          SubscriberPackageVersionId: installedPackage.SubscriberPackageVersionId,
+          SubscriberPackageVersionName: installedPackage.SubscriberPackageVersionName,
+          SubscriberPackageVersionNumber: installedPackage.SubscriberPackageVersionNumber,
         };
-      });
-      this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
-    }
+        installedPackagesLog.push(installedPackageLog);
+        // Clean repo: Remove previous versions of file names
+        const fileNameNoSepBad1 = fileName.replace(/\//g, '_').replace(/:/g, '_');
+        const fileNameNoSepBad2 = fileName;
+        for (const oldFileName of [fileNameNoSepBad1, fileNameNoSepBad2]) {
+          if (oldFileName === fileNameNoSep) {
+            continue;
+          }
+          const oldFilePath = path.join(packageFolder, oldFileName);
+          if (fs.existsSync(oldFilePath)) {
+            await fs.remove(oldFilePath);
+          }
+        }
 
-    // Build notifications
-    const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
-    const notifButtons = await getNotificationButtons();
-    let notifSeverity: NotifSeverity = 'log';
-    let notifText = `No updates detected in ${orgMarkdown}`;
-    let notifAttachments: MessageAttachment[] = [];
-    if (this.diffFiles.length > 0) {
-      const filesHumanFormatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), true);
-      notifSeverity = 'info';
-      notifText = `Updates detected in ${orgMarkdown}`;
-      notifAttachments = [
-        {
-          text: this.diffFiles
-            .map((diffFile) => {
-              let flag = '';
-              if (diffFile.index && diffFile.index !== ' ') {
-                flag = ` (${diffFile.index === '?' ? 'A' : diffFile.index})`;
-              }
-              const line = `- ${filesHumanFormatted.get(diffFile.path)}` + flag;
-              return line;
-            })
-            .join('\n'),
+      }
+
+      this.diffFiles = await MetadataUtils.listChangedFiles();
+      retrieved = true;
+
+      // Write output file
+      if (this.diffFiles.length > 0) {
+        const filesHumanUnformatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), false);
+        const severityIconLog = getSeverityIcon('log');
+        this.outputFile = await generateReportPath('backup-updated-files', this.outputFile);
+        this.diffFilesSimplified = this.diffFiles.map((diffFile) => {
+          return {
+            File: diffFile.path.replace('force-app/main/default/', ''),
+            ChangeType: backupChangeType(diffFile),
+            FileHuman: filesHumanUnformatted.get(diffFile.path) || diffFile.path.replace('force-app/main/default/', ''),
+            WorkingDir: diffFile.working_dir === '?' ? '' : diffFile.working_dir,
+            PrevName: diffFile?.from || '',
+            severity: 'log',
+            severityIcon: severityIconLog,
+          };
+        });
+        this.outputFilesRes = await generateCsvFile(this.diffFilesSimplified, this.outputFile, { fileTitle: 'Updated Metadatas' });
+      }
+
+      // Build notifications
+      const orgMarkdown = await getOrgMarkdown(flags['target-org']?.getConnection()?.instanceUrl);
+      const notifButtons = await getNotificationButtons();
+      let notifSeverity: NotifSeverity = 'log';
+      let notifText = `No updates detected in ${orgMarkdown}`;
+      let notifAttachments: MessageAttachment[] = [];
+      if (this.diffFiles.length > 0) {
+        const filesHumanFormatted = MetadataUtils.getMetadataPrettyNames(this.diffFiles.map((diffFile) => diffFile.path), true);
+        notifSeverity = 'info';
+        notifText = `Updates detected in ${orgMarkdown}`;
+        notifAttachments = [
+          {
+            text: this.diffFiles
+              .map((diffFile) => {
+                const changeType = backupChangeType(diffFile);
+                const flag = changeType && changeType !== ' ' ? ` (${changeType})` : '';
+                const line = `- ${filesHumanFormatted.get(diffFile.path)}` + flag;
+                return line;
+              })
+              .join('\n'),
+          },
+        ];
+      } else {
+        uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
+      }
+
+      // Post notifications
+      backupDone = true;
+      await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
+      await NotifProvider.postNotifications({
+        type: 'BACKUP',
+        text: notifText,
+        buttons: notifButtons,
+        attachments: notifAttachments,
+        severity: notifSeverity,
+        sideImage: 'backup',
+        attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
+        logElements: this.diffFilesSimplified,
+        data: {
+          metric: this.diffFilesSimplified.length,
+          installedPackages: installedPackagesLog,
         },
-      ];
-    } else {
-      uxLog("log", this, c.grey(t('noUpdatedMetadataForBackup')));
+        metrics: {
+          UpdatedMetadatas: this.diffFilesSimplified.length,
+        },
+      });
+    } catch (e: any) {
+      if (!backupDone) {
+        await this.postBackupFailureNotification(flags, e, retrieved);
+      }
+      throw e;
     }
 
-    // Post notifications
-    await setConnectionVariables(flags['target-org']?.getConnection());// Required for some notifications providers like Email
-    await NotifProvider.postNotifications({
-      type: 'BACKUP',
-      text: notifText,
-      buttons: notifButtons,
-      attachments: notifAttachments,
-      severity: notifSeverity,
-      sideImage: 'backup',
-      attachedFiles: this.outputFilesRes.xlsxFile ? [this.outputFilesRes.xlsxFile] : [],
-      logElements: this.diffFilesSimplified,
-      data: {
-        metric: this.diffFilesSimplified.length,
-        installedPackages: installedPackagesLog,
-      },
-      metrics: {
-        UpdatedMetadatas: this.diffFilesSimplified.length,
-      },
-    });
+    // Written after the notification, so that an update of AGENTS.md is never reported as an org change
+    await this.writeAgentsMd();
+    await this.ensureMegaLinterConfig();
 
     // Ask interactively only after backup is done and just before doc generation.
     if (!isCI && !agentMode && !skipDocFlagProvided) {
@@ -479,6 +568,64 @@ In agent mode:
     return { outputString: 'BackUp processed on org ' + flags['target-org'].getConnection().instanceUrl };
   }
 
+  // Never throws: the error of the backup is the one the job must fail with
+  private async postBackupFailureNotification(flags: any, error: any, retrieved = false) {
+    try {
+      const conn = flags['target-org']?.getConnection();
+      await setConnectionVariables(conn);// Required for some notifications providers like Email
+      const orgMarkdown = await getOrgMarkdown(conn?.instanceUrl);
+      const errorMessage = backupErrorMessage(error);
+      await NotifProvider.postNotifications({
+        type: 'BACKUP',
+        // After the retrieve, the metadata is backed up: only the report of the changes failed
+        text: retrieved
+          ? `Metadata backup of ${orgMarkdown} retrieved, but its report of the changes failed`
+          : `Metadata backup failed in ${orgMarkdown}`,
+        buttons: await getNotificationButtons(),
+        attachments: [{ text: errorMessage }],
+        severity: 'error',
+        sideImage: 'backup',
+        attachedFiles: [],
+        logElements: [],
+        data: { error: errorMessage },
+        metrics: {},
+      });
+    } catch (notifError: any) {
+      uxLog("warning", this, c.yellow(t('backupFailureNotificationError', { message: notifError?.message || String(notifError) })));
+    }
+  }
+
+
+  private async writeAgentsMd() {
+    try {
+      const config = await getConfig('user');
+      const agentsMdResult = await writeMonitoringAgentsMd(config);
+      if (agentsMdResult.updatedFiles.length > 0) {
+        uxLog("action", this, c.cyan(t('monitoringAgentsMdUpdated', { files: agentsMdResult.updatedFiles.join(', ') })));
+      }
+      if (agentsMdResult.markersBroken) {
+        uxLog("warning", this, c.yellow(t('monitoringAgentsMdMarkersBroken')));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('errorWhileWritingMonitoringAgentsMd', { message: e.message })));
+    }
+  }
+
+  // The MegaLinter job of the pipeline pulls the branch after the backup: it reads this file
+  private async ensureMegaLinterConfig() {
+    try {
+      const megaLinterConfigResult = await ensureMonitoringMegaLinterConfig();
+      if (megaLinterConfigResult.status === 'created') {
+        uxLog("action", this, c.cyan(t('monitoringMegaLinterConfigCreated', { file: MEGALINTER_CONFIG_FILE })));
+      } else if (megaLinterConfigResult.status === 'updated') {
+        uxLog("action", this, c.cyan(t('monitoringMegaLinterConfigUpdated', { file: MEGALINTER_CONFIG_FILE })));
+      } else if (megaLinterConfigResult.status === 'unparsable') {
+        uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigUnparsable', { file: MEGALINTER_CONFIG_FILE, message: megaLinterConfigResult.message })));
+      }
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('monitoringMegaLinterConfigNotWritten', { file: MEGALINTER_CONFIG_FILE, message: e.message })));
+    }
+  }
 
   private async extractMetadatasFull(packageXmlFullFile: string, flags) {
     let packageXmlToExtract = packageXmlFullFile;
@@ -775,7 +922,8 @@ In agent mode:
     }).join('\n');
     uxLog("log", this, c.grey(mdTypesString));
     try {
-      await execCommand(
+      // --json: its list of written files tells which local files the org did not return
+      const retrieveResult = await execSfdxJson(
         `sf project retrieve start -x "${packageXmlBackUpItemsFile}" -o ${flags['target-org'].getUsername()} --ignore-conflicts --wait 120`,
         this,
         {
@@ -784,7 +932,17 @@ In agent mode:
           debug: this.debugMode,
         }
       );
-    } catch (e) {
+      const retrieveFailure = retrieveFailureMessage(retrieveResult);
+      if (retrieveFailure) {
+        throw new SfError(retrieveFailure);
+      }
+      this.retrievedFiles.add(retrieveResult);
+    } catch (e: any) {
+      // The output of a failed --json command is a JSON document: keep its message readable
+      const jsonErrorMessage = retrieveJsonErrorMessage(e);
+      if (jsonErrorMessage) {
+        e.message = jsonErrorMessage;
+      }
       const failedPackageXmlContent = await fs.readFile(packageXmlBackUpItemsFile, 'utf8');
       uxLog("warning", this, c.yellow(t('backupPackageXmlThatFailedToBe') + c.grey(failedPackageXmlContent)));
       if (this.full) {
@@ -819,6 +977,63 @@ In agent mode:
         )
       );
       throw e;
+    }
+    for (const profileName of collectProfileNames(packageXml)) {
+      this.profileNames.add(profileName);
+    }
+  }
+
+  // Only the Profiles of the manifests that were retrieved: package-skip-items.xml,
+  // MONITORING_BACKUP_SKIP_METADATA_TYPES and --start-chunk apply here too
+  private async readCompleteProfiles(flags: any) {
+    const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+    const defaultPackageDir =
+      (this.project?.getPackageDirectories() || []).find((dir: any) => dir.default)?.fullPath ||
+      packageDirs[0] ||
+      path.join(process.cwd(), 'force-app');
+    // Only the profiles folders are given as the existing sources to write over: resolving every
+    // file of the backup to find the Profiles takes minutes on a large org
+    const profileDirs = packageDirs
+      .map((packageDir: string) => path.join(packageDir, 'main', 'default', 'profiles'))
+      .filter((profileDir: string) => fs.existsSync(profileDir));
+    await readBackupProfiles({
+      conn: flags['target-org'].getConnection(),
+      profileNames: [...this.profileNames],
+      outputDir: defaultPackageDir,
+      packageDirs: profileDirs,
+      commandThis: this,
+      debug: this.debugMode,
+    });
+  }
+
+  // Nothing is deleted when the run can not tell what is gone from the org. Never throws: the
+  // metadata is retrieved, a cleanup that fails must not fail the backup.
+  private async deleteFilesOfDeletedComponents(packageXmlFullFile: string, previousOrgManifest: any, flags: any) {
+    try {
+      const config = await getConfig('branch');
+      let skipReason: BackupDeletionsSkipReason | null = null;
+      if (isBackupDeletionsDisabled(config)) {
+        skipReason = { kind: 'disabled' };
+      } else if (this.startChunk > 1) {
+        skipReason = { kind: 'partialRetrieve', detail: '--start-chunk' };
+      } else if (process.env.FULL_ORG_MANIFEST_PATH) {
+        skipReason = { kind: 'partialRetrieve', detail: 'FULL_ORG_MANIFEST_PATH' };
+      } else if (!this.retrievedFiles.complete) {
+        skipReason = { kind: 'noFileList' };
+      }
+      const packageDirs = (this.project?.getPackageDirectories() || []).map((dir: any) => dir.fullPath);
+      const conn = flags['target-org'].getConnection();
+      await applyBackupDeletions({
+        packageDirs: packageDirs.length > 0 ? packageDirs : [path.join(process.cwd(), 'force-app')],
+        retrieved: this.retrievedFiles,
+        currentManifest: skipReason ? null : await parsePackageXmlFile(packageXmlFullFile),
+        previousManifest: previousOrgManifest,
+        skipReason,
+        readMetadata: (type: string, fullNames: string[]) => conn.metadata.read(type, fullNames),
+        commandThis: this,
+      });
+    } catch (e: any) {
+      uxLog("warning", this, c.yellow(t('backupDeletionsFailed', { message: e?.message || String(e) })));
     }
   }
 }

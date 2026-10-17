@@ -4,18 +4,19 @@ Salesforce DevOps toolbox by Cloudity -- CI/CD pipelines, metadata backup/monito
 
 ## Quick Reference
 
-| Command                              | Description                                              |
-|--------------------------------------|----------------------------------------------------------|
-| `yarn build`                         | Full build (compile + lint + JSON schema doc via wireit) |
-| `yarn compile`                       | TypeScript compilation only                              |
-| `yarn lint`                          | ESLint on src/ and test/                                 |
-| `yarn test`                          | Full test suite (CI-gated)                               |
-| `yarn test:only`                     | Unit tests only (CI-gated)                               |
-| `yarn test:nuts`                     | Integration tests (long timeout, parallel)               |
-| `yarn format`                        | Prettier on src/test/schemas                             |
-| `yarn clean`                         | sf-clean                                                 |
-| `yarn build:doc`                     | Auto-generate command documentation                      |
-| `./bin/dev.js hardis:<cat>:<action>` | Test a command locally (no build needed)                 |
+| Command                              | Description                                               |
+|--------------------------------------|-----------------------------------------------------------|
+| `yarn build`                         | Full build (compile + lint + JSON schema doc via wireit)  |
+| `yarn compile`                       | TypeScript compilation only                               |
+| `yarn lint`                          | ESLint on src/ and test/                                  |
+| `yarn test`                          | Full test suite (CI-gated)                                |
+| `yarn test:only`                     | Unit tests only (CI-gated)                                |
+| `yarn test:nuts`                     | Integration tests (long timeout, parallel)                |
+| `yarn format`                        | Prettier on src/test/schemas                              |
+| `yarn clean`                         | sf-clean                                                  |
+| `yarn build:doc`                     | Auto-generate command documentation (all commands)        |
+| `yarn build:doc --commands <id>`     | Regenerate the doc of some commands (ids or `*` patterns) |
+| `./bin/dev.js hardis:<cat>:<action>` | Test a command locally (no build needed)                  |
 
 **Package manager**: Yarn only. Do not use npm. Lock file: `yarn.lock`.
 
@@ -32,13 +33,14 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 
 - `monitoring-notifications` skill: load it whenever a monitoring command, notification type, routing threshold, metric key, or logElements shape is created, updated, or deleted.
 - `grafana-dashboards` skill: rules and workflow for the "Org Monitoring by sfdx-hardis" v2 dashboards (`docs/grafana/dashboards-v2`). Load it for any dashboard or alert-rule work, and for every indicator evolution: **any change to a monitoring indicator must also handle its impact on the Grafana dashboards.**
-- Generic Grafana skills (`dashboarding`, `promql`, `loki`, `alerting-irm`) are vendored in `.claude/skills/` from [grafana/skills](https://github.com/grafana/skills) via `npx skills` (tracked in `skills-lock.json`, refresh with `npx skills update`). They are agent-agnostic: any coding agent reading `.claude/skills/` can use them.
+- `monitoring-agents-md` skill: the `AGENTS.md` that the monitoring backup writes for coding agents. Load it for any change to what it describes: the backup output, the monitoring pipelines and commands, what is sent to Grafana, monitoring config keys, the CI/CD pipeline behavior, git provider APIs or token variables. **A change that makes it wrong must update it in the same PR.**
+- Generic Grafana skills (`grafana-core:dashboarding`, `grafana-core:promql`, `grafana-core:alerting-irm`, `grafana-lgtm:loki`...) and MegaLinter skills and agents (`megalinter:megalinter-check`, `megalinter:megalinter-fix`, `megalinter:megalinter-runner`...) come from Claude Code plugins enabled for this repository in `.claude/settings.json`: `grafana-core` and `grafana-lgtm` from [grafana/skills](https://github.com/grafana/skills), `megalinter` from [oxsecurity/megalinter](https://github.com/oxsecurity/megalinter). Never copy them into `.claude/`. Update them with `claude plugin update <plugin>@<marketplace>`.
 
 ## Promotion Branches Skills
 
 - `promotion-branches` skill: how the promotion branches feature (`enablePromotionBranches`, `sf hardis:project:promotion:create`) works across sfdx-hardis and vscode-sfdx-hardis, its invariants, and every file to touch. Load it for any work on promotion branches, on the Pull Request scope of `deploy:smart`, on release notes filtering, or on the DevOps Pipeline windows, counters and toggles.
 - `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches or backpromote change in a way unit tests cannot cover.
-- `backpromote` skill: how a coding agent drives `sf hardis:work:backpromote` (plan, decide, run, solve the merges it asks for, confirm manual actions) and where the feature lives in both repositories. Load it for any work on backpromote, on the "Backpromotes" Pull Request comments or on the VS Code Backpromote panel. The requirements are in `backpromote.md`.
+- `backpromote` skill: how a coding agent drives `sf hardis:work:backpromote` (plan, decide, run, solve the merges it asks for, confirm manual actions) and where the feature lives in both repositories. Load it for any work on backpromote, on the "Backpromotes" Pull Request comments or on the VS Code Backpromote panel.
 
 ## VS Code Extension (vscode-sfdx-hardis)
 
@@ -49,11 +51,35 @@ Most users run sfdx-hardis through the VS Code extension [vscode-sfdx-hardis](ht
 - A feature available in both must behave the same: the CLI is the engine and the extension passes it flags. Never reimplement CLI logic in the extension.
 - Work in the extension follows the extension's own `CLAUDE.md`, `.claude/skills` (`analyze`, `design`, `implement`, `test`...) and `.claude/agents`, not the sfdx-hardis ones. One PR per repository, cross-linked.
 
+## Training (sfdx-hardis-training)
+
+The [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com/) course walks learners through this product, click by click, with screenshots taken from the real extension. A change here can break a lab silently: the text still reads fine and the click no longer does what it says.
+
+- `training-impact` skill: load it for any change touching a command name or flag, a prompt, `--json` output, a config key, a report file, a doc page URL, an LWC panel, or any behavior a lab walks through. It reads `training-manifest.json` from the sibling clone and names the affected labs.
+- `training-update` skill: load it once `training-impact` says there is an impact. It performs the edits in the sibling training repository, including regenerating the Helios screenshots.
+- `training-publish` skill: the Trailhead Trailmixes and the Cloudity badges. Load it for the Trailmix titles, copy, step lists and URLs, and for anything touching the badges, the claim issue or the audit's promises to a learner.
+- `training-e2e` skill: walk the course as a learner, in a real fork against real orgs, checking that every step works and every screenshot still matches the text. Load it when the user asks to test the training or walk the labs, and when a change is too broad for reading the labs to settle it. It is the only one of these that finds defects nobody predicted.
+- `training-feedback-discussions` skill: the comments learners leave under the pages of the course (GitHub Discussions of `sfdx-hardis-training`). Load it when the user asks to check the training discussions or to answer the learners. It lists the threads nobody answered, checks each remark, prepares the fixes and drafts the replies. **Nothing is posted before the user has validated both the fixes and the replies.**
+- **The analysis and the design always state the training impact, even when it is "none".**
+- **The course ships in English and French, and `labs/en/` is always the reference.** Every change starts in English; the translations follow it and never lead it. The structure is English in every locale: same file names, same ids, same URLs, same `depends_on`. A lab that a change affects is affected in every language, and a fix that lands only in `labs/fr/` is a fact nobody else can find.
+- `node scripts/check-training-impact.mjs` names the affected labs mechanically. It only covers names: a behavior that changed under an unchanged name needs the skill.
+- `sfdx-hardis-training` is always a sibling directory, cloned there if absent, like `../vscode-sfdx-hardis` already is.
+
+One Pull Request per repository, cross-linked. Order: CLI, then the extension, then the training. A change that invalidates a lab is not finished until the training Pull Request is open.
+
+**Every change made from here to a sibling repository updates that repository's own `CHANGELOG.md`**, in the same Pull Request: `## Unreleased` in `../vscode-sfdx-hardis`, `## [beta] (main)` here, and in `../sfdx-hardis-training`, which has no versions, a `## YYYY-MM-DD` heading with the date of the day (add it at the top if it does not exist yet). The `changelog` skill's style rules apply to all three.
+
 ## Behavior Preferences
 
 - Always continue iterating until the task is complete -- do not ask to continue.
 - Use git bash for Windows formatting when building commands.
 - **NEVER** use em-dashes (—) in anything you generate. (replace them with simple hyphens)
+
+## Method Order
+
+- Order the methods of a class, and the functions of a module, by visibility first: public (exported), then protected, then private (not exported).
+- Inside each visibility group, follow the order they are called: a caller comes before what it calls, and steps of a flow appear in the order they run.
+- This applies to new code and to methods you add to an existing file. Do not reorder a whole existing file in an unrelated change.
 
 ## No AI Attribution
 

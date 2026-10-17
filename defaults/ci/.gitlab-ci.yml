@@ -4,7 +4,7 @@
 #         Update it only if you know what you are doing :)       #
 ##################################################################
 
-# More info at https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-home/
+# More info at https://sfdx-hardis.cloudity.com/salesforce-devops-setup-home/
 
 # To add custom behaviors, please use side config file .gitlab-ci-config.yml
 include:
@@ -69,9 +69,12 @@ check_quality:
     expire_in: 1 week
 
 # Check deployment in target branch org.
-# If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/
+# If auth not configure yet, check this doc: https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/
 check_deploy_to_target_branch_org:
   stage: build
+  # Deployments can be long: raise this value if a job is killed before the deployment ends.
+  # It cannot exceed the maximum job timeout of the runner, raise that one too if needed.
+  timeout: 150 minutes
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
@@ -127,12 +130,17 @@ create_scratch_org:
       - $SCRATCH_ORG_POOL == "true"
       - $USE_SCRATCH_ORGS == "false"
   interruptible: true
+  # Merge Requests taking a scratch org from the pool at the same time are queued, so two of them
+  # never get the same one. Remove this line if you do not use a scratch org pool.
+  resource_group: scratch_org_pool
   script:
     - |
       if [ "${CI_COMMIT_REF_NAME#auto-fix/}" != "$CI_COMMIT_REF_NAME" ]; then
         echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CI_COMMIT_REF_NAME"
         exit 0
       fi
+    # With a scratch org pool stored in the git provider, define the masked CI/CD variables
+    # CI_SFDX_HARDIS_GITLAB_TOKEN and SFDX_HARDIS_POOL_ENCRYPTION_KEY
     - sf hardis:auth:login --devhub
     - sf hardis:scratch:create
   artifacts:
@@ -168,6 +176,7 @@ refresh_scratch_org_pool:
 # Run apex unit tests in testing scratch org
 test_apex:
   stage: test
+  timeout: 150 minutes # Raise it if the job is killed before the Apex tests end
   when: delayed # Orgs just created can be not ready yet, let's wait a while before running tests
   start_in: 2 minutes
   tags:
@@ -247,6 +256,7 @@ clean:
 # Is triggered only when scheduled, or via manual launch
 check_deploy_to_current_branch_org:
   stage: check_deploy
+  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
@@ -286,6 +296,7 @@ check_deploy_to_current_branch_org:
 # Don't forget to define variable DEPLOY_BRANCHES to match your branches in .gitlab-ci-config.yml
 deploy_to_org:
   stage: deploy
+  timeout: 150 minutes # Raise it if the job is killed before the deployment ends
   tags:
     # Change or even remove tags if standard runners
     - ubuntu

@@ -2,7 +2,7 @@ import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
 import { SlackProvider } from "./slackProvider.js";
-import { UtilsNotifs as utilsNotifs } from "./utils.js";
+import { UtilsNotifs as utilsNotifs } from "./utils/utils.js";
 import { TeamsProvider } from "./teamsProvider.js";
 import { GoogleChatProvider } from "./googleChatProvider.js";
 import { CONSTANTS, getConfig } from "../../config/index.js";
@@ -10,18 +10,20 @@ import { EmailProvider } from "./emailProvider.js";
 import { ApiProvider } from "./apiProvider.js";
 import type { NotifMessage } from "./types.js";
 import { t } from '../utils/i18n.js';
-import { writeMonitoringNotifFile } from './monitoringNotifWriter.js';
+import { writeMonitoringNotifFile } from './utils/monitoringNotifWriter.js';
 import {
   getChannelThreshold,
   getEffectiveNotificationConfig,
   severityMeetsThreshold,
-} from "./notificationConfig.js";
+} from "./utils/notificationConfig.js";
 import {
+  AnonymizationChannel,
   AnonymizationLevel,
   anonymizeNotifMessage,
   consumeAnonymizationNotice,
   getAnonymizationLevel,
   getChannelAnonymizationLevel,
+  isTextScrubbingSkipped,
 } from "../utils/anonymizeUtils.js";
 
 export abstract class NotifProvider {
@@ -63,7 +65,7 @@ export abstract class NotifProvider {
         "log",
         this,
         c.grey(
-          `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/#message-notifications`,
+          `[NotifProvider] No notif has been configured: ${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/#message-notifications`,
         ),
       );
     }
@@ -80,12 +82,15 @@ export abstract class NotifProvider {
         uxLog("warning", this, c.yellow(t('anonymizationLegacyEnvVarDeprecated')));
       }
     }
-    const anonymizedViews = new Map<AnonymizationLevel, NotifMessage>();
-    const getViewForLevel = (level: AnonymizationLevel): NotifMessage => {
-      if (!anonymizedViews.has(level)) {
-        anonymizedViews.set(level, anonymizeNotifMessage(notifMessage, level));
+    const anonymizedViews = new Map<string, NotifMessage>();
+    const getViewForLevel = (level: AnonymizationLevel, channel: AnonymizationChannel | null = null): NotifMessage => {
+      // Views only differ by channel when the message keeps user names readable in its text
+      const viewChannel = isTextScrubbingSkipped(notifMessage, level, channel) ? channel : null;
+      const viewKey = `${level}|${viewChannel || ""}`;
+      if (!anonymizedViews.has(viewKey)) {
+        anonymizedViews.set(viewKey, anonymizeNotifMessage(notifMessage, level, viewChannel));
       }
-      return anonymizedViews.get(level) as NotifMessage;
+      return anonymizedViews.get(viewKey) as NotifMessage;
     };
     for (const notifProvider of notifProviders) {
       uxLog("log", this, c.grey(`[NotifProvider] - Notif target found: ${notifProvider.getLabel()}`));
@@ -133,7 +138,7 @@ export abstract class NotifProvider {
         // from receiving the notification, nor make the calling command fail.
         try {
           const channelAnonymizationLevel = await getChannelAnonymizationLevel(channel);
-          await notifProvider.postNotification(getViewForLevel(channelAnonymizationLevel));
+          await notifProvider.postNotification(getViewForLevel(channelAnonymizationLevel, channel));
         } catch (e) {
           failedChannels.push(notifProvider.getLabel());
           uxLog(

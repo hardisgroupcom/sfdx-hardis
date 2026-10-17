@@ -361,6 +361,24 @@ describe('anonymizeUtils', () => {
       assert.ok(message.text.includes('jane.doe@acme.com'));
     });
 
+    it('keeps usernames readable in human channel texts when the message opts in, at standard level only', () => {
+      const message = { ...buildMessage(), keepUsersReadableInText: true };
+      for (const channel of ['messaging', 'email'] as const) {
+        const result = anonymizeNotifMessage(message, 'standard', channel);
+        assert.ok(result.text.includes('jane.doe@acme.com'), result.text);
+        assert.ok((result.attachments as any[])[0].text.includes('jane.doe@acme.com'));
+        // Rows stay pseudonymized for every channel
+        assert.match(result.logElements[0].Username, /^user_/);
+      }
+      // API channel (Loki, monitoring files, AI summary) and calls without channel stay scrubbed
+      assert.ok(!anonymizeNotifMessage(message, 'standard', 'api').text.includes('jane.doe@acme.com'));
+      assert.ok(!anonymizeNotifMessage(message, 'standard').text.includes('jane.doe@acme.com'));
+      // Strict level scrubs everything
+      assert.ok(!anonymizeNotifMessage(message, 'strict', 'messaging').text.includes('jane.doe@acme.com'));
+      // Without the opt-in, human channels are scrubbed as before
+      assert.ok(!anonymizeNotifMessage(buildMessage(), 'standard', 'messaging').text.includes('jane.doe@acme.com'));
+    });
+
     it('also anonymizes actors at strict level, including in free texts', () => {
       const result = anonymizeNotifMessage(buildMessage(), 'strict');
       assert.match(result.logElements[0].TriggeredBy, /^user_/);

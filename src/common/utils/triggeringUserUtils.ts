@@ -21,7 +21,7 @@ import * as os from 'node:os';
 import c from 'chalk';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
-import { isJenkins } from '../gitProvider/jenkinsUtils.js';
+import { isJenkins } from '../gitProvider/utils/jenkinsUtils.js';
 import { git, isCI, uxLog } from './index.js';
 import { t } from './i18n.js';
 

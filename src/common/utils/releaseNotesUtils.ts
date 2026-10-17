@@ -17,12 +17,15 @@ import {
 import { readActions } from "./actionUtils.js";
 import { isDeploymentActionsDisabled } from "./prePostCommandUtils.js";
 import {
+  buildPromotionIndex,
   expandPromotionPullRequests,
+  findPromotionsCarryingIndexed,
   getPromotionBranchConfig,
   isPromotionPullRequest,
   parsePromotionPullRequestIds,
   PromotionBranchConfig,
 } from "./promotionBranchUtils.js";
+import { listDownstreamPromotionPullRequests, oldestPullRequestDate } from "./pullRequestUtils.js";
 import { getConfig } from "../../config/index.js";
 import { ActionWhen } from "../actionsProvider/actionsProvider.js";
 import { AiProvider } from "../aiProvider/index.js";
@@ -131,7 +134,9 @@ export async function resolveReleaseScope(
       await assertTagExists(previousTag, commandRef);
     }
     const toCommit = await getCommitForTag(releaseTag);
-    const fromCommit = previousTag ? await getCommitForTag(previousTag) : toCommit;
+    // The first release tag has no tag before it: bound the range with the first parent of the
+    // tagged commit, as the post mode does for a first promotion, rather than an empty range
+    const fromCommit = previousTag ? await getCommitForTag(previousTag) : (await getFirstParentCommit(toCommit)) || toCommit;
     const targetBranch = flags["target-branch"] || (await detectTargetBranchForTag(releaseTag, majorOrgs, agentMode));
     return { fromCommit, toCommit, releaseTag, previousTag, targetBranch, mode };
   }
@@ -223,8 +228,11 @@ export async function resolveReleaseScope(
       const prevCommit = selectedIndex >= 0 && selectedIndex < mergeCommits.length - 1
         ? mergeCommits[selectedIndex + 1]
         : null;
+      // The first promotion into a branch has no merge before it: bound the range with the
+      // merge's first parent, as the merge-commit scope does, or the metadata delta is skipped
+      // and the notes of every first promotion say no metadata changed
       return {
-        fromCommit: prevCommit?.sha || "",
+        fromCommit: prevCommit?.sha || (await getFirstParentCommit(selected.sha)) || "",
         toCommit: selected.sha,
         targetBranch,
         sourceBranch: sourceBranch || undefined,
@@ -291,10 +299,33 @@ interface MergeCommitInfo {
   message: string;
 }
 
+// The merges happen on the git server: a local branch nobody pulled since misses the latest
+// release. Fetch the branch, and read the remote-tracking copy when there is one.
+async function freshBranchRef(branch: string): Promise<string> {
+  // execCommand only swallows a failure for a --json command: for these two it
+  // throws, and a branch that exists only locally, or an offline run, would end
+  // up reported as a branch with no merge at all.
+  try {
+    await execCommand(`git fetch origin "${branch}"`, null, { fail: false, output: false });
+  } catch {
+    // No remote, or no network: the local branch is all there is
+  }
+  try {
+    const remoteRef = await execCommand(`git rev-parse --verify --quiet "refs/remotes/origin/${branch}"`, null, {
+      fail: false,
+      output: false,
+    });
+    return remoteRef?.stdout?.trim() ? `origin/${branch}` : branch;
+  } catch {
+    return branch;
+  }
+}
+
 async function listMergeCommitsOnBranch(branch: string, limit = 20): Promise<MergeCommitInfo[]> {
   try {
+    const ref = await freshBranchRef(branch);
     const result = await execCommand(
-      `git log --merges --first-parent "${branch}" --pretty=format:"%H|%cs|%s" -n ${limit}`,
+      `git log --merges --first-parent "${ref}" --pretty=format:"%H|%cs|%s" -n ${limit}`,
       null,
       { fail: true },
     );
@@ -485,6 +516,26 @@ export async function getReleaseDate(scope: ReleaseNotesScope): Promise<string> 
 // Data collection
 // ---------------------------------------------------------------------------
 
+/**
+ * How the Pull Requests of a release are found, from its scope:
+ * - `dates`: merged into the target branch between two dates
+ * - `branches`: merged into the source branch since its last merge into the target branch (what is
+ *   waiting). Not in post mode once a merge commit is chosen: right after that merge, "since the last
+ *   merge" is empty
+ * - `goLive`: introduced by the chosen merge commit
+ * - `recent`: the recently merged Pull Requests of the target branch
+ */
+export function pullRequestsLookup(scope: ReleaseNotesScope): "dates" | "branches" | "goLive" | "recent" {
+  const mergeCommitChosen = Boolean(scope.toCommit && scope.toCommit !== "HEAD" && !scope.releaseTag);
+  if (scope.fromDate || scope.toDate) {
+    return "dates";
+  }
+  if (scope.sourceBranch && scope.targetBranch && !(scope.mode === "post" && mergeCommitChosen)) {
+    return "branches";
+  }
+  return mergeCommitChosen ? "goLive" : "recent";
+}
+
 export async function collectPullRequests(
   scope: ReleaseNotesScope,
   commandRef: any,
@@ -503,8 +554,9 @@ export async function collectPullRequests(
   // are inter-major-branch but must survive the filter below, as they carry the release.
   const releaseCommitPrIds = new Set<string>();
 
+  const lookup = pullRequestsLookup(scope);
   // Date-based filtering
-  if (scope.fromDate || scope.toDate) {
+  if (lookup === "dates") {
     pullRequests = (await gitProvider.listPullRequests(
       {
         targetBranch: scope.targetBranch,
@@ -520,12 +572,12 @@ export async function collectPullRequests(
         return mergedDate && mergedDate <= toDate;
       });
     }
-  } else if (scope.sourceBranch && scope.targetBranch) {
+  } else if (lookup === "branches") {
     // Branch-based: find PRs between branches
     const childBranches = recursiveGetChildBranches(scope.targetBranch, majorOrgs);
     try {
       pullRequests = await gitProvider.listPullRequestsInBranchSinceLastMerge(
-        scope.sourceBranch,
+        scope.sourceBranch as string,
         scope.targetBranch,
         [...childBranches],
       );
@@ -537,7 +589,7 @@ export async function collectPullRequests(
         { targetBranch: scope.targetBranch, status: "merged" },
       )) || [];
     }
-  } else if (scope.toCommit && scope.toCommit !== "HEAD" && !scope.releaseTag) {
+  } else if (lookup === "goLive") {
     // Commit-based (e.g. post mode with --merge-commit): scope PRs to the go-live
     // introduced by the merge commit. This excludes hotfixes merged directly to the
     // target branch at other times, which a plain "recent merged PRs" list catches.
@@ -592,7 +644,57 @@ export async function collectPullRequests(
   pullRequests = await expandPromotionPullRequests(pullRequests, promotionConfig, (id) => gitProvider.getPullRequestById(id));
   pullRequests = dropResolvedPromotionPullRequests(pullRequests, promotionConfig, options);
 
+  // The window of a branch runs since its last direct merge into the next one, which a project
+  // using promotion branches may never do again: a story a merged promotion already carried to the
+  // target branch is still in it, and would be announced as upcoming months after it shipped.
+  if (lookup === "branches" && promotionConfig.enabled) {
+    const downstreamPromotions = await listDownstreamPromotionPullRequests(
+      gitProvider,
+      scope.targetBranch,
+      majorOrgs,
+      promotionConfig,
+      oldestPullRequestDate(pullRequests),
+    );
+    pullRequests = dropAlreadyPromotedPullRequests(pullRequests, downstreamPromotions, promotionConfig, scope.targetBranch, commandRef);
+  }
+
   return pullRequests;
+}
+
+/**
+ * Leaves out the User Stories a merged promotion Pull Request already carried to the target branch
+ * (or further): their change is there, the upcoming promotion of the branch does not bring it. The
+ * stories are named in the log, never dropped in silence. The promotions themselves are never
+ * touched: a promotion still open carries nothing yet, and buildPromotionIndex ignores it.
+ */
+export function dropAlreadyPromotedPullRequests(
+  pullRequests: CommonPullRequestInfo[],
+  downstreamPromotions: CommonPullRequestInfo[],
+  config: PromotionBranchConfig,
+  targetBranch: string,
+  commandRef: any = null,
+): CommonPullRequestInfo[] {
+  if (!config.enabled || downstreamPromotions.length === 0) {
+    return pullRequests;
+  }
+  const index = buildPromotionIndex(downstreamPromotions, config);
+  const leftOut: string[] = [];
+  const kept = pullRequests.filter((pr) => {
+    const promotions = findPromotionsCarryingIndexed(pr.idNumber, index).filter((promotion) => promotion.idNumber !== pr.idNumber);
+    if (promotions.length === 0) {
+      return true;
+    }
+    leftOut.push(`${pr.idStr} (${promotions.map((promotion) => promotion.sourceBranch).join(", ")})`);
+    return false;
+  });
+  if (leftOut.length > 0) {
+    uxLog("log", commandRef, c.grey(`[PromotionBranch] ${t("releaseNotesAlreadyPromotedLeftOut", {
+      count: leftOut.length,
+      branch: targetBranch,
+      details: leftOut.join("; "),
+    })}`));
+  }
+  return kept;
 }
 
 /**
@@ -944,6 +1046,7 @@ export async function collectMetadataAttribution(
 export async function collectDeploymentActions(
   pullRequests: CommonPullRequestInfo[],
   commandRef: any,
+  targetBranch?: string,
 ): Promise<DeploymentActionStateEntry[]> {
   const prNumbers = pullRequests.map((pr) => pr.idNumber).filter((n) => n > 0);
   if (prNumbers.length === 0) {
@@ -984,7 +1087,7 @@ export async function collectDeploymentActions(
         if (allEntries.length > 0) {
           // State exists for these PRs: return the processed actions (skipped excluded, deduped),
           // even if that leaves the list empty - do not fall back to re-listing action definitions.
-          return filterAndDedupeDeploymentActions(allEntries);
+          return filterAndDedupeDeploymentActions(allEntries, targetBranch);
         }
       }
     }
@@ -1025,20 +1128,40 @@ export async function collectDeploymentActions(
 // Keep only processed actions (drop skipped) and remove duplicates: the same action can be
 // recorded once per org branch, which would render as identical rows since the table does not
 // show the org branch. Collapse to one row per action + phase + PR, keeping the most meaningful status.
-function filterAndDedupeDeploymentActions(entries: DeploymentActionStateEntry[]): DeploymentActionStateEntry[] {
+/**
+ * One row per action, with its status. The notes of a branch report the status in the org of that
+ * branch: a manual step ticked in integration is still to do in uat, and taking the best status
+ * across orgs printed it as done in the notes of uat. An action with no entry for that branch yet,
+ * as when previewing a promotion that has not run, has not run there: it reads as pending. An
+ * action only ever skipped in that org does not apply to it, and is left out.
+ */
+export function filterAndDedupeDeploymentActions(entries: DeploymentActionStateEntry[], targetBranch?: string): DeploymentActionStateEntry[] {
   const statusPriority: Record<string, number> = { success: 3, failed: 2, manual: 1 };
   const byKey = new Map<string, DeploymentActionStateEntry>();
+  const target = (targetBranch || "").trim();
+  const isTarget = (entry: DeploymentActionStateEntry) => !!target && (entry.orgBranch || "").trim() === target;
+  const keyOf = (entry: DeploymentActionStateEntry) => `${entry.actionId}::${entry.when}::${entry.prNumber ?? ""}`;
+  // A runOnlyOnceByOrg action is skipped on every deployment after the one that ran it, so a skip
+  // only removes the action when nothing else was recorded for it in the target org
+  const ranInTarget = new Set(entries.filter((entry) => isTarget(entry) && entry.status !== "skipped").map(keyOf));
+  const skippedInTarget = new Set(entries.filter((entry) => isTarget(entry) && entry.status === "skipped").map(keyOf));
   for (const entry of entries) {
-    if (entry.status === "skipped") {
+    const key = keyOf(entry);
+    if (entry.status === "skipped" || (skippedInTarget.has(key) && !ranInTarget.has(key))) {
       continue;
     }
-    const key = `${entry.actionId}::${entry.when}::${entry.prNumber ?? ""}`;
     const existing = byKey.get(key);
-    if (!existing || (statusPriority[entry.status] || 0) > (statusPriority[existing.status] || 0)) {
+    const better = !existing
+      || (isTarget(entry) && !isTarget(existing))
+      || (isTarget(entry) === isTarget(existing) && (statusPriority[entry.status] || 0) > (statusPriority[existing.status] || 0));
+    if (better) {
       byKey.set(key, entry);
     }
   }
-  return sortDeploymentActions(Array.from(byKey.values()));
+  const rows = Array.from(byKey.values()).map((entry) =>
+    target && !isTarget(entry) ? { ...entry, orgBranch: target, status: "pending" as const, jobId: "", jobUrl: "", date: "" } : entry,
+  );
+  return sortDeploymentActions(rows);
 }
 
 function sortDeploymentActions(entries: DeploymentActionStateEntry[]): DeploymentActionStateEntry[] {
@@ -1324,6 +1447,9 @@ function getStatusIcon(status: string): string {
     case "failed": return "\u274c";
     case "manual": return "\ud83d\udc4b";
     case "skipped": return "\u26aa";
+    case "pending": return "\u23f3";
+    case "not-run": return "\u23f8\ufe0f";
+    case "moved": return "\u21aa\ufe0f";
     default: return "\u2753";
   }
 }

@@ -1,7 +1,6 @@
 ---
 name: test
 description: Build, lint, and run tests to verify the implementation. Fourth step of the contribution workflow, use after /implement.
-disable-model-invocation: true
 allowed-tools: Read Glob Grep Write Edit Bash
 argument-hint: "[additional context]"
 model: sonnet

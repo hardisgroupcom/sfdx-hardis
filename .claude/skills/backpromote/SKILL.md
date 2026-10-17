@@ -9,8 +9,8 @@ user-invocable: true
 `sf hardis:work:backpromote` deploys into a **developer sandbox** what the team merged in a **parent
 major branch** since the last backpromote of that sandbox: the metadata (computed by sfdx-git-delta on
 the window of merged Pull Requests) and the deployment actions declared by those Pull Requests. The
-requirements are in `backpromote.md` at the repository root; the command page is
-`docs/hardis/work/backpromote.md`.
+command page is `docs/hardis/work/backpromote.md`, and the user guide is
+`docs/salesforce-devops-backpromote.md`.
 
 Vocabulary: parent branch (`developmentBranch` or one of `availableTargetBranches`), target sandbox
 (never a major org), sandbox name (from the instance URL, `--sandbox-name` overrides), backpromote

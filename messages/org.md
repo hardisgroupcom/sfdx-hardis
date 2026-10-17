@@ -38,13 +38,29 @@ Assisted export data defined in .sfdx-hardis.yml
 
 Activate debug mode (more logs)
 
+# doraReportBranches
+
+Comma-separated branches to compute. Default: the current branch in CI, every major branch otherwise
+
+# doraReportCompare
+
+Also compute the previous period of the same length, to show how each metric moved
+
+# doraReportDataOnly
+
+Return the JSON result only: no report file, no notification
+
 # doraReportOutputFile
 
 Force the path and name of output report file. Must end with .md
 
 # doraReportPeriod
 
-Number of days to analyze (default: 90)
+Number of days to analyze (default: 90, maximum: 365)
+
+# doraReportRefresh
+
+Read every job again from the git provider instead of using the local cache
 
 # deployMetadatas
 

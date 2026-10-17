@@ -1,6 +1,7 @@
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import AdmZip from 'adm-zip';
+import { MetadataResolver } from '@salesforce/source-deploy-retrieve';
 import fs from '../utils/fsUtils.js';
 import * as path from 'path';
 import sortArray from '../utils/sortArray.js';
@@ -14,7 +15,7 @@ import {
   isGitRepo,
   sortCrossPlatform,
   uxLog,
-} from '../../common/utils/index.js';
+} from '../utils/index.js';
 import { getApiVersion } from '../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../settings.js';
 import { getCache, setCache } from '../cache/index.js';
@@ -428,6 +429,29 @@ Issue tracking: https://github.com/forcedotcom/cli/issues/2426`)
     const files = [...changedFiles, ...updatedFiles]
     const filesSorted = files.sort((a, b) => (a.path > b.path ? 1 : -1));
     return filesSorted;
+  }
+
+  // Resolve a local source file to its metadata component (a file of a LWC or Aura bundle resolves to the
+  // bundle, a field file to "Object.Field__c", with its object as parent). Returns null when the file
+  // is not Salesforce metadata.
+  // Pass a resolver to resolve many files: building one per file is the slow part.
+  public static resolveMetadataFromFile(
+    filePath: string,
+    resolver?: MetadataResolver
+  ): { type: string; name: string; parent: { type: string; name: string } | null } | null {
+    try {
+      // Ignore .forceignore: a file listed in .forceignore is still a component of the org
+      const component = (resolver ?? new MetadataResolver(undefined, undefined, false)).getComponentsFromPath(path.resolve(filePath))[0];
+      return component
+        ? {
+          type: component.type.name,
+          name: component.fullName,
+          parent: component.parent ? { type: component.parent.type.name, name: component.parent.fullName } : null,
+        }
+        : null;
+    } catch {
+      return null;
+    }
   }
 
   public static getMetadataPrettyNames(metadataFilePaths: string[], bold = false): Map<string, string> {

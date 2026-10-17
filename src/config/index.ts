@@ -16,6 +16,7 @@ import c from 'chalk';
 import { cosmiconfig } from 'cosmiconfig';
 import fs from '../common/utils/fsUtils.js';
 import * as yaml from 'js-yaml';
+import { parseDocument as parseYamlDocument } from 'yaml';
 import * as os from 'os';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, isGitRepo, uxLog } from '../common/utils/index.js';
@@ -61,20 +62,25 @@ export const getBannerMarkdownAndLink = () => {
 export type PrCommentBannerKey =
   | 'validation-success'
   | 'validation-failure'
+  | 'validation-waiting'
   | 'deployment-success'
   | 'deployment-failure'
+  | 'deployment-action-failed'
   | 'actions-completed'
   | 'actions-pending'
   | 'actions-error';
 
-// Validation and deployment comments are only posted once completed, so they carry no pending
-// banner: their only statuses are success and failure. Only the deployment actions comment has a
-// pending state (manual actions still waiting to be performed).
+// Validation and deployment comments are only posted once completed. Besides success and failure,
+// each has one orange badge case: a validation stopped by manual actions not done yet (nothing was
+// simulated), and a deployment Salesforce accepted but whose post-deployment action failed. The
+// deployment actions comment has a pending state (manual actions still waiting to be performed).
 const PR_COMMENT_BANNERS: Record<PrCommentBannerKey, { file: string; altTextKey: string }> = {
   'validation-success': { file: 'pr-banner-validation-success.png', altTextKey: 'prBannerValidationSuccess' },
   'validation-failure': { file: 'pr-banner-validation-failure.png', altTextKey: 'prBannerValidationFailure' },
+  'validation-waiting': { file: 'pr-banner-validation-waiting.png', altTextKey: 'prBannerValidationWaiting' },
   'deployment-success': { file: 'pr-banner-deployment-success.png', altTextKey: 'prBannerDeploymentSuccess' },
   'deployment-failure': { file: 'pr-banner-deployment-failure.png', altTextKey: 'prBannerDeploymentFailure' },
+  'deployment-action-failed': { file: 'pr-banner-deployment-action-failed.png', altTextKey: 'prBannerDeploymentActionFailed' },
   'actions-completed': { file: 'pr-banner-actions-completed.png', altTextKey: 'prBannerActionsCompleted' },
   'actions-pending': { file: 'pr-banner-actions-pending.png', altTextKey: 'prBannerActionsPending' },
   'actions-error': { file: 'pr-banner-actions-error.png', altTextKey: 'prBannerActionsError' },
@@ -220,6 +226,29 @@ async function loadFromRemoteConfigFile(url) {
   return remoteConfig;
 }
 
+// A file with a YAML syntax error parses into a partial document: writing it back would silently
+// drop what could not be read, so refuse to edit it and say which file to fix
+function readEditableYamlDocument(configFile: string) {
+  const previous = fs.existsSync(configFile) ? fs.readFileSync(configFile, 'utf-8') : '';
+  const doc = parseYamlDocument(previous);
+  if (doc.errors.length > 0) {
+    throw new SfError(`${configFile} is not valid YAML, fix it before updating it: ${doc.errors[0].message}`);
+  }
+  return doc;
+}
+
+// Remove keys from a configuration file, keeping the rest of it and its comments as they are
+export async function removeFromConfigFile(configFile: string, keys: string[]) {
+  if (!fs.existsSync(configFile)) {
+    return;
+  }
+  const doc = readEditableYamlDocument(configFile);
+  for (const key of keys) {
+    doc.delete(key);
+  }
+  await fs.writeFile(configFile, doc.toString({ lineWidth: 0 }));
+}
+
 // Update configuration file
 export async function setInConfigFile(searchPlaces: string[], propValues: any, configFile: string = '') {
   let explorer;
@@ -228,13 +257,17 @@ export async function setInConfigFile(searchPlaces: string[], propValues: any, c
     const configExplorer = await explorer.search();
     configFile = configExplorer != null ? configExplorer.filepath : searchPlaces.slice(-1)[0];
   }
-  let doc: any = {};
-  if (fs.existsSync(configFile)) {
-    doc = yaml.load(fs.readFileSync(configFile, 'utf-8'));
+  // The file is edited in place rather than rebuilt from a JS object: a project
+  // configuration is written by hand and its comments explain why each value is
+  // what it is. Loading it and dumping it back would drop every one of them, and
+  // rewrap the lines, the first time any command stored a value.
+  const doc = readEditableYamlDocument(configFile);
+  for (const [key, value] of Object.entries(propValues)) {
+    doc.set(key, value);
   }
-  doc = Object.assign(doc, propValues);
   await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  // lineWidth 0: never fold a long value, so a URL or a sentence stays on one line
+  await fs.writeFile(configFile, doc.toString({ lineWidth: 0 }));
   if (explorer) {
     explorer.clearCaches();
   }

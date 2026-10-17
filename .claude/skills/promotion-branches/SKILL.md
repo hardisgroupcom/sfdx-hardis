@@ -4,7 +4,7 @@ description: How the promotion branches feature works (enablePromotionBranches, 
 user-invocable: false
 ---
 
-# Promotion branches (experimental)
+# Promotion branches (Beta)
 
 A **promotion branch** carries a chosen subset of the User Stories waiting in a major branch to the
 next major branch, ahead of the rest of the promotion window. It is a selective merge: instead of
@@ -16,10 +16,10 @@ Required with it: **`allowedPromotionSteps`**, the source and target branches a 
 may assemble a promotion between (`- source: uat` / `target: preprod`). `promotion:create`
 refuses to run while the list is missing.
 Everything below is inert while it is off, with one exception noted in [Filtering](#filtering-what-moves-the-pull-requests).
-The feature is **experimental** and must be labelled as such in docs and UIs.
+The feature is in **Beta** and must be labelled as such in docs and UIs, the way backpromote is.
 
-User documentation: `docs/salesforce-ci-cd-promotion-branches.md`
-(<https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/>).
+User documentation: `docs/salesforce-devops-promotion-branches.md`
+(<https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/>).
 End to end test runbook: the `promotion-branches-e2e` skill.
 
 ## Mental model
@@ -75,8 +75,10 @@ Break one of these and the feature is wrong, whatever the tests say.
 6. **Expansion is multi level.** A `preprod -> main` promotion can carry a `uat -> preprod`
    promotion, which carries stories. Both levels must resolve.
 7. **Conflict markers never reach an org, and the reviewer is told why.**
-   `assertNoPromotionConflictMarkers` greps every tracked file, not only the package directories.
-   It stops the job before anything is deployed, so no other code would ever post a Pull Request
+   `assertNoPromotionConflictMarkers` greps every tracked file, not only the package directories,
+   except the git glob patterns of `promotionConflictMarkersIgnoredFiles` (files that hold markers
+   on purpose, like the merge conflict lab of the training). It reads the checked out files only,
+   never the history, so a shallow CI clone is enough. It stops the job before anything is deployed, so no other code would ever post a Pull Request
    comment: it sets `deployErrorsMarkdownBody` / `status: 'invalid'` on the Pull Request data and
    calls `GitProvider.managePostPullRequestComment(checkOnly)` **before** throwing. A red job with
    no comment on the very Pull Request that has to be fixed is not an acceptable outcome.
@@ -239,6 +241,18 @@ Break one of these and the feature is wrong, whatever the tests say.
     extension mirror: the DevOps Pipeline, the release notes and the promotion candidates ignore them,
     and no CI job runs on them. The backpromote history lives in the "Backpromotes" Pull Request
     comment, which is not the CI/CD "Deployment Actions" comment: neither side reads the other's.
+30. **What a story already reached is read from the merged promotions of the step, not from the
+    windows.** The window of a branch runs since its last direct merge into the next branch, and a
+    project using promotions may never merge `uat` into `preprod` directly again, so a promotion
+    merged into `preprod` leaves the `preprod` window at the next go-live while the stories it
+    carried stay in the `uat` window for months (issue #2260: 292 counted, 129 pending). In the
+    extension, `listMergedPromotionsOfSteps` (`orgConfigUtils.ts`) asks the provider
+    (`listMergedPullRequestsIntoBranch`) for the merged promotions of every `branch -> merge
+    target` step, bounded by the oldest Pull Request of the source window, and feeds them into the
+    index next to the ones the windows hold; `enforceSinglePlacePerPullRequest` stays as the
+    fallback for a provider that answers nothing. In the CLI, the branch mode of
+    `hardis:doc:release-notes` subtracts the same stories (`dropAlreadyPromotedPullRequests`),
+    while `deploy:smart` keeps them in scope on purpose (no-op redeploy, actions skipped).
 
 ## sfdx-hardis (CLI)
 
@@ -299,6 +313,8 @@ not leak in.
 |------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `src/utils/pipeline/promotionBranchUtils.ts`         | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`. |
 | `src/commands/showPipeline.ts`                       | Fetches the declared Pull Requests (in parallel), builds the windows.                                                                                                                         |
+| `src/utils/orgConfigUtils.ts`                        | `completeMajorOrgsWithPromotionBranches`: expands the windows, reads the merged promotions of each step from the provider (`listMergedPromotionsOfSteps`), annotates, enforces the invariant. |
+| `src/utils/gitProviders/*.ts`                        | `listMergedPullRequestsIntoBranch(target, updatedAfter)` on the four providers and the mock, sharing the per-branch fetch of the window listings.                                             |
 | `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                    |
 | `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, User Stories not promoted away), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                  |
 | `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the vehicles toggle, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                     |
@@ -319,8 +335,8 @@ Major-to-major merges are filtered for **every** project: such a merge is plumbi
 A `promotion/` branch is only a vehicle when the feature is enabled, because otherwise it really is
 an ordinary branch, which is exactly how the deployment jobs treat it.
 
-What brings the vehicles back: the **Show merge and promotion Pull Requests** toggle (top right of
-the branch window modal), and `--include-promotions` on `hardis:doc:release-notes`.
+What brings the vehicles back: the **Merges and promotions** chip of the Pull Requests list
+(`s/pullRequestList`, next to its text filter), and `--include-promotions` on `hardis:doc:release-notes`.
 
 ## Performance
 
@@ -340,5 +356,9 @@ A big project has hundreds of Pull Requests, so:
   in the CLI, the 9 `src/i18n/*.json` in the extension).
 - Any behaviour change: re-run the A/B regression check with the feature **off** before saying it
   is safe. A green unit suite has already missed a flag-off regression once.
-- The feature is experimental: keep the "(experimental)" mention in the docs page, the JSON schema
-  description and the settings UI.
+- The monitoring `AGENTS.md` explains promotion branches and the Pull Request scope of
+  `deploy:smart` to coding agents: when their behaviour changes, load the `monitoring-agents-md`
+  skill and update its "How the CI/CD pipeline works" section.
+- The feature is in Beta: keep the "(Beta)" mention in the docs page, the JSON schema description
+  and the settings UI. It moved from "(experimental)" in September 2026, so a new mention is written
+  "(Beta)", capital B, like backpromote.

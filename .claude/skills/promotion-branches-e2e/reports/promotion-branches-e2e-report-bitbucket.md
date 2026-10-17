@@ -1,297 +1,141 @@
-# Promotion branches: end to end test on Bitbucket Cloud
+# Promotion branches, deployment actions and backpromote: end to end test on Bitbucket Cloud
 
-> **Not re-run on 2026-09-13 either.** The only Bitbucket access token available is scoped to the
-> repository of the previous runs, which has been deleted: the API answers 404 on that repository
-> and 403 on the creation of a new one, so no Bitbucket run is possible until a new token (or a
-> workspace access token) is issued. GitHub and GitLab were re-run on 2026-09-13, backpromote (Beta)
-> included. The backpromote hooks of `scripts/e2e-lib-bitbucket.sh` (`bp_provider_env`, `bp_open`,
-> `bp_merge`) were written for this cycle and have **never run**; this report covers neither them,
-> nor the pipeline checkpoints, nor any fix made after 2026-09-08.
->
-> **Not re-run on 2026-09-09.** The test repository was deleted, so this report is the one of
-> 2026-09-08 and does not cover the five fixes of the 2026-09-09 cycle, nor the pipeline
-> checkpoints. The three other providers were re-run.
+**Date:** 2026-10-14 (supersedes the run of 2026-10-10 on `feat/pr-modal-job-artifacts`)
+**Why this run:** regression check of the four providers on `main` after the release of 8.18.0
+(the scratch org pool in the git provider, hardisgroupcom/sfdx-hardis#2343). Bitbucket Cloud last,
+after GitHub, GitLab and Azure DevOps.
 
-**Date:** 2026-09-08 (re-run; the first Bitbucket run of 2026-09-07 is summarized under "What the first run found")
-**Repository under test:** `galerieslafayette/test-prom-e2e` (private), reset to the runbook base project for this run
-**Salesforce org:** `nicolas.vuillamy.c8024b5deb9f@agentforce.com` (developer org, shared with the three other providers)
-**sfdx-hardis:** `feat/promotion-branches`, `2c2ffa6ea` at the start, unchanged by this run
-**vscode-sfdx-hardis:** `feat/promotion-branches`, `06ba32f8` (not modified by this run)
+**Repositories under test** (private, created empty for this run, in the workspace `sfdxhardistest`,
+project `TES`):
 
-Every job below is a real `deploy:smart` against that org, run locally with the Bitbucket Pipelines
-variables set (`CI_SFDX_HARDIS_BITBUCKET_TOKEN`, `BITBUCKET_WORKSPACE`, `BITBUCKET_REPO_SLUG`,
-`BITBUCKET_PR_ID`), which is what the git provider reads.
+- sections 3, 4, 4bis, 4ter, 5bis, 5quater, 6, 6quater, 6sexies and 7bis: `sfdx-hardis-promo-e2e-bb-10`
+- backpromote (Beta), section 6bis: `sfdx-hardis-promo-e2e-bb-11`
+- real CI with the branch linked by `sf plugins link`, section 6quinquies: `sfdx-hardis-promo-e2e-ci-bb-6`
 
-**The repository is reused, not new.** The Bitbucket access token is scoped to this one repository,
-so a second one cannot be created. The repository was reset instead: every branch but `main`
-deleted, and the base project force-pushed. The consequences are called out where they show.
+**Salesforce org:** the Developer Edition org of `E2E_ORG` (also the Dev Hub). Scratch orgs
+`promo-e2e-dev` (also `DEV_ORG` of 6quater and 6sexies) and `promo-e2e-dev2`: the two created at
+06:16 by the Azure backpromote setup, after Salesforce deleted the ones of 2026-10-10 (see the Azure
+report). Bitbucket is the only provider whose whole run used the new orgs.
+**sfdx-hardis:** `main` at `e8caccee6` (8.18.0), through `bin/dev.js` for the simulators, cloned and
+linked by the real CI jobs.
+**vscode-sfdx-hardis:** `main` at `ef21b5ab`, compiled with `yarn compile`.
 
 ___
 
-## The pipeline
+## Counts
 
-| Story | Pull Request | Branch                    | Target      | Actions                   | Test classes                            | Keyword                  |
-|-------|--------------|---------------------------|-------------|---------------------------|-----------------------------------------|--------------------------|
-| S1    | #24          | `feature/E2E-101-alpha`   | integration | pre command + post manual | `PromoE2EAlphaTest`, `PromoE2EBetaTest` | -                        |
-| S2    | #25          | `feature/E2E-102-beta`    | integration | post command              | -                                       | `NO_DELTA`               |
-| S3    | #26          | `feature/E2E-103-gamma`   | integration | pre command               | `PromoE2EBetaTest`                      | `PURGE_FLOW_VERSIONS`    |
-| S4    | #27          | `feature/E2E-201-delta`   | uat         | pre command + post manual | `PromoE2EAlphaTest`                     | -                        |
-| S5    | #28          | `feature/E2E-202-epsilon` | uat         | post command              | -                                       | -                        |
-| S6    | #29          | `feature/E2E-301-hotfix`  | preprod     | pre command + post manual | `PromoE2EBetaTest`                      | `FLOW_DELETE_INTERVIEWS` |
+| Section                                                                             | Checks                            | OK  | FAIL | Not covered                        |
+|-------------------------------------------------------------------------------------|-----------------------------------|-----|------|------------------------------------|
+| 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42                                | 42  | 0    |                                    |
+| 6: edge cases, groups g1 to g6                                                      | 47                                | 47  | 0    |                                    |
+| 6quater: gate, recovery, set-status ahead, forecast, developer org                  | 21                                | 21  | 0    |                                    |
+| 6sexies: identical actions, I1 to I10                                               | 24                                | 24  | 0    |                                    |
+| Visual fixtures (VE, VG)                                                            | 2                                 | 2   | 0    |                                    |
+| 6bis: backpromote B0 to B16, C1 to C4 (`bb-11`)                                     | 63                                | 63  | 0    |                                    |
+| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-bb-6`)                                   | 22                                | 21  | 0    | 1 SKIP by design (W8)              |
+| 4ter: single Pull Request window, simulated jobs (`bb-10`)                          | 51 Pull Requests                  | 51  | 0    |                                    |
+| 4ter: single Pull Request window, real CI jobs (`ci-bb-6`, X1)                      | 1                                 | 1   | 0    |                                    |
+| 5bis: comment audit (`bb-10`)                                                       | 1142 checks over 55 Pull Requests | all | 0    |                                    |
+| 5quater: visual check of the comments (`bb-10`, fixtures included)                  | 12 types                          |     |      | 12: Chrome logged out of Bitbucket |
+| 5quater: visual check (`bb-11`, backpromote)                                        | 1 type                            |     |      | 1: same, logged out                |
+| 7bis: single place in the diagram (`bb-10`)                                         | 1                                 | 1   | 0    |                                    |
+| 7ter: flag-off A/B against `origin/main`                                            | see "What this run did not cover" |     |      |                                    |
 
-## The promotions
+No SKIP line in sections 6quater and 6sexies: the developer org groups ran on the new scratch org.
+One `getaddrinfo() thread failed to start` on a `curl` poll of section 6 (group g5, after check 46):
+the parser printed a traceback and the poll went on, no check was affected.
 
-| Promotion | Pull Request | Branch                                   | Carries            | Outcome                                                                                    |
-|-----------|--------------|------------------------------------------|--------------------|--------------------------------------------------------------------------------------------|
-| P1        | #30          | `promotion/integration/uat/2026-09-08-1` | #24, #26           | merged, deployed to uat. Closed the **previous run's** stale open promotion #17 on the way |
-| P2        | #31          | `promotion/uat/preprod/2026-09-08-1`     | #27                | merged, deployed to preprod                                                                |
-| P3        | #32          | `promotion/uat/preprod/2026-09-08-2`     | #26, #24           | the merge commit of P1, one level of nesting                                               |
-| P4        | #33          | `promotion/preprod/main/2026-09-08-1`    | #27, #26, #24, #29 | merged, deployed to main, two levels of nesting                                            |
-| P5        | #37          | `promotion/integration/uat/2026-09-08-2` | #36                | assembled with conflict markers on purpose, then declined                                  |
-| P6        | #39          | `promotion/integration/uat/2026-09-08-3` | #36                | superseded #37 and declined it                                                             |
-
-___
-
-## What the first run found, and what this one confirms
-
-The first Bitbucket run (2026-09-07) found **five defects**, four of them Bitbucket specific. All
-five are fixed and this run exercises the fixed code from a clean pipeline:
-
-| Defect                                                             | Commit      | Confirmed here                                                                |
-|--------------------------------------------------------------------|-------------|-------------------------------------------------------------------------------|
-| A cherry-pick git refused was reported as a conflict with no files | `cb7e8d6de` | the conflict on #36 is a real one and names both files                        |
-| `listPullRequests` read a single page                              | `356992aa4` | every candidate title resolves, no `PR #n` placeholder                        |
-| `listPullRequests` ignored the target branch filter                | `356992aa4` | the retargeted promotion is not counted as a promotion that reached `preprod` |
-| Bitbucket drops `state` when `q` is present                        | `356992aa4` | no merged promotion reported as still open                                    |
-| A skipped action erased a pending manual action                    | `d99043d6d` | see the audit below                                                           |
-
-**This run found no new defect.** Every group of the runbook passes.
+Wall clock: sections 1 h 39 min (the slowest of the four: the validation median is 57 s against
+50 on GitLab, and one `edge-full-merge` validation took 375 s), fixtures 4 min, post checks 12 min,
+backpromote 38 min (setup 7 min 42 s, steps 30 min), real CI 1 h 13 min (04:01 to 05:14, in
+parallel with the GitLab sections and backpromote). The whole provider ran from 06:51 to 09:24.
 
 ___
 
-## Test groups
+## Results by group
 
-| Group                                    | Expected                                                                       | Result                                                                                              |
-|------------------------------------------|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| Provider detection                       | Bitbucket picked from the token, repository from `BITBUCKET_REPO_SLUG`         | OK on every job                                                                                     |
-| Feature branch validation and deployment | `Pull Request scope: 1 Pull Request(s) (#N)` and nothing else                  | OK for #24..#29                                                                                     |
-| Merge job Pull Request resolution        | the merged Pull Request found without `BITBUCKET_PR_ID`                        | OK, through the branch search fallback                                                              |
-| Two yaml blocks in a description         | both are read                                                                  | OK on #24: `PromoE2EAlphaTest` and `PromoE2EBetaTest`                                               |
-| `NO_DELTA`                               | `Delta deployment has been disabled`, `Deployment mode: FULL`                  | OK on #25                                                                                           |
-| `PURGE_FLOW_VERSIONS`                    | extra pre-deploy action, skipped in validation, run in deployment              | OK on #26                                                                                           |
-| Manual actions in a validation job       | `Skipping ...: deployment-only action`                                         | OK everywhere                                                                                       |
-| Promotion Pull Request creation          | branch pushed, Pull Request opened with the declaration and the carried table  | OK: #30, #31, #32, #33, #37, #39                                                                    |
-| Promotion validation and deployment      | scope = declared + the promotion itself                                        | OK: #30 (`#24, #26, #30`), #31 (`#27, #31`), #32 (`#26, #24, #32`), #33 (`#27, #26, #24, #29, #33`) |
-| Keyword inheritance                      | only the keywords of the carried stories                                       | OK: #30 inherits `PURGE_FLOW_VERSIONS` and not `NO_DELTA`; #33 inherits both                        |
-| Test classes of a promotion              | union of the carried Pull Requests, `RunSpecifiedTests`                        | OK                                                                                                  |
-| Go-live branch content                   | the four static resources and the four action files                            | OK on #33                                                                                           |
-| Deployment action state                  | the comment lands on the **story** Pull Request, one column per org branch     | OK                                                                                                  |
-| Promotion carrying a promotion           | the stories of the inner promotion are in the scope                            | OK on #32 and #33                                                                                   |
-| Grouped merge commit                     | the numbers nobody asked for are named **before** cherry-picking, and declared | OK on #32 and #33                                                                                   |
-| Retrofit `main` -> `integration`         | the promotion is expanded, then every already shipped story is named           | OK on #34: `Promotion Pull Request 33 adds 2 carried Pull Request(s)`, then four `already deployed` |
-| Release notes of the go-live             | the User Stories, not the vehicles                                             | OK: 4 Pull Requests (#24, #26, #27, #29); 5 with `--include-promotions`, #33 added                  |
-| Already promoted                         | marked in the table, `--include-already-promoted` named, no branch created     | OK                                                                                                  |
-| Empty cherry-pick                        | `Nothing to cherry-pick`, no branch, exit 0                                    | OK                                                                                                  |
-| Empty cherry-pick, dirty report folder   | same result with `hardis-report/` untracked                                    | OK                                                                                                  |
-| Conflict, agent default                  | promotion undone, both files named                                             | OK on #36                                                                                           |
-| Conflict outside `force-app`             | the gate still catches it                                                      | OK, `NOTES.md` named                                                                                |
-| Conflict, kept                           | Pull Request created, prompt file written and embedded                         | OK: #37                                                                                             |
-| Marker guard                             | the job fails naming the files                                                 | OK: `still contains git conflict markers in 2 file(s)`                                              |
-| Marker guard, solved                     | the job passes                                                                 | OK, scope `#36, #37`                                                                                |
-| Committed conflict prompt report         | the gate ignores it                                                            | OK                                                                                                  |
-| Feature off                              | one informational line, scope = the Pull Request alone                         | OK on #37                                                                                           |
-| Hand-named branch                        | warning, treated as a feature branch, declaration ignored                      | OK on #15, see the reused-repository note below                                                     |
-| Retargeted promotion                     | warning naming the mismatch, scope = the Pull Request alone                    | OK on #38                                                                                           |
-| Unreadable declaration                   | warning and skip, not a failure                                                | OK on #37: `Pull Request #9999 ... was not found: skipped`                                          |
-| Sync merge inside a story                | the candidate lists the story only                                             | OK: #40 alone, #41 on its own row                                                                   |
-| Branch merged twice                      | listed once, never with a `-` row                                              | OK: #41 and #42, one row each                                                                       |
-| Supersede an open promotion              | the open one is closed, its stories offered again with no mark                 | OK: #39 declined #37, state `DECLINED`                                                              |
-| Restricted `allowedPromotionSteps`       | a forbidden source and a forbidden target are both refused                     | OK, both name the allowed steps                                                                     |
-| `allowedPromotionSteps` not declared     | the command stops, asking for the list and linking to the doc                  | OK                                                                                                  |
-| Full merge after a partial promotion     | already promoted stories skipped, the never promoted one arrives               | OK on #43, see below                                                                                |
-| `promotion:list-candidates`              | the candidate table without assembling anything                                | OK from `uat`                                                                                       |
-| Pull Request comment audit               | consistent comments, navigation and action state                               | 1241 checks over 44 Pull Requests, two findings, both known, see below                              |
-| Single place in the diagram              | each number in one branch only                                                 | OK, see below                                                                                       |
-| Flag-off regression                      | `TOTAL DIFFERING LINES: 0`                                                     | 6 lines, all from the coverage fix, see below                                                       |
+### Sections 3, 4 and 4bis (`bb-10`): 42 OK
 
-### A full major-to-major merge after a partial promotion
+### Section 6, edge cases: 47 OK
 
-#43 merges `uat` into `preprod` in full, after #27 had been promoted alone by #31 and #24, #26 by #32.
+### Section 6quater, deployment actions: 21 OK
 
-- The validation scope is `#23, #28, #30, #27, #41, #40, #42, #43, #24, #26`: the promotion #30 is
-  expanded, and #28 (S5 epsilon), which had never been promoted, arrives for the first time.
-- #27, #24 and #26 are each reported as `already deployed through promotion branch(es) ...` and
-  their deployment actions are skipped.
-- The post-deploy action of #28 runs for the first time in `preprod`.
-- After the merge, `promotion:create uat -> preprod` answers `No Pull Request merged into uat is
-  waiting for promotion to preprod`.
+### Section 6sexies, identical actions: 24 OK
 
-`#23` in that scope is the previous run's `integration -> uat` Pull Request, matched by its source
-branch. A reused-repository artefact: it does not happen on a fresh repository, and the three other
-providers show no equivalent.
+### Section 6bis, backpromote (`bb-11`): 63 OK
 
-### Pull Request comment audit
+B0 to B16 and C1 to C4 in 30 minutes on the scratch orgs created at 06:16. B2 ran as
+`developer-edition.json`; `refused-production.json` stays not covered. The Backpromotes comment of
+the first story was dumped (11 Pull Requests) but not pictured: the e2e Chrome profile is logged
+out of Bitbucket.
 
-```
-1241 checks over 44 Pull Requests (bitbucket)
-2 FINDING(S):
-  - #24: manual action e2e-manual-24 is marked skipped in uat
-  - #1:  manual action e2e-manual-1  is marked skipped in uat
-```
+### Section 6quinquies, real CI on Bitbucket Pipelines (`ci-bb-6`): 21 OK, 1 SKIP
 
-- **#1** belongs to the previous run and was already reported there.
-- **#24** was written by the flag-off passes that deliberately run the pre-fix `origin/main` CLI.
-  All five passes log the skip; only the three `ab-main*` ones, which are pre-fix, write it into the
-  state, and `ab-main3` ran last. The fixed CLI was proved not to create it: a deployment that
-  skipped four actions of #27 left its manual action `👋` in every branch it had reached.
+15 pipelines, all recorded "real CI" in `ci-jobs.tsv`, none simulated: the build minutes fallback
+never kicked in. 71 build minutes spent (3 to 6 a pipeline), 229 seconds queued and 3854 seconds run
+in total, 1 hour 13 minutes of wall clock. The expected failures failed (the gate on C1, the flaky
+command of C1, the gate of the promotion to uat) and the re-runs passed. W3 proves that a Bitbucket
+draft (the `draft` flag of the API, no "draft" in the title) is warned about and not stopped. W8
+(the missing `safe.directory` line) is GitHub only, SKIP by design. X1 (the Pull Request window on
+the real comments, merged Pull Requests included) and X2 (the DevOps Pipeline) pass. One `curl`
+poll got `getaddrinfo() thread failed to start` at 05:02, retried by the loop.
 
-The fix prevents new corruption; it does not repair an entry already written. Both entries stay
-`⚪` in this repository.
+This section ran first, at 04:01, after a first start at 02:58 died in the YAML self-check of the
+prepare script (see "What the run found").
 
-### Single place in the diagram
+### Section 5quater, visual check: not covered
 
-Read with `MIN_PR=24`, which drops the previous run's Pull Requests:
+The 12 comment types of `bb-10` were all reported "comment not found on the page". The page the
+check reached is the Pull Request URL itself, but what the e2e Chrome profile (port 9222) sees
+there is "404 Repository not found": it is logged out of Bitbucket, and a private repository answers
+404 to an anonymous visitor. The same profile took 12 Bitbucket pictures on 2026-10-10. Nobody
+could log in during an unattended run. The comment audit (1142 checks) and the Pull Request window
+check (51 of 51) read the same comments through the API and pass, so the content is right; how
+Bitbucket draws it (raw HTML shown as text, the known trap) was last seen on 2026-10-10.
 
-```
-Branch      | node counter | Pull Requests listed
-integration | 4            | #36, #35, #34, #25
-uat         | 4            | #28, #42, #40, #41
-preprod     | 0            |
-main        | 4            | #27, #26, #24, #29
+___
 
-OK: every Pull Request number appears in a single branch
-With 'show already promoted' on: integration=6 uat=7 preprod=4 main=4
-With 'show merge and promotion Pull Requests' on: integration=4 uat=5 preprod=3 main=5
-```
+## What the run found
 
-The same counters as GitHub, GitLab and Azure DevOps on the same scenario.
+| Finding                                                                                                                                                                                                                                     | Status                                                                                                                                                    |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ci-workflows-prepare.cjs` refused `bitbucket-pipelines.yml` of 8.18.0: "the pull request pipeline is not one single step" (the scratch org tests step): the real CI run died in 30 s                                                       | test script defect, fixed during the run: the step is left out like the MegaLinter one, and a check refuses a kept step that runs `hardis:scratch:create` |
+| The e2e Chrome profile is logged out of Bitbucket (and of Azure DevOps): the visual check reports every comment "not found"                                                                                                                 | environment; runbook trap added, preflight to extend                                                                                                      |
+| The wording findings of the GitHub and GitLab readings (Pull Request lists not in numeric order, "Deployment failed" banner, done-only "To do by hand" section, "Pull Request(s)", off-by-one counts) could not be checked on pictures here | not covered on Bitbucket; the audit saw the same comment texts. All of them are fixed on `fix/pr-comment-wording` (see the GitHub report)                 |
 
-### Flag-off regression
-
-```
-check-feature-pr22.log: 130 lines vs 128 lines, only in A: 2, only in B: 0
-check-major-pr44.log:   189 lines vs 187 lines, only in A: 2, only in B: 0
-deploy-uat.log:         185 lines vs 183 lines, only in A: 2, only in B: 0
-release-notes.log:       81 lines vs  81 lines, only in A: 0, only in B: 0
-release-notes.md:        37 lines vs  37 lines, only in A: 0, only in B: 0
-TOTAL DIFFERING LINES: 6
-```
-
-Not zero, and every one of the six lines is the same pair, present only on `origin/main`:
-
-```
-A> Warning: unable to convert Unknown into string
-A> orgCoverage.toFixed is not a function
-```
-
-That is the coverage fix `4752b64fd` removing two lines `main` still prints. Promotion branches,
-switched off, change nothing.
-
-> An earlier pass of this comparison produced 33 differing lines. Twenty-seven of them came from
-> `sfdx-git-delta` failing on the `main` side with `git config exited 3221225794`, a Windows
-> DLL-initialisation exit code, while the machine was under the memory pressure that also killed
-> the background job running the comparison. The pass was re-run on a quiet machine and the release
-> notes then matched line for line. Worth knowing before reading a diff of this kind as a product
-> difference.
+No product defect found on Bitbucket Cloud.
 
 ___
 
 ## What this run did not cover
 
-- **The interactive paths.** Everything ran with `--agent`.
-- **The websocket button** on Pull Request creation.
-- **The pipeline webview itself**: checked through the extension's compiled helpers.
-- **Bitbucket Pipelines itself.** The jobs are reproduced locally with the pipeline variables;
-  `BITBUCKET_BUILD_NUMBER` was a fixed value, so every job link points at pipeline 1.
-- **The "Pull Request Commit Links" app.** Not installed, so the merge job uses the branch search
-  fallback; that fallback is what this run proved, not the primary path.
-- **A brand new repository.** The token is repository-scoped, so the repository is reset rather than
-  created. Two artifacts follow, both benign and both visible above: an old Pull Request matched by
-  its source branch in a deployment scope, and Bitbucket **reopening** the previous run's declined
-  Pull Request (#15) instead of creating a new number when the same two branches are used again.
-- **Branch permissions and required approvals.** The test repository has none.
-- **One org for four branches.**
-- **`FLOW_DELETE_INTERVIEWS` end to end.**
-
-## Suite counts
-
-- sfdx-hardis: **1837 unit tests passing**, lint clean.
-- vscode-sfdx-hardis: not modified by this run.
+- **Section 7ter, the flag-off A/B against `origin/main`.** The branch under test is `main`
+  itself. Not run; the last proof is the one of 2026-10-09 (0 differing lines).
+- **The visual check** (see above): not one picture of a Bitbucket comment this run.
+- **The visual check and the comment audit of the real CI comments** (`ci-bb-6`): X1 reads them
+  through the modal calls only.
+- `refused-production.json` (B2 against a real production org), the terminal prompts of B17, the
+  Backpromote panel of VS Code, the Code Quality tab of the Pull Request window (no MegaLinter
+  comment is posted by the run), the Flow diff comment (no story holds a Flow).
+- The known gaps of the skill stay: no Jenkins, no Gitea, no Bitbucket Server, no production org,
+  no real sandbox (scratch orgs stand in for developer sandboxes), VS Code panels are checked
+  through the extension's compiled code and not by clicks.
 
 ___
 
-## Appendix: the five defects of the first Bitbucket run, in detail
+## What was restarted, and why
 
-Kept here because the evidence exists nowhere else, and four of the five are Bitbucket specific.
+- **The real CI section, once.** The first start (02:58, `ci-bb-6` picked but never created) died in
+  the YAML self-check of the prepare script; the second (04:01, same name) ran.
+- **The sections started late, not restarted.** The first sections chain was stopped before
+  Bitbucket (its scratch orgs had just died under the Azure backpromote); Bitbucket started at
+  06:51 in a second chain, with the new orgs. Its sections, post checks and backpromote then ran
+  once, end to end.
 
-### 1. A cherry-pick git refused was reported as a conflict with no files (`cb7e8d6de`)
+___
 
-Promoting the conflict story answered `Cherry-pick conflict on #13 (...) (-)`. `(-)` is the list of
-conflicting files, empty because there was no conflict: git had refused the cherry-pick outright.
+## Left behind
 
-```
-error: The following untracked working tree files would be overwritten by merge:
-	hardis-report/apex-coverage-results.json
-	... 11 more
-Please move or remove them before you merge.
-```
-
-That is the runbook's deliberate "hardis-report is not gitignored" setup in a shape nobody had hit:
-the commit carried report files while the working tree held untracked copies of the same paths. git
-leaves no `CHERRY_PICK_HEAD` and no conflicted path there, so the code fell into the conflict branch
-anyway. An agent aborted on `(-)`; a human would have been offered three ways to solve a conflict
-that did not exist. `cherryPickCandidates` now checks whether git actually started, and reports the
-reason git gave.
-
-### 2. Bitbucket listed only the first page of Pull Requests (`356992aa4`)
-
-`listPullRequests` called the API once and used `response.data.values`, one page, though the
-provider already had a `fetchAllPages` helper. Older Pull Requests fell off the listing, so the
-candidate table showed the placeholder `PR #5` and `PR #7` instead of `S5 epsilon` and `S3 gamma`.
-The same listing feeds `listAlreadyPromotedPullRequests`, so on any repository with more Pull
-Requests than one page an already promoted story would have been offered for promotion again.
-
-### 3. Bitbucket ignored the target branch filter (`356992aa4`)
-
-The `targetBranch` filter was accepted and never used, so a caller asking for the promotions that
-reached `preprod` was handed the promotions of every branch. Concretely, the **retargeted** branch
-`promotion/uat/preprod/2026-09-07-9`, whose Pull Request targets `main`, was counted as having
-reached `preprod`:
-
-```
-#7, #3, #1 PR #7 [ce8fbac]: #3, #1 are already carried by promotion/uat/preprod/2026-09-07-9
-```
-
-A false "already promoted" silently leaves stories out of a promotion.
-
-### 4. Bitbucket drops `state` as soon as `q` is present (`356992aa4`)
-
-Found while fixing 3: adding the target branch as a `q` expression made the answers worse. Asking
-for the **open** promotions of `preprod` returned the **merged** ones, so `list-candidates`
-announced two already shipped promotions as still in flight. Proved against the API:
-
-| Query                                                      | Answer                   |
-|------------------------------------------------------------|--------------------------|
-| `state=OPEN`                                               | #17, #16, #15 (all OPEN) |
-| `state=OPEN` **and** `q=destination.branch.name="preprod"` | #6, #9, #8 (all MERGED)  |
-| `q=state="OPEN" AND destination.branch.name="preprod"`     | empty, which is correct  |
-
-The state now goes inside the `q` expression, never next to it.
-
-### 5. A pending manual action lost its checkbox (`d99043d6d`)
-
-The Deployment Actions comment of the first story ended with four org branch columns and only three
-pending checkboxes:
-
-```
-| E2E manual step of PR 1 | post-deploy | 👋 integration | ⚪ uat | 👋 preprod | 👋 main |
-```
-
-`uat` had been `👋 waiting`. A later job whose scope held the story skipped the action as "already
-run in uat", and the skip was written over the manual entry, dropping it from the "Pending manual
-actions" list: no checkbox left to tick, and a skip displayed for a step nobody performed.
-
-`upsertActionInState` already refused to let a skip overwrite a `success`, with a comment saying
-"a skip is the absence of an outcome, not an outcome". The guard covered only `success`; it now
-covers every recorded outcome, a pending `manual` and a `failed` included. Proved live afterwards:
-a deployment that skipped four actions left the manual one `👋` in all four branches.
+Repositories `sfdx-hardis-promo-e2e-bb-10`, `bb-11` and `ci-bb-6` in `sfdxhardistest`, and the two
+scratch orgs (one day, created 06:16). Next free numbers: `bb-12`, `ci-bb-7`. Work folders:
+`%TEMP%/e2e-1014/promo-e2e-bitbucket*`, `promo-e2e-bp-bitbucket*`, `promo-e2e-ci-bitbucket*`.

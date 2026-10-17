@@ -73,7 +73,7 @@ External integrations use a root class + concrete implementations:
 
 - **gitProvider**: GitHub, GitLab, Azure DevOps, Bitbucket
 - **notifProvider**: Slack, MS Teams, Email, API webhook. Slack and Teams share the logical `messaging` channel; each provider declares its channel via `getChannel()`. Routing is filtered per notification type and per channel via severity thresholds. See the `monitoring-notifications` skill.
-- **ticketProvider**: Jira, Azure Boards, generic
+- **ticketProvider**: Jira, Azure Boards, ServiceNow, Aha!, generic
 - **aiProvider**: LangChain-based (Anthropic, Google GenAI, Ollama, OpenAI) + Codex + Agentforce
 - **actionsProvider**: Post-deploy actions (Apex, data, manual, community publish, schedule batch)
 - **keyValueProviders**: Salesforce org, local test

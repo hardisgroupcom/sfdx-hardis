@@ -4,15 +4,241 @@
 
 - [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/): **new command** writing the test cases of a ticket into a notebook a tester fills in: an Excel workbook, a CSV or a markdown table.
 - [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/): **new command** creating or updating the test cases of a notebook in Azure DevOps or Xray Cloud, safe to run again from a CI job.
+- [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): in a production org without `sfdmuCanModify`, the command asks to confirm the modification of the org and authorizes SFDMU to modify it, instead of failing with "Entered instance URL '' does not match" ([vscode-sfdx-hardis#499](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/499)). As in SFDMU, a Developer Edition org is not a production org: deleting its data no longer requires `"runnableInProduction": true`. hardis:org:data:delete now also reads the `SFDMU_CAN_MODIFY` environment variable, as hardis:org:data:import already did
+
+## [8.18.1] 2026-10-15
+
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/), [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/), [hardis:org:create](https://sfdx-hardis.cloudity.com/hardis/org/create/) and [hardis:org:connect](https://sfdx-hardis.cloudity.com/hardis/org/connect/): where no browser can be opened (Agentforce Vibes, a dev container, CI), the login link of the org is shown with a button to open it, instead of nothing. The link is kept out of the log file. On Windows, the browser now opens every time: `sf org open` run by a command exited before its browser launcher had run, so the org opened only sometimes.
+- CI/CD pipeline templates: the check deploy, deployment and Apex test jobs now declare a job timeout above the deployment wait on every git platform, with a comment telling where to raise it.
+- Pull Request comments: the carried Pull Requests are listed in numeric order, the fold says "N other Pull Requests" when the one being read is left out, and no sentence writes "Pull Request(s)" anymore
+- Pull Request comments: banners with an orange badge for a validation waiting for manual actions and for a deployment whose post-deployment action failed, no "To do by hand" section once everything is done, the Backpromotes comment in the navigation line of feature Pull Requests, developer orgs named by the sandbox part of their instance URL or by their alias instead of an org id
+
+## [8.18.0] 2026-10-13
+
+- [hardis:org:monitor:backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/):
+  - Deletes the files of the components deleted from the org: the first backup after the upgrade removes all the files left by past deletions.
+  - Backs up complete Profiles, as the Metadata Retriever does in Auto mode: the first backup after the upgrade reports every Profile as updated.
+  - Lists the metadata and the installed packages of the org given with `--target-org`, instead of the default org.
+- [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) reads several batches of components in parallel, up to 3 times faster on Profiles.
+- Scratch orgs:
+  - [hardis:scratch:pool:create](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/): the scratch org pool can now be stored in the git provider, in a "Scratch Orgs Pool Dashboard" (an issue on GitHub and GitLab, a work item on Azure DevOps, a Pull Request on Bitbucket), with encrypted scratch org credentials.
+  - GitHub, Azure DevOps, Bitbucket and Jenkins pipeline templates can now create a scratch org (or take one from the pool) and run Apex tests on it, like GitLab already did. Off by default.
+  - [hardis:scratch:pool:view](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/view/) no longer outputs scratch org credentials, and shows the last scratch orgs taken from the pool and the Dev Hub limits.
+  - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): scratch orgs are signed up with the Salesforce CLI built-in app by default, so a Dev Hub authenticated through an External Client App no longer fails with error C-1016 (Salesforce CLI 2.147.7 or later).
+- Documentation and command help now link to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com/) course at its final address.
+
+## [8.17.0] 2026-10-11
+
+- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/): DORA metrics are now computed for each major org from the deployment jobs and Pull Requests of the git provider, without any org login, with the time each change takes to reach production and where it waits.
+  - Deployments made outside the CI/CD pipeline are no longer counted, so the numbers of an existing report can change. A git provider token that can read CI jobs is now required.
+- New [hardis:git:artifacts:download](https://sfdx-hardis.cloudity.com/hardis/git/artifacts/download/): download the report files a CI job published as artifacts (GitHub, GitLab, Azure DevOps), also behind the new Files button of the VS Code Pull Request view.
+- ServiceNow: new option to keep the deployment job read-only on the tickets (no work note written), while they stay listed in the Pull Request comments and the notifications.
+- ServiceNow: the ticket links of the Pull Request comments open the record directly, instead of a "Page not found" page on the Next Experience UI.
+- Bitbucket: the list of Pull Requests already deployed through a promotion branch is drawn as a list in the Pull Request comments, instead of one long paragraph.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/): a manual step to do before the deployment now holds the validation of the Pull Request even when it was declared for the deployment job only.
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) says the secrets go in the monitoring repository, and explains how to fix a push GitHub refuses for a missing `workflow` scope.
+- [hardis:org:diagnose:legacyapi](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/): the link to the French article, whose site no longer exists, is removed.
+- Doc: new [Pipeline Settings](https://sfdx-hardis.cloudity.com/vscode-extension-pipeline-settings/) page, listing every setting of the VS Code panel tab by tab, with the key it writes in `.sfdx-hardis.yml`.
+- Doc: the [DevOps Pipeline](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/) guide shows the running jobs and the job durations of the VS Code Pull Request view.
+- [hardis:org:test:apex](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/) retries when the network drops during a long test run, no longer reports failed tests with a 0% coverage when the run times out or its results cannot be retrieved, and waits 2 hours by default instead of 1.
+
+## [8.16.0] 2026-10-09
+
+- [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#pull-request-comments):
+  - Open on a verdict and a short table of checks, say whether the metadata was deployed and how to merge, fold the details, and stay under the size limit of each git provider.
+  - Deployment errors show again when the Salesforce CLI prints warnings next to its result, instead of "There has been an issue parsing errors".
+  - A deployment stopped by a lost connection to Salesforce says so in the job log and the comment, and asks to run the job again instead of reporting a parsing issue.
+  - A deployment error on a component whose name holds a space, like a page layout, shows the whole name in bold.
+  - A failed deployment action names the **Retry** button of the VS Code Deployment Actions tab, the label the extension shows.
+  - Bitbucket: HTML tags and technical markers no longer show as text: folded sections become titled sections, and the markers are hidden. Upgrade the pipelines and the local CLIs of a Bitbucket project together: an older version does not read the comments written by this one.
+  - Azure DevOps: the comments tell to mark a manual action as done with the Mark as done button of the VS Code extension, since only the author of a comment or a project administrator can tick its boxes there.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/):
+    - Stops with an explanation when the git provider refuses to update the Deployment Actions comment, instead of saying the action was recorded.
+    - Azure DevOps: a contributor can mark a deployment action as done (with this command or with Mark as done in VS Code) on a Pull Request whose comments were written by the pipeline: the update is added to the Deployment Actions thread and read by the next job.
+  - Actions declared in the config of a branch whose name holds a slash (like `release/uat`) are found again by [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/) and [hardis:project:action:create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/).
+- Azure DevOps:
+  - The Pull Request window of the DevOps Pipeline shows the Deployment Actions statuses and the validation and deployment results, which stayed empty because the commands run outside a pipeline could not read the Pull Request comments.
+  - A command run outside a pipeline no longer ignores the Pull Requests of its own repository as belonging to another one.
+  - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) no longer says the conflict prompt is in the Pull Request description when it was too long to fit there.
+- Bitbucket: the `--json` output of the commands is no longer preceded by a banner of the Bitbucket client, which a program reading that output could not parse.
+- Flow documentation and Flow diff comments show the value of an "Is Null" filter or condition (True or False) instead of leaving it empty, since "Is Null False" means "is not null".
+- A damaged sfdx-hardis cache file (`~/.sfdx/.sfdx-hardis-cache.json`) no longer stops the commands: it is reset to an empty cache.
+
+## [8.15.0] 2026-10-07
+
+- [hardis:mdapi:read](https://sfdx-hardis.cloudity.com/hardis/mdapi/read/) can leave out the Profile and Permission Set entries that grant nothing.
+- [hardis:project:clean:emptyitems](https://sfdx-hardis.cloudity.com/hardis/project/clean/emptyitems/) removes the empty CustomObject files that break deployments, and can run at each User Story save.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): a Flow that can not be deleted after the deployment no longer fails it, and a Flow referenced by another deleted Flow is retried once that Flow is gone.
+- GitHub Actions: the validation and deployment comments of a Pull Request show again in the Pull Request window of the DevOps Pipeline, and the navigation line between the comments is filled again.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Apex class and Flow pages can now be protected with `DO_NOT_OVERWRITE_DOC=TRUE`, like the other pages, so what a person writes in them survives the next generation.
+- The shared MegaLinter configuration no longer names two removed linters, so MegaLinter comments stop warning about them.
+
+## [8.14.0] 2026-10-06
+
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):
+  - [Pull Request comments](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#deployment-components-report) count the deployed components per metadata type, show the components protected by package-no-overwrite.xml, and an Excel report lists every component.
+  - The code coverage comes first in Pull Request comments, and the protected metadata and Flow deletion tables are collapsed by default.
+  - The [Flow deletion table](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes) of a validation Pull Request comment now says that nothing has been deleted yet and that the Flows are deleted during the real deployment.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - A pre-deployment manual action not marked as performed no longer stops the validation by default: set [`failValidationOnPendingManualActions: true`](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#manual-step) to turn it back on.
+  - The deployment action commands ([create](https://sfdx-hardis.cloudity.com/hardis/project/action/create/), update, delete, reorder) no longer add a `when` key to the actions already in the file.
+- Ticketing:
+  - New [Aha! integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/): Aha! features are listed in Pull Request comments and notifications, and get a comment and a tag when they are deployed.
+  - When `ticketingProvider` is defined in `.sfdx-hardis.yml`, ticket references are only looked for with that ticketing provider.
+- New [hardis:project:pipeline:describe](https://sfdx-hardis.cloudity.com/hardis/project/pipeline/describe/): Describe the major branches of a project and the steps between them, so scripts and coding agents stop assuming the pipeline is integration, uat, preprod and main.
+- The [coding agents guides](https://sfdx-hardis.cloudity.com/salesforce-devops-agent-skills/#deployment-actions-commands-hardisprojectaction) now cover trying, retrying and closing deployment actions, their status by org, and list every command that accepts `--agent`.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/) never reuses an existing branch: when the name is taken, it asks for another one, or adds a number suffix in CI and agent mode.
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/) and [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/) no longer ask for the org a second time when you pick one that is not your default org.
+- [Org Monitoring](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/) jobs that ran to their end are now green even when they found issues: a red job means the job could not run.
+- Git:
+  - Git credentials asked by a command are typed once and kept by the credential helper of git, on every platform. The token is never displayed, and the command says what git answered when it is refused.
+  - Upgrade simple-git to v4 to fix security advisories, keeping the git environment variables of CI runners and proxies.
+  - Git hooks, aliases and merge drivers run by sfdx-hardis git commands must spell git options in full: an abbreviation such as `--dry` for `--dry-run` is now refused.
+
+## [8.13.0] 2026-10-04
+
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - [Recover a failed action](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#recover-a-failed-action) without redeploying: retry it with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/), close it with [hardis:project:action:set-status](https://sfdx-hardis.cloudity.com/hardis/project/action/set-status/), or move it to a fix Pull Request.
+  - [Try the actions of your Pull Request](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#try-your-actions-in-your-own-org) in your own developer org before the merge, with [hardis:project:action:run](https://sfdx-hardis.cloudity.com/hardis/project/action/run/).
+  - New [Run Batch](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#run-an-apex-batch) action, to run an Apex batch once before or after a deployment and optionally wait for its result.
+  - A Schedule Batch action can schedule a class of an installed package, a global class of a managed package being written `ns.ClassName`.
+  - [Identical actions run once](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#identical-actions-run-once): when several Pull Requests of one deployment carry the same action, it runs once and the others are recorded as done.
+  - Two Pull Requests reusing the same action id no longer skip each other's action.
+  - The validation of a Pull Request stops while one of its pre-deployment manual actions is not marked as performed in the target org, except on a draft Pull Request or with `failValidationOnPendingManualActions: false`.
+  - Deployment jobs stop with the line to add to the CI workflow when git refuses the checkout ("detected dubious ownership"), instead of skipping the deployment actions; the GitHub Actions templates now include it.
+- [VS Code DevOps Pipeline](https://sfdx-hardis.cloudity.com/vscode-extension-devops-pipeline/):
+  - A **Pull Requests explorer** finds any Pull Request and shows its tickets, deployment actions, test classes, validation and deployment results without leaving VS Code.
+  - Deployment Actions tab: a **Total** row adds up the pills of its Pull Requests and filters the actions by status, for the status in the branch and for the next promotion ([#2274](https://github.com/hardisgroupcom/sfdx-hardis/issues/2274)).
+  - Deployment Actions tab: **Mark as done** shows its result about twice as fast, and reading the statuses no longer opens a command tab.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no item of the deployment package matches package-no-overwrite.xml, even when their metadata types match; the split packages of a deployment plan are checked too.
+- [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/) asks for the alias of an org before the browser opens when its URL is known, and an org you reconnect keeps the alias it has ([#2269](https://github.com/hardisgroupcom/sfdx-hardis/issues/2269)).
+- [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/) can regenerate the documentation of chosen commands only, keeps a page for removed commands, and no longer writes broken or machine-dependent parameter tables ([#2270](https://github.com/hardisgroupcom/sfdx-hardis/issues/2270)).
+- Documentation and command help now link to the [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.github.io/) course at its new address.
+
+## [8.12.1] 2026-10-02
+
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta): the upcoming promotion notes of a branch no longer list the User Stories a merged promotion branch already carried to the target branch. In the VS Code extension, the DevOps Pipeline reads the merged promotions of each step from the git provider, so a promoted story stays out of the branch it left after the next branch goes live.
+
+## [8.12.0] 2026-09-26
+
+- [hardis:doc:metadata-deps](https://sfdx-hardis.cloudity.com/hardis/doc/metadata-deps/): Identify which metadata items use a Salesforce component, or what it uses, and export a dependency report.
+- New [VS Code user guides](https://sfdx-hardis.cloudity.com/vscode-extension/): one step by step page per workbench of the extension, with numbered screenshots and what you can customize.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#metadata-rest-api) deploys with the Metadata REST API by default, which is faster and accepts larger packages than SOAP. Set `useRestDeploy: false` or `SFDX_HARDIS_USE_REST_DEPLOY=false` to deploy with SOAP. Your sf configuration is not modified.
+- New [hardis:org:list:metadata](https://sfdx-hardis.cloudity.com/hardis/org/list/metadata/): List the metadata components of a type in an org, for scripts, agents and the VS Code extension.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) no longer lists the whole target org when no metadata type of the deployment package is in package-no-overwrite.xml, which saves minutes on large orgs.
+- [hardis:org:user:unlink-security-key](https://sfdx-hardis.cloudity.com/hardis/org/user/unlink-security-key/): the Slack, Teams and email notification shows the usernames of the users whose MFA methods were unlinked, instead of pseudonyms.
+
+## [8.11.1] 2026-09-26
+
+- [Monitoring backup](https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/) sends an error notification when it fails, and the Grafana Fleet Overview and backup alert rule report failed backups and orgs without a successful backup for 36 hours.
+- [Monitoring backup](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#query-the-monitoring-history-in-grafana): the `AGENTS.md` of a monitoring repository lets coding agents query the logs and metrics sent to Grafana, using the new `grafanaUrl` property.
+- [Grafana](https://sfdx-hardis.cloudity.com/salesforce-monitoring-grafana-v2/): a notification with thousands of rows, like a day of Apex errors, is no longer refused by Loki.
+
+## [8.11.0] 2026-09-26
+
+- [Monitoring backup](https://sfdx-hardis.cloudity.com/salesforce-monitoring-metadata-backup/#ask-questions-with-a-coding-agent) writes an `AGENTS.md` file explaining the monitoring repository, so a coding agent can answer questions about the org, also from the deployment repository and the pipeline logs when the new `deploymentRepository` property is set.
+- [Monitoring](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/): the `MONITORING_DISABLE` env variable has priority over the `monitoringDisable` property, and spaces around its keys are ignored.
+- New [Free training](https://sfdx-hardis.cloudity.com/salesforce-devops-training/) page presenting the hands-on Salesforce DevOps course, linked from the menu, the home page and the guides.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) (Beta):
+  - New `promotionConflictMarkersIgnoredFiles` property to list the files allowed to hold git conflict markers, so a repository whose own content holds them can promote again.
+  - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) and [hardis:project:promotion:list-candidates](https://sfdx-hardis.cloudity.com/hardis/project/promotion/list-candidates/) now require the git provider connection, so a promotion behaves the same on GitHub, GitLab, Bitbucket and Azure DevOps. From a terminal or an agent, the token can come from a `.env` file at the repository root, and the commands warn when that file is not git-ignored.
+  - The Pull Request number of a GitHub squash merge is read from the commit subject, so a story is matched from the git history the same way on every platform. [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta) benefits from it too.
+- [Release notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the notes of a first promotion list its metadata changes, and each deployment action shows its status in the org of the branch the notes are for.
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta) works in a fork again: a Pull Request number from the history of the forked repository is no longer read as a Pull Request of the fork.
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta) names a scratch org by its alias in its messages and questions, not by its org id.
+- Deployment actions and custom functions are saved in the YAML style Prettier writes, so MegaLinter no longer pushes a fix commit onto the Pull Request.
+- The build scripts and the tests use native `fs` instead of `fs-extra`, which was no longer a dependency and only worked because another package installed it.
+- Docker images: the `beta` and `latest` images always hold the sfdx-hardis version published by the same run, never the previous one.
+
+## [8.10.0] 2026-09-23
+
+- French translations: a CI/CD pipeline is feminine, so the messages now read "la pipeline" and "la CI/CD".
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/) are no longer experimental: the feature is now in Beta, and the docs, the JSON schema and the VS Code labels say so.
+
+## [8.9.2] 2026-09-22
+
+- VS Code: [hardis:project:function:list](https://sfdx-hardis.cloudity.com/hardis/project/function/list/) and [hardis:scratch:pool:view](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/view/) no longer open a command execution tab when a panel reads them in the background to fill itself, which the DevOps Pipeline did on every click and every refresh.
+
+## [8.9.1] 2026-09-22
+
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): `newTaskNameRegex` is checked against the User Story name as typed, so a pattern with a space such as `^MYPROJECT-[0-9]+ .*` accepts a name again, instead of rejecting every name because the spaces had already been replaced by `-`.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and [hardis:doc:plugin:generate](https://sfdx-hardis.cloudity.com/hardis/doc/plugin/generate/): Google Analytics is now declared in `mkdocs.yml` under `extra.analytics`, and a measurement id already set in `docs/javascripts/gtag.js` is moved there on the next run: the page a reader lands on is counted, instead of nothing being counted until they click a link.
+- `WebSocketClient.sendCommandLabelMessage()`: a command can name itself in the VS Code command execution panel. The label replaces the command line in the header, which becomes its tooltip.
+- GitHub monitoring workflow: the Apex tests and monitoring checks jobs refresh the branch before running, instead of failing the pull on `detected dubious ownership` because `safe.directory` was only set after it.
+- Monitoring: the MegaLinter job no longer fails on the Flows Salesforce ships in every org. The Code Analyzer flow engine was the only Salesforce linter still blocking, so `sfdc_default_ReportExport_Protection_Flow` turned the nightly run red on metadata nobody wrote.
+
+## [8.9.0] 2026-09-20
+
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta): a Developer Edition org used as a development environment is now an allowed target, instead of being refused as production.
+- [hardis:misc:servicenow-report](https://sfdx-hardis.cloudity.com/hardis/misc/servicenow-report/): tickets separated by spaces are read as several tickets, and each one is looked up on its own, instead of the whole field being reported as NOT FOUND.
+- Deployment actions:
+  - [Custom functions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-custom-functions/): package a node, python or bash script as a deployment action type of your project, with its own inputs, outputs and secrets.
+  - [hardis:project:action:update](https://sfdx-hardis.cloudity.com/hardis/project/action/update/): move an action between pre-deployment and post-deployment with `--new-when`.
+- [Generic ticketing](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-generic-ticketing/):
+  - New optional `genericTicketingProviderDetailsUrlBuilder`, so that Pull Request comments, release notes and notifications show the title and status of each ticket, read from one JSON document per ticket.
+  - `genericTicketingProviderRegex` and `genericTicketingProviderUrlBuilder` declared in `.sfdx-hardis.yml` now work, and with them declared, a ticket is no longer listed a second time with a placeholder JIRA link, and a release name such as `2026-09` is no longer listed as a JIRA ticket.
+  - JIRA references are kept unless the project declares its own ticketing system, instead of disappearing on a pipeline that happens to expose Azure DevOps variables.
+- Monitoring:
+  - New configuration key `monitoringRepository`: the address of the monitoring repository of a CI/CD project, which the Org Monitoring Workbench of VS Code offers to open.
+  - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): works in a freshly cloned empty repository with no default org, and on GitHub it now writes the monitoring workflow on `main` with the org in it, so that the nightly run starts without copying and editing the file by hand, and the GitHub monitoring job no longer fails on its commit step after the backup.
+  - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring workflow reaches `main` again, instead of being refused by the certificate key the command had just rewritten, so the nightly run is scheduled without copying a file by hand.
+  - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring workflow on `main` keeps the orgs somebody else added since your last fetch, instead of dropping them from the nightly run.
+  - GitHub monitoring workflow: the nightly backup commits the org state again, instead of reporting no change on every run.
+- [hardis:org:diagnose:unsecure-connected-apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/):
+  - Connected Apps that allow users to authorize themselves were reported as secured when their OAuth tokens were fetched with the Bulk API: they are now reported as unsecured, so the number of findings can rise after upgrading.
+  - A Connected App migrated to an External Client App is no longer reported as unsecured when the External Client App requires admin pre-approval, its OAuth tokens are now checked against the External Client App policy. When that policy can not be read, the Connected App settings are kept, and the apps whose status comes from an External Client App are logged so they can be checked.
+  - OAuth tokens issued before a Connected App was reinstalled are now matched to it by name, instead of being reported as unsecured whatever the app settings.
+- CI authentication:
+  - An `SFDX_AUTH_URL_TECHNICAL_ORG` no longer becomes the default org of the job, so the commands that follow keep running against the org they were meant for.
+  - `SFDX_AUTH_URL_<ALIAS>` now sets the org as the default one, like JWT already did: the job authenticated and the next command failed with `NoDefaultEnvError`.
+- [hardis:doc:dora-report](https://sfdx-hardis.cloudity.com/hardis/doc/dora-report/):
+  - The deployments of the current week are shown in the weekly chart and table again, and weeks are numbered the ISO way, starting on Monday.
+  - Without a git provider token, squash-merged Pull Requests of GitHub and Azure DevOps are counted too.
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/):
+  - Profiles, permission sets, roles, rules and field references are read from the package directories of `sfdx-project.json` only, so another copy of the metadata elsewhere in the repository no longer documents the same item twice or writes an invalid JSON file.
+  - Now keeps the comments of an existing `mkdocs.yml`, including inside the sections and lists it adds to, and only rewrites what it changes.
+- [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/):
+  - The merges of a major branch that exists only locally, or read offline, are found again instead of coming back empty.
+  - The notes of a promotion that was just merged list its Pull Requests and tickets again instead of none, and the merge commits offered are read from the git server, so the latest merge is there even when the local branch was not pulled.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/):
+  - No longer asks whether to update the sandbox, unless the project sets `offerSandboxInit: true`. Metadata reaches a sandbox through a backpromote.
+  - The scratch orgs offered to build a User Story in are read fresh, so a scratch org deleted and created again under the same alias is no longer offered in its old version.
+  - The scratch orgs your major branches deploy to are no longer offered as orgs to build a User Story in.
+  - When it puts uncommitted changes aside to start the new branch clean, it now says so, names the files and says how to get them back.
+- [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/):
+  - Deleting a standard profile from the repository no longer adds it to `destructiveChanges.xml`, where it failed every deployment with "cannot delete profile".
+  - The cleaning keeps the final line break of the XML files it rewrites, so a cleaned file no longer shows a change on its last line.
+- List views:
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/) and [hardis:org:fix:listviewmine](https://sfdx-hardis.cloudity.com/hardis/org/fix/listviewmine/): list views are set back to Mine again on current Lightning pages, and a failure to do so no longer fails a deployment that succeeded.
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): a project with no list view to restore no longer starts a browser after the deployment, which failed the job with a navigation timeout although the deployment had succeeded.
+  - [hardis:project:clean:listviews](https://sfdx-hardis.cloudity.com/hardis/project/clean/listviews/): the log names the list view it converted instead of printing `[object Object]`.
+- Orgs:
+  - [hardis:org:select](https://sfdx-hardis.cloudity.com/hardis/org/select/): an org you connect is now given an alias, suggested from its instance URL, so it appears under a short name instead of its username.
+  - Working on a scratch org no longer prints a "please create an issue" warning: a scratch org has no connection status to report, and its lifecycle status is read instead.
+- Configuration:
+  - A command that stores a value in a `.sfdx-hardis.yml` file now keeps the comments and the formatting of that file instead of rewriting it.
+  - A project that declares a single `availableTargetBranches` is no longer asked which target branch to use, and `--agent` no longer stops on that question.
+  - [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/): the branch being configured is no longer offered as one of its own merge targets.
+- `sf commands` no longer crashes with `ReferenceError: DS_PROMETHEUS is not defined`: a command description containing `${...}` made oclif evaluate it while reading its own manifest.
+- Upgrade **adm-zip** to 0.6.1, which fixes an uncontrolled memory allocation when reading a zip header (CVE-2026-77301) and a symlink path traversal at extraction (CVE-2026-76845).
+- Documentation:
+  - [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/): the documentation page now explains the feature with diagrams and screenshots of the DevOps Pipeline.
+  - [Retrofit](https://sfdx-hardis.cloudity.com/salesforce-devops-retrofit/) has its own documentation page, split from [Hotfixes](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/), and both are illustrated with diagrams.
+  - [hardis:org:retrieve:sources:retrofit](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/retrofit/) is deprecated: recover a change made by hand in an org as a User Story instead.
+
+## [8.8.1] 2026-09-14
+
+- [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): duplicate commits are no longer shown in the Pull Request selection list when branches merge both ways.
 
 ## [8.8.0] 2026-09-13
 
-- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged, from the new VS Code panel or with a coding agent, with its history kept on the Pull Requests. It replaces `hardis:work:refresh`.
-- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): updating an existing sandbox no longer deploys the target branch metadata, use [backpromote](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-backpromote/) for that.
+- [Backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (Beta), reworked: bring into your developer sandbox what your teammates merged, from the new VS Code panel or with a coding agent, with its history kept on the Pull Requests. It replaces `hardis:work:refresh`.
+- [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): updating an existing sandbox no longer deploys the target branch metadata, use [backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) for that.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): on GitLab, stories can be selected by their merge request number even when GitLab cannot be reached, and an undone promotion no longer ends with a misleading error.
 - Git and ticketing providers: large projects load faster, with calls slowed down only when the provider asks for it, and a Pull Request comment is never written twice.
 - [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/): a promotion branch deleted after its merge no longer blocks the next promotion of the same day, whose name is now also taken from the merged Pull Requests, the target branch history and the stale remote-tracking refs.
-- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/#naming): new branches are named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` (UTC), with `-2`, `-3`... only when that name is already taken, and the `<YYYY-MM-DD>-<counter>` names of earlier promotions are still recognized.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#naming): new branches are named `promotion/<source>/<target>/<YYYY-MM-DD>-<HHMM>` (UTC), with `-2`, `-3`... only when that name is already taken, and the `<YYYY-MM-DD>-<counter>` names of earlier promotions are still recognized.
 
 ## [8.7.1] 2026-09-09
 
@@ -30,7 +256,7 @@
 
 ## [8.7.0] 2026-09-08
 
-- [Promotion branches (experimental)](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-promotion-branches/): ship a subset of the approved User Stories of a major branch with a `promotion/<source>/<target>/<date>-<counter>` branch created by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) that declares the Pull Requests it carries (`enablePromotionBranches`), so their deployment actions, Apex test classes, custom behaviors and release notes follow them.
+- [Promotion branches (experimental)](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/): ship a subset of the approved User Stories of a major branch with a `promotion/<source>/<target>/<date>-<counter>` branch created by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) that declares the Pull Requests it carries (`enablePromotionBranches`), so their deployment actions, Apex test classes, custom behaviors and release notes follow them.
   - [hardis:project:promotion:list-candidates](https://sfdx-hardis.cloudity.com/hardis/project/promotion/list-candidates/): **new command** listing the User Stories waiting for promotion from a major branch to the next one, without creating anything, so agents and automation can choose what a promotion will carry.
   - Promotion branches: `allowedPromotionSteps` declares the source and target branches a release manager can create a promotion between (ex: only from uat to preprod). It is required to use the feature, and is applied by [hardis:project:promotion:create](https://sfdx-hardis.cloudity.com/hardis/project/promotion/create/) and by the DevOps Pipeline.
 - [hardis:doc:release-notes](https://sfdx-hardis.cloudity.com/hardis/doc/release-notes/): the Pull Requests that move other Pull Requests (merges between two major branches, and promotion branches) are left out of the notes, so what is listed is the work the release delivers. Use `--include-promotions` to list them too.
@@ -40,7 +266,7 @@
 
 ## [8.6.0] 2026-09-04
 
-- [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-servicenow/):
+- [ServiceNow ticketing integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/):
   - ServiceNow records referenced in your commits, branches and Pull Requests are now shown in Pull Request comments and deployment notifications, with their description and state, like Jira issues already were.
   - A work note naming the org, the branch and the Pull Request is posted on each record deployed in a major org.
 - Azure Boards: work items linked to the commits of a Pull Request are collected again, and a failure to read them no longer costs the whole Pull Request comment.
@@ -112,7 +338,7 @@
 - The org authentication check that ran before every command is now disabled outside of CI (as if `--skipauth` was always sent), saving time on each command and removing the repeated "You are already connected as..." lines. CI/CD and monitoring pipelines keep the check, so the org they target is still set as default org for the sf commands started next. Set [SFDX_HARDIS_AUTH_CHECK](https://sfdx-hardis.cloudity.com/all-env-variables/)=`true` to also run it locally. The DevHub authentication check of scratch org commands is kept. When the check is skipped, the project configuration is no longer loaded either, saving about 1 more second per command.
 - Fixed Azure Pipelines check and deployment jobs failing on the publish artifact step when there is nothing to deploy (missing hardis-report folder).
 - Fix GitLab validation jobs scanning thousands of historical Merge Requests during the Deployment Actions phase, making pipelines exceed their timeout
-- New [disableDeploymentActions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#disable-deployment-actions) config property (or SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env var) to fully disable the deployment actions feature.
+- New [disableDeploymentActions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#disable-deployment-actions) config property (or SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS env var) to fully disable the deployment actions feature.
 - The major orgs list (config/branches files) is now read once per command instead of being re-globbed and re-parsed at every call.
 - [hardis:org:monitor:all](https://sfdx-hardis.cloudity.com/hardis/org/monitor/all/) now states whether frequency gating is active or forced, and lists skipped commands with their frequency in the run summary.
 - [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) now cleans Flow positions only on the Flows of the git delta, instead of scanning all Flows of the repository.
@@ -152,7 +378,7 @@
 ### Documentation
 
 - The [Installation page](https://sfdx-hardis.cloudity.com/installation/) is **rewritten for first-time users**: a table to pick between **VS Code**, the **CLI plugin** and the **Docker images**, then the VS Code setup **step by step**, with the IDE compatibility table and the troubleshooting tips moved to the end.
-- [Deployment Actions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/#choose-the-target-orgs): the **Target orgs** section now shows two screenshots of the editor, one action restricted to `uat` and `main` to enable an integration, and one running everywhere except `main` to upsert the sample records used to test the agents.
+- [Deployment Actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#choose-the-target-orgs): the **Target orgs** section now shows two screenshots of the editor, one action restricted to `uat` and `main` to enable an integration, and one running everywhere except `main` to upsert the sample records used to test the agents.
 
 ## [8.0.0] 2026-08-21
 
@@ -203,8 +429,8 @@
 - The default **GitHub Actions**, **Azure Pipelines** and **Bitbucket Pipelines** workflows (CI/CD and Org Monitoring) now run in the **sfdx-hardis Docker image**, like **GitLab** always did: jobs no longer install Node.js, the Salesforce CLI and its plugins at every run, so they **start faster** and can no longer be broken by a bad release of a dependency. **Existing pipelines keep working**, as the templates only apply when initializing a new project or monitoring repository.
 - To let the pipeline **auto-fix deployment errors with coding agents**, switch to the `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest` image instead of uncommenting npm install lines.
 - Docker images are published to **GitHub Container Registry** (`ghcr.io/hardisgroupcom/sfdx-hardis`, the recommended default, whose publication does not rely on any long-lived token) and mirrored on **Docker Hub**.
-- New [CI/CD Setup Checklist](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-checklist/) page, to verify that a CI/CD setup is complete: what to do before the initialization merge request, what to check after it, and the integrations grouped by platform.
-- New [documentation page](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-publish-artifacts/) explaining how to add the **hardis-report artifacts upload step** to existing GitHub, GitLab, Azure, Bitbucket or Jenkins pipelines.
+- New [CI/CD Setup Checklist](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-checklist/) page, to verify that a CI/CD setup is complete: what to do before the initialization merge request, what to check after it, and the integrations grouped by platform.
+- New [documentation page](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-publish-artifacts/) explaining how to add the **hardis-report artifacts upload step** to existing GitHub, GitLab, Azure, Bitbucket or Jenkins pipelines.
 
 ### Org Monitoring & Grafana
 
@@ -221,9 +447,9 @@
 
 ### Documentation
 
-- The [Salesforce CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/) is **reorganized for v8**: the overview page presents the **contribution workflow from User Story to production**, and the **Contributor**, **Release Manager** and **Setup** guides get their own overview pages and numbered steps.
+- The [Salesforce CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-home/) is **reorganized for v8**: the overview page presents the **contribution workflow from User Story to production**, and the **Contributor**, **Release Manager** and **Setup** guides get their own overview pages and numbered steps.
 - Every **VS Code extension screenshot and animation** is refreshed with the new design of the extension, with sample data modeled on real projects. The animations are **10 to 100 times lighter** than before, so the pages displaying them load much faster.
-- The [deployment actions guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) is **rewritten for end users**, with one illustrated section per action type and the YAML reference moved into collapsible technical sections.
+- The [deployment actions guide](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/) is **rewritten for end users**, with one illustrated section per action type and the YAML reference moved into collapsible technical sections.
 - [VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/): Document the **DevOps Pipeline** view, the **Org Monitoring Workbench** and the **command execution panel**.
 - Redraw the **CI/CD schemas** of the Release and Delta-deployment pages, and update the [events list](https://sfdx-hardis.cloudity.com/events/) with the latest talks and photos.
 
@@ -288,7 +514,7 @@
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Send real deployment metrics (components, Apex tests, code coverage, duration, quick deploy and delta flags) in DEPLOYMENT notifications, instead of always zero.
 - Slack, Teams and Google Chat notifications are now trimmed when too long for the platform to accept, instead of being silently dropped.
 - Deployment notification messages now stay in English by default: set `notifTranslateDeploymentMessages` to follow the configured locale.
-- `MANUAL ACTION:` commit markers are now flagged as legacy in notifications, pointing to [deployment actions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) instead.
+- `MANUAL ACTION:` commit markers are now flagged as legacy in notifications, pointing to [deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/) instead.
 
 ### CI/CD
 
@@ -394,7 +620,7 @@
 - [hardis:project:skills:import](https://sfdx-hardis.cloudity.com/hardis/project/skills/import/): Support a main Claude Code skills repo plus complementary add-on repos.
   - New `--addon` boolean flag.
   - When set, the resolved repository URL is appended (deduplicated) to the new `skillsRepoAddOns` array config property instead of replacing the main `skillsRepo` string in `.sfdx-hardis.yml`.
-- New [Google Chat](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-google-chat/) notification channel.
+- New [Google Chat](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-google-chat/) notification channel.
   - Set `GOOGLE_CHAT_WEBHOOK_URL` to receive deployment and monitoring notifications as Google Chat Card v2 messages.
   - Optional `GOOGLE_CHAT_WEBHOOK_URL_<BRANCH>` and `GOOGLE_CHAT_WEBHOOK_URL_ERRORS_WARNINGS` overrides.
   - Uses the same per-type severity routing as Slack and Microsoft Teams.
@@ -498,7 +724,7 @@
 
 - CI/CD pipelines
 
-  - Jenkins CI/CD pipeline (`defaults/ci/Jenkinsfile`): refactored to use a single top-level Docker agent, scoped `withCredentials()` blocks per stage (no global `environment` credentials), parallel MegaLinter + Validation on PRs, fixed `branch` condition syntax, added `options` and `post` cleanup blocks, and comprehensive setup comments. Updated [Jenkins CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jenkins/).
+  - Jenkins CI/CD pipeline (`defaults/ci/Jenkinsfile`): refactored to use a single top-level Docker agent, scoped `withCredentials()` blocks per stage (no global `environment` credentials), parallel MegaLinter + Validation on PRs, fixed `branch` condition syntax, added `options` and `post` cleanup blocks, and comprehensive setup comments. Updated [Jenkins CI/CD documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-jenkins/).
   - Jenkins CI support for Monitoring: added a ready-to-use `Jenkinsfile` template in `defaults/monitoring/` and a new [Jenkins configuration documentation page](https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-jenkins/).
   - Add .gitattributes files to CI/CD and Monitoring defaults to ensure consistent line endings across platforms
 
@@ -780,7 +1006,7 @@ Note: Can be used with `sfdx plugins:install sfdx-hardis@beta` and docker image 
 ## [6.23.4] 2026-01-27
 
 - Always use `sf org login web` as `sf org login device` has been retired
-- Update [BUILD/RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-hotfixes/) to add info to activate [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) to auto-solve conflicts during retrofits
+- Update [BUILD/RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/) to add info to activate [sf-git-merge-driver](https://github.com/scolladon/sf-git-merge-driver) to auto-solve conflicts during retrofits
 
 ## [6.23.3] 2026-01-22
 
@@ -893,7 +1119,7 @@ deploymentApexTestClasses:
 
 ## [6.16.1] 2025-12-16
 
-- Notif Provider: Add NOTIF_API_SKIP_LOGS and NOTIF_API_SKIP_METRICS env variables to skip posting logs or metrics to API for all notification types or specific ones. (See details in [documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#skip-configuration))
+- Notif Provider: Add NOTIF_API_SKIP_LOGS and NOTIF_API_SKIP_METRICS env variables to skip posting logs or metrics to API for all notification types or specific ones. (See details in [documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-api/#skip-configuration))
 - CI: Use npm trusted providers to deploy package
 
 ## [6.16.0] 2025-12-14
@@ -1028,7 +1254,7 @@ deploymentApexTestClasses:
 
 ## [6.11.0] 2025-11-02
 
-- New feature: [**Deployment actions**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-deployment-actions/) at Pull Request level
+- New feature: [**Deployment actions**](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/) at Pull Request level
   - Define pre-deploy and post-deploy commands to be executed during CI/CD deployments
   - Display summary in Pull Request with details of each command execution
 - Update CI/CD documentation & screenshots
@@ -1043,7 +1269,7 @@ deploymentApexTestClasses:
 
 ## [6.9.0] 2025-10-23
 
-- Bring back Microsoft Teams notifications [using Teams Workflow](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- Bring back Microsoft Teams notifications [using Teams Workflow](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-ms-teams/)
 - Update servicenow-report to add validity rows management
 
 ## [6.8.1] 2025-10-22
@@ -1106,7 +1332,7 @@ deploymentApexTestClasses:
 
 ## [6.6.0] 2025-10-05
 
-- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Enhance beta feature **useDeltaDeploymentWithDependencies** to add more dependencies to the delta deployment package (see [related documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta))
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): Enhance beta feature **useDeltaDeploymentWithDependencies** to add more dependencies to the delta deployment package (see [related documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-delta-deployment/#delta-with-dependencies-beta))
 - Remove `dev` or `config` parts of the new git branches, as it is not relevant
 - Update global variables documentation to add AI related ones
 - Add more events about sfdx-hardis in the documentation
@@ -1472,7 +1698,7 @@ deploymentApexTestClasses:
 ## [5.32.0] 2025-05-06
 
 - [hardis:org:diagnose:audittrail](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/): Flag more audit trail actions as not relevant
-- CI/CD: Add FlowDefinition in default [package-no-overwrite.xml](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/#package-no-overwritexml), as it is a deprecated metadata
+- CI/CD: Add FlowDefinition in default [package-no-overwrite.xml](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/#package-no-overwritexml), as it is a deprecated metadata
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Escalation Rules AI-enhanced documentation
 
 ## [5.31.0] 2025-05-05
@@ -1549,11 +1775,11 @@ deploymentApexTestClasses:
 
 - [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/): Add profile documentation generated by AI
 - Refactor document generation code
-- GitHub Integration: Use ENV variables as fallback [in case the job runner is not GitHub Actions](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-github/#using-github-integration-without-github-actions), like Codefresh
+- GitHub Integration: Use ENV variables as fallback [in case the job runner is not GitHub Actions](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-github/#using-github-integration-without-github-actions), like Codefresh
 
 ## [5.24.3] 2025-04-04
 
-- Fix visualization of [Azure DevOps](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/#azure-pull-request-notes) images by linking attachments to a generic work item.
+- Fix visualization of [Azure DevOps](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-azure/#azure-pull-request-notes) images by linking attachments to a generic work item.
 
 ## [5.24.2] 2025-04-02
 
@@ -1563,7 +1789,7 @@ deploymentApexTestClasses:
 
 - Upgrade @xmlnode/xmlnode and update related code so it works with newer version
 - Upgrade NPM dependencies
-- Update [Contributor Guide documentation about package management](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/)
+- Update [Contributor Guide documentation about package management](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/)
 
 ## [5.24.0] 2025-03-21
 
@@ -1983,7 +2209,7 @@ deploymentApexTestClasses:
 
 ## [5.2.0] 2024-10-14
 
-- Improve [BUILD & RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-hotfixes/)
+- Improve [BUILD & RUN documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-hotfixes/)
 - 21 hardis commands: rename `-o` short into `-f` when possible, or other short letter, to avoid collision with `-o` (`--target-org`) option
 - Fix GitHub Org Monitoring workflow (remove push event + fix command typo)
 
@@ -2218,7 +2444,7 @@ We made many tests but risk zero do not exist, so if you see any bug, please rep
 ## [4.51.0] 2024-08-01
 
 - Deprecate Microsoft Teams Web Hooks notifications
-  - Must be replaced by [Email Notifications](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-email/) using the Ms Teams Channel email.
+  - Must be replaced by [Email Notifications](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-email/) using the Ms Teams Channel email.
 - Handle bug when a branch .sfdx-hardis.yml config file is empty
 - Upgrade default API version to 61
 - Additional log when generating manifest package.xml from org
@@ -2467,7 +2693,7 @@ commandsPostDeploy:
 
 ## [4.32.0] 2024-04-24
 
-- Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
+- Enhance [BitBucket Integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-bitbucket/), by @Alainbates in <https://github.com/hardisgroupcom/sfdx-hardis/pull/584>
 
   - Deployment status in Pull Request comments
   - Quick Deploy to enhance performance
@@ -2549,12 +2775,12 @@ commandsPostDeploy:
 
 ## [4.26.1] 2024-01-31
 
-- Update [Contributor User Guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task/)
+- Update [Contributor User Guide](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story/)
 - Empty predefined list of packages to install
 
 ## [4.26.0] 2024-01-27
 
-- Detect JIRA tickets even if there is only their identifiers in commits / PR text (see [Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-jira/))
+- Detect JIRA tickets even if there is only their identifiers in commits / PR text (see [Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-jira/))
 - Fix PR comment ticket URL when detail has not been found on server
 - Monitoring: run non-critical commands only weekly by default (on saturdays)
 
@@ -2826,15 +3052,15 @@ commandsPostDeploy:
 - Improve delta display in logs
 - Display Quick Deploy icon in slack notifications
 - Update Azure Pipelines default pipelines for delta deployments compliance
-- Update [slack integration documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
-- Add [tutorials](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/#major-orgs) for authentication configuration on CI/CD servers
+- Update [slack integration documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-slack/)
+- Add [tutorials](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/#major-orgs) for authentication configuration on CI/CD servers
 
 ## [4.10.O] 2023-11-04
 
-- Allow to [deploy in delta during PR checks between minor and major branches](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/)
+- Allow to [deploy in delta during PR checks between minor and major branches](https://sfdx-hardis.cloudity.com/salesforce-devops-config-delta-deployment/)
   - To activate it, define `useDeltaDeployment: true` in `.sfdx-hardis.yml`, or set env variable **USE_DELTA_DEPLOYMENT** with value `true`
   - Make sure your GitHub, Gitlab, Azure or Bitbucket yaml workflows are up to date
-- Overwrite management: [Rename packageDeployOnce.xml into package-no-overwrite.xml](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/) (compatibility with packageDeployOnce.xml file name is kept)
+- Overwrite management: [Rename packageDeployOnce.xml into package-no-overwrite.xml](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/) (compatibility with packageDeployOnce.xml file name is kept)
 
 ## [4.9.2] 2023-10-31
 
@@ -2866,7 +3092,7 @@ commandsPostDeploy:
   - New command **sfdx hardis:org:monitor:all**
 - Simplify `sfdx hardis:project:configure:auth` (Configure Org CI Authentication)
 - Disable auto-update for .gitignore & .forceignore
-- Improve [documentation related to pull and commit](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#commit-your-updates)
+- Improve [documentation related to pull and commit](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/#commit-your-updates)
 
 ## [4.8.1] 2023-10-28
 
@@ -2915,7 +3141,7 @@ commandsPostDeploy:
 
 ## [4.6.0] 2023-09-20
 
-- [sfdx-hardis & Slack Integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
+- [sfdx-hardis & Slack Integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-slack/)
 
   - Easy configuration
   - Deployment notifications to a common channel, and also to git branch dedicated channel
@@ -3131,9 +3357,9 @@ Other upgrades
 
 ## [3.12.0] 2022-03-23
 
-- Integration with [Azure Pipelines Pull Request threads](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-azure/)
+- Integration with [Azure Pipelines Pull Request threads](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-azure/)
 - **hardis:work:new**: Allow to select no org even of sandbox or scratch is forced on the project using config property **allowedOrgTypes**
-- Doc: rename _User Guide_ into [Contributor Guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-use-home/)
+- Doc: rename _User Guide_ into [Contributor Guide](https://sfdx-hardis.cloudity.com/salesforce-devops-use-home/)
 
 ## [3.11.1] 2022-03-20
 
@@ -3184,7 +3410,7 @@ Other upgrades
 ## [3.8.0] 2022-03-03
 
 - Manage deprecation of force:mdapi:legacy:deploy, replaced by force:mdapi:deploy
-- Update default packageDeployOnce.xml when creating a new project (related to [Overwrite management](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-overwrite/))
+- Update default packageDeployOnce.xml when creating a new project (related to [Overwrite management](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/))
 - Update CI/CD documentation
   - Initialize orgs
 - Update labels of prompts when creating a new sfdx-hardis project
@@ -3195,7 +3421,7 @@ Other upgrades
 
 ## [3.7.0] 2022-02-27
 
-- Add demo video about [configuring authentication between CI and Salesforce orgs](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/)
+- Add demo video about [configuring authentication between CI and Salesforce orgs](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/)
 - Update CI/CD documentation
 - Update branding
 
@@ -3274,7 +3500,7 @@ Other upgrades
 
 ## [2.98.0] 2022-01-23
 
-- Documentation: Add CI/CD user guide and release manager guide, available at <https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/>
+- Documentation: Add CI/CD user guide and release manager guide, available at <https://sfdx-hardis.cloudity.com/salesforce-devops-home/>
 - New .sfdx-hardis.yml config property **allowedOrgTypes**, allowing to define the type(s) or org that can be used for implementation: (sandbox and/or scratch)
 
 ## [2.97.3] 2022-11-30

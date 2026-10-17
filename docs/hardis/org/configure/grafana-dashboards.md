@@ -10,15 +10,15 @@
 
 Key functionalities:
 
-- **Guided start:** in interactive mode, the command first asks whether a Grafana instance is already available. If not, it opens the [Grafana free-tier setup guide](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/#grafana-setup) (Grafana Cloud free tier: free forever, no credit card required) instead of asking for a URL.
+- **Guided start:** in interactive mode, the command first asks whether a Grafana instance is already available. If not, it opens the [Grafana free-tier setup guide](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-api/#grafana-setup) (Grafana Cloud free tier: free forever, no credit card required) instead of asking for a URL.
 - **Folder creation:** creates the `Org Monitoring by sfdx-hardis` folder (uid `sfdx-hardis-v2`) if missing.
 - **Dashboard import:** downloads the dashboard definitions from the sfdx-hardis GitHub repository (`--ref` selects the branch or tag, default `main`) and imports them with `overwrite: true`. Re-running the command upgrades the dashboards in place: uids are stable, bookmarks and links keep working. The dashboards resolve their Prometheus and Loki datasources by themselves (hidden variables), so no datasource configuration is needed for this part.
-- **Optional alert pack:** with `--with-alerts`, imports the 6 alert rules (org limit above 90%, storage exhaustion forecast, error spike, backup failure, silent org, health score degradation). All rules are imported **paused**, so they trigger no evaluation and no cost until you enable them from **Alerting -> Alert rules** and configure your contact points. Alert rules need explicit datasource uids: the command auto-detects the Prometheus/Mimir and Loki datasources receiving sfdx-hardis data (Grafana Cloud internal datasources are filtered out), and `--prom-uid` / `--loki-uid` pin the choice when several candidates exist.
+- **Optional alert pack:** with `--with-alerts`, imports the 6 alert rules (org limit above 90%, storage exhaustion forecast, error spike, missing backup, silent org, health score degradation). All rules are imported **paused**, so they trigger no evaluation and no cost until you enable them from **Alerting -> Alert rules** and configure your contact points. Alert rules need explicit datasource uids: the command auto-detects the Prometheus/Mimir and Loki datasources receiving sfdx-hardis data (Grafana Cloud internal datasources are filtered out), and `--prom-uid` / `--loki-uid` pin the choice when several candidates exist.
 - **Verification:** each imported dashboard is read back through the API, and the command prints the direct URL to the Fleet Overview.
 
-Authentication uses a Grafana service account token provided via `--grafana-token` or the `GRAFANA_API_TOKEN` environment variable (prefer the environment variable: flag values can end up in shell history and local log files). The instance URL comes from `--grafana-url` or `GRAFANA_API_URL`. An Editor role is enough for the dashboards; `--with-alerts` additionally needs datasource read and alert provisioning permissions.
+Authentication uses a Grafana service account token provided via `--grafana-token` or the `GRAFANA_API_TOKEN` environment variable (prefer the environment variable: flag values can end up in shell history and local log files). The instance URL comes from `--grafana-url`, `GRAFANA_API_URL` or the `grafanaUrl` property of `.sfdx-hardis.yml`, in that order, and the alert pack datasources can be pinned with the `grafanaPrometheusDatasourceUid` and `grafanaLokiDatasourceUid` properties, used only when the instance is that `grafanaUrl`. The token never goes in the configuration file. An Editor role is enough for the dashboards; `--with-alerts` additionally needs datasource read and alert provisioning permissions.
 
-This command requires no Salesforce org: it only talks to Grafana and GitHub. Configure the [API integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-api/) first so the dashboards have data to display.
+This command requires no Salesforce org: it only talks to Grafana and GitHub. Configure the [API integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-api/) first so the dashboards have data to display.
 
 ### Agent Mode
 
@@ -40,27 +40,27 @@ In agent mode:
 - Dashboard JSONs live in `docs/grafana/dashboards-v2` of the sfdx-hardis repository and are fetched at runtime: the file list comes from the GitHub contents API (with a hardcoded fallback list when unreachable), the files from `raw.githubusercontent.com`.
 - Dashboards are imported via `POST /api/dashboards/db` with `overwrite: true` into the folder created via `POST /api/folders` (uid `sfdx-hardis-v2`).
 - Datasource detection (only with `--with-alerts`) uses `GET /api/datasources` with the same exclusion list as the hidden `ds_prom`/`ds_loki` dashboard variables (`alert-state-history`, `usage-insights`, `ml-metrics` in the datasource name; the dashboards apply it to the name, the command also applies it to the uid).
-- The alert pack YAML (`docs/grafana/alerts-v2/sfdx-hardis-alerts.yaml`) is fetched from the same ref, its `${DS_PROMETHEUS}`/`${DS_LOKI}` placeholders are replaced by the detected datasource uids, and each rule group is pushed via `PUT /api/v1/provisioning/folder/sfdx-hardis-v2/rule-groups/<group>` with the `X-Disable-Provenance` header, so the rules stay editable (and unpausable) from the Grafana UI.
+- The alert pack YAML (`docs/grafana/alerts-v2/sfdx-hardis-alerts.yaml`) is fetched from the same ref, its `DS_PROMETHEUS` and `DS_LOKI` placeholders are replaced by the detected datasource uids, and each rule group is pushed via `PUT /api/v1/provisioning/folder/sfdx-hardis-v2/rule-groups/<group>` with the `X-Disable-Provenance` header, so the rules stay editable (and unpausable) from the Grafana UI.
 - Helpers live in `src/common/grafana/grafanaDashboardsInstaller.ts`.
 </details>
 
 
 ## Parameters
 
-| Name          |  Type   | Description                                                                                                    | Default | Required | Options |
-|:--------------|:-------:|:---------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent         | boolean | Run in non-interactive mode for agents and automation                                                          |         |          |         |
-| debug<br/>-d  | boolean | Activate debug mode (more logs)                                                                                |         |          |         |
-| flags-dir     | option  | undefined                                                                                                      |         |          |         |
-| grafana-token | option  | Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)            |         |          |         |
-| grafana-url   | option  | Grafana instance URL (defaults to GRAFANA_API_URL environment variable)                                        |         |          |         |
-| json          | boolean | Format output as json.                                                                                         |         |          |         |
-| loki-uid      | option  | Uid of the Loki datasource used by the alert pack (--with-alerts only, auto-detected when not set)             |         |          |         |
-| prom-uid      | option  | Uid of the Prometheus/Mimir datasource used by the alert pack (--with-alerts only, auto-detected when not set) |         |          |         |
-| ref           | option  | Git branch or tag of the sfdx-hardis repository to fetch the dashboards from                                   |  main   |          |         |
-| skipauth      | boolean | Skip authentication check when a default username is required                                                  |         |          |         |
-| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                      |         |          |         |
-| with-alerts   | boolean | Also import the sfdx-hardis alert rules pack (all rules imported paused)                                       |         |          |         |
+| Name          |  Type   | Description                                                                                                     | Default | Required | Options |
+|:--------------|:-------:|:----------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent         | boolean | Run in non-interactive mode for agents and automation                                                           |         |          |         |
+| debug<br/>-d  | boolean | Activate debug mode (more logs)                                                                                 |         |          |         |
+| flags-dir     | option  | Import flag values from a directory.                                                                            |         |          |         |
+| grafana-token | option  | Grafana service account token with Editor role (defaults to GRAFANA_API_TOKEN environment variable)             |         |          |         |
+| grafana-url   | option  | Grafana instance URL (defaults to GRAFANA_API_URL environment variable, then to grafanaUrl in .sfdx-hardis.yml) |         |          |         |
+| json          | boolean | Format output as json.                                                                                          |         |          |         |
+| loki-uid      | option  | Uid of the Loki datasource used by the alert pack (--with-alerts only, auto-detected when not set)              |         |          |         |
+| prom-uid      | option  | Uid of the Prometheus/Mimir datasource used by the alert pack (--with-alerts only, auto-detected when not set)  |         |          |         |
+| ref           | option  | Git branch or tag of the sfdx-hardis repository to fetch the dashboards from                                    |  main   |          |         |
+| skipauth      | boolean | Skip authentication check when a default username is required                                                   |         |          |         |
+| websocket     | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                       |         |          |         |
+| with-alerts   | boolean | Also import the sfdx-hardis alert rules pack (all rules imported paused)                                        |         |          |         |
 
 ## Examples
 

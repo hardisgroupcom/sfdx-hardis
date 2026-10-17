@@ -1,6 +1,6 @@
 ---
 title: Apex flex queue (Salesforce monitoring)
-description: Monitor AsyncApexJob Holding backlog and get alerts before the flex queue is full
+description: With sfdx-hardis, monitor AsyncApexJob Holding backlog and get alerts before the flex queue is full
 ---
 <!-- markdownlint-disable MD013 -->
 

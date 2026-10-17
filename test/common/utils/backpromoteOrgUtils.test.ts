@@ -5,7 +5,7 @@ import * as path from 'path';
 // Enter the gitProvider import cycle through its barrel first (see promotionBranchUtils.test.ts)
 import '../../../src/common/gitProvider/index.js';
 import fs from '../../../src/common/utils/fsUtils.js';
-import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, attachDeployTips, createRetrieveProject, parseDeployComponentFailures, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
+import { BackpromoteRetrieveRunners, BackpromoteSourceMemberRow, attachDeployTips, backpromoteOrgDisplayName, createRetrieveProject, parseDeployComponentFailures, retrieveItemsForComparison } from '../../../src/common/utils/backpromoteOrgUtils.js';
 
 // The org is faked: SourceMember rows and Metadata API dates by "Type:Name" answer the validation,
 // and the retrieve writes the files of the keys the org has into the blank project, like sf does
@@ -443,5 +443,16 @@ describe('backpromote deployment tips', () => {
     expect(result[1].tip?.label).to.equal('CodeCoverageWarning');
     // Nothing read from the output: the fallback is the only information left, it is kept
     expect(attachDeployTips([], errorsAndTips.slice(1)).map((error) => error.tip?.label)).to.deep.equal(['SfdxHardisInternalError']);
+  });
+});
+
+describe('backpromoteOrgDisplayName()', () => {
+  it('names a scratch org by its alias, since its sandbox name is its org id', () => {
+    expect(backpromoteOrgDisplayName({ orgType: 'scratch', alias: 'helios-dev', sandboxName: '00d000000000000001' })).to.equal('helios-dev');
+    expect(backpromoteOrgDisplayName({ orgType: 'scratch', alias: null, sandboxName: '00d000000000000001' })).to.equal('00d000000000000001');
+  });
+
+  it('keeps the sandbox name of a sandbox, whatever its alias', () => {
+    expect(backpromoteOrgDisplayName({ orgType: 'sandbox', alias: 'my-dev', sandboxName: 'dev1' })).to.equal('dev1');
   });
 });

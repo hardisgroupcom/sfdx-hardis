@@ -40,7 +40,7 @@ Required in agent mode:
 |:-------------|:-------:|:-----------------------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation                        |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                              |         |          |         |
-| flags-dir    | option  | undefined                                                                    |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                                         |         |          |         |
 | json         | boolean | Format output as json.                                                       |         |          |         |
 | pr-id        | option  | Pull request ID to link, or "current" to auto-detect from the current branch |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                    |         |          |         |

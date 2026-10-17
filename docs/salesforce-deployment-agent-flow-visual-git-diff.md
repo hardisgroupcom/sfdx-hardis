@@ -1,6 +1,6 @@
 ---
 title: Flow Visual Git Diff
-description: Visual Flow diffs in deployment comments
+description: With sfdx-hardis, visual Flow diffs in deployment comments
 ---
 
 <!-- markdownlint-disable MD013 -->
@@ -13,6 +13,12 @@ This helps reviewers:
 
 - Visually inspect Flow differences in a Mermaid diagram
 - Understand updates without opening raw XML metadata
+
+Each changed Flow gets a comment of its own: the properties that changed, with their value before and after, then the diagram. The full property tables of the Flow are folded below it.
+
+![Visual git diff comment of a Flow](assets/images/screenshot-pr-comment-flow-diff.png)
+
+A Flow whose only change is its status (activated or deactivated) gets no visual diff comment: the change is one line, and the validation comment counts it with the other metadata.
 
 ## Legend
 

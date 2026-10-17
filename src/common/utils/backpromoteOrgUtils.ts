@@ -18,6 +18,7 @@ import { t } from './i18n.js';
 import {
   BackpromoteTargetOrgRefusal,
   countDifferingLines,
+  deriveOrgLabel,
   deriveSandboxName,
   findBackpromoteTargetOrgRefusal,
   isBinaryMetadataFile,
@@ -37,7 +38,7 @@ export interface BackpromoteTargetOrgInfo {
   alias: string | null;
   username: string;
   instanceUrl: string;
-  orgType: 'sandbox' | 'scratch' | 'production';
+  orgType: 'sandbox' | 'scratch' | 'developer' | 'production';
   orgId: string;
   sandboxName: string;
   tracksSource: boolean;
@@ -46,8 +47,23 @@ export interface BackpromoteTargetOrgInfo {
 }
 
 /**
- * Only developer sandboxes and scratch orgs receive a backpromote. A production org, or the org of a
- * major branch, is deployed by the CI/CD pipeline.
+ * The name of the target org in what a person reads. `sandboxName` stays the key of the
+ * backpromote branch and of the Backpromotes comment rows, and a scratch org has no sandbox name,
+ * so it holds the org id there: the alias is what its owner calls it.
+ */
+export function backpromoteOrgDisplayName(targetOrg: Pick<BackpromoteTargetOrgInfo, 'orgType' | 'alias' | 'sandboxName'>): string {
+  return targetOrg.orgType === 'scratch' && targetOrg.alias ? targetOrg.alias : targetOrg.sandboxName;
+}
+
+/** The label written in the rows of the Backpromotes comments for this org (deriveOrgLabel) */
+export function backpromoteOrgLabel(targetOrg: Pick<BackpromoteTargetOrgInfo, 'instanceUrl' | 'alias' | 'username'>): string {
+  return deriveOrgLabel({ instanceUrl: targetOrg.instanceUrl, alias: targetOrg.alias, username: targetOrg.username });
+}
+
+/**
+ * Only development environments receive a backpromote: a developer sandbox, a scratch org, or a
+ * Developer Edition org used as somebody's dev environment. A production org, or the org of a major
+ * branch, is refused: the CI/CD pipeline deploys those.
  */
 export async function getBackpromoteTargetOrgInfo(options: {
   conn: Connection;
@@ -56,15 +72,22 @@ export async function getBackpromoteTargetOrgInfo(options: {
   tracksSource: boolean;
   sandboxNameOverride: string | null;
 }): Promise<BackpromoteTargetOrgInfo> {
-  const orgResult = await soqlQuery('SELECT Id, IsSandbox, TrialExpirationDate FROM Organization LIMIT 1', options.conn);
+  const orgResult = await soqlQuery('SELECT Id, IsSandbox, OrganizationType, TrialExpirationDate FROM Organization LIMIT 1', options.conn);
   const organization = orgResult?.records?.[0] || {};
   const isSandboxOrg = organization.IsSandbox === true;
-  const orgType: BackpromoteTargetOrgInfo['orgType'] = !isSandboxOrg ? 'production' : organization.TrialExpirationDate ? 'scratch' : 'sandbox';
+  const isDeveloperEdition = !isSandboxOrg && String(organization.OrganizationType || '') === 'Developer Edition';
+  const orgType: BackpromoteTargetOrgInfo['orgType'] = isSandboxOrg
+    ? organization.TrialExpirationDate
+      ? 'scratch'
+      : 'sandbox'
+    : isDeveloperEdition
+      ? 'developer'
+      : 'production';
   const instanceUrl = options.conn.instanceUrl || '';
   const orgId = String(organization.Id || options.conn.getAuthInfoFields()?.orgId || '');
-  const refusal = findBackpromoteTargetOrgRefusal({ isSandbox: isSandboxOrg, username: options.username, instanceUrl, majorOrgs: await listMajorOrgs() });
+  const refusal = findBackpromoteTargetOrgRefusal({ isSandbox: isSandboxOrg, isDeveloperEdition, username: options.username, instanceUrl, majorOrgs: await listMajorOrgs() });
   const sandboxName = deriveSandboxName({ instanceUrl, username: options.username, orgId, override: options.sandboxNameOverride });
-  let message = t('backpromoteCheckTargetOrgOk', { sandboxName });
+  let message = t('backpromoteCheckTargetOrgOk', { sandboxName: backpromoteOrgDisplayName({ orgType, alias: options.alias, sandboxName }) });
   if (refusal?.reason === 'production') {
     message = t('backpromoteTargetOrgIsProduction', { username: options.username });
   } else if (refusal?.reason === 'majorOrg') {

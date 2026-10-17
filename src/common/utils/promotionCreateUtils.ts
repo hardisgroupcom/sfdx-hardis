@@ -210,7 +210,7 @@ export async function assertPromotionBranchesEnabled(commandThis: any): Promise<
   const config = await getConfig('branch');
   const promotionConfig = getPromotionBranchConfig(config);
   if (!promotionConfig.enabled) {
-    throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
+    throw new SfError(t('promotionCreateFeatureDisabled', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/` }));
   }
   // The steps a promotion may run on are part of enabling the feature: without them, nobody
   // decided what a release manager is allowed to promote, and the commands will not decide for them
@@ -219,10 +219,52 @@ export async function assertPromotionBranchesEnabled(commandThis: any): Promise<
     throw new SfError(t('promotionCreateAllowedStepsInvalid'));
   }
   if (promotionConfig.allowedSteps.length === 0) {
-    throw new SfError(t('promotionCreateAllowedStepsRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/` }));
+    throw new SfError(t('promotionCreateAllowedStepsRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/` }));
   }
   uxLog('log', commandThis, c.grey(t('promotionCreateAllowedStepsInfo', { steps: formatPromotionSteps(promotionConfig.allowedSteps) })));
   return promotionConfig;
+}
+
+/**
+ * A promotion is assembled from the Pull Requests of the source branch, and only the git provider
+ * names them authoritatively: read from commit subjects alone, the candidates depend on how each
+ * platform writes its merge commits, so a tokenless run behaves differently on GitHub, GitLab,
+ * Bitbucket and Azure DevOps. Requiring the connection keeps the feature identical on the four
+ * platforms, and gives every carried Pull Request its real title and author. Locally the missing
+ * connection is prompted for first; in CI or agent mode the command stops with the variables to set.
+ */
+export async function requireGitProviderForPromotion(commandThis: any, agentMode: boolean): Promise<void> {
+  await warnWhenDotEnvIsCommittable(commandThis);
+  const provider = await GitProvider.getInstance(!agentMode);
+  if (provider == null) {
+    throw new SfError(t('promotionCreateGitProviderRequired', { url: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/` }));
+  }
+  uxLog('log', commandThis, c.grey(t('promotionCreateGitProviderConnected', { provider: provider.getLabel() })));
+}
+
+/**
+ * The Salesforce CLI itself reads a `.env` file from the working directory into the environment,
+ * which is how a terminal or an agent provides the provider token without exporting it on every
+ * shell. The one thing it does not do is say when that file, which holds tokens, is about to be
+ * committed: say it here, on the command that told the user to write it.
+ */
+export async function warnWhenDotEnvIsCommittable(commandThis: any): Promise<void> {
+  const dotEnvPath = path.join(process.cwd(), '.env');
+  if (!fs.existsSync(dotEnvPath)) {
+    return;
+  }
+  if ((await isGitIgnored(dotEnvPath)) === false) {
+    uxLog('warning', commandThis, c.yellow(t('promotionCreateDotEnvNotIgnored')));
+  }
+}
+
+/** True when git ignores the file, false when it does not, null when git could not answer. */
+export async function isGitIgnored(file: string): Promise<boolean | null> {
+  try {
+    return (await git().checkIgnore(file)).length > 0;
+  } catch {
+    return null;
+  }
 }
 
 // ---- Branch resolution ----
@@ -385,19 +427,29 @@ export async function listPromotionCandidates(
 }
 
 /**
- * A User Story reaches a branch twice when a promotion carried it and an ordinary sync merge of
- * the source branch delivered the original commit afterwards: the cherry-pick and the merge are
- * two commits inside the same window, so the same Pull Request is offered on two rows. Only the
- * first is kept, which is also the one the command already cherry-picks, so nothing changes but
- * the table a release manager reads.
+ * A row can be offered twice for two independent reasons, and both are dropped here. Only the
+ * first occurrence is kept, which is also the one the command cherry-picks, so nothing changes
+ * but the table a release manager reads.
  *
- * Only an exact repeat of the same set of numbers is dropped. A row that groups several Pull
- * Requests (a back-merge, an octopus merge) is never allowed to hide the finer rows of the stories
- * it holds, and a row with no number at all is a commit of its own and always stays.
+ * The same commit twice: branches merged both ways make a commit reachable by two routes, and
+ * opening up the vehicle merges walks it once per route.
+ *
+ * The same User Story twice: a promotion carried it and an ordinary sync merge of the source
+ * branch delivered the original commit afterwards, so the cherry-pick and the merge are two
+ * commits inside the same window. Only an exact repeat of the same set of numbers is dropped
+ * there: a row that groups several Pull Requests (a back-merge, an octopus merge) is never
+ * allowed to hide the finer rows of the stories it holds, and a row with no number at all is a
+ * commit of its own and stays as long as its commit was not already offered.
  */
 export function dropOfferedTwice(candidates: PromotionCandidate[]): PromotionCandidate[] {
   const seen = new Set<string>();
+  const seenHashes = new Set<string>();
   return candidates.filter((candidate) => {
+    const hash = candidate.group.commit.hash;
+    if (seenHashes.has(hash)) {
+      return false;
+    }
+    seenHashes.add(hash);
     if (candidate.pullRequestNumbers.length === 0) {
       return true;
     }
@@ -1121,9 +1173,12 @@ async function promptConflictChoice(candidate: PromotionCandidate, commandThis: 
     message: c.cyanBright(t('promotionCreateConflictPrompt', { label: candidate.label })),
     description: t('promotionCreateConflictPrompt', { label: candidate.label }),
     choices: [
+      // commit-with-markers-all is the recommended answer, so it comes first and carries the
+      // description: a promotion window conflicts on the same files story after story, and the
+      // coding agent prompt solves them all in one pass once the branch is assembled
+      { title: t('promotionCreateConflictCommitAll'), value: 'commit-with-markers-all', description: t('promotionCreateConflictCommitAllHelp') },
       { title: t('promotionCreateConflictSkip'), value: 'skip' },
       { title: t('promotionCreateConflictCommit'), value: 'commit-with-markers' },
-      { title: t('promotionCreateConflictCommitAll'), value: 'commit-with-markers-all' },
       { title: t('promotionCreateConflictAbort'), value: 'abort' },
     ],
   });
@@ -1237,7 +1292,7 @@ export function assertPromotionBranchIsNotDeployed(
   uxLog('error', commandThis, c.red(t('promotionBranchDeploymentForbiddenShort', { branch: currentBranch })));
   throw new SfError(t('promotionBranchDeploymentForbidden', {
     branch: currentBranch,
-    docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-promotion-branches/`,
+    docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-promotion-branches/`,
   }));
 }
 
@@ -1246,20 +1301,31 @@ export function assertPromotionBranchIsNotDeployed(
  * purpose, so they have to be solved on the branch before the merge: this is what makes the
  * validation job fail while they are there, with a message naming the files.
  */
-export async function listFilesWithConflictMarkers(commandThis: any): Promise<string[]> {
+export async function listFilesWithConflictMarkers(commandThis: any, ignoredPatterns: string[] = []): Promise<string[]> {
   // Every tracked file, not only the package directories: a cherry-pick conflicts wherever the
   // stories touched the repository (config/, scripts/actions/, data/...), commitWithConflictMarkers
   // stages all of it with git add -A, and the Pull Request body lists all of it as to be fixed.
-  // git grep only searches tracked files, so the report folder and node_modules stay out.
-  // Only the opening and closing markers: a line of "=======" is legitimate in markdown
-  const res = await runCommandSafe('git grep -l -E "^(<<<<<<< |>>>>>>> )"', commandThis, { output: false });
-  if (res.status !== 0) {
-    return []; // 1 = nothing found, anything else = nothing that can be checked here
+  // git grep only searches tracked files, so the report folder and node_modules stay out, and it
+  // reads the checked out files, so a shallow clone is enough.
+  // Only the opening and closing markers: a line of "=======" is legitimate in markdown.
+  // A repository whose own content holds markers on purpose (a lab about merge conflicts, merge
+  // driver fixtures) lists those files in promotionConflictMarkersIgnoredFiles.
+  const pathspecs = [':/', ...ignoredPatterns.filter((pattern) => pattern && pattern.trim() !== '').map((pattern) => `:(top,exclude,glob)${pattern.trim()}`)];
+  try {
+    // No shell: the patterns are passed as they are written in the configuration
+    const stdout = await git().raw(['-c', 'core.quotepath=off', 'grep', '-l', '--full-name', '-E', '^(<<<<<<< |>>>>>>> )', '--', ...pathspecs]);
+    return (stdout || '')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line !== '');
+  } catch (e: any) {
+    // git grep exits with 1 when nothing is found, which is not an error
+    if (e?.exitCode === 1 && !(e?.message || '').trim()) {
+      return [];
+    }
+    uxLog('warning', commandThis, c.yellow(t('promotionConflictMarkersScanFailed', { message: e?.message || String(e) })));
+    return [];
   }
-  return (res.stdout || '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
 }
 
 /**
@@ -1275,7 +1341,8 @@ export async function assertNoPromotionConflictMarkers(commandThis: any, config:
   if (!isPromotionPullRequest(prInfo, getPromotionBranchConfig(config))) {
     return;
   }
-  const files = await listFilesWithConflictMarkers(commandThis);
+  const ignoredFiles = Array.isArray(config?.promotionConflictMarkersIgnoredFiles) ? config.promotionConflictMarkersIgnoredFiles : [];
+  const files = await listFilesWithConflictMarkers(commandThis, ignoredFiles);
   if (files.length === 0) {
     return;
   }
@@ -1395,19 +1462,27 @@ export function buildPromotionPullRequestBody(options: {
   // rather than the Pull Request being refused: it is saved in hardis-report/ either way.
   maxLength?: number | null;
 }): string {
+  return buildPromotionPullRequestDescription(options).body;
+}
+
+/**
+ * The description, and whether it holds the coding agent prompt: the caller tells the user where to
+ * find the prompt, and must not have to guess it from the text.
+ */
+export function buildPromotionPullRequestDescription(options: Parameters<typeof buildPromotionPullRequestBody>[0]): { body: string; promptEmbedded: boolean } {
   const full = renderPromotionPullRequestBody(options, true);
   const maxLength = options.maxLength || null;
   if (!maxLength || full.length <= maxLength) {
-    return full;
+    return { body: full, promptEmbedded: true };
   }
   const withoutPrompt = renderPromotionPullRequestBody(options, false);
   if (withoutPrompt.length <= maxLength) {
-    return withoutPrompt;
+    return { body: withoutPrompt, promptEmbedded: false };
   }
   // Still too long: the yaml block the deployment jobs read sits at the top, so cutting the tail
   // keeps the description usable rather than losing the declaration
   const marker = '\n\n_Description truncated to fit this git provider._';
-  return withoutPrompt.substring(0, Math.max(0, maxLength - marker.length)) + marker;
+  return { body: withoutPrompt.substring(0, Math.max(0, maxLength - marker.length)) + marker, promptEmbedded: false };
 }
 
 /**
@@ -1456,7 +1531,7 @@ function renderPromotionPullRequestBody(
     lines.push('## Committed with conflict markers');
     lines.push('');
     for (const story of conflicted) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
       for (const file of story.conflictFiles || []) {
         lines.push(`  - \`${file}\``);
       }
@@ -1485,7 +1560,7 @@ function renderPromotionPullRequestBody(
     lines.push('## Left out because of cherry-pick conflicts');
     lines.push('');
     for (const story of options.skipped) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
     }
   }
   if ((options.alreadyThere || []).length > 0) {
@@ -1495,7 +1570,7 @@ function renderPromotionPullRequestBody(
     lines.push('Nothing to cherry-pick for those User Stories, their change is already in the target branch. They stay declared above, so their deployment actions and Apex test classes still run in the target org:');
     lines.push('');
     for (const story of options.alreadyThere || []) {
-      lines.push(`- ${story.number > 0 ? `#${story.number} ` : ''}${sanitizeCell(story.title)}`);
+      lines.push(`- ${sanitizeCell(story.title)}${story.number > 0 ? ` (#${story.number})` : ''}`);
     }
   }
   lines.push('');
@@ -1560,6 +1635,8 @@ export function buildConflictResolutionPrompt(options: {
   return lines.join('\n');
 }
 
+// List items naming a story put its number after its title: Azure DevOps prints the dash of a list
+// item that starts with #.
 function sanitizeCell(text: string): string {
   return (text || '').replace(/\r?\n/g, ' ').replace(/\|/g, '&#124;').trim();
 }
@@ -1575,12 +1652,15 @@ export async function writeConflictResolutionPrompt(options: {
   conflicted: PromotionStory[];
   pullRequestUrl: string | null;
   commandThis: any;
+  // False when the provider caps the description and the prompt was left out of it
+  embeddedInDescription?: boolean;
 }): Promise<string> {
   const prompt = buildConflictResolutionPrompt(options);
   const file = await generateReportPath('promotion-conflicts-prompt', '', { withDate: true, withBranchName: false, fileExtension: 'md' });
   await fs.ensureDir(path.dirname(file));
   await fs.writeFile(file, `${prompt}\n`, 'utf8');
-  uxLog('warning', options.commandThis, c.yellow(t('promotionCreateConflictPromptFile', { file })));
+  const messageKey = options.embeddedInDescription === false ? 'promotionCreateConflictPromptFileOnly' : 'promotionCreateConflictPromptFile';
+  uxLog('warning', options.commandThis, c.yellow(t(messageKey, { file })));
   if (WebSocketClient.isAliveWithLwcUI()) {
     WebSocketClient.sendReportFileMessage(file, t('promotionCreateConflictPromptReportTitle'), 'report');
   }

@@ -40,7 +40,7 @@ The command's technical implementation involves:
 - **Interactive Prompts:** Leverages the `prompts` library to guide the user through selecting a Git branch and specific commits for delta generation if they are not provided as command-line arguments.
 - **`sfdx-git-delta` Integration:** The core of the delta generation is handled by the `callSfdxGitDelta` utility function, which wraps the `sfdx-git-delta` tool. This tool performs the actual Git comparison and generates the `package.xml` and `destructiveChanges.xml` files.
 - **Temporary Directory Management:** Uses `createTempDir` to create a temporary directory for storing the generated XML files, ensuring a clean working environment.
-- **File System Operations:** Uses `fs-extra` to manage temporary files and directories.
+- **File System Operations:** Uses Node.js `fs` to manage temporary files and directories.
 - **User Feedback:** Provides clear messages to the user about the generated files and their locations.
 </details>
 
@@ -52,7 +52,7 @@ The command's technical implementation involves:
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | branch       | option  | Git branch to use to generate delta                           |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | fromcommit   | option  | Hash of commit to start from                                  |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |

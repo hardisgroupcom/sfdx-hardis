@@ -105,6 +105,8 @@ You can define additional users to exclude in .sfdx-hardis.yml **monitoringExclu
 
 You can also add more sections / actions considered as not suspect using property **monitoringAllowedSectionsActions**
 
+If a user is expected to perform some specific actions (for example an integration user whose portal user provisioning automatically creates account roles), you can allow those actions for that user only using property **monitoringAllowedUsersActions**: unlike **monitoringExcludeUsernames**, any other action performed by the same user is still flagged.
+
 Example:
 
 ```yaml
@@ -116,6 +118,10 @@ monitoringExcludeUsernames:
 monitoringAllowedSectionsActions:
   "Some section": [] // Will ignore all actions from such section
   "Some other section": ["actionType1","actionType2","actionType3"] // Will ignore only those 3 actions from section "Some other section". Other actions in the same section will be considered as suspect.
+
+monitoringAllowedUsersActions:
+  "provisioning-user@cloudity.com": ["createdrole"] // Will ignore only createdrole from provisioning-user@cloudity.com. Any other action from this user will still be considered as suspect.
+  "another-integration@cloudity.com": [] // Will ignore all actions from this user (same as monitoringExcludeUsernames, but the records remain visible in the report as not suspect)
 ```
 
 ## Excel output example
@@ -141,18 +147,18 @@ In agent mode, the audit trail report is generated without interactive prompts, 
 
 ## Parameters
 
-| Name                |  Type   | Description                                                       | Default | Required | Options |
-|:--------------------|:-------:|:------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent               | boolean | Run in non-interactive mode for agents and automation             |         |          |         |
-| debug<br/>-d        | boolean | Activate debug mode (more logs)                                   |         |          |         |
-| excludeusers<br/>-e | option  | Comma-separated list of usernames to exclude                      |         |          |         |
-| flags-dir           | option  | undefined                                                         |         |          |         |
-| json                | boolean | Format output as json.                                            |         |          |         |
-| lastndays<br/>-t    | option  | Number of days to extract from today (included)                   |         |          |         |
-| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv |         |          |         |
-| skipauth            | boolean | Skip authentication check when a default username is required     |         |          |         |
-| target-org<br/>-o   | option  | undefined                                                         |         |          |         |
-| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration         |         |          |         |
+| Name                |  Type   | Description                                                                                                  | Default | Required | Options |
+|:--------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent               | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| excludeusers<br/>-e | option  | Comma-separated list of usernames to exclude                                                                 |         |          |         |
+| flags-dir           | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json                | boolean | Format output as json.                                                                                       |         |          |         |
+| lastndays<br/>-t    | option  | Number of days to extract from today (included)                                                              |         |          |         |
+| outputfile<br/>-f   | option  | Force the path and name of output report file. Must end with .csv                                            |         |          |         |
+| skipauth            | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o   | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

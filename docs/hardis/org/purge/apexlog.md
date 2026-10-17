@@ -27,7 +27,7 @@ The command's technical implementation involves:
 - **CSV Export:** The retrieved log IDs are temporarily exported to a CSV file (`ApexLogsToDelete_*.csv`) in the `./tmp` directory.
 - **User Confirmation:** It uses the `prompts` library to ask for user confirmation before proceeding with the deletion, displaying the count of logs to be purged.
 - **Bulk API Deletion:** It then uses the Salesforce CLI's `sf data delete bulk` command, pointing to the generated CSV file, to perform the mass deletion of Apex logs.
-- **File System Operations:** It uses `fs-extra` to create the temporary directory and manage the CSV file.
+- **File System Operations:** It uses Node.js `fs` to create the temporary directory and manage the CSV file.
 - **Error Handling:** Includes error handling for the query and deletion operations.
 </details>
 
@@ -47,16 +47,16 @@ In agent mode:
 
 ## Parameters
 
-| Name              |  Type   | Description                                                        | Default | Required | Options |
-|:------------------|:-------:|:-------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation              |         |          |         |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                                    |         |          |         |
-| flags-dir         | option  | undefined                                                          |         |          |         |
-| json              | boolean | Format output as json.                                             |         |          |         |
-| prompt<br/>-z     | boolean | Prompt for confirmation (true by default, use --no-prompt to skip) |         |          |         |
-| skipauth          | boolean | Skip authentication check when a default username is required      |         |          |         |
-| target-org<br/>-o | option  | undefined                                                          |         |          |         |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration          |         |          |         |
+| Name              |  Type   | Description                                                                                                  | Default | Required | Options |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |         |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |         |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |         |
+| json              | boolean | Format output as json.                                                                                       |         |          |         |
+| prompt<br/>-z     | boolean | Prompt for confirmation (true by default, use --no-prompt to skip)                                           |         |          |         |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |         |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |         |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |         |
 
 ## Examples
 

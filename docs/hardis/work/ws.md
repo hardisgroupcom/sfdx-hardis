@@ -34,7 +34,7 @@ The command's technical implementation involves:
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
 | event<br/>-e | option  | WebSocket event                                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

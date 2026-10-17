@@ -31,7 +31,7 @@ Most monitoring commands emit a single notification type whose key matches the c
 
 The user `.sfdx-hardis.yml` has **two independent top-level keys**, each merged by `key` onto its respective defaults list:
 
-- `monitoringCommands:` -- scheduling overrides. `monitor:all` calls `resolveMonitoringCommands(monitoringCommandsDefault, userEntries)` from `src/common/notifProvider/notificationConfig.ts`. Each user entry is shallow-merged on top of the matching default; user-only entries (new keys) are appended as custom commands.
+- `monitoringCommands:` -- scheduling overrides. `monitor:all` calls `resolveMonitoringCommands(monitoringCommandsDefault, userEntries)` from `src/common/notifProvider/utils/notificationConfig.ts`. Each user entry is shallow-merged on top of the matching default; user-only entries (new keys) are appended as custom commands.
 - `notificationConfig:` -- per-notification-type routing overrides. `NotifProvider.postNotifications` calls `getEffectiveNotificationConfig(notifType)` from the same file. It reads `notificationTypesDefault[type].defaults` and merges the user's `notificationConfig[i].notifications` block on top, field-by-field.
 
 Net effect: **fields the user did not set automatically pick up new defaults the next time you ship**. Fields the user explicitly set keep their value (user intent wins).
@@ -135,6 +135,10 @@ Renaming/removing a `metrics` key, changing the `logElements` row shape, or dele
 
 If you change a default that a user has fully overridden in their YAML (`notificationConfig:` entry), their override wins. That's intentional.
 
+## The monitoring AGENTS.md
+
+The backup writes an `AGENTS.md` in every monitoring repository that lists the checks, their frequencies, the Loki labels, the log payload fields and the metric naming, for coding agents. A new or renamed command, notification type, metric key, log field or label changes what it must say: load the `monitoring-agents-md` skill and update the template in the same change.
+
 ## Adding a new channel
 
 Three steps if you ever need a fourth channel:
@@ -205,7 +209,7 @@ After any change in this area, run:
 ```sh
 yarn compile      # TypeScript catches missing union members and enum drift
 yarn lint
-yarn build:doc    # Regenerates docs/hardis/**/*.md including monitor:all and config:monitoring-defaults
+yarn build:doc --commands "hardis:org:monitor:all,hardis:config:monitoring-defaults"    # Regenerates only these two pages, plus the pages of the commands you changed
 node -e "for (const l of ['en','de','es','fr','it','ja','nl','pl','pt-BR']) JSON.parse(require('fs').readFileSync('src/i18n/'+l+'.json','utf8'))"
 ```
 

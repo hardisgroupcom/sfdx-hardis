@@ -41,7 +41,7 @@ The command orchestrates interactions with MkDocs, Salesforce CLI, and file syst
 - **Permission Set Assignment:** After successful deployment, it calls `initPermissionSetAssignments` to assign the newly created permission set to the current user.
 - **Browser Launch:** For non-CI environments, it uses `execCommand` to open the deployed Custom Tab in the user's default browser.
 - **Error Handling and Cleanup:** It includes error handling for deployment failures (e.g., static resource size limits) and ensures that the `mkdocs.yml` file is restored to its original state after execution.
-- **File System Operations:** It extensively uses `fs-extra` for file manipulation, including creating directories, moving files, and writing XML content.
+- **File System Operations:** It extensively uses Node.js `fs` for file manipulation, including creating directories, moving files, and writing XML content.
 </details>
 
 ### Agent Mode
@@ -58,16 +58,16 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
 ## Parameters
 
-| Name              |  Type   | Description                                                   | Default | Required |       Options       |
-|:------------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------------------:|
-| agent             | boolean | Run in non-interactive mode for agents and automation         |         |          |                     |
-| debug<br/>-d      | boolean | Activate debug mode (more logs)                               |         |          |                     |
-| flags-dir         | option  | undefined                                                     |         |          |                     |
-| json              | boolean | Format output as json.                                        |         |          |                     |
-| skipauth          | boolean | Skip authentication check when a default username is required |         |          |                     |
-| target-org<br/>-o | option  | undefined                                                     |         |          |                     |
-| type<br/>-t       | option  | Type of the documentation to generate. Default is "all"       |  CICD   |          | CICD<br/>Monitoring |
-| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |                     |
+| Name              |  Type   | Description                                                                                                  | Default | Required |       Options       |
+|:------------------|:-------:|:-------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------------------:|
+| agent             | boolean | Run in non-interactive mode for agents and automation                                                        |         |          |                     |
+| debug<br/>-d      | boolean | Activate debug mode (more logs)                                                                              |         |          |                     |
+| flags-dir         | option  | Import flag values from a directory.                                                                         |         |          |                     |
+| json              | boolean | Format output as json.                                                                                       |         |          |                     |
+| skipauth          | boolean | Skip authentication check when a default username is required                                                |         |          |                     |
+| target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set. |         |   true   |                     |
+| type<br/>-t       | option  | Type of the documentation to generate. Default is "all"                                                      |  CICD   |          | CICD<br/>Monitoring |
+| websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                    |         |          |                     |
 
 ## Examples
 

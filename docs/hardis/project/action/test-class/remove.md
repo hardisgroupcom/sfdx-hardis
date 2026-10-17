@@ -45,7 +45,7 @@ Required in agent mode:
 | branch       | option  | Target branch name (for branch scope, defaults to current branch)                 |         |          |                           |
 | class-name   | option  | Apex test class name(s) to remove (can be specified multiple times)               |         |          |                           |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                                                   |         |          |                           |
-| flags-dir    | option  | undefined                                                                         |         |          |                           |
+| flags-dir    | option  | Import flag values from a directory.                                              |         |          |                           |
 | json         | boolean | Format output as json.                                                            |         |          |                           |
 | pr-id        | option  | Pull request ID (for pr scope, defaults to draft)                                 |         |          |                           |
 | scope        | option  | Configuration scope: project, branch, or pr                                       |         |          | project<br/>branch<br/>pr |

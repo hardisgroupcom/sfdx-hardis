@@ -59,6 +59,25 @@ jobs:
     with:
       skipTsDepCheck: true
 
+  # The numbered pills of the VS Code guides: annotated images match
+  # docs/assets/annotations.json, and every guide cites exactly the pills its
+  # screenshots carry. Plain node scripts, no install needed.
+  doc-pills:
+    needs: detect-duplicate-run
+    if: needs.detect-duplicate-run.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: node scripts/annotate-doc-images.mjs --check
+      - run: node scripts/check-doc-pills.mjs
+
   windows-unit-tests:
     needs: detect-duplicate-run
     if: needs.detect-duplicate-run.outputs.should_run == 'true'
@@ -81,7 +100,11 @@ jobs:
       needs.detect-duplicate-run.outputs.should_run == 'true' &&
       (github.event_name != 'pull_request' ||
        github.event.pull_request.head.repo.full_name == github.repository)
-    uses: salesforcecli/github-workflows/.github/workflows/nut.yml@main # zizmor: ignore[unpinned-uses]
+    # Pinned before salesforcecli/github-workflows#185 (2026-09-28): its steps run
+    # `bash -c` without `shell: bash`, which does nothing on Windows runners, so
+    # lib/ is never compiled and every Windows nut fails with "command not found".
+    # Go back to @main once upstream sets the shell on those steps.
+    uses: salesforcecli/github-workflows/.github/workflows/nut.yml@88f3f194920ed8065e656064b96c7118329b13e0
     secrets: inherit # zizmor: ignore[secrets-inherit]
     permissions:
       contents: read

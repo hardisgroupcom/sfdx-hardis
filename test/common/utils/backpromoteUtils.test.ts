@@ -7,6 +7,7 @@ import {
   extractPrNumbersFromCommit,
   isVehicleMerge,
   mergedSourceBranches,
+  messageNumberIsPullRequestOf,
   parseCommitParents,
   splitVehicleMerges,
 } from '../../../src/common/utils/backpromoteUtils.js';
@@ -201,6 +202,65 @@ describe('splitVehicleMerges()', () => {
     );
     expect(split.map((commit) => commit.hash)).to.deep.equal(['sync']);
   });
+
+  // main and uat merged both ways:
+  //
+  //   sync  (merge main into uat)   parents u1, back
+  //   back  (merge uat into main)   parents p1, u1
+  //   p1    (work on main)
+  //   u1    (work on uat)
+  //
+  // Opening up sync walks main, whose first-parent line holds the back-merge, and opening that
+  // one up in turn walks back to u1, which the uat list started from.
+  const crissCross = [
+    { hash: 'sync', message: "Merge branch 'main' into uat" },
+    { hash: 'back', message: "Merge branch 'uat' into main" },
+    { hash: 'p1', message: 'work on main' },
+    { hash: 'u1', message: 'work on uat' },
+  ];
+  const crissCrossParents = parseCommitParents(
+    ['sync u1 back', 'back p1 u1', 'p1 mainBase', 'u1 uatBase'].join('\n'),
+  );
+  const crissCrossWindow = new Set(crissCross.map((commit) => commit.hash));
+  const crissCrossFirstParents = async (fromCommit: string, toCommit: string) => {
+    if (fromCommit === 'u1' && toCommit === 'back') {
+      return [crissCross[1], crissCross[2]];
+    }
+    if (fromCommit === 'p1' && toCommit === 'u1') {
+      return [crissCross[3]];
+    }
+    throw new Error(`unexpected range ${fromCommit}..${toCommit}`);
+  };
+
+  it('offers a commit once when the branches were merged both ways', async () => {
+    const split = await splitVehicleMerges(
+      [crissCross[0], crissCross[3]],
+      ['main', 'uat'],
+      crissCrossParents,
+      crissCrossWindow,
+      (commit) => mergedSourceBranches(commit, new Map(), new Map()),
+      crissCrossFirstParents,
+    );
+    expect(split.map((commit) => commit.hash)).to.deep.equal(['p1', 'u1']);
+  });
+
+  it('adds only what a vehicle brings that is not listed yet', async () => {
+    // The vehicle carries one new commit and one already on its own row
+    const partial = [
+      { hash: 'sync', message: "Merge branch 'main' into uat" },
+      { hash: 'new1', message: "Merge branch 'feature/one' into main" },
+      { hash: 'u1', message: 'work on uat' },
+    ];
+    const split = await splitVehicleMerges(
+      [partial[0], partial[2]],
+      ['main', 'uat'],
+      parseCommitParents(['sync uatBase new1', 'new1 mainBase work1', 'u1 uatBase'].join('\n')),
+      new Set(partial.map((commit) => commit.hash)),
+      (commit) => mergedSourceBranches(commit, new Map(), new Map()),
+      async () => [partial[1], partial[2]],
+    );
+    expect(split.map((commit) => commit.hash)).to.deep.equal(['new1', 'u1']);
+  });
 });
 
 describe('attributeCommitsToFirstParents() with opened-up vehicle merges', () => {
@@ -232,7 +292,62 @@ describe('extractPrNumbersFromCommit()', () => {
     expect(extractPrNumbersFromCommit({ message: 'Merged PR 52: feature x' })).to.deep.equal([52]);
   });
 
+  it('reads the number a GitHub squash merge puts in brackets at the end of the subject', () => {
+    expect(
+      extractPrNumbersFromCommit({ message: 'US-057 Park an installation that is waiting for parts (#7)' })
+    ).to.deep.equal([7]);
+    expect(extractPrNumbersFromCommit({ message: 'Fix the thing (#12) and more' })).to.deep.equal([12]);
+  });
+
   it('never takes a generic #N reference of the body for a Pull Request', () => {
     expect(extractPrNumbersFromCommit({ message: "Merge branch 'feature/x' into 'integration'", body: 'Fixes #12 and relates to #13' })).to.deep.equal([]);
+  });
+});
+
+describe('messageNumberIsPullRequestOf()', () => {
+  // A fork of the training course: its own US-014 is #1, merged as commit f1, and it carries the
+  // squash commits of the course it was forked from, whose subjects hold the course's numbers
+  const prs = new Map<number, { mergeCommitSha?: string }>([[1, { mergeCommitSha: 'f1' }]]);
+  const window = new Set(['f1', 'u41', 'u1', 'cp1']);
+
+  it('drops a number the provider does not list, which would be read as a 404', () => {
+    expect(messageNumberIsPullRequestOf(41, { hash: 'u41' }, true, prs, window)).to.be.false;
+  });
+
+  it('drops a number of the fork whose merge commit is another commit of the window', () => {
+    expect(messageNumberIsPullRequestOf(1, { hash: 'u1' }, true, prs, window)).to.be.false;
+  });
+
+  it('keeps the merge commit of the Pull Request', () => {
+    expect(messageNumberIsPullRequestOf(1, { hash: 'f1' }, true, prs, window)).to.be.true;
+  });
+
+  it('keeps a cherry-pick of the Pull Request, which is what a promotion branch carries', () => {
+    const body = '(cherry picked from commit 0123456789abcdef0123456789abcdef01234567)';
+    expect(messageNumberIsPullRequestOf(1, { hash: 'cp1', body }, true, prs, window)).to.be.true;
+  });
+
+  it('trusts the message when the merge commit is outside the window, or unknown', () => {
+    expect(messageNumberIsPullRequestOf(1, { hash: 'x' }, true, prs, new Set(['x']))).to.be.true;
+    expect(messageNumberIsPullRequestOf(2, { hash: 'x' }, true, new Map([[2, {}]]), window)).to.be.true;
+  });
+
+  it('drops a number of the fork merged outside the window when its title is not in the message', () => {
+    const forkPrs = new Map([[1, { mergeCommitSha: 'old', title: 'Promotion integration to uat' }]]);
+    expect(messageNumberIsPullRequestOf(1, { hash: 'u1', message: 'US-001 Add the field (#1)' }, true, forkPrs, window)).to.be.false;
+    const samePr = new Map([[1, { mergeCommitSha: 'old', title: 'US-001 Add the field' }]]);
+    expect(messageNumberIsPullRequestOf(1, { hash: 'u1', message: 'US-001 add the field (#1)' }, true, samePr, window)).to.be.true;
+  });
+
+  it('keeps the vehicle merge detection away from a number that is not this repository\'s', () => {
+    const forkPrs = new Map([[3, { sourceBranch: 'integration', mergeCommitSha: 'f3' }]]);
+    const commit = { hash: 'u3', message: 'Merge pull request #3 from upstream/feature-x' };
+    const isPullRequestOf = (num: number, c: { hash: string }) => messageNumberIsPullRequestOf(num, c, true, forkPrs, new Set(['f3', 'u3']));
+    expect(mergedSourceBranches(commit, new Map(), forkPrs, isPullRequestOf)).to.deep.equal(['feature-x']);
+    expect(mergedSourceBranches(commit, new Map(), forkPrs)).to.deep.equal(['feature-x', 'integration']);
+  });
+
+  it('trusts the message when the Pull Requests could not be listed', () => {
+    expect(messageNumberIsPullRequestOf(41, { hash: 'u41' }, false, new Map(), window)).to.be.true;
   });
 });

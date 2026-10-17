@@ -1,6 +1,6 @@
 ---
 title: Agent deployment Hints
-description: Salesforce DevOps AI integration hints for Deployment Agent
+description: With sfdx-hardis, Salesforce DevOps AI integration hints for Deployment Agent
 ---
 
 <!-- markdownlint-disable MD013 -->

@@ -52,7 +52,7 @@ jobs:
         persistCredentials: true
         displayName: Git Checkout
 
-      # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-ci-cd-setup-auth/ )
+      # Login & check deployment to PR target branch related org (configuration: https://hardisgroupcom.github.io/sfdx-hardis/salesforce-devops-setup-auth/ )
       - script: |
           if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "${CURRENT_BRANCH_NAME}" ]; then
             echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH_NAME}"
@@ -85,6 +85,8 @@ jobs:
           JIRA_EMAIL: $(JIRA_EMAIL)
           JIRA_TOKEN: $(JIRA_TOKEN)
           JIRA_PAT: $(JIRA_PAT)
+          AHA_HOST: $(AHA_HOST)
+          AHA_API_KEY: $(AHA_API_KEY)
           JIRA_TICKET_REGEX: $(JIRA_TICKET_REGEX)
           OPENAI_API_KEY: $(OPENAI_API_KEY)
           # Uncomment to provide API keys for coding agent auto-fix of deployment errors
@@ -114,6 +116,67 @@ jobs:
         condition: succeededOrFailed()
         continueOnError: true
         artifact: hardis-report
+        displayName: Publish sfdx-hardis reports
+
+  # Scratch org tests: create a scratch org (or take one from the scratch org pool), push the sources
+  # and run the Apex tests on it.
+  # Runs only when the pipeline variable USE_SCRATCH_ORGS is "true"
+  # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/
+  - job: ScratchOrgTests
+    condition: eq(variables['USE_SCRATCH_ORGS'], 'true')
+    timeoutInMinutes: 150
+    pool:
+      vmImage: ubuntu-latest
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    steps:
+      - checkout: self
+        fetchDepth: 0
+        persistCredentials: true
+        displayName: Git Checkout
+
+      - script: |
+          set -e
+          if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "${CURRENT_BRANCH_NAME}" ]; then
+            echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch ${CURRENT_BRANCH_NAME}"
+            exit 0
+          fi
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:create
+          sleep 120 # A scratch org that was just created can be not ready yet
+          sf hardis:org:test:apex
+          # Not reached when a command above failed, so the scratch org can be investigated until it expires.
+          # Set the pipeline variable CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
+          if [ "${CI_DELETE_SCRATCH_ORG}" != "false" ]; then
+            sf org delete scratch --no-prompt || true
+          fi
+        env:
+          # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+          # and replace DEVHUB by the alias of your Dev Hub
+          SFDX_AUTH_URL_DEV_HUB: $(SFDX_AUTH_URL_DEV_HUB)
+          SFDX_CLIENT_ID_DEVHUB: $(SFDX_CLIENT_ID_DEVHUB)
+          SFDX_CLIENT_KEY_DEVHUB: $(SFDX_CLIENT_KEY_DEVHUB)
+          # Key that decrypts the scratch orgs of a pool stored in the git provider
+          SFDX_HARDIS_POOL_ENCRYPTION_KEY: $(SFDX_HARDIS_POOL_ENCRYPTION_KEY)
+          CI_DELETE_SCRATCH_ORG: $(CI_DELETE_SCRATCH_ORG)
+          CI: "true"
+          # The "Scratch Orgs Pool Dashboard" is a work item: the Build Service user needs the
+          # permission to edit work items in the project
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          CI_SFDX_HARDIS_AZURE_TOKEN: $(System.AccessToken)
+          SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+          SYSTEM_TEAMPROJECT: $(System.TeamProject)
+          SYSTEM_JOB_DISPLAY_NAME: $(System.JobDisplayName)
+          SYSTEM_JOB_ID: $(System.JobId)
+          SYSTEM_PULLREQUEST_PULLREQUESTID: $(System.PullRequest.PullRequestId)
+          BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+          BUILD_REPOSITORYNAME: $(Build.Repository.Name)
+          BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+          BUILD_BUILD_ID: $(Build.BuildId)
+        displayName: "Scratch org tests"
+      - publish: $(System.DefaultWorkingDirectory)/hardis-report/
+        condition: succeededOrFailed()
+        continueOnError: true
+        artifact: hardis-report-scratch-org
         displayName: Publish sfdx-hardis reports
 
   # Run MegaLinter to detect linting and security issues

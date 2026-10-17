@@ -3,7 +3,7 @@
 # project, the four major branches and the six User Story branches. Provider agnostic: the caller
 # creates the remote repository and opens the Pull Requests.
 #
-#   WORK=/c/tmp/promo-e2e API=67.0 bash build-repo.sh
+#   WORK=<a new folder> API=67.0 bash build-repo.sh
 #
 # Idempotent only on a fresh $WORK: it refuses to run on an existing directory, because a rerun on
 # a previous tree is exactly the artefact this test must not have.

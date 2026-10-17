@@ -69,10 +69,16 @@ describe('Deployment Actions state comment (matrix format)', () => {
     const body = buildDeploymentActionsCommentBody(entries, undefined, 42);
 
     expect(body).to.contain('| Action | When | integration | uat |');
-    expect(body).to.contain('### Pending manual actions');
-    expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 when:pre-deploy -->');
+    // The developer orgs column is labelled, its key stays dev-sandboxes in the hidden rows
+    const withDevOrg = buildDeploymentActionsCommentBody([...entries, entry({ orgBranch: 'dev-sandboxes', status: 'manual', jobId: '', jobUrl: '' })], undefined, 42);
+    expect(withDevOrg).to.match(/\| Action \| When \|.* Developer orgs \|/);
+    expect(withDevOrg).to.not.match(/\| Action \| When \|.* dev-sandboxes \|/);
+    expect(parseDeploymentActionsCommentBody(withDevOrg).some((e) => e.orgBranch === 'dev-sandboxes')).to.be.true;
+    expect(body).to.contain('#### Needs you');
+    expect(body).to.contain('### In uat: 👋 1 to do by hand');
+    expect(body).to.contain('- [ ] <!-- sfdx-hardis-manual-action id:action-1 org:uat pr:42 when:pre-deploy --> 👋 ');
     expect(body).to.contain('*Legend:');
-    expect(body).to.contain('*Last updated:');
+    expect(body).to.match(/\*Updated [A-Z][a-z]{2} \d{1,2}, \d{2}:\d{2} UTC\*/);
   });
 
   it('escapes pipes and newlines in labels and round-trips them intact', () => {
@@ -124,6 +130,75 @@ describe('Deployment Actions state comment (matrix format)', () => {
     expect(mixedBody).to.contain('pr-banner-actions-pending');
   });
 
+  describe('verdict line', () => {
+    function deployOnlyDef(id: string, overrides: Partial<ActionDef> = {}): ActionDef {
+      return { id, label: id, type: 'command', command: 'echo hello', context: 'process-deployment-only', when: 'post-deploy', executionOrder: 0, ...overrides };
+    }
+
+    it('says Nothing to do when every action is done or skipped for good', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2', { excludeTargetBranches: ['integration'] })]]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        // A skip with no definition to read cannot be told apart from a final one
+        entry({ actionId: 'action-3', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### ✅ Nothing to do: every deployment action is done or skipped');
+    });
+
+    // Training walk 2026-10-08, O-1: a validation skips the deployment-only actions, which run at the merge
+    it('names the actions a validation left for the deployment job instead of Nothing to do', () => {
+      const defs = new Map<string, ActionDef>([
+        ['action-2', deployOnlyDef('action-2')],
+        ['action-3', deployOnlyDef('action-3', { type: 'run-batch', context: 'all' })],
+        ['action-4', deployOnlyDef('action-4')],
+      ]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        entry({ actionId: 'action-3', status: 'skipped' }),
+        entry({ actionId: 'action-4', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 3 after the merge\n');
+      expect(body).to.not.contain('Nothing to do:');
+      // Nothing to tick: the checklist stays out
+      expect(body).to.not.contain('#### Needs you');
+      // The matrix and its markers do not change
+      expect(parseDeploymentActionsCommentBody(body).filter((e) => e.status === 'skipped')).to.have.length(3);
+    });
+
+    it('adds the actions run after the merge to an org that needs someone', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2')]]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({ status: 'manual' }),
+        entry({ actionId: 'action-2', status: 'skipped' }),
+        entry({ actionId: 'action-2', orgBranch: 'uat', status: 'skipped' }),
+      ], defs, 42);
+      expect(body).to.contain('### In integration: 👋 1 to do by hand · 🕒 1 after the merge / In uat: ✅ nothing to do now · 🕒 1 after the merge\n');
+    });
+
+    it('reads the project and branch actions recorded in the comment, which no Pull Request file defines', () => {
+      const configDefs = new Map<string, Map<string, ActionDef>>([
+        ['', new Map([['project-action', deployOnlyDef('project-action')]])],
+        ['uat', new Map([['uat-action', deployOnlyDef('uat-action')]])],
+      ]);
+      const body = buildDeploymentActionsCommentBody([
+        entry({}),
+        entry({ actionId: 'project-action', status: 'skipped' }),
+        entry({ actionId: 'uat-action', orgBranch: 'uat', status: 'skipped' }),
+        // A branch definition only counts in its own org
+        entry({ actionId: 'uat-action', status: 'skipped' }),
+      ], new Map(), 42, null, configDefs);
+      expect(body).to.contain('### In integration: ✅ nothing to do now · 🕒 1 after the merge / In uat: ✅ nothing to do now · 🕒 1 after the merge\n');
+    });
+
+    it('stops counting an action once the deployment job ran it', () => {
+      const defs = new Map<string, ActionDef>([['action-2', deployOnlyDef('action-2')]]);
+      const body = buildDeploymentActionsCommentBody([entry({}), entry({ actionId: 'action-2', status: 'success' })], defs, 42);
+      expect(body).to.contain('### ✅ Nothing to do: every deployment action is done or skipped');
+    });
+  });
+
   describe('Action Details section', () => {
     function actionDef(overrides: Partial<ActionDef>): ActionDef {
       return {
@@ -165,7 +240,7 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(body).to.contain('**Results by org**');
       expect(body).to.contain('| Org branch | Status | Date | Job |');
       expect(body).to.contain('| integration | \u2705 success | 2026-08-14 | [1234](https://ci.example.com/1234) |');
-      expect(body).to.contain('| uat | \ud83d\udc4b waiting for manual execution | 2026-08-15 | [5678](https://ci.example.com/5678) |');
+      expect(body).to.contain('| uat | \ud83d\udc4b to do by hand | 2026-08-15 | [5678](https://ci.example.com/5678) |');
       expect(body).to.contain('**Output - integration**\n\n```\nItems removed: 1\n```');
       expect(body).to.not.contain('**Output - uat**');
       expect(body).to.not.contain('*integration - ');
@@ -200,6 +275,22 @@ describe('Deployment Actions state comment (matrix format)', () => {
       expect(body).to.contain('| Class name | `MyBatch` |');
       expect(body).to.contain('| Cron expression | `0 0 4 ? * SAT` |');
       expect(body).to.contain('| Job name | MyBatch_Schedule |');
+    });
+
+    it('lists the run-batch parameters as rows', () => {
+      const defs = new Map<string, ActionDef>([['action-1', actionDef({
+        type: 'run-batch',
+        command: '',
+        parameters: { className: 'MyBatch', runMode: 'wait', batchSize: 50, waitTimeoutMinutes: 30, successEvenIfBatchErrors: true },
+      })]]);
+      const body = buildDeploymentActionsCommentBody([entry({})], defs, 42);
+
+      expect(body).to.contain('| Class name | `MyBatch` |');
+      expect(body).to.contain('| Run mode | wait |');
+      expect(body).to.contain('| Batch size | 50 |');
+      expect(body).to.contain('| Wait timeout (minutes) | 30 |');
+      expect(body).to.contain('| Success even if batch errors | true |');
+      expect(body).to.not.contain('| runMode |');
     });
 
     // A pipe would end the cell. Inside inline code the HTML entity is not decoded, so the
@@ -450,5 +541,62 @@ describe('Manual action checkboxes', () => {
     const untickedBody = `- [ ] ${spacedMarker} Enable feature X\n`;
     const res = checkManualActionCheckboxInBody(untickedBody, spacedId, 'uat');
     expect(res.changed).to.be.true;
+  });
+});
+
+/**
+ * The whole state round-trips through the markdown of the Pull Request comment, so outputs that
+ * are not serialized there are lost between two jobs. Without this, a runOnlyOnceByOrg action
+ * would replay nothing and every later deployment would break the actions consuming its outputs.
+ */
+describe('Deployment Actions state comment - custom function outputs', () => {
+  it('round-trips the outputs of an action through build and parse', () => {
+    const entries = [entry({ outputs: { accountId: '001xx000003DHPl', count: 3 } })];
+    const parsed = parseDeploymentActionsCommentBody(
+      buildDeploymentActionsCommentBody(entries, undefined, 42)
+    );
+    expect(parsed).to.have.length(1);
+    expect(parsed[0].outputs).to.deep.equal({ accountId: '001xx000003DHPl', count: 3 });
+  });
+
+  it('keeps the other cell values readable next to the outputs marker', () => {
+    const entries = [entry({ outputs: { accountId: '001' } })];
+    const parsed = parseDeploymentActionsCommentBody(
+      buildDeploymentActionsCommentBody(entries, undefined, 42)
+    );
+    expect(parsed[0].status).to.equal('success');
+    expect(parsed[0].date).to.equal('2026-08-14');
+    expect(parsed[0].jobId).to.equal('1234');
+    expect(parsed[0].jobUrl).to.equal('https://ci.example.com/1234');
+  });
+
+  it('hides the marker from the rendered comment', () => {
+    const body = buildDeploymentActionsCommentBody([entry({ outputs: { a: 'b' } })], undefined, 42);
+    // An HTML comment renders as nothing, and must not break the markdown table
+    expect(body).to.match(/<!-- outputs:[A-Za-z0-9+/=]+ -->/);
+    expect(body.split('\n').filter((line) => line.includes('outputs:'))).to.have.length(1);
+  });
+
+  it('writes no marker when the action returned no output', () => {
+    const body = buildDeploymentActionsCommentBody([entry({})], undefined, 42);
+    expect(body).to.not.match(/outputs:/);
+    expect(parseDeploymentActionsCommentBody(body)[0].outputs).to.equal(undefined);
+  });
+
+  it('drops outputs too large to belong in a Pull Request comment', () => {
+    const body = buildDeploymentActionsCommentBody(
+      [entry({ outputs: { blob: 'x'.repeat(5000) } })],
+      undefined,
+      42
+    );
+    expect(body).to.not.match(/outputs:/);
+  });
+
+  it('survives a value containing the characters that would break the table', () => {
+    const outputs = { tricky: 'a | b\nc --> d "e"' };
+    const parsed = parseDeploymentActionsCommentBody(
+      buildDeploymentActionsCommentBody([entry({ outputs })], undefined, 42)
+    );
+    expect(parsed[0].outputs).to.deep.equal(outputs);
   });
 });

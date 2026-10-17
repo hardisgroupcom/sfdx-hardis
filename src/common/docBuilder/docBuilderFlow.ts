@@ -4,7 +4,7 @@ import { PromptTemplate } from "../aiProvider/promptTemplates.js";
 import { DocBuilderRoot } from "./docBuilderRoot.js";
 import * as path from "path";
 import { prettifyFieldName } from "../utils/flowVisualiser/nodeFormatUtils.js";
-import { mdTableCell } from "../gitProvider/utilsMarkdown.js";
+import { mdTableCell } from "../gitProvider/utils/utilsMarkdown.js";
 import fs from "fs";
 import { t } from '../utils/i18n.js';
 

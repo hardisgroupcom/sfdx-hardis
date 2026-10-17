@@ -1,6 +1,6 @@
 ---
 title: Coding Agent Auto-Fix (Beta)
-description: Automatically fix deployment errors using AI coding agents
+description: With sfdx-hardis, automatically fix deployment errors using AI coding agents
 ---
 
 <!-- markdownlint-disable MD013 -->

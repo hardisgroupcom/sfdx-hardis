@@ -6,7 +6,7 @@ import c from "chalk";
 import { uxLog } from "../utils/index.js";
 import { PromptTemplate } from "./promptTemplates.js";
 import { getEnvVar } from "../../config/index.js";
-import { resolveBooleanFlag, parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./providerConfigUtils.js";
+import { resolveBooleanFlag, parseDefaultHeaders, HEADER_PARSE_I18N_KEYS } from "./utils/providerConfigUtils.js";
 import { t } from '../utils/i18n.js';
 
 export class OpenAiProvider extends AiProviderRoot {

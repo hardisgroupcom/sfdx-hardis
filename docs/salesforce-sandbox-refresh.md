@@ -1,6 +1,6 @@
 ---
 title: Salesforce Full Sandbox Refresh - Save & Restore Everything
-description: Learn how to refresh a full Salesforce sandbox without losing Connected Apps, External Client Apps, certificates, custom settings, and records
+description: With sfdx-hardis, learn how to refresh a full Salesforce sandbox without losing Connected Apps, External Client Apps, certificates, custom settings, and records
 ---
 <!-- markdownlint-disable MD013 -->
 

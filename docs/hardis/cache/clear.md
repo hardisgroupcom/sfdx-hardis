@@ -19,6 +19,7 @@ This command is designed to remove temporary files, stored configurations, and o
 The command's technical implementation is straightforward:
 
 - **Direct Function Call:** It directly invokes the `clearCache()` function, which is imported from uri../../../common/cache/index.jsuri.
+- **Org API cache:** It also removes the results of technical API calls cached per org Id (`listMetadata`, `EntityDefinition`...) under `~/.sfdx/sfdx-hardis-cache/orgs/`.
 - **Cache Management Logic:** The uriclearCache()` function encapsulates the logic for identifying and removing the specific files and directories that constitute the sfdx-hardis cache.
 
 ### Agent Mode
@@ -39,7 +40,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 |:-------------|:-------:|:--------------------------------------------------------------|:-------:|:--------:|:-------:|
 | agent        | boolean | Run in non-interactive mode for agents and automation         |         |          |         |
 | debug<br/>-d | boolean | Activate debug mode (more logs)                               |         |          |         |
-| flags-dir    | option  | undefined                                                     |         |          |         |
+| flags-dir    | option  | Import flag values from a directory.                          |         |          |         |
 | json         | boolean | Format output as json.                                        |         |          |         |
 | skipauth     | boolean | Skip authentication check when a default username is required |         |          |         |
 | websocket    | option  | Websocket host:port for VsCode SFDX Hardis UI integration     |         |          |         |

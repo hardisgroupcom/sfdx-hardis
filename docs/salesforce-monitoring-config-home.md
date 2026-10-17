@@ -27,7 +27,7 @@ All you need to configure sfdx-hardis Org Monitoring is a **GitHub**, **GitLab**
 
 - Create and clone a git repository (initialize it with README)
 - Open it with Visual Studio Code, then open the [VS Code SFDX Hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) menu.
-  - If you need installation instructions, see the [installation documentation page](salesforce-ci-cd-use-install.md)
+  - If you need installation instructions, see the [installation documentation page](salesforce-devops-use-install.md)
 
 - Follow the instructions, which can differ depending on your git provider
 
@@ -69,10 +69,10 @@ For a better user experience, we highly recommend configuring notifications.
 
 You can wire any combination of the following targets. They are fully independent and can be enabled in parallel:
 
-- [Slack instructions](salesforce-ci-cd-setup-integration-slack.md) - post to one or several Slack channels (global, branch-scoped, errors-only)
-- [Microsoft Teams instructions](salesforce-ci-cd-setup-integration-ms-teams.md) - post to Teams channels via incoming webhooks
-- [Email instructions](salesforce-ci-cd-setup-integration-email.md) - send to any recipient list, with per-notification-type overrides
-- [API / Grafana instructions](salesforce-ci-cd-setup-integration-api.md) - stream logs and Prometheus metrics to Grafana Loki, Prometheus, or any HTTP endpoint (used to build the [Org Monitoring by sfdx-hardis Grafana dashboards](salesforce-monitoring-grafana-v2.md))
+- [Slack instructions](salesforce-devops-setup-integration-slack.md) - post to one or several Slack channels (global, branch-scoped, errors-only)
+- [Microsoft Teams instructions](salesforce-devops-setup-integration-ms-teams.md) - post to Teams channels via incoming webhooks
+- [Email instructions](salesforce-devops-setup-integration-email.md) - send to any recipient list, with per-notification-type overrides
+- [API / Grafana instructions](salesforce-devops-setup-integration-api.md) - stream logs and Prometheus metrics to Grafana Loki, Prometheus, or any HTTP endpoint (used to build the [Org Monitoring by sfdx-hardis Grafana dashboards](salesforce-monitoring-grafana-v2.md))
 
 sfdx-hardis groups these targets into three channels, and you can configure each channel independently per notification type:
 

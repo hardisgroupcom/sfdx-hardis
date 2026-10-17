@@ -14,6 +14,7 @@ import {
   initApexScripts,
   initOrgData,
   initPermissionSetAssignments,
+  openOrgInBrowser,
   promptUserEmail,
 } from '../../../common/utils/orgUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
@@ -223,12 +224,8 @@ In agent mode:
     // Trigger a status refresh on VS Code WebSocket Client
     WebSocketClient.sendRefreshStatusMessage();
 
-    // Open sandbox org for user if not in CI
-    await execSfdxJson('sf org open', this, {
-      fail: true,
-      output: false,
-      debug: this.debugMode,
-    });
+    // Open sandbox org for user (in CI and container mode, log the link instead)
+    await openOrgInBrowser(this, { debug: this.debugMode });
     uxLog(
       "action",
       this,

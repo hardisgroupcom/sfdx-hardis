@@ -18,13 +18,19 @@ The headline is **Deployment Actions leaving beta**. But there is a lot more:
 | [**VS Code extension rebuilt**](#the-vs-code-extension-got-a-full-redesign)                   | One consistent design, readable tables, and a command panel that shows a whole run on a single screen            |
 | [**Everything runs faster**](#everything-runs-faster)                                         | Save / Publish my User Story reaches its first question in 5 seconds instead of 16                               |
 | [**Deployment Actions are generally available**](#deployment-actions-are-generally-available) | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org |
+| [**Promotion branches (Beta)**](#promotion-branches-beta-ship-only-the-approved-user-stories) | Ship only the approved User Stories to production, with their deployment actions, tests and release notes        |
+| [**Backpromote (Beta)**](#backpromote-beta-catch-your-sandbox-up-with-the-team)               | Bring what your teammates merged into your developer sandbox, by hand or with a coding agent                     |
+| [**Pull Requests explorer**](#find-any-pull-request-without-leaving-vs-code)                  | Find any Pull Request and read its tickets, actions, validation and deployment results in VS Code                |
+| [**Metadata dependencies**](#know-what-uses-a-component-before-you-change-it)                 | See what uses an Apex class, a Flow or a field before you change or delete it                                    |
 | [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)       | You know in one second which comment you are reading and how the deployment went                                 |
 | [**Smaller footprint, safer supply chain**](#lighter-and-safer)                               | Half the npm packages removed: faster installs and fewer dependencies to trust                                   |
 | [**Personal data anonymized**](#personal-data-no-longer-leaves-your-org-in-clear-text)        | Names, emails, user Ids and IP addresses are pseudonymized in every report and every notification channel        |
 | [**Usage and cost monitoring**](#watch-what-your-org-consumes-and-what-it-costs)              | Entitlements, consumption alerts and Agentforce credits, in percentages and in your own currency                 |
+| [**Ask a coding agent**](#ask-a-coding-agent-about-your-org-and-your-pipeline)                | Your monitoring repository explains itself to a coding agent, which answers about the org and the pipeline       |
 | [**Sandbox refresh covered end to end**](#sandbox-refresh-covered-end-to-end)                 | Connected Apps, Scheduled Apex and restores that survive a failure                                               |
 | [**Flow deletion in destructive changes**](#deleting-a-flow-is-now-part-of-the-deployment)    | Deleting a Flow no longer means a manual step in every org                                                       |
 | [**Pipelines run in the Docker image**](#pipelines-run-in-the-sfdx-hardis-docker-image)       | Faster jobs that a bad dependency release can no longer break                                                    |
+| [**Free training with badges**](#learn-it-hands-on-free-training-with-badges)                 | A free course builds a complete pipeline on free orgs, click by click, and awards a badge per level              |
 | [**Professional support by Cloudity**](#free-and-supported-if-you-want-it)                    | Still free and open-source, with setup, support subscriptions and Release Manager as a Service if you need them  |
 
 ---
@@ -207,15 +213,16 @@ A deployment action is anything that must happen **around** a metadata deploymen
 
 ![Deployment actions of a Pull Request](assets/images/screenshot-pr-deployment-actions-list.jpg)
 
-| Action type                  | What it does                                                              |
-|------------------------------|---------------------------------------------------------------------------|
-| **Command**                  | Runs a Salesforce CLI or sfdx-hardis command                              |
-| **Data**                     | Loads an SFDMU data workspace (reference data, settings records)          |
-| **Apex**                     | Runs an anonymous Apex script                                             |
-| **Schedule Batch**           | Schedules an Apex batch with its CRON expression                          |
-| **Publish Community**        | Publishes an Experience Cloud site                                        |
-| **Remove package.xml items** | Excludes metadata from the deployment package                             |
-| **Manual**                   | Describes a step a human must do in Setup, and tracks whether it was done |
+| Action type                  | What it does                                                                      |
+|------------------------------|-----------------------------------------------------------------------------------|
+| **Command**                  | Runs a Salesforce CLI or sfdx-hardis command                                      |
+| **Data**                     | Loads an SFDMU data workspace (reference data, settings records)                  |
+| **Apex**                     | Runs an anonymous Apex script                                                     |
+| **Schedule Batch**           | Schedules an Apex batch with its CRON expression                                  |
+| **Publish Community**        | Publishes an Experience Cloud site                                                |
+| **Remove package.xml items** | Excludes metadata from the deployment package                                     |
+| **Manual**                   | Describes a step a human must do in Setup, and tracks whether it was done         |
+| **Custom function**          | Runs a node, python or bash script of your project, with typed inputs and outputs |
 
 **What you get in v8:**
 
@@ -229,11 +236,75 @@ A deployment action is anything that must happen **around** a metadata deploymen
 - A failed action now **says why it failed**, in the job log and in the Pull Request comment. An action declared with `allowFailure` shows as a **warning**, not as a failure, and no longer turns the comment banner red, since the deployment went through.
 - A Pull Request **between two major branches** (a promotion) lists the actions declared on the feature Pull Requests it carries, with their author, instead of asking you to declare new ones.
 - The **validation job of a feature branch only carries its own Pull Request**. It used to collect every Pull Request ever merged upstream, 341 of them on one project, and list their manual actions in your check comment.
+- **Bring your own action types** with [custom functions](salesforce-devops-work-on-user-story-custom-functions.md): package a node, python or bash script of your repository behind declared inputs, outputs and secrets, and it shows up in the action editor next to `command`, `apex` and `data`. Call an internal API, post to a tool your team uses, or anything the built-in types do not cover.
 - Not for you? `disableDeploymentActions` (or `SFDX_HARDIS_DISABLE_DEPLOYMENT_ACTIONS`) turns the whole feature off.
 
 ![Deployment actions status by org branch](assets/images/pr-comment-deployment-actions-matrix.png)
 
-> The [Deployment Actions guide](salesforce-ci-cd-work-on-task-deployment-actions.md) was rewritten for v8, with one illustrated section per action type.
+> The [Deployment Actions guide](salesforce-devops-work-on-user-story-deployment-actions.md) was rewritten for v8, with one illustrated section per action type.
+
+---
+
+## Promotion branches (Beta): ship only the approved User Stories
+
+With sfdx-hardis you promote **branches**, not features: everything merged into `uat` goes to `preprod`, then to production, together. That stays the recommended way. But when business sign-off happens per User Story and the release date does not move, one unapproved story in `uat` blocks all the others.
+
+A [**promotion branch**](salesforce-devops-promotion-branches.md) is the way out for that case. From the DevOps Pipeline, the release manager ticks the approved stories of `uat` and clicks **Create promotion**. sfdx-hardis cuts a branch from `preprod`, cherry-picks those stories onto it, and opens an ordinary Pull Request.
+
+![The uat branch window with two User Stories ticked and the Create promotion button](assets/images/promotion-branch-modal.png)
+
+- **Nothing is lost on the way**: the deployment actions, the Apex test classes, the tickets and the release notes of the stories it carries follow them to `preprod` and production.
+- The open promotion is **drawn on the DevOps Pipeline**, on the arrow between the two branches.
+- A cherry-pick conflict can be answered once for the whole promotion, or handed to a **coding agent** with a ready-made prompt.
+- [hardis:project:promotion:list-candidates](hardis/project/promotion/list-candidates.md) lists what is waiting to be promoted, for agents and automation.
+- Works the same on **GitHub, GitLab, Azure DevOps and Bitbucket**.
+- **Off by default**: enable it and declare the allowed steps (for example only `uat` to `preprod`) in the **Danger Zone** of the Pipeline Settings.
+
+---
+
+## Backpromote (Beta): catch your sandbox up with the team
+
+While you work in your developer sandbox, your teammates merge their User Stories in `integration`. Your sandbox falls behind: the fields, classes and Flows they created are missing, and your next story may conflict with theirs.
+
+A [**backpromote**](salesforce-devops-backpromote.md) deploys into your sandbox what the team merged since your last one: the metadata, the deletions, and the **deployment actions** of their Pull Requests.
+
+![Backpromote panel](assets/images/backpromote.png)
+
+- **A panel of its own**, opened from the Backpromote card under the DevOps Pipeline: pick the sandbox and the parent branch, read the plan, decide what to do with each file that differs from your work, and follow the deployment.
+- **With a coding agent, or without**: do it all by hand in the panel, let Claude Code, Codex or GitHub Copilot solve the merges and fix the deployment errors, or paste one prompt and let the agent run [hardis:work:backpromote](hardis/work/backpromote.md) from start to end.
+- **Its history is kept on the Pull Requests**, so the next backpromote starts where the previous one ended, from any computer and for everyone sharing the sandbox.
+- Production and the orgs of major branches are never offered as targets.
+
+---
+
+## Find any Pull Request without leaving VS Code
+
+"Is this story in production yet?" used to mean opening your git provider, finding the Pull Request, then hunting for its comments. The DevOps Pipeline now has a [**Pull Requests explorer**](vscode-extension-devops-pipeline.md#find-and-open-any-pull-request): type a number, a title, a branch, an author or a ticket, and open it in place.
+
+![Window of a Pull Request, on its Validation tab](assets/images/vscode-guide/pipeline-pr-view-validation.png)
+
+- **Where it stands**, as a path: the validation, then each major branch up to production, filled once reached.
+- **Everything about it in tabs**: its description, its tickets, its deployment actions and test classes, and the validation, code quality and deployment comments posted on it, as you would read them on your git provider.
+- **A promotion lists what it carries**, and each story names the promotion that carried it: one click goes from one to the other, and **Previous** brings you back.
+- **Search goes beyond the pipeline**: the Pull Requests already loaded are listed as you type, then your git provider is searched, open and merged alike.
+- Pull Request links of the Backpromote panel and of command results open the same window.
+
+*Ships in v8.13.0.*
+
+---
+
+## Know what uses a component before you change it
+
+Before you change or delete an Apex class, a Flow, a field or a layout, you want to know what uses it. The new [**Metadata Dependencies**](vscode-extension-metadata-dependencies.md) panel asks the org and lists every component that uses the one you picked, or every component it uses.
+
+![Metadata Dependencies](assets/images/metadata-dependencies.png)
+
+- **Right-click a metadata file**, or pick **Find where it is used** in the Metadata Retriever.
+- **Walk the chain** one level at a time, open a dependent, or retrieve it into your project.
+- **Export the list** as a CSV and an Excel file, to share it or attach it to a ticket.
+- The panel runs [hardis:doc:metadata-deps](hardis/doc/metadata-deps.md), which you can also call from a terminal or a pipeline.
+
+*Ships in v8.12.0.*
 
 ---
 
@@ -336,6 +407,21 @@ A monitoring run that skips most of its commands used to look exactly like a bro
 
 ---
 
+## Ask a coding agent about your org and your pipeline
+
+The monitoring repository holds the daily history of your org. Each backup now writes an `AGENTS.md` file in it, which tells a coding agent (Claude Code, Codex, Gemini, Copilot...) how the monitoring works, what each folder holds and which checks run. Open the repository with your agent and [**ask**](salesforce-monitoring-metadata-backup.md#ask-questions-with-a-coding-agent):
+
+- "Which Flows changed last week?"
+- "Is the field `Invoice__c.Status__c` the same in production and in the UAT sandbox?"
+- "Was this change deployed by the pipeline, or made directly in production?"
+- "On which days did Apex errors spike this quarter?"
+
+Declare your CI/CD repository as `deploymentRepository` and the agent reads the pipeline too: its branches, its deployment actions, its Pull Requests and its job logs. Add `grafanaUrl` and it queries months of monitoring logs and metrics. It only reads: no push, no comment, no pipeline run.
+
+*Ships in v8.11.0.*
+
+---
+
 ## Sandbox refresh, covered end to end
 
 Refreshing a sandbox destroys more than metadata. v8 closes the gaps that used to end in a manual checklist.
@@ -373,7 +459,20 @@ The default **GitHub Actions**, **Azure Pipelines** and **Bitbucket Pipelines** 
 - Images are published to **GitHub Container Registry** (`ghcr.io/hardisgroupcom/sfdx-hardis`), the recommended default, and mirrored on Docker Hub.
 - **Existing pipelines keep working**: the templates apply when you initialize a new project or monitoring repository.
 
-Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-ci-cd-setup-checklist.md) and [how to publish job artifacts](salesforce-ci-cd-setup-publish-artifacts.md) on any platform.
+Two new pages help you check your setup: the [CI/CD Setup Checklist](salesforce-devops-setup-checklist.md) and [how to publish job artifacts](salesforce-devops-setup-publish-artifacts.md) on any platform.
+
+---
+
+## Learn it hands-on: free training with badges
+
+[Salesforce DevOps with sfdx-hardis](salesforce-devops-training.md) is a free course that builds a complete CI/CD pipeline on free orgs, one click at a time in VS Code, with screenshots of the real panels.
+
+- **Three levels**: Contributor basics, Contributor advanced and Release Manager, from your first User Story to owning the pipeline.
+- **A badge per level**, on a page you can share on LinkedIn. To award it, a job re-runs every check of the level against your public repository.
+- **Nothing to pay**: a free GitHub account and free Developer Edition orgs are all it takes.
+- Available in **English and French**.
+
+[![Salesforce DevOps with sfdx-hardis, the free course](https://sfdx-hardis-training.cloudity.com/_assets/social/course.png)](salesforce-devops-training.md)
 
 ---
 
@@ -389,6 +488,7 @@ A few behaviors changed on purpose. Check these if they apply to your project.
 | **`--check` no longer validates Flow destructive members against the org.**                                                                                                                                                                                   | A Flow missing from the target org is reported as `FLOW_DELETE_NOOP` and passes, because the same destructive changes are replayed along the promotion chain. |
 | **Reports, notifications and CI logs produced in CI are anonymized** at the `standard` level by default.                                                                                                                                                      | If a downstream tool of yours reads real usernames or emails out of them, set `SFDX_HARDIS_ANONYMIZE=off`, or lower the level of that single channel.         |
 | **Connected Apps can no longer be restored after a sandbox refresh.**                                                                                                                                                                                         | Convert them to External Client Apps before your next refresh.                                                                                                |
+| **`hardis:work:refresh` is replaced by [backpromote](salesforce-devops-backpromote.md)**, and **New User Story no longer deploys metadata to an existing sandbox**.                                                                                           | Use the Backpromote panel, or `sf hardis:work:backpromote`, to bring a sandbox up to date with its parent branch.                                             |
 | **The plugin requires Node.js 22 or more**, like the Salesforce CLI.                                                                                                                                                                                          | Upgrade Node.js on machines and CI runners that still use Node.js 20.                                                                                         |
 
 ---

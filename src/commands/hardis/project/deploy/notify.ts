@@ -24,13 +24,13 @@ export default class DeployNotify extends SfCommand<any> {
 
 ### Integrations
 
-According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-flow-visual-git-diff/)
+According to the [integrations you configured](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-setup-integrations-home/), notifications can contain deployment information and [Flow Visual Git Diff](${CONSTANTS.DOC_URL_ROOT}/salesforce-deployment-agent-flow-visual-git-diff/)
 
   - GitHub, Gitlab, Azure DevOps, Bitbucket comments on Pull Requests (including Flows Visual Git Diff)
 
   - Slack, Microsoft Teams, Email deployment summary after a successful deployment
 
-  - JIRA tags and comments on tickets that just has been deployed
+  - JIRA, Azure Boards, ServiceNow or Aha! comments and tags on the tickets that have just been deployed
 
 ![](${CONSTANTS.DOC_URL_ROOT}/assets/images/screenshot-jira-gitlab.jpg)
 

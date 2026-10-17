@@ -35,11 +35,15 @@ const expectations = EXPECTATIONS_PATH ? JSON.parse(fs.readFileSync(EXPECTATIONS
 const DEPLOYMENT_ACTIONS_MARKER = "<!-- sfdx-hardis deployment-actions-state -->";
 const NAV_START = "<!-- sfdx-hardis nav-start -->";
 const NAV_END = "<!-- sfdx-hardis nav-end -->";
-const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (\S+) -->/;
+// The key holds the CI job name, spaces included on GitHub Actions
+const MESSAGE_KEY_REGEX = /<!-- sfdx-hardis message-key (.+?) -->/;
 
-// Same rule as getPrCommentKind in src/common/gitProvider/prCommentNav.ts
+const BACKPROMOTES_MARKER = "<!-- sfdx-hardis backpromotes -->";
+
+// Same rule as getPrCommentKind in src/common/gitProvider/utils/prCommentNav.ts
 function commentKind(body) {
   if (body.includes(DEPLOYMENT_ACTIONS_MARKER)) return "actions";
+  if (body.includes(BACKPROMOTES_MARKER)) return "backpromotes";
   const messageKey = (body.match(MESSAGE_KEY_REGEX) || [])[1] || "";
   if (messageKey.startsWith("deployment-check-")) return "validation";
   if (messageKey.startsWith("deployment-")) return "deployment";
@@ -67,14 +71,14 @@ const allPrNumbers = new Set(dump.prs.map((pr) => pr.number));
 
 for (const pr of dump.prs) {
   const sfdxComments = (pr.comments || []).filter((c) => c.body.includes("<!-- sfdx-hardis "));
-  const byKind = { validation: [], deployment: [], actions: [], other: [] };
+  const byKind = { validation: [], deployment: [], actions: [], backpromotes: [], other: [] };
   for (const comment of sfdxComments) {
     const kind = commentKind(comment.body);
     byKind[kind || "other"].push(comment);
   }
 
   // 1. At most one comment of each kind: a job must update its comment in place, never add a second
-  for (const kind of ["validation", "deployment", "actions"]) {
+  for (const kind of ["validation", "deployment", "actions", "backpromotes"]) {
     check(
       byKind[kind].length <= 1,
       pr.number,
@@ -89,6 +93,14 @@ for (const pr of dump.prs) {
     check(byKind.validation.length === 1, pr.number, "no validation comment");
     check(byKind.deployment.length === 1, pr.number, "no deployment comment");
   }
+  // 2bis. A backpromote only concerns feature and fix Pull Requests: a promotion vehicle never
+  //       carries a Backpromotes comment, nor a link to one
+  if (expected.kind === "promotion") {
+    check(byKind.backpromotes.length === 0, pr.number, "a promotion vehicle carries a Backpromotes comment");
+    for (const comment of sfdxComments) {
+      check(!comment.body.includes("Backpromotes]("), pr.number, `comment ${comment.id} of a promotion vehicle links to a Backpromotes comment`);
+    }
+  }
 
   // 3. Nothing leaked into any sfdx-hardis comment
   for (const comment of sfdxComments) {
@@ -98,7 +110,7 @@ for (const pr of dump.prs) {
   }
 
   // 4. The navigation block is well formed and points at comments of THIS Pull Request
-  const present = ["validation", "deployment", "actions"].filter((k) => byKind[k].length === 1);
+  const present = ["validation", "deployment", "actions", "backpromotes"].filter((k) => byKind[k].length === 1);
   for (const comment of sfdxComments) {
     const kind = commentKind(comment.body);
     if (!kind) continue;
@@ -122,7 +134,7 @@ for (const pr of dump.prs) {
     );
     for (const other of present) {
       if (other === kind) continue;
-      const label = { validation: "Validation", deployment: "Deployment", actions: "Actions" }[other];
+      const label = { validation: "Validation", deployment: "Deployment", actions: "Actions", backpromotes: "Backpromotes" }[other];
       check(nav.includes(label), pr.number, `${kind} comment navigation does not link to ${other}`);
     }
     // Every link of the navigation must address this Pull Request, never another one
@@ -145,7 +157,9 @@ for (const pr of dump.prs) {
     const columns = statusHeader
       .split("|")
       .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+      .filter((s) => s.length > 0)
+      // The developer orgs column is labelled in the header, keyed dev-sandboxes in the rows
+      .map((s) => (s === "Developer orgs" ? "dev-sandboxes" : s));
     for (const branch of expected.orgBranches || []) {
       check(columns.includes(branch), pr.number, `Deployment Actions has no column for org branch ${branch}`);
     }
@@ -187,6 +201,10 @@ for (const pr of dump.prs) {
       cells.forEach((cell, index) => {
         const branch = columns[index];
         if (!branch) return;
+        // The dev-sandboxes column holds the tries of `action:run --dev-org`: information for their
+        // author, never a pending step of the pipeline, so it offers no checkbox on purpose (the
+        // manual actions of a developer org are confirmed per sandbox in the Backpromotes comment)
+        if (branch === 'dev-sandboxes') return;
         const waiting = cell.includes('\u{1F44B}');
         const skipped = cell.includes('\u26AA');
         const hasCheckbox = body.includes(`<!-- sfdx-hardis-manual-action id:${actionId} org:${branch} pr:${pr.number} when:`);
@@ -213,7 +231,7 @@ for (const pr of dump.prs) {
     const seen = new Map();
     for (const id of actionRows) seen.set(id, (seen.get(id) || 0) + 1);
     for (const [id, count] of seen) {
-      // one row in "Status by org branch" plus one in the "Action Details" fold
+      // one row in "Status by org" plus one in the "Action Details" fold
       check(count <= 2, pr.number, `Deployment Actions repeats action ${id} ${count} times`);
     }
   } else if ((expected.manualActions || []).length > 0) {

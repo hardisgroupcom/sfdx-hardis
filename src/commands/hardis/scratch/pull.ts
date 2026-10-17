@@ -26,7 +26,7 @@ Key features and considerations:
 
 - **Underlying Command:** Internally, this command executes \`sf project retrieve start\` to fetch the metadata.
 - **Error Handling:** If the pull operation encounters errors, it offers to automatically add the problematic items to your \`.forceignore\` file and then attempts to pull again, helping you resolve conflicts and ignore unwanted metadata.
-- **Missing Updates:** If you don't see certain updated items in the pull results, you might need to manually retrieve them using the Salesforce Extension's **Org Browser** or the **Salesforce CLI** directly. Refer to the [Retrieve Metadatas documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#retrieve-metadatas) for more details.
+- **Missing Updates:** If you don't see certain updated items in the pull results, you might need to manually retrieve them using the Salesforce Extension's **Org Browser** or the **Salesforce CLI** directly. Refer to the [Retrieve Metadatas documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-publish-user-story/#retrieve-metadatas) for more details.
 - **Automatic Retrieval:** You can configure the \`autoRetrieveWhenPull\` property in your \`.sfdx-hardis.yml\` file to always retrieve specific metadata types (e.g., \`CustomApplication\`) that might not always be detected as updates by \`project:retrieve:start\`.
 
 Example \`.sfdx-hardis.yml\` configuration for \`autoRetrieveWhenPull\`:
@@ -101,10 +101,10 @@ In agent mode, all interactive prompts are skipped and default values are used.
     uxLog("action", this, c.cyan(t('pullingMetadataChangesFromOrg', { targetUsername: c.bold(targetUsername) })));
     await forceSourcePull(targetUsername, debugMode);
 
-    uxLog("warning", this, c.yellow(t('updatedItemsNotVisibleCheckDocumentation') + `: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/#retrieve-metadatas`));
+    uxLog("warning", this, c.yellow(t('updatedItemsNotVisibleCheckDocumentation') + `: https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/#retrieve-metadatas`));
 
     WebSocketClient.sendReportFileMessage("workbench.view.scm", t('commitYourRetrievedFiles'), "actionCommand");
-    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-publish-task/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
+    WebSocketClient.sendReportFileMessage(`${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-publish-user-story/#commit-your-updates`, t('retrieveAndCommitDocumentation'), 'docUrl');
     // Return an object to be displayed with --json
     return { outputString: 'Pulled scratch org / source-tracked sandbox updates' };
   }

@@ -1884,6 +1884,20 @@ export function listMetadataTypes() {
         xmlName: 'ExternalStoragePrvdConfig',
       },
       {
+        directoryName: 'extlClntAppAttestPolicies',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'ecaAttestPlcy',
+        xmlName: 'ExtlClntAppAttestConfigurablePolicies',
+      },
+      {
+        directoryName: 'extlClntAppAttestSettings',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'ecaAttest',
+        xmlName: 'ExtlClntAppAttestSettings',
+      },
+      {
         directoryName: 'extlClntAppCanvasSettings',
         inFolder: false,
         metaFile: false,
@@ -3302,6 +3316,13 @@ export function listMetadataTypes() {
         metaFile: false,
         suffix: 'refdash',
         xmlName: 'ReferencedDashboard',
+      },
+      {
+        directoryName: 'referralIntakeConfigurations',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'referralIntakeConfiguration',
+        xmlName: 'ReferralIntakeConfiguration',
       },
       {
         directoryName: 'registeredExternalServices',

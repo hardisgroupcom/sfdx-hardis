@@ -20,6 +20,12 @@ pipelines:
               name: Run MegaLinter
               image: ghcr.io/oxsecurity/megalinter-salesforce:latest
               script:
+                # The scratch org pool dashboard is a Pull Request that is never merged: nothing to lint
+                - |
+                  if [ "${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}" = "sfdx-hardis/scratch-orgs-pool" ]; then
+                    echo "[sfdx-hardis] Nothing to check on the scratch org pool dashboard Pull Request"
+                    exit 0
+                  fi
                 - export DEFAULT_WORKSPACE=$BITBUCKET_CLONE_DIR && bash
                   /entrypoint.sh
               artifacts:
@@ -27,9 +33,17 @@ pipelines:
           # Simulate deployment
           - step:
               name: Simulate SFDX deployment
+              # Maximum duration of the step, in minutes. Bitbucket Cloud does not allow more than 120,
+              # so SFDX_DEPLOY_WAIT_MINUTES must stay below this value.
+              max-time: 120
               clone:
                 depth: full
               script:
+                - |
+                  if [ "${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}" = "sfdx-hardis/scratch-orgs-pool" ]; then
+                    echo "[sfdx-hardis] Nothing to check on the scratch org pool dashboard Pull Request"
+                    exit 0
+                  fi
                 - export BRANCH_NAME=$(echo "$BITBUCKET_PR_DESTINATION_BRANCH" |
                   sed 's/refs\/heads\///')
                 - export CI_COMMIT_REF_NAME=$BRANCH_NAME
@@ -59,12 +73,73 @@ pipelines:
                 - sf hardis:project:deploy:smart --check
               artifacts:
                 - hardis-report/**
+          # Scratch org tests: create a scratch org (or take one from the scratch org pool), push
+          # the sources and run the Apex tests on it.
+          # Does nothing unless the repository variable USE_SCRATCH_ORGS is "true".
+          # Variables to create: the Dev Hub authentication variables, and SFDX_HARDIS_POOL_ENCRYPTION_KEY
+          # (secured) when the pool is stored in the git provider.
+          # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/
+          - step:
+              name: Scratch org tests
+              clone:
+                depth: full
+              script:
+                - |
+                  if [ "$USE_SCRATCH_ORGS" != "true" ]; then
+                    echo "[sfdx-hardis] USE_SCRATCH_ORGS is not true: scratch org tests are skipped"
+                    exit 0
+                  fi
+                - |
+                  if [ "${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}" = "sfdx-hardis/scratch-orgs-pool" ]; then
+                    echo "[sfdx-hardis] Nothing to check on the scratch org pool dashboard Pull Request"
+                    exit 0
+                  fi
+                - export
+                  CURRENT_BRANCH_NAME=${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}
+                - export FORCE_COLOR=1
+                - |
+                  if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "$CURRENT_BRANCH_NAME" ]; then
+                    echo "[sfdx-hardis] Skipping sf hardis commands on auto-fix branch $CURRENT_BRANCH_NAME"
+                    exit 0
+                  fi
+                - sf hardis:auth:login --devhub
+                - sf hardis:scratch:create
+                - sleep 120 # A scratch org that was just created can be not ready yet
+                - sf hardis:org:test:apex
+                # Not reached when a command above failed, so the scratch org can be investigated until it expires.
+                # Set the repository variable CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
+                - |
+                  if [ "$CI_DELETE_SCRATCH_ORG" != "false" ]; then
+                    sf org delete scratch --no-prompt || true
+                  fi
+              artifacts:
+                - hardis-report/**
+
+  # Scratch org pool refresh: deletes the scratch orgs about to expire and creates new ones.
+  # Configure the pool first with sf hardis:scratch:pool:create, then schedule this pipeline every
+  # night on your main branch (Pipelines -> Schedules -> New schedule -> scratch-pool-refresh)
+  custom:
+    scratch-pool-refresh:
+      - step:
+          name: Refresh scratch org pool
+          clone:
+            depth: full
+          script:
+            - export SCRATCH_ORG_POOL=true
+            - export FORCE_COLOR=1
+            - sf hardis:auth:login --devhub
+            - sf hardis:scratch:pool:refresh
+          artifacts:
+            - hardis-report/**
 
   branches:
     # Add all your major branches here
     "{integration,uat,preprod,production,main}":
       - step:
           name: Deploy to major org
+          # Maximum duration of the step, in minutes. Bitbucket Cloud does not allow more than 120,
+          # so SFDX_DEPLOY_WAIT_MINUTES must stay below this value.
+          max-time: 120
           clone:
             depth: full
           script:

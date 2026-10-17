@@ -51,29 +51,18 @@ reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no pat
 # Fixing it here would mean overriding a dependency two majors past its declared range (5.x -> 7.x),
 # whose parser options and record/info semantics changed, with no test coverage of that path. The
 # real fix belongs upstream: remove once @jsforce/jsforce-node moves to csv-parse 7.x. Added 2026-09-09.
+# OSV reports this finding under CVE-2026-85063 with GHSA-8cw4-87c7-c6xx as an alias, and an ignore
+# only counts as used when it matches the reported id: listing the GHSA id as well fails as an unused ignore.
 [[IgnoredVulns]]
-id = "GHSA-8cw4-87c7-c6xx"
+id = "CVE-2026-85063"
 reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."
 
 [[IgnoredVulns]]
-id = "CVE-2026-85063"
-reason = "Same finding as GHSA-8cw4-87c7-c6xx, ignored under the same id alias."
-
-# https://github.com/advisories/GHSA-vwc7-r8mq-g2x9 (CVE-2026-76845)
-# adm-zip: Utils.sanitize enforces containment by comparing only the string form of an entry name
-# against the resolved extraction root, and Utils.writeFileTo opens the destination without
-# O_NOFOLLOW and without a pre-write lstat, so a symlink already present at the destination is
-# followed and a file is written outside the target directory.
-# No patched release exists: 0.6.0 is the latest release on npm, so there is nothing to upgrade to.
-# Single call site in sfdx-hardis: src/common/metadata-utils/index.ts builds `new AdmZip(...)` and
-# calls extractAllTo(metadataFolder, true) on the unpackaged.zip retrieved from the Salesforce
-# Metadata API into a temporary metadata folder. The archive is produced by the org's own Metadata
-# API, not supplied by an untrusted uploader, which is the premise of adm-zip path-traversal
-# findings. Remove as soon as adm-zip ships a fixed release. Added 2026-09-09.
-[[IgnoredVulns]]
-id = "GHSA-vwc7-r8mq-g2x9"
-reason = "adm-zip 0.6.0 is the latest release on npm and no patched version exists. Our single call site (src/common/metadata-utils/index.ts) extracts the unpackaged.zip returned by the Salesforce Metadata API into a temporary folder, so the archive is produced by the org itself and never supplied by an untrusted uploader."
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-03: no fixed braces release exists (3.0.3, the latest, is affected). Stack exhaustion when braces expands an attacker-supplied deeply nested pattern. braces is only brought by dev tooling (oclif > find-yarn-workspace-root > micromatch, @salesforce/dev-scripts > mocha > chokidar), never by the published plugin, and only expands our own patterns."
 
 [[IgnoredVulns]]
-id = "CVE-2026-76845"
-reason = "Same finding as GHSA-vwc7-r8mq-g2x9, ignored under the same id alias."
+id = "GHSA-hp3w-g68c-fv3c"
+ignoreUntil = 2026-12-31
+reason = "Added 2026-10-06: no fixed sprintf-js release exists. 1.0.3 only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, so no untrusted format string ever reaches sprintf-js."

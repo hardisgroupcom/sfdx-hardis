@@ -24,7 +24,7 @@ import {
 import { getApiVersion, getConfig, getEnvVar, getReportDirectory, setConfig } from '../../config/index.js';
 import { uxLogTableWithReport } from './filesUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
-import { deployCodeCoverageToMarkdown } from '../gitProvider/utilsMarkdown.js';
+import { deployCodeCoverageToMarkdown } from '../gitProvider/utils/utilsMarkdown.js';
 import { MetadataUtils } from '../metadata-utils/index.js';
 import { importData } from './dataUtils.js';
 import { analyzeDeployErrorLogs } from './deployTips.js';
@@ -32,13 +32,14 @@ import { callSfdxGitDelta, getPullRequestData, setPullRequestData } from './gitU
 import { createBlankSfdxProject, GLOB_IGNORE_PATTERNS, isSfdxProject } from './projectUtils.js';
 import { prompts } from './prompts.js';
 import { arrangeFilesBefore, restoreArrangedFiles } from './workaroundUtils.js';
-import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
+import { countPackageXmlItems, isPackageXmlEmpty, listDuplicateFolderMetadataApiNames, listPackageXmlItemsMatchingNoOverwrite, parsePackageXmlFile, parseXmlFile, removePackageXmlFilesContent, writeXmlFile } from './xmlUtils.js';
 import { ResetMode } from 'simple-git';
 import { isProductionOrg } from './orgUtils.js';
 import { PullRequestData } from '../gitProvider/index.js';
 import { WebSocketClient } from '../websocketClient.js';
-import { executePrePostCommands } from './prePostCommandUtils.js';
+import { executePrePostCommands, resetActionOutputsRegistry } from './prePostCommandUtils.js';
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
+import { finalizeDeploymentComponentsReport, recordDeployResult, recordNoOverwriteFiltering, resetDeploymentComponentsReport } from './deploymentComponentsReport.js';
 import { t } from './i18n.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
 import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
@@ -259,7 +260,34 @@ function setNoMetadataDeploymentSuccess(check: boolean, reason?: string): void {
     deployErrorsMarkdownBody: (reason || defaultReason) + " " + (check ? "The deployment check succeeded." : "The deployment succeeded."),
     deployStatus: "valid",
     status: "valid",
+    metadataOutcome: "nothing-to-deploy",
   };
+  setPullRequestData(prData);
+}
+
+/**
+ * Tell the Pull Request comment what Salesforce accepted, as soon as it accepted it: the post-deployment
+ * actions and the code coverage check that follow can still fail the job and post the comment, which
+ * must then say that the metadata is in the org.
+ */
+function recordDeployedMetadataInPrData(deploymentMetrics: DeploymentMetrics, check: boolean, usedQuickDeploy = false): void {
+  // How the metadata reached the org, for the Metadata row of the deployment comment
+  const prData: Partial<PullRequestData> = { deploymentMode: deploymentMetrics.delta ? 'delta' : 'full' };
+  if (isComponentChangeDetailComplete(deploymentMetrics)) {
+    prData.deploymentMetrics = {
+      deployed: deploymentMetrics.componentsDeployed,
+      created: deploymentMetrics.componentsCreated,
+      updated: deploymentMetrics.componentsUpdated,
+      deleted: deploymentMetrics.componentsDeleted,
+      unchanged: deploymentMetrics.componentsUnchanged,
+    };
+  }
+  if (!check) {
+    prData.metadataOutcome = 'deployed';
+  }
+  if (usedQuickDeploy) {
+    prData.usedQuickDeploy = true;
+  }
   setPullRequestData(prData);
 }
 
@@ -309,9 +337,12 @@ export function buildDeployedComponentsMarkdown(deploymentMetrics: DeploymentMet
   }
   const changed =
     deploymentMetrics.componentsCreated + deploymentMetrics.componentsUpdated + deploymentMetrics.componentsDeleted;
-  const verb = check === true ? 'would change' : 'changed';
+  const prefix =
+    check === true
+      ? `**Simulated deployment:** ${deploymentMetrics.componentsDeployed} components validated against the org, ${changed} would change`
+      : `**Deployed components:** ${deploymentMetrics.componentsDeployed} sent to the org, ${changed} changed`;
   return (
-    `**Deployed components:** ${deploymentMetrics.componentsDeployed} sent to the org, ${changed} ${verb}` +
+    prefix +
     ` (${deploymentMetrics.componentsCreated} created, ${deploymentMetrics.componentsUpdated} updated,` +
     ` ${deploymentMetrics.componentsDeleted} deleted, ${deploymentMetrics.componentsUnchanged} unchanged)`
   );
@@ -375,8 +406,11 @@ export async function smartDeploy(
   }
 ): Promise<any> {
   elapseStart('all deployments');
-  // Start from a clean slate so the post-deployment notification only reports this run's actions
+  // Start from a clean slate so the post-deployment notification only reports this run's actions,
+  // and so custom function outputs never leak from a previous deployment of the same process
   resetExecutedDeploymentActions();
+  resetActionOutputsRegistry();
+  resetDeploymentComponentsReport();
   const deployStartTime = Date.now();
   let quickDeploy = false;
   const deploymentMetrics: DeploymentMetrics = buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime });
@@ -404,11 +438,9 @@ export async function smartDeploy(
   if (packageXmlIsEmpty && hasEmptyDestructiveChanges && !hasDestructiveChanges) {
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, c.cyan(t('bothPackageXmlAndDestructiveChangesFiles')));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    if (options.deferSuccessPullRequestComment !== true) {
-      await GitProvider.managePostPullRequestComment(check);
-    }
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
@@ -416,11 +448,9 @@ export async function smartDeploy(
   if (packageXmlIsEmpty && !hasDestructiveChanges) {
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("action", this, t('noDeploymentOrDestructiveChangesToPerform'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    if (options.deferSuccessPullRequestComment !== true) {
-      await GitProvider.managePostPullRequestComment(check);
-    }
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages: [], quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
 
@@ -445,11 +475,9 @@ export async function smartDeploy(
   } else if (deployXmlCount === 0) {
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     uxLog("other", this, t('noDeploymentToPerform'));
-    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
     setNoMetadataDeploymentSuccess(check);
-    if (options.deferSuccessPullRequestComment !== true) {
-      await GitProvider.managePostPullRequestComment(check);
-    }
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
@@ -575,6 +603,8 @@ export async function smartDeploy(
             if (quickDeployResultJson) {
               deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
               accumulateComponentChanges(deploymentMetrics, quickDeployResultJson);
+              recordDeployedMetadataInPrData(deploymentMetrics, check, true);
+              recordDeployResult(quickDeployResultJson, { quickDeploy: true });
               deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
               deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
               deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
@@ -697,6 +727,8 @@ export async function smartDeploy(
         if (deployResultJson) {
           deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
           accumulateComponentChanges(deploymentMetrics, deployResultJson);
+          recordDeployedMetadataInPrData(deploymentMetrics, check);
+          recordDeployResult(deployResultJson);
           deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
           deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
           deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);
@@ -745,7 +777,7 @@ export async function smartDeploy(
         try {
           await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
         } catch (errCoverage) {
-          await GitProvider.managePostPullRequestComment(check);
+          await postDeploymentPullRequestComment(check);
           killBoringExitHandlers();
           throw errCoverage;
         }
@@ -753,6 +785,7 @@ export async function smartDeploy(
         // Handle notif message when there is no apex
         const prDataCodeCoverage: Partial<PullRequestData> = {
           ...buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: quickDeploy }),
+          testsNotRunReason: testlevel === 'NoTestRun' ? 'smart-tests' : branchConfig?.skipCodeCoverage === true ? 'coverage-skipped' : 'no-apex',
           codeCoverageMarkdownBody:
             testlevel === 'NoTestRun'
               ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
@@ -808,11 +841,10 @@ export async function smartDeploy(
     }
     messages.push(message);
   }
-  // Run deployment post commands
-  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   // Nothing was sent to the org because every planned deployment was skipped: report the same
   // success as the paths that detect an empty package.xml before building the deployment plan,
-  // otherwise the Pull Request comment carries no status at all.
+  // otherwise the Pull Request comment carries no status at all. Said before the post-deployment
+  // actions: when one of them fails, the comment it posts must still say nothing was deployed.
   if (shouldReportNoMetadataDeploymentSuccess(processedDeploymentCount, hasDestructiveChanges, getPullRequestData())) {
     uxLog("action", this, c.cyan(t('allDeploymentsSkippedEmptyPackageXml')));
     setNoMetadataDeploymentSuccess(
@@ -820,15 +852,10 @@ export async function smartDeploy(
       "No metadata to deploy: every item of the deployment package was filtered out before the deployment (package-no-overwrite.xml, packageDeployOnChange.xml or a remove-packagexml-items action), so nothing was sent to the target org."
     );
   }
-  // Tell the Pull Request comment how much of the package really moved in the org
-  const componentsMarkdown = buildDeployedComponentsMarkdown(deploymentMetrics, check);
-  if (componentsMarkdown) {
-    setPullRequestData({ deploymentComponentsMarkdownBody: componentsMarkdown });
-  }
+  // Run deployment post commands
+  await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   // Post pull request comment if available
-  if (options.deferSuccessPullRequestComment !== true) {
-    await GitProvider.managePostPullRequestComment(check);
-  }
+  await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
   elapseEnd('all deployments');
   deploymentMetrics.quickDeploy = quickDeploy;
   deploymentMetrics.durationSeconds = Math.round((Date.now() - deployStartTime) / 1000);
@@ -844,12 +871,13 @@ async function handleDeployError(
   deployment: any
 ) {
   const output: string = (e as any).stdout + (e as any).stderr;
+  // The deploy output can weigh several MB: it is parsed once
+  const jsonResult = findJsonInString(output);
   // Handle coverage error if ignored
   if (
     check === true &&
     branchConfig?.testCoverageNotBlocking === true
   ) {
-    const jsonResult = findJsonInString(output);
     if (isDeployCheckCoverageOnlyFailure(jsonResult, commandThis)) {
       uxLog(
         "warning",
@@ -860,7 +888,7 @@ async function handleDeployError(
     }
   }
   // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
-  const deployResultReportFile = await writeDeployResultReportFile(findJsonInString(output), deployment.label);
+  const deployResultReportFile = await writeDeployResultReportFile(jsonResult, deployment.label);
   // Handle Effective error
   const { errLog, errorsAndTips: deployErrorsAndTips, failedTests: deployFailedTests } = await analyzeDeployErrorLogs(output, true, { check: check, label: deployment.label, deployResultReportFile: deployResultReportFile });
   uxLog("error", commandThis, c.red(c.bold(t('sadlyThereHasBeenDeploymentError'))));
@@ -881,7 +909,9 @@ async function handleDeployError(
   }
   elapseEnd(`deploy ${deployment.label}`);
   await executePrePostCommands('commandsPostDeploy', { success: false, checkOnly: check });
-  await GitProvider.managePostPullRequestComment(check);
+  // A real deployment that failed was rolled back: only its failures say something about the org
+  recordDeployResult(jsonResult?.result, { failuresOnly: check !== true });
+  await postDeploymentPullRequestComment(check);
   killBoringExitHandlers();
   throw new SfError('Deployment failure. Check messages above');
 }
@@ -1058,7 +1088,19 @@ async function buildDeploymentPackageXmls(
     uxLog("other", this, t('emptyPackageXmlNothingToDeploy'));
     return [];
   }
-  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, options);
+  const config = await getConfig('user');
+  const skipSplitPackages = (process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES || 'true') !== 'false';
+  // The split packages of the deployment plan are filtered by package-no-overwrite.xml too
+  const packageXmlFilesToProtect = [packageXmlFile];
+  if (config.deploymentPlan && !check && skipSplitPackages === false) {
+    for (const deploymentItem of config.deploymentPlan.packages || []) {
+      if (deploymentItem.packageXmlFile) {
+        packageXmlFilesToProtect.push(path.resolve(deploymentItem.packageXmlFile));
+      }
+    }
+  }
+  const noOverwriteSourceFile = await resolvePackageNoOverwriteFile();
+  const deployOncePackageXml = await buildDeployOncePackageXml(debugMode, { ...options, packageXmlFiles: packageXmlFilesToProtect, packageNoOverwrite: noOverwriteSourceFile });
   const deployOnChangePackageXml = await buildDeployOnChangePackageXml(debugMode, options);
   // Copy main package.xml so it can be dynamically updated before deployment
   const tmpDir = await createTempDir();
@@ -1069,13 +1111,11 @@ async function buildDeploymentPackageXmls(
     packageXmlFile: mainPackageXmlCopyFileName,
     order: 0,
   };
-  const config = await getConfig('user');
   // Build list of package.xml according to plan
   if (config.deploymentPlan && !check) {
     const deploymentItems = [mainPackageXmlItem];
 
     // Work on deploymentPlan packages before deploying them
-    const skipSplitPackages = (process.env.SFDX_HARDIS_DEPLOY_IGNORE_SPLIT_PACKAGES || 'true') !== 'false';
     if (skipSplitPackages === true) {
       uxLog(
         "warning",
@@ -1101,7 +1141,8 @@ async function buildDeploymentPackageXmls(
             deploymentItem.packageXmlFile,
             deployOncePackageXml,
             deployOnChangePackageXml,
-            debugMode
+            debugMode,
+            noOverwriteSourceFile
           );
         }
         deploymentItems.push(deploymentItem);
@@ -1111,7 +1152,8 @@ async function buildDeploymentPackageXmls(
       mainPackageXmlCopyFileName,
       deployOncePackageXml,
       deployOnChangePackageXml,
-      debugMode
+      debugMode,
+      noOverwriteSourceFile
     );
 
     // Sort in requested order
@@ -1127,7 +1169,8 @@ async function buildDeploymentPackageXmls(
       mainPackageXmlCopyFileName,
       deployOncePackageXml,
       deployOnChangePackageXml,
-      debugMode
+      debugMode,
+      noOverwriteSourceFile
     );
     return [
       {
@@ -1161,7 +1204,9 @@ async function warnOnDuplicateFolderMetadataApiNames(packageXmlFile: string, com
 }
 
 // Apply packageXml filtering using deployOncePackageXml and deployOnChangePackageXml
-async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deployOnChangePackageXml, debugMode) {
+async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deployOnChangePackageXml, debugMode, noOverwriteSourceFile: string | null = null) {
+  // Items package-no-overwrite.xml protects, listed before the filtering so the report can tell which ones it removed
+  const noOverwriteMatchingItems = noOverwriteSourceFile ? await listPackageXmlItemsMatchingNoOverwrite(packageXml, noOverwriteSourceFile) : [];
   // Main packageXml: Remove package-no-overwrite.xml items that are already present in target org
   if (deployOncePackageXml) {
     await removePackageXmlContent(packageXml, deployOncePackageXml, false, {
@@ -1169,6 +1214,12 @@ async function applyPackageXmlFiltering(packageXml, deployOncePackageXml, deploy
       keepEmptyTypes: true,
       context: 'no-overwrite-remove',
     });
+  }
+  // Recorded before the packageDeployOnChange.xml filtering, so what it removes is never reported as protected
+  if (noOverwriteSourceFile && noOverwriteMatchingItems.length > 0) {
+    const remainingContent = await parsePackageXmlFile(packageXml);
+    const notOverwrittenItems = noOverwriteMatchingItems.filter((item) => !(remainingContent[item.type] || []).includes(item.member));
+    await recordNoOverwriteFiltering(noOverwriteSourceFile, notOverwrittenItems);
   }
   //Main packageXml: Remove packageDeployOnChange.xml items that are not different in target org
   if (deployOnChangePackageXml) {
@@ -1201,23 +1252,24 @@ async function buildDeployOncePackageXml(debugMode = false, options: any = {}) {
     );
     return null;
   }
-  // Get default package-no-overwrite
-  let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
-  if (!fs.existsSync(packageNoOverwrite)) {
-    packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
-  }
-  const config = await getConfig("branch");
-  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
-    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
-    if (!fs.existsSync(packageNoOverwrite)) {
-      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
-    }
-    uxLog("log", this, c.grey(t('usingCustomPackageNoOverwriteFileDefined', { packageNoOverwrite })));
-  }
-  if (fs.existsSync(packageNoOverwrite)) {
+  const packageNoOverwrite: string | null = options.packageNoOverwrite || null;
+  if (packageNoOverwrite) {
     uxLog("action", this, c.cyan(t('handlingPackageNoOverwriteXmlMetadataThat')));
     // If package-no-overwrite.xml is not empty, build target org package.xml and remove its content from packageOnce.xml
     if (!(await isPackageXmlEmpty(packageNoOverwrite))) {
+      // Listing the target org takes minutes on a large org: skip it when no item of the
+      // deployment packages matches package-no-overwrite.xml, as nothing could be removed from them anyway
+      if (options.packageXmlFiles?.length > 0) {
+        let nbMatchingItems = 0;
+        for (const packageXmlFile of options.packageXmlFiles) {
+          nbMatchingItems += (await listPackageXmlItemsMatchingNoOverwrite(packageXmlFile, packageNoOverwrite)).length;
+        }
+        if (nbMatchingItems === 0) {
+          uxLog("log", this, c.grey('[NoOverwrite] ' + t('noOverwriteNoProtectedItemInPackage')));
+          return null;
+        }
+        uxLog("log", this, c.grey('[NoOverwrite] ' + t('noOverwriteItemsMatchingInPackage', { count: nbMatchingItems })));
+      }
       const tmpDir = await createTempDir();
       // Build target org package.xml
       uxLog("action", this, c.cyan('[NoOverwrite] ' + t('listingTargetOrgContentForNoOverwrite')));
@@ -1919,6 +1971,10 @@ async function updatePullRequestResultCoverage(
   } else {
     prDataCodeCoverage.codeCoverageMarkdownBody = deployCodeCoverageToMarkdown(orgCoverage, orgCoverageTarget, options);
   }
+  prDataCodeCoverage.coverage = { value: orgCoverage, target: orgCoverageTarget, status: coverageStatus };
+  if (options.testClasses) {
+    prDataCodeCoverage.testClasses = options.testClasses.split(' ').filter((testClass) => testClass !== '');
+  }
   setPullRequestData(prDataCodeCoverage);
 }
 
@@ -1979,4 +2035,55 @@ export function minutesBetween(start: Date | null, end: Date | null): number {
 declare global {
   // eslint-disable-next-line no-var
   var pendingDeploymentPackageXmlFiles: string[] | undefined;
+}
+
+/**
+ * Post the Pull Request comment of the deployment flow, with the deployment components report written
+ * first. Every post of the comment by smartDeploy goes through it, so the report sections cannot be
+ * missing or stale. With defer, the report is still written, and the caller posts the comment later.
+ */
+async function postDeploymentPullRequestComment(check: boolean, options: { defer?: boolean } = {}): Promise<void> {
+  await publishDeploymentComponentsReport(check);
+  if (options.defer !== true) {
+    await GitProvider.managePostPullRequestComment(check);
+  }
+}
+
+/**
+ * Write the deployment components report and give its Markdown to the Pull Request comment.
+ * Called right before each post of the comment by the deployment flow.
+ */
+async function publishDeploymentComponentsReport(check: boolean): Promise<void> {
+  try {
+    const report = await finalizeDeploymentComponentsReport(check);
+    setPullRequestData({
+      deploymentComponentTypesMarkdownBody: report.componentTypesMarkdown,
+      noOverwriteMarkdownBody: report.noOverwriteMarkdown,
+    });
+  } catch (e: any) {
+    // The report must never fail a deployment
+    uxLog("warning", this, c.yellow(t('deploymentComponentsReportError', { message: e.message })));
+  }
+}
+
+// The package-no-overwrite.xml file of the deployment (or its legacy name packageDeployOnce.xml), possibly
+// overridden for a branch with packageNoOverwritePath / PACKAGE_NO_OVERWRITE_PATH. Null when there is none
+// or when SKIP_PACKAGE_DEPLOY_ONCE=true.
+async function resolvePackageNoOverwriteFile(): Promise<string | null> {
+  if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === 'true') {
+    return null;
+  }
+  let packageNoOverwrite = path.resolve('./manifest/package-no-overwrite.xml');
+  if (!fs.existsSync(packageNoOverwrite)) {
+    packageNoOverwrite = path.resolve('./manifest/packageDeployOnce.xml');
+  }
+  const config = await getConfig("branch");
+  if (process.env?.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath) {
+    packageNoOverwrite = process.env.PACKAGE_NO_OVERWRITE_PATH || config?.packageNoOverwritePath;
+    if (!fs.existsSync(packageNoOverwrite)) {
+      throw new SfError(`packageNoOverwritePath property or PACKAGE_NO_OVERWRITE_PATH leads not existing file ${packageNoOverwrite}`);
+    }
+    uxLog("log", this, c.grey(t('usingCustomPackageNoOverwriteFileDefined', { packageNoOverwrite })));
+  }
+  return fs.existsSync(packageNoOverwrite) ? packageNoOverwrite : null;
 }

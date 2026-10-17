@@ -1,6 +1,6 @@
 ---
 title: Consumption utilization alerts (Salesforce monitoring)
-description: Collect the consumption and license utilization alerts Salesforce raises on your org
+description: With sfdx-hardis, collect the consumption and license utilization alerts Salesforce raises on your org
 ---
 <!-- markdownlint-disable MD013 -->
 

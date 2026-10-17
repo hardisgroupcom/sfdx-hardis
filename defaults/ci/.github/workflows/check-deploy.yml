@@ -22,6 +22,9 @@ concurrency:
 jobs:
   check_deployment:
     runs-on: ubuntu-latest
+    # Job timeout, in minutes: define the repository variable CI_JOB_TIMEOUT_MINUTES to change it.
+    # Keep it above SFDX_DEPLOY_WAIT_MINUTES (120 by default) to leave room for checkout, login and the delta computation.
+    timeout-minutes: ${{ fromJSON(vars.CI_JOB_TIMEOUT_MINUTES || '150') }}
     # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
     # You can use latest, beta or a version number (ex: v7.23.0), and pin a version if you need reproducible runs.
     # Images are also mirrored on Docker Hub, if your infrastructure can only pull from docker.io: hardisgroupcom/sfdx-hardis-ubuntu:latest
@@ -73,6 +76,8 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
           JIRA_PAT: ${{ secrets.JIRA_PAT }}
+          AHA_HOST: ${{ secrets.AHA_HOST }}
+          AHA_API_KEY: ${{ secrets.AHA_API_KEY }}
           JIRA_TICKET_REGEX: ${{ secrets.JIRA_TICKET_REGEX }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # Uncomment to provide API keys for coding agent auto-fix of deployment errors
@@ -95,13 +100,73 @@ jobs:
           else
             echo "[sfdx-hardis] Skipping coding-agent GitHub auth setup: CI_SFDX_HARDIS_GITHUB_PUSH_TOKEN is not set"
           fi
+          # The job runs in a container, where git runs as another user than the owner of the checkout:
+          # without this, git refuses the repository ("detected dubious ownership") and sfdx-hardis cannot
+          # read which Pull Requests are deployed, so their deployment actions are not run
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           sf hardis:auth:login
           sf hardis:project:deploy:smart --check
 
       # Upload sfdx-hardis reports, including the complete deployment result JSON
       - name: Archive sfdx-hardis reports
-        if: success() || failure()
+        if: always() # Also when the job was stopped by the timeout
         uses: actions/upload-artifact@v4
         with:
           name: sfdx-hardis reports
+          path: hardis-report
+
+  # Scratch org tests: create a scratch org (or take one from the scratch org pool), push the sources
+  # and run the Apex tests on it.
+  # Runs only when the repository variable USE_SCRATCH_ORGS is "true"
+  # (Settings -> Secrets and variables -> Actions -> Variables)
+  # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/pool/create/
+  scratch_org_tests:
+    if: ${{ vars.USE_SCRATCH_ORGS == 'true' && !startsWith(github.head_ref, 'auto-fix/') }}
+    runs-on: ubuntu-latest
+    # Job timeout, in minutes: keep it above SFDX_TEST_WAIT_MINUTES (120 by default)
+    timeout-minutes: ${{ fromJSON(vars.CI_JOB_TIMEOUT_MINUTES || '150') }}
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    name: Scratch org tests
+    permissions:
+      issues: write # Allows sfdx-hardis to take a scratch org from the "Scratch Orgs Pool Dashboard" issue
+      pull-requests: read
+      contents: read
+    env:
+      # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+      # and replace DEVHUB by the alias of your Dev Hub
+      SFDX_AUTH_URL_DEV_HUB: ${{ secrets.SFDX_AUTH_URL_DEV_HUB }}
+      SFDX_CLIENT_ID_DEVHUB: ${{ secrets.SFDX_CLIENT_ID_DEVHUB }}
+      SFDX_CLIENT_KEY_DEVHUB: ${{ secrets.SFDX_CLIENT_KEY_DEVHUB }}
+      # Key that decrypts the scratch orgs of a pool stored in the git provider
+      SFDX_HARDIS_POOL_ENCRYPTION_KEY: ${{ secrets.SFDX_HARDIS_POOL_ENCRYPTION_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Set the repository variable CI_DELETE_SCRATCH_ORG to "false" only to investigate issues
+      CI_DELETE_SCRATCH_ORG: ${{ vars.CI_DELETE_SCRATCH_ORG || 'true' }}
+      SFDX_TEST_WAIT_MINUTES: ${{ vars.SFDX_TEST_WAIT_MINUTES || '120' }}
+      FORCE_COLOR: "1"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Create scratch org (or take it from the pool)
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:create
+      - name: Run Apex tests
+        run: |
+          sleep 120 # A scratch org that was just created can be not ready yet
+          sf hardis:org:test:apex
+      # Skipped when a previous step failed, so the scratch org can be investigated until it expires
+      - name: Delete scratch org
+        if: ${{ success() && env.CI_DELETE_SCRATCH_ORG != 'false' }}
+        run: sf org delete scratch --no-prompt || true
+      - name: Archive sfdx-hardis reports
+        if: always() # Also when the job was stopped by the timeout
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfdx-hardis scratch org reports
           path: hardis-report

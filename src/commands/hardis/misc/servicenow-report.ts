@@ -19,6 +19,25 @@ import { t } from '../../../common/utils/i18n.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
+/**
+ * Split the ticket field of a user story into the ticket numbers it holds.
+ *
+ * Teams separate several tickets in one field with a comma, a semicolon or simply a space, and
+ * a field often mixes them ("DMND0000001, DMND0000002 DMND0000003"). Every separator is treated
+ * the same way, so a value is never sent to ServiceNow as one invalid token.
+ *
+ * Returns an empty array for an empty, null or non-string value.
+ */
+export function splitTicketNumbers(ticketFieldValue: any): string[] {
+  if (typeof ticketFieldValue !== 'string') {
+    return [];
+  }
+  return ticketFieldValue
+    .split(/[,;\s]+/)
+    .map((ticketNumber) => ticketNumber.trim())
+    .filter((ticketNumber) => ticketNumber !== '');
+}
+
 /* jscpd:ignore-end */
 export default class ServiceNowReport extends SfCommand<any> {
   public static title = 'ServiceNow Report';
@@ -31,6 +50,8 @@ Define the following environment variables (in CICD variables or locally in a **
 - SERVICENOW_PASSWORD: The password for ServiceNow API authentication.
 
 You also need to define JSON configuration file(e) in folder **config/user-stories/**
+
+When a user story carries several tickets in the field named by \`ticketField\`, separate them with a comma, a semicolon or a space. The command splits on all three, and on a mix of them, so each ticket becomes its own report row and is looked up in ServiceNow on its own.
 
 Example:
 
@@ -248,18 +269,18 @@ In agent mode:
     const userStoriesRes = await soqlQuery(userStoriesQuery, conn);
     this.userStories = userStoriesRes.records;
     const initialUserStoriesCount = this.userStories.length;
-    // Duplicate user stories entries if there are multiple ticket numbers separated by ; or , in the ticket field
+    // Duplicate user stories entries when the ticket field holds several ticket numbers
     this.userStories = this.userStories.flatMap((us) => {
-      const ticketFieldValue = us?.[this.userStoriesConfig.ticketField];
-      if (ticketFieldValue && (ticketFieldValue.includes(';') || ticketFieldValue.includes(','))) {
-        const ticketNumbers = ticketFieldValue.split(/[,;]\s*/).filter((tn: string) => tn);
+      const ticketNumbers = splitTicketNumbers(us?.[this.userStoriesConfig.ticketField]);
+      if (ticketNumbers.length > 1) {
         return ticketNumbers.map((tn: string) => ({ ...us, [this.userStoriesConfig.ticketField]: tn }));
       }
       return us;
     });
     const finalUserStoriesCount = this.userStories.length;
-    // Get list of tickets from user stories
-    const ticketNumbers = userStoriesRes.records.map((record: any) => record?.[this.userStoriesConfig.ticketField] as string);
+    // Read the tickets from the entries AFTER the split: sending a raw "A B" or "A;B" to
+    // ServiceNow queries one ticket that does not exist, and the report says NOT FOUND for both.
+    const ticketNumbers = this.userStories.map((record: any) => record?.[this.userStoriesConfig.ticketField] as string);
     // Remove null/undefined and duplicates
     const ticketNumbersUnique = [...new Set(ticketNumbers.filter((tn: string | undefined) => tn))] as string[];
     let message = `${initialUserStoriesCount} user stories fetched from Salesforce, with ${ticketNumbersUnique.length} unique ticket numbers.`;

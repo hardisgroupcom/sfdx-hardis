@@ -65,3 +65,13 @@ on:
   schedule:
     - cron: "0 0 * * *" # Cron format -> https://crontab.cronhub.io/
 ```
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
+
+- [Lab 3.8 - Monitor your production org](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-8-monitor-your-production-org/)
+
+<!-- training-links:end -->

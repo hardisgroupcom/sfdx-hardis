@@ -3,14 +3,14 @@
 
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
-_Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl) _and [_Dreamforce 24!_](https://reg.salesforce.com/flow/plus/df24/sessioncatalog/page/catalog/session/1718915808069001Q7HH)_
-
 **New:** [**What's new in sfdx-hardis v8**](https://sfdx-hardis.cloudity.com/sfdx-hardis-v8/) - Deployment Actions are generally available, Pull Request comments are redesigned, and the VS Code extension is rebuilt.
+
+**New:** [**Free Salesforce DevOps course**](https://sfdx-hardis.cloudity.com/salesforce-devops-training/): build a complete pipeline on free orgs, one click at a time, and earn a badge per level.
 
 [![Version](https://img.shields.io/npm/v/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/week](https://img.shields.io/npm/dw/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
 [![Downloads/total](https://img.shields.io/npm/dt/sfdx-hardis.svg)](https://npmjs.org/package/sfdx-hardis)
-[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-216.6k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
+[![Docker Pulls](https://img.shields.io/badge/Docker%20Pulls-265.0k-blue)](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis/tags)
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/sfdx-hardis)](https://GitHub.com/hardisgroupcom/sfdx-hardis/stargazers/)
 [![GitHub contributors](https://img.shields.io/github/contributors/hardisgroupcom/sfdx-hardis.svg)](https://gitHub.com/hardisgroupcom/sfdx-hardis/graphs/contributors/)
 [![MegaLinter](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml/badge.svg?branch=main)](https://github.com/hardisgroupcom/sfdx-hardis/actions/workflows/mega-linter.yml?query=branch%3Amain)
@@ -18,13 +18,13 @@ _Presented at_ [_Dreamforce 23_](https://reg.salesforce.com/flow/plus/df23/sessi
 [![License](https://img.shields.io/npm/l/sfdx-hardis.svg)](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/package.json)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
-Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce).
+Sfdx-hardis is a **CLI and visual productivity tools suite for Salesforce**, by [**Cloudity**](https://cloudity.com/) & friends, natively compliant with most Git platforms, messaging tools, ticketing systems and AI providers (including Agentforce), with a [**free hands-on training and shareable badges**](https://sfdx-hardis.cloudity.com/salesforce-devops-training/).
 
 ![Native Integrations](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/integrations.png)
 
 It is free and open-source, and lets you:
 
-- [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- [Deliver your projects with **State of the art Salesforce DevOps**](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 
 ![DevOps Pipeline UI](https://sfdx-hardis.cloudity.com/assets/images/sfdx-hardis-pipeline-view.gif)
 
@@ -40,17 +40,25 @@ It is free and open-source, and lets you:
 
 ![Productivity commands](https://sfdx-hardis.cloudity.com/assets/images/ProductivityCommands.png)
 
+<!-- training-teaser:start -->
+
+- [**Learn Salesforce DevOps hands-on** with a free course and shareable badges](https://sfdx-hardis.cloudity.com/salesforce-devops-training/)
+
+![Salesforce DevOps with sfdx-hardis, the free course](https://sfdx-hardis-training.cloudity.com/_assets/social/course.png)
+
+<!-- training-teaser:end -->
+
 If you need help to get the most out of sfdx-hardis, Cloudity's international teams of business and technical experts can help: [contact us](https://cloudity.com/contact-us/).
 
 [![Cloudity](https://sfdx-hardis.cloudity.com/assets/images/cloudity-banner.png)](https://cloudity.com/contact-us/)
 
 [_See online documentation for a better navigation_](https://sfdx-hardis.cloudity.com)
 
-___
+---
 
 **sfdx-hardis** commands and configuration are best used from the [**SFDX Hardis Visual Studio Code extension**](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
 
-___
+---
 
 _Featured on SalesforceBen_
 
@@ -64,25 +72,101 @@ _See Dreamforce presentation_
 
 <!-- installation.md start -->
 
-### With IDE
+### Which installation do I need?
 
-You can install [Visual Studio Code](https://code.visualstudio.com/), then the VS Code extension [SFDX Hardis](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)
+There are three ways to install sfdx-hardis, and you only need one of them.
 
-Once installed, click on ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) in the VS Code left bar, click on **Install dependencies** and follow the installation instructions.
+| Your situation                                                                                                            | What to install                                                                                  | Terminal needed |
+|---------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|-----------------|
+| You want to use sfdx-hardis on your computer, with menus and buttons instead of commands. This is how most people use it. | [Visual Studio Code and the SFDX Hardis extension](#install-with-visual-studio-code-recommended) | No              |
+| You are at ease with a terminal and only want the commands.                                                               | [The sfdx-hardis plugin for Salesforce CLI](#install-as-a-salesforce-cli-plugin)                 | Yes             |
+| You are setting up a CI/CD pipeline (GitHub, GitLab, Azure, Bitbucket).                                                   | [A ready to use Docker image](#run-in-cicd-with-a-docker-image)                                  | Yes             |
+
+Not sure? Take the first one: it also installs the command line version for you.
+
+---
+
+### Install with Visual Studio Code (recommended)
+
+Visual Studio Code, usually shortened to **VS Code**, is a free application published by Microsoft. sfdx-hardis runs inside it and adds its own menus and buttons, so you can use every feature without typing a single command.
+
+You do not need to know VS Code, or to write code, to follow the five steps below. Plan about 15 minutes, mostly waiting for downloads.
+
+#### Step 1: Install Visual Studio Code
+
+Go to [code.visualstudio.com](https://code.visualstudio.com/), download the version for your system (Windows, macOS or Linux), then run the downloaded file and keep the proposed options.
+
+If VS Code is already on your computer, jump to step 2.
+
+#### Step 2: Install the SFDX Hardis extension
+
+- Start VS Code.
+- In the vertical bar of icons on the left, called the Activity Bar, click the **Extensions** icon <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/vscode-extensions-icon.png" alt="VS Code Extensions icon" height="22"/> (four small squares, the top right one tilted). Keyboard shortcut: `Ctrl+Shift+X`, or `Cmd+Shift+X` on macOS.
+- Type `sfdx hardis` in the search box.
+- Click **SFDX Hardis** in the results, then click **Install**.
+- If VS Code asks whether you trust the publisher, accept: the extension is published by **NicolasVuillamy**, the author of sfdx-hardis.
+
+You can also do it from your browser: open the [SFDX Hardis page on the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis), click **Install**, and let the browser hand over to VS Code.
+
+#### Step 3: Open the sfdx-hardis panel
+
+Once the extension is installed, a new icon ![SFDX Hardis button](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/hardis-button.jpg) appears in the Activity Bar, on the left. Click it (arrow 1 below): the sfdx-hardis menus appear, and the **Welcome** page opens.
+
+At the top of the Welcome page, click the **dependencies** button (arrow 2 below).
 
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-highlight.png)
 
+#### Step 4: Install the dependencies
+
+To talk to Salesforce and to Git, sfdx-hardis needs a few other free tools. The setup page lists them all, with a green check on those you already have.
+
 ![](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/install-dependencies-screenshot.png)
 
-When everything is green, you are all set.
+- Click **Install** or **Upgrade** on every line that is not green, or click **Run pending installs** to handle them one after the other.
+- **Node.js** and **Git** are the two you may have to install by yourself: download them from [nodejs.org](https://nodejs.org/en/) and [git-scm.com](https://git-scm.com/downloads), then click **Re-check** on the line.
+- Close VS Code and open it again at the end, so it sees the newly installed tools.
 
-_You can also watch the video tutorial below_
+When every line is green, the installation is over.
+
+#### Step 5: Connect to your Salesforce org
+
+Go back to the Welcome page and click **Connect** to log in to your first org. The same page then gives you access to all the features.
+
+Where to go next:
+
+- [What you can do from the VS Code extension](https://sfdx-hardis.cloudity.com/vscode-extension/)
+- [Set up a Salesforce CI/CD project](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
+- [Monitor a Salesforce org](https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/)
+
+#### Video tutorial
+
+If you prefer to watch someone do it first, follow the video below.
 
 [![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
-___
+#### If something does not work
 
-### As SFDX Plugin
+- A line stays red after you installed the tool: close VS Code, open it again, then click **Re-check** on that line.
+- A command does nothing: open the setup page again, a dependency may still be missing or outdated.
+- Still stuck? Open a [GitHub issue](https://github.com/hardisgroupcom/sfdx-hardis/issues), the maintainers and the community answer there.
+
+#### Other VS Code compatible IDEs
+
+The extension is published on both the Visual Studio Marketplace and the [Open VSX Registry](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis), so the steps above also work in the IDEs built on VS Code, on desktop or in the browser.
+
+|                                                                                                                                                                                                                                                                                                                                                                                                      | IDE                                                                                                                         | Install from                                                                                                        |
+|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscode.png" alt="Visual Studio Code" height="48"/>                                                                                                                                                                                                                                                           | [Visual Studio Code](https://code.visualstudio.com/)                                                                        | [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis) |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-agentforce-vibes.png" alt="Agentforce Vibes IDE" height="48"/>                                                                                                                                                                                                                                               | [Agentforce Vibes IDE](https://www.salesforce.com/agentforce/developers/vibe-coding/ide/) and other browser IDEs            | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+| <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-cursor.png" alt="Cursor" height="48"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-windsurf.png" alt="Windsurf" height="48"/> <img src="https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/ide-vscodium.png" alt="VSCodium" height="48"/> | [Cursor](https://cursor.com/), [Windsurf](https://windsurf.com/), [VSCodium](https://vscodium.com/) and other VS Code forks | [Open VSX](https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis)                                       |
+
+The only requirement is the same as for VS Code: the IDE must be able to run the Salesforce CLI (Agentforce Vibes IDE ships it preinstalled).
+
+---
+
+### Install as a Salesforce CLI plugin
+
+For those who prefer to type commands in a terminal. If you followed the VS Code steps above, this is already done.
 
 #### Pre-requisites
 
@@ -105,11 +189,11 @@ sf plugins install sfdmu
 
 If you are using CI/CD scripts, use `echo y | sf plugins install ...` to bypass prompt.
 
-___
+---
 
-### Docker
+### Run in CI/CD with a Docker image
 
-You can use sfdx-hardis docker images to run in CI.
+For pipelines: the images already contain Node.js, the Salesforce CLI, sfdx-hardis and its plugins, so a job starts without installing anything.
 
 > All our Docker images are checked for security issues with [MegaLinter by OX Security](https://megalinter.io/latest/)
 
@@ -182,6 +266,18 @@ _See [Dockerfile-ubuntu](https://github.com/hardisgroupcom/sfdx-hardis/blob/main
 ```sh-session
 sf hardis:<COMMAND> <OPTIONS>
 ```
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+[Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) is a free hands-on course that builds a complete CI/CD pipeline on free orgs, one click at a time.
+
+- [Level 1 - Contributor basics](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/): 7 labs, from your first User Story to a merged Pull Request
+- [Level 2 - Contributor advanced](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/): 9 labs, deployment errors, deployment actions, code quality, conflicts
+- [Level 3 - Release Manager](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/): 11 labs, the pipeline up to production, releases, hotfixes, monitoring
+
+<!-- training-links:end -->
 
 ## Events
 
@@ -341,11 +437,6 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 [![Reactivate all the sandbox users with .invalid emails in 3 clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
 [![Invalid scope:Mine, not allowed ? Deploy your ListViews anyway !](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-scope-mine.jpg)](https://nicolas.vuillamy.fr/invalid-scope-mine-not-allowed-deploy-your-listviews-anyway-443aceca8ac7)
 
-- French
-  - [Versions d'API Salesforce décommissionnées: Que faire ?](https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/)
-  - [Exporter en masse les fichiers d’une org Salesforce](https://leblog.hardis-group.com/portfolio/exporter-en-masse-les-fichiers-dune-org-salesforce/)
-  - [Suspendre l’accès aux utilisateurs lors d’une mise en production Salesforce](https://leblog.hardis-group.com/portfolio/suspendre-lacces-aux-utilisateurs-lors-dune-mise-en-production-salesforce/)
-
 ### Recorded Conferences
 
 #### Dreamforce Sessions
@@ -402,27 +493,27 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 #### CI/CD Workflows
 
-- Complete CI/CD workflow for Salesforce projects - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/)
+- Complete CI/CD workflow for Salesforce projects - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-home/)
 
 [![Dreamforce demo video: Easy Salesforce CI/CD with sfdx-hardis and open-source only !](https://img.youtube.com/vi/zEYqTd2txU4/0.jpg)](https://www.youtube.com/watch?v=zEYqTd2txU4){target=blank}
 
-- How to start a new User Story in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/)
+- How to start a new User Story in sandbox - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-create-new-user-story/)
 
 [![Create New User Story](https://img.youtube.com/vi/WOqssZwjPhw/0.jpg)](https://www.youtube.com/watch?v=WOqssZwjPhw){target=blank}
 
-- How to commit updates and create merge requests - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/)
+- How to commit updates and create merge requests - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-publish-user-story/)
 
 [![Publish User Story Tutorial](https://img.youtube.com/vi/Ik6whtflmfY/0.jpg)](https://www.youtube.com/watch?v=Ik6whtflmfY){target=blank}
 
-- How to resolve git merge conflicts in Visual Studio Code - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-validate-merge-request/)
+- How to resolve git merge conflicts in Visual Studio Code - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-validate-merge-request/)
 
 [![Merge Conflicts Resolution](https://img.youtube.com/vi/lz5OuKzvadQ/0.jpg)](https://www.youtube.com/watch?v=lz5OuKzvadQ){target=blank}
 
-- How to install packages in your org - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/)
+- How to install packages in your org - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/)
 
 [![Install Packages Tutorial](https://img.youtube.com/vi/5-MgqoSLUls/0.jpg)](https://www.youtube.com/watch?v=5-MgqoSLUls){target=blank}
 
-- Configure CI server authentication to Salesforce orgs - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/)
+- Configure CI server authentication to Salesforce orgs - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-auth/)
 
 [![Configure CI Authentication](https://img.youtube.com/vi/OzREUu5utVI/0.jpg)](https://www.youtube.com/watch?v=OzREUu5utVI){target=blank}
 
@@ -434,11 +525,11 @@ Here are some articles about [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 #### Integrations
 
-- Configure Slack integration for deployment notifications - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-slack/)
+- Configure Slack integration for deployment notifications - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-slack/)
 
 [![Slack Integration](https://img.youtube.com/vi/se292ABGUmI/0.jpg)](https://www.youtube.com/watch?v=se292ABGUmI){target=blank}
 
-- How to create a Personal Access Token in GitLab - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-clone-repository/)
+- How to create a Personal Access Token in GitLab - [📖 Documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-clone-repository/)
 
 [![GitLab Personal Access Token](https://img.youtube.com/vi/9y5VmmYHuIg/0.jpg)](https://www.youtube.com/watch?v=9y5VmmYHuIg){target=blank}
 
@@ -471,6 +562,7 @@ Everyone is welcome to contribute to sfdx-hardis (even juniors: we will help you
   - Run `yarn` to install dependencies
   - Run `sf plugins link` to link the local sfdx-hardis to the Salesforce CLI
   - Run `tsc --watch` to transpile TypeScript into JavaScript every time you update a TS file
+  - Optional, recommended on Windows: export `NODE_OPTIONS="--import file:///<path-to-your-clone>/scripts/disable-auto-transpile.mjs"` in your shell profile or VS Code terminal environment. A linked plugin is normally re-transpiled from TypeScript at every command (about 3 extra seconds per run): since `tsc --watch` already keeps `lib/` fresh, this preload makes commands start from the compiled sources instead, as fast as an installed plugin. Remove the variable to run live TypeScript again.
 - Debug commands using `NODE_OPTIONS=--inspect-brk sf hardis:somecommand --someparameter somevalue` (you can also debug commands with the VS Code SFDX Hardis extension debug setting)
 
 Note: To test a feature from CI, you can add the following code in your workflow before running sfdx-hardis commands:
@@ -553,13 +645,13 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Quentin Tiercelin](https://github.com/TiercelinQ), for the commands to [detect unsecure permissions](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-permissions/) and [generate a data dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/)
 - [Pranay Jaiswal](https://github.com/pranayjswl007), for smarter [audit trail monitoring](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/) with allowed actions per user
 - [Maciej Ptak](https://github.com/0ptaq0), for fixing Flow git diff on projects with custom package directories
-- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-activate-org/)
+- [Eric Mulder](https://github.com/ericmulder-welisa), for revising the [sandbox setup and best practices documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-activate-org/)
 - [Maxime Guenego](https://github.com/maximeg44), for the metadata lint commands: [unused metadata](https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/), [inactive metadata](https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/) and [missing descriptions](https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/)
 - [Meric Asaner](https://github.com/masaner), for the [unused users detection](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/) and bulkified Flow deletions
 - [Brahim Laissaoui](https://github.com/laissaouibrahim), for major [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) improvements (batched processing, Attachments support)
 - [Dimitri Monge](https://github.com/dimitrimonge), for the [user freeze/unfreeze](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/) commands and the Jenkins and GitHub Actions pipeline templates
 - [zzyviolette](https://github.com/zzyviolette), for restoring Connected Apps after a [sandbox refresh](https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/)
-- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integration-ms-teams/)
+- [Yan Imensar](https://github.com/yan-imensar), for the [MS Teams notifications integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-ms-teams/)
 - [Maksym Petrov](https://github.com/maksym-petrov-ct), for Apex Trigger support in [project documentation generation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and CI runner cost savings
 - [Manoel Calixto](https://github.com/manoelcalixto), for robustness fixes on sources cleaning and Flow documentation
 - [Piotr](https://github.com/piotrekkr), for the [files export](https://sfdx-hardis.cloudity.com/hardis/org/files/export/) filename format options
@@ -574,6 +666,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Mehdi](https://github.com/Mehdi-Cloudity), for the [bypass generation command](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) and its application to Flows, Validation Rules and Triggers
 - [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
 - [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
+- [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.cloudity.com/)
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
@@ -589,273 +682,295 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 <!-- contributors.md end -->
 
+
+
 ## Commands
 
 ### hardis:auth
 
 | Command                                       | Title |
 |:----------------------------------------------|:------|
-| [**hardis:auth:login**](hardis/auth/login.md) |       |
+| [**hardis:auth:login**](hardis/auth/login.md) | Login |
 
 ### hardis:cache
 
-| Command                                         | Title |
-|:------------------------------------------------|:------|
-| [**hardis:cache:clear**](hardis/cache/clear.md) |       |
+| Command                                         | Title                   |
+|:------------------------------------------------|:------------------------|
+| [**hardis:cache:clear**](hardis/cache/clear.md) | Clear sfdx-hardis cache |
 
 ### hardis:config
 
-| Command                                                                       | Title |
-|:------------------------------------------------------------------------------|:------|
-| [**hardis:config:get**](hardis/config/get.md)                                 |       |
-| [**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md) |       |
+| Command                                                                       | Title                                  |
+|:------------------------------------------------------------------------------|:---------------------------------------|
+| [**hardis:config:get**](hardis/config/get.md)                                 | Deploy metadata sources to org         |
+| [**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md) | Get monitoring & notification defaults |
 
 ### hardis:datacloud
 
-| Command                                                                                                       | Title |
-|:--------------------------------------------------------------------------------------------------------------|:------|
-| [**hardis:datacloud:extract:agentforce-conversations**](hardis/datacloud/extract/agentforce-conversations.md) |       |
-| [**hardis:datacloud:extract:agentforce-feedback**](hardis/datacloud/extract/agentforce-feedback.md)           |       |
-| [**hardis:datacloud:sql-query**](hardis/datacloud/sql-query.md)                                               |       |
+| Command                                                                                                       | Title                                                 |
+|:--------------------------------------------------------------------------------------------------------------|:------------------------------------------------------|
+| [**hardis:datacloud:extract:agentforce-conversations**](hardis/datacloud/extract/agentforce-conversations.md) | Extract Agentforce Conversations Data from Data Cloud |
+| [**hardis:datacloud:extract:agentforce-feedback**](hardis/datacloud/extract/agentforce-feedback.md)           | Extract Agentforce Feedback Data from Data Cloud      |
+| [**hardis:datacloud:sql-query**](hardis/datacloud/sql-query.md)                                               | Execute a SQL query on Data Cloud                     |
 
 ### hardis:deploy
 
-| Command                                                 | Title |
-|:--------------------------------------------------------|:------|
-| [**hardis:deploy:quick**](hardis/deploy/quick.md)       |       |
-| [**hardis:deploy:start**](hardis/deploy/start.md)       |       |
-| [**hardis:deploy:validate**](hardis/deploy/validate.md) |       |
+| Command                                                 | Title                                                                                                 |
+|:--------------------------------------------------------|:------------------------------------------------------------------------------------------------------|
+| [**hardis:deploy:quick**](hardis/deploy/quick.md)       | sfdx-hardis wrapper for **sf project deploy quick** that displays tips to solve deployment errors.    |
+| [**hardis:deploy:start**](hardis/deploy/start.md)       | sfdx-hardis wrapper for **sf project deploy start** that displays tips to solve deployment errors.    |
+| [**hardis:deploy:validate**](hardis/deploy/validate.md) | sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors. |
 
 ### hardis:doc
 
-| Command                                                                     | Title |
-|:----------------------------------------------------------------------------|:------|
-| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)             |       |
-| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                     |       |
-| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) |       |
-| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       |       |
-| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 |       |
-| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   |       |
-| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)   |       |
-| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   |       |
-| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)       |       |
-| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)           |       |
-| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     |       |
-| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             |       |
-| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           |       |
-| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 |       |
+| Command                                                                     | Title                                                                                                             |
+|:----------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------|
+| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)             | **Generates an Excel (.xlsx) data dictionary for one or more Salesforce objects, read live from the target org.** |
+| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                     | DORA Metrics Report                                                                                               |
+| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) | Generate project documentation                                                                                    |
+| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       | **Retrieves and displays the usage of custom fields within a Salesforce org, based on metadata dependencies.**    |
+| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 | Flow to Markdown                                                                                                  |
+| [**hardis:doc:metadata-deps**](hardis/doc/metadata-deps.md)                 | Find metadata dependencies                                                                                        |
+| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   | MkDocs to Cloudflare                                                                                              |
+| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)   | MkDocs to Confluence                                                                                              |
+| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   | MkDocs to Salesforce                                                                                              |
+| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)       | **Analyzes how populated fields are for a specific Salesforce object.**                                           |
+| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)           | Override AI Prompt Templates                                                                                      |
+| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     | PackageXml to Markdown                                                                                            |
+| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             | Generate SF Cli Plugin Documentation                                                                              |
+| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           | SFDX Project to Markdown                                                                                          |
+| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 | Release Notes                                                                                                     |
 
 ### hardis:doctor
 
-| Command                               | Title |
-|:--------------------------------------|:------|
-| [**hardis:doctor**](hardis/doctor.md) |       |
+| Command                               | Title  |
+|:--------------------------------------|:-------|
+| [**hardis:doctor**](hardis/doctor.md) | Doctor |
 
 ### hardis:git
 
-| Command                                                                     | Title |
-|:----------------------------------------------------------------------------|:------|
-| [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md) |       |
+| Command                                                                     | Title                  |
+|:----------------------------------------------------------------------------|:-----------------------|
+| [**hardis:git:artifacts:download**](hardis/git/artifacts/download.md)       | Download job artifacts |
+| [**hardis:git:pull-requests:extract**](hardis/git/pull-requests/extract.md) | Extract pull requests  |
 
 ### hardis:lint
 
-| Command                                                               | Title |
-|:----------------------------------------------------------------------|:------|
-| [**hardis:lint:access**](hardis/lint/access.md)                       |       |
-| [**hardis:lint:metadatastatus**](hardis/lint/metadatastatus.md)       |       |
-| [**hardis:lint:missingattributes**](hardis/lint/missingattributes.md) |       |
-| [**hardis:lint:unusedmetadatas**](hardis/lint/unusedmetadatas.md)     |       |
+| Command                                                               | Title                                      |
+|:----------------------------------------------------------------------|:-------------------------------------------|
+| [**hardis:lint:access**](hardis/lint/access.md)                       | check permission access                    |
+| [**hardis:lint:metadatastatus**](hardis/lint/metadatastatus.md)       | check inactive metadatas                   |
+| [**hardis:lint:missingattributes**](hardis/lint/missingattributes.md) | check missing description on custom fields |
+| [**hardis:lint:unusedmetadatas**](hardis/lint/unusedmetadatas.md)     | check unused labels and custom permissions |
 
 ### hardis:mdapi
 
-| Command                                           | Title |
-|:--------------------------------------------------|:------|
-| [**hardis:mdapi:deploy**](hardis/mdapi/deploy.md) |       |
-| [**hardis:mdapi:read**](hardis/mdapi/read.md)     |       |
-| [**hardis:mdapi:upsert**](hardis/mdapi/upsert.md) |       |
+| Command                                           | Title                                                                                                                                                           |
+|:--------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:mdapi:deploy**](hardis/mdapi/deploy.md) | **A wrapper command for Salesforce CLI's `sf project deploy start` (formerly `sfdx force:mdapi:deploy`), designed to assist with deployment error resolution.** |
+| [**hardis:mdapi:read**](hardis/mdapi/read.md)     | Read metadata using the CRUD-based Metadata API                                                                                                                 |
+| [**hardis:mdapi:upsert**](hardis/mdapi/upsert.md) | Upsert metadata using the CRUD-based Metadata API                                                                                                               |
 
 ### hardis:misc
 
-| Command                                                                               | Title |
-|:--------------------------------------------------------------------------------------|:------|
-| [**hardis:misc:custom-label-translations**](hardis/misc/custom-label-translations.md) |       |
-| [**hardis:misc:purge-references**](hardis/misc/purge-references.md)                   |       |
-| [**hardis:misc:servicenow-report**](hardis/misc/servicenow-report.md)                 |       |
-| [**hardis:misc:toml2csv**](hardis/misc/toml2csv.md)                                   |       |
+| Command                                                                               | Title                     |
+|:--------------------------------------------------------------------------------------|:--------------------------|
+| [**hardis:misc:custom-label-translations**](hardis/misc/custom-label-translations.md) | Custom Label Translations |
+| [**hardis:misc:purge-references**](hardis/misc/purge-references.md)                   | Purge References          |
+| [**hardis:misc:servicenow-report**](hardis/misc/servicenow-report.md)                 | ServiceNow Report         |
+| [**hardis:misc:toml2csv**](hardis/misc/toml2csv.md)                                   | TOML to CSV               |
 
 ### hardis:org
 
-| Command                                                                                             | Title |
-|:----------------------------------------------------------------------------------------------------|:------|
-| [**hardis:org:community:update**](hardis/org/community/update.md)                                   |       |
-| [**hardis:org:configure:data**](hardis/org/configure/data.md)                                       |       |
-| [**hardis:org:configure:files**](hardis/org/configure/files.md)                                     |       |
-| [**hardis:org:configure:generic-prompt**](hardis/org/configure/generic-prompt.md)                   |       |
-| [**hardis:org:configure:grafana-dashboards**](hardis/org/configure/grafana-dashboards.md)           |       |
-| [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)                           |       |
-| [**hardis:org:connect**](hardis/org/connect.md)                                                     |       |
-| [**hardis:org:create**](hardis/org/create.md)                                                       |       |
-| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                             |       |
-| [**hardis:org:data:export**](hardis/org/data/export.md)                                             |       |
-| [**hardis:org:data:import**](hardis/org/data/import.md)                                             |       |
-| [**hardis:org:diagnose:apex-api-version**](hardis/org/diagnose/apex-api-version.md)                 |       |
-| [**hardis:org:diagnose:audittrail**](hardis/org/diagnose/audittrail.md)                             |       |
-| [**hardis:org:diagnose:deployments**](hardis/org/diagnose/deployments.md)                           |       |
-| [**hardis:org:diagnose:flex-queue**](hardis/org/diagnose/flex-queue.md)                             |       |
-| [**hardis:org:diagnose:instanceupgrade**](hardis/org/diagnose/instanceupgrade.md)                   |       |
-| [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                               |       |
-| [**hardis:org:diagnose:licenses**](hardis/org/diagnose/licenses.md)                                 |       |
-| [**hardis:org:diagnose:mfa**](hardis/org/diagnose/mfa.md)                                           |       |
-| [**hardis:org:diagnose:minimalpermsets**](hardis/org/diagnose/minimalpermsets.md)                   |       |
-| [**hardis:org:diagnose:releaseupdates**](hardis/org/diagnose/releaseupdates.md)                     |       |
-| [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                       |       |
-| [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)               |       |
-| [**hardis:org:diagnose:unsecure-connected-apps**](hardis/org/diagnose/unsecure-connected-apps.md)   |       |
-| [**hardis:org:diagnose:unsecure-permissions**](hardis/org/diagnose/unsecure-permissions.md)         |       |
-| [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)           |       |
-| [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)       |       |
-| [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                     |       |
-| [**hardis:org:diagnose:unusedusers**](hardis/org/diagnose/unusedusers.md)                           |       |
-| [**hardis:org:ext-client-app:rotate-credentials**](hardis/org/ext-client-app/rotate-credentials.md) |       |
-| [**hardis:org:files:export**](hardis/org/files/export.md)                                           |       |
-| [**hardis:org:files:import**](hardis/org/files/import.md)                                           |       |
-| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                   |       |
-| [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)                     |       |
-| [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                             |       |
-| [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                       |       |
-| [**hardis:org:monitor:errors**](hardis/org/monitor/errors.md)                                       |       |
-| [**hardis:org:monitor:health-check**](hardis/org/monitor/health-check.md)                           |       |
-| [**hardis:org:monitor:limits**](hardis/org/monitor/limits.md)                                       |       |
-| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                     |       |
-| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                         |       |
-| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                               |       |
-| [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                         |       |
-| [**hardis:org:refresh:after-refresh**](hardis/org/refresh/after-refresh.md)                         |       |
-| [**hardis:org:refresh:before-refresh**](hardis/org/refresh/before-refresh.md)                       |       |
-| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)                       |       |
-| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)               |       |
-| [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                             |       |
-| [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)                           |       |
-| [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)                 |       |
-| [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)                 |       |
-| [**hardis:org:select**](hardis/org/select.md)                                                       |       |
-| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                             |       |
-| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                 |       |
-| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                           |       |
-| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                             |       |
-| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                         |       |
-| [**hardis:org:user:unlink-security-key**](hardis/org/user/unlink-security-key.md)                   |       |
+| Command                                                                                             | Title                                                                                                                    |
+|:----------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:org:community:update**](hardis/org/community/update.md)                                   | Update a community status.                                                                                               |
+| [**hardis:org:configure:data**](hardis/org/configure/data.md)                                       | Configure Data project                                                                                                   |
+| [**hardis:org:configure:files**](hardis/org/configure/files.md)                                     | Configure File export project                                                                                            |
+| [**hardis:org:configure:generic-prompt**](hardis/org/configure/generic-prompt.md)                   | Configure Generic Prompt Template                                                                                        |
+| [**hardis:org:configure:grafana-dashboards**](hardis/org/configure/grafana-dashboards.md)           | Install Grafana dashboards                                                                                               |
+| [**hardis:org:configure:monitoring**](hardis/org/configure/monitoring.md)                           | Configure org monitoring                                                                                                 |
+| [**hardis:org:connect**](hardis/org/connect.md)                                                     | Connect to an org                                                                                                        |
+| [**hardis:org:create**](hardis/org/create.md)                                                       | Create sandbox org                                                                                                       |
+| [**hardis:org:data:delete**](hardis/org/data/delete.md)                                             | Delete data                                                                                                              |
+| [**hardis:org:data:export**](hardis/org/data/export.md)                                             | Export data                                                                                                              |
+| [**hardis:org:data:import**](hardis/org/data/import.md)                                             | Import data                                                                                                              |
+| [**hardis:org:diagnose:ai-usage**](hardis/org/diagnose/ai-usage.md)                                 | Check Agentforce and Data 360 credit usage                                                                               |
+| [**hardis:org:diagnose:apex-api-version**](hardis/org/diagnose/apex-api-version.md)                 | Check Apex classes and triggers for deprecated API versions                                                              |
+| [**hardis:org:diagnose:audittrail**](hardis/org/diagnose/audittrail.md)                             | Diagnose content of Setup Audit Trail                                                                                    |
+| [**hardis:org:diagnose:consumption-alerts**](hardis/org/diagnose/consumption-alerts.md)             | Check consumption utilization alerts                                                                                     |
+| [**hardis:org:diagnose:deployments**](hardis/org/diagnose/deployments.md)                           | Analyze metadata deployments and validations                                                                             |
+| [**hardis:org:diagnose:flex-queue**](hardis/org/diagnose/flex-queue.md)                             | Monitor Apex flex queue (AsyncApexJob Holding)                                                                           |
+| [**hardis:org:diagnose:instanceupgrade**](hardis/org/diagnose/instanceupgrade.md)                   | Get Instance Upgrade date                                                                                                |
+| [**hardis:org:diagnose:legacyapi**](hardis/org/diagnose/legacyapi.md)                               | Check for legacy API use                                                                                                 |
+| [**hardis:org:diagnose:licenses**](hardis/org/diagnose/licenses.md)                                 | List licenses subscribed and used in a Salesforce org                                                                    |
+| [**hardis:org:diagnose:mfa**](hardis/org/diagnose/mfa.md)                                           | Diagnose MFA configuration                                                                                               |
+| [**hardis:org:diagnose:minimalpermsets**](hardis/org/diagnose/minimalpermsets.md)                   | Detect permission sets with minimal permissions                                                                          |
+| [**hardis:org:diagnose:releaseupdates**](hardis/org/diagnose/releaseupdates.md)                     | Check Release Updates of an org                                                                                          |
+| [**hardis:org:diagnose:storage-stats**](hardis/org/diagnose/storage-stats.md)                       | Extract Data Storage stats                                                                                               |
+| [**hardis:org:diagnose:underusedpermsets**](hardis/org/diagnose/underusedpermsets.md)               | Detect underused Permission Sets                                                                                         |
+| [**hardis:org:diagnose:unsecure-connected-apps**](hardis/org/diagnose/unsecure-connected-apps.md)   | Detect Unsecured Connected Apps                                                                                          |
+| [**hardis:org:diagnose:unsecure-permissions**](hardis/org/diagnose/unsecure-permissions.md)         | Audit dangerous permissions                                                                                              |
+| [**hardis:org:diagnose:unused-apex-classes**](hardis/org/diagnose/unused-apex-classes.md)           | Detect unused Apex classes in an org                                                                                     |
+| [**hardis:org:diagnose:unused-connected-apps**](hardis/org/diagnose/unused-connected-apps.md)       | Unused Connected Apps in an org                                                                                          |
+| [**hardis:org:diagnose:unusedlicenses**](hardis/org/diagnose/unusedlicenses.md)                     | Detect unused Permission Set Licenses (beta)                                                                             |
+| [**hardis:org:diagnose:unusedusers**](hardis/org/diagnose/unusedusers.md)                           | Detect unused Users in Salesforce                                                                                        |
+| [**hardis:org:diagnose:usage-entitlements**](hardis/org/diagnose/usage-entitlements.md)             | Check usage-based entitlements                                                                                           |
+| [**hardis:org:ext-client-app:rotate-credentials**](hardis/org/ext-client-app/rotate-credentials.md) | Rotate External Client App Credentials                                                                                   |
+| [**hardis:org:files:export**](hardis/org/files/export.md)                                           | Export files                                                                                                             |
+| [**hardis:org:files:import**](hardis/org/files/import.md)                                           | Import files                                                                                                             |
+| [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                   | Fix listviews with                                                                                                       |
+| [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)                     | Generate Full Org package.xml                                                                                            |
+| [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                         | List metadata components of an org                                                                                       |
+| [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                             | Monitor org                                                                                                              |
+| [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                       | Backup DX sources                                                                                                        |
+| [**hardis:org:monitor:errors**](hardis/org/monitor/errors.md)                                       | Monitor Apex and Flow errors                                                                                             |
+| [**hardis:org:monitor:health-check**](hardis/org/monitor/health-check.md)                           | Check org security health                                                                                                |
+| [**hardis:org:monitor:limits**](hardis/org/monitor/limits.md)                                       | Check org limits                                                                                                         |
+| [**hardis:org:multi-org-query**](hardis/org/multi-org-query.md)                                     | Multiple Orgs SOQL Query                                                                                                 |
+| [**hardis:org:purge:apexlog**](hardis/org/purge/apexlog.md)                                         | Purge Apex Logs                                                                                                          |
+| [**hardis:org:purge:flow**](hardis/org/purge/flow.md)                                               | Purge Flow versions                                                                                                      |
+| [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                         | Remove PS attributes from Profile                                                                                        |
+| [**hardis:org:refresh:after-refresh**](hardis/org/refresh/after-refresh.md)                         | Restore Connected Apps after org refresh                                                                                 |
+| [**hardis:org:refresh:before-refresh**](hardis/org/refresh/before-refresh.md)                       | > **This command must always be run by a human. It is intentionally interactive and must not be called by an AI agent.** |
+| [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)                       | Retrieve package configuration from an org                                                                               |
+| [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)               | Retrieve CRM Analytics configuration from an org                                                                         |
+| [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                             | Retrieve sfdx sources from org                                                                                           |
+| [**hardis:org:retrieve:sources:dx2**](hardis/org/retrieve/sources/dx2.md)                           | Retrieve sfdx sources from org (2)                                                                                       |
+| [**hardis:org:retrieve:sources:metadata**](hardis/org/retrieve/sources/metadata.md)                 | Retrieve sfdx sources from org                                                                                           |
+| [**hardis:org:retrieve:sources:retrofit**](hardis/org/retrieve/sources/retrofit.md)                 | Retrofit changes from an org                                                                                             |
+| [**hardis:org:select**](hardis/org/select.md)                                                       | Select org                                                                                                               |
+| [**hardis:org:test:agents**](hardis/org/test/agents.md)                                             | Run agent tests                                                                                                          |
+| [**hardis:org:test:apex**](hardis/org/test/apex.md)                                                 | Run apex tests                                                                                                           |
+| [**hardis:org:user:activateinvalid**](hardis/org/user/activateinvalid.md)                           | Reactivate sandbox invalid users                                                                                         |
+| [**hardis:org:user:freeze**](hardis/org/user/freeze.md)                                             | Freeze user logins                                                                                                       |
+| [**hardis:org:user:unfreeze**](hardis/org/user/unfreeze.md)                                         | Unfreeze user logins                                                                                                     |
+| [**hardis:org:user:unlink-security-key**](hardis/org/user/unlink-security-key.md)                   | Unlink user security keys / MFA methods                                                                                  |
 
 ### hardis:package
 
-| Command                                                                 | Title |
-|:------------------------------------------------------------------------|:------|
-| [**hardis:package:create**](hardis/package/create.md)                   |       |
-| [**hardis:package:install**](hardis/package/install.md)                 |       |
-| [**hardis:package:mergexml**](hardis/package/mergexml.md)               |       |
-| [**hardis:package:version:create**](hardis/package/version/create.md)   |       |
-| [**hardis:package:version:list**](hardis/package/version/list.md)       |       |
-| [**hardis:package:version:promote**](hardis/package/version/promote.md) |       |
+| Command                                                                 | Title                              |
+|:------------------------------------------------------------------------|:-----------------------------------|
+| [**hardis:package:create**](hardis/package/create.md)                   | Create a new package               |
+| [**hardis:package:install**](hardis/package/install.md)                 | Install packages in an org         |
+| [**hardis:package:mergexml**](hardis/package/mergexml.md)               | Merge package.xml files            |
+| [**hardis:package:version:create**](hardis/package/version/create.md)   | Create a new version of a package  |
+| [**hardis:package:version:list**](hardis/package/version/list.md)       | Create a new version of a package  |
+| [**hardis:package:version:promote**](hardis/package/version/promote.md) | Promote new versions of package(s) |
 
 ### hardis:packagexml
 
-| Command                                                                     | Title |
-|:----------------------------------------------------------------------------|:------|
-| [**hardis:packagexml:append**](hardis/packagexml/append.md)                 |       |
-| [**hardis:packagexml:remove**](hardis/packagexml/remove.md)                 |       |
-| [**hardis:packagexml:remove-managed**](hardis/packagexml/remove-managed.md) |       |
+| Command                                                                     | Title                                                                                                                                                   |
+|:----------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:packagexml:append**](hardis/packagexml/append.md)                 | **Appends the content of one or more Salesforce `package.xml` files into a single target `package.xml` file.**                                          |
+| [**hardis:packagexml:remove**](hardis/packagexml/remove.md)                 | **Removes metadata components from a `package.xml` file using either another `package.xml` as a filter or inline metadata type/member specifications.** |
+| [**hardis:packagexml:remove-managed**](hardis/packagexml/remove-managed.md) | **Removes all managed package items from a `package.xml` file, while preserving custom metadata created on top of managed objects.**                    |
 
 ### hardis:project
 
-| Command                                                                                           | Title |
-|:--------------------------------------------------------------------------------------------------|:------|
-| [**hardis:project:action:base**](hardis/project/action/base.md)                                   |       |
-| [**hardis:project:action:create**](hardis/project/action/create.md)                               |       |
-| [**hardis:project:action:delete**](hardis/project/action/delete.md)                               |       |
-| [**hardis:project:action:link-pull-request**](hardis/project/action/link-pull-request.md)         |       |
-| [**hardis:project:action:list**](hardis/project/action/list.md)                                   |       |
-| [**hardis:project:action:reorder**](hardis/project/action/reorder.md)                             |       |
-| [**hardis:project:action:test-class:add**](hardis/project/action/test-class/add.md)               |       |
-| [**hardis:project:action:test-class:list**](hardis/project/action/test-class/list.md)             |       |
-| [**hardis:project:action:test-class:remove**](hardis/project/action/test-class/remove.md)         |       |
-| [**hardis:project:action:update**](hardis/project/action/update.md)                               |       |
-| [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                         |       |
-| [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)                   |       |
-| [**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)                 |       |
-| [**hardis:project:audit:remotesites**](hardis/project/audit/remotesites.md)                       |       |
-| [**hardis:project:clean:emptyitems**](hardis/project/clean/emptyitems.md)                         |       |
-| [**hardis:project:clean:filter-xml-content**](hardis/project/clean/filter-xml-content.md)         |       |
-| [**hardis:project:clean:flowpositions**](hardis/project/clean/flowpositions.md)                   |       |
-| [**hardis:project:clean:hiddenitems**](hardis/project/clean/hiddenitems.md)                       |       |
-| [**hardis:project:clean:listviews**](hardis/project/clean/listviews.md)                           |       |
-| [**hardis:project:clean:manageditems**](hardis/project/clean/manageditems.md)                     |       |
-| [**hardis:project:clean:minimizeprofiles**](hardis/project/clean/minimizeprofiles.md)             |       |
-| [**hardis:project:clean:orgmissingitems**](hardis/project/clean/orgmissingitems.md)               |       |
-| [**hardis:project:clean:profiles-extract**](hardis/project/clean/profiles-extract.md)             |       |
-| [**hardis:project:clean:references**](hardis/project/clean/references.md)                         |       |
-| [**hardis:project:clean:retrievefolders**](hardis/project/clean/retrievefolders.md)               |       |
-| [**hardis:project:clean:sensitive-metadatas**](hardis/project/clean/sensitive-metadatas.md)       |       |
-| [**hardis:project:clean:standarditems**](hardis/project/clean/standarditems.md)                   |       |
-| [**hardis:project:clean:systemdebug**](hardis/project/clean/systemdebug.md)                       |       |
-| [**hardis:project:clean:xml**](hardis/project/clean/xml.md)                                       |       |
-| [**hardis:project:configure:auth**](hardis/project/configure/auth.md)                             |       |
-| [**hardis:project:convert:profilestopermsets**](hardis/project/convert/profilestopermsets.md)     |       |
-| [**hardis:project:create**](hardis/project/create.md)                                             |       |
-| [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                               |       |
-| [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                                 |       |
-| [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                           |       |
-| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                                 |       |
-| [**hardis:project:deploy:sources:dx**](hardis/project/deploy/sources/dx.md)                       |       |
-| [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md)           |       |
-| [**hardis:project:deploy:start**](hardis/project/deploy/start.md)                                 |       |
-| [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                           |       |
-| [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                           |       |
-| [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                       |       |
-| [**hardis:project:generate:bypass**](hardis/project/generate/bypass.md)                           |       |
-| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md)             |       |
-| [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)                       |       |
-| [**hardis:project:lint**](hardis/project/lint.md)                                                 |       |
-| [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) |       |
-| [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           |       |
-| [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                         |       |
-| [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md)       |       |
-| [**hardis:project:skills:import**](hardis/project/skills/import.md)                               |       |
+| Command                                                                                           | Title                                                                                                                                                                                                                  |
+|:--------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:project:action:base**](hardis/project/action/base.md)                                   |                                                                                                                                                                                                                        |
+| [**hardis:project:action:create**](hardis/project/action/create.md)                               | Create deployment action                                                                                                                                                                                               |
+| [**hardis:project:action:delete**](hardis/project/action/delete.md)                               | Delete deployment action                                                                                                                                                                                               |
+| [**hardis:project:action:link-pull-request**](hardis/project/action/link-pull-request.md)         | Link draft actions to a pull request                                                                                                                                                                                   |
+| [**hardis:project:action:list**](hardis/project/action/list.md)                                   | List deployment actions                                                                                                                                                                                                |
+| [**hardis:project:action:reorder**](hardis/project/action/reorder.md)                             | Reorder deployment actions                                                                                                                                                                                             |
+| [**hardis:project:action:run**](hardis/project/action/run.md)                                     | Run a deployment action                                                                                                                                                                                                |
+| [**hardis:project:action:set-status**](hardis/project/action/set-status.md)                       | Set the status of a deployment action                                                                                                                                                                                  |
+| [**hardis:project:action:test-class:add**](hardis/project/action/test-class/add.md)               | Add deployment Apex test class                                                                                                                                                                                         |
+| [**hardis:project:action:test-class:list**](hardis/project/action/test-class/list.md)             | List deployment Apex test classes                                                                                                                                                                                      |
+| [**hardis:project:action:test-class:remove**](hardis/project/action/test-class/remove.md)         | Remove deployment Apex test class                                                                                                                                                                                      |
+| [**hardis:project:action:update**](hardis/project/action/update.md)                               | Update deployment action                                                                                                                                                                                               |
+| [**hardis:project:audit:apiversion**](hardis/project/audit/apiversion.md)                         | Audit Metadatas API Version                                                                                                                                                                                            |
+| [**hardis:project:audit:callincallout**](hardis/project/audit/callincallout.md)                   | Audit CallIns and CallOuts                                                                                                                                                                                             |
+| [**hardis:project:audit:duplicatefiles**](hardis/project/audit/duplicatefiles.md)                 | Find duplicate sfdx files                                                                                                                                                                                              |
+| [**hardis:project:audit:remotesites**](hardis/project/audit/remotesites.md)                       | Audit Remote Sites                                                                                                                                                                                                     |
+| [**hardis:project:clean:emptyitems**](hardis/project/clean/emptyitems.md)                         | Clean retrieved empty items in dx sources                                                                                                                                                                              |
+| [**hardis:project:clean:filter-xml-content**](hardis/project/clean/filter-xml-content.md)         | **Filters the content of Salesforce metadata XML files to remove specific elements, enabling more granular deployments.**                                                                                              |
+| [**hardis:project:clean:flowpositions**](hardis/project/clean/flowpositions.md)                   | Clean Flow Positions                                                                                                                                                                                                   |
+| [**hardis:project:clean:hiddenitems**](hardis/project/clean/hiddenitems.md)                       | Clean retrieved hidden items in dx sources                                                                                                                                                                             |
+| [**hardis:project:clean:listviews**](hardis/project/clean/listviews.md)                           | Replace Mine by Everything in ListViews                                                                                                                                                                                |
+| [**hardis:project:clean:manageditems**](hardis/project/clean/manageditems.md)                     | Clean retrieved managed items in dx sources                                                                                                                                                                            |
+| [**hardis:project:clean:minimizeprofiles**](hardis/project/clean/minimizeprofiles.md)             | Clean profiles of Permission Set attributes                                                                                                                                                                            |
+| [**hardis:project:clean:orgmissingitems**](hardis/project/clean/orgmissingitems.md)               | Clean SFDX items using target org definition                                                                                                                                                                           |
+| [**hardis:project:clean:profiles-extract**](hardis/project/clean/profiles-extract.md)             | **Guides administrators through extracting Salesforce profiles, personas, and related metadata into structured CSV/XLSX deliverables.**                                                                                |
+| [**hardis:project:clean:references**](hardis/project/clean/references.md)                         | Clean references in dx sources                                                                                                                                                                                         |
+| [**hardis:project:clean:retrievefolders**](hardis/project/clean/retrievefolders.md)               | Retrieve dashboards, documents and report folders in DX sources                                                                                                                                                        |
+| [**hardis:project:clean:sensitive-metadatas**](hardis/project/clean/sensitive-metadatas.md)       | Clean Sensitive Metadatas                                                                                                                                                                                              |
+| [**hardis:project:clean:standarditems**](hardis/project/clean/standarditems.md)                   | Clean retrieved standard items in dx sources                                                                                                                                                                           |
+| [**hardis:project:clean:systemdebug**](hardis/project/clean/systemdebug.md)                       | Clean System debug                                                                                                                                                                                                     |
+| [**hardis:project:clean:xml**](hardis/project/clean/xml.md)                                       | Clean retrieved empty items in dx sources                                                                                                                                                                              |
+| [**hardis:project:configure:auth**](hardis/project/configure/auth.md)                             | Configure authentication                                                                                                                                                                                               |
+| [**hardis:project:convert:profilestopermsets**](hardis/project/convert/profilestopermsets.md)     | Convert Profiles into Permission Sets                                                                                                                                                                                  |
+| [**hardis:project:create**](hardis/project/create.md)                                             | Login                                                                                                                                                                                                                  |
+| [**hardis:project:deploy:notify**](hardis/project/deploy/notify.md)                               | Deployment Notifications                                                                                                                                                                                               |
+| [**hardis:project:deploy:quick**](hardis/project/deploy/quick.md)                                 | sfdx-hardis wrapper for **sf project deploy quick** that displays tips to solve deployment errors.                                                                                                                     |
+| [**hardis:project:deploy:simulate**](hardis/project/deploy/simulate.md)                           | Simulate the deployment of metadata in an org prompted to the user.<br/>Used by VS Code extension.                                                                                                                     |
+| [**hardis:project:deploy:smart**](hardis/project/deploy/smart.md)                                 | Smart Deploy sfdx sources to org                                                                                                                                                                                       |
+| [**hardis:project:deploy:sources:dx**](hardis/project/deploy/sources/dx.md)                       | Smart Deploy sfdx sources to org                                                                                                                                                                                       |
+| [**hardis:project:deploy:sources:metadata**](hardis/project/deploy/sources/metadata.md)           | Deploy metadata sources to org                                                                                                                                                                                         |
+| [**hardis:project:deploy:start**](hardis/project/deploy/start.md)                                 | sfdx-hardis wrapper for **sf project deploy start** that displays tips to solve deployment errors.                                                                                                                     |
+| [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                           | sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.                                                                                                                  |
+| [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                           | Fix profiles to add tabs that are not retrieved by SF CLI                                                                                                                                                              |
+| [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                       | Fix flexipages for v53                                                                                                                                                                                                 |
+| [**hardis:project:function:base**](hardis/project/function/base.md)                               |                                                                                                                                                                                                                        |
+| [**hardis:project:function:create**](hardis/project/function/create.md)                           | Create custom function                                                                                                                                                                                                 |
+| [**hardis:project:function:delete**](hardis/project/function/delete.md)                           | Delete custom function                                                                                                                                                                                                 |
+| [**hardis:project:function:list**](hardis/project/function/list.md)                               | List custom functions                                                                                                                                                                                                  |
+| [**hardis:project:function:update**](hardis/project/function/update.md)                           | Update custom function                                                                                                                                                                                                 |
+| [**hardis:project:generate:bypass**](hardis/project/generate/bypass.md)                           | **Generates custom permissions and permission sets to bypass specified Salesforce automations (Flows, Triggers, and Validation Rules) for specific sObjects, with optional automatic implementation of bypass logic.** |
+| [**hardis:project:generate:flow-git-diff**](hardis/project/generate/flow-git-diff.md)             | Generate Flow Visual Gif Diff                                                                                                                                                                                          |
+| [**hardis:project:generate:gitdelta**](hardis/project/generate/gitdelta.md)                       | Generate Git Delta                                                                                                                                                                                                     |
+| [**hardis:project:lint**](hardis/project/lint.md)                                                 | Lint                                                                                                                                                                                                                   |
+| [**hardis:project:metadata:activate-decomposed**](hardis/project/metadata/activate-decomposed.md) | Activate Decomposed Metadata (Beta)                                                                                                                                                                                    |
+| [**hardis:project:metadata:findduplicates**](hardis/project/metadata/findduplicates.md)           | XML duplicate values finder                                                                                                                                                                                            |
+| [**hardis:project:pipeline:describe**](hardis/project/pipeline/describe.md)                       | Describe the pipeline of the project                                                                                                                                                                                   |
+| [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                         | Create a promotion branch (Beta)                                                                                                                                                                                       |
+| [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md)       | List the User Stories waiting for promotion (Beta)                                                                                                                                                                     |
+| [**hardis:project:skills:import**](hardis/project/skills/import.md)                               | Import Skills                                                                                                                                                                                                          |
 
 ### hardis:scratch
 
-| Command                                                               | Title |
-|:----------------------------------------------------------------------|:------|
-| [**hardis:scratch:create**](hardis/scratch/create.md)                 |       |
-| [**hardis:scratch:delete**](hardis/scratch/delete.md)                 |       |
-| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)       |       |
-| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md) |       |
-| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)     |       |
-| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)         |       |
-| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)           |       |
-| [**hardis:scratch:pull**](hardis/scratch/pull.md)                     |       |
-| [**hardis:scratch:push**](hardis/scratch/push.md)                     |       |
+| Command                                                               | Title                                    |
+|:----------------------------------------------------------------------|:-----------------------------------------|
+| [**hardis:scratch:create**](hardis/scratch/create.md)                 | Create and initialize scratch org        |
+| [**hardis:scratch:delete**](hardis/scratch/delete.md)                 | Delete scratch orgs(s)                   |
+| [**hardis:scratch:pool:create**](hardis/scratch/pool/create.md)       | Create and configure scratch org pool    |
+| [**hardis:scratch:pool:localauth**](hardis/scratch/pool/localauth.md) | Authenticate locally to scratch org pool |
+| [**hardis:scratch:pool:refresh**](hardis/scratch/pool/refresh.md)     | Refresh scratch org pool                 |
+| [**hardis:scratch:pool:reset**](hardis/scratch/pool/reset.md)         | Reset scratch org pool                   |
+| [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)           | View scratch org pool info               |
+| [**hardis:scratch:pull**](hardis/scratch/pull.md)                     | Scratch PULL                             |
+| [**hardis:scratch:push**](hardis/scratch/push.md)                     | Scratch PUSH                             |
 
 ### hardis:source
 
-| Command                                                 | Title |
-|:--------------------------------------------------------|:------|
-| [**hardis:source:deploy**](hardis/source/deploy.md)     |       |
-| [**hardis:source:push**](hardis/source/push.md)         |       |
-| [**hardis:source:retrieve**](hardis/source/retrieve.md) |       |
+| Command                                                 | Title                                                                                                                                               |
+|:--------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:source:deploy**](hardis/source/deploy.md)     | sfdx-hardis wrapper for sfdx force:source:deploy that displays tips to solve deployment errors.                                                     |
+| [**hardis:source:push**](hardis/source/push.md)         | sfdx-hardis wrapper for sfdx force:source:push that displays tips to solve deployment errors.                                                       |
+| [**hardis:source:retrieve**](hardis/source/retrieve.md) | **A wrapper command for Salesforce CLI's `sf project retrieve start` (formerly `sfdx force:source:retrieve`), with enhanced interactive features.** |
+
+### hardis:ticket
+
+| Command                                       | Title      |
+|:----------------------------------------------|:-----------|
+| [**hardis:ticket:get**](hardis/ticket/get.md) | Get ticket |
 
 ### hardis:work
 
-| Command                                                         | Title |
-|:----------------------------------------------------------------|:------|
-| [**hardis:work:backpromote**](hardis/work/backpromote.md)       |       |
-| [**hardis:work:new**](hardis/work/new.md)                       |       |
-| [**hardis:work:refresh**](hardis/work/refresh.md)               |       |
-| [**hardis:work:resetselection**](hardis/work/resetselection.md) |       |
-| [**hardis:work:save**](hardis/work/save.md)                     |       |
-| [**hardis:work:ws**](hardis/work/ws.md)                         |       |
+| Command                                                         | Title                               |
+|:----------------------------------------------------------------|:------------------------------------|
+| [**hardis:work:backpromote**](hardis/work/backpromote.md)       | Backpromote to a dev sandbox (Beta) |
+| [**hardis:work:new**](hardis/work/new.md)                       | New User Story                      |
+| [**hardis:work:refresh**](hardis/work/refresh.md)               | Refresh User Story branch           |
+| [**hardis:work:resetselection**](hardis/work/resetselection.md) | Select again                        |
+| [**hardis:work:save**](hardis/work/save.md)                     | Save User Story                     |
+| [**hardis:work:ws**](hardis/work/ws.md)                         | WebSocket operations                |
 
 ### hello:world
 
-| Command                           | Title |
-|:----------------------------------|:------|
-| [**hello:world**](hello/world.md) |       |
+| Command                           | Title      |
+|:----------------------------------|:-----------|
+| [**hello:world**](hello/world.md) | Say hello. |

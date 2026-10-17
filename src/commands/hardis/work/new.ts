@@ -9,17 +9,21 @@ import {
   checkGitClean,
   createWorkBranchFromTarget,
   execCommand,
-  execSfdxJson,
   getGitRepoUrl,
+  isCI,
   uxLog,
+  firstFreeWorkBranchName,
+  workBranchExists,
 } from '../../../common/utils/index.js';
 import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
+import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import {
   initApexScripts,
   initOrgData,
   initPermissionSetAssignments,
   installPackages,
   makeSureOrgIsConnected,
+  openOrgInBrowser,
   promptOrg,
 } from '../../../common/utils/orgUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -47,17 +51,18 @@ This command guides you through the process of preparing your local environment 
 
 Key features include:
 
-- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`.
+- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from \`origin/<target>\` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the \`branchPrefixChoices\` property in \`.sfdx-hardis.yml\`. A new User Story never reuses an existing branch: if a branch with the same name already exists, locally or on the remote, the command says so and asks for another name (in \`--agent\` mode or in CI, where nobody can answer, it adds a number suffix instead: \`-2\`, \`-3\`...). When the remote can not be reached, only the branches of the last fetch are checked, with a warning.
 
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in \`config/.sfdx-hardis.yml\
 
 - **Project-Specific Configuration:** Supports defining multiple target branches (\`availableTargetBranches\`) and projects (\`availableProjects\`) in \`.sfdx-hardis.yml\`, allowing for tailored User Stories workflows.
 
-- **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\
+- **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\`. The regex is applied to the name as you type it, so a pattern such as \`^MYPROJECT-[0-9]+ .*\` can require spaces. Once validated, the name is converted into a git-compatible branch name, where spaces and special characters become \`-\`.
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
+- **Sandbox initialization:** Only when \`offerSandboxInit: true\` is set, the command offers to initialize the selected sandbox: installed packages, \`initPermissionSets\`, \`scratchOrgInitApexScripts\` and \`scripts/data/ScratchInit\`. It never deploys metadata.
 
-- **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-backpromote/) (the Backpromote panel in VS Code).
+- **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
 - **Agent Mode (\`--agent\`):** Enables a fully non-interactive execution path for AI agents and automation. In this mode, all required decisions must be provided as flags and are validated at command start with explicit error messages listing missing inputs and available options.
 
@@ -86,6 +91,7 @@ In \`--agent\` mode, the command also computes automatically:
 
 - branch prefix: value provided by \`--branch-prefix\`, otherwise first configured branch prefix choice, fallback \`feature\`
 - scratch mode: always create a new scratch org
+- branch name: when a branch with the same name already exists, locally or on the remote, a number suffix (\`-2\`, \`-3\`...) is added, and a warning names the branch created
 
 In \`--agent\` mode, the command intentionally skips:
 
@@ -94,21 +100,37 @@ In \`--agent\` mode, the command intentionally skips:
 
 In \`--agent\` mode, opening org in browser is optional via \`--open-org\`.
 
-Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-create-new-task/).
+Advanced instructions are available in the [Create New User Story documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-create-new-user-story/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 The command's logic orchestrates various underlying processes:
 
-- **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), checks out the branch if it already exists, and fails with a clear message if it is checked out in another git worktree.
+- **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), refuses a branch that already exists (\`workBranchExists\` checks the local branches and \`git ls-remote --heads origin\`, and drops a stale remote-tracking ref of a branch deleted on the remote), and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
 - **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
 - **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`) via \`execCommand\` and \`execSfdxJson\
-- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed.
+- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed. A scratch org that a major branch deploys to is never offered for reuse.
 - **WebSocket Communication:** Sends refresh status messages via \`WebSocketClient.sendRefreshStatusMessage()\` to update connected VS Code clients.
 </details>
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course runs this command, click by click, on an org of your own, in these labs:
+
+- [Lab 1.3 - Start a User Story on its own Git branch](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-3-start-a-user-story-on-a-git-branch/)
+- [Lab 1.7 - Capstone: deliver a User Story on your own](https://sfdx-hardis-training.cloudity.com/en/level-1-contributor-basics/1-7-capstone-deliver-a-user-story-on-your-own/)
+- [Lab 2.2 - Fix a deployment error caused by a missing dependency](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-2-fix-a-missing-dependency-deployment-error/)
+- [Lab 2.9 - Capstone: deliver a User Story that has it all](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-9-capstone-deliver-a-user-story-that-has-it-all/)
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+- [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-7-hotfix-and-retrofit/)
+- [Lab 3.10 - Promote a subset with promotion branches (Beta)](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-10-promote-a-subset-with-promotion-branches/)
+
+<!-- training-links:end -->
 `;
 
   public static examples = [
@@ -243,18 +265,44 @@ The command's logic orchestrates various underlying processes:
           },
         ]);
 
-    // Request task name
-    const taskName = agentMode
-      ? agentInputs.normalizedTaskName
-      : flags['task-name']
-        ? this.normalizeTaskName(flags['task-name'])
-        : await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
-    this.validateTaskNameOrThrow(taskName, config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+    // Request task name.
+    // newTaskNameRegex is always checked against the name as typed by the user: the normalization
+    // into a git-compatible branch name (spaces become "-") happens only once the name is validated.
+    let taskName: string;
+    if (agentMode) {
+      // Already validated against newTaskNameRegex in validateAgentInputs
+      taskName = agentInputs.normalizedTaskName;
+    } else if (flags['task-name']) {
+      taskName = this.validateAndNormalizeTaskName(
+        flags['task-name'],
+        config.newTaskNameRegex || null,
+        config.newTaskNameRegexExample || null
+      );
+    } else {
+      // promptTaskName validates the typed name and returns it normalized
+      taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+    }
 
     // Create the new branch from the latest version of the target branch.
     // We branch from origin/<target> instead of checking out <target>, so this works even
     // when the target branch is checked out in another git worktree.
-    const branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    // A new User Story never reuses an existing branch: an old branch with the same name would
+    // carry its commits into the new Pull Request. The user picks another name instead, and when
+    // nobody can be asked (CI, --agent) a number suffix makes the name free.
+    let branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+    if (agentMode || isCI) {
+      const freeBranchName = await firstFreeWorkBranchName(branchName);
+      if (freeBranchName !== branchName) {
+        uxLog("warning", this, c.yellow(t('workBranchAlreadyExistsUsingSuffix', { branch: branchName, newBranch: freeBranchName })));
+        branchName = freeBranchName;
+      }
+    } else {
+      while (await workBranchExists(branchName)) {
+        uxLog("action", this, c.yellow(t('workBranchAlreadyExistsChooseAnotherName', { branch: branchName })));
+        taskName = await this.promptTaskName(config.newTaskNameRegex || null, config.newTaskNameRegexExample || null);
+        branchName = `${projectBranchPart}${response.branch || 'feature'}/${taskName}`;
+      }
+    }
     const repoUrl = await getGitRepoUrl();
     uxLog(
       "action",
@@ -262,7 +310,7 @@ The command's logic orchestrates various underlying processes:
       c.cyan(t('checkingOutLatestVersionOfBranch', { branch: c.bold(this.targetBranch), repoUrl }))
     );
     uxLog("action", this, c.cyan(t('creatingNewBranch', { branchName: c.green(branchName) })));
-    await createWorkBranchFromTarget(branchName, this.targetBranch);
+    await createWorkBranchFromTarget(branchName, this.targetBranch, { refuseExisting: true });
     // Update config if necessary
     if (config.developmentBranch !== this.targetBranch && (config.availableTargetBranches || null) == null) {
       let shouldUpdateDefaultTargetBranch = false;
@@ -358,11 +406,26 @@ The command's logic orchestrates various underlying processes:
     return { outputString: 'Created new User Story' };
   }
 
-  private validateTaskNameOrThrow(taskName: string, validationRegex: string | null, taskNameExample: string | null): void {
+  /**
+   * The User Story name as it was given, checked against newTaskNameRegex and turned into a
+   * branch name. The order is the whole point: normalizing first replaces every space with "-",
+   * so a pattern like "^MYPROJECT-[0-9]+ .*" could never match a name anybody types.
+   */
+  private validateAndNormalizeTaskName(
+    rawTaskName: string,
+    validationRegex: string | null,
+    taskNameExample: string | null
+  ): string {
+    this.validateTaskNameOrThrow(rawTaskName, validationRegex, taskNameExample);
+    return this.normalizeTaskName(rawTaskName);
+  }
+
+  // The name is checked as typed by the user, before it is normalized into a branch name
+  private validateTaskNameOrThrow(rawTaskName: string, validationRegex: string | null, taskNameExample: string | null): void {
     const effectiveTaskNameExample = taskNameExample || 'MYPROJECT-123 Update account status validation rule';
-    if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
+    if (validationRegex != null && !new RegExp(validationRegex).test(rawTaskName)) {
       throw new SfError(
-        `task-name "${taskName}" does not match required pattern (${validationRegex}). Example: ${effectiveTaskNameExample}`
+        `task-name "${rawTaskName}" does not match required pattern (${validationRegex}). Example: ${effectiveTaskNameExample}`
       );
     }
   }
@@ -514,9 +577,10 @@ The command's logic orchestrates various underlying processes:
     if (!normalizedTaskName) {
       missing.push('task-name produced an empty normalized value');
     }
-    if (config.newTaskNameRegex && normalizedTaskName && !new RegExp(config.newTaskNameRegex).test(normalizedTaskName)) {
+    // newTaskNameRegex applies to the value passed by the caller, not to its normalized version
+    if (config.newTaskNameRegex && taskNameRaw && !new RegExp(config.newTaskNameRegex).test(taskNameRaw)) {
       missing.push(
-        `task-name does not match newTaskNameRegex (${config.newTaskNameRegex}). Example: ${taskNameExample}`
+        `task-name "${taskNameRaw}" does not match newTaskNameRegex (${config.newTaskNameRegex}). Example: ${taskNameExample}`
       );
     }
 
@@ -560,18 +624,19 @@ The command's logic orchestrates various underlying processes:
       description: t('enterDescriptiveNameForUserStoryBranch'),
       placeholder: `Ex: ${taskNameExample}`,
     });
-    let taskName = taskResponse.taskName.replace(/[^a-zA-Z0-9 -]|\s/g, '-');
-    // If there are multiple "-" , replace by single "-", otherwise it messes with mermaid diagrams
-    taskName = taskName.replace(/-+/g, '-');
-    if (validationRegex != null && !new RegExp(validationRegex).test(taskName)) {
+    const rawTaskName = taskResponse.taskName || '';
+    // Validate the name as typed by the user: normalizing it first would turn every space into "-",
+    // so a regex like "^MYPROJECT-[0-9]+ .*" could never match
+    if (validationRegex != null && !new RegExp(validationRegex).test(rawTaskName)) {
       uxLog(
         "action",
         this,
-        c.cyan(t('userStoryNameDoesNotMatchPattern', { taskName: c.bold(taskName), validationRegex: c.bold(validationRegex) }))
+        c.cyan(t('userStoryNameDoesNotMatchPattern', { taskName: c.bold(rawTaskName), validationRegex: c.bold(validationRegex) }))
       );
       return this.promptTaskName(validationRegex, taskNameExample);
     }
-    return taskName;
+    // Once validated, turn the name into a git-compatible branch name
+    return this.normalizeTaskName(rawTaskName);
   }
 
   // Select/Create scratch org
@@ -597,8 +662,13 @@ The command's logic orchestrates various underlying processes:
         : null;
     }
 
-    const hubOrgUsername = flags['target-dev-hub'].getUsername();
-    const scratchOrgList = await MetadataUtils.listLocalOrgs('scratch', { devHubUsername: hubOrgUsername });
+    const hubOrgUsername = flags['target-dev-hub']?.getUsername();
+    // A scratch org a major branch deploys to is not a place to build a User Story in
+    const majorOrgUsernames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.targetUsername).filter(Boolean);
+    // Read fresh: a cached list still offers scratch orgs deleted since, and misses the new ones
+    const scratchOrgList = (await MetadataUtils.listLocalOrgs('scratch', { devHubUsername: hubOrgUsername, useCache: false })).filter(
+      (scratchOrg: any) => !majorOrgUsernames.includes(scratchOrg.username)
+    );
     const currentOrg = await MetadataUtils.getCurrentOrg();
 
     const baseChoices = [
@@ -671,11 +741,7 @@ The command's logic orchestrates various underlying processes:
       });
       // Open selected org
       uxLog("action", this, c.cyan(t('openingScratchOrgInBrowser')));
-      await execSfdxJson('sf org open', this, {
-        fail: true,
-        output: false,
-        debug: this.debugMode,
-      });
+      await openOrgInBrowser(this, { debug: this.debugMode });
       // Trigger a status refresh on VS Code WebSocket Client
       WebSocketClient.sendRefreshStatusMessage();
       return {
@@ -705,10 +771,13 @@ The command's logic orchestrates various underlying processes:
 
     // Initialize / Update existing sandbox if available
     if (!(config.sharedDevSandboxes === true)) {
+      // Only offered when the project asks for it: the metadata comes from a backpromote, and the
+      // initialization left (packages, permission sets, scripts, data) is not what most teams expect
+      const offerSandboxInit = config.offerSandboxInit === true;
       let initSandbox = false;
-      if (agentInputs) {
+      if (offerSandboxInit && agentInputs) {
         initSandbox = agentInputs.initSandbox === true;
-      } else {
+      } else if (offerSandboxInit) {
         const initSandboxResponse = await prompts({
           type: 'select',
           name: 'value',
@@ -773,7 +842,7 @@ The command's logic orchestrates various underlying processes:
       uxLog(
         "action",
         this,
-        c.cyan(t('workNewBackpromoteHint', { branch: this.targetBranch, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-backpromote/` }))
+        c.cyan(t('workNewBackpromoteHint', { branch: this.targetBranch, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/` }))
       );
     }
     // Open of if not already open
@@ -794,11 +863,7 @@ The command's logic orchestrates various underlying processes:
 
       if (shouldOpenOrg) {
         uxLog("action", this, c.cyan(t('openingOrg', { orgUsername: c.green(orgUsername) })));
-        await execSfdxJson('sf org open', this, {
-          fail: true,
-          output: false,
-          debug: this.debugMode,
-        });
+        await openOrgInBrowser(this, { debug: this.debugMode });
       }
     }
 

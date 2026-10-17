@@ -1,4 +1,5 @@
 import { SfCommand } from '@salesforce/sf-plugins-core';
+import { promptActionConfirm, promptActionSelect, promptActionText } from '../../../../common/utils/actionPromptUtils.js';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import { isCI } from '../../../../common/utils/index.js';
@@ -6,6 +7,8 @@ import { ActionBranchFilterMode, ActionScope, ActionWhen, listActionTargetBranch
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { prompts } from '../../../../common/utils/prompts.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { CustomFunctionDefinition } from '../../../../common/utils/customFunctionUtils.js';
+import { applyRunBatchFlags, normalizeRunBatchParameters } from '../../../../common/actionsProvider/runBatchAction.js';
 
 /**
  * Base class for hardis:project:action:* commands.
@@ -44,28 +47,52 @@ export abstract class ActionCommandBase extends SfCommand<any> {
     return { scope, when };
   }
 
+  /**
+   * Collect the run-batch parameters other than the class name: flags in agent/CI mode,
+   * prompts seeded with the current values otherwise.
+   */
+  protected async collectRunBatchParameters(
+    flags: any,
+    headless: boolean,
+    current: PrePostCommand['parameters'] = {}
+  ): Promise<Record<string, any>> {
+    if (headless) {
+      return applyRunBatchFlags({ runMode: 'wait' }, flags);
+    }
+    const collected: Record<string, any> = applyRunBatchFlags({ ...current }, flags);
+    delete collected.className;
+    if (!flags['run-mode']) {
+      collected.runMode = await this.promptSelect(t('selectRunBatchMode'), [
+        { title: t('runBatchModeWait'), value: 'wait' },
+        { title: t('runBatchModeNoWait'), value: 'no-wait' },
+      ], collected.runMode || 'wait');
+    }
+    if (flags['batch-size'] === undefined) {
+      collected.batchSize = await this.promptText(t('enterBatchSize'), collected.batchSize ? String(collected.batchSize) : '');
+    }
+    if (collected.runMode !== 'no-wait') {
+      if (flags['wait-timeout'] === undefined) {
+        collected.waitTimeoutMinutes = await this.promptText(
+          t('enterWaitTimeoutMinutes'),
+          collected.waitTimeoutMinutes ? String(collected.waitTimeoutMinutes) : ''
+        );
+      }
+      if (flags['success-even-if-batch-errors'] === undefined) {
+        collected.successEvenIfBatchErrors = await this.promptConfirm(
+          t('actionPromptSuccessEvenIfBatchErrors'),
+          collected.successEvenIfBatchErrors === true
+        );
+      }
+    }
+    return normalizeRunBatchParameters(collected);
+  }
+
   protected async promptSelect(message: string, choices: any[], initial?: string): Promise<any> {
-    const initialIndex = initial != null ? choices.findIndex(c2 => c2.value === initial) : 0;
-    const response = await prompts({
-      type: 'select',
-      name: 'value',
-      message: c.cyanBright(message),
-      choices,
-      initial: initialIndex >= 0 ? initialIndex : 0,
-      description: message,
-    });
-    return response.value;
+    return promptActionSelect(message, choices, initial);
   }
 
   protected async promptText(message: string, initial: string): Promise<string> {
-    const response = await prompts({
-      type: 'text',
-      name: 'value',
-      message: c.cyanBright(message),
-      initial,
-      description: message,
-    });
-    return response.value || '';
+    return promptActionText(message, initial);
   }
 
   /**
@@ -128,14 +155,44 @@ export abstract class ActionCommandBase extends SfCommand<any> {
   }
 
   protected async promptConfirm(message: string, initial = false): Promise<boolean> {
-    const response = await prompts({
-      type: 'confirm',
-      name: 'value',
-      message: c.cyanBright(message),
-      default: initial,
-      initial,
-      description: message,
-    });
-    return response.value === true;
+    return promptActionConfirm(message, initial);
+  }
+
+  /**
+   * Ask for the value of every input a custom function declares, rendering each one according to
+   * its declared type. `currentValues` pre-fills the answers when updating an existing action.
+   *
+   * A secret input asks for the NAME of a CI/CD variable, never for the value: the value is read
+   * from the environment when the action runs, so it never reaches a configuration file.
+   */
+  protected async promptCustomFunctionInputs(
+    definition: CustomFunctionDefinition,
+    currentValues: Record<string, any> = {}
+  ): Promise<Record<string, any>> {
+    const parameters: Record<string, any> = {};
+    for (const input of definition.inputs || []) {
+      const currentValue = currentValues[input.name] ?? input.default;
+      const message = `${input.label || input.name}${input.required ? ' *' : ''}`;
+      if (input.type === 'boolean') {
+        parameters[input.name] = await this.promptConfirm(message, currentValue === true);
+        continue;
+      }
+      if (input.type === 'select') {
+        parameters[input.name] = await this.promptSelect(
+          message,
+          (input.options || []).map((option) => ({ title: option, value: option })),
+          currentValue != null ? String(currentValue) : undefined
+        );
+        continue;
+      }
+      const promptMessage = input.type === 'secret' ? t('enterSecretVariableName', { name: input.label || input.name }) : message;
+      const answer = await this.promptText(promptMessage, currentValue != null ? String(currentValue) : '');
+      if (answer === '' && !input.required) {
+        // Nothing typed and nothing required: leave the parameter out so the function default wins
+        continue;
+      }
+      parameters[input.name] = input.type === 'number' && answer !== '' ? Number(answer) : answer;
+    }
+    return parameters;
   }
 }
