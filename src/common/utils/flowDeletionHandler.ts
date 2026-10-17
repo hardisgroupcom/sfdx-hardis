@@ -1,4 +1,4 @@
-import { Org, SfError } from '@salesforce/core';
+import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from './fsUtils.js';
 import { createTempDir, getCurrentGitBranch, uxLog } from './index.js';
@@ -36,7 +36,7 @@ export type FlowDeletionHandlerOptions = {
   checkOnly: boolean;
   // Merged branch configuration (.sfdx-hardis.yml)
   configInfo: any;
-  // Org resolved from the --target-org flag
+  // Org selected for the deployment (typed --target-org, branch config targetUsername or default org)
   targetOrg: any;
   smartDeployOptions: FlowDeletionDeployOptions;
 };
@@ -251,21 +251,11 @@ export class FlowDeletionHandler {
     }
   }
 
-  // The deployment targets smartDeployOptions.targetUsername, which branch config or interactive
-  // selection may have set to another org than --target-org. Flow deletion is irreversible, so it
-  // must connect to the deployment org, not to the flag org.
+  // targetOrg is the org the deployment was sent to: Flow deletion is irreversible, so it must use it
   private async getConnection(): Promise<any> {
-    if (this.conn) {
-      return this.conn;
-    }
-    const deployUsername = this.smartDeployOptions?.targetUsername || null;
-    if (!deployUsername || deployUsername === this.targetOrg?.getUsername()) {
+    if (!this.conn) {
       this.conn = this.targetOrg?.getConnection();
-      return this.conn;
     }
-    const deployOrg = await Org.create({ aliasOrUsername: deployUsername });
-    this.conn = deployOrg.getConnection();
-    uxLog('log', this.commandThis, c.grey('[FlowDeletion] ' + t('flowDeletionUsingDeploymentOrg', { username: deployUsername })));
     return this.conn;
   }
 }

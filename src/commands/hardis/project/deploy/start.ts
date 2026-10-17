@@ -202,7 +202,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     await GitProvider.managePostPullRequestComment(checkOnly);
     // Post success deployment notifications
     if (process.exitCode === 0 && !checkOnly) {
-      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);
+      await handlePostDeploymentNotifications(flags["target-org"], flags["target-org"].getUsername(), false, false, flags["debug"]);
     }
     return result;
   }
