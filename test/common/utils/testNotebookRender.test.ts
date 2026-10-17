@@ -404,6 +404,11 @@ describe('testNotebookRender', () => {
   });
 
   describe('buildTemplateCases', () => {
+    it('refuses more cases than the 3 digit counter its own reader accepts', () => {
+      expect(() => buildTemplateCases({ kind: 'functional', ticket: 'PROJ-1', modules: ['A', 'B', 'C'], rows: 400 })).to.throw(/999/);
+      expect(buildTemplateCases({ kind: 'functional', ticket: 'PROJ-1', modules: ['A', 'B', 'C'], rows: 333 }).at(-1)?.id).to.equal('PROJ-1-F999');
+    });
+
     it('numbers the rows across module groups', () => {
       const cases = buildTemplateCases({
         kind: 'functional',

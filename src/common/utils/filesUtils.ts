@@ -1447,6 +1447,15 @@ export async function countLinesInFile(file: string) {
   });
 }
 
+/** True when both paths name the same file once resolved, ignoring case on Windows. */
+export function isSamePath(first: string, second: string): boolean {
+  const normalize = (value: string) => {
+    const resolved = path.resolve(value);
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  };
+  return normalize(first) === normalize(second);
+}
+
 /**
  * @description This function generates a report path for a given file name prefix.
  * It retrieves the report directory and the current branch name.
@@ -2106,12 +2115,4 @@ function extractHyperlinkTarget(cell: ExcelJS.Cell): string | null {
 // listed in the same cell, can not be turned into an Excel hyperlink without losing the rest.
 function isLikelyHyperlink(value: string): boolean {
   return /^(https?:\/\/|mailto:)\S+$/i.test(value);
-}
-/** True when both paths name the same file once resolved, ignoring case on Windows. */
-export function isSamePath(first: string, second: string): boolean {
-  const normalize = (value: string) => {
-    const resolved = path.resolve(value);
-    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
-  };
-  return normalize(first) === normalize(second);
 }

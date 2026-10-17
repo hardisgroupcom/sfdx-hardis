@@ -4042,6 +4042,7 @@
   "testCasesServiceNowProbeFailed": "ServiceNow: il controllo della connessione su {{table}} non è riuscito - {{message}}",
   "testCasesServiceNowUnexpectedAnswer": "ServiceNow: {{url}} non ha risposto come una ServiceNow Table API. Controlla SERVICENOW_URL, e riattiva l'istanza se è un'istanza per sviluppatori.",
   "testCasesTicketRequired": "--ticket-number è obbligatorio in modalità agente e in CI.",
+  "testCasesTooManyTemplateRows": "Un quaderno vuoto contiene al massimo {{max}} casi di test, ne sono stati richiesti {{count}}: riduci --rows o il numero di --modules.",
   "testCasesUnknownProvider": "Strumento di gestione dei test sconosciuto {{provider}}. Valori consentiti: {{providers}}.",
   "testCasesUnreadableId": "ID del caso di test illeggibile {{id}}. Era previsto <TICKET>-F01 (functional), <TICKET>-T01 (technical) o <TICKET>-01 (maintenance), solo con lettere, cifre, _ . # e -.",
   "testCasesUnsupportedExtension": "Estensione del quaderno non supportata {{extension}} su {{file}}. Supportate: .md, .xlsx, .csv, .json.",

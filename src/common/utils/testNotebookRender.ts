@@ -10,7 +10,9 @@
 import ExcelJS from 'exceljs';
 import Papa from 'papaparse';
 import path from 'path';
+import { SfError } from '@salesforce/core';
 import fs from './fsUtils.js';
+import { t } from './i18n.js';
 import {
   NormalizedTestCase,
   renderStepsFlat,
@@ -236,6 +238,7 @@ export interface TemplateOptions {
 }
 
 const KIND_ID_LETTER: Record<TestCaseKind, string> = { functional: 'F', technical: 'T', maintenance: '' };
+const MAX_TEMPLATE_CASES = 999;
 
 /**
  * The empty cases of a blank notebook, identifiers pre-filled. Numbering runs across module
@@ -244,9 +247,14 @@ const KIND_ID_LETTER: Record<TestCaseKind, string> = { functional: 'F', technica
 export function buildTemplateCases(options: TemplateOptions): NormalizedTestCase[] {
   const groups = options.modules && options.modules.length > 0 ? options.modules : [''];
   const letter = KIND_ID_LETTER[options.kind];
+  const rows = Math.max(1, options.rows);
+  // The id counter is read back with 2 or 3 digits: a 1000th row would be refused by its own reader
+  if (groups.length * rows > MAX_TEMPLATE_CASES) {
+    throw new SfError(t('testCasesTooManyTemplateRows', { count: groups.length * rows, max: MAX_TEMPLATE_CASES }));
+  }
   const cases: NormalizedTestCase[] = [];
   for (const moduleName of groups) {
-    for (let i = 0; i < Math.max(1, options.rows); i++) {
+    for (let i = 0; i < rows; i++) {
       cases.push({
         id: `${options.ticket}-${letter}${String(cases.length + 1).padStart(2, '0')}`,
         ticket: options.ticket,

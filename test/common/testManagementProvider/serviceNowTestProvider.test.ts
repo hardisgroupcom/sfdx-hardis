@@ -347,15 +347,15 @@ describe('ServiceNowTestProvider', () => {
   describe('update', () => {
     it('patches the test record in place without touching its steps', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({ result: { sys_id: 'test-9' } }));
+      mockFetch(jsonResponse({ result: { description: '' } }), jsonResponse({ result: { sys_id: 'test-9' } }));
       const ref = await new ServiceNowTestProvider().update(
         { id: 'test-9', url: 'https://acme.service-now.com/sn_test_management_test.do?sys_id=test-9' },
         makeCase()
       );
-      expect(requests).to.have.lengthOf(1);
-      expect(requests[0].init.method).to.equal('PATCH');
-      expect(requests[0].url).to.equal('https://acme.service-now.com/api/now/table/sn_test_management_test/test-9');
-      const body = JSON.parse(requests[0].init.body);
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[1].init.method).to.equal('PATCH');
+      expect(requests[1].url).to.equal('https://acme.service-now.com/api/now/table/sn_test_management_test/test-9');
+      const body = JSON.parse(requests[1].init.body);
       expect(body.short_description).to.equal('[TESTKIT:PROJ-123:F01] Create a quote');
       expect(body.priority).to.equal(1);
       expect(ref.id).to.equal('test-9');
@@ -363,14 +363,27 @@ describe('ServiceNowTestProvider', () => {
 
     it('leaves the priority alone when the notebook has no priority column', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({ result: { sys_id: 'test-9' } }));
+      mockFetch(jsonResponse({ result: { description: '' } }), jsonResponse({ result: { sys_id: 'test-9' } }));
       await new ServiceNowTestProvider().update({ id: 'test-9', url: 'x' }, makeCase({ priority: undefined }));
-      expect(JSON.parse(requests[0].init.body)).to.not.have.property('priority');
+      expect(JSON.parse(requests[1].init.body)).to.not.have.property('priority');
+    });
+
+    it('reads the description first and keeps the lines of the fields the notebook has no column for', async () => {
+      setAllEnv();
+      mockFetch(
+        jsonResponse({ result: { description: 'Module: Quote management\nSOQL query: SELECT Id\nFROM Quote' } }),
+        jsonResponse({ result: { sys_id: 'test-9' } })
+      );
+      await new ServiceNowTestProvider().update({ id: 'test-9', url: 'x' }, makeCase({ module: undefined, soql: undefined }));
+      expect(requests[0].init.method ?? 'GET').to.equal('GET');
+      const description = JSON.parse(requests[1].init.body).description;
+      expect(description).to.match(/^Module: Quote management\n/);
+      expect(description).to.match(/\nSOQL query: SELECT Id\nFROM Quote$/);
     });
 
     it('surfaces the server error detail of a failed update, with the record id', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({ error: { message: 'ACL restricts the record' } }, 403));
+      mockFetch(jsonResponse({ result: { description: '' } }), jsonResponse({ error: { message: 'ACL restricts the record' } }, 403));
       const message = await errorOf(new ServiceNowTestProvider().update({ id: 'test-9', url: 'x' }, makeCase()));
       expect(message).to.contain('test-9');
       expect(message).to.contain('ACL restricts the record');

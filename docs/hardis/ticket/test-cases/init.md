@@ -20,11 +20,11 @@ The test cases usually come from a `NormalizedTestCase[]` JSON file written by a
 
 The format is read from the file extension:
 
-| Input | Flag | Typical producer |
-|-------|------|------------------|
-| JSON test cases | `--testsjsonfile` | An AI agent that read the ticket and the code |
-| An existing notebook (.md, .xlsx, .csv) | `--notebook` | A previous run of this command, or a notebook a tester filled in |
-| Nothing | neither flag | Blank notebook |
+| Input                                   | Flag              | Typical producer                                                 |
+|-----------------------------------------|-------------------|------------------------------------------------------------------|
+| JSON test cases                         | `--testsjsonfile` | An AI agent that read the ticket and the code                    |
+| An existing notebook (.md, .xlsx, .csv) | `--notebook`      | A previous run of this command, or a notebook a tester filled in |
+| Nothing                                 | neither flag      | Blank notebook                                                   |
 
 ### Output
 
@@ -60,21 +60,21 @@ The same applies in CI.
 
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|format|option|Output format: xlsx (default), csv, md, or both for xlsx and csv. Defaults to the extension of --outputfile|||xlsx<br/>csv<br/>md<br/>both|
-|json|boolean|Format output as json.||||
-|kind<br/>-k|option|Column set to write. Defaults to the kind derived from the ID column|||functional<br/>technical<br/>maintenance|
-|modules|option|Module names of a blank notebook, one group of rows each||||
-|notebook<br/>-n|option|Existing notebook to read the test cases from: .md, .xlsx or .csv||||
-|outputfile<br/>-f|option|Path of the generated notebook||||
-|rows|option|Rows per module of a blank notebook|3|||
-|testsjsonfile<br/>-j|option|NormalizedTestCase[] JSON file holding the test cases to write||||
-|ticket-number|option|Ticket key of a blank notebook. With test cases, sets their carrier ticket||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name                 |  Type   | Description                                                                                                 | Default | Required |                 Options                  |
+|:---------------------|:-------:|:------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:----------------------------------------:|
+| agent                | boolean | Run in non-interactive mode for agents and automation                                                       |         |          |                                          |
+| debug<br/>-d         | boolean | Activate debug mode (more logs)                                                                             |         |          |                                          |
+| flags-dir            | option  | Import flag values from a directory.                                                                        |         |          |                                          |
+| format               | option  | Output format: xlsx (default), csv, md, or both for xlsx and csv. Defaults to the extension of --outputfile |         |          |       xlsx<br/>csv<br/>md<br/>both       |
+| json                 | boolean | Format output as json.                                                                                      |         |          |                                          |
+| kind<br/>-k          | option  | Column set to write. Defaults to the kind derived from the ID column                                        |         |          | functional<br/>technical<br/>maintenance |
+| modules              | option  | Module names of a blank notebook, one group of rows each                                                    |         |          |                                          |
+| notebook<br/>-n      | option  | Existing notebook to read the test cases from: .md, .xlsx or .csv                                           |         |          |                                          |
+| outputfile<br/>-f    | option  | Path of the generated notebook                                                                              |         |          |                                          |
+| rows                 | option  | Rows per module of a blank notebook                                                                         |    3    |          |                                          |
+| testsjsonfile<br/>-j | option  | NormalizedTestCase[] JSON file holding the test cases to write                                              |         |          |                                          |
+| ticket-number        | option  | Ticket key of a blank notebook. With test cases, sets their carrier ticket                                  |         |          |                                          |
+| websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                   |         |          |                                          |
 
 ## Examples
 

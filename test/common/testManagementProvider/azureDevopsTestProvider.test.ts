@@ -287,6 +287,13 @@ describe('AzureDevopsTestProvider', () => {
       const patch = AzureDevopsTestProvider.buildUpdatePatch(makeCase(), [' Regression ', 'TESTKIT:PROJ-123:F01', '']);
       expect(valueOf(patch, '/fields/System.Tags')).to.equal('Regression; TESTKIT:PROJ-123:F01; MODULE:Quotes');
     });
+
+    it('drops the MODULE tag of a renamed module, and keeps it when the notebook has no module column', () => {
+      const existing = ['Regression', 'TESTKIT:PROJ-123:F01', 'MODULE:Opportunity'];
+      expect(AzureDevopsTestProvider.buildTags(makeCase({ module: 'Quotes' }), existing)).to.deep.equal(['Regression', 'TESTKIT:PROJ-123:F01', 'MODULE:Quotes']);
+      expect(AzureDevopsTestProvider.buildTags(makeCase({ module: '' }), existing)).to.deep.equal(['Regression', 'TESTKIT:PROJ-123:F01']);
+      expect(AzureDevopsTestProvider.buildTags(makeCase({ module: undefined }), existing)).to.deep.equal(existing);
+    });
   });
 
   describe('azureDevopsStepsXml', () => {

@@ -25,10 +25,19 @@ export const allTestManagementProviders: Array<{
 
 export const TEST_MANAGEMENT_PROVIDER_KEYS = allTestManagementProviders.map((descriptor) => descriptor.key);
 
-/** Build every provider, Azure DevOps organization and project being read from the git remote when unset. */
-export async function buildTestManagementProviders(config: any): Promise<Array<{ key: string; provider: TestManagementProviderRoot }>> {
-  await AzureBoardsProvider.autoDetectFromGitRemote();
-  return allTestManagementProviders.map((descriptor) => ({ key: descriptor.key, provider: descriptor.build(config) }));
+/**
+ * Build the provider of `key`, or every provider when no key is given. The Azure DevOps
+ * organization and project are read from the git remote only when that provider is built.
+ */
+export async function buildTestManagementProviders(
+  config: any,
+  key?: string
+): Promise<Array<{ key: string; provider: TestManagementProviderRoot }>> {
+  const descriptors = key ? allTestManagementProviders.filter((descriptor) => descriptor.key === key.toLowerCase()) : allTestManagementProviders;
+  if (descriptors.some((descriptor) => descriptor.key === AzureDevopsTestProvider.providerKey)) {
+    await AzureBoardsProvider.autoDetectFromGitRemote();
+  }
+  return descriptors.map((descriptor) => ({ key: descriptor.key, provider: descriptor.build(config) }));
 }
 
 /** Human readable list of what would have to be set for each provider. */
@@ -70,23 +79,6 @@ export interface PushReport {
   /** 0 all good, 2 partial, 1 nothing could be attempted. */
   exitCode: 0 | 1 | 2;
   message: string;
-}
-
-function _failAll(provider: TestManagementProviderRoot, cases: NormalizedTestCase[], error: Error): PushReport {
-  const rows: PushRow[] = cases.map((testCase) => ({
-    provider: provider.getLabel(),
-    caseId: testCase.id,
-    action: 'failed',
-    error: error.message,
-  }));
-  return {
-    rows,
-    created: 0,
-    updated: 0,
-    failed: cases.length,
-    exitCode: 1,
-    message: t('testCasesProviderUnusable', { label: provider.getLabel(), message: error.message }),
-  };
 }
 
 /**
@@ -172,4 +164,21 @@ export async function pushCases(
     })
     : t('testCasesUpsertSummary', { created, updated, failed });
   return { rows, created, updated, failed, exitCode, message };
+}
+
+function _failAll(provider: TestManagementProviderRoot, cases: NormalizedTestCase[], error: Error): PushReport {
+  const rows: PushRow[] = cases.map((testCase) => ({
+    provider: provider.getLabel(),
+    caseId: testCase.id,
+    action: 'failed',
+    error: error.message,
+  }));
+  return {
+    rows,
+    created: 0,
+    updated: 0,
+    failed: cases.length,
+    exitCode: 1,
+    message: t('testCasesProviderUnusable', { label: provider.getLabel(), message: error.message }),
+  };
 }

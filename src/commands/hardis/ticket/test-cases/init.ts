@@ -51,7 +51,8 @@ The format is read from the file extension:
 ### Output
 
 - Format: \`--format\` (\`xlsx\` by default, \`both\` writes the xlsx and the CSV), or the extension of \`--outputfile\`.
-- File: \`--outputfile\`, or \`hardis-report/test-cases-<TICKET>-<KIND>-<DATE>.<ext>\`.
+- File: \`--outputfile\`, or \`hardis-report/test-cases-<TICKET>-<KIND>-<DATE>.<ext>\`. The file always gets the extension of its format: \`--outputfile notes.txt\` writes \`notes.xlsx\`.
+- A blank notebook holds at most 999 cases (modules x \`--rows\`), the most a test case id counter can number.
 - An existing file is never overwritten silently: the command asks first, and refuses in CI and in agent mode.
 
 ### Configuration
@@ -200,45 +201,6 @@ The same applies in CI.
     return format === 'both' ? ['xlsx', 'csv'] : [format as NotebookFormat];
   }
 
-  private async targetFor(
-    flags: any,
-    format: NotebookFormat,
-    severalFormats: boolean,
-    ticket: string,
-    kind: TestCaseKind,
-    nonInteractive: boolean
-  ): Promise<string> {
-    let target: string;
-    if (flags.outputfile) {
-      const base = path.extname(flags.outputfile) ? flags.outputfile.slice(0, -path.extname(flags.outputfile).length) : flags.outputfile;
-      target = severalFormats || !path.extname(flags.outputfile) ? `${base}.${format}` : flags.outputfile;
-      await fs.ensureDir(path.dirname(path.resolve(target)));
-    } else {
-      const safeTicket = ticket.replace(/[^\w.-]/g, '_');
-      target = await generateReportPath(`test-cases-${safeTicket}-${kind}`, '', { withDate: true, withBranchName: false, fileExtension: format });
-    }
-    if (flags.notebook && isSamePath(target, flags.notebook)) {
-      throw new SfError(t('testCasesOutputIsInputNotebook', { file: flags.notebook }));
-    }
-    if (await fs.pathExists(target)) {
-      if (nonInteractive) {
-        throw new SfError(t('testCasesOutputExists', { file: target }));
-      }
-      const answer = await prompts({
-        type: 'confirm',
-        name: 'value',
-        message: t('testCasesConfirmOverwrite', { file: target }),
-        description: t('testCasesConfirmOverwriteDescription'),
-        initial: false,
-      });
-      uxLog('action', this, c.cyan(t(answer.value === true ? 'testCasesOverwriting' : 'testCasesOverwriteCancelled', { file: target })));
-      if (answer.value !== true) {
-        throw new SfError(t('testCasesOutputExists', { file: target }));
-      }
-    }
-    return target;
-  }
-
   private async resolveKind(flagValue: string | undefined, nonInteractive: boolean): Promise<TestCaseKind> {
     if (flagValue) {
       return flagValue as TestCaseKind;
@@ -283,5 +245,46 @@ The same applies in CI.
       throw new SfError(t('testCasesTicketRequired'));
     }
     return value;
+  }
+
+  private async targetFor(
+    flags: any,
+    format: NotebookFormat,
+    severalFormats: boolean,
+    ticket: string,
+    kind: TestCaseKind,
+    nonInteractive: boolean
+  ): Promise<string> {
+    let target: string;
+    if (flags.outputfile) {
+      const extension = path.extname(flags.outputfile);
+      const base = extension ? flags.outputfile.slice(0, -extension.length) : flags.outputfile;
+      // The file always ends with the extension of its format: notes.txt or cases.json written as xlsx becomes notes.xlsx or cases.xlsx
+      target = severalFormats || extension.toLowerCase() !== `.${format}` ? `${base}.${format}` : flags.outputfile;
+      await fs.ensureDir(path.dirname(path.resolve(target)));
+    } else {
+      const safeTicket = ticket.replace(/[^\w.-]/g, '_');
+      target = await generateReportPath(`test-cases-${safeTicket}-${kind}`, '', { withDate: true, withBranchName: false, fileExtension: format });
+    }
+    if (flags.notebook && isSamePath(target, flags.notebook)) {
+      throw new SfError(t('testCasesOutputIsInputNotebook', { file: flags.notebook }));
+    }
+    if (await fs.pathExists(target)) {
+      if (nonInteractive) {
+        throw new SfError(t('testCasesOutputExists', { file: target }));
+      }
+      const answer = await prompts({
+        type: 'confirm',
+        name: 'value',
+        message: t('testCasesConfirmOverwrite', { file: target }),
+        description: t('testCasesConfirmOverwriteDescription'),
+        initial: false,
+      });
+      uxLog('action', this, c.cyan(t(answer.value === true ? 'testCasesOverwriting' : 'testCasesOverwriteCancelled', { file: target })));
+      if (answer.value !== true) {
+        throw new SfError(t('testCasesOutputExists', { file: target }));
+      }
+    }
+    return target;
   }
 }

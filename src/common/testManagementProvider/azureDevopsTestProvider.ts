@@ -18,88 +18,6 @@ export interface CarrierContext {
 
 const WORK_ITEM_TYPE = 'Test Case';
 
-function _htmlEscape(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function _oneLine(value: unknown): string {
-  return String(value ?? '')
-    .replace(/\s*[\r\n]+\s*/g, ' ')
-    .trim();
-}
-
-// A control character sentinel, so it never collides with real notebook content
-const BR_PLACEHOLDER = '\u0000BR\u0000';
-
-/**
- * `System.Description` renders HTML. The text is escaped FIRST, so nothing in the notebook can
- * break out of the markup, and only then are `[label](url)`, `code` and `**bold**` turned into
- * tags. Reversing the two opens an HTML injection.
- */
-function _richText(text: unknown): string {
-  const protectedBreaks = String(text ?? '')
-    .replace(/<br\s*\/?>/gi, BR_PLACEHOLDER)
-    .replace(/\r\n|\r|\n/g, BR_PLACEHOLDER);
-  return _htmlEscape(protectedBreaks)
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
-    .split(BR_PLACEHOLDER)
-    .join('<br>');
-}
-
-/** A `<div><b>Label</b> ...</div>` block of a description. Only the label is captured. */
-const DESCRIPTION_BLOCK_RE = /<div><b>([^<]*)<\/b>[\s\S]*?<\/div>/g;
-
-/** The description blocks a work item already holds, keyed by their label. */
-function _existingBlocks(html: unknown): Map<string, string> {
-  const blocks = new Map<string, string>();
-  const text = String(html ?? '');
-  DESCRIPTION_BLOCK_RE.lastIndex = 0;
-  let match = DESCRIPTION_BLOCK_RE.exec(text);
-  while (match !== null) {
-    blocks.set(match[1].trim(), match[0]);
-    match = DESCRIPTION_BLOCK_RE.exec(text);
-  }
-  return blocks;
-}
-
-/**
- * System.Description, in English whatever the locale: the tracker is shared.
- *
- * A notebook kind carries only its own columns, so a field the notebook does not define keeps the
- * block the work item already holds, exactly like the priority and the steps. A field defined but
- * empty is a deliberate erasure and drops its block.
- */
-function _description(testCase: NormalizedTestCase, existingHtml: unknown = ''): string {
-  const existing = _existingBlocks(existingHtml);
-  const parts: string[] = [];
-  const add = (labelKey: string, value: string | undefined, render: (text: string) => string): void => {
-    const label = _htmlEscape(tEn(labelKey));
-    if (value === undefined) {
-      const kept = existing.get(label.trim());
-      if (kept) {
-        parts.push(kept);
-      }
-      return;
-    }
-    if (value) {
-      parts.push(`<div><b>${label}</b> ${render(value)}</div>`);
-    }
-  };
-  add('testCaseModule', testCase.module, (text) => _htmlEscape(text));
-  add('testCaseTarget', testCase.target, (text) => `<code>${_htmlEscape(text)}</code>`);
-  add('testCasePreconditions', testCase.preconditions, (text) => _richText(text));
-  add('testCaseOverallExpectedResult', testCase.expected, (text) => _richText(text));
-  // A SOQL query is code: escaped, not converted
-  add('testCaseSoqlQuery', testCase.soql, (text) => `<pre>${_htmlEscape(text)}</pre>`);
-  return parts.join('');
-}
-
 /**
  * `Microsoft.VSTS.TCM.Steps` stores HTML as an XML escaped string: the step text is HTML escaped,
  * then the DIV/P fragment is escaped again, so `Enter <Account Name>` stays text.
@@ -126,18 +44,6 @@ export function azureDevopsStepsXml(steps: TestCaseStep[] | undefined): string {
   });
   parts.push('</steps>');
   return parts.join('');
-}
-
-/**
- * Work item number of a ticket key: the last group of digits, so `DSI-2026-14545` gives 14545.
- * Throws when there is none rather than asking the API for item `NaN`.
- */
-function _requireStoryId(ticketKey: string): number {
-  const digitGroups = String(ticketKey ?? '').match(/\d+/g);
-  if (!digitGroups) {
-    throw new SfError(t('testCasesAzureNoWorkItemNumber', { ticket: JSON.stringify(ticketKey) }));
-  }
-  return Number(digitGroups[digitGroups.length - 1]);
 }
 
 /**
@@ -229,10 +135,17 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
     return patch;
   }
 
-  /** Existing tags plus the idempotency key and the module tag, without duplicates. */
+  /**
+   * Existing tags plus the idempotency key and the module tag, without duplicates. When the
+   * notebook has a module column, the MODULE tag of a renamed or emptied module is dropped.
+   */
   public static buildTags(testCase: NormalizedTestCase, existingTags: string[]): string[] {
-    const tags = existingTags.map((tag) => tag.trim()).filter(Boolean);
-    for (const tag of [idempotencyKey(testCase.id), testCase.module ? `MODULE:${testCase.module}` : '']) {
+    const moduleTag = testCase.module ? `MODULE:${testCase.module}` : '';
+    const tags = existingTags
+      .map((tag) => tag.trim())
+      .filter(Boolean)
+      .filter((tag) => testCase.module === undefined || !tag.startsWith('MODULE:') || tag === moduleTag);
+    for (const tag of [idempotencyKey(testCase.id), moduleTag]) {
       if (tag && !tags.includes(tag)) {
         tags.push(tag);
       }
@@ -393,4 +306,98 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
       `${String(this.serverUrl).replace(/\/+$/, '')}/${encodeURIComponent(String(this.teamProject))}/_workitems/edit/${workItem?.id}`
     );
   }
+}
+
+function _htmlEscape(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function _oneLine(value: unknown): string {
+  return String(value ?? '')
+    .replace(/\s*[\r\n]+\s*/g, ' ')
+    .trim();
+}
+
+// A control character sentinel, so it never collides with real notebook content
+const BR_PLACEHOLDER = '\u0000BR\u0000';
+
+/**
+ * `System.Description` renders HTML. The text is escaped FIRST, so nothing in the notebook can
+ * break out of the markup, and only then are `[label](url)`, `code` and `**bold**` turned into
+ * tags. Reversing the two opens an HTML injection.
+ */
+function _richText(text: unknown): string {
+  const protectedBreaks = String(text ?? '')
+    .replace(/<br\s*\/?>/gi, BR_PLACEHOLDER)
+    .replace(/\r\n|\r|\n/g, BR_PLACEHOLDER);
+  return _htmlEscape(protectedBreaks)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .split(BR_PLACEHOLDER)
+    .join('<br>');
+}
+
+/** A `<div><b>Label</b> ...</div>` block of a description. Only the label is captured. */
+const DESCRIPTION_BLOCK_RE = /<div><b>([^<]*)<\/b>[\s\S]*?<\/div>/g;
+
+/** The description blocks a work item already holds, keyed by their label. */
+function _existingBlocks(html: unknown): Map<string, string> {
+  const blocks = new Map<string, string>();
+  const text = String(html ?? '');
+  DESCRIPTION_BLOCK_RE.lastIndex = 0;
+  let match = DESCRIPTION_BLOCK_RE.exec(text);
+  while (match !== null) {
+    blocks.set(match[1].trim(), match[0]);
+    match = DESCRIPTION_BLOCK_RE.exec(text);
+  }
+  return blocks;
+}
+
+/**
+ * System.Description, in English whatever the locale: the tracker is shared.
+ *
+ * A notebook kind carries only its own columns, so a field the notebook does not define keeps the
+ * block the work item already holds, exactly like the priority and the steps. A field defined but
+ * empty is a deliberate erasure and drops its block.
+ */
+function _description(testCase: NormalizedTestCase, existingHtml: unknown = ''): string {
+  const existing = _existingBlocks(existingHtml);
+  const parts: string[] = [];
+  const add = (labelKey: string, value: string | undefined, render: (text: string) => string): void => {
+    const label = _htmlEscape(tEn(labelKey));
+    if (value === undefined) {
+      const kept = existing.get(label.trim());
+      if (kept) {
+        parts.push(kept);
+      }
+      return;
+    }
+    if (value) {
+      parts.push(`<div><b>${label}</b> ${render(value)}</div>`);
+    }
+  };
+  add('testCaseModule', testCase.module, (text) => _htmlEscape(text));
+  add('testCaseTarget', testCase.target, (text) => `<code>${_htmlEscape(text)}</code>`);
+  add('testCasePreconditions', testCase.preconditions, (text) => _richText(text));
+  add('testCaseOverallExpectedResult', testCase.expected, (text) => _richText(text));
+  // A SOQL query is code: escaped, not converted
+  add('testCaseSoqlQuery', testCase.soql, (text) => `<pre>${_htmlEscape(text)}</pre>`);
+  return parts.join('');
+}
+
+/**
+ * Work item number of a ticket key: the last group of digits, so `DSI-2026-14545` gives 14545.
+ * Throws when there is none rather than asking the API for item `NaN`.
+ */
+function _requireStoryId(ticketKey: string): number {
+  const digitGroups = String(ticketKey ?? '').match(/\d+/g);
+  if (!digitGroups) {
+    throw new SfError(t('testCasesAzureNoWorkItemNumber', { ticket: JSON.stringify(ticketKey) }));
+  }
+  return Number(digitGroups[digitGroups.length - 1]);
 }

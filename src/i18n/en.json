@@ -4046,6 +4046,7 @@
   "testCasesServiceNowProbeFailed": "ServiceNow: connection check on {{table}} failed - {{message}}",
   "testCasesServiceNowUnexpectedAnswer": "ServiceNow: {{url}} did not answer as a ServiceNow Table API. Check SERVICENOW_URL, and wake up the instance if it is a developer instance.",
   "testCasesTicketRequired": "--ticket-number is required in agent mode and in CI.",
+  "testCasesTooManyTemplateRows": "A blank notebook holds at most {{max}} test cases, {{count}} were asked: lower --rows or the number of --modules.",
   "testCasesUnknownProvider": "Unknown test management tool {{provider}}. Allowed values: {{providers}}.",
   "testCasesUnreadableId": "Unreadable test case ID {{id}}. Expected <TICKET>-F01 (functional), <TICKET>-T01 (technical) or <TICKET>-01 (maintenance), with letters, digits, _ . # and - only.",
   "testCasesUnsupportedExtension": "Unsupported notebook extension {{extension}} on {{file}}. Supported: .md, .xlsx, .csv, .json.",

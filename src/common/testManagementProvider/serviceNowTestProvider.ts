@@ -54,11 +54,14 @@ export class ServiceNowTestProvider extends TestManagementProviderRoot {
     return `[${idempotencyKey(testCase.id)}] ${testCase.title}`;
   }
 
-  /** Fields of the test record. The priority is only sent when the notebook has that column. */
-  public static buildTestBody(testCase: NormalizedTestCase): Record<string, any> {
+  /**
+   * Fields of the test record. The priority is only sent when the notebook has that column, and
+   * the description keeps the blocks of `existingDescription` the notebook has no column for.
+   */
+  public static buildTestBody(testCase: NormalizedTestCase, existingDescription: string = ''): Record<string, any> {
     const body: Record<string, any> = {
       short_description: ServiceNowTestProvider.buildShortDescription(testCase),
-      description: TestManagementProviderRoot.buildPlainDescription(testCase),
+      description: TestManagementProviderRoot.buildPlainDescription(testCase, existingDescription),
     };
     if (testCase.priority !== undefined) {
       body.priority = testCase.priority;
@@ -141,12 +144,27 @@ export class ServiceNowTestProvider extends TestManagementProviderRoot {
   }
 
   /**
-   * Updates the test record only. The steps of the existing version are left alone: replacing them
-   * would delete rows a tester may already have run.
+   * Updates the test record only, read first so the description blocks the notebook does not own
+   * are kept. The steps of the existing version are left alone: replacing them would delete rows a
+   * tester may already have run.
    */
   public async update(ref: ProviderRef, testCase: NormalizedTestCase): Promise<ProviderRef> {
+    let existingDescription = '';
     try {
-      await httpPatch(`${this.instanceUrl}/api/now/table/${T_TEST}/${ref.id}`, ServiceNowTestProvider.buildTestBody(testCase), this.authConfig());
+      const response = await httpGet(`${this.instanceUrl}/api/now/table/${T_TEST}/${ref.id}`, {
+        ...this.authConfig(),
+        params: { sysparm_fields: 'description' },
+      });
+      existingDescription = String(response.data?.result?.description ?? '');
+    } catch (e) {
+      throw new SfError(t('testCasesServiceNowCallFailed', { action: `read ${ref.id}`, message: TestManagementProviderRoot.describeHttpError(e) }));
+    }
+    try {
+      await httpPatch(
+        `${this.instanceUrl}/api/now/table/${T_TEST}/${ref.id}`,
+        ServiceNowTestProvider.buildTestBody(testCase, existingDescription),
+        this.authConfig()
+      );
     } catch (e) {
       throw new SfError(t('testCasesServiceNowCallFailed', { action: `update ${ref.id}`, message: TestManagementProviderRoot.describeHttpError(e) }));
     }

@@ -108,6 +108,31 @@ export class JiraProvider extends TicketProviderRoot {
     }
   }
 
+  /** JIRA host as every caller expects it: `https://` added when missing, no trailing slash. Empty when unset. */
+  public static normalizeHost(rawHost: unknown): string {
+    const host = String(rawHost ?? "").trim();
+    return host ? (host.startsWith("http") ? host : `https://${host}`).replace(/\/+$/, "") : "";
+  }
+
+  /**
+   * REST base URL and headers of the first configured credential, for callers that send their own
+   * calls (the Xray test cases provider), so JIRA is configured once. Client credentials go
+   * through the Atlassian API gateway. Null when no credential is configured.
+   */
+  public async getRestAccess(): Promise<{ label: string; baseUrl: string; headers: Record<string, string> } | null> {
+    if (getEnvVar("JIRA_CLIENT_ID") && getEnvVar("JIRA_CLIENT_SECRET")) {
+      const accessToken = await this.getOAuthToken();
+      const cloudId = await this.getCloudId(accessToken);
+      return {
+        label: "JIRA_CLIENT_ID + JIRA_CLIENT_SECRET",
+        baseUrl: `https://api.atlassian.com/ex/jira/${cloudId}`,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      };
+    }
+    const auth = this.nextAuths.find((candidate) => candidate.headers);
+    return auth?.headers ? { label: auth.label, baseUrl: this.jiraHost || "", headers: auth.headers() } : null;
+  }
+
   /** Activates the next credential that has not been tried yet */
   private async useNextAuth(): Promise<void> {
     const auth = this.nextAuths.shift();

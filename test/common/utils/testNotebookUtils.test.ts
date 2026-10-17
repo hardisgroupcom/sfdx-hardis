@@ -117,6 +117,13 @@ describe('testNotebookUtils', () => {
         expectMention(error.message, 'testCasesUnreadableId', 'DSI-2026-14545');
       });
 
+      it('refuses a bare ticket key with a 2 or 3 digit number instead of reading it as a maintenance case', async () => {
+        const error = await errorOf(() => deriveTicketAndKind('PROJ-123'));
+        expectMention(error.message, 'testCasesUnreadableId', 'PROJ-123');
+        await errorOf(() => deriveTicketAndKind('PROJ-12'));
+        expect(deriveTicketAndKind('12345-07')).to.deep.equal({ ticket: '12345', kind: 'maintenance' });
+      });
+
       it('refuses a counter of a single digit or of 4 digits', async () => {
         await errorOf(() => deriveTicketAndKind('PROJ-123-F1'));
         await errorOf(() => deriveTicketAndKind('PROJ-123-F1000'));
@@ -755,6 +762,20 @@ describe('testNotebookUtils', () => {
       const [testCase] = validateNormalizedCases([{ id: 'PROJ-123-F01', ticket: 'PROJ-123', title: 'T', expected: 'E' }], 'OTHER-42');
       expect(testCase.ticket).to.equal('OTHER-42');
       expect(idempotencyKey(testCase.id)).to.equal('TESTKIT:PROJ-123:F01');
+    });
+
+    it('refuses an optional text field that is not a string', async () => {
+      const error = await errorOf(() =>
+        validateNormalizedCases([{ id: 'PROJ-123-F01', title: 'T', expected: 'E', module: 5, preconditions: { a: 1 }, target: [], soql: 7 }])
+      );
+      for (const field of ['module', 'preconditions', 'target', 'soql']) {
+        expect(error.message).to.contain(`"${field}" must be a string`);
+      }
+    });
+
+    it('trims the ticket of a JSON entry', () => {
+      const [testCase] = validateNormalizedCases([{ id: 'PROJ-123-F01', ticket: ' PROJ-1 ', title: 'T', expected: 'E' }]);
+      expect(testCase.ticket).to.equal('PROJ-1');
     });
 
     it('accepts an id made of a ticket key holding dashes, and refuses the bare ticket key', async () => {

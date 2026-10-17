@@ -71,26 +71,31 @@ export abstract class TestManagementProviderRoot {
    * Plain text description shared by the trackers whose description field cannot render markup.
    * Written in English whatever the locale: the tracker is shared, and a run in another language
    * must not rewrite every description.
+   *
+   * A field the notebook does not define keeps the block `existing` already holds, as the Azure
+   * DevOps HTML description does. A field defined but empty drops its block.
    */
-  public static buildPlainDescription(testCase: NormalizedTestCase): string {
-    const linksToUrls = (text: unknown): string => String(text ?? '').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$2');
-    const lines: string[] = [];
-    if (testCase.module) {
-      lines.push(`${tEn('testCaseModule')} ${testCase.module}`);
-    }
-    if (testCase.target) {
-      lines.push(`${tEn('testCaseTarget')} ${testCase.target}`);
-    }
-    if (testCase.preconditions) {
-      lines.push(`${tEn('testCasePreconditions')} ${linksToUrls(testCase.preconditions)}`);
-    }
-    if (testCase.expected) {
-      lines.push(`${tEn('testCaseOverallExpectedResult')} ${linksToUrls(testCase.expected)}`);
-    }
-    if (testCase.soql) {
-      lines.push(`${tEn('testCaseSoqlQuery')} ${testCase.soql}`);
-    }
-    return lines.join('\n');
+  public static buildPlainDescription(testCase: NormalizedTestCase, existing: unknown = ''): string {
+    const linksToUrls = (text: string): string => text.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '$2');
+    const kept = _plainBlocks(existing);
+    const blocks: string[] = [];
+    const add = (labelKey: string, value: string | undefined, render: (text: string) => string = (text) => text): void => {
+      const label = tEn(labelKey);
+      if (value === undefined) {
+        const block = kept.get(label);
+        if (block) {
+          blocks.push(block);
+        }
+      } else if (value) {
+        blocks.push(`${label} ${render(value)}`);
+      }
+    };
+    add('testCaseModule', testCase.module);
+    add('testCaseTarget', testCase.target);
+    add('testCasePreconditions', testCase.preconditions, linksToUrls);
+    add('testCaseOverallExpectedResult', testCase.expected, linksToUrls);
+    add('testCaseSoqlQuery', testCase.soql);
+    return blocks.join('\n');
   }
 
   /**
@@ -125,4 +130,33 @@ export abstract class TestManagementProviderRoot {
     const message = e?.message ?? String(e);
     return details.length > 0 ? `${message}: ${details.join('; ')}` : message;
   }
+}
+
+/** Labels of the plain description blocks, in the order they are written. */
+const PLAIN_BLOCK_LABEL_KEYS = ['testCaseModule', 'testCaseTarget', 'testCasePreconditions', 'testCaseOverallExpectedResult', 'testCaseSoqlQuery'];
+
+/**
+ * The blocks of a plain description, keyed by their label. A block starts on a line opening with
+ * a label and runs until the next one, so a multi-line precondition stays whole.
+ */
+function _plainBlocks(text: unknown): Map<string, string> {
+  const labels = PLAIN_BLOCK_LABEL_KEYS.map((key) => tEn(key));
+  const blocks = new Map<string, string>();
+  let current: { label: string; lines: string[] } | null = null;
+  const flush = (): void => {
+    if (current) {
+      blocks.set(current.label, current.lines.join('\n'));
+    }
+  };
+  for (const line of String(text ?? '').split(/\r?\n/)) {
+    const label = labels.find((candidate) => line.startsWith(`${candidate} `) || line === candidate);
+    if (label) {
+      flush();
+      current = { label, lines: [line] };
+    } else if (current) {
+      current.lines.push(line);
+    }
+  }
+  flush();
+  return blocks;
 }

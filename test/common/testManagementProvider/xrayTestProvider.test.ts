@@ -4,7 +4,18 @@ import { XrayTestProvider, xrayBaseUrlFor } from '../../../src/common/testManage
 import { NormalizedTestCase } from '../../../src/common/utils/testNotebookUtils.js';
 import { setFetchForTests } from '../../../src/common/utils/httpUtils.js';
 
-const ENV_KEYS = ['XRAY_CLIENT_ID', 'XRAY_CLIENT_SECRET', 'XRAY_REGION', 'JIRA_HOST', 'JIRA_PROJECT_KEY', 'JIRA_EMAIL', 'JIRA_TOKEN'];
+const ENV_KEYS = [
+  'XRAY_CLIENT_ID',
+  'XRAY_CLIENT_SECRET',
+  'XRAY_REGION',
+  'JIRA_HOST',
+  'JIRA_PROJECT_KEY',
+  'JIRA_EMAIL',
+  'JIRA_TOKEN',
+  'JIRA_CLIENT_ID',
+  'JIRA_CLIENT_SECRET',
+  'JIRA_PAT',
+];
 
 function makeCase(overrides: Partial<NormalizedTestCase> = {}): NormalizedTestCase {
   return {
@@ -161,6 +172,50 @@ describe('XrayTestProvider', () => {
       await new XrayTestProvider().checkPrerequisites();
       expect(requests[0].url).to.equal('https://eu.xray.cloud.getxray.app/api/v2/authenticate');
     });
+
+    it('reads the Jira project with the Jira credentials, so a wrong token refuses the run before any write', async () => {
+      setAllEnv();
+      mockFetch(jsonResponse('the-jwt'), jsonResponse({ errorMessages: ['Unauthorized'] }, 401));
+      const message = await errorOf(new XrayTestProvider().checkPrerequisites());
+      expect(requests[1].url).to.match(/^https:\/\/acme\.atlassian\.net\/rest\/api\/2\/project\/PROJ\?/);
+      expect(requests[1].init.headers.Authorization).to.match(/^Basic /);
+      expect(message).to.contain('read project PROJ');
+      expect(message).to.contain('Unauthorized');
+    });
+  });
+
+  describe('prepare', () => {
+    it('reads each carrier ticket once, and refuses a missing one before any test is created', async () => {
+      setAllEnv();
+      mockFetch(jsonResponse({ key: 'PROJ-123' }), jsonResponse({ errorMessages: ['Issue does not exist'] }, 404));
+      const cases = [makeCase(), makeCase({ id: 'PROJ-123-F02' }), makeCase({ id: 'PROJ-456-F01', ticket: 'PROJ-456' })];
+      const message = await errorOf(new XrayTestProvider().prepare(cases));
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].url).to.match(/\/rest\/api\/2\/issue\/PROJ-123\?/);
+      expect(message).to.contain('read carrier ticket PROJ-456');
+      expect(message).to.contain('Issue does not exist');
+    });
+  });
+
+  describe('Jira credentials', () => {
+    it('accepts the client credentials of the Jira ticket provider and calls Jira through the API gateway', async () => {
+      setAllEnv();
+      delete process.env.JIRA_EMAIL;
+      delete process.env.JIRA_TOKEN;
+      process.env.JIRA_CLIENT_ID = 'jira-cid';
+      process.env.JIRA_CLIENT_SECRET = 'jira-secret';
+      const provider = new XrayTestProvider();
+      expect(provider.isActive).to.be.true;
+      mockFetch(
+        jsonResponse({ access_token: 'oauth-token' }),
+        jsonResponse([{ id: 'cloud-1', url: 'https://acme.atlassian.net' }]),
+        jsonResponse({ issues: [{ key: 'PROJ-9', fields: { labels: ['TESTKIT:PROJ-123:F01'] } }] })
+      );
+      const found = await provider.findByKey('TESTKIT:PROJ-123:F01');
+      expect(requests[2].url).to.match(/^https:\/\/api\.atlassian\.com\/ex\/jira\/cloud-1\/rest\/api\/3\/search\/jql\?/);
+      expect(requests[2].init.headers.Authorization).to.equal('Bearer oauth-token');
+      expect(found?.url).to.equal('https://acme.atlassian.net/browse/PROJ-9');
+    });
   });
 
   it('follows the region and falls back to the global endpoint on an unknown one', () => {
@@ -206,7 +261,7 @@ describe('XrayTestProvider', () => {
 
     it('reuses the token obtained by checkPrerequisites', async () => {
       setAllEnv();
-      mockFetch(jsonResponse('the-jwt'), jsonResponse(CREATED));
+      mockFetch(jsonResponse('the-jwt'), jsonResponse({ key: 'PROJ' }), jsonResponse(CREATED));
       const provider = new XrayTestProvider();
       await provider.checkPrerequisites();
       await provider.create(makeCase());
@@ -363,20 +418,21 @@ describe('XrayTestProvider', () => {
   describe('update', () => {
     it('sends the update through REST API v2, where the description is a plain string', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({}));
+      mockFetch(jsonResponse({ fields: { description: '', labels: [] } }), jsonResponse({}));
       const ref = await new XrayTestProvider().update({ id: 'PROJ-9', url: 'x' }, makeCase());
-      expect(requests).to.have.lengthOf(1);
-      expect(requests[0].url).to.equal('https://acme.atlassian.net/rest/api/2/issue/PROJ-9');
-      expect(requests[0].init.method).to.equal('PUT');
-      expect(JSON.parse(requests[0].init.body).fields.description).to.be.a('string');
+      expect(requests).to.have.lengthOf(2);
+      expect(requests[0].url).to.match(/^https:\/\/acme\.atlassian\.net\/rest\/api\/2\/issue\/PROJ-9\?/);
+      expect(requests[1].url).to.equal('https://acme.atlassian.net/rest/api/2/issue/PROJ-9');
+      expect(requests[1].init.method).to.equal('PUT');
+      expect(JSON.parse(requests[1].init.body).fields.description).to.be.a('string');
       expect(ref).to.deep.equal({ id: 'PROJ-9', url: 'https://acme.atlassian.net/browse/PROJ-9' });
     });
 
     it('updates summary, description and priority, and adds labels instead of replacing them', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({}));
+      mockFetch(jsonResponse({ fields: { description: '', labels: ['manual-label'] } }), jsonResponse({}));
       await new XrayTestProvider().update({ id: 'PROJ-9', url: 'x' }, makeCase({ priority: 2, expected: 'The quote is saved' }));
-      const body = JSON.parse(requests[0].init.body);
+      const body = JSON.parse(requests[1].init.body);
       expect(body.fields.summary).to.equal('Create a quote');
       expect(body.fields.description).to.contain('The quote is saved');
       expect(body.fields.priority).to.deep.equal({ name: 'High' });
@@ -390,6 +446,31 @@ describe('XrayTestProvider', () => {
       expect(body.fields).to.not.have.property('priority');
     });
 
+    it('keeps the description lines of the fields the notebook has no column for', () => {
+      const existing = 'Module: Quote management\nPreconditions: old\nSOQL query: SELECT Id FROM Quote';
+      const body = XrayTestProvider.buildUpdateBody(makeCase({ module: undefined, soql: undefined, preconditions: 'new' }), {
+        description: existing,
+      });
+      expect(body.fields.description).to.equal('Module: Quote management\nPreconditions: new\nOverall expected result: The quote exists\nSOQL query: SELECT Id FROM Quote');
+    });
+
+    it('drops the description line of a field the notebook empties', () => {
+      const body = XrayTestProvider.buildUpdateBody(makeCase({ soql: '' }), { description: 'SOQL query: SELECT Id FROM Quote' });
+      expect(body.fields.description).to.not.contain('SOQL');
+    });
+
+    it('removes the MODULE label of a renamed module and keeps the other labels', () => {
+      const body = XrayTestProvider.buildUpdateBody(makeCase({ module: 'Billing' }), {
+        labels: ['TESTKIT:PROJ-123:F01', 'MODULE:Quote_management', 'manual-label'],
+      });
+      expect(body.update.labels).to.deep.equal([{ add: 'TESTKIT:PROJ-123:F01' }, { add: 'MODULE:Billing' }, { remove: 'MODULE:Quote_management' }]);
+    });
+
+    it('leaves the MODULE label alone when the notebook has no module column', () => {
+      const body = XrayTestProvider.buildUpdateBody(makeCase({ module: undefined }), { labels: ['MODULE:Quote_management'] });
+      expect(body.update.labels).to.deep.equal([{ add: 'TESTKIT:PROJ-123:F01' }]);
+    });
+
     it('does not authenticate on Xray for a Jira update', async () => {
       setAllEnv();
       mockFetch(jsonResponse({}));
@@ -399,7 +480,7 @@ describe('XrayTestProvider', () => {
 
     it('surfaces the Jira field errors of a failed update, with the issue key', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({ errorMessages: [], errors: { priority: 'Specify a valid priority' } }, 400));
+      mockFetch(jsonResponse({ fields: {} }), jsonResponse({ errorMessages: [], errors: { priority: 'Specify a valid priority' } }, 400));
       const message = await errorOf(new XrayTestProvider().update({ id: 'PROJ-9', url: 'x' }, makeCase()));
       expect(message).to.contain('PROJ-9');
       expect(message).to.contain('priority: Specify a valid priority');
@@ -432,13 +513,24 @@ describe('XrayTestProvider', () => {
 
   it('puts a timeout on every Xray and Jira call', async () => {
     setAllEnv();
-    mockFetch(jsonResponse('jwt'), jsonResponse(CREATED), jsonResponse({}), jsonResponse({ issues: [] }), jsonResponse({}));
+    mockFetch(
+      jsonResponse('jwt'),
+      jsonResponse({ key: 'PROJ' }),
+      jsonResponse({ key: 'PROJ-123' }),
+      jsonResponse(CREATED),
+      jsonResponse({}),
+      jsonResponse({ issues: [] }),
+      jsonResponse({ fields: {} }),
+      jsonResponse({})
+    );
     const provider = new XrayTestProvider();
+    await provider.checkPrerequisites();
+    await provider.prepare([makeCase()]);
     await provider.create(makeCase());
     await provider.linkToStory({ id: 'PROJ-9', url: 'x' }, 'PROJ-123');
     await provider.findByKey('TESTKIT:PROJ-123:F01');
     await provider.update({ id: 'PROJ-9', url: 'x' }, makeCase());
-    expect(requests).to.have.lengthOf(5);
+    expect(requests).to.have.lengthOf(8);
     for (const request of requests) {
       expect(request.init.signal, request.url).to.be.instanceOf(AbortSignal);
     }

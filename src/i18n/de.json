@@ -4041,6 +4041,7 @@
   "testCasesServiceNowProbeFailed": "ServiceNow: Verbindungsprüfung auf {{table}} fehlgeschlagen - {{message}}",
   "testCasesServiceNowUnexpectedAnswer": "ServiceNow: {{url}} hat nicht wie eine ServiceNow Table API geantwortet. Überprüfen Sie SERVICENOW_URL, und wecken Sie die Instanz auf, falls es sich um eine Entwicklerinstanz handelt.",
   "testCasesTicketRequired": "--ticket-number ist im Agentenmodus und in CI erforderlich.",
+  "testCasesTooManyTemplateRows": "Ein leeres Notizbuch enthält höchstens {{max}} Testfälle, {{count}} wurden angefordert: Verringern Sie --rows oder die Anzahl der --modules.",
   "testCasesUnknownProvider": "Unbekanntes Testmanagement-Tool {{provider}}. Zulässige Werte: {{providers}}.",
   "testCasesUnreadableId": "Unlesbare Testfall-ID {{id}}. Erwartet wurde <TICKET>-F01 (functional), <TICKET>-T01 (technical) oder <TICKET>-01 (maintenance), nur mit Buchstaben, Ziffern, _ . # und -.",
   "testCasesUnsupportedExtension": "Nicht unterstützte Notizbuch-Erweiterung {{extension}} bei {{file}}. Unterstützt: .md, .xlsx, .csv, .json.",

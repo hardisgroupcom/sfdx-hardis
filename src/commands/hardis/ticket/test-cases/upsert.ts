@@ -54,13 +54,15 @@ The variables sfdx-hardis already uses for these tools, from CI/CD variables or 
 |------|-----------------|----------|
 | \`azure-devops\` | A Test Case work item with its steps, tagged and linked to its user story | \`CI_SFDX_HARDIS_AZURE_TOKEN\` (or \`SYSTEM_ACCESSTOKEN\` or \`AZURE_DEVOPS_EXT_PAT\`), plus \`SYSTEM_COLLECTIONURI\` and \`SYSTEM_TEAMPROJECT\`, read from the git remote when unset |
 | \`servicenow\` | A Test Management 2.0 test, its version and its steps | \`SERVICENOW_URL\`, \`SERVICENOW_USERNAME\`, \`SERVICENOW_PASSWORD\` |
-| \`xray\` | A Jira Test issue with its steps, labelled and linked to its story | \`XRAY_CLIENT_ID\`, \`XRAY_CLIENT_SECRET\`, \`JIRA_HOST\` (or \`jiraHost\` config), \`JIRA_PROJECT_KEY\`, \`JIRA_EMAIL\`, \`JIRA_TOKEN\`, and \`XRAY_REGION\` (\`us\`, \`eu\` or \`au\`) when not on the global endpoint |
+| \`xray\` | A Jira Test issue with its steps, labelled and linked to its story | \`XRAY_CLIENT_ID\`, \`XRAY_CLIENT_SECRET\`, \`JIRA_HOST\` (or \`jiraHost\` config), \`JIRA_PROJECT_KEY\`, the Jira credentials of the Jira ticket provider (\`JIRA_EMAIL\` + \`JIRA_TOKEN\`, or \`JIRA_CLIENT_ID\` + \`JIRA_CLIENT_SECRET\`, or \`JIRA_PAT\`), and \`XRAY_REGION\` (\`us\`, \`eu\` or \`au\`) when not on the global endpoint |
 
 <details markdown="1">
 <summary>Technical explanations</summary>
 
 - **Idempotency key:** \`TESTKIT:<TICKET>:<SHORT ID>\`, the ticket being the one of the identifier, so \`--ticket-number\` never changes it. Azure DevOps stores it as a tag, Xray as a label, ServiceNow as a \`[TESTKIT:...]\` prefix of the test short description. Every search result is checked against the exact key before it is updated.
-- **Carrier ticket:** the ticket of the identifier, or \`--ticket-number\`. Azure DevOps uses its last group of digits as work item number (\`PROJ-2026-14545\` gives 14545), and reads that work item before any write: a missing one refuses the run. A new test case inherits its area, iteration and assignee; an unassigned story leaves the test case unassigned.
+- **Carrier ticket:** the ticket of the identifier, or \`--ticket-number\`. Azure DevOps uses its last group of digits as work item number (\`PROJ-2026-14545\` gives 14545), and reads that work item before any write: a missing one refuses the run. A new test case inherits its area, iteration and assignee; an unassigned story leaves the test case unassigned. Xray reads the Jira project and every carrier issue before any write, so wrong Jira credentials or a missing story also refuse the run. ServiceNow has no link to a story: the carrier only travels in the idempotency key.
+- **Module renamed in the notebook:** the old \`MODULE:\` tag (Azure DevOps) or label (Xray) is replaced by the new one. Other tags and labels stay.
+- **Description blocks:** a field the notebook has no column for (the module of a maintenance notebook, the SOQL query of a functional one...) keeps the block the tracker already holds.
 - **Descriptions** are written in English whatever the language of sfdx-hardis, so runs from different machines do not rewrite each other. Azure DevOps descriptions are HTML: the text is escaped first, then links, \`code\` and \`**bold**\` become tags. ServiceNow and Jira descriptions are plain text, where a markdown link becomes its URL.
 - **ServiceNow steps:** Test Management 2.0 has no expected result field on \`sn_test_management_step\`, so the expected result is written in the step text, after \`Expected result:\`.
 - **Proxy:** ServiceNow and Xray calls go through the proxy-aware HTTP client (\`HTTP_PROXY\`, \`HTTPS_PROXY\`, \`NO_PROXY\`).
@@ -180,27 +182,29 @@ The same applies in CI.
   /** --provider, then the testCasesProvider configuration, then a prompt in interactive sessions. */
   private async resolveProvider(flagValue: string | undefined, nonInteractive: boolean): Promise<TestManagementProviderRoot> {
     const config = await getConfig('user');
-    const providers = await buildTestManagementProviders(config);
-    let key = flagValue || config.testCasesProvider;
-    if (!key) {
-      const configured = providers.filter((descriptor) => descriptor.provider.isActive);
-      if (configured.length === 0) {
-        throw new SfError(t('testCasesNoActiveProvider') + '\n' + describeRequiredSettings(providers));
-      }
-      if (nonInteractive) {
-        throw new SfError(t('testCasesProviderRequired', { providers: configured.map((descriptor) => descriptor.key).join(', ') }));
-      }
-      const answer = await prompts({
-        type: 'select',
-        name: 'value',
-        message: t('testCasesPromptProvider'),
-        description: t('testCasesPromptProviderDescription'),
-        choices: configured.map((descriptor) => ({ title: descriptor.provider.getLabel(), value: descriptor.key })),
-      });
-      key = answer.value;
-      uxLog('action', this, c.cyan(t('testCasesProviderSelected', { provider: key })));
+    const key = flagValue || config.testCasesProvider;
+    if (key) {
+      // Only the chosen provider is built: no Azure DevOps detection for an Xray run
+      return selectTestManagementProvider(await buildTestManagementProviders(config, String(key)), String(key));
     }
-    return selectTestManagementProvider(providers, String(key));
+    const providers = await buildTestManagementProviders(config);
+    const configured = providers.filter((descriptor) => descriptor.provider.isActive);
+    if (configured.length === 0) {
+      throw new SfError(t('testCasesNoActiveProvider') + '\n' + describeRequiredSettings(providers));
+    }
+    if (nonInteractive) {
+      throw new SfError(t('testCasesProviderRequired', { providers: configured.map((descriptor) => descriptor.key).join(', ') }));
+    }
+    const answer = await prompts({
+      type: 'select',
+      name: 'value',
+      message: t('testCasesPromptProvider'),
+      description: t('testCasesPromptProviderDescription'),
+      choices: configured.map((descriptor) => ({ title: descriptor.provider.getLabel(), value: descriptor.key })),
+    });
+    const chosen = String(answer.value);
+    uxLog('action', this, c.cyan(t('testCasesProviderSelected', { provider: chosen })));
+    return selectTestManagementProvider(providers, chosen);
   }
 
   /** Confirmation before writing, skipped in dry run, in CI and in agent mode. */

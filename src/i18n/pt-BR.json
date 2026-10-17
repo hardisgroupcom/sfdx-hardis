@@ -4007,6 +4007,7 @@
   "testCasesServiceNowProbeFailed": "ServiceNow: a verificação de conexão em {{table}} falhou - {{message}}",
   "testCasesServiceNowUnexpectedAnswer": "ServiceNow: {{url}} não respondeu como uma ServiceNow Table API. Verifique SERVICENOW_URL, e ative a instância se for uma instância de desenvolvedor.",
   "testCasesTicketRequired": "--ticket-number é obrigatório no modo agente e no CI.",
+  "testCasesTooManyTemplateRows": "Um caderno em branco contém no máximo {{max}} casos de teste, foram pedidos {{count}}: reduza --rows ou o número de --modules.",
   "testCasesUnknownProvider": "Ferramenta de gerenciamento de testes desconhecida {{provider}}. Valores permitidos: {{providers}}.",
   "testCasesUnreadableId": "ID de caso de teste ilegível {{id}}. Era esperado <TICKET>-F01 (functional), <TICKET>-T01 (technical) ou <TICKET>-01 (maintenance), somente com letras, dígitos, _ . # e -.",
   "testCasesUnsupportedExtension": "Extensão de caderno não suportada {{extension}} em {{file}}. Suportadas: .md, .xlsx, .csv, .json.",

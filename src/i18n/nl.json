@@ -4042,6 +4042,7 @@
   "testCasesServiceNowProbeFailed": "ServiceNow: de verbindingscontrole op {{table}} is mislukt - {{message}}",
   "testCasesServiceNowUnexpectedAnswer": "ServiceNow: {{url}} antwoordde niet als een ServiceNow Table API. Controleer SERVICENOW_URL en wek de instantie als het een developer-instantie is.",
   "testCasesTicketRequired": "--ticket-number is verplicht in agent-modus en in CI.",
+  "testCasesTooManyTemplateRows": "Een leeg notitieboek bevat maximaal {{max}} testgevallen, er zijn er {{count}} gevraagd: verlaag --rows of het aantal --modules.",
   "testCasesUnknownProvider": "Onbekende testmanagementtool {{provider}}. Toegestane waarden: {{providers}}.",
   "testCasesUnreadableId": "Onleesbaar testgeval-ID {{id}}. Verwacht werd <TICKET>-F01 (functional), <TICKET>-T01 (technical) of <TICKET>-01 (maintenance), met alleen letters, cijfers, _ . # en -.",
   "testCasesUnsupportedExtension": "Niet-ondersteunde notitieboek-extensie {{extension}} op {{file}}. Ondersteund: .md, .xlsx, .csv, .json.",

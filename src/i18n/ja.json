@@ -4039,6 +4039,7 @@
   "testCasesServiceNowProbeFailed": "ServiceNow: {{table}} への接続確認に失敗しました - {{message}}",
   "testCasesServiceNowUnexpectedAnswer": "ServiceNow: {{url}} は ServiceNow Table API として応答しませんでした。SERVICENOW_URL を確認し、開発者インスタンスの場合はインスタンスを起動してください。",
   "testCasesTicketRequired": "エージェントモードおよび CI では --ticket-number が必須です。",
+  "testCasesTooManyTemplateRows": "空のノートブックに含められるテストケースは最大 {{max}} 件ですが、{{count}} 件が要求されました。--rows または --modules の数を減らしてください。",
   "testCasesUnknownProvider": "不明なテスト管理ツール {{provider}} です。使用できる値: {{providers}}。",
   "testCasesUnreadableId": "読み取れないテストケース ID {{id}} です。<TICKET>-F01 (functional)、<TICKET>-T01 (technical)、または <TICKET>-01 (maintenance) の形式で、文字、数字、_ . # と - のみを使用してください。",
   "testCasesUnsupportedExtension": "サポートされていないノートブックの拡張子 {{extension}} が {{file}} にあります。サポートされる拡張子: .md, .xlsx, .csv, .json。",

@@ -80,8 +80,10 @@ export function findTodoMarker(value: unknown): string | undefined {
 }
 
 // <TICKET>-F01 functional, <TICKET>-T01 technical, <TICKET>-01 maintenance. The counter has 2 or
-// 3 digits, so a bare ticket key such as DSI-2026-14545 is not read as a test case id.
-const ID_RE = /^(.+)-([FT]?)(\d{2,3})$/;
+// 3 digits, so a bare ticket key such as DSI-2026-14545 is not read as a test case id, and the
+// ticket holds a digit, as every work item, Jira or ServiceNow key does, so a bare key such as
+// PROJ-123 is not read as maintenance case 123 of a ticket "PROJ".
+const ID_RE = /^(.*\d.*)-([FT]?)(\d{2,3})$/;
 // No quote, space or query operator can reach a tracker query through an identifier.
 const ID_CHARS_RE = /^[A-Za-z0-9_.#-]+$/;
 
@@ -579,6 +581,11 @@ export function validateNormalizedCases(payload: unknown, ticketOverride?: strin
         });
       }
     }
+    for (const field of ['module', 'preconditions', 'target', 'soql']) {
+      if (item?.[field] !== undefined && typeof item[field] !== 'string') {
+        problems.push(`"${field}" must be a string`);
+      }
+    }
     if (item?.priority !== undefined && ![1, 2, 3].includes(item.priority)) {
       problems.push('"priority" must be 1, 2 or 3');
     }
@@ -608,7 +615,7 @@ export function validateNormalizedCases(payload: unknown, ticketOverride?: strin
     return {
       ...item,
       id: item.id.trim(),
-      ticket: ticketOverride || item.ticket || derived.ticket,
+      ticket: ticketOverride || item.ticket?.trim() || derived.ticket,
       kind: derived.kind,
       steps: item.steps?.map((step: any) => ({ action: step.action, expected: step.expected ?? '' })),
       soql: item.soql === undefined ? undefined : normalizeSoql(item.soql),

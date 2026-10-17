@@ -4042,6 +4042,7 @@
   "testCasesServiceNowProbeFailed": "ServiceNow: sprawdzenie połączenia dla {{table}} nie powiodło się - {{message}}",
   "testCasesServiceNowUnexpectedAnswer": "ServiceNow: {{url}} nie odpowiedział jak ServiceNow Table API. Sprawdź SERVICENOW_URL i wybudź instancję, jeśli jest to instancja deweloperska.",
   "testCasesTicketRequired": "--ticket-number jest wymagane w trybie agenta i w CI.",
+  "testCasesTooManyTemplateRows": "Pusty notatnik może zawierać maksymalnie {{max}} przypadków testowych, zażądano {{count}}: należy zmniejszyć --rows lub liczbę --modules.",
   "testCasesUnknownProvider": "Nieznane narzędzie do zarządzania testami {{provider}}. Dozwolone wartości: {{providers}}.",
   "testCasesUnreadableId": "Nieczytelny identyfikator przypadku testowego {{id}}. Oczekiwano <TICKET>-F01 (functional), <TICKET>-T01 (technical) lub <TICKET>-01 (maintenance), zawierającego wyłącznie litery, cyfry, _ . # i -.",
   "testCasesUnsupportedExtension": "Nieobsługiwane rozszerzenie notatnika {{extension}} w {{file}}. Obsługiwane: .md, .xlsx, .csv, .json.",

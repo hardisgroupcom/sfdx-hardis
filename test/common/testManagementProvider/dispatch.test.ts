@@ -319,6 +319,13 @@ describe('testManagementProvider descriptors', () => {
     expect(() => selectTestManagementProvider(built, 'servicenow')).to.throw(/SERVICENOW_URL/);
   });
 
+  it('builds only the provider of the given key', async () => {
+    const built = await buildTestManagementProviders({ jiraHost: 'acme.atlassian.net' }, 'XRAY');
+    expect(built.map((entry) => entry.key)).to.deep.equal(['xray']);
+    expect(built[0].provider).to.be.instanceOf(XrayTestProvider);
+    expect(await buildTestManagementProviders({}, 'unknown')).to.deep.equal([]);
+  });
+
   it('describes the settings of each provider on its own line', () => {
     const text = describeRequiredSettings([
       { key: 'servicenow', provider: new ServiceNowTestProvider() },
