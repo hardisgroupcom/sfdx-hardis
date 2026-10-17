@@ -3,7 +3,7 @@ import * as azdev from 'azure-devops-node-api';
 import { IWorkItemTrackingApi } from 'azure-devops-node-api/WorkItemTrackingApi.js';
 import { JsonPatchDocument } from 'azure-devops-node-api/interfaces/common/VSSInterfaces.js';
 import { SfError } from '@salesforce/core';
-import { TestManagementProviderRoot, ProviderRef } from './testManagementProviderRoot.js';
+import { TestManagementProviderRoot, ProviderRef, CarrierTicketRef } from './testManagementProviderRoot.js';
 import { NormalizedTestCase, TestCaseStep, idempotencyKey } from '../utils/testNotebookUtils.js';
 import { getEnvVar } from '../../config/index.js';
 import { t, tEn } from '../utils/i18n.js';
@@ -234,6 +234,11 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
       throw new SfError(t('testCasesAzureWorkItemNotFound', { id: ref.id }));
     }
     return { id: ref.id, url: this.htmlUrlOf(workItem) || ref.url };
+  }
+
+  /** The carrier work item, by the number `linkToStory` links the test cases to. */
+  public carrierTicketRef(ticket: string): CarrierTicketRef {
+    return { ticketId: String(_requireStoryId(ticket)), ticketProviderKey: 'azure' };
   }
 
   /** Relation Tests -> US: TestedBy-Reverse points from the test case to the story. */

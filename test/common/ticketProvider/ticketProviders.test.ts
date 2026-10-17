@@ -508,8 +508,10 @@ describe('ServiceNowProvider deployment comments', () => {
     expect(writes).to.have.lengthOf(1);
     expect(writes[0].url).to.equal('https://acme.service-now.com/api/now/table/incident/abc123');
     expect(Object.keys(writes[0].body)).to.deep.equal(['work_notes']);
-    expect(writes[0].body.work_notes).to.contain('Deployed by sfdx-hardis in Salesforce org acme--uat.sandbox');
-    expect(writes[0].body.work_notes).to.contain('Pull Request: Block a past close date (https://github.com/acme/sfdx-project/pull/812) by Alice Martin');
+    // Plain text of the deployment markdown every connector shares: the links are spelled out
+    expect(writes[0].body.work_notes).to.contain('Deployed by sfdx-hardis (https://sfdx-hardis.cloudity.com/) in acme--uat.sandbox (https://acme--uat.sandbox.my.salesforce.com)');
+    expect(writes[0].body.work_notes).to.contain('Related PR: Block a past close date (https://github.com/acme/sfdx-project/pull/812), by Alice Martin');
+    expect(writes[0].body.work_notes).to.not.match(/[*[\]]/);
     // Tagging is opt-in: nothing was written to the label tables
     expect(calls.some((call) => call.url.includes('/api/now/table/label'))).to.equal(false);
   }));

@@ -477,6 +477,7 @@ nav:
           - retrieve: hardis/source/retrieve.md
       - hardis:ticket:
           - get: hardis/ticket/get.md
+          - post-comment: hardis/ticket/post-comment.md
           - test-cases init: hardis/ticket/test-cases/init.md
           - test-cases upsert: hardis/ticket/test-cases/upsert.md
       - hardis:work:

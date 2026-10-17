@@ -1,11 +1,20 @@
 import { SfError } from '@salesforce/core';
 import { NormalizedTestCase } from '../utils/testNotebookUtils.js';
 import { tEn } from '../utils/i18n.js';
+// Type-only: the ticket providers never import the test management ones
+import type { TicketProviderKey } from '../ticketProvider/index.js';
 
 /** What a provider returns for a test case that exists on its side. */
 export interface ProviderRef {
   id: string;
   url: string;
+}
+
+/** Ticket a summary of the test cases is posted on, with the ticketing connector to post it with. */
+export interface CarrierTicketRef {
+  ticketId: string;
+  /** Unset: the connector is deduced from the shape of the identifier */
+  ticketProviderKey?: TicketProviderKey;
 }
 
 /**
@@ -60,6 +69,14 @@ export abstract class TestManagementProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async update(_ref: ProviderRef, _testCase: NormalizedTestCase): Promise<ProviderRef> {
     throw new SfError(`update is not implemented on ${this.getLabel()}`);
+  }
+
+  /**
+   * The ticket the cases of `ticket` are linked to, as the ticketing connectors know it. Each tool
+   * names its tracker, so a PROJ-123 carrier of an Azure DevOps project never goes to JIRA.
+   */
+  public carrierTicketRef(ticket: string): CarrierTicketRef {
+    return { ticketId: ticket };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

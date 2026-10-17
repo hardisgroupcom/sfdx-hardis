@@ -360,6 +360,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:scratch:pool:view**](hardis/scratch/pool/view.md)                             | Display pool status: capacity, available, expired, and in-use orgs                                                                          |
 | [**hardis:source:deploy**](hardis/source/deploy.md)                                     | Deploy local SFDX project sources to a Salesforce org                                                                                       |
 | [**hardis:ticket:get**](hardis/ticket/get.md)                                           | Fetch one JIRA, Azure Boards, ServiceNow or Aha! ticket in full, as JSON and optionally as a markdown extract, before implementing it       |
+| [**hardis:ticket:post-comment**](hardis/ticket/post-comment.md)                         | Post a markdown comment on one or several tickets. Required: `--id` and `--message` or `--file`; `--marker` updates the comment posted before|
 | [**hardis:source:push**](hardis/source/push.md)                                         | Push local SFDX sources to a scratch org                                                                                                    |
 | [**hardis:source:retrieve**](hardis/source/retrieve.md)                                 | Retrieve metadata from an org and update local SFDX sources                                                                                 |
 

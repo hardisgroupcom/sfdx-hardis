@@ -12,10 +12,13 @@ import {
   buildTestManagementProviders,
   describeRequiredSettings,
   pushCases,
+  PushReport,
   selectTestManagementProvider,
   TEST_MANAGEMENT_PROVIDER_KEYS,
 } from '../../../../common/testManagementProvider/index.js';
 import { TestManagementProviderRoot } from '../../../../common/testManagementProvider/testManagementProviderRoot.js';
+import { postTestCasesSummaries } from '../../../../common/testManagementProvider/testCasesSummary.js';
+import { PostCommentResult } from '../../../../common/ticketProvider/utils/ticketComment.js';
 import { getConfig } from '../../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -37,6 +40,7 @@ export default class TicketTestCasesUpsert extends SfCommand<any> {
 - **Best effort per case:** one case failing does not stop the others. Exit code 0 when everything went through, 2 when some cases failed, 1 when nothing could be attempted.
 - **Dry run** (\`--dry-run\`): checks the notebook, the connection and the carrier tickets, and tells which cases would be created or updated, without writing anything.
 - **Report:** a CSV and XLSX file with the action, tracker id and URL of each case.
+- **Summary on the ticket** (\`--post-comment\`, or \`testCasesPostComment: true\` in \`config/.sfdx-hardis.yml\`): after a real run, a table of the cases with a link to each one is posted on every carrier ticket, through [hardis:ticket:post-comment](${'https://sfdx-hardis.cloudity.com/hardis/ticket/post-comment/'}). The next runs update that comment instead of adding one. The ticket is a Jira issue for Xray, the work item for Azure DevOps, and the ServiceNow record of the identifier for ServiceNow. A summary that cannot be posted is a warning and does not change the exit code.
 
 ### Choosing the test management tool
 
@@ -92,6 +96,7 @@ The same applies in CI.
     '$ sf hardis:ticket:test-cases:upsert --notebook docs/tests/PROJ-123.xlsx',
     '$ sf hardis:ticket:test-cases:upsert --notebook docs/tests/PROJ-123.xlsx --provider azure-devops --dry-run',
     '$ sf hardis:ticket:test-cases:upsert --testsjsonfile cases.json --provider xray --agent',
+    '$ sf hardis:ticket:test-cases:upsert --notebook docs/tests/PROJ-123.xlsx --provider azure-devops --post-comment --agent',
     '$ sf hardis:ticket:test-cases:upsert --notebook docs/tests/PROJ-123.xlsx --agent',
   ];
 
@@ -111,6 +116,10 @@ The same applies in CI.
       char: 'p',
       options: TEST_MANAGEMENT_PROVIDER_KEYS,
       description: 'Test management tool to send the test cases to. Defaults to the testCasesProvider configuration',
+    }),
+    'post-comment': Flags.boolean({
+      default: false,
+      description: 'Post a summary of the test cases on each carrier ticket, updated on every run. Defaults to the testCasesPostComment configuration',
     }),
     'dry-run': Flags.boolean({
       default: false,
@@ -170,13 +179,39 @@ The same applies in CI.
     const reportFile = await generateReportPath('test-cases-upsert', flags.outputfile, { withDate: true });
     await generateCsvFile(rows, reportFile, { fileTitle: t('testCasesUpsertReport') });
 
+    const commentResults = await this.postSummaries(flags, provider, cases, report);
+
     if (report.exitCode !== 0) {
       uxLog('warning', this, c.yellow(report.message));
       process.exitCode = report.exitCode;
     } else {
       uxLog('success', this, c.green(report.message));
     }
-    return { outputString: report.message, ...report } as unknown as AnyJson;
+    return { outputString: report.message, ...report, commentResults } as unknown as AnyJson;
+  }
+
+  /**
+   * Summary posted on each carrier ticket, with --post-comment or the testCasesPostComment
+   * configuration, never in dry run. A summary that cannot be posted is a warning: the test cases
+   * themselves are written, so the exit code does not change.
+   */
+  private async postSummaries(flags: any, provider: TestManagementProviderRoot, cases: any[], report: PushReport): Promise<PostCommentResult[]> {
+    const config = await getConfig('user');
+    if (flags['dry-run'] || (flags['post-comment'] !== true && config.testCasesPostComment !== true)) {
+      return [];
+    }
+    const tickets = [...new Set(cases.map((testCase) => testCase.ticket))];
+    uxLog('action', this, c.cyan(t('testCasesSummaryPosting', { tickets: tickets.join(', ') })));
+    const providerKey = String((provider.constructor as any).providerKey || '');
+    const results = await postTestCasesSummaries(providerKey, provider, cases, report);
+    for (const result of results) {
+      if (result.action === 'failed') {
+        uxLog('warning', this, c.yellow(t('testCasesSummaryPostFailed', { ticketId: result.ticketId, message: result.error })));
+      } else {
+        uxLog('log', this, c.grey(`- ${result.ticketId} (${result.action}): ${result.url ?? ''}`));
+      }
+    }
+    return results;
   }
 
   /** --provider, then the testCasesProvider configuration, then a prompt in interactive sessions. */

@@ -1,5 +1,5 @@
 import { SfError } from '@salesforce/core';
-import { TestManagementProviderRoot, ProviderRef } from './testManagementProviderRoot.js';
+import { TestManagementProviderRoot, ProviderRef, CarrierTicketRef } from './testManagementProviderRoot.js';
 import { NormalizedTestCase, idempotencyKey } from '../utils/testNotebookUtils.js';
 import { httpGet, httpPost, httpPut } from '../utils/httpUtils.js';
 import { getEnvVar } from '../../config/index.js';
@@ -194,6 +194,11 @@ export class XrayTestProvider extends TestManagementProviderRoot {
       throw new SfError(t('testCasesJiraCallFailed', { action: `update ${ref.id}`, message: TestManagementProviderRoot.describeHttpError(e) }));
     }
     return { id: ref.id, url: this.browseUrl(ref.id) };
+  }
+
+  /** The carrier is a Jira issue, whatever the shape of its key. */
+  public carrierTicketRef(ticket: string): CarrierTicketRef {
+    return { ticketId: ticket, ticketProviderKey: 'jira' };
   }
 
   /** Link through Jira REST (link type "Test"), not through Xray. */

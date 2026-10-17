@@ -3,12 +3,15 @@ import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
 import type { Ticket, TicketsFromStringOptions } from './index.js';
 import { recordTicketCollectionIssue, TicketProviderRoot } from './ticketProviderRoot.js';
-import { extractRegexMatches, getCurrentGitBranch, uxLog } from '../utils/index.js';
+import { extractRegexMatches, uxLog } from '../utils/index.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { getConfig, getEnvVar } from '../../config/index.js';
 import { httpGet, httpPatch, httpPost } from '../utils/httpUtils.js';
-import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo } from '../gitProvider/index.js';
+import { SfError } from '@salesforce/core';
 import { WebSocketClient } from '../websocketClient.js';
+import { PostCommentOptions, PostCommentResult, buildDeploymentCommentMarkdown, markdownMarkerFooter } from './utils/ticketComment.js';
+import { markdownToPlainText } from './utils/markdownToTicketFormats.js';
 import { t } from '../utils/i18n.js';
 import {
   TicketDetails,
@@ -68,6 +71,7 @@ export class ServiceNowProvider extends TicketProviderRoot {
   public static readonly providerKey = 'servicenow' as const;
   public static readonly providerLabel = 'ServiceNow';
   public static readonly supportsTicketDetails = true;
+  public static readonly supportsComments = true;
 
   protected instanceUrl: string;
   protected user: string;
@@ -568,13 +572,20 @@ export class ServiceNowProvider extends TicketProviderRoot {
       return tickets;
     }
     uxLog('action', this, c.cyan('[ServiceNowProvider] ' + t('serviceNowProviderPostingComments', { count: serviceNowTickets.length })));
-    const commentField = getEnvVar('SERVICENOW_COMMENT_FIELD') || config?.serviceNowCommentField || SERVICENOW_DEFAULT_COMMENT_FIELD;
+    let commentField: string;
+    try {
+      commentField = ServiceNowProvider.commentFieldOf(undefined, config);
+    } catch (e: any) {
+      // A wrong field name in the configuration must not stop the deployment job
+      uxLog('warning', this, c.yellow('[ServiceNowProvider] ' + e.message));
+      return tickets;
+    }
     // Env var wins in both directions: a pipeline must be able to turn off what .sfdx-hardis.yml turned on
     const addTagEnv = getEnvVar('SERVICENOW_ADD_DEPLOYMENT_TAG');
     const addTag = addTagEnv ? addTagEnv === 'true' : config?.serviceNowAddDeploymentTag === true;
     // Only resolved when tagging is on: computing it reads the git branch and the Pull Request
     const tag = addTag ? await this.getDeploymentTag() : '';
-    const commentText = await this.buildDeploymentComment(org, pullRequestInfo);
+    const commentMarkdown = await buildDeploymentCommentMarkdown(org, pullRequestInfo);
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
     for (const ticket of serviceNowTickets) {
@@ -588,7 +599,7 @@ export class ServiceNowProvider extends TicketProviderRoot {
         continue;
       }
       try {
-        await httpPatch(`${this.instanceUrl}/api/now/table/${table}/${sysId}`, { [commentField]: commentText }, this.authConfig());
+        await this.writeNote(table, sysId, commentField, commentMarkdown);
         commentedTickets.push(ticket);
       } catch (e: any) {
         uxLog('warning', this, c.yellow('[ServiceNowProvider] ' + t('serviceNowProviderErrorPostingComment', { ticketId: ticket.id, message: e.message })));
@@ -620,22 +631,53 @@ export class ServiceNowProvider extends TicketProviderRoot {
   }
 
   /**
-   * Journal entries are plain text: ServiceNow escapes HTML and renders no markdown in them, so the
-   * note spells its links out instead of hiding them behind a label.
+   * Writes a markdown comment as plain text in a journal field of the record, `work_notes` by
+   * default. A journal entry cannot be edited: with a marker, a new note is added, ending with the
+   * marker line, and a warning says so.
    */
-  private async buildDeploymentComment(org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<string> {
-    const orgLabel = org.replace('https://', '').replace('.my.salesforce.com', '');
-    const branchName = (await getCurrentGitBranch()) || '';
-    const branchUrl = (await GitProvider.getCurrentBranchUrl()) || '';
-    const lines = [`Deployed by sfdx-hardis in Salesforce org ${orgLabel}${org ? ` (${org})` : ''}`];
-    if (branchName) {
-      lines.push(`Branch: ${branchName}${branchUrl ? ` (${branchUrl})` : ''}`);
+  public async postComment(ticketId: string, markdown: string, options: PostCommentOptions = {}): Promise<PostCommentResult> {
+    const config = await getConfig('project');
+    const number = (ticketId || '').trim().toUpperCase();
+    const table = ServiceNowProvider.tableOfTicketId(number, config);
+    if (!table) {
+      throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId: number }));
     }
-    if (pullRequestInfo?.webUrl) {
-      const author = pullRequestInfo.authorName ? ` by ${pullRequestInfo.authorName}` : '';
-      lines.push(`Pull Request: ${pullRequestInfo.title} (${pullRequestInfo.webUrl})${author}`);
+    const field = ServiceNowProvider.commentFieldOf(options.serviceNowField, config);
+    const sysId = await this.resolveSysId(table, number);
+    if (!sysId) {
+      throw new SfError(t('serviceNowProviderNoSysId', { ticketId: number }));
     }
-    return lines.join('\n');
+    if (options.marker) {
+      uxLog('warning', this, c.yellow('[ServiceNowProvider] ' + t('ticketCommentServiceNowNotEditable', { ticketId: number })));
+    }
+    await this.writeNote(table, sysId, field, markdown + markdownMarkerFooter(options.marker));
+    return {
+      ticketId: number,
+      provider: ServiceNowProvider.providerLabel,
+      action: 'created',
+      url: ServiceNowProvider.recordUrlBySysId(this.instanceUrl, table, sysId),
+    };
+  }
+
+  /**
+   * Journal field a comment is written to: the option (the --servicenow-field flag), then
+   * SERVICENOW_COMMENT_FIELD, then `serviceNowCommentField`, then `work_notes`.
+   */
+  private static commentFieldOf(override: string | undefined, config: any): string {
+    const field = override || getEnvVar('SERVICENOW_COMMENT_FIELD') || config?.serviceNowCommentField || SERVICENOW_DEFAULT_COMMENT_FIELD;
+    // The field name lands in the request body as a key: a column name and nothing else
+    if (!/^[a-z0-9_]+$/.test(field)) {
+      throw new SfError(t('ticketCommentServiceNowInvalidField', { field: JSON.stringify(field) }));
+    }
+    return field;
+  }
+
+  /**
+   * Journal entries are plain text: ServiceNow escapes HTML and renders no markdown in them, so the
+   * note spells its links out as `label (url)` instead of hiding them behind a label.
+   */
+  private async writeNote(table: string, sysId: string, field: string, markdown: string): Promise<void> {
+    await httpPatch(`${this.instanceUrl}/api/now/table/${table}/${sysId}`, { [field]: markdownToPlainText(markdown) }, this.authConfig());
   }
 
   /** Only needed when the note is posted without a prior collectTicketsInfo() on the same ticket */
