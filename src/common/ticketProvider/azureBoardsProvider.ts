@@ -5,8 +5,8 @@ import c from "chalk";
 import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
 import type { Ticket, TicketsFromStringOptions } from "./index.js";
-import { getBranchMarkdown, getOrgMarkdown } from "../utils/notifUtils.js";
 import { convertMarkdownToHtml } from "../notifProvider/utils/markdownToHtml.js";
+import { PostCommentOptions, PostCommentResult, buildDeploymentCommentMarkdown, hasMarker, htmlMarker } from "./utils/ticketComment.js";
 import { extractRegexMatches, git, isGitRepo, uxLog } from "../utils/index.js";
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { AzureDevopsProvider } from "../gitProvider/azureDevops.js";
@@ -33,6 +33,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   public static readonly providerKey = "azure" as const;
   public static readonly providerLabel = "Azure Boards";
   public static readonly supportsTicketDetails = true;
+  public static readonly supportsComments = true;
 
   protected serverUrl: string | null;
   protected azureApi: InstanceType<typeof azdev.WebApi>;
@@ -389,8 +390,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     uxLog("action", this, c.cyan('[AzureBoardsProvider] ' + t('azureBoardsProviderPostingComments', { count: tickets.length })));
-    const orgMarkdown = await getOrgMarkdown(org);
-    const branchMarkdown = await getBranchMarkdown();
+    const commentMarkdown = await buildDeploymentCommentMarkdown(org, pullRequestInfo);
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
@@ -399,24 +399,10 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       // The list holds the tickets of every connector: without this filter a configured Azure
       // Boards would call getWorkItem(NaN) on a JIRA key or a ServiceNow record number
       if (ticket.provider === "AZURE" && ticket.foundOnServer) {
-        let commentMd = `Deployed from branch ${branchMarkdown} to org ${orgMarkdown}`;
-        if (pullRequestInfo) {
-          const prUrl = pullRequestInfo.webUrl || "";
-          if (prUrl) {
-            const prAuthor = pullRequestInfo.authorName;
-            commentMd += `\n\nPR: [${pullRequestInfo.title}](${prUrl})` + (prAuthor ? ` by ${prAuthor}` : "");
-          }
-        }
-        const azureBoardsComment = await convertMarkdownToHtml(commentMd);
-
         // Post comment
         try {
-          const commentPostRes = await azureWorkItemApi.addComment({ text: azureBoardsComment }, this.teamProject || "", Number(ticket.id));
-          if (commentPostRes?.id && commentPostRes?.id > 0) {
-            commentedTickets.push(ticket);
-          } else {
-            throw new SfError("commentPostRes: " + commentPostRes);
-          }
+          await this.postComment(ticket.id, commentMarkdown);
+          commentedTickets.push(ticket);
         } catch (e6) {
           uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
         }
@@ -456,5 +442,51 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       ),
     );
     return tickets;
+  }
+  /**
+   * Posts a markdown comment, written as HTML. With a marker, hidden in an HTML comment, the most
+   * recent comment holding it is updated instead.
+   */
+  public async postComment(ticketId: string, markdown: string, options: PostCommentOptions = {}): Promise<PostCommentResult> {
+    const workItemId = AzureBoardsProvider.workItemIdOf(ticketId);
+    if (!workItemId) {
+      throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId }));
+    }
+    const html = (await convertMarkdownToHtml(markdown)) + htmlMarker(options.marker);
+    const project = this.teamProject || "";
+    const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
+    const existing = options.marker ? await this.findMarkedComment(azureWorkItemApi, project, workItemId, options.marker) : null;
+    const comment = existing
+      ? await azureWorkItemApi.updateComment({ text: html }, project, workItemId, Number(existing.id))
+      : await azureWorkItemApi.addComment({ text: html }, project, workItemId);
+    if (!comment?.id || comment.id <= 0) {
+      throw new SfError("commentPostRes: " + JSON.stringify(comment));
+    }
+    return {
+      ticketId: String(workItemId),
+      provider: AzureBoardsProvider.providerLabel,
+      action: existing ? "updated" : "created",
+      commentId: String(comment.id),
+      url: `${String(this.serverUrl || "").replace(/\/+$/, "")}/${encodeURIComponent(project)}/_workitems/edit/${workItemId}`,
+    };
+  }
+
+  /** The most recent comment holding the marker, read page after page */
+  private async findMarkedComment(azureWorkItemApi: any, project: string, workItemId: number, marker: string): Promise<any | null> {
+    let found: any = null;
+    let continuationToken: string | undefined = undefined;
+    for (let page = 0; page < 50; page++) {
+      const list: any = await azureWorkItemApi.getComments(project, workItemId, 200, continuationToken);
+      for (const comment of list?.comments ?? []) {
+        if (hasMarker(comment?.text, marker) && (!found || new Date(comment.createdDate) > new Date(found.createdDate))) {
+          found = comment;
+        }
+      }
+      continuationToken = list?.continuationToken || undefined;
+      if (!continuationToken) {
+        break;
+      }
+    }
+    return found;
   }
 }

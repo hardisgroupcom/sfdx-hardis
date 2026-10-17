@@ -5,14 +5,22 @@ import c from "chalk";
 import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
 import type { Ticket, TicketsFromStringOptions } from "./index.js";
-import { extractRegexMatches, getCurrentGitBranch, uxLog } from "../utils/index.js";
+import { extractRegexMatches, uxLog } from "../utils/index.js";
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
 import { SfError } from "@salesforce/core";
-import { CONSTANTS, getConfig, getEnvVar } from "../../config/index.js";
-import { CommonPullRequestInfo, GitProvider } from "../gitProvider/index.js";
+import { getConfig, getEnvVar } from "../../config/index.js";
+import { CommonPullRequestInfo } from "../gitProvider/index.js";
 import { t } from '../utils/i18n.js';
 import { httpGet, httpPost } from "../utils/httpUtils.js";
 import { WebSocketClient } from "../websocketClient.js";
+import {
+  PostCommentOptions,
+  PostCommentResult,
+  buildDeploymentCommentMarkdown,
+  hasMarker,
+  markdownMarkerFooter,
+} from "./utils/ticketComment.js";
+import { markdownToAdf, markdownToJiraWiki } from "./utils/markdownToTicketFormats.js";
 import {
   TicketDetails,
   TicketDetailsOptions,
@@ -42,6 +50,7 @@ export class JiraProvider extends TicketProviderRoot {
   public static readonly providerKey = "jira" as const;
   public static readonly providerLabel = "JIRA";
   public static readonly supportsTicketDetails = true;
+  public static readonly supportsComments = true;
 
   // Version3Client for Jira Cloud, Version2Client for Jira Server / Data Center
   private jiraClient: Version2Client | Version3Client | null = null;
@@ -106,6 +115,31 @@ export class JiraProvider extends TicketProviderRoot {
         this.isActive = true;
       }
     }
+  }
+
+  /** JIRA host as every caller expects it: `https://` added when missing, no trailing slash. Empty when unset. */
+  public static normalizeHost(rawHost: unknown): string {
+    const host = String(rawHost ?? "").trim();
+    return host ? (host.startsWith("http") ? host : `https://${host}`).replace(/\/+$/, "") : "";
+  }
+
+  /**
+   * REST base URL and headers of the first configured credential, for callers that send their own
+   * calls (the Xray test cases provider), so JIRA is configured once. Client credentials go
+   * through the Atlassian API gateway. Null when no credential is configured.
+   */
+  public async getRestAccess(): Promise<{ label: string; baseUrl: string; headers: Record<string, string> } | null> {
+    if (getEnvVar("JIRA_CLIENT_ID") && getEnvVar("JIRA_CLIENT_SECRET")) {
+      const accessToken = await this.getOAuthToken();
+      const cloudId = await this.getCloudId(accessToken);
+      return {
+        label: "JIRA_CLIENT_ID + JIRA_CLIENT_SECRET",
+        baseUrl: `https://api.atlassian.com/ex/jira/${cloudId}`,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      };
+    }
+    const auth = this.nextAuths.find((candidate) => candidate.headers);
+    return auth?.headers ? { label: auth.label, baseUrl: this.jiraHost || "", headers: auth.headers() } : null;
   }
 
   /** Activates the next credential that has not been tried yet */
@@ -640,14 +674,7 @@ export class JiraProvider extends TicketProviderRoot {
     uxLog("action", this, c.cyan('[JiraProvider] ' + t('jiraProviderPostingComments', { count: tickets.length })));
 
     const genericHtmlResponseError = "Probably config/access error since response is HTML";
-    // Jira's ADF / wiki markup builders below consume { label, url } objects.
-    // TODO(commonmark-jira): replace the bespoke ADF / wiki markup builders with a
-    // CommonMark -> Jira converter so this provider can join the central pipeline.
-    const orgLabel = org.replace("https://", "").replace(".my.salesforce.com", "");
-    const orgMarkdown = { label: orgLabel, url: org };
-    const branchName = (await getCurrentGitBranch()) || "";
-    const branchUrl = (await GitProvider.getCurrentBranchUrl()) || "";
-    const branchMarkdown = { label: branchName, url: branchUrl };
+    const commentMarkdown = await buildDeploymentCommentMarkdown(org, pullRequestInfo);
     const tag = await this.getDeploymentTag();
     const commentedTickets: Ticket[] = [];
     const taggedTickets: Ticket[] = [];
@@ -655,43 +682,8 @@ export class JiraProvider extends TicketProviderRoot {
       // The list holds the tickets of every connector: without this filter a configured JIRA would
       // try to comment on an Azure work item or a ServiceNow record number
       if (ticket.provider === "JIRA" && ticket.foundOnServer) {
-        // Build comment
-        let prTitle = "";
-        let prUrl = "";
-        let prAuthor = "";
-        if (pullRequestInfo) {
-          prUrl = pullRequestInfo.webUrl;
-          if (prUrl) {
-            prTitle = pullRequestInfo.title;
-            prAuthor = pullRequestInfo?.authorName;
-          }
-        }
-        // Use ADF format for Jira Cloud, plain text for Jira Server/DC
-        const jiraComment: any = this.isJiraCloud()
-          ? this.getJiraDeploymentCommentAdf(
-            orgMarkdown.label,
-            orgMarkdown.url,
-            branchMarkdown.label,
-            branchMarkdown.url || "",
-            prTitle,
-            prUrl,
-            prAuthor,
-          )
-          : this.getJiraDeploymentCommentText(
-            orgMarkdown.label,
-            orgMarkdown.url,
-            branchMarkdown.label,
-            branchMarkdown.url || "",
-            prTitle,
-            prUrl,
-            prAuthor,
-          );
-        // Post comment
         try {
-          const commentPostRes = await this.runJiraCall((client) => client.issueComments.addComment({ issueIdOrKey: ticket.id, comment: jiraComment }));
-          if (JiraProvider.containsHtmlLoginPage(commentPostRes)) {
-            throw new SfError(genericHtmlResponseError);
-          }
+          await this.postComment(ticket.id, commentMarkdown);
           commentedTickets.push(ticket);
         } catch (e6) {
           uxLog("warning", this, c.yellow('[JiraProvider] ' + t('jiraProviderErrorPostingComment', { ticketId: ticket.id, message: (e6 as any).message })));
@@ -730,128 +722,38 @@ export class JiraProvider extends TicketProviderRoot {
     return tickets;
   }
 
-  getJiraDeploymentCommentAdf(
-    orgName: string,
-    orgUrl: string,
-    branchName: string,
-    branchUrl: string,
-    prTitle: string,
-    prUrl: string,
-    prAuthor: string,
-  ): Version3Models.Document {
-    const comment: Version3Models.Document = {
-      version: 1,
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text: "Deployed by ",
-            },
-            {
-              type: "text",
-              text: "sfdx-hardis",
-              marks: [
-                {
-                  type: "link",
-                  attrs: {
-                    href: "${CONSTANTS.DOC_URL_ROOT}/",
-                  },
-                },
-              ],
-            },
-            {
-              type: "text",
-              text: " in ",
-            },
-            {
-              type: "text",
-              text: orgName,
-              marks: [
-                {
-                  type: "link",
-                  attrs: {
-                    href: orgUrl,
-                  },
-                },
-                {
-                  type: "strong",
-                },
-              ],
-            },
-            {
-              type: "text",
-              text: " from branch ",
-            },
-            {
-              type: "text",
-              text: branchName,
-              marks: [
-                {
-                  type: "link",
-                  attrs: {
-                    href: branchUrl,
-                  },
-                },
-                {
-                  type: "strong",
-                },
-              ],
-            },
-          ],
-        },
-        {
-          type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text: "Related PR: ",
-            },
-            {
-              type: "text",
-              text: prTitle,
-              marks: [
-                {
-                  type: "link",
-                  attrs: {
-                    href: prUrl,
-                  },
-                },
-              ],
-            },
-            {
-              type: "text",
-              text: `, by ${prAuthor}`,
-            },
-          ],
-        },
-      ],
+  /**
+   * Posts a markdown comment: an Atlassian document on Jira Cloud (REST API v3), wiki markup on
+   * Jira Server / Data Center (REST API v2). With a marker, the most recent comment holding it is
+   * updated instead, the marker being a visible line since a Jira comment has no hidden text.
+   */
+  public async postComment(ticketId: string, markdown: string, options: PostCommentOptions = {}): Promise<PostCommentResult> {
+    const issueKey = (ticketId || "").trim().toUpperCase();
+    const fullMarkdown = markdown + markdownMarkerFooter(options.marker);
+    const body: any = this.isJiraCloud() ? markdownToAdf(fullMarkdown) : markdownToJiraWiki(fullMarkdown);
+    const existing = options.marker ? await this.findMarkedComment(issueKey, options.marker) : null;
+    // jira.js reads the text from `comment`, except the v3 update which reads `body`: both are given
+    const result: any = existing
+      ? await this.runJiraCall((client) => client.issueComments.updateComment({ issueIdOrKey: issueKey, id: String(existing.id), comment: body, body } as any))
+      : await this.runJiraCall((client) => client.issueComments.addComment({ issueIdOrKey: issueKey, comment: body } as any));
+    if (JiraProvider.containsHtmlLoginPage(result) || !result?.id) {
+      throw new SfError("Probably config/access error since response is HTML");
+    }
+    const commentId = String(result.id);
+    return {
+      ticketId: issueKey,
+      provider: JiraProvider.providerLabel,
+      action: existing ? "updated" : "created",
+      commentId,
+      url: `${this.jiraHost}/browse/${issueKey}?focusedCommentId=${commentId}`,
     };
-    return comment;
   }
 
-  /**
-   * Builds a plain-text deployment comment for Jira Server / Data Center (REST API v2).
-   */
-  getJiraDeploymentCommentText(
-    orgName: string,
-    orgUrl: string,
-    branchName: string,
-    branchUrl: string,
-    prTitle: string,
-    prUrl: string,
-    prAuthor: string,
-  ): string {
-    let text = `Deployed by [sfdx-hardis|${CONSTANTS.DOC_URL_ROOT}/] in [${orgName}|${orgUrl}] from branch [${branchName}|${branchUrl}]`;
-    if (prTitle && prUrl) {
-      text += `\nRelated PR: [${prTitle}|${prUrl}]`;
-      if (prAuthor) {
-        text += `, by ${prAuthor}`;
-      }
-    }
-    return text;
+  /** The most recent comment holding the marker, read through the paginated comment list */
+  private async findMarkedComment(issueKey: string, marker: string): Promise<any | null> {
+    const { comments } = await this.fetchAllComments(issueKey);
+    const marked = comments.filter((comment: any) => hasMarker(comment?.body, marker));
+    return marked.length > 0 ? marked[marked.length - 1] : null;
   }
 
   private getPlainTextFromDescription(description: Version3Models.Document | string | null | undefined): string {
