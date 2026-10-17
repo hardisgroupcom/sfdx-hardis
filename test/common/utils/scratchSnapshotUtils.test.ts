@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, scopeDeltaToDeployManifest } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, scopeDeltaToDeployManifest } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -57,6 +57,30 @@ describe('snapshot name and description', () => {
   it('writes a description that the Pull Request side reads back', () => {
     const record = { SnapshotName: 'SHaaaaaaaaaaaaa', Description: getSnapshotDescription('release/1.0', shaNew) };
     expect(pickScratchSnapshot([record], 'release/1.0', () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
+  });
+});
+
+describe('getExhaustedSnapshotLimit', () => {
+  const limits = (daily: number, active: number) => ({
+    DailyOrgSnapshots: { Max: 5, Remaining: daily },
+    ActiveOrgSnapshots: { Max: 5, Remaining: active },
+  });
+
+  it('names the daily limit when no snapshot is left today', () => {
+    expect(getExhaustedSnapshotLimit(limits(0, 3))).to.equal('DailyOrgSnapshots (0 of 5 left)');
+  });
+
+  it('names the active limit when every snapshot slot is taken', () => {
+    expect(getExhaustedSnapshotLimit(limits(4, 0))).to.equal('ActiveOrgSnapshots (0 of 5 left)');
+  });
+
+  it('returns null when both limits have room', () => {
+    expect(getExhaustedSnapshotLimit(limits(1, 1))).to.equal(null);
+  });
+
+  it('returns null when the Dev Hub does not report the limits, so the refresh goes on as before', () => {
+    expect(getExhaustedSnapshotLimit(null)).to.equal(null);
+    expect(getExhaustedSnapshotLimit({ DailyScratchOrgs: { Max: 6, Remaining: 0 } })).to.equal(null);
   });
 });
 

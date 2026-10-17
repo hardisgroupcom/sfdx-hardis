@@ -127,6 +127,18 @@ export function getSnapshotDescription(branch: string, sha: string): string {
   return `${getSnapshotDescriptionPrefix(branch)}${sha}`;
 }
 
+// The snapshot limit that has nothing left, read before the refresh builds its source org. Null when both have room
+// or the Dev Hub does not report them.
+export function getExhaustedSnapshotLimit(limits: any): string | null {
+  for (const name of ['DailyOrgSnapshots', 'ActiveOrgSnapshots']) {
+    const limit = limits?.[name];
+    if (limit && Number(limit.Remaining) <= 0) {
+      return `${name} (${limit.Remaining} of ${limit.Max} left)`;
+    }
+  }
+  return null;
+}
+
 // sf org create snapshot has no --wait
 export async function waitSnapshotActive(devHubConn: any, name: string, timeoutMinutes: number, commandThis: any) {
   const deadline = Date.now() + timeoutMinutes * 60000;

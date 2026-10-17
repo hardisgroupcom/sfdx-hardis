@@ -4,6 +4,7 @@ import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import { execSfdxJson, getCurrentGitBranch, git, uxLog } from '../../../../common/utils/index.js';
 import {
+  getExhaustedSnapshotLimit,
   getScratchSnapshotBranchConfig,
   getSnapshotDescription,
   getSnapshotName,
@@ -33,7 +34,7 @@ Key functionalities:
 - **Snapshot of the branch head:** Creates an empty scratch org with [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/) (full deployment, permission sets, Apex init scripts, init data), takes a snapshot of it, waits until the snapshot is Active, then deletes the scratch org.
 - **One snapshot per branch and commit:** The snapshot name is \`SH\`, the first 7 characters of the commit sha and 6 characters of a hash of the branch name, and its description holds the branch and the full sha. Running it again on the same commit does nothing.
 - **Pruning:** Keeps the newest \`scratchOrgSnapshotKeep\` Active snapshots of the branch (default 2) and deletes the older ones. Keeping more lets Pull Requests whose branch is behind the target branch use a snapshot too, but every snapshot counts in the active snapshots allocation of the Dev Hub.
-- **Daily limit:** When the Dev Hub refuses the snapshot because of a limit, it logs a warning and ends without error: Pull Requests keep using the previous snapshot, with a larger delta.
+- **Daily limit:** The \`DailyOrgSnapshots\` and \`ActiveOrgSnapshots\` limits of the Dev Hub are read before the source org is created. When one has nothing left, or the Dev Hub still refuses the snapshot because of a limit, it logs a warning and ends without error: Pull Requests keep using the previous snapshot, with a larger delta.
 
 The Pull Request side is in [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): in CI, it creates the scratch org from the newest Active snapshot of the target branch whose commit is in the history of the Pull Request, and deploys only what changed since that commit.
 
@@ -110,6 +111,12 @@ The command has no prompt.
           fail: true,
           output: true,
         });
+      }
+      // A full source org takes a daily scratch org and the whole deployment: check the snapshot limits first
+      const exhaustedLimit = getExhaustedSnapshotLimit(await devHubConn.limits().catch(() => null));
+      if (exhaustedLimit) {
+        uxLog("warning", this, c.yellow(t('scratchSnapshotLimitReached', { message: exhaustedLimit })));
+        return { outputString: `Snapshot of branch ${branch} not taken: limit reached` };
       }
       const created = await this.createSnapshot(devHubConn, devHubUsername, branch, sha, name, timeoutMinutes);
       if (!created) {
