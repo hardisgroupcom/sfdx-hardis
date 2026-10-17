@@ -11,6 +11,7 @@ import { removePackageXmlContent } from './deployUtils.js';
 import { getScratchDeployManifest } from './orgUtils.js';
 import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
+import { getEnvVar } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
 
@@ -91,7 +92,7 @@ export async function deploySnapshotDelta(snapshot: ScratchSnapshot, configInfo:
   if (toDeploy === 0 && toDelete === 0) {
     return;
   }
-  let deployCommand = `sf project deploy start --manifest "${packageXml}" --ignore-warnings --ignore-conflicts --target-org ${targetUsername} --wait 60`;
+  let deployCommand = `sf project deploy start --manifest "${packageXml}" --ignore-warnings --ignore-conflicts --target-org ${targetUsername} --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}`;
   if (toDelete > 0) {
     deployCommand += ` --post-destructive-changes "${destructiveChangesXml}"`;
   }
