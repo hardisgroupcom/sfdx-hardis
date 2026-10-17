@@ -3873,6 +3873,34 @@
       "title": "Target Username",
       "type": "string"
     },
+    "testCasesPostComment": {
+      "$id": "#/properties/testCasesPostComment",
+      "default": false,
+      "description": "After a real run of hardis:ticket:test-cases:upsert, post a summary of the test cases (created, updated, failed, with a link to each one) on each carrier ticket, updated by the next runs instead of adding a new comment. Same as the --post-comment flag.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/",
+      "title": "Post the test cases summary on the tickets",
+      "type": "boolean"
+    },
+    "testCasesProvider": {
+      "$id": "#/properties/testCasesProvider",
+      "description": "Test management tool that hardis:ticket:test-cases:upsert sends the test cases to, when --provider is not passed. Required in CI and in agent mode when --provider is not passed, so test cases never go to a tool only because its environment variables happen to be set.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/",
+      "enum": [
+        "azure-devops",
+        "servicenow",
+        "xray"
+      ],
+      "enumNames": [
+        "Azure DevOps",
+        "ServiceNow Test Management",
+        "Xray Cloud"
+      ],
+      "examples": [
+        "xray"
+      ],
+      "title": "Test cases provider",
+      "type": "string"
+    },
     "testCoverageNotBlocking": {
       "$id": "#/properties/testCoverageNotBlocking",
       "default": false,
@@ -3927,7 +3955,7 @@
     "serviceNowCommentField": {
       "$id": "#/properties/serviceNowCommentField",
       "default": "work_notes",
-      "description": "Journal field the deployment comment is written into. work_notes is the internal journal, comments is read by the person who opened the record.",
+      "description": "Journal field the deployment comment, and the comments posted with hardis:ticket:post-comment, are written into. work_notes is the internal journal, comments is read by the person who opened the record. The SERVICENOW_COMMENT_FIELD environment variable and the --servicenow-field flag of hardis:ticket:post-comment take precedence.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "work_notes",

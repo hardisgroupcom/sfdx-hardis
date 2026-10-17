@@ -954,9 +954,12 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 ### hardis:ticket
 
-| Command                                       | Title      |
-|:----------------------------------------------|:-----------|
-| [**hardis:ticket:get**](hardis/ticket/get.md) | Get ticket |
+| Command                                                                   | Title                                 |
+|:--------------------------------------------------------------------------|:--------------------------------------|
+| [**hardis:ticket:get**](hardis/ticket/get.md)                             | Get ticket                            |
+| [**hardis:ticket:post-comment**](hardis/ticket/post-comment.md)           | Post a comment on tickets             |
+| [**hardis:ticket:test-cases:init**](hardis/ticket/test-cases/init.md)     | Initialize the test cases of a ticket |
+| [**hardis:ticket:test-cases:upsert**](hardis/ticket/test-cases/upsert.md) | Upsert the test cases of a ticket     |
 
 ### hardis:work
 
