@@ -1776,6 +1776,12 @@
     "ciphertext",
     "mainbranch",
     "Étapes",
-    "throttl"
+    "throttl",
+    "ONETOONE",
+    "ONETOMANY",
+    "MANYTOONE",
+    "NTOONE",
+    "MANYTOMANY",
+    "DEACTIVATEDBYUSER"
   ]
 }
