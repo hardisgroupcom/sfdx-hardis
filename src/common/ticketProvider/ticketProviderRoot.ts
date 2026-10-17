@@ -12,6 +12,7 @@ import {
   TicketDetailsOptions,
   downloadTicketAttachment,
 } from "./utils/ticketDetails.js";
+import { PostCommentOptions, PostCommentResult } from "./utils/ticketComment.js";
 import { t } from '../utils/i18n.js';
 
 // Issues met while collecting ticket details (ex: expired JIRA token), so the Pull Request
@@ -83,6 +84,15 @@ export abstract class TicketProviderRoot {
       index++;
     }
     details.attachmentsDir = details.attachments.some((attachment) => attachment.localPath) ? targetDir : null;
+  }
+
+  /**
+   * Post a markdown comment on one ticket, converted to the format of the ticketing system. With
+   * `options.marker`, the comment this marker was posted with before is updated instead.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async postComment(_ticketId: string, _markdown: string, _options: PostCommentOptions = {}): Promise<PostCommentResult> {
+    throw new SfError(t('ticketCommentNotSupported', { provider: this.getLabel() }));
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

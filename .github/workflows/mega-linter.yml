@@ -53,7 +53,7 @@ jobs:
     steps:
       # Git Checkout
       - name: Checkout Code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -61,6 +61,17 @@ jobs:
           # improve performance
           fetch-depth: 0
           persist-credentials: true
+
+      # Cache the grype vulnerability database between runs: downloading it is
+      # what makes REPOSITORY_GRYPE take about 2 minutes on a cold run. grype
+      # still refreshes the database itself when the cached copy is too old.
+      - name: Cache grype vulnerability DB
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .megalinter-cache/grype
+          key: grype-db-${{ github.run_id }}
+          restore-keys: |
+            grype-db-
 
       # MegaLinter
       - name: MegaLinter
@@ -102,12 +113,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }} # zizmor: ignore[secrets-outside-env]
 
+          # Reuse the cached grype vulnerability DB (see "Cache grype vulnerability DB" step)
+          GRYPE_DB_CACHE_DIR: /github/workspace/.megalinter-cache/grype
+
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF
           # .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
 
+      # The MegaLinter container runs as root and writes the grype database with
+      # root-only permissions: give it back to the runner user, else the post
+      # step of the cache cannot read it and nothing is saved
+      - name: Give the grype cache back to the runner user
+        if: success() || failure()
+        run: |
+          if [ -d .megalinter-cache ]; then
+            sudo chown -R "$(id -u):$(id -g)" .megalinter-cache
+          fi
+
       # Upload MegaLinter artifacts
       - name: Archive production artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: success() || failure()
         with:
           name: MegaLinter reports

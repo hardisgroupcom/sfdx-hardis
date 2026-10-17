@@ -89,6 +89,7 @@ ADDITIONAL_EXCLUDED_DIRECTORIES:
   - node_modules
   - lib
   - megalinter-reports
+  - .megalinter-cache
   - coverage
   - hardis-report
   - site

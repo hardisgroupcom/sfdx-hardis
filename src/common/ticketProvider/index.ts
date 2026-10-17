@@ -12,6 +12,7 @@ import { SfError } from "@salesforce/core";
 import { ServiceNowProvider } from "./serviceNowProvider.js";
 import { AhaProvider } from "./ahaProvider.js";
 import { TicketDetails, TicketDetailsOptions } from "./utils/ticketDetails.js";
+import { PostCommentOptions, PostCommentResult, assertValidMarker } from "./utils/ticketComment.js";
 
 export type TicketProviderKey = "jira" | "azure" | "servicenow" | "aha" | "generic";
 
@@ -40,6 +41,8 @@ export type TicketProviderClass = {
   providerKey: TicketProviderKey;
   providerLabel: string;
   supportsTicketDetails: boolean;
+  /** True for a connector able to post a comment on a ticket (every connector with an API) */
+  supportsComments: boolean;
   isAvailable(config: any): boolean;
   matchesTicketId(ticketId: string, config?: any): boolean;
   getTicketsFromString(text: string, options: TicketsFromStringOptions): Promise<Ticket[]>;
@@ -60,6 +63,11 @@ export const allTicketProviders: TicketProviderClass[] = [
   ServiceNowProvider,
   AhaProvider,
 ];
+
+/** Connectors `sf hardis ticket post-comment` can post a comment with */
+export function ticketCommentProviderKeys(): TicketProviderKey[] {
+  return allTicketProviders.filter((provider) => provider.supportsComments).map((provider) => provider.providerKey);
+}
 
 /** Connectors `sf hardis ticket get` can fetch a full ticket from */
 export function ticketDetailsProviderKeys(): TicketProviderKey[] {
@@ -156,22 +164,71 @@ export abstract class TicketProvider {
     ticketId: string,
     options: TicketDetailsOptions & { providerKey?: TicketProviderKey } = {}
   ): Promise<TicketDetails | null> {
-    const config = await getConfig("project");
     const trimmedId = (ticketId || "").trim();
-    const detailsProviders = allTicketProviders.filter((provider) => provider.supportsTicketDetails);
-    let shapeMatches = detailsProviders.filter((provider) =>
-      options.providerKey ? provider.providerKey === options.providerKey : provider.matchesTicketId(trimmedId, config)
+    const { provider, providerClass } = await this.resolveProviderForTicket(trimmedId, options.providerKey, "supportsTicketDetails");
+    uxLog("action", this, c.cyan('[TicketProvider] ' + t('ticketDetailsFetching', { ticketId: trimmedId, provider: providerClass.providerLabel })));
+    return provider.getTicketDetails(trimmedId, options);
+  }
+
+  /**
+   * Post a markdown comment on one ticket, the provider being found as `getTicketDetails` finds it.
+   * Never throws: a ticket that cannot be commented on comes back as a `failed` result, so a caller
+   * posting on several tickets reports each one.
+   */
+  public static async postComment(
+    ticketId: string,
+    markdown: string,
+    options: PostCommentOptions & { providerKey?: TicketProviderKey } = {}
+  ): Promise<PostCommentResult> {
+    const trimmedId = (ticketId || "").trim();
+    let providerLabel = options.providerKey || "";
+    try {
+      assertValidMarker(options.marker);
+      const { provider, providerClass } = await this.resolveProviderForTicket(trimmedId, options.providerKey, "supportsComments");
+      providerLabel = providerClass.providerLabel;
+      return await provider.postComment(trimmedId, markdown, options);
+    } catch (e) {
+      return { ticketId: trimmedId, provider: providerLabel, action: "failed", error: (e as Error).message };
+    }
+  }
+
+  // Process Ticket providers actions after a deployment.
+  // Can be comments on JIRA, and maybe later status changes ? 😊
+  public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null) {
+    const config = await getConfig("project");
+    const ticketProviders = this.getInstances(config);
+    for (const ticketProvider of ticketProviders) {
+      if (ticketProvider.isActive) {
+        await ticketProvider.postDeploymentComments(tickets, org, pullRequestInfo);
+      }
+    }
+    return tickets;
+  }
+
+  /**
+   * The connector that handles one identifier, for a capability (`supportsTicketDetails`,
+   * `supportsComments`). Several connectors can recognize the same identifier: the ones reading the
+   * references of the project come first, and an identifier none of them recognizes (a ServiceNow
+   * number typed in a JIRA project) is still routed by its shape, among the connectors that always
+   * run. Throws an explicit SfError naming what is missing when nothing can handle it.
+   */
+  private static async resolveProviderForTicket(
+    ticketId: string,
+    providerKey: TicketProviderKey | undefined,
+    capability: "supportsTicketDetails" | "supportsComments"
+  ): Promise<{ provider: TicketProviderRoot; providerClass: TicketProviderClass }> {
+    const config = await getConfig("project");
+    const capableProviders = allTicketProviders.filter((provider) => provider[capability]);
+    let shapeMatches = capableProviders.filter((provider) =>
+      providerKey ? provider.providerKey === providerKey : provider.matchesTicketId(ticketId, config)
     );
-    if (!options.providerKey) {
-      // Several connectors can recognize the same identifier: the ones reading the references of
-      // the project come first. An identifier none of them recognizes (a ServiceNow number typed in
-      // a JIRA project) is still routed by its shape, among the connectors that always run.
+    if (!providerKey) {
       const active = activeTicketProviders(config);
       const activeMatches = shapeMatches.filter((provider) => active.includes(provider));
       shapeMatches = activeMatches.length > 0 ? activeMatches : shapeMatches.filter((provider) => !provider.onlyWhenDeclared);
     }
     if (shapeMatches.length === 0) {
-      throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId: trimmedId }));
+      throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId }));
     }
     // A provider may be able to complete its own configuration (Azure Boards reads the organization
     // and the project from the git remote). Runs before isAvailable(), which is synchronous and
@@ -186,7 +243,7 @@ export abstract class TicketProvider {
     if (available.length === 0) {
       throw new SfError(
         t('ticketDetailsProviderNotConfigured', {
-          ticketId: trimmedId,
+          ticketId,
           providers: shapeMatches.map((provider) => provider.providerLabel).join(", "),
         })
       );
@@ -194,28 +251,12 @@ export abstract class TicketProvider {
     if (available.length > 1) {
       throw new SfError(
         t('ticketDetailsAmbiguousProvider', {
-          ticketId: trimmedId,
+          ticketId,
           providers: available.map((provider) => provider.providerKey).join(", "),
         })
       );
     }
-    const providerClass = available[0];
-    const provider = new providerClass(config);
-    uxLog("action", this, c.cyan('[TicketProvider] ' + t('ticketDetailsFetching', { ticketId: trimmedId, provider: providerClass.providerLabel })));
-    return provider.getTicketDetails(trimmedId, options);
-  }
-
-  // Process Ticket providers actions after a deployment.
-  // Can be comments on JIRA, and maybe later status changes ? 😊
-  public static async postDeploymentActions(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null) {
-    const config = await getConfig("project");
-    const ticketProviders = this.getInstances(config);
-    for (const ticketProvider of ticketProviders) {
-      if (ticketProvider.isActive) {
-        await ticketProvider.postDeploymentComments(tickets, org, pullRequestInfo);
-      }
-    }
-    return tickets;
+    return { provider: new available[0](config), providerClass: available[0] };
   }
 
   /**
