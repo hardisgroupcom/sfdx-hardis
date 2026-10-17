@@ -1954,7 +1954,6 @@
   "flowDeletionStrippedFromDeploy": "Flow members have been removed from the destructive changes: Flows are deleted through the Tooling API.",
   "flowDeletionSucceeded": "Deleted Flow {{flow}} ({{count}} version(s)).",
   "flowDeletionSummary": "Flow deletion summary",
-  "flowDeletionUsingDeploymentOrg": "Using deployment target org {{username}} for Flow deletion.",
   "flowDeletionVersionDeleteFailed": "Could not delete version {{version}} of Flow {{flow}}: {{error}}",
   "flowDeletionVersionsDeleted": "Deleted {{count}} version(s) of Flow {{flow}}.",
   "flowDeletionVersionsRemaining": "Flow {{flow}} still has {{count}} version(s) in the target org.",

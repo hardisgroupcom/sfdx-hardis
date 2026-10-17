@@ -1950,7 +1950,6 @@
   "flowDeletionStrippedFromDeploy": "Elementy Flow zostały usunięte z destructive changes: Flow są usuwane przez Tooling API.",
   "flowDeletionSucceeded": "Usunięto Flow {{flow}} ({{count}} wersji).",
   "flowDeletionSummary": "Podsumowanie usuwania Flow",
-  "flowDeletionUsingDeploymentOrg": "Do usunięcia Flow używana jest docelowa org wdrożenia {{username}}.",
   "flowDeletionVersionDeleteFailed": "Nie udało się usunąć wersji {{version}} Flow {{flow}}: {{error}}",
   "flowDeletionVersionsDeleted": "Usunięto {{count}} wersji Flow {{flow}}.",
   "flowDeletionVersionsRemaining": "Flow {{flow}} ma nadal {{count}} wersji w docelowej org.",

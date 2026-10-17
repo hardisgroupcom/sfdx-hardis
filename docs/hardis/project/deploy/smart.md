@@ -9,6 +9,16 @@ In case of errors, [tips to fix them](https://sfdx-hardis.cloudity.com/deployTip
 
 > See the [whole sfdx-hardis smart deployment workflow explained in detail](https://sfdx-hardis.cloudity.com/salesforce-devops-smart-deployment/)
 
+### Target org
+
+The deployment goes to one org, chosen in this order:
+
+1. The `--target-org` typed on the command line (`--target-org`, `-o` or the deprecated `--targetusername` / `-u`).
+2. The `targetUsername` of the branch config (`config/branches/.sfdx-hardis.BRANCHNAME.yml`).
+3. The default org of the Salesforce CLI.
+
+Outside CI and agent mode, you are then asked to confirm the org. The deployment actions and the other `sf` commands started by the deployment target the same org, through the `SF_TARGET_ORG` environment variable of the process: the default org of the project is not changed.
+
 ### Quick Deploy
 
 In case Pull Request comments are configured on the project, Quick Deploy will try to be used (equivalent to button Quick Deploy)
@@ -132,7 +142,7 @@ The validation and deployment Pull Request comments all read the same way:
 - A **verdict** naming the target org: *Ready to merge into integration*, *Cannot merge into integration: 2 deployment errors*, *Deployed to integration, but an action failed after the deployment*... A green validation also says how to merge: **Squash and merge** for a User Story branch, a **merge commit** (never squash) for a major, promotion or retrofit branch.
 - A short table of **checks**: Metadata (what changed, and for a deployment how: Full or Delta deployment, Full or Delta Quick Deploy), Apex tests (coverage, failures, or why none ran), Deployment actions (counts per status), and in a validation whether Quick Deploy can reuse it.
 - What **needs you**: deployment errors with their tips, failed actions with the end of their output, and the manual actions to perform, as checkboxes.
-- The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the Flows, the tickets and the carried Pull Requests.
+- The **details**, folded: every deployment action of the job, the components per metadata type, the protected components, the Apex test classes, the tickets and the carried Pull Requests.
 
 ![Validation Pull Request comment: verdict, checks and the manual action to do before the deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-validation.png)
 
@@ -144,7 +154,7 @@ Each changed Flow gets a comment of its own, with the changed properties first, 
 
 ![Visual git diff comment of a Flow](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/screenshot-pr-comment-flow-diff.png)
 
-Each comment stays under 50,000 characters (30,000 on Bitbucket). Above that, long outputs and lists are shortened, then the biggest folded sections are left out, and the comment says so. A Flow whose only change is its status (activated or deactivated) gets no visual diff comment: the folded **Flows** section of the validation comment names it.
+Each comment stays under 50,000 characters (30,000 on Bitbucket). Above that, long outputs and lists are shortened, then the biggest folded sections are left out, and the comment says so. A Flow whose only change is its status (activated or deactivated) gets no visual diff comment.
 
 ### Deployment components report
 
@@ -382,7 +392,7 @@ In agent mode:
 - The interactive org selection prompt is skipped.
 - Deployment is forced into **simulation/check mode** - `--check` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
 - Use `--source-branch` to specify the source git branch (overrides local git branch detection via `FORCE_SOURCE_BRANCH`).
-- Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded - providing the correct `targetUsername` for that org automatically.
+- Use `--target-branch` to specify the target git branch. This sets `FORCE_TARGET_BRANCH` for delta/PR scope and also sets `CONFIG_BRANCH` so the target branch config file (`config/branches/.sfdx-hardis-BRANCHNAME.yml`) is loaded - providing the correct `targetUsername` for that org automatically, unless `--target-org` is typed on the command line.
 - If a deployment action requires a `customUsername` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 
 <!-- training-links:start -->
@@ -421,7 +431,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 | runtests<br/>-r   | option  | If testlevel=RunSpecifiedTests, please provide a list of classes.<br/>If testlevel=RunRepositoryTests, can contain a regular expression to keep only class names matching it. If not set, will run all test classes found in the repo. |         |          |                                                                                                                                                           |
 | skipauth          | boolean | Skip authentication check when a default username is required                                                                                                                                                                          |         |          |                                                                                                                                                           |
 | source-branch     | option  | Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)                                                                                                                                      |         |          |                                                                                                                                                           |
-| target-branch     | option  | Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)                                                                                                    |         |          |                                                                                                                                                           |
+| target-branch     | option  | Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername, unless --target-org is typed on the command line)                                                  |         |          |                                                                                                                                                           |
 | target-org<br/>-o | option  | Username or alias of the target org. Not required if the `target-org` configuration variable is already set.                                                                                                                           |         |   true   |                                                                                                                                                           |
 | testlevel<br/>-l  | option  | Level of tests to validate deployment. RunRepositoryTests auto-detect and run all repository test classes                                                                                                                              |         |          | NoTestRun<br/>RunSpecifiedTests<br/>RunRepositoryTests<br/>RunRepositoryTestsExceptSeeAllData<br/>RunLocalTests<br/>RunRelevantTests<br/>RunAllTestsInOrg |
 | websocket         | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                              |         |          |                                                                                                                                                           |

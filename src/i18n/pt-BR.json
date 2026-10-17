@@ -1926,7 +1926,6 @@
   "flowDeletionStrippedFromDeploy": "Os membros Flow foram removidos dos destructive changes: os Flows são excluídos pela Tooling API.",
   "flowDeletionSucceeded": "Flow {{flow}} excluído ({{count}} versão(ões)).",
   "flowDeletionSummary": "Resumo da exclusão de Flows",
-  "flowDeletionUsingDeploymentOrg": "Usando a org de destino do deployment {{username}} para a exclusão do Flow.",
   "flowDeletionVersionDeleteFailed": "Não foi possível excluir a versão {{version}} do Flow {{flow}}: {{error}}",
   "flowDeletionVersionsDeleted": "{{count}} versão(ões) do Flow {{flow}} excluída(s).",
   "flowDeletionVersionsRemaining": "O Flow {{flow}} ainda tem {{count}} versão(ões) na org de destino.",

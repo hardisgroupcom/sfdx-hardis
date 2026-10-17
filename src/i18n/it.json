@@ -1950,7 +1950,6 @@
   "flowDeletionStrippedFromDeploy": "I membri Flow sono stati rimossi dai destructive changes: i Flow vengono eliminati tramite la Tooling API.",
   "flowDeletionSucceeded": "Flow {{flow}} eliminato ({{count}} versione(i)).",
   "flowDeletionSummary": "Riepilogo dell'eliminazione dei Flow",
-  "flowDeletionUsingDeploymentOrg": "Utilizzo dell'org di destinazione del deployment {{username}} per l'eliminazione del Flow.",
   "flowDeletionVersionDeleteFailed": "Impossibile eliminare la versione {{version}} del Flow {{flow}}: {{error}}",
   "flowDeletionVersionsDeleted": "Eliminate {{count}} versione(i) del Flow {{flow}}.",
   "flowDeletionVersionsRemaining": "Il Flow {{flow}} ha ancora {{count}} versione(i) nell'org di destinazione.",

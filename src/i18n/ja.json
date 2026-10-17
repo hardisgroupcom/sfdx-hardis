@@ -1948,7 +1948,6 @@
   "flowDeletionStrippedFromDeploy": "Flow タイプのメンバーを destructive changes から除外しました: フローは Tooling API 経由で削除されます。",
   "flowDeletionSucceeded": "フロー {{flow}} を削除しました（{{count}}件のバージョン）。",
   "flowDeletionSummary": "フロー削除のサマリー",
-  "flowDeletionUsingDeploymentOrg": "Flowの削除には、デプロイ先のターゲット組織 {{username}} を使用します。",
   "flowDeletionVersionDeleteFailed": "フロー {{flow}} のバージョン {{version}} を削除できませんでした: {{error}}",
   "flowDeletionVersionsDeleted": "フロー {{flow}} のバージョンを{{count}}件削除しました。",
   "flowDeletionVersionsRemaining": "フロー {{flow}} には対象 org にまだ{{count}}件のバージョンが残っています。",

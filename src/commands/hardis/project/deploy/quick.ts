@@ -141,7 +141,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
     await executePrePostCommands('commandsPostDeploy', { success: process.exitCode === 0, checkOnly: false });
     // Post success deployment notifications
     if (process.exitCode === 0) {
-      await handlePostDeploymentNotifications(flags, flags["target-org"].getUsername(), false, false, flags["debug"]);
+      await handlePostDeploymentNotifications(flags["target-org"], flags["target-org"].getUsername(), false, false, flags["debug"]);
     }
     return result;
   }

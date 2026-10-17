@@ -1950,7 +1950,6 @@
   "flowDeletionStrippedFromDeploy": "Flow-members zijn uit de destructive changes verwijderd: Flows worden via de Tooling API verwijderd.",
   "flowDeletionSucceeded": "Flow {{flow}} verwijderd ({{count}} versie(s)).",
   "flowDeletionSummary": "Samenvatting van de Flow-verwijdering",
-  "flowDeletionUsingDeploymentOrg": "Gebruik van deployment-doel-org {{username}} voor het verwijderen van de Flow.",
   "flowDeletionVersionDeleteFailed": "Kan versie {{version}} van Flow {{flow}} niet verwijderen: {{error}}",
   "flowDeletionVersionsDeleted": "{{count}} versie(s) van Flow {{flow}} verwijderd.",
   "flowDeletionVersionsRemaining": "Flow {{flow}} heeft nog {{count}} versie(s) in de doel-org.",

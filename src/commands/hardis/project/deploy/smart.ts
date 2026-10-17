@@ -40,7 +40,7 @@ import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCom
 import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { getTargetOrg, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
+import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -57,6 +57,16 @@ export default class SmartDeploy extends SfCommand<any> {
 In case of errors, [tips to fix them](${CONSTANTS.DOC_URL_ROOT}/deployTips/) will be included within the error messages.
 
 > See the [whole sfdx-hardis smart deployment workflow explained in detail](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-smart-deployment/)
+
+### Target org
+
+The deployment goes to one org, chosen in this order:
+
+1. The \`--target-org\` typed on the command line (\`--target-org\`, \`-o\` or the deprecated \`--targetusername\` / \`-u\`).
+2. The \`targetUsername\` of the branch config (\`config/branches/.sfdx-hardis.BRANCHNAME.yml\`).
+3. The default org of the Salesforce CLI.
+
+Outside CI and agent mode, you are then asked to confirm the org. The deployment actions and the other \`sf\` commands started by the deployment target the same org, through the \`SF_TARGET_ORG\` environment variable of the process: the default org of the project is not changed.
 
 ### Quick Deploy
 
@@ -426,8 +436,6 @@ sf hardis:project:deploy:smart --agent --check --source-branch feature/my-featur
 
 > **Important**: \`--target-org\` must be the **target deployment org** (e.g. the integration sandbox), not the developer's current working org. The Salesforce CLI must be authenticated to that org before running this command.
 
-Target org resolution: a \`--target-org\` typed on the command line always wins. Otherwise the \`targetUsername\` of the branch config is used, and if there is none, the default org.
-
 In agent mode:
 
 - The interactive org selection prompt is skipped.
@@ -559,7 +567,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(SmartDeploy);
+    const parseOutput = await this.parse(SmartDeploy);
+    const flags = parseOutput.flags;
     const agentMode = flags.agent === true;
     // Store agentMode globally so action providers can skip failing auth instead of failing
     globalThis._agentMode = agentMode;
@@ -593,7 +602,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Get target org: --target-org typed on the command line, then targetUsername from branch config,
     // then the default org
     const resolvedTarget = resolveTargetUsername({
-      argv: this.argv,
+      targetOrgTyped: isFlagTyped(parseOutput, 'target-org'),
       branchConfigTargetUsername: this.configInfo.targetUsername,
       flagUsername: flags['target-org']?.getUsername(),
     });
@@ -608,6 +617,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
     // Every org call of the deployment must use the selected org, not the one of the --target-org flag
     this.targetOrg = await getTargetOrg(targetUsername, flags['target-org']);
+    // The sf commands started by the deployment without --target-org (deployment actions, sfdmu...) use the
+    // default org: point it at the selected org for this process only, without touching the project config
+    process.env.SF_TARGET_ORG = this.targetOrg.getUsername() || targetUsername;
 
     await setConnectionVariables(this.targetOrg.getConnection(), true);
 
@@ -700,8 +712,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (this.smartDeployOptions.deferSuccessPullRequestComment === true) {
         await GitProvider.managePostPullRequestComment(this.checkOnly);
       }
-      const notificationFlags = { ...flags, 'target-org': this.targetOrg };
-      await handlePostDeploymentNotifications(notificationFlags, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
+      await handlePostDeploymentNotifications(this.targetOrg, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
         flowsNotDeleted: this.flowDeletion.flowsNotDeleted,
       });
     }

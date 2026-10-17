@@ -4,7 +4,7 @@ import c from 'chalk';
 import fs from './fsUtils.js';
 import * as path from "path";
 import sortArray from './sortArray.js';
-import { SfError, SfProject } from '@salesforce/core';
+import { Org, SfError, SfProject } from '@salesforce/core';
 import {
   arrayUniqueByKey,
   arrayUniqueByKeys,
@@ -555,7 +555,8 @@ export async function isDeploymentNotifTranslationEnabled(): Promise<boolean> {
 }
 
 export async function handlePostDeploymentNotifications(
-  flags,
+  // Org the deployment was sent to
+  targetOrg: Org | undefined,
   targetUsername: any,
   quickDeploy: any,
   delta: boolean,
@@ -588,7 +589,7 @@ export async function handlePostDeploymentNotifications(
     commitAttachments = collected.attachments;
     await TicketProvider.postDeploymentActions(
       collected.commitsSummary.tickets,
-      flags['target-org']?.getConnection()?.instanceUrl || targetUsername || '',
+      targetOrg?.getConnection()?.instanceUrl || targetUsername || '',
       pullRequestInfo
     );
   } catch (e4: any) {
@@ -621,7 +622,7 @@ export async function handlePostDeploymentNotifications(
   ].filter((attachment): attachment is MessageAttachment => attachment !== undefined);
 
   const orgMarkdown = await getOrgMarkdown(
-    flags['target-org']?.getConnection()?.instanceUrl || targetUsername || ''
+    targetOrg?.getConnection()?.instanceUrl || targetUsername || ''
   );
   const branchMarkdown = await getBranchMarkdown();
   let notifMessage = `Deployment has been successfully processed from branch ${branchMarkdown} to org ${orgMarkdown}`;
@@ -646,7 +647,7 @@ export async function handlePostDeploymentNotifications(
   } else {
     uxLog("warning", this, c.yellow("WARNING: Unable to get Pull Request info, notif won't have a button URL"));
   }
-  await setConnectionVariables(flags['target-org']?.getConnection(), true);// Required for some notifications providers like Email
+  await setConnectionVariables(targetOrg?.getConnection(), true);// Required for some notifications providers like Email
   await NotifProvider.postNotifications({
     type: 'DEPLOYMENT',
     text: notifMessage,
