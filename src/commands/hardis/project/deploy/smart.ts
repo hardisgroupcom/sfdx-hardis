@@ -12,7 +12,7 @@ Azure: CI=true SYSTEM_ACCESSTOKEN=XXX SYSTEM_COLLECTIONURI=https://dev.azure.com
 */
 
 import { SfCommand, Flags, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
-import { Messages, SfError } from '@salesforce/core';
+import { Messages, Org, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import fs from '../../../../common/utils/fsUtils.js';
@@ -40,6 +40,7 @@ import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCom
 import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -56,6 +57,16 @@ export default class SmartDeploy extends SfCommand<any> {
 In case of errors, [tips to fix them](${CONSTANTS.DOC_URL_ROOT}/deployTips/) will be included within the error messages.
 
 > See the [whole sfdx-hardis smart deployment workflow explained in detail](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-smart-deployment/)
+
+### Target org
+
+The deployment goes to one org, chosen in this order:
+
+1. The \`--target-org\` typed on the command line (\`--target-org\`, \`-o\` or the deprecated \`--targetusername\` / \`-u\`).
+2. The \`targetUsername\` of the branch config (\`config/branches/.sfdx-hardis.BRANCHNAME.yml\`).
+3. The default org of the Salesforce CLI.
+
+Outside CI and agent mode, you are then asked to confirm the org. The deployment actions and the other \`sf\` commands started by the deployment target the same org, through the \`SF_TARGET_ORG\` environment variable of the process: the default org of the project is not changed.
 
 ### Quick Deploy
 
@@ -430,7 +441,7 @@ In agent mode:
 - The interactive org selection prompt is skipped.
 - Deployment is forced into **simulation/check mode** - \`--check\` is implicit, but should be passed explicitly to make the intent clear. No changes are applied to the org.
 - Use \`--source-branch\` to specify the source git branch (overrides local git branch detection via \`FORCE_SOURCE_BRANCH\`).
-- Use \`--target-branch\` to specify the target git branch. This sets \`FORCE_TARGET_BRANCH\` for delta/PR scope and also sets \`CONFIG_BRANCH\` so the target branch config file (\`config/branches/.sfdx-hardis-BRANCHNAME.yml\`) is loaded - providing the correct \`targetUsername\` for that org automatically.
+- Use \`--target-branch\` to specify the target git branch. This sets \`FORCE_TARGET_BRANCH\` for delta/PR scope and also sets \`CONFIG_BRANCH\` so the target branch config file (\`config/branches/.sfdx-hardis-BRANCHNAME.yml\`) is loaded - providing the correct \`targetUsername\` for that org automatically, unless \`--target-org\` is typed on the command line.
 - If a deployment action requires a \`customUsername\` and authentication for that user fails, the action is **skipped** (not failed) so the simulation can continue.
 
 <!-- training-links:start -->
@@ -522,7 +533,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       description: 'Source git branch name (agent mode: overrides local git branch detection via FORCE_SOURCE_BRANCH)',
     }),
     'target-branch': Flags.string({
-      description: 'Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername)',
+      description: 'Target git branch name (agent mode: sets CONFIG_BRANCH so the target branch config is loaded, providing the correct targetUsername, unless --target-org is typed on the command line)',
     }),
     'target-org': requiredOrgFlagWithDeprecations,
   };
@@ -550,11 +561,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   protected debugMode = false;
   // Handles the Flow members of the destructive manifests, deleted outside the metadata deploy
   protected flowDeletion: FlowDeletionHandler;
+  // Org selected for the deployment, used for every org call (may differ from the --target-org flag)
+  protected targetOrg: Org;
 
   /* jscpd:ignore-end */
 
   public async run(): Promise<AnyJson> {
-    const { flags } = await this.parse(SmartDeploy);
+    const parseOutput = await this.parse(SmartDeploy);
+    const flags = parseOutput.flags;
     const agentMode = flags.agent === true;
     // Store agentMode globally so action providers can skip failing auth instead of failing
     globalThis._agentMode = agentMode;
@@ -585,17 +599,29 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     const packageXml = flags.packagexml || null;
     this.debugMode = flags.debug || false;
     const currentGitBranch = await getCurrentGitBranch();
-    // Get target org: prefer targetUsername from target-branch config, then fall back to --target-org
-    let targetUsername = this.configInfo.targetUsername || flags['target-org'].getUsername();
-    if (this.configInfo.targetUsername) {
-      uxLog("log", this, c.grey(`[AgentMode] Using targetUsername from branch config: ${targetUsername}`));
+    // Get target org: --target-org typed on the command line, then targetUsername from branch config,
+    // then the default org
+    const resolvedTarget = resolveTargetUsername({
+      targetOrgTyped: isFlagTyped(parseOutput, 'target-org'),
+      branchConfigTargetUsername: this.configInfo.targetUsername,
+      flagUsername: flags['target-org']?.getUsername(),
+    });
+    let targetUsername = resolvedTarget.username;
+    if (resolvedTarget.source === 'branchConfig') {
+      const branchConfigMessage = t('usingTargetUsernameFromBranchConfig', { username: targetUsername });
+      uxLog("log", this, c.grey(agentMode ? `[AgentMode] ${branchConfigMessage}` : branchConfigMessage));
     }
     if (!isCI && !agentMode) {
       uxLog("warning", this, c.yellow(t('justToBeSurePleaseSelectThe')))
       targetUsername = await promptOrgUsernameDefault(this, targetUsername, { devHub: false, setDefault: false, scratch: false });
     }
+    // Every org call of the deployment must use the selected org, not the one of the --target-org flag
+    this.targetOrg = await getTargetOrg(targetUsername, flags['target-org']);
+    // The sf commands started by the deployment without --target-org (deployment actions, sfdmu...) use the
+    // default org: point it at the selected org for this process only, without touching the project config
+    process.env.SF_TARGET_ORG = this.targetOrg.getUsername() || targetUsername;
 
-    await setConnectionVariables(flags['target-org']?.getConnection(), true);
+    await setConnectionVariables(this.targetOrg.getConnection(), true);
 
     // A promotion branch may only be validated, never deployed: a deployment job running from it
     // ships the promotion to the org before it is reviewed and merged. Checked before anything is
@@ -626,7 +652,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
 
     // Get package.xml & destructiveChanges.xml
-    await this.initPackageXmlAndDestructiveChanges(packageXml, targetUsername, flags);
+    await this.initPackageXmlAndDestructiveChanges(packageXml, targetUsername);
 
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
@@ -636,7 +662,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       commandThis: this,
       checkOnly: this.checkOnly,
       configInfo: this.configInfo,
-      targetOrg: flags['target-org'],
+      targetOrg: this.targetOrg,
       smartDeployOptions: this.smartDeployOptions,
     });
     await this.flowDeletion.prepare();
@@ -671,7 +697,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // org by now, so a browser that cannot reach a page must not fail the job.
     if ((this.configInfo.listViewsToSetToMine || []).length > 0 && deployExecuted) {
       try {
-        await restoreListViewMine(this.configInfo.listViewsToSetToMine, flags['target-org'].getConnection(), {
+        await restoreListViewMine(this.configInfo.listViewsToSetToMine, this.targetOrg.getConnection(), {
           debug: this.debugMode,
         });
       } catch (e: any) {
@@ -686,12 +712,12 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (this.smartDeployOptions.deferSuccessPullRequestComment === true) {
         await GitProvider.managePostPullRequestComment(this.checkOnly);
       }
-      await handlePostDeploymentNotifications(flags, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
+      await handlePostDeploymentNotifications(this.targetOrg, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
         flowsNotDeleted: this.flowDeletion.flowsNotDeleted,
       });
     }
     // Return result
-    return { orgId: flags['target-org'].getOrgId(), outputString: messages.join('\n') };
+    return { orgId: this.targetOrg.getOrgId(), outputString: messages.join('\n') };
   }
 
   private async setAdditionalOptions(targetUsername: string) {
@@ -854,7 +880,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
   }
 
-  private async initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any, flags) {
+  private async initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any) {
     // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
     // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
     this.packageXmlFile =
@@ -864,7 +890,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml');
     this.smartDeployOptions = {
       targetUsername: targetUsername,
-      conn: flags['target-org']?.getConnection(),
+      conn: this.targetOrg.getConnection(),
       testClasses: this.testClasses,
       extraCommands: []
     };
