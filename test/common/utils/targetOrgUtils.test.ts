@@ -1,3 +1,4 @@
+// cspell:ignore ouat
 import { expect } from 'chai';
 import { Flags, Parser } from '@oclif/core';
 import { Org } from '@salesforce/core';
