@@ -4036,6 +4036,7 @@
   "testCasesProviderUnusable": "Nie można użyć {{label}}: {{message}}",
   "testCasesPushCancelled": "Upsert anulowany. Nic nie zostało zapisane.",
   "testCasesServiceNowCallFailed": "ServiceNow: {{action}} nie powiodło się - {{message}}",
+  "testCasesServiceNowCarrierNotFound": "ServiceNow: nie znaleziono rekordu o numerze {{ticket}} lub użytkownik nie może odczytać tabeli task. Nie zapisano żadnego przypadku testowego.",
   "testCasesServiceNowNoSysId": "ServiceNow: odpowiedź na wstawienie do {{table}} nie jest rekordem. Sprawdź, czy SERVICENOW_URL to adres URL instancji i czy instancja jest aktywna.",
   "testCasesServiceNowPartialCreate": "ServiceNow: test {{url}} został utworzony, ale jego wersja lub kroki nie ({{message}}). Ponowne uruchomienie ich nie doda: należy uzupełnić lub usunąć ten test w ServiceNow.",
   "testCasesServiceNowPluginInactive": "ServiceNow: tabela {{table}} odpowiedziała HTTP {{status}}: wtyczka {{plugin}} nie jest aktywna w tej instancji (jest dostarczana z SPM / ITBM Professional) lub użytkownik nie może jej odczytać. Nie utworzono żadnego przypadku testowego.",

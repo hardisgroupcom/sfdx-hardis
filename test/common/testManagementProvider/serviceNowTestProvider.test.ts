@@ -170,14 +170,9 @@ describe('ServiceNowTestProvider', () => {
     });
   });
 
-  describe('buildShortDescription and buildTestBody', () => {
+  describe('buildShortDescription', () => {
     it('prefixes the title with the idempotency key only, without the module', () => {
       expect(ServiceNowTestProvider.buildShortDescription(makeCase())).to.equal('[TESTKIT:PROJ-123:F01] Create a quote');
-    });
-
-    it('sends the priority only when the notebook has that column', () => {
-      expect(ServiceNowTestProvider.buildTestBody(makeCase()).priority).to.equal(1);
-      expect(ServiceNowTestProvider.buildTestBody(makeCase({ priority: undefined }))).to.not.have.property('priority');
     });
   });
 
@@ -206,7 +201,7 @@ describe('ServiceNowTestProvider', () => {
         'sn_test_management_step',
       ]);
       expect(requests.every((request) => request.init.method === 'POST')).to.be.true;
-      expect(JSON.parse(requests[1].init.body)).to.deep.equal({ test: 'test-1', version: 1 });
+      expect(JSON.parse(requests[1].init.body)).to.deep.equal({ test: 'test-1', version: 1, short_description: '[TESTKIT:PROJ-123:F01] Create a quote' });
       expect(ref).to.deep.equal({ id: 'test-1', url: 'https://acme.service-now.com/sn_test_management_test.do?sys_id=test-1' });
     });
 
@@ -230,32 +225,13 @@ describe('ServiceNowTestProvider', () => {
       expect(requests).to.have.lengthOf(2);
     });
 
-    it('keeps the idempotency key as a short_description prefix', async () => {
+    it('writes the title on the test and on its version, and nothing the test table does not have', async () => {
       setAllEnv();
       mockFetch(...createResponses());
       await new ServiceNowTestProvider().create(makeCase());
-      const body = JSON.parse(requests[0].init.body);
-      expect(body.short_description).to.equal('[TESTKIT:PROJ-123:F01] Create a quote');
-      expect(body.priority).to.equal(1);
-    });
-
-    it('defaults the priority to 2 on create when the notebook has no priority column', async () => {
-      setAllEnv();
-      mockFetch(...createResponses());
-      await new ServiceNowTestProvider().create(makeCase({ priority: undefined }));
-      expect(JSON.parse(requests[0].init.body).priority).to.equal(2);
-    });
-
-    it('sends a plain text description, reducing a markdown link to a bare URL', async () => {
-      setAllEnv();
-      mockFetch(...createResponses());
-      await new ServiceNowTestProvider().create(makeCase());
-      const description = JSON.parse(requests[0].init.body).description;
-      expect(description).to.contain('https://example.test/spec');
-      expect(description).to.contain('Quotes');
-      expect(description).to.contain('The quote exists');
-      expect(description).to.not.contain('[the spec]');
-      expect(description).to.not.contain('<');
+      // Test Management 2.0 has no description nor priority field: the Table API would drop them silently
+      expect(JSON.parse(requests[0].init.body)).to.deep.equal({ short_description: '[TESTKIT:PROJ-123:F01] Create a quote' });
+      expect(JSON.parse(requests[1].init.body).short_description).to.equal('[TESTKIT:PROJ-123:F01] Create a quote');
     });
 
     it('throws when an insert answer carries no sys_id, instead of chaining on undefined', async () => {
@@ -345,56 +321,64 @@ describe('ServiceNowTestProvider', () => {
   });
 
   describe('update', () => {
-    it('patches the test record in place without touching its steps', async () => {
+    it('renames the latest version, the test copying its read-only title from it, without touching the steps', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({ result: { description: '' } }), jsonResponse({ result: { sys_id: 'test-9' } }));
+      mockFetch(jsonResponse({ result: [{ sys_id: 'version-3' }] }), jsonResponse({ result: { sys_id: 'version-3' } }));
       const ref = await new ServiceNowTestProvider().update(
         { id: 'test-9', url: 'https://acme.service-now.com/sn_test_management_test.do?sys_id=test-9' },
         makeCase()
       );
       expect(requests).to.have.lengthOf(2);
+      const params = new URL(requests[0].url).searchParams;
+      expect(params.get('sysparm_query')).to.equal('test=test-9^ORDERBYDESCversion');
       expect(requests[1].init.method).to.equal('PATCH');
-      expect(requests[1].url).to.equal('https://acme.service-now.com/api/now/table/sn_test_management_test/test-9');
-      const body = JSON.parse(requests[1].init.body);
-      expect(body.short_description).to.equal('[TESTKIT:PROJ-123:F01] Create a quote');
-      expect(body.priority).to.equal(1);
+      expect(requests[1].url).to.equal('https://acme.service-now.com/api/now/table/sn_test_management_test_version/version-3');
+      expect(JSON.parse(requests[1].init.body)).to.deep.equal({ short_description: '[TESTKIT:PROJ-123:F01] Create a quote' });
       expect(ref.id).to.equal('test-9');
     });
 
-    it('leaves the priority alone when the notebook has no priority column', async () => {
+    it('gives a version holding the title to a test that has none', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({ result: { description: '' } }), jsonResponse({ result: { sys_id: 'test-9' } }));
-      await new ServiceNowTestProvider().update({ id: 'test-9', url: 'x' }, makeCase({ priority: undefined }));
-      expect(JSON.parse(requests[1].init.body)).to.not.have.property('priority');
-    });
-
-    it('reads the description first and keeps the lines of the fields the notebook has no column for', async () => {
-      setAllEnv();
-      mockFetch(
-        jsonResponse({ result: { description: 'Module: Quote management\nSOQL query: SELECT Id\nFROM Quote' } }),
-        jsonResponse({ result: { sys_id: 'test-9' } })
-      );
-      await new ServiceNowTestProvider().update({ id: 'test-9', url: 'x' }, makeCase({ module: undefined, soql: undefined }));
-      expect(requests[0].init.method ?? 'GET').to.equal('GET');
-      const description = JSON.parse(requests[1].init.body).description;
-      expect(description).to.match(/^Module: Quote management\n/);
-      expect(description).to.match(/\nSOQL query: SELECT Id\nFROM Quote$/);
+      mockFetch(jsonResponse({ result: [] }), jsonResponse({ result: { sys_id: 'version-1' } }));
+      await new ServiceNowTestProvider().update({ id: 'test-9', url: 'x' }, makeCase());
+      expect(requests[1].init.method).to.equal('POST');
+      expect(JSON.parse(requests[1].init.body)).to.deep.equal({ test: 'test-9', version: 1, short_description: '[TESTKIT:PROJ-123:F01] Create a quote' });
     });
 
     it('surfaces the server error detail of a failed update, with the record id', async () => {
       setAllEnv();
-      mockFetch(jsonResponse({ result: { description: '' } }), jsonResponse({ error: { message: 'ACL restricts the record' } }, 403));
+      mockFetch(jsonResponse({ result: [{ sys_id: 'version-3' }] }), jsonResponse({ error: { message: 'ACL restricts the record' } }, 403));
       const message = await errorOf(new ServiceNowTestProvider().update({ id: 'test-9', url: 'x' }, makeCase()));
       expect(message).to.contain('test-9');
       expect(message).to.contain('ACL restricts the record');
     });
   });
 
-  it('links nothing: the carrier ticket travels in the idempotency key', async () => {
-    setAllEnv();
-    mockFetch();
-    await new ServiceNowTestProvider().linkToStory();
-    expect(requests).to.be.empty;
+  describe('carrier ticket', () => {
+    it('reads every carrier record once before any write, and refuses a missing one', async () => {
+      setAllEnv();
+      mockFetch(jsonResponse({ result: [{ sys_id: 'task-1' }] }), jsonResponse({ result: [] }));
+      const cases = [makeCase(), makeCase({ id: 'PROJ-123-F02' }), makeCase({ id: 'INC0099999-F01', ticket: 'INC0099999' })];
+      const message = await errorOf(new ServiceNowTestProvider().prepare(cases));
+      expect(requests).to.have.lengthOf(2);
+      expect(new URL(requests[0].url).pathname).to.equal('/api/now/table/task');
+      expect(new URL(requests[0].url).searchParams.get('sysparm_query')).to.equal('number=PROJ-123');
+      expect(message).to.contain('INC0099999');
+    });
+
+    it('links the test to the record of its ticket once', async () => {
+      setAllEnv();
+      mockFetch(jsonResponse({ result: [{ sys_id: 'task-1' }] }), jsonResponse({ result: [] }), jsonResponse({ result: { sys_id: 'link-1' } }));
+      const provider = new ServiceNowTestProvider();
+      await provider.linkToStory({ id: 'test-9', url: 'x' }, 'INC0010005');
+      expect(requests[2].url).to.equal('https://acme.service-now.com/api/now/table/sn_test_management_m2m_task_test');
+      expect(JSON.parse(requests[2].init.body)).to.deep.equal({ test: 'test-9', task: 'task-1' });
+
+      // The task id is cached, and an existing link is not added twice
+      mockFetch(jsonResponse({ result: [{ sys_id: 'link-1' }] }));
+      await provider.linkToStory({ id: 'test-9', url: 'x' }, 'INC0010005');
+      expect(requests).to.have.lengthOf(1);
+    });
   });
 });
 

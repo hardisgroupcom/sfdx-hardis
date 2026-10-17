@@ -4040,6 +4040,7 @@
   "testCasesProviderUnusable": "{{label}} cannot be used: {{message}}",
   "testCasesPushCancelled": "Upsert cancelled. Nothing was written.",
   "testCasesServiceNowCallFailed": "ServiceNow: {{action}} failed - {{message}}",
+  "testCasesServiceNowCarrierNotFound": "ServiceNow: no record numbered {{ticket}} was found, or the user cannot read the task table. No test case was written.",
   "testCasesServiceNowNoSysId": "ServiceNow: the answer of the insert into {{table}} is not a record. Check that SERVICENOW_URL is the instance URL and that the instance is awake.",
   "testCasesServiceNowPartialCreate": "ServiceNow: the test {{url}} was created, but its version or its steps were not ({{message}}). A new run will not add them: complete or delete this test in ServiceNow.",
   "testCasesServiceNowPluginInactive": "ServiceNow: table {{table}} answered HTTP {{status}}: the plugin {{plugin}} is not active on this instance (it comes with SPM / ITBM Professional), or the user cannot read it. No test case was created.",

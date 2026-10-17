@@ -4036,6 +4036,7 @@
   "testCasesProviderUnusable": "{{label}} kan niet worden gebruikt: {{message}}",
   "testCasesPushCancelled": "Upsert geannuleerd. Er is niets geschreven.",
   "testCasesServiceNowCallFailed": "ServiceNow: {{action}} is mislukt - {{message}}",
+  "testCasesServiceNowCarrierNotFound": "ServiceNow: geen record met nummer {{ticket}} gevonden, of de gebruiker kan de tabel task niet lezen. Er is geen testgeval geschreven.",
   "testCasesServiceNowNoSysId": "ServiceNow: het antwoord op het invoegen in {{table}} is geen record. Controleer of SERVICENOW_URL de instantie-URL is en of de instantie actief is.",
   "testCasesServiceNowPartialCreate": "ServiceNow: de test {{url}} is aangemaakt, maar de versie of de stappen niet ({{message}}). Een nieuwe uitvoering voegt ze niet toe: vul deze test aan of verwijder hem in ServiceNow.",
   "testCasesServiceNowPluginInactive": "ServiceNow: tabel {{table}} antwoordde met HTTP {{status}}: de plugin {{plugin}} is niet actief op deze instantie (deze wordt geleverd met SPM / ITBM Professional), of de gebruiker kan deze niet lezen. Er is geen testgeval aangemaakt.",

@@ -4033,6 +4033,7 @@
   "testCasesProviderUnusable": "{{label}} は使用できません: {{message}}",
   "testCasesPushCancelled": "Upsert がキャンセルされました。何も書き込まれませんでした。",
   "testCasesServiceNowCallFailed": "ServiceNow: {{action}} が失敗しました - {{message}}",
+  "testCasesServiceNowCarrierNotFound": "ServiceNow: 番号 {{ticket}} のレコードが見つからないか、ユーザーが task テーブルを読み取れません。テストケースは書き込まれていません。",
   "testCasesServiceNowNoSysId": "ServiceNow: {{table}} への挿入の応答がレコードではありません。SERVICENOW_URL がインスタンスの URL であること、およびインスタンスが起動していることを確認してください。",
   "testCasesServiceNowPartialCreate": "ServiceNow: テスト {{url}} は作成されましたが、そのバージョンまたはステップは作成されませんでした ({{message}})。再実行しても追加されません。ServiceNow でこのテストを完成させるか削除してください。",
   "testCasesServiceNowPluginInactive": "ServiceNow: テーブル {{table}} が HTTP {{status}} を返しました。プラグイン {{plugin}} がこのインスタンスで有効になっていない (SPM / ITBM Professional に含まれます)、またはユーザーがそれを読み取れません。テストケースは作成されませんでした。",
