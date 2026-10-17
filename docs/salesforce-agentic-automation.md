@@ -188,7 +188,7 @@ The table below lists every sfdx-hardis command that supports `--agent`. Click t
 | [**hardis:project:function:update**](hardis/project/function/update.md)                     | Change a custom function definition. Required: `--id`                                                                                                                                                             |
 | [**hardis:project:function:delete**](hardis/project/function/delete.md)                     | Remove a custom function. Required: `--id`; `--force` to delete one still used by deployment actions                                                                                                              |
 | [**hardis:ticket:test-cases:init**](hardis/ticket/test-cases/init.md) | Write the test cases drafted for a ticket into a notebook. `--agent` skips the prompts; required then: `--testsjsonfile`, or `--kind` + `--ticket-number` for a blank one |
-| [**hardis:ticket:test-cases:upsert**](hardis/ticket/test-cases/upsert.md) | Send the test cases of a notebook to Azure DevOps or Xray. `--agent` skips the confirmation asked before any write. Required: `--notebook` or `--testsjsonfile`, and `--provider` unless `testCasesProvider` is configured; optional: `--dry-run` |
+| [**hardis:ticket:test-cases:upsert**](hardis/ticket/test-cases/upsert.md) | Send the test cases of a notebook to Azure DevOps, ServiceNow or Xray. `--agent` skips the confirmation asked before any write. Required: `--notebook` or `--testsjsonfile`, and `--provider` unless `testCasesProvider` is configured; optional: `--dry-run` |
 
 ### Monitoring
 
