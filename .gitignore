@@ -58,6 +58,7 @@ node_modules
 .env
 hardis-report/
 megalinter-reports/
+.megalinter-cache/
 config/user/
 
 .sfdx/
