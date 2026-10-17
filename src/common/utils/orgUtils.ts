@@ -586,6 +586,20 @@ export async function installPackages(installedPackages: any[], orgAlias: string
   elapseEnd('Install all packages');
 }
 
+// The manifest deployed to a scratch org in deploy mode, or null when its sources are pushed (the default)
+export function getScratchDeployManifest(configInfo: any): string | null {
+  if (!((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true')) {
+    return null;
+  }
+  // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
+  // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
+  return (
+    process.env.PACKAGE_XML_TO_DEPLOY ||
+    configInfo.packageXmlToDeploy ||
+    (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml')
+  );
+}
+
 export async function initOrgMetadatas(
   configInfo: any,
   orgUsername: string,
@@ -595,15 +609,10 @@ export async function initOrgMetadatas(
   options: any = {}
 ) {
   // Push or deploy according to config (default: push)
-  if ((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true') {
+  const packageXmlFile = getScratchDeployManifest(configInfo);
+  if (packageXmlFile) {
     // if CI, use sf project deploy start to make sure package.xml is consistent
     uxLog("action", this, c.cyan(t('deployingProjectSourcesToOrg', { orgAlias: c.green(orgAlias) })));
-    // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
-    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
-    const packageXmlFile =
-      process.env.PACKAGE_XML_TO_DEPLOY ||
-      configInfo.packageXmlToDeploy ||
-      (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml');
     await smartDeploy(packageXmlFile, false, 'NoTestRun', debugMode, this, {
       targetUsername: orgUsername,
       conn: null,

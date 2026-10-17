@@ -190,7 +190,7 @@ In agent mode:
       await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
       if (this.pool === false) {
         if (this.snapshot?.sha) {
-          await deploySnapshotDelta(this.snapshot, this.scratchOrgUsername, this, this.debugMode);
+          await deploySnapshotDelta(this.snapshot, this.configInfo, this.scratchOrgUsername, this, this.debugMode);
         } else {
           await initOrgMetadatas(
             this.configInfo,

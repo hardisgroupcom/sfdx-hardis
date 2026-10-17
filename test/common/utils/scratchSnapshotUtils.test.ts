@@ -1,5 +1,9 @@
 import { expect } from 'chai';
-import { getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, scopeDeltaToDeployManifest } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
@@ -69,5 +73,41 @@ describe('parsePositiveSetting', () => {
 
   it('raises a number below 1 to 1 instead of giving the default', () => {
     expect(parsePositiveSetting(0, 2)).to.equal(1);
+  });
+});
+
+describe('scopeDeltaToDeployManifest', () => {
+  const packageXml = (types: Record<string, string[]>) =>
+    '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n' +
+    Object.entries(types)
+      .map(([name, members]) => `  <types>\n${members.map((m) => `    <members>${m}</members>\n`).join('')}    <name>${name}</name>\n  </types>\n`)
+      .join('') +
+    '  <version>62.0</version>\n</Package>\n';
+  let dir: string;
+  let delta: string;
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scope-delta-'));
+    delta = path.join(dir, 'package', 'package.xml');
+    fs.mkdirSync(path.dirname(delta));
+    fs.writeFileSync(delta, packageXml({ ApexClass: ['ClassA', 'ClassC'], CustomObject: ['Foo__c'], Flow: ['FlowX'] }));
+    fs.writeFileSync(path.join(dir, 'manifest.xml'), packageXml({ ApexClass: ['ClassA', 'ClassB'], CustomObject: ['*'] }));
+    process.env.PACKAGE_XML_TO_DEPLOY = path.join(dir, 'manifest.xml');
+  });
+
+  afterEach(() => {
+    delete process.env.DEBUG_DEPLOY;
+    delete process.env.PACKAGE_XML_TO_DEPLOY;
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('keeps only the changed items the manifest deploys in deploy mode, a wildcard type included', async () => {
+    process.env.DEBUG_DEPLOY = 'true';
+    const scoped = await scopeDeltaToDeployManifest(delta, {});
+    expect(await parsePackageXmlFile(scoped)).to.deep.equal({ ApexClass: ['ClassA'], CustomObject: ['Foo__c'] });
+  });
+
+  it('returns the delta unchanged when the sources are pushed', async () => {
+    expect(await scopeDeltaToDeployManifest(delta, {})).to.equal(delta);
   });
 });

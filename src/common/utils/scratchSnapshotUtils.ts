@@ -7,6 +7,9 @@ import { createTempDir, execSfdxJson, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
 import { callSfdxGitDelta } from './gitUtils.js';
 import { countPackageXmlItems } from './xmlUtils.js';
+import { removePackageXmlContent } from './deployUtils.js';
+import { getScratchDeployManifest } from './orgUtils.js';
+import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
@@ -77,10 +80,10 @@ export function pickScratchSnapshot(
 }
 
 // Deploys what changed between the commit of the snapshot and HEAD, deletions included
-export async function deploySnapshotDelta(snapshot: ScratchSnapshot, targetUsername: string, commandThis: any, debugMode = false) {
+export async function deploySnapshotDelta(snapshot: ScratchSnapshot, configInfo: any, targetUsername: string, commandThis: any, debugMode = false) {
   const deltaDir = await createTempDir();
   await callSfdxGitDelta(snapshot.sha, 'HEAD', deltaDir, { debugMode });
-  const packageXml = path.join(deltaDir, 'package', 'package.xml');
+  const packageXml = await scopeDeltaToDeployManifest(path.join(deltaDir, 'package', 'package.xml'), configInfo, debugMode);
   const destructiveChangesXml = path.join(deltaDir, 'destructiveChanges', 'destructiveChanges.xml');
   const toDeploy = await countPackageXmlItems(packageXml);
   const toDelete = await countPackageXmlItems(destructiveChangesXml);
@@ -93,6 +96,19 @@ export async function deploySnapshotDelta(snapshot: ScratchSnapshot, targetUsern
     deployCommand += ` --post-destructive-changes "${destructiveChangesXml}"`;
   }
   await execSfdxJson(deployCommand, commandThis, { fail: true, output: true, debug: debugMode });
+}
+
+// In deploy mode an empty scratch org gets only the configured manifest: the delta keeps that scope, as
+// deploy:smart does (manifest filtered by the delta, so a wildcard in the manifest works)
+export async function scopeDeltaToDeployManifest(deltaPackageXml: string, configInfo: any, debugMode = false): Promise<string> {
+  const manifest = getScratchDeployManifest(configInfo);
+  if (!manifest) {
+    return deltaPackageXml;
+  }
+  const scopedPackageXml = path.join(path.dirname(deltaPackageXml), 'packageDelta.xml');
+  await fs.copy(manifest, scopedPackageXml);
+  await removePackageXmlContent(scopedPackageXml, deltaPackageXml, true, { debugMode, keepEmptyTypes: false, context: 'delta' });
+  return scopedPackageXml;
 }
 
 // Snapshot names are 15 alphanumeric characters at most. The branch is part of the name, as two major branches
