@@ -114,7 +114,7 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
    * Patch of an existing test case: what the notebook owns, and nothing else. Assignee, area and
    * iteration stay as the team set them, tags added by hand are kept, and the priority, the steps
    * and each description block are only sent when the notebook has that column. `add` is an upsert
-   * on a work item field.
+   * on a work item field, except for the tags, replaced as a whole.
    */
   public static buildUpdatePatch(
     testCase: NormalizedTestCase,
@@ -124,7 +124,9 @@ export class AzureDevopsTestProvider extends TestManagementProviderRoot {
     const patch: any[] = [
       { op: 'add', path: '/fields/System.Title', value: testCase.title },
       { op: 'add', path: '/fields/System.Description', value: _description(testCase, existingDescription) },
-      { op: 'add', path: '/fields/System.Tags', value: AzureDevopsTestProvider.buildTags(testCase, existingTags).join('; ') },
+      // `replace`, not `add`: Azure DevOps merges an added tag list into the current one, so the
+      // MODULE tag of a renamed module would never go away. The case always has its TESTKIT tag.
+      { op: 'replace', path: '/fields/System.Tags', value: AzureDevopsTestProvider.buildTags(testCase, existingTags).join('; ') },
     ];
     if (testCase.priority !== undefined) {
       patch.push({ op: 'add', path: '/fields/Microsoft.VSTS.Common.Priority', value: testCase.priority });

@@ -286,6 +286,8 @@ describe('AzureDevopsTestProvider', () => {
     it('keeps the tags added by hand and adds the missing ones without duplicates', () => {
       const patch = AzureDevopsTestProvider.buildUpdatePatch(makeCase(), [' Regression ', 'TESTKIT:PROJ-123:F01', '']);
       expect(valueOf(patch, '/fields/System.Tags')).to.equal('Regression; TESTKIT:PROJ-123:F01; MODULE:Quotes');
+      // Azure DevOps merges an added tag list: only replace removes the tag of a renamed module
+      expect(patch.find((operation: any) => operation.path === '/fields/System.Tags').op).to.equal('replace');
     });
 
     it('drops the MODULE tag of a renamed module, and keeps it when the notebook has no module column', () => {
@@ -544,11 +546,12 @@ describe('AzureDevopsTestProvider - api calls through the injected factory', () 
       expect(valueOf(patch, '/fields/System.Tags')).to.equal('Regression; TESTKIT:PROJ-123:F01; MODULE:Quotes');
     });
 
-    it('sends add operations only, and never assignee, area or iteration', async () => {
+    it('upserts the fields, replaces the tag list, and never sends assignee, area or iteration', async () => {
       const { api, calls } = stubApi();
       await providerWith(api).update({ id: '77', url: 'x' }, makeCase());
       const patch = callsTo(calls, 'updateWorkItem')[0].args[1] as any[];
-      expect(patch.every((op) => op.op === 'add')).to.be.true;
+      // Tags are replaced as a whole (Azure DevOps merges an added list), every other field is an add
+      expect(patch.every((op) => op.op === (op.path === '/fields/System.Tags' ? 'replace' : 'add'))).to.be.true;
       const paths = patch.map((op) => op.path);
       expect(paths).to.not.include('/fields/System.AssignedTo');
       expect(paths).to.not.include('/fields/System.AreaPath');
