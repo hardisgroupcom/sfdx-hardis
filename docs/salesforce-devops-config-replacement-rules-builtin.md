@@ -70,6 +70,8 @@ The rule `builtin-unknown-user-permissions` removes each `userPermissions` entry
 - **With a connection to the target org** (deployments, scratch orgs, backpromote): sfdx-hardis reads the `Permissions<Name>` fields of the `PermissionSet` object of the org. That list follows the API version of the org, and also its licenses and enabled features: a permission of a cloud the org does not have is removed too.
 - **Without a connection** (`hardis:project:replacement:preview` without `--target-org`): sfdx-hardis uses the list below, by deployment API version. It comes from the describe of an Enterprise Edition sandbox and a Developer Edition org, so it cannot hold the permissions of every cloud.
 
+<!-- cspell:disable -->
+
 <details><summary>New in API 58.0: removed when the API is below 58.0 (28)</summary>
 
 `AccessCdpProfileExplorer`, `AccessToComplaintMgmt`, `ActivateDeactivateNonSetupFlow`, `AuthorizePayments`, `BREAlertsUserAccess`, `CanUpdateEmailMessage`, `CaptureAndReversePayments`, `CdcReportingCreateReports`, `CdcReportingManageFolders`, `CdcReportingViewReports`, `CombAuthAndCapPayments`, `CreateEditNonSetupFlow`, `DeleteNonSetupFlow`, `EmbeddedMessagingAgent`, `ExternalClientAppAdmin`, `ExternalClientAppDeveloper`, `ExternalClientAppViewer`, `MakePayments`, `ManageForecastingCustomData`, `OrgPerformanceAccess`, `PerformanceAnalysisAccess`, `RefundPayments`, `RunDecisionMatrix`, `RunExpressionSet`, `UmaQueryCMSEmailContent`, `VideoConferenceMeetUser`, `ViewNonSetupFlow`, `ViewPayments`
@@ -141,3 +143,5 @@ Removed by Salesforce, so removed when the API is at that version or above:
 - API 51.0: `ViewFlowUsageAndFlowEventData`
 - API 59.0: `AllowObjectDetection`, `AllowObjectDetectionTraining`
 - API 65.0: `AutomatedDealTracking`
+
+<!-- cspell:enable -->

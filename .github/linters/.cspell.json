@@ -9,6 +9,7 @@
     "report",
     ".cspell.json",
     "**/metadataList.ts",
+    "**/userPermissionsByApiVersion.ts",
     "**/actionsProvider/**",
     "**/i18n/*.json",
     "**/copilot-instructions.md",

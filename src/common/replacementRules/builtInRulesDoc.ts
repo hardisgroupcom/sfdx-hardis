@@ -82,7 +82,8 @@ function removedWhen(rule: BuiltInReplacementRule): string {
 }
 
 function userPermissionsSection(): string[] {
-  const lines: string[] = [];
+  // Salesforce permission names are full of abbreviations: the spell checker skips the list
+  const lines: string[] = ['<!-- cspell:disable -->', ''];
   const versions = Object.keys(USER_PERMISSIONS_INTRODUCED_IN).map(Number).sort((a, b) => a - b);
   for (const version of versions) {
     const names = [...USER_PERMISSIONS_INTRODUCED_IN[version]].sort();
@@ -105,6 +106,7 @@ function userPermissionsSection(): string[] {
   while (lines.length > 0 && lines[lines.length - 1] === '') {
     lines.pop();
   }
+  lines.push('', '<!-- cspell:enable -->');
   return lines;
 }
 
