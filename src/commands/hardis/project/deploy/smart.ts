@@ -184,6 +184,20 @@ When components of the deployment package are protected by \`package-no-overwrit
 
 See [Overwrite management documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-overwrite/)
 
+### Replacement rules
+
+Right before the deployment, \`replacementRules\` change the files of the deployment package for the target org, then the files are put back:
+
+- Set an XML element to the value of the target org (endpoint of a Named Credential, sender of an email alert...), remove an XML element, or find and replace a text in any file.
+- A value is the same for every org, one per target branch with a \`default\`, or read from a CI/CD variable (\`secret\`, masked in every log and comment).
+- Rules come from \`config/.sfdx-hardis.yml\`, the branch file of the target, and the "sfdx-hardis Replacement Rules" issue of the git provider (no commit needed).
+- Built-in rules remove the XML elements the deployment API version of the target org does not accept (for example Flow \`ends\` below API 68.0).
+- The Pull Request comment lists the rules applied and their warnings. \`SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true\` skips them.
+
+The target branch is the target of the Pull Request in a check job, the deployed branch otherwise. Quick Deploy reuses the validated package, which got the same changes.
+
+See [Replacement rules documentation](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-replacement-rules/) and [hardis:project:replacement:list](${CONSTANTS.DOC_URL_ROOT}/hardis/project/replacement/list/)
+
 ### Pull Request comments
 
 The validation and deployment Pull Request comments all read the same way:
@@ -555,6 +569,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     destructiveChangesAfterDeployment?: boolean;
     extraCommands?: any[];
     deferSuccessPullRequestComment?: boolean;
+    replacementRules?: { targetBranch: string | null } | false;
   };
   protected packageXmlFile: string;
   protected delta = false;
@@ -679,6 +694,13 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Flow deletion still has to succeed.
     this.smartDeployOptions.deferSuccessPullRequestComment =
       !this.checkOnly && this.flowDeletion.hasPostDeployDeletions;
+
+    // Replacement rules use the values of the org the deployment goes to: the target branch of the
+    // Pull Request in a check job, the current branch in a deployment job
+    const replacementPrInfo = await GitProvider.getPullRequestInfo({ useCache: true });
+    this.smartDeployOptions.replacementRules = {
+      targetBranch: replacementPrInfo?.targetBranch || process.env.FORCE_TARGET_BRANCH || currentGitBranch || null,
+    };
 
     // Process deployment (or deployment check)
     const { messages, quickDeploy, deployXmlCount, deploymentMetrics } = await smartDeploy(

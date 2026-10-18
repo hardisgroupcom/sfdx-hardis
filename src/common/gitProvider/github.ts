@@ -537,6 +537,11 @@ ${getBannerMarkdownAndLink()}
     await this.api.patch<any>(`${this.repoPath()}/issues/${dashboard.id}`, { title, body });
   }
 
+  public async getDashboardBody(dashboard: DashboardRef): Promise<string> {
+    const response = await this.api.get<any>(`${this.repoPath()}/issues/${dashboard.id}`);
+    return response.data?.body || '';
+  }
+
   public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
     const comments = await this.api.paginate<any>(`${this.repoPath()}/issues/${dashboard.id}/comments`);
     return comments

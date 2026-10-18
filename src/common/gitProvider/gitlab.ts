@@ -531,6 +531,11 @@ ${getBannerMarkdownAndLink()}
     await this.gitlabApi.Issues.edit(this.dashboardProjectId(), dashboard.id, { title, description: body });
   }
 
+  public async getDashboardBody(dashboard: DashboardRef): Promise<string> {
+    const issue: any = await this.gitlabApi.Issues.show(dashboard.id, { projectId: this.dashboardProjectId() } as any);
+    return issue?.description || '';
+  }
+
   public async listDashboardComments(dashboard: DashboardRef): Promise<DashboardComment[]> {
     const notes: any[] = await this.gitlabApi.IssueNotes.all(this.dashboardProjectId(), dashboard.id, { sort: 'asc', orderBy: 'created_at' } as any);
     return notes

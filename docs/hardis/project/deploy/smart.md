@@ -135,6 +135,20 @@ When components of the deployment package are protected by `package-no-overwrite
 
 See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/)
 
+### Replacement rules
+
+Right before the deployment, `replacementRules` change the files of the deployment package for the target org, then the files are put back:
+
+- Set an XML element to the value of the target org (endpoint of a Named Credential, sender of an email alert...), remove an XML element, or find and replace a text in any file.
+- A value is the same for every org, one per target branch with a `default`, or read from a CI/CD variable (`secret`, masked in every log and comment).
+- Rules come from `config/.sfdx-hardis.yml`, the branch file of the target, and the "sfdx-hardis Replacement Rules" issue of the git provider (no commit needed).
+- Built-in rules remove the XML elements the deployment API version of the target org does not accept (for example Flow `ends` below API 68.0).
+- The Pull Request comment lists the rules applied and their warnings. `SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true` skips them.
+
+The target branch is the target of the Pull Request in a check job, the deployed branch otherwise. Quick Deploy reuses the validated package, which got the same changes.
+
+See [Replacement rules documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) and [hardis:project:replacement:list](https://sfdx-hardis.cloudity.com/hardis/project/replacement/list/)
+
 ### Pull Request comments
 
 The validation and deployment Pull Request comments all read the same way:
@@ -407,7 +421,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 - [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
 - [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
 - [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
-- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.4 - Three Pull Requests in one release: review the merge order](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
 - [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
 - [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
 - [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-7-hotfix-and-retrofit/)

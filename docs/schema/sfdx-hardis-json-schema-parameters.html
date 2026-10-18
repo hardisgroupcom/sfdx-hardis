@@ -16805,6 +16805,1149 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionreplacementRules">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules"
+                        aria-expanded="" aria-controls="replacementRules" onclick="setAnchor('#replacementRules')"><span class="property-name">replacementRules</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules"
+             data-parent="#accordionreplacementRules">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a></div><h4>Replacement rules</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<div class="description collapse" id="collapseDescription_replacementRules">
+            <p>Rules applied to the metadata files right before each deployment, for the org the deployment goes to: set an XML element to the value of the target org (xml-value), remove an XML element (xml-remove), or find and replace a text (text). A value is the same for every org (value), one per target branch with a default (values), or read from a CI/CD variable (secret). Rules of the branch config file of the target and of the "sfdx-hardis Replacement Rules" git provider issue change the rules with the same id. Built-in rules (ids starting with builtin-) remove the elements the deployment API version of the target org does not accept, and can be turned off with enabled: false.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_replacementRules"
+               aria-expanded="false" aria-controls="collapseDescriptionreplacementRules"
+            ></a>
+        </div>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Replacement rule, or the fields of a rule of a lower place it changes</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionreplacementRules_items_id">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_id">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_id"
+                        aria-expanded="" aria-controls="replacementRules_items_id" onclick="setAnchor('#replacementRules_items_id')"><span class="property-name">id</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_id"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_id"
+             data-parent="#accordionreplacementRules_items_id">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_id" onclick="anchorLink('replacementRules_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Unique id of the rule: lowercase letters, digits and "-". The same id in the branch config file or the issue changes this rule.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_id_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;payment-api-endpoint&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_description">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_description">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_description"
+                        aria-expanded="" aria-controls="replacementRules_items_description" onclick="setAnchor('#replacementRules_items_description')"><span class="property-name">description</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_description"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_description"
+             data-parent="#accordionreplacementRules_items_description">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_description" onclick="anchorLink('replacementRules_items_description')">description</a></div><h4>Description</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Shown in logs and Pull Request comments</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_enabled">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_enabled">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_enabled"
+                        aria-expanded="" aria-controls="replacementRules_items_enabled" onclick="setAnchor('#replacementRules_items_enabled')"><span class="property-name">enabled</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_enabled"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_enabled"
+             data-parent="#accordionreplacementRules_items_enabled">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_enabled" onclick="anchorLink('replacementRules_items_enabled')">enabled</a></div><h4>Enabled</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>false turns the rule off, including a built-in rule</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_type">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_type">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_type"
+                        aria-expanded="" aria-controls="replacementRules_items_type" onclick="setAnchor('#replacementRules_items_type')"><span class="property-name">type</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_type"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_type"
+             data-parent="#accordionreplacementRules_items_type">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_type" onclick="anchorLink('replacementRules_items_type')">type</a></div><h4>Type</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>xml-value: set the value of an XML element. xml-remove: remove an XML element. text: find and replace a text or a regular expression in any file.</p>
+</span><div class="enum-value" id="replacementRules_items_type_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"xml-value"</li><li class="list-group-item enum-item">"xml-remove"</li><li class="list-group-item enum-item">"text"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_files">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_files">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_files"
+                        aria-expanded="" aria-controls="replacementRules_items_files" onclick="setAnchor('#replacementRules_items_files')"><span class="property-name">files</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_files"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_files"
+             data-parent="#accordionreplacementRules_items_files">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a></div><h4>Files</h4><br/>
+<span class="description"><p>Glob of the files the rule applies to, from the repository root</p>
+</span><div class="any-of-value" id="replacementRules_items_files_anyOf"><h2 class="handle">
+  <label>Any of</label>
+</h2><ul class="nav nav-tabs" id="tabsreplacementRules_items_files_anyOf_anyOf" role="tablist"><li class="nav-item">
+            <a class="nav-link active anyOf-option"
+               id="replacementRules_items_files_anyOf_i0" data-toggle="tab" href="#tab-pane_replacementRules_items_files_anyOf_i0" role="tab"
+               onclick="setAnchor('#replacementRules_items_files_anyOf_i0')"
+            >Option 1</a>
+        </li><li class="nav-item">
+            <a class="nav-link anyOf-option"
+               id="replacementRules_items_files_anyOf_i1" data-toggle="tab" href="#tab-pane_replacementRules_items_files_anyOf_i1" role="tab"
+               onclick="setAnchor('#replacementRules_items_files_anyOf_i1')"
+            >Option 2</a>
+        </li></ul>
+<div class="tab-content card"><div class="tab-pane fade card-body active show"
+             id="tab-pane_replacementRules_items_files_anyOf_i0" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf" onclick="anchorLink('replacementRules_items_files_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i0" onclick="anchorLink('replacementRules_items_files_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div><div class="tab-pane fade card-body "
+             id="tab-pane_replacementRules_items_files_anyOf_i1" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf" onclick="anchorLink('replacementRules_items_files_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i1" onclick="anchorLink('replacementRules_items_files_anyOf_i1')">item 1</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items_files_anyOf_i1_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf" onclick="anchorLink('replacementRules_items_files_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i1" onclick="anchorLink('replacementRules_items_files_anyOf_i1')">item 1</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i1_items" onclick="anchorLink('replacementRules_items_files_anyOf_i1_items')">item 1 items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+        </div></div></div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_files_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;**/namedCredentials/*.namedCredential-meta.xml&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_xmlPath">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_xmlPath">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_xmlPath"
+                        aria-expanded="" aria-controls="replacementRules_items_xmlPath" onclick="setAnchor('#replacementRules_items_xmlPath')"><span class="property-name">xmlPath</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_xmlPath"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_xmlPath"
+             data-parent="#accordionreplacementRules_items_xmlPath">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_xmlPath" onclick="anchorLink('replacementRules_items_xmlPath')">xmlPath</a></div><h4>Element path</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Element path, without namespace: NamedCredential/endpoint, //dayOfMonthToRun (any depth), Workflow/alerts[fullName=MyAlert]/senderAddress, Layout/excludeButtons[.=MyButton]</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_xmlPath_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;NamedCredential/endpoint&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_find">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_find">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_find"
+                        aria-expanded="" aria-controls="replacementRules_items_find" onclick="setAnchor('#replacementRules_items_find')"><span class="property-name">find</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_find"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_find"
+             data-parent="#accordionreplacementRules_items_find">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_find" onclick="anchorLink('replacementRules_items_find')">find</a></div><h4>Find</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Text to find, with type: text</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_regex">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_regex">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_regex"
+                        aria-expanded="" aria-controls="replacementRules_items_regex" onclick="setAnchor('#replacementRules_items_regex')"><span class="property-name">regex</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_regex"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_regex"
+             data-parent="#accordionreplacementRules_items_regex">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_regex" onclick="anchorLink('replacementRules_items_regex')">regex</a></div><h4>Regular expression</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>find is a regular expression. The replacement is literal.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_value">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_value">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_value"
+                        aria-expanded="" aria-controls="replacementRules_items_value" onclick="setAnchor('#replacementRules_items_value')"><span class="property-name">value</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_value"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_value"
+             data-parent="#accordionreplacementRules_items_value">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_value" onclick="anchorLink('replacementRules_items_value')">value</a></div><h4>Value</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Same value for every org</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_values">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_values">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_values"
+                        aria-expanded="" aria-controls="replacementRules_items_values" onclick="setAnchor('#replacementRules_items_values')"><span class="property-name">values</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_values"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_values"
+             data-parent="#accordionreplacementRules_items_values">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_values" onclick="anchorLink('replacementRules_items_values')">values</a></div><h4>Values per org</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Value per target branch. default applies to dev sandboxes, scratch orgs and the branches without their own value.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_values_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;uat&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-uat.example.com&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;main&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay.example.com&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;default&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-sandbox.example.com&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_values_additionalProperties">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_values_additionalProperties">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_values_additionalProperties"
+                        aria-expanded="" aria-controls="replacementRules_items_values_additionalProperties" onclick="setAnchor('#replacementRules_items_values_additionalProperties')"><em><span class="property-name">Additional Properties</span></em></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_values_additionalProperties"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_values_additionalProperties"
+             data-parent="#accordionreplacementRules_items_values_additionalProperties">
+            <div class="card-body pl-5"><p class="additional-properties">Each additional property must conform to the following schema</p>
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_values" onclick="anchorLink('replacementRules_items_values')">values</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_values_additionalProperties" onclick="anchorLink('replacementRules_items_values_additionalProperties')">additionalProperties</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_secret">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_secret">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_secret"
+                        aria-expanded="" aria-controls="replacementRules_items_secret" onclick="setAnchor('#replacementRules_items_secret')"><span class="property-name">secret</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_secret"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_secret"
+             data-parent="#accordionreplacementRules_items_secret">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_secret" onclick="anchorLink('replacementRules_items_secret')">secret</a></div><h4>Secret variable</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Name of the CI/CD variable holding the value: NAME_&lt;BRANCH&gt; is read first, then NAME. Never write a value here. The value is masked in every log.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_secret_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;PAYMENT_API_PASSWORD&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_includeTargetBranches">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_includeTargetBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_includeTargetBranches"
+                        aria-expanded="" aria-controls="replacementRules_items_includeTargetBranches" onclick="setAnchor('#replacementRules_items_includeTargetBranches')"><span class="property-name">includeTargetBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_includeTargetBranches"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_includeTargetBranches"
+             data-parent="#accordionreplacementRules_items_includeTargetBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_includeTargetBranches" onclick="anchorLink('replacementRules_items_includeTargetBranches')">includeTargetBranches</a></div><h4>Only for target branches</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Target branches the rule applies to (dev-sandboxes for any other org)</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items_includeTargetBranches_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_includeTargetBranches" onclick="anchorLink('replacementRules_items_includeTargetBranches')">includeTargetBranches</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_includeTargetBranches_items" onclick="anchorLink('replacementRules_items_includeTargetBranches_items')">includeTargetBranches items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_excludeTargetBranches">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_excludeTargetBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_excludeTargetBranches"
+                        aria-expanded="" aria-controls="replacementRules_items_excludeTargetBranches" onclick="setAnchor('#replacementRules_items_excludeTargetBranches')"><span class="property-name">excludeTargetBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_excludeTargetBranches"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_excludeTargetBranches"
+             data-parent="#accordionreplacementRules_items_excludeTargetBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_excludeTargetBranches" onclick="anchorLink('replacementRules_items_excludeTargetBranches')">excludeTargetBranches</a></div><h4>Not for target branches</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Target branches the rule does not apply to</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items_excludeTargetBranches_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_excludeTargetBranches" onclick="anchorLink('replacementRules_items_excludeTargetBranches')">excludeTargetBranches</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_excludeTargetBranches_items" onclick="anchorLink('replacementRules_items_excludeTargetBranches_items')">excludeTargetBranches items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_required">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_required">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_required"
+                        aria-expanded="" aria-controls="replacementRules_items_required" onclick="setAnchor('#replacementRules_items_required')"><span class="property-name">required</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_required"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_required"
+             data-parent="#accordionreplacementRules_items_required">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_required" onclick="anchorLink('replacementRules_items_required')">required</a></div><h4>Required</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Warn in the Pull Request comment when the files of the rule are deployed but nothing matches</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#replacementRules_ex1" aria-controls="replacementRules_ex1"></button><div id="replacementRules_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;payment-api-endpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;xml-value&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;files&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;**/namedCredentials/Payment_API.namedCredential-meta.xml&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;xmlPath&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;NamedCredential/endpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;main&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay.example.com&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;default&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-sandbox.example.com&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;payment-api-password&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;xml-value&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;files&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;**/namedCredentials/Payment_API.namedCredential-meta.xml&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;xmlPath&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;NamedCredential/password&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;secret&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;PAYMENT_API_PASSWORD&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;apex-payment-host&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;files&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;**/classes/PaymentService.cls&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;find&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-[a-z]+.example.com&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;regex&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;main&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay.example.com&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;builtin-flow-schedule-day-of-month&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;enabled&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionsecretsProvider">
+    <div class="card">
+        <div class="card-header" id="headingsecretsProvider">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#secretsProvider"
+                        aria-expanded="" aria-controls="secretsProvider" onclick="setAnchor('#secretsProvider')"><span class="property-name">secretsProvider</span></button>
+            </h2>
+        </div>
+
+        <div id="secretsProvider"
+             class="collapse property-definition-div" aria-labelledby="headingsecretsProvider"
+             data-parent="#accordionsecretsProvider">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#secretsProvider" onclick="anchorLink('secretsProvider')">secretsProvider</a></div><h4>Secrets provider</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "ciVariables"</span><br/>
+<span class="description"><p>Where the secrets of the replacement rules are read from. ciVariables: CI/CD variables (NAME_&lt;BRANCH&gt;, then NAME).</p>
+</span><div class="enum-value" id="secretsProvider_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"ciVariables"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionrefreshSandboxConfig">
     <div class="card">
         <div class="card-header" id="headingrefreshSandboxConfig">
@@ -17678,6 +18821,44 @@ Deprecated: use orgInitSteps, edited from the Org Initialization panel of the VS
         <p><span class="badge badge-light restriction numeric-restriction" id="scratchOrgDuration_number">Value must be greater or equal to <code>1</code> and lesser or equal to <code>30</code></span></p>
 
         
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionscratchOrgShape">
+    <div class="card">
+        <div class="card-header" id="headingscratchOrgShape">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#scratchOrgShape"
+                        aria-expanded="" aria-controls="scratchOrgShape" onclick="setAnchor('#scratchOrgShape')"><span class="property-name">scratchOrgShape</span></button>
+            </h2>
+        </div>
+
+        <div id="scratchOrgShape"
+             class="collapse property-definition-div" aria-labelledby="headingscratchOrgShape"
+             data-parent="#accordionscratchOrgShape">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#scratchOrgShape" onclick="anchorLink('scratchOrgShape')">scratchOrgShape</a></div><h4>Scratch org shape</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Org id of the org whose org shape creates the scratch orgs (sourceOrg of the scratch org definition). Set it in the config of a major branch (developmentBranch or one of availableTargetBranches): a scratch org uses the shape of the branch its User Story started from, else the one of the project config, and none means no org shape for that branch. The definition then needs no edition. The SCRATCH<em>ORG</em>SHAPE environment variable wins over it.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="scratchOrgShape_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;00D0000000ShapeOrg&quot;</span>
+</pre></div>
+</div>
             </div>
         </div>
     </div>

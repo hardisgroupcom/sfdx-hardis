@@ -158,6 +158,7 @@ Read the configuration from the deployment branch itself (`git -C ../<name> show
 - `manifest/destructiveChanges.xml`: items deleted from the org by the deployment.
 - `installedPackages` in `config/.sfdx-hardis.yml`: the packages installed by the deployments.
 - `testLevel`, `runtests`, `skipCodeCoverage`, `apexTestsMinCoverageOrgWide`: test settings, often per branch.
+- `replacementRules` (in `config/.sfdx-hardis.yml`, a branch file, or the "sfdx-hardis Replacement Rules" issue of the deployment repository): changes applied to the files right before each deployment, for the target org. An XML element set to the value of that org, an element removed, or a text replaced. A value can come from a CI/CD variable (`secret`), never written in the repository. Built-in rules also remove the elements the deployment API version of the org does not accept. So a value that differs between the repository and the org (an endpoint, an email address, a site admin) can be expected: check these rules before calling it a difference.
 
 #### Deployment actions
 

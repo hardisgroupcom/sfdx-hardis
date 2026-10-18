@@ -2,6 +2,9 @@
 
 ## [beta] (main)
 
+- [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/): change metadata right before each deployment for the target org, with values per org, secrets from CI/CD variables, and removal of the XML elements an older API version refuses, edited from the new Replacement Rules panel of VS Code.
+  - New [hardis:project:replacement:list](https://sfdx-hardis.cloudity.com/hardis/project/replacement/list/), [create](https://sfdx-hardis.cloudity.com/hardis/project/replacement/create/), [update](https://sfdx-hardis.cloudity.com/hardis/project/replacement/update/), [delete](https://sfdx-hardis.cloudity.com/hardis/project/replacement/delete/) and [preview](https://sfdx-hardis.cloudity.com/hardis/project/replacement/preview/): manage the rules from the terminal or a coding agent.
+  - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): applies the rules, also on scratch orgs and backpromotes, and lists them with their warnings in the Pull Request comments.
 - [Org initialization](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/): one ordered list of steps sets up new scratch orgs and sandboxes, edited from the new Org Initialization panel of VS Code.
   - New [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/): run these steps on an existing scratch org or sandbox.
   - New [hardis:config:org-init](https://sfdx-hardis.cloudity.com/hardis/config/org-init/): the steps and the scratch org definition for a UI, with the languages, countries and releases of the Dev Hub, and settings or org shape features read from an org.

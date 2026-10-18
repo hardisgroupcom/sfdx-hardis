@@ -159,6 +159,7 @@ nav:
               - Overwrite management: salesforce-devops-config-overwrite.md
               - Delta deployments: salesforce-devops-config-delta-deployment.md
               - Automated cleaning: salesforce-devops-config-cleaning.md
+              - Replacement rules: salesforce-devops-config-replacement-rules.md
               - Source retrieve issues: salesforce-devops-retrieve.md
               - Repository clean up: salesforce-devops-manual-repo-clean.md
               - Environment variables: all-env-variables.md
