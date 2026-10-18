@@ -2,10 +2,16 @@
 
 ## [beta] (main)
 
+- [Org initialization](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/): one ordered list of steps sets up new scratch orgs and sandboxes, edited from the new Org Initialization panel of VS Code.
+  - New [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/): run these steps on an existing scratch org or sandbox.
+  - New [hardis:config:org-init](https://sfdx-hardis.cloudity.com/hardis/config/org-init/): the steps and the scratch org definition for a UI, with the languages, countries and releases of the Dev Hub, and settings or org shape features read from an org.
+  - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): a scratch org taken from the pool is now fully initialized, brought up to date with your branch and given a clean source tracking, scratch orgs can use the org shape of their major branch, and errors in the scratch org definition or the steps are reported before the org is requested, and a project without devHubAlias can create scratch orgs again.
+  - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): no longer offers to initialize a selected sandbox.
 - New [hardis:ticket:post-comment](https://sfdx-hardis.cloudity.com/hardis/ticket/post-comment/): post a markdown comment on JIRA, Azure Boards, ServiceNow or Aha! tickets, or update the one posted before.
 - New [hardis:ticket:test-cases:init](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/init/): write the test cases of a ticket into a notebook a tester fills in: an Excel workbook, a CSV or a markdown table.
 - New [hardis:ticket:test-cases:upsert](https://sfdx-hardis.cloudity.com/hardis/ticket/test-cases/upsert/): create or update the test cases of a notebook in Azure DevOps, ServiceNow or Xray Cloud, and post their summary on the ticket.
 - [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): in a production org without `sfdmuCanModify`, the command asks to confirm the modification of the org and authorizes SFDMU to modify it, instead of failing with "Entered instance URL '' does not match" ([vscode-sfdx-hardis#499](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/499)). As in SFDMU, a Developer Edition org is not a production org: deleting its data no longer requires `"runnableInProduction": true`. hardis:org:data:delete now also reads the `SFDMU_CAN_MODIFY` environment variable, as hardis:org:data:import already did
+- [hardis:scratch:pool:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/refresh/): fills the pool from a Windows computer again.
 - Ticketing: the deployment comments of JIRA, Azure Boards, ServiceNow and Aha! tickets now say the same thing, and the sfdx-hardis link of the JIRA one works again.
 
 ## [8.18.1] 2026-10-15

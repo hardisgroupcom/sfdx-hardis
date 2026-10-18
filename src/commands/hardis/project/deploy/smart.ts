@@ -456,7 +456,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
 - [Lab 2.5 - Pass the code quality gate and Apex test coverage](https://sfdx-hardis-training.cloudity.com/en/level-2-contributor-advanced/2-5-pass-code-quality-and-apex-test-coverage/)
 - [Lab 3.2 - Review and merge a contributor Pull Request](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-2-review-a-contributor-pull-request/)
 - [Lab 3.3 - Read the deployment log, and what .forceignore hides from it](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-3-deploy-to-integration-and-read-the-log/)
-- [Lab 3.4 - Three Pull Requests collide: choose the merge order](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
+- [Lab 3.4 - Three Pull Requests in one release: review the merge order](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-4-merge-colliding-pull-requests/)
 - [Lab 3.5 - Promote to UAT and write the release notes](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-5-promote-to-uat-and-write-release-notes/)
 - [Lab 3.6 - Release to production and read your DORA metrics](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-6-release-to-production-and-read-dora-metrics/)
 - [Lab 3.7 - Production is broken: hotfix and retrofit](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-7-hotfix-and-retrofit/)

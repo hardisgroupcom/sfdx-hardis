@@ -20,6 +20,8 @@ The headline is **Deployment Actions leaving beta**. But there is a lot more:
 | [**Deployment Actions are generally available**](#deployment-actions-are-generally-available) | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org |
 | [**Promotion branches (Beta)**](#promotion-branches-beta-ship-only-the-approved-user-stories) | Ship only the approved User Stories to production, with their deployment actions, tests and release notes        |
 | [**Backpromote (Beta)**](#backpromote-beta-catch-your-sandbox-up-with-the-team)               | Bring what your teammates merged into your developer sandbox, by hand or with a coding agent                     |
+| [**Scratch org pool in your git provider**](#a-scratch-org-pool-with-no-extra-infrastructure) | Scratch orgs ready in seconds, stored encrypted in your git provider, with a dashboard and a VS Code panel       |
+| [**Org initialization**](#every-new-scratch-org-or-sandbox-set-up-the-same-way)               | One ordered list of steps sets up every new scratch org and sandbox, configured from a VS Code panel             |
 | [**Pull Requests explorer**](#find-any-pull-request-without-leaving-vs-code)                  | Find any Pull Request and read its tickets, actions, validation and deployment results in VS Code                |
 | [**Metadata dependencies**](#know-what-uses-a-component-before-you-change-it)                 | See what uses an Apex class, a Flow or a field before you change or delete it                                    |
 | [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)       | You know in one second which comment you are reading and how the deployment went                                 |
@@ -274,6 +276,44 @@ A [**backpromote**](salesforce-devops-backpromote.md) deploys into your sandbox 
 - **With a coding agent, or without**: do it all by hand in the panel, let Claude Code, Codex or GitHub Copilot solve the merges and fix the deployment errors, or paste one prompt and let the agent run [hardis:work:backpromote](hardis/work/backpromote.md) from start to end.
 - **Its history is kept on the Pull Requests**, so the next backpromote starts where the previous one ended, from any computer and for everyone sharing the sandbox.
 - Production and the orgs of major branches are never offered as targets.
+
+---
+
+## A scratch org pool with no extra infrastructure
+
+Creating a scratch org, installing its packages and pushing the sources takes minutes, for every Pull Request job and every new User Story. A [**scratch org pool**](salesforce-devops-setup-scratch-org-pool.md) keeps scratch orgs ready: a scheduled job creates them during the night, and a job or a developer takes one in seconds.
+
+The pool used to need a storage service of its own. It now lives **in your git provider**: an issue on GitHub and GitLab, a work item on Azure DevOps, a Pull Request that is never merged on Bitbucket Cloud.
+
+![Scratch Orgs Pool Dashboard in a GitHub issue](assets/images/scratch-org-pool-dashboard.png)
+
+- **Nothing to install or pay for**: [hardis:scratch:pool:create](hardis/scratch/pool/create.md) creates the dashboard, and the CI templates already carry the refresh job.
+- **Credentials are encrypted and signed** with a key only your CI variables and your team hold. The dashboard shows what anyone with access to the repository may read: aliases, expiration dates, who took which org for which branch, and the failed creations.
+- **A VS Code panel**, opened from the settings menu of the DevOps Pipeline: take a scratch org, refill or reset the pool, set the encryption key, and see the Dev Hub limits.
+- **Rotate the key** without leaving orphan scratch orgs behind, and a refresh run from a computer never empties a pool it cannot read.
+
+![Scratch Org Pool panel](assets/images/scratch-org-pool-panel.png)
+
+*Ships in v8.18.0.*
+
+---
+
+## Every new scratch org or sandbox set up the same way
+
+A new scratch org or developer sandbox is empty: it needs the packages, the sources, the permission sets of the team, a few Apex scripts and some test data before anyone can work in it. These used to be scattered settings, run in a fixed order, a little differently for scratch orgs and for sandboxes.
+
+[**Org initialization**](salesforce-devops-org-initialization.md) gathers them in **one ordered list of steps**, edited from a new **Org Initialization** panel, opened from the settings menu of the DevOps Pipeline.
+
+![Org Initialization panel](assets/images/org-initialization.png)
+
+- **Every kind of step**: install packages, deploy the project sources, assign permission sets, Apex scripts, SFDMU data, commands, batch runs and schedules, publish an Experience site, and your own custom functions.
+- **Each step decides** whether it runs on scratch orgs, sandboxes or both, whether a failure stops the initialization, and whether it runs when the pool is filled. Switch a step off without deleting it.
+- **A scratch org taken from the pool is ready**: every step runs when the pool is filled, and its source tracking starts clean, so your first pull only lists your own changes.
+- **Run the steps again on any scratch org or sandbox** with **Run now** in the panel, or [hardis:org:init](hardis/org/init.md). Production orgs are refused.
+- **The scratch org definition** has its own tab: a form for the common fields, a JSON editor for the settings, and a check against the Salesforce CLI schema before anything is saved. [hardis:scratch:create](hardis/scratch/create.md) runs the same check, and checks the steps, before it requests an org.
+- **Existing projects keep working**: without the new list, the steps are built from your current settings, in the order they always ran. The panel converts them on the first save.
+
+*Ships in v8.19.0.*
 
 ---
 

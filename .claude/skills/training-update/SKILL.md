@@ -585,11 +585,11 @@ Control, then Save / Publish and answer *Yes, my commit(s) are ready*.
 
 **`hardis:work:new` in this course answers Scratch org, then Reuse scratch org helios-dev.** The list
 leaves out the scratch orgs `config/branches/` names, and never *Create new scratch org*: the Dev Hub
-keeps three alive and all three are taken. With a sandbox, the command only asks whether to initialize
-it when the project sets `offerSandboxInit: true` (this one does not), and that answer does not bring
-metadata down. It installs packages, assigns permission sets and runs the init scripts. The command itself
-prints that a backpromote is what brings the merged metadata. A lab that says "say yes and you will
-have the team's work" is wrong.
+keeps three alive and all three are taken. With a sandbox, the command never initializes it
+(`offerSandboxInit` is deprecated and ignored): the org initialization steps run on demand with
+`hardis:org:init` (the Org Initialization panel), and they never bring the team's metadata down either.
+The command itself prints that a backpromote is what brings the merged metadata. A lab that says
+"New User Story updates your sandbox with the team's work" is wrong.
 
 **Staging is the decision, not the picker.** `hardis:work:save` commits nothing by itself: the
 learner stages the retrieved files one at a time in the Source Control panel, with the **+** on each

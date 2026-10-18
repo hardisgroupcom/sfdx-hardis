@@ -93,6 +93,7 @@ _See [Configure CI authentication](salesforce-devops-setup-auth.md)_
 - [ ] All credential variables are **masked / secret**, and not restricted to protected branches only if your pipelines run on other branches.
 - [ ] If you use scratch orgs, Dev Hub authentication is configured too (`sf hardis:project:configure:auth --devhub` plus the `SFDX_CLIENT_*_<DEVHUB_ALIAS>` variables).
 - [ ] If you use scratch orgs with GitHub, Azure, Bitbucket or Jenkins, the variable `USE_SCRATCH_ORGS` is set to `"true"` (the scratch org jobs are off by default there).
+- [ ] The [org initialization steps](salesforce-devops-org-initialization.md) give a new scratch org or sandbox what a contributor needs (packages, permission sets, scripts, data), checked once with `sf hardis:org:init` on a test org.
 - [ ] If you use a [scratch org pool](salesforce-devops-setup-scratch-org-pool.md), its refresh job is scheduled with `SCRATCH_ORG_POOL` set to `"true"`, and with a pool stored in the git provider the masked variable `SFDX_HARDIS_POOL_ENCRYPTION_KEY` is defined.
 - [ ] No `SFDX_AUTH_URL_*` variable is used for a major org (it embeds a long-lived refresh token, reserve it for scratch orgs and Dev Hub).
 - [ ] Login works from the CI server: a pipeline job reaches the org without falling back to an interactive prompt.
@@ -159,7 +160,7 @@ Then the rest of the project configuration:
 
 - [ ] [Automated sources cleaning](salesforce-devops-config-cleaning.md) is configured (`autoCleanTypes`), so User Story branches are cleaned before Pull Requests.
 - [ ] Apex test configuration matches your policy (test level, minimum coverage).
-- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `offerSandboxInit`, `allowedOrgTypes`...) so contributors get the right prompts.
+- [ ] New User Story options are set (`availableTargetBranches`, `availableTargetBranchesLabels`, `sharedDevSandboxes`, `allowedOrgTypes`...) so contributors get the right prompts.
 - [ ] Delta deployments are **NOT activated**: `useDeltaDeployment` is absent from `config/.sfdx-hardis.yml`, or set to `false`. The initialization Pull Request must deploy the **full package**. _See [Delta deployments](salesforce-devops-config-delta-deployment.md)_
 
 #### Notification channels

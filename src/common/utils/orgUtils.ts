@@ -3,14 +3,13 @@ import { prompts } from './prompts.js';
 import c from 'chalk';
 import fs from './fsUtils.js';
 import * as path from 'path';
-import { createTempDir, elapseEnd, elapseStart, execCommand, execSfdxJson, isAgentMode, isCI, uxLog } from './index.js';
+import { createTempDir, execCommand, execSfdxJson, isAgentMode, isCI, uxLog } from './index.js';
 import { getOrgAccessToken } from './credentialUtils.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
 import { isValidEmail } from './stringUtils.js';
 import sortArray from './sortArray.js';
 import { AuthInfo, Connection, SfdcUrl, SfError } from '@salesforce/core';
-import { importData } from './dataUtils.js';
 import { soqlQuery, soqlQueryTooling } from './apiUtils.js';
 import { open } from './openUtils.js';
 import { isSfdxProject } from './projectUtils.js';
@@ -566,13 +565,6 @@ export function getScratchSignupEnv(env: NodeJS.ProcessEnv = process.env): Recor
   };
 }
 
-export async function installPackages(installedPackages: any[], orgAlias: string) {
-  const packages = installedPackages || [];
-  elapseStart('Install all packages');
-  await MetadataUtils.installPackagesOnOrg(packages, orgAlias, this, 'scratch');
-  elapseEnd('Install all packages');
-}
-
 export async function initOrgMetadatas(
   configInfo: any,
   orgUsername: string,
@@ -645,82 +637,32 @@ export async function initOrgMetadatas(
   }
 }
 
-// Assign permission sets to user
-export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string) {
+// Assign permission sets to user. Returns the failures ("name: message"), an existing assignment is not one.
+export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string): Promise<string[]> {
   uxLog("action", this, c.cyan(t('assigningPermissionSets')));
+  const failures: string[] = [];
   for (const permSet of permSets) {
-    uxLog("action", this, c.cyan(t('assigningToOrgUser', { permSet: c.bold(permSet.name || permSet), orgUsername })));
-    const assignCommand = `sf org assign permset --name ${permSet.name || permSet} --target-org ${orgUsername}`;
+    const permSetName = permSet?.name || permSet;
+    uxLog("action", this, c.cyan(t('assigningToOrgUser', { permSet: c.bold(permSetName), orgUsername })));
+    const assignCommand = `sf org assign permset --name "${permSetName}" --target-org ${orgUsername}`;
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
       output: false,
     });
-    if (
-      assignResult?.result?.failures?.length > 0 &&
-      !assignResult?.result?.failures[0].message.includes('Duplicate')
-    ) {
-      uxLog(
-        "error",
-        this,
-        c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSet.name || permSet), message: assignResult?.result?.failures[0].message }))
-      );
+    const failureMessage: string = assignResult?.result?.failures?.[0]?.message || '';
+    const errorMessage = failureMessage
+      ? failureMessage.includes('Duplicate')
+        ? ''
+        : failureMessage
+      : assignResult?.status !== 0
+        ? assignResult?.errorMessage || assignResult?.message || 'unknown error'
+        : '';
+    if (errorMessage) {
+      uxLog("error", this, c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSetName), message: errorMessage })));
+      failures.push(`${permSetName}: ${errorMessage}`);
     }
   }
-}
-
-// Run initialization apex scripts
-export async function initApexScripts(orgInitApexScripts: Array<any>, orgAlias: string) {
-  uxLog("action", this, c.cyan(t('runningApexInitializationScripts')));
-  // Build list of apex scripts and check their existence
-  const initApexScripts = orgInitApexScripts.map((scriptName: string) => {
-    if (!fs.existsSync(scriptName)) {
-      throw new SfError(c.red(`[sfdx-hardis][ERROR] Unable to find script ${scriptName}`));
-    }
-    return scriptName;
-  });
-  // Process apex scripts
-  for (const apexScript of initApexScripts) {
-    const apexScriptCommand = `sf apex run --file "${apexScript}" --target-org ${orgAlias}`;
-    await execCommand(apexScriptCommand, this, {
-      fail: true,
-      output: true,
-    });
-  }
-}
-
-// Loads data in the org
-export async function initOrgData(initDataFolder: string, orgUsername: string) {
-  // Init folder (accounts, etc...)
-  if (fs.existsSync(initDataFolder)) {
-    uxLog("action", this, c.cyan(t('loadingSandboxOrgInitializationData')));
-    await importData(initDataFolder, this, {
-      targetUsername: orgUsername,
-    });
-  } else {
-    uxLog(
-      "action",
-      this,
-      c.cyan(t('noInitializationData', { initDataFolder }))
-    );
-  }
-  // Import data packages
-  const config = await getConfig('user');
-  const dataPackages = config.dataPackages || [];
-  for (const dataPackage of dataPackages) {
-    if (dataPackage.importInSandboxOrgs === true) {
-      await importData(dataPackage.dataPath, this, {
-        targetUsername: orgUsername,
-      });
-    } else {
-      uxLog(
-        "log",
-        this,
-        c.grey(
-          `Skipped import of ${dataPackage.dataPath} as importInSandboxOrgs is not defined to true in .sfdx-hardis.yml`
-        )
-      );
-    }
-  }
+  return failures;
 }
 
 export async function getOrgAliasUsername(alias: string) {

@@ -3,7 +3,6 @@ import { SfCommand, Flags, optionalHubFlagWithDeprecations, optionalOrgFlagWithD
 import { Messages, SfError } from '@salesforce/core';
 import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
-import * as path from 'path';
 import { MetadataUtils } from '../../../common/metadata-utils/index.js';
 import {
   checkGitClean,
@@ -18,10 +17,6 @@ import {
 import { buildAvailableTargetBranches, selectTargetBranch } from '../../../common/utils/gitUtils.js';
 import { listMajorOrgs } from '../../../common/utils/orgConfigUtils.js';
 import {
-  initApexScripts,
-  initOrgData,
-  initPermissionSetAssignments,
-  installPackages,
   makeSureOrgIsConnected,
   openOrgInBrowser,
   promptOrg,
@@ -60,7 +55,7 @@ Key features include:
 - **User Story Name Validation:** Enforces User Story name formatting using \`newTaskNameRegex\` and provides examples via \`newTaskNameRegexExample\`. The regex is applied to the name as you type it, so a pattern such as \`^MYPROJECT-[0-9]+ .*\` can require spaces. Once validated, the name is converted into a git-compatible branch name, where spaces and special characters become \`-\`.
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
-- **Sandbox initialization:** Only when \`offerSandboxInit: true\` is set, the command offers to initialize the selected sandbox: installed packages, \`initPermissionSets\`, \`scratchOrgInitApexScripts\` and \`scripts/data/ScratchInit\`. It never deploys metadata.
+- **Sandbox initialization:** The command never initializes a selected sandbox. Run [hardis:org:init](${CONSTANTS.DOC_URL_ROOT}/hardis/org/init/) to run the org initialization steps on it. A new scratch org, or one taken from the pool, gets them when it is created.
 
 - **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
@@ -110,7 +105,7 @@ The command's logic orchestrates various underlying processes:
 - **Git Operations:** Utilizes \`checkGitClean\` and \`createWorkBranchFromTarget\` to manage Git repository state and branches. \`createWorkBranchFromTarget\` fetches \`origin/<target>\` and creates the new branch from it (falling back to the local target ref), refuses a branch that already exists (\`workBranchExists\` checks the local branches and \`git ls-remote --heads origin\`, and drops a stale remote-tracking ref of a branch deleted on the remote), and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the \`prompts\` library to gather user input for User Story type, source types, and User Story names.
 - **Configuration Management:** Reads and applies project-specific configurations from \`.sfdx-hardis.yml\` using \`getConfig\` and \`setConfig\
-- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`initApexScripts\`, \`initOrgData\`, \`initPermissionSetAssignments\`, \`installPackages\`, and \`makeSureOrgIsConnected\
+- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including \`makeSureOrgIsConnected\
 - **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., \`sf config set target-org\`, \`sf org open\`) via \`execCommand\` and \`execSfdxJson\
 - **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling \`ScratchCreate.run\` or \`SandboxCreate.run\` as needed. A scratch org that a major branch deploys to is never offered for reuse.
 - **WebSocket Communication:** Sends refresh status messages via \`WebSocketClient.sendRefreshStatusMessage()\` to update connected VS Code clients.
@@ -607,7 +602,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       scratchMode: 'new',
       scratchOrgUsername: null,
       sandboxOrgUsername: null,
-      initSandbox: false,
       openOrg: flags['open-org'] === true,
       updateDefaultTargetBranch: false,
     };
@@ -769,76 +763,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       openOrg = promptRes.openOrg;
     }
 
-    // Initialize / Update existing sandbox if available
+    // A sandbox is never initialized from here: its metadata comes from a backpromote, and
+    // sf hardis:org:init runs the org initialization steps on demand
     if (!(config.sharedDevSandboxes === true)) {
-      // Only offered when the project asks for it: the metadata comes from a backpromote, and the
-      // initialization left (packages, permission sets, scripts, data) is not what most teams expect
-      const offerSandboxInit = config.offerSandboxInit === true;
-      let initSandbox = false;
-      if (offerSandboxInit && agentInputs) {
-        initSandbox = agentInputs.initSandbox === true;
-      } else if (offerSandboxInit) {
-        const initSandboxResponse = await prompts({
-          type: 'select',
-          name: 'value',
-          message: c.cyanBright(t('doYouWantToUpdateSandboxToMatchBranch', { branch: this.targetBranch })),
-          description: t('chooseSyncSandboxWithLatestChanges'),
-          placeholder: t('selectSyncOption'),
-          choices: [
-            {
-              title: t('continueWorkingOnCurrentSandboxState'),
-              value: 'no',
-              description: t('useIfMultipleUsersShareSandbox'),
-            },
-            {
-              title: t('yesUpdateMySandbox'),
-              value: 'init',
-              description: t('integrateNewUpdatesFromParentBranch', { targetBranch: this.targetBranch }),
-            },
-          ],
-        });
-        initSandbox = initSandboxResponse.value === 'init';
-        // Ask the user if he's really sure of what he's doing !
-        if (initSandbox) {
-          const promptConfirm = await prompts({
-            type: 'confirm',
-            message: c.cyanBright(t('confirmUpdateDevSandboxWithBranchState', { branch: this.targetBranch })),
-            description: t('confirmResetSandboxToMatchTargetBranch'),
-          });
-          initSandbox = promptConfirm.value === true;
-        }
-      }
-
-      if (initSandbox) {
-        let initSandboxErr: any = null;
-        try {
-          if (config.installedPackages) {
-            await installPackages(config.installedPackages || [], orgUsername);
-          }
-          // The metadata is not deployed from here: a backpromote brings into the sandbox what the
-          // team merged in the target branch
-          await initPermissionSetAssignments(config.initPermissionSets || [], orgUsername);
-          await initApexScripts(config.scratchOrgInitApexScripts || [], orgUsername);
-          await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), orgUsername);
-        } catch (e) {
-          initSandboxErr = e;
-        }
-        if (initSandboxErr) {
-          uxLog(
-            "log",
-            this,
-            c.grey('Error(s) while initializing sandbox: ' + initSandboxErr.message + '\n' + initSandboxErr.stack)
-          );
-          uxLog(
-            "warning",
-            this,
-            c.yellow(
-              'Sandbox may not be fully initialized from git. Share the error above with your release manager.'
-            )
-          );
-        }
-      }
-      // The metadata of the sandbox is brought up to date with a backpromote, not by this command
       uxLog(
         "action",
         this,
