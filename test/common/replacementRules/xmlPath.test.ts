@@ -49,6 +49,30 @@ describe('replacement rules - element paths', () => {
   });
 });
 
+describe('replacement rules - user permissions', () => {
+  it('removes one user permission of a Profile, and only that one', () => {
+    const doc = parse(`<?xml version="1.0" encoding="UTF-8"?>
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+    <custom>false</custom>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ApiEnabled</name>
+    </userPermissions>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ViewSetup</name>
+    </userPermissions>
+</Profile>`);
+    const nodes = selectXmlPath('Profile/userPermissions[name=ViewSetup]', doc);
+    expect(nodes).to.have.length(1);
+    removeXmlNode(nodes[0]);
+    const xml = serialize(doc);
+    expect(xml).to.not.include('ViewSetup');
+    expect(xml).to.include('<name>ApiEnabled</name>');
+    expect(xml).to.include('<custom>false</custom>');
+  });
+});
+
 describe('replacement rules - Flow End elements', () => {
   it('removes the End elements and the connectors pointing to them', () => {
     const doc = parse(`<?xml version="1.0" encoding="UTF-8"?>

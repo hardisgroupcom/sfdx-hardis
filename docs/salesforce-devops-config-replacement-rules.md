@@ -41,18 +41,34 @@ Only the files that are deployed are changed (the components of the package.xml,
 | Type         | What it does                                                                     | Example                                                    |
 |--------------|----------------------------------------------------------------------------------|------------------------------------------------------------|
 | `xml-value`  | Writes the value of the target org in an XML element, whatever git holds         | `NamedCredential/endpoint`                                 |
-| `xml-remove` | Removes an XML element before deploying                                          | `Layout/platformActionList`                                |
+| `xml-remove` | Removes an XML element before deploying                                          | `Profile/userPermissions[name=ViewSetup]`                  |
 | `text`       | Finds and replaces a text or a regular expression, in any file (Apex, LWC, JSON) | `https://pay-[a-z]+\.example\.com` in `PaymentService.cls` |
 
 `xmlPath` is a path of elements from the root, without namespace:
 
-| Path                                                       | Matches                                          |
-|------------------------------------------------------------|--------------------------------------------------|
-| `NamedCredential/endpoint`                                 | The `endpoint` element under the root            |
-| `//dayOfMonthToRun`                                        | `dayOfMonthToRun` at any depth                   |
-| `Flow/screens//fields/styleProperties`                     | `styleProperties` of screen fields, at any depth |
-| `Workflow/alerts[fullName=Escalation_Alert]/senderAddress` | The sender of one email alert                    |
-| `Layout/excludeButtons[.=SmartFillEnrich]`                 | The `excludeButtons` element holding this value  |
+| Path                                                       | Matches                                             |
+|------------------------------------------------------------|-----------------------------------------------------|
+| `NamedCredential/endpoint`                                 | The `endpoint` element under the root               |
+| `Profile/userPermissions[name=ViewSetup]`                  | The whole `userPermissions` block of one permission |
+| `Profile/fieldPermissions[field=Account.Secret__c]`        | The access to one field                             |
+| `//dayOfMonthToRun`                                        | `dayOfMonthToRun` at any depth                      |
+| `Flow/screens//fields/styleProperties`                     | `styleProperties` of screen fields, at any depth    |
+| `Workflow/alerts[fullName=Escalation_Alert]/senderAddress` | The sender of one email alert                       |
+| `Layout/excludeButtons[.=SmartFillEnrich]`                 | The `excludeButtons` element holding this value     |
+
+For example, to remove one user permission from every Profile deployed to production:
+
+```yaml
+replacementRules:
+  - id: remove-view-setup-in-production
+    description: ViewSetup is granted in the sandboxes only
+    type: xml-remove
+    files: "**/profiles/*.profile-meta.xml"
+    xmlPath: Profile/userPermissions[name=ViewSetup]
+    includeTargetBranches: [main]
+```
+
+The same rule works for Permission Sets with `files: "**/permissionsets/*.permissionset-meta.xml"` and `xmlPath: PermissionSet/userPermissions[name=ViewSetup]`.
 
 An `xml-value` rule never creates a missing element: it reports "not found". A `text` rule replaces every occurrence, and its replacement is literal (no `$1`), so a value containing `$` is safe.
 

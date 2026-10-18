@@ -17319,7 +17319,7 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
             />
         </svg>
     <a href="#replacementRules_items_xmlPath" onclick="anchorLink('replacementRules_items_xmlPath')">xmlPath</a></div><h4>Element path</h4><span class="badge badge-dark value-type">Type: string</span><br/>
-<span class="description"><p>Element path, without namespace: NamedCredential/endpoint, //dayOfMonthToRun (any depth), Workflow/alerts[fullName=MyAlert]/senderAddress, Layout/excludeButtons[.=MyButton]</p>
+<span class="description"><p>Element path, without namespace: NamedCredential/endpoint, Profile/userPermissions[name=ViewSetup] (one user permission, to remove), //dayOfMonthToRun (any depth), Workflow/alerts[fullName=MyAlert]/senderAddress, Layout/excludeButtons[.=MyButton]</p>
 </span>
         
 
@@ -17327,8 +17327,10 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         
 
         <br/>
-<div class="badge badge-secondary">Example:</div>
+<div class="badge badge-secondary">Examples:</div>
 <br/><div id="replacementRules_items_xmlPath_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;NamedCredential/endpoint&quot;</span>
+</pre></div>
+</div><div id="replacementRules_items_xmlPath_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;Profile/userPermissions[name=ViewSetup]&quot;</span>
 </pre></div>
 </div>
             </div>

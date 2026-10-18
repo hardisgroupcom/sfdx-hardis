@@ -3744,9 +3744,10 @@
           },
           "xmlPath": {
             "$id": "#/properties/replacementRules/items/properties/xmlPath",
-            "description": "Element path, without namespace: NamedCredential/endpoint, //dayOfMonthToRun (any depth), Workflow/alerts[fullName=MyAlert]/senderAddress, Layout/excludeButtons[.=MyButton]",
+            "description": "Element path, without namespace: NamedCredential/endpoint, Profile/userPermissions[name=ViewSetup] (one user permission, to remove), //dayOfMonthToRun (any depth), Workflow/alerts[fullName=MyAlert]/senderAddress, Layout/excludeButtons[.=MyButton]",
             "examples": [
-              "NamedCredential/endpoint"
+              "NamedCredential/endpoint",
+              "Profile/userPermissions[name=ViewSetup]"
             ],
             "title": "Element path",
             "type": "string"

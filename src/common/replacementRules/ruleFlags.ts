@@ -48,7 +48,7 @@ export function replacementRuleFieldFlags(): any {
       description: 'xml-value (set an XML element), xml-remove (remove an XML element) or text (find and replace)',
     }),
     files: Flags.string({ multiple: true, description: 'Glob of the files the rule applies to, from the repository root (can be repeated)' }),
-    'xml-path': Flags.string({ description: 'Element path, for example NamedCredential/endpoint or Workflow/alerts[fullName=MyAlert]/senderAddress' }),
+    'xml-path': Flags.string({ description: 'Element path, for example NamedCredential/endpoint, Workflow/alerts[fullName=MyAlert]/senderAddress, or Profile/userPermissions[name=ViewSetup] to remove one user permission' }),
     find: Flags.string({ description: 'Text or regular expression to find, with --type text' }),
     regex: Flags.boolean({ allowNo: true, description: '--find is a regular expression' }),
     value: Flags.string({ description: 'Same value for every org' }),

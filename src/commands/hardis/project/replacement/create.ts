@@ -31,7 +31,7 @@ export default class ReplacementCreate extends ReplacementCommandBase {
 A rule does one of three things:
 
 - \`xml-value\`: writes the target org's value in an XML element, whatever git holds (for example the endpoint of a Named Credential).
-- \`xml-remove\`: removes an XML element before deploying.
+- \`xml-remove\`: removes an XML element before deploying (for example one user permission of a Profile: \`Profile/userPermissions[name=ViewSetup]\`).
 - \`text\`: finds and replaces a text or a regular expression in any file (Apex, LWC, JSON...).
 
 Its value is the same for every org (\`--value\`), one per target branch with a \`default\` (\`--value-for uat=... --value-for default=...\`), or a secret read from a CI/CD variable (\`--secret NAME\`: NAME_<BRANCH> is read first, then NAME). Secret values are never written anywhere and are masked in every log.
@@ -67,6 +67,7 @@ Required in agent mode: \`--layer\` (and \`--branch\` with \`--layer branch\`), 
     '$ sf hardis:project:replacement:create',
     '$ sf hardis:project:replacement:create --agent --layer project --id payment-api-endpoint --type xml-value --files "**/namedCredentials/Payment_API.namedCredential-meta.xml" --xml-path NamedCredential/endpoint --value-for main=https://pay.example.com --value-for default=https://pay-sandbox.example.com',
     '$ sf hardis:project:replacement:create --agent --layer project --id payment-api-password --type xml-value --files "**/namedCredentials/Payment_API.namedCredential-meta.xml" --xml-path NamedCredential/password --secret PAYMENT_API_PASSWORD',
+    '$ sf hardis:project:replacement:create --agent --layer project --id remove-view-setup-in-production --type xml-remove --files "**/profiles/*.profile-meta.xml" --xml-path "Profile/userPermissions[name=ViewSetup]" --include-branches main',
     '$ sf hardis:project:replacement:create --agent --layer branch --branch uat --id uat-hide-case-actions --type xml-remove --files "**/layouts/Case-*.layout-meta.xml" --xml-path Layout/platformActionList',
     '$ sf hardis:project:replacement:create --agent --layer issue --rule-file ./rule.json',
   ];
