@@ -377,6 +377,9 @@ describe('orgInitUtils', () => {
       expect(await getScratchOrgShape({ developmentBranch: 'integration' })).to.equal('00D000000000AAA');
       expect(await getScratchOrgShape({ developmentBranch: 'main' })).to.equal(null);
       expect(await getScratchOrgShape({ developmentBranch: 'main', scratchOrgShape: '00D000000000PRJ' })).to.equal('00D000000000PRJ');
+      // A branch can turn off the org shape of the project config
+      await fs.writeFile(path.join('config', 'branches', '.sfdx-hardis.uat.yml'), 'scratchOrgShape: none');
+      expect(await getScratchOrgShape({ developmentBranch: 'uat', scratchOrgShape: '00D000000000PRJ' })).to.equal(null);
       process.env.SCRATCH_ORG_SHAPE = '00D000000000ENV';
       expect(await getScratchOrgShape({ developmentBranch: 'integration' })).to.equal('00D000000000ENV');
     });

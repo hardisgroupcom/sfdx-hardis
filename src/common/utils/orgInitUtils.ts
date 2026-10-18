@@ -67,6 +67,8 @@ export interface PoolOrgInitInfo {
 }
 
 export const ORG_INIT_STEPS_CONFIG_KEY = 'orgInitSteps';
+// scratchOrgShape of a branch that uses no org shape, even when the project config sets one
+export const SCRATCH_ORG_SHAPE_NONE = 'none';
 export const ORG_INIT_LEGACY_KEYS = [
   'initPermissionSets',
   'scratchOrgInitApexScripts',
@@ -104,10 +106,15 @@ const ALL_ORG_TYPES: OrgInitOrgType[] = ['scratch', 'sandbox'];
  * Everything a configuration UI needs to show the org initialization of the project, read-only.
  * scratchDefFile replaces config/project-scratch-def.json, to validate a definition before saving it.
  */
-export async function getOrgInitConfigPayload(config: any, scratchDefFile?: string): Promise<any> {
+export async function getOrgInitConfigPayload(
+  config: any,
+  scratchDefFile?: string,
+  // Validates the definition with this org shape (null: none) instead of the configured one
+  options: { orgShapeOverride?: string | null } = {}
+): Promise<any> {
   const stepsInfo = getOrgInitSteps(config);
   const scratchDefPath = scratchDefFile || PROJECT_SCRATCH_DEF_FILE;
-  const orgShape = await getScratchOrgShape(config);
+  const orgShape = options.orgShapeOverride !== undefined ? options.orgShapeOverride : await getScratchOrgShape(config);
   const scratchDef = readProjectScratchDef(scratchDefPath, { orgShape });
   return {
     source: stepsInfo.source,
@@ -127,6 +134,9 @@ export async function getOrgInitConfigPayload(config: any, scratchDefFile?: stri
     // SCRATCH_ORG_SHAPE), and that branch: the panel writes scratchOrgShape in its config file
     scratchOrgShape: orgShape,
     scratchOrgMajorBranch: await getScratchOrgMajorBranch(config),
+    // The value of each level, for a panel that edits them like Pipeline Settings: global, then
+    // each major branch (undefined: inherits the global value, "none": no org shape)
+    scratchOrgShapes: await getScratchOrgShapeLevels(config),
     scratchDefHints: getScratchOrgDefHints(),
   };
 }
@@ -479,7 +489,24 @@ export async function getScratchOrgShape(config: any): Promise<string | null> {
   }
   const majorBranch = await getScratchOrgMajorBranch(config);
   const branchShape = majorBranch ? readBranchConfigValue(majorBranch, 'scratchOrgShape') : undefined;
+  if (branchShape === SCRATCH_ORG_SHAPE_NONE) {
+    return null;
+  }
   return branchShape || config?.scratchOrgShape || null;
+}
+
+/** scratchOrgShape of the project config and of each major branch config. */
+export async function getScratchOrgShapeLevels(
+  config: any
+): Promise<{ global: string | null; branches: Record<string, string | null>; majorBranches: string[] }> {
+  const { getConfig } = await import('../../config/index.js');
+  const projectConfig = await getConfig('project');
+  const majorBranches = listMajorBranches(config);
+  const branches: Record<string, string | null> = {};
+  for (const branch of majorBranches) {
+    branches[branch] = readBranchConfigValue(branch, 'scratchOrgShape') || null;
+  }
+  return { global: projectConfig?.scratchOrgShape || null, branches, majorBranches };
 }
 
 /**
@@ -488,15 +515,21 @@ export async function getScratchOrgShape(config: any): Promise<string | null> {
  * from (localStorageBranchTargets, written by hardis:work:new), else developmentBranch.
  */
 export async function getScratchOrgMajorBranch(config: any): Promise<string | null> {
-  const majorBranches = [config?.developmentBranch, ...(config?.availableTargetBranches || [])]
-    .map((branch: any) => (typeof branch === 'string' ? branch : branch?.branch))
-    .filter(Boolean);
+  const majorBranches = listMajorBranches(config);
   const currentBranch = await getCurrentGitBranch();
   if (currentBranch && majorBranches.includes(currentBranch)) {
     return currentBranch;
   }
   const startedFrom = currentBranch ? config?.localStorageBranchTargets?.[currentBranch] : null;
   return startedFrom || config?.developmentBranch || null;
+}
+
+// developmentBranch first, then availableTargetBranches, once each
+function listMajorBranches(config: any): string[] {
+  const branches = [config?.developmentBranch, ...(config?.availableTargetBranches || [])]
+    .map((branch: any) => (typeof branch === 'string' ? branch : branch?.branch))
+    .filter(Boolean);
+  return [...new Set<string>(branches)];
 }
 
 function readBranchConfigValue(branch: string, key: string): any {

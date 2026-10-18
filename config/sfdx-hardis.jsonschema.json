@@ -3790,7 +3790,7 @@
     },
     "scratchOrgShape": {
       "$id": "#/properties/scratchOrgShape",
-      "description": "Org id of the org whose org shape creates the scratch orgs (sourceOrg of the scratch org definition). Set it in the config of a major branch (developmentBranch or one of availableTargetBranches): a scratch org uses the shape of the branch its User Story started from. The definition then needs no edition. The SCRATCH_ORG_SHAPE environment variable wins over it.",
+      "description": "Org id of the org whose org shape creates the scratch orgs (sourceOrg of the scratch org definition). Set it in the config of a major branch (developmentBranch or one of availableTargetBranches): a scratch org uses the shape of the branch its User Story started from, else the one of the project config, and none means no org shape for that branch. The definition then needs no edition. The SCRATCH_ORG_SHAPE environment variable wins over it.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/",
       "examples": ["00D5g000004Z0bXEAS"],
       "title": "Scratch org shape",

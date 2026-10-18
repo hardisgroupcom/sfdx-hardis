@@ -134,10 +134,9 @@ The command has no prompt: agent mode behaves the same.
     const config = await getConfig('user');
     // The panel validates a definition with the org shape picked on screen, saved or not
     const shapeFlag = flags['scratch-org-shape'] as string | undefined;
-    if (shapeFlag !== undefined) {
-      config.scratchOrgShape = shapeFlag === 'none' ? null : shapeFlag;
-    }
-    const payload = await getOrgInitConfigPayload(config, scratchDefFile);
+    const payload = await getOrgInitConfigPayload(config, scratchDefFile, {
+      orgShapeOverride: shapeFlag === undefined ? undefined : shapeFlag === 'none' ? null : shapeFlag,
+    });
     if (flags['list-org-shapes']) {
       payload.orgShapes = await listActiveOrgShapes();
     }
