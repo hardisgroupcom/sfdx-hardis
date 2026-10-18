@@ -516,7 +516,8 @@ export async function getScratchOrgShapeLevels(
  */
 export async function getScratchOrgMajorBranch(config: any): Promise<string | null> {
   const majorBranches = listMajorBranches(config);
-  const currentBranch = await getCurrentGitBranch();
+  // Outside a git repository (or when git fails), the scratch org belongs to developmentBranch
+  const currentBranch = await getCurrentGitBranch().catch(() => null);
   if (currentBranch && majorBranches.includes(currentBranch)) {
     return currentBranch;
   }
