@@ -528,8 +528,11 @@ echo "FETCHED=$FETCHED" >>"$LOGS/oi-vars.sh"
 assert_log O11 oi-pool-fetch 0 "scratch:create takes the org from the pool, runs the fetch-only step and resets the tracking" \
   "from pool" "Step 1/1: Apex marker run when the org is taken" "Resetting the source tracking" "!sf org create scratch"
 if [ -n "$FETCHED" ]; then
-  [ "$FETCHED" = "$POOL_ORG" ] && record O11a OK "the org taken is the one of the pool" ||
+  if [ "$FETCHED" = "$POOL_ORG" ]; then
+    record O11a OK "the org taken is the one of the pool"
+  else
     record O11a FAIL "the org taken ($FETCHED) is not the one of the pool ($POOL_ORG)"
+  fi
   assert_count O11b "$FETCHED" "the fetch-only step ran when the org was taken" "SELECT Id FROM Account WHERE Name = 'OrgInitFetch'" 1
   (cd "$OI_DEV" && env -u NODE_OPTIONS sf project retrieve preview --target-org "$FETCHED" --json) >"$OI_LOGS/retrieve-preview.json" 2>/dev/null
   (cd "$OI_DEV" && env -u NODE_OPTIONS sf project deploy preview --target-org "$FETCHED" --json) >"$OI_LOGS/deploy-preview.json" 2>/dev/null
@@ -539,8 +542,11 @@ const r = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')).result;
 const d = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')).result;
 console.log((r.toRetrieve || []).length + ',' + (r.conflicts || []).length + ',' + (d.toDeploy || []).length);
 " "$(e2e_native_path "$OI_LOGS/retrieve-preview.json")" "$(e2e_native_path "$OI_LOGS/deploy-preview.json")" 2>/dev/null)
-  [ "$PREVIEWS" = "0,0,0" ] && record O11c OK "pull and push previews are empty after the reset" ||
+  if [ "$PREVIEWS" = "0,0,0" ]; then
+    record O11c OK "pull and push previews are empty after the reset"
+  else
     record O11c FAIL "previews (to retrieve, conflicts, to deploy) = $PREVIEWS, expected 0,0,0"
+  fi
   # A change made in the org afterwards: deployed from the other clone, which tracks nothing there
   sed -i 's#<value>base</value>#<value>changed in the org</value>#' "$OI/force-app/main/default/labels/CustomLabels.labels-meta.xml"
   (cd "$OI" && env -u NODE_OPTIONS sf project deploy start --metadata CustomLabels --target-org "$FETCHED" --ignore-conflicts --json) >"$OI_LOGS/org-change.json" 2>&1
