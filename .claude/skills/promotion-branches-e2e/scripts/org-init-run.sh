@@ -368,10 +368,10 @@ if [ "${OI_GROUPS:-all}" = "pool" ]; then
   write_config all
   git add -A && git commit -qm "chore: every org initialization step type" && git push -q origin "$OI_BRANCH"
 else
-# ------------------------------------------------------------------ O0 legacy keys
-echo "=== O0: the steps built from the older keys ==="
-(cd "$OI" && p_cli hardis:config:org-init --json) >"$OI_LOGS/config-legacy.json" 2>"$LOGS/oi-config-legacy.err"
-if node -e "
+  # ------------------------------------------------------------------ O0 legacy keys
+  echo "=== O0: the steps built from the older keys ==="
+  (cd "$OI" && p_cli hardis:config:org-init --json) >"$OI_LOGS/config-legacy.json" 2>"$LOGS/oi-config-legacy.err"
+  if node -e "
 const r = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')).result;
 const ids = r.steps.map((s) => s.id).join(',');
 const want = 'legacy-install-packages,legacy-deploy-sources,legacy-permission-sets,legacy-scratch-apex-1';
@@ -384,109 +384,109 @@ if (r.definitionErrors.length) errors.push('definitionErrors ' + JSON.stringify(
 if (r.scratchDef.issues.length) errors.push('scratch def issues ' + r.scratchDef.issues);
 if (errors.length) { console.log(errors.join('; ')); process.exit(1); }
 " "$(e2e_native_path "$OI_LOGS/config-legacy.json")" >"$OI_LOGS/config-legacy.check" 2>&1; then
-  record O0 OK "config:org-init builds the four steps of the older keys, all run at pool fill"
-else
-  record O0 FAIL "config:org-init legacy: $(cat "$OI_LOGS/config-legacy.check")"
-fi
+    record O0 OK "config:org-init builds the four steps of the older keys, all run at pool fill"
+  else
+    record O0 FAIL "config:org-init legacy: $(cat "$OI_LOGS/config-legacy.check")"
+  fi
 
-# ------------------------------------------------------------------ O1 deployment action guard
-echo "=== O1: org init types refused as deployment actions ==="
-oi_cli oi-action-create-refused "$OI" hardis:project:action:create --agent --scope project --when post-deploy \
-  --type deploy-sources --label "Deploy sources from a deployment action"
-assert_log O1 oi-action-create-refused 1 "action:create refuses an org initialization type" \
-  "deploy-sources" "!Action created"
+  # ------------------------------------------------------------------ O1 deployment action guard
+  echo "=== O1: org init types refused as deployment actions ==="
+  oi_cli oi-action-create-refused "$OI" hardis:project:action:create --agent --scope project --when post-deploy \
+    --type deploy-sources --label "Deploy sources from a deployment action"
+  assert_log O1 oi-action-create-refused 1 "action:create refuses an org initialization type" \
+    "deploy-sources" "!Action created"
 
-# ------------------------------------------------------------------ O2 / O3 checks before any org
-echo "=== O2: a step that cannot run stops scratch:create before any org ==="
-ACTIVE_BEFORE=$(active_scratch_orgs)
-write_config broken-step
-oi_cli oi-create-broken-step "$OI" hardis:scratch:create --agent --forcenew --target-dev-hub "$DEVHUB"
-assert_log O2 oi-create-broken-step 1 "scratch:create refuses a step that cannot run, before requesting an org" \
-  "missing-apex" "does-not-exist.apex" "!sf org create scratch"
-echo "=== O3: a scratch org definition the schema refuses ==="
-write_config all
-cp config/project-scratch-def.json "$OI_LOGS/project-scratch-def.json.bak"
-node -e "
+  # ------------------------------------------------------------------ O2 / O3 checks before any org
+  echo "=== O2: a step that cannot run stops scratch:create before any org ==="
+  ACTIVE_BEFORE=$(active_scratch_orgs)
+  write_config broken-step
+  oi_cli oi-create-broken-step "$OI" hardis:scratch:create --agent --forcenew --target-dev-hub "$DEVHUB"
+  assert_log O2 oi-create-broken-step 1 "scratch:create refuses a step that cannot run, before requesting an org" \
+    "missing-apex" "does-not-exist.apex" "!sf org create scratch"
+  echo "=== O3: a scratch org definition the schema refuses ==="
+  write_config all
+  cp config/project-scratch-def.json "$OI_LOGS/project-scratch-def.json.bak"
+  node -e "
 const f = 'config/project-scratch-def.json';
 const d = JSON.parse(require('fs').readFileSync(f, 'utf8'));
 d.hasSampleData = 'yes';
 require('fs').writeFileSync(f, JSON.stringify(d, null, 2));
 "
-oi_cli oi-create-bad-def "$OI" hardis:scratch:create --agent --forcenew --target-dev-hub "$DEVHUB"
-assert_log O3 oi-create-bad-def 1 "scratch:create refuses a definition the schema refuses, before requesting an org" \
-  "hasSampleData" "!sf org create scratch"
-cp "$OI_LOGS/project-scratch-def.json.bak" config/project-scratch-def.json
-ACTIVE_AFTER=$(active_scratch_orgs)
-if [ "$ACTIVE_BEFORE" = "$ACTIVE_AFTER" ]; then
-  record O2-O3 OK "no scratch org was requested by the refused creations ($ACTIVE_AFTER active)"
-else
-  record O2-O3 FAIL "active scratch orgs went from $ACTIVE_BEFORE to $ACTIVE_AFTER"
-fi
+  oi_cli oi-create-bad-def "$OI" hardis:scratch:create --agent --forcenew --target-dev-hub "$DEVHUB"
+  assert_log O3 oi-create-bad-def 1 "scratch:create refuses a definition the schema refuses, before requesting an org" \
+    "hasSampleData" "!sf org create scratch"
+  cp "$OI_LOGS/project-scratch-def.json.bak" config/project-scratch-def.json
+  ACTIVE_AFTER=$(active_scratch_orgs)
+  if [ "$ACTIVE_BEFORE" = "$ACTIVE_AFTER" ]; then
+    record O2-O3 OK "no scratch org was requested by the refused creations ($ACTIVE_AFTER active)"
+  else
+    record O2-O3 FAIL "active scratch orgs went from $ACTIVE_BEFORE to $ACTIVE_AFTER"
+  fi
 
-# ------------------------------------------------------------------ O4 every step type
-echo "=== O4: scratch:create runs every step type ==="
-git add -A && git commit -qm "chore: every org initialization step type" && git push -q origin "$OI_BRANCH"
-oi_cli oi-create-all "$OI" hardis:scratch:create --agent --forcenew --target-dev-hub "$DEVHUB"
-SCRATCH1=$(scratch_username_of "$OI")
-echo "SCRATCH1=$SCRATCH1" >>"$LOGS/oi-vars.sh"
-assert_log O4 oi-create-all 0 "scratch:create initializes the org with every step type, in order" \
-  "Step 1/13: Install packages" "Step 2/13: Deploy project sources" "Step 3/13: Assign permission sets" \
-  "Step 4/13: Apex marker record" "Step 5/13: Load accounts" "Step 6/13: Command marker record" \
-  "Step 7/13: Run the marker batch" "Step 8/13: Schedule the nightly job" \
-  "Step 9/13: Custom function marker record" "Step 10/13: Create the experience site" \
-  "Step 11/13: Wait for the experience site" "Step 12/13: Publish the experience site" \
-  "Step 13/13: Apex marker run when the org is taken" \
-  "13 succeeded, 0 failed, 0 skipped" "!Disabled step" "!Sandbox only step"
-if [ -n "$SCRATCH1" ]; then
-  assert_package_installed O4a "$SCRATCH1" "install-packages: the package is installed"
-  assert_count O4b "$SCRATCH1" "deploy-sources: the project classes are in the org" \
-    "SELECT Id FROM ApexClass WHERE Name IN ('OrgInitBatch', 'OrgInitSchedulable', 'PromoE2EAlphaTest')" 3
-  assert_count O4c "$SCRATCH1" "assign-permission-sets: the permission set is assigned" \
-    "SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = 'PromoE2EOrgInit'" 1
-  assert_count O4d "$SCRATCH1" "apex: the script ran once" "SELECT Id FROM Account WHERE Name = 'OrgInitApex'" 1
-  assert_count O4e "$SCRATCH1" "data: the SFDMU workspace was imported" \
-    "SELECT Id FROM Account WHERE Name IN ('OrgInitData1', 'OrgInitData2')" 2
-  assert_count O4f "$SCRATCH1" "command: the sf command targeted the org without --target-org" \
-    "SELECT Id FROM Account WHERE Name = 'OrgInitCommand'" 1
-  assert_count O4g "$SCRATCH1" "run-batch: the batch ran" "SELECT Id FROM Account WHERE Name = 'OrgInitBatch'" 1
-  assert_count O4h "$SCRATCH1" "schedule-batch: the job is scheduled" \
-    "SELECT Id FROM CronTrigger WHERE CronJobDetail.Name = 'OrgInitE2ESchedule'" 1
-  assert_count O4i "$SCRATCH1" "custom function: the script ran with its input and the org" \
-    "SELECT Id FROM Account WHERE Name = 'OrgInitFunction'" 1
-  assert_count O4j "$SCRATCH1" "publish-community: the site exists" "SELECT Id FROM Network WHERE Name = 'OrgInitSite'" 1
-  assert_count O4k "$SCRATCH1" "the fetch-only step runs on a new scratch org too (phase all)" \
-    "SELECT Id FROM Account WHERE Name = 'OrgInitFetch'" 1
-  assert_count O4l "$SCRATCH1" "the disabled and the sandbox-only steps did not run" \
-    "SELECT Id FROM Account WHERE Name IN ('OrgInitDisabled', 'OrgInitSandboxOnly')" 0
-else
-  record O4a FAIL "no scratch org username in config/user: the org checks of O4 did not run"
-fi
+  # ------------------------------------------------------------------ O4 every step type
+  echo "=== O4: scratch:create runs every step type ==="
+  git add -A && git commit -qm "chore: every org initialization step type" && git push -q origin "$OI_BRANCH"
+  oi_cli oi-create-all "$OI" hardis:scratch:create --agent --forcenew --target-dev-hub "$DEVHUB"
+  SCRATCH1=$(scratch_username_of "$OI")
+  echo "SCRATCH1=$SCRATCH1" >>"$LOGS/oi-vars.sh"
+  assert_log O4 oi-create-all 0 "scratch:create initializes the org with every step type, in order" \
+    "Step 1/13: Install packages" "Step 2/13: Deploy project sources" "Step 3/13: Assign permission sets" \
+    "Step 4/13: Apex marker record" "Step 5/13: Load accounts" "Step 6/13: Command marker record" \
+    "Step 7/13: Run the marker batch" "Step 8/13: Schedule the nightly job" \
+    "Step 9/13: Custom function marker record" "Step 10/13: Create the experience site" \
+    "Step 11/13: Wait for the experience site" "Step 12/13: Publish the experience site" \
+    "Step 13/13: Apex marker run when the org is taken" \
+    "13 succeeded, 0 failed, 0 skipped" "!Disabled step" "!Sandbox only step"
+  if [ -n "$SCRATCH1" ]; then
+    assert_package_installed O4a "$SCRATCH1" "install-packages: the package is installed"
+    assert_count O4b "$SCRATCH1" "deploy-sources: the project classes are in the org" \
+      "SELECT Id FROM ApexClass WHERE Name IN ('OrgInitBatch', 'OrgInitSchedulable', 'PromoE2EAlphaTest')" 3
+    assert_count O4c "$SCRATCH1" "assign-permission-sets: the permission set is assigned" \
+      "SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = 'PromoE2EOrgInit'" 1
+    assert_count O4d "$SCRATCH1" "apex: the script ran once" "SELECT Id FROM Account WHERE Name = 'OrgInitApex'" 1
+    assert_count O4e "$SCRATCH1" "data: the SFDMU workspace was imported" \
+      "SELECT Id FROM Account WHERE Name IN ('OrgInitData1', 'OrgInitData2')" 2
+    assert_count O4f "$SCRATCH1" "command: the sf command targeted the org without --target-org" \
+      "SELECT Id FROM Account WHERE Name = 'OrgInitCommand'" 1
+    assert_count O4g "$SCRATCH1" "run-batch: the batch ran" "SELECT Id FROM Account WHERE Name = 'OrgInitBatch'" 1
+    assert_count O4h "$SCRATCH1" "schedule-batch: the job is scheduled" \
+      "SELECT Id FROM CronTrigger WHERE CronJobDetail.Name = 'OrgInitE2ESchedule'" 1
+    assert_count O4i "$SCRATCH1" "custom function: the script ran with its input and the org" \
+      "SELECT Id FROM Account WHERE Name = 'OrgInitFunction'" 1
+    assert_count O4j "$SCRATCH1" "publish-community: the site exists" "SELECT Id FROM Network WHERE Name = 'OrgInitSite'" 1
+    assert_count O4k "$SCRATCH1" "the fetch-only step runs on a new scratch org too (phase all)" \
+      "SELECT Id FROM Account WHERE Name = 'OrgInitFetch'" 1
+    assert_count O4l "$SCRATCH1" "the disabled and the sandbox-only steps did not run" \
+      "SELECT Id FROM Account WHERE Name IN ('OrgInitDisabled', 'OrgInitSandboxOnly')" 0
+  else
+    record O4a FAIL "no scratch org username in config/user: the org checks of O4 did not run"
+  fi
 
-# ------------------------------------------------------------------ O5 / O6 / O7 hardis:org:init
-echo "=== O5: hardis:org:init reruns one step ==="
-oi_cli oi-init-one "$OI" hardis:org:init --agent --target-org "$SCRATCH1" --steps apex-marker
-assert_log O5 oi-init-one 0 "org:init --steps runs only the step asked for" \
-  "Step 1/1: Apex marker record" "1 succeeded, 0 failed, 0 skipped" "!Load accounts"
-assert_count O5a "$SCRATCH1" "the Apex marker ran a second time" "SELECT Id FROM Account WHERE Name = 'OrgInitApex'" 2
-echo "=== O6: failures, allowed and not ==="
-write_config failures
-oi_cli oi-init-failures "$OI" hardis:org:init --agent --target-org "$SCRATCH1" --steps fail-allowed,fail-stop,after-stop
-assert_log O6 oi-init-failures 1 "an allowed failure goes on, a failure stops and skips the next steps" \
-  "A failure that is allowed failed and allows failure" "the remaining steps are not run" \
-  "Not run: step A failure that stops the run failed before it"
-assert_count O6a "$SCRATCH1" "the step after the failure did not run" "SELECT Id FROM Account WHERE Name = 'OrgInitAfterStop'" 0
-git checkout -q -- config/.sfdx-hardis.yml
-echo "=== O7: production refused ==="
-oi_cli oi-init-production "$OI" hardis:org:init --agent --target-org "$ORG"
-assert_log O7 oi-init-production 1 "org:init refuses a production org" "is a production org" "!Step 1/"
+  # ------------------------------------------------------------------ O5 / O6 / O7 hardis:org:init
+  echo "=== O5: hardis:org:init reruns one step ==="
+  oi_cli oi-init-one "$OI" hardis:org:init --agent --target-org "$SCRATCH1" --steps apex-marker
+  assert_log O5 oi-init-one 0 "org:init --steps runs only the step asked for" \
+    "Step 1/1: Apex marker record" "1 succeeded, 0 failed, 0 skipped" "!Load accounts"
+  assert_count O5a "$SCRATCH1" "the Apex marker ran a second time" "SELECT Id FROM Account WHERE Name = 'OrgInitApex'" 2
+  echo "=== O6: failures, allowed and not ==="
+  write_config failures
+  oi_cli oi-init-failures "$OI" hardis:org:init --agent --target-org "$SCRATCH1" --steps fail-allowed,fail-stop,after-stop
+  assert_log O6 oi-init-failures 1 "an allowed failure goes on, a failure stops and skips the next steps" \
+    "A failure that is allowed failed and allows failure" "the remaining steps are not run" \
+    "Not run: step A failure that stops the run failed before it"
+  assert_count O6a "$SCRATCH1" "the step after the failure did not run" "SELECT Id FROM Account WHERE Name = 'OrgInitAfterStop'" 0
+  git checkout -q -- config/.sfdx-hardis.yml
+  echo "=== O7: production refused ==="
+  oi_cli oi-init-production "$OI" hardis:org:init --agent --target-org "$ORG"
+  assert_log O7 oi-init-production 1 "org:init refuses a production org" "is a production org" "!Step 1/"
 
-# ------------------------------------------------------------------ O8 free the slot
-echo "=== O8: delete the scratch org of O4 ==="
-if [ -n "$SCRATCH1" ] && env -u NODE_OPTIONS sf org delete scratch --target-org "$SCRATCH1" --no-prompt --json >"$OI_LOGS/delete-scratch1.json" 2>&1; then
-  record O8 OK "scratch org of O4 deleted"
-else
-  record O8 FAIL "scratch org of O4 not deleted: $(head -c 300 "$OI_LOGS/delete-scratch1.json" 2>/dev/null)"
-fi
+  # ------------------------------------------------------------------ O8 free the slot
+  echo "=== O8: delete the scratch org of O4 ==="
+  if [ -n "$SCRATCH1" ] && env -u NODE_OPTIONS sf org delete scratch --target-org "$SCRATCH1" --no-prompt --json >"$OI_LOGS/delete-scratch1.json" 2>&1; then
+    record O8 OK "scratch org of O4 deleted"
+  else
+    record O8 FAIL "scratch org of O4 not deleted: $(head -c 300 "$OI_LOGS/delete-scratch1.json" 2>/dev/null)"
+  fi
 
 fi
 # ------------------------------------------------------------------ O9 / O10 the pool
