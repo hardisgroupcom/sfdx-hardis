@@ -31,7 +31,7 @@ export { isCI, isAgentMode } from './envUtils.js';
 import { isCI, isAgentMode } from './envUtils.js';
 import { storeGitCredentials } from './gitCredentialUtils.js';
 import { anonymizeRows, getChannelAnonymizationLevel, getChannelAnonymizationLevelSync } from './anonymizeUtils.js';
-import { hasRegisteredSecrets, redactSecrets, redactSecretsDeep } from './secretMaskingUtils.js';
+import { hasRegisteredSecrets, redactCommandOutput, redactSecrets, redactSecretsDeep } from './secretMaskingUtils.js';
 
 export type GitInstanceOptions = {
   output?: boolean;
@@ -1192,8 +1192,8 @@ export async function execCommand(
   try {
     commandResult = await exec(command, execOptions);
     // A secret read by sfdx-hardis (replacement rules) never leaves the process through a command output
-    commandResult.stdout = redactSecrets(commandResult.stdout);
-    commandResult.stderr = redactSecrets(commandResult.stderr);
+    commandResult.stdout = redactCommandOutput(commandResult.stdout);
+    commandResult.stderr = redactCommandOutput(commandResult.stderr);
     if (spinner) {
       spinner.succeed(commandLog);
     }
@@ -1208,8 +1208,8 @@ export async function execCommand(
     }
   } catch (e) {
     if (hasRegisteredSecrets()) {
-      (e as any).stdout = redactSecrets((e as any).stdout);
-      (e as any).stderr = redactSecrets((e as any).stderr);
+      (e as any).stdout = redactCommandOutput((e as any).stdout);
+      (e as any).stderr = redactCommandOutput((e as any).stderr);
       (e as Error).message = redactSecrets((e as Error).message);
     }
     if (spinner) {

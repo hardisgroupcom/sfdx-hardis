@@ -5,12 +5,26 @@ import { BUILT_IN_REPLACEMENT_RULES, findBuiltInReplacementRule } from './builtI
 import { readIssueRules } from './issueRulesStore.js';
 import { readAllBranchReplacementRules, readRulesFromFile, resolveProjectConfigFile, validateReplacementRule } from './ruleConfig.js';
 import { ReplacementRule, RulePlace } from './types.js';
+import { t } from '../utils/i18n.js';
+
+/** Why a rule cannot be stored in this place whatever it holds, or null */
+export function checkRulePlace(rule: ReplacementRule, place: RulePlace): string | null {
+  // Rules of the issue reach the deployments without review: they never read a secret
+  if (place.layer === 'issue' && rule.secret !== undefined) {
+    return t('replacementRulesReasonSecretInIssue');
+  }
+  return null;
+}
 
 /** Why the rule cannot be stored in this place, or null */
 export async function checkRuleUpdate(rule: ReplacementRule, place: RulePlace): Promise<string | null> {
+  const placeProblem = checkRulePlace(rule, place);
+  if (placeProblem) {
+    return placeProblem;
+  }
   if (findBuiltInReplacementRule(rule.id)) {
     const otherFields = Object.keys(rule).filter((key) => key !== 'id' && key !== 'enabled');
-    return otherFields.length > 0 ? `a built-in rule can only be turned on or off (fields: ${otherFields.join(', ')})` : null;
+    return otherFields.length > 0 ? t('replacementRulesReasonBuiltInOnlyEnabled', { fields: otherFields.join(', ') }) : null;
   }
   if (rule.type) {
     return validateReplacementRule(rule);
@@ -18,7 +32,7 @@ export async function checkRuleUpdate(rule: ReplacementRule, place: RulePlace): 
   const definedElsewhere = (await listRuleIdsByPlace()).some(
     (entry) => entry.ids.has(rule.id) && !(entry.place.layer === place.layer && (entry.place.branch || '') === (place.branch || ''))
   );
-  return definedElsewhere ? null : 'this rule does not exist in another place: create it with hardis:project:replacement:create';
+  return definedElsewhere ? null : t('replacementRulesReasonOverrideUnknown');
 }
 
 /** Ids of every rule defined somewhere, built-in ones included, for prompts */

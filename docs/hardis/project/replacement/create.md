@@ -20,7 +20,7 @@ The rule is stored in one place:
 
 - `project`: `config/.sfdx-hardis.yml`
 - `branch`: `config/branches/.sfdx-hardis.<branch>.yml`, applied only when deploying to that branch
-- `issue`: the "sfdx-hardis Replacement Rules" issue of the git provider (work item on Azure DevOps, Pull Request on Bitbucket), applied at the next deployment job without any commit
+- `issue`: the "sfdx-hardis Replacement Rules" issue of the git provider (work item on Azure DevOps, Pull Request on Bitbucket), applied at the next deployment job without any commit. It is read only when its author has write access to the repository, and its rules cannot use `secret`
 
 See [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) for the full reference.
 

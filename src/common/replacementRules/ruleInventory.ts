@@ -3,6 +3,7 @@
 // Never holds a secret value: only variable names.
 
 import { listMajorOrgs } from '../utils/orgConfigUtils.js';
+import { t } from '../utils/i18n.js';
 import { buildActionTargetBranchCandidates, evaluateActionBranchFilter } from '../utils/actionUtils.js';
 import { getSecretsProvider } from '../secretsProvider/index.js';
 import { BUILT_IN_REPLACEMENT_RULES } from './builtInReplacementRules.js';
@@ -11,6 +12,7 @@ import { resolveRuleValue } from './ruleEngine.js';
 import {
   mergeReplacementRules,
   readAllBranchReplacementRules,
+  readProjectReplacementRules,
   readRulesFromFile,
   ReplacementRulesSource,
   resolveProjectConfigFile,
@@ -24,11 +26,14 @@ export interface RuleDefinition {
   file?: string;
   rule: ReplacementRule;
   overrides: ReplacementRuleOrigin[];
+  inherited?: boolean;
 }
 
 export interface EffectiveRule extends MergedReplacementRule {
   builtIn: any;
   applies: boolean;
+  // Why the merged rule is skipped by the deployments, when it is invalid
+  invalid?: string;
   resolved: { source: 'value' | 'branch' | 'default' | 'secret' | 'none'; value?: string; variables?: string[] };
 }
 
@@ -56,7 +61,9 @@ export function summarizeRuleDefinitions(definitions: RuleDefinition[]): any[] {
 
 export async function buildReplacementRulesInventory(options: { targetBranch?: string | null; skipIssue?: boolean }): Promise<any> {
   const projectFile = resolveProjectConfigFile();
-  const projectRules = readRulesFromFile(projectFile);
+  // What deployments read (with the rules of a remote `extends` config), and what the file holds
+  const projectRules = await readProjectReplacementRules();
+  const projectFileIds = new Set(readRulesFromFile(projectFile).map((rule) => rule.id));
   const branchLayers = await readAllBranchReplacementRules();
   const issue = options.skipIssue ? { available: false, rules: [] as ReplacementRule[] } : await readIssueRules({ useCache: false });
   const majorOrgs = [...(await listMajorOrgs())].sort((a: any, b: any) => (a.level || 0) - (b.level || 0));
@@ -70,7 +77,14 @@ export async function buildReplacementRulesInventory(options: { targetBranch?: s
   const projectIds = new Set(projectRules.map((rule) => rule.id));
   const branchIds = new Set(branchLayers.flatMap((layer) => layer.rules.map((rule) => rule.id)));
   for (const rule of projectRules) {
-    definitions.push({ layer: 'project', file: projectFile, rule, overrides: builtInIds.has(rule.id) ? ['builtin'] : [] });
+    definitions.push({
+      layer: 'project',
+      file: projectFile,
+      rule,
+      overrides: builtInIds.has(rule.id) ? ['builtin'] : [],
+      // Comes from the remote config of `extends`: an update writes an override in the project file
+      inherited: !projectFileIds.has(rule.id) || undefined,
+    });
   }
   for (const layer of branchLayers) {
     for (const rule of layer.rules) {
@@ -91,13 +105,17 @@ export async function buildReplacementRulesInventory(options: { targetBranch?: s
   // Invalid definitions
   const issues: { ruleId?: string; layer: string; branch?: string; message: string }[] = [];
   for (const definition of definitions) {
+    if (definition.layer === 'issue' && definition.rule.secret !== undefined) {
+      issues.push({ ruleId: definition.rule.id, layer: definition.layer, message: t('replacementRulesReasonSecretInIssue') });
+      continue;
+    }
     if (definition.rule.type) {
       const error = validateReplacementRule(definition.rule);
       if (error) {
         issues.push({ ruleId: definition.rule.id, layer: definition.layer, branch: definition.branch, message: error });
       }
     } else if (definition.overrides.length === 0) {
-      issues.push({ ruleId: definition.rule.id, layer: definition.layer, branch: definition.branch, message: 'changes a rule that does not exist' });
+      issues.push({ ruleId: definition.rule.id, layer: definition.layer, branch: definition.branch, message: t('replacementRulesReasonOverrideUnknown') });
     }
   }
 
@@ -115,7 +133,9 @@ export async function buildReplacementRulesInventory(options: { targetBranch?: s
     const { rules } = mergeReplacementRules(sources);
     const candidates = buildActionTargetBranchCandidates(targetBranch || '', majorBranchNames);
     effective[target] = rules.map((rule) => {
-      const applies = rule.enabled && (rule.builtIn ? true : evaluateActionBranchFilter(rule, candidates).run);
+      // Same check as the deployments, which skip an invalid merged rule
+      const invalid = !rule.builtIn && rule.enabled ? validateReplacementRule(rule) || undefined : undefined;
+      const applies = rule.enabled && !invalid && (rule.builtIn ? true : evaluateActionBranchFilter(rule, candidates).run);
       let resolved: EffectiveRule['resolved'] = { source: 'none' };
       if (!rule.builtIn && rule.type !== 'xml-remove') {
         if (rule.secret) {
@@ -129,7 +149,7 @@ export async function buildReplacementRulesInventory(options: { targetBranch?: s
         }
       }
       const { builtIn, ...rest } = rule;
-      return { ...rest, builtIn: !!builtIn, applies, resolved } as EffectiveRule;
+      return { ...rest, builtIn: !!builtIn, applies, invalid, resolved } as EffectiveRule;
     });
   }
 

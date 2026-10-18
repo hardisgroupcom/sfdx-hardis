@@ -47,14 +47,6 @@ import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeploy
 // Push sources to org
 // For some cases, push must be performed in 2 times: the first with all passing sources, and the second with updated sources requiring the first push
 export async function forceSourcePush(scratchOrgAlias: string, commandThis: any, debug = false, options: any = {}) {
-  // A scratch org gets the default values of the replacement rules
-  const { runWithReplacementRules } = await import('../replacementRules/ruleEngine.js');
-  return await runWithReplacementRules({ targetBranch: null, targetUsername: scratchOrgAlias, commandThis }, () =>
-    forceSourcePushWithoutReplacementRules(scratchOrgAlias, commandThis, debug, options)
-  );
-}
-
-async function forceSourcePushWithoutReplacementRules(scratchOrgAlias: string, commandThis: any, debug = false, options: any = {}) {
   elapseStart('project:deploy:start');
   const config = await getConfig('user');
   const currentBranch = await getCurrentGitBranch();
@@ -491,8 +483,6 @@ export async function smartDeploy(
     await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
-  // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
-  await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
   // Expose the package.xml files of the deployment plan so pre-deploy actions can update them
   // (ex: remove-packagexml-items actions filter their content before the metadata deploy step)
@@ -507,6 +497,10 @@ export async function smartDeploy(
   const replacementSession = options.replacementRules === false
     ? null
     : await startDeploymentReplacementRules(splitDeployments, commandThis, options);
+  // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions.
+  // Done after the replacement rules: restoreQuickActions puts back the files the rules changed, then
+  // the restore of the rules puts back the files of git, in the reverse order of the changes.
+  await replaceQuickActionsWithDummy();
   // Deployments that were actually sent to the org. A deployment whose package.xml ends up empty is
   // skipped below, and when every one of them is skipped nothing sets the deployment result: the
   // Pull Request comment then displays no status, no banner and no code coverage section.

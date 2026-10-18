@@ -38,6 +38,38 @@ describe('replacement rules - layers', () => {
     expect(rules[0].enabled).to.equal(true);
   });
 
+  it('switches the value source of a rule from a higher place', () => {
+    const single: ReplacementRule = { id: 'x', type: 'xml-value', files: 'a', xmlPath: 'A/b', value: 'A' };
+    // values over a single value: the single value becomes the default of the other orgs
+    const branch = mergeReplacementRules([{ origin: 'project', rules: [single] }, { origin: 'branch', branch: 'uat', rules: [{ id: 'x', values: { uat: 'B' } }] }], []).rules[0];
+    expect(branch.value).to.equal(undefined);
+    expect(branch.values).to.deep.equal({ default: 'A', uat: 'B' });
+    expect(validateReplacementRule(branch)).to.equal(null);
+    // secret over values: the values go away
+    const secret = mergeReplacementRules([{ origin: 'project', rules: [endpointRule] }, { origin: 'branch', branch: 'uat', rules: [{ id: 'payment-api-endpoint', secret: 'MY_ENDPOINT' }] }], []).rules[0];
+    expect(secret.values).to.equal(undefined);
+    expect(secret.secret).to.equal('MY_ENDPOINT');
+    expect(validateReplacementRule(secret)).to.equal(null);
+    // value over a secret: the secret goes away
+    const value = mergeReplacementRules([{ origin: 'project', rules: [{ ...single, value: undefined, secret: 'S' }] }, { origin: 'branch', branch: 'uat', rules: [{ id: 'x', value: 'C' }] }], []).rules[0];
+    expect(value.secret).to.equal(undefined);
+    expect(value.value).to.equal('C');
+  });
+
+  it('never takes a secret from the issue', () => {
+    const { rules, warnings } = mergeReplacementRules(
+      [
+        { origin: 'project', rules: [endpointRule] },
+        { origin: 'issue', rules: [{ id: 'payment-api-endpoint', secret: 'SFDX_CLIENT_KEY' }, { id: 'steal', type: 'text', files: '**/*', find: 'x', secret: 'SFDX_CLIENT_KEY' }] },
+      ],
+      []
+    );
+    expect(rules).to.have.length(1);
+    expect(rules[0].secret).to.equal(undefined);
+    expect(rules[0].values).to.deep.equal(endpointRule.values);
+    expect(warnings.map((warning) => warning.ruleId)).to.deep.equal(['payment-api-endpoint', 'steal']);
+  });
+
   it('turns built-in rules on or off, and only that', () => {
     const builtIn = BUILT_IN_REPLACEMENT_RULES.find((rule) => rule.id === 'builtin-flow-ends')!;
     const { rules } = mergeReplacementRules([{ origin: 'issue', rules: [{ id: 'builtin-flow-ends', enabled: false, files: 'x' }] }], [builtIn]);

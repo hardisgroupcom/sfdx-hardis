@@ -537,6 +537,12 @@ ${getBannerMarkdownAndLink()}
     await this.api.patch<any>(`${this.repoPath()}/issues/${dashboard.id}`, { title, body });
   }
 
+  // Anyone who can read a repository can open an issue: only owners, members and collaborators count
+  public async isDashboardAuthorTrusted(dashboard: DashboardRef): Promise<boolean> {
+    const response = await this.api.get<any>(`${this.repoPath()}/issues/${dashboard.id}`);
+    return ['OWNER', 'MEMBER', 'COLLABORATOR'].includes(String(response.data?.author_association || ''));
+  }
+
   public async getDashboardBody(dashboard: DashboardRef): Promise<string> {
     const response = await this.api.get<any>(`${this.repoPath()}/issues/${dashboard.id}`);
     return response.data?.body || '';

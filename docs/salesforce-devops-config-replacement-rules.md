@@ -29,7 +29,7 @@ Replacement rules change the metadata files **right before each deployment, for 
 They apply to:
 
 - [hardis:project:deploy:smart](hardis/project/deploy/smart.md): deployment checks of Pull Requests, deployments to major orgs, quick deploys.
-- Scratch org creation and push, and org initialization of pool orgs.
+- Scratch org deployments with a manifest (`CI_SCRATCH_MODE=deploy`), and org initialization of pool orgs.
 - [Backpromote](salesforce-devops-backpromote.md) deployments to developer sandboxes.
 
 Only the files that are deployed are changed (the components of the package.xml, so a delta deployment stays a delta deployment).
@@ -126,7 +126,7 @@ Rules merge by `id`, each place changing the ones before it:
 3. **Branch**: `config/branches/.sfdx-hardis.<branch>.yml` of the target branch only.
 4. **Issue**: the "sfdx-hardis Replacement Rules" issue of the git provider.
 
-A rule with the same `id` in a later place changes only the fields it sets, and `values` are merged org by org. For example, this branch file changes the uat value of the project rule:
+A rule with the same `id` in a later place changes only the fields it sets, and `values` are merged org by org. Setting another value source replaces the previous one: `values` over a single `value` keeps that value as the `default`. For example, this branch file changes the uat value of the project rule:
 
 ```yaml
 replacementRules:
@@ -147,7 +147,9 @@ The issue holds rules in a YAML block of its body. Editing it changes the rules 
 - Edit the YAML block in the web UI, from the VS Code panel, or with `sf hardis:project:replacement:update --layer issue`. On Azure DevOps, prefer the panel or the command: the rich text editor can damage YAML.
 - Once the fix is in the repository, delete the rule from the issue.
 - A quick deploy reuses the package of the deployment check: after changing the issue, run the check of an open Pull Request again.
-- Anyone who can edit the issue can change what reaches production. Rules coming from the issue are marked in the job log and the Pull Request comment.
+- The issue is only read when its author has write access to the repository (GitHub owner, member or collaborator, GitLab Developer or more; Azure DevOps work items and Bitbucket Pull Requests already need it). An issue with this title opened by someone else is ignored, with a warning in the Pull Request comment: close it and create the rules again from VS Code or with the command.
+- A rule of the issue cannot use `secret`: secrets only come from the configuration files of the repository, which are reviewed in Pull Requests.
+- Anyone who can edit the issue can still change values and removals that reach production. Rules coming from the issue are marked in the job log and the Pull Request comment.
 
 ---
 
@@ -155,7 +157,7 @@ The issue holds rules in a YAML block of its body. Editing it changes the rules 
 
 When the deployment API version of the target org is older than the sources (sources retrieved from a preview sandbox, production still on the previous release), some XML elements make the deployment fail with errors like `Element {http://soap.sforce.com/2006/04/metadata}dayOfMonthToRun invalid at this location`. Built-in rules remove them before deploying. Others remove elements Salesforce stopped accepting.
 
-The deployment API version is the `org-api-version` sf config (or `SF_ORG_API_VERSION`) when set, otherwise the maximum API version of the target org.
+The deployment API version is the lowest of the connection version (the `org-api-version` sf config or `SF_ORG_API_VERSION` when set, otherwise the maximum API version of the target org), the `sourceApiVersion` of `sfdx-project.json` and the version of the deployed package.xml: Salesforce reads the metadata with that version.
 
 | Id                                         | Element                                                         | Removed when API is | Default |
 |--------------------------------------------|-----------------------------------------------------------------|---------------------|---------|
@@ -229,6 +231,6 @@ The deployment check and deployment comments have a **Replacement rules** sectio
 ### Good to know
 
 - Files are changed in place during the deployment and always put back, also when the deployment fails or the job is interrupted. A run killed before restoring them (power loss) is repaired by the next run in the same folder.
-- On a scratch org push, the restored files look changed to source tracking, so they are pushed again at the next push.
+- A plain scratch org push (source tracking, without manifest) does not apply the rules: tracking would record the changed files, and the restored files would then look modified at every push.
 - `SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true` skips every rule, built-in ones included. The Pull Request comment says so.
 - Native `replacements` of `sfdx-project.json` keep working: sf CLI applies them when building the deployment.

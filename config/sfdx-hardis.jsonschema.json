@@ -3788,7 +3788,7 @@
           },
           "secret": {
             "$id": "#/properties/replacementRules/items/properties/secret",
-            "description": "Name of the CI/CD variable holding the value: NAME_<BRANCH> is read first, then NAME. Never write a value here. The value is masked in every log.",
+            "description": "Name of the CI/CD variable holding the value: NAME_<BRANCH> is read first, then NAME. Never write a value here. The value is masked in every log. Not allowed in the rules of the git provider issue.",
             "examples": [
               "PAYMENT_API_PASSWORD"
             ],

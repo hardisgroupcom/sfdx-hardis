@@ -1,7 +1,8 @@
 import { expect } from 'chai';
-import { buildIssueBody, parseIssueRules } from '../../../src/common/replacementRules/issueRulesStore.js';
+import { buildIssueBody, clearIssueRulesCache, parseIssueRules, readIssueRules, writeIssueRules } from '../../../src/common/replacementRules/issueRulesStore.js';
+import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { CiVariablesSecretsProvider } from '../../../src/common/secretsProvider/ciVariablesSecretsProvider.js';
-import { clearRegisteredSecrets, redactSecrets, redactSecretsDeep, registerSecretValue } from '../../../src/common/utils/secretMaskingUtils.js';
+import { clearRegisteredSecrets, redactCommandOutput, redactSecrets, redactSecretsDeep, registerSecretValue } from '../../../src/common/utils/secretMaskingUtils.js';
 import { ReplacementRule } from '../../../src/common/replacementRules/types.js';
 
 const rules: ReplacementRule[] = [
@@ -30,6 +31,54 @@ describe('replacement rules - issue body', () => {
   it('returns no rule without a YAML block, and fails on invalid YAML', () => {
     expect(parseIssueRules('Just a text', 'markdown')).to.deep.equal([]);
     expect(() => parseIssueRules('```yaml\nreplacementRules: [\n```', 'markdown')).to.throw();
+  });
+});
+
+describe('replacement rules - issue trust', () => {
+  const originalGetInstance = GitProvider.getInstance;
+  const body = buildIssueBody([{ id: 'builtin-flow-ends', enabled: false }], 'markdown');
+  const fakeProvider = (trusted: boolean, calls: string[]) => ({
+    supportsDashboard: () => true,
+    getDashboardTitle: (title: string) => title,
+    getDashboardFormat: () => 'markdown',
+    findDashboard: async () => ({ id: 12, url: 'https://example.com/issues/12' }),
+    isDashboardAuthorTrusted: async () => trusted,
+    getDashboardBody: async () => body,
+    updateDashboardBody: async () => {
+      calls.push('update');
+    },
+    createDashboard: async () => {
+      calls.push('create');
+      return { id: 13, url: '' };
+    },
+  });
+
+  afterEach(() => {
+    GitProvider.getInstance = originalGetInstance;
+    clearIssueRulesCache();
+  });
+
+  it('reads the rules of an issue created by a user with write access', async () => {
+    GitProvider.getInstance = (async () => fakeProvider(true, [])) as any;
+    const state = await readIssueRules({ useCache: false });
+    expect(state.error).to.equal(undefined);
+    expect(state.rules).to.deep.equal([{ id: 'builtin-flow-ends', enabled: false }]);
+  });
+
+  it('ignores, and never writes, an issue created by someone without write access', async () => {
+    const calls: string[] = [];
+    GitProvider.getInstance = (async () => fakeProvider(false, calls)) as any;
+    const state = await readIssueRules({ useCache: false });
+    expect(state.rules).to.deep.equal([]);
+    expect(state.error).to.include('https://example.com/issues/12');
+    let error: any = null;
+    try {
+      await writeIssueRules([]);
+    } catch (e) {
+      error = e;
+    }
+    expect(error).to.not.equal(null);
+    expect(calls).to.deep.equal([]);
   });
 });
 
@@ -64,6 +113,17 @@ describe('replacement rules - secrets', () => {
     expect(redactSecrets('x abcdef y abc z')).to.equal('x *** y *** z');
     expect(redactSecrets('line-two alone')).to.equal('*** alone');
     expect(redactSecretsDeep({ a: ['abc'], b: { c: 'abcdef' }, n: 1 })).to.deep.equal({ a: ['***'], b: { c: '***' }, n: 1 });
+  });
+
+  it('keeps a JSON command output parseable', () => {
+    registerSecretValue('true');
+    registerSecretValue('my-password');
+    const output = redactCommandOutput('{"status":0,"result":{"success":true,"numberComponentsDeployed":100,"message":"bad my-password"}}');
+    const parsed = JSON.parse(output);
+    expect(parsed.result.success).to.equal(true);
+    expect(parsed.result.numberComponentsDeployed).to.equal(100);
+    expect(parsed.result.message).to.equal('bad ***');
+    expect(redactCommandOutput('plain my-password text')).to.equal('plain *** text');
   });
 
   it('does not redact values too short to be meaningful', () => {

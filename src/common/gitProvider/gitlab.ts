@@ -531,6 +531,22 @@ ${getBannerMarkdownAndLink()}
     await this.gitlabApi.Issues.edit(this.dashboardProjectId(), dashboard.id, { title, description: body });
   }
 
+  // Guests and reporters can open issues: only Developer access or more counts
+  public async isDashboardAuthorTrusted(dashboard: DashboardRef): Promise<boolean> {
+    const issue: any = await this.gitlabApi.Issues.show(dashboard.id, { projectId: this.dashboardProjectId() } as any);
+    const authorId = Number(issue?.author?.id || 0);
+    if (!authorId) {
+      return false;
+    }
+    try {
+      const member: any = await this.gitlabApi.ProjectMembers.show(this.dashboardProjectId(), authorId, { includeInherited: true } as any);
+      return Number(member?.access_level || 0) >= 30;
+    } catch {
+      // Not a member of the project
+      return false;
+    }
+  }
+
   public async getDashboardBody(dashboard: DashboardRef): Promise<string> {
     const issue: any = await this.gitlabApi.Issues.show(dashboard.id, { projectId: this.dashboardProjectId() } as any);
     return issue?.description || '';

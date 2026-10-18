@@ -14,8 +14,10 @@ import { dumpRepositoryYaml } from '../utils/yamlUtils.js';
 import { clearListMajorOrgsCache } from '../utils/orgConfigUtils.js';
 import { BUILT_IN_REPLACEMENT_RULES } from './builtInReplacementRules.js';
 import { validateXmlPath } from './xmlPath.js';
+import { t } from '../utils/i18n.js';
 import {
   BuiltInReplacementRule,
+  DEFAULT_VALUE_KEY,
   MergedReplacementRule,
   REPLACEMENT_RULE_TYPES,
   ReplacementRule,
@@ -118,7 +120,12 @@ export function mergeReplacementRules(
   for (const source of sources) {
     for (const rule of source.rules) {
       if (!rule?.id) {
-        warnings.push({ kind: 'invalid-rule', message: `A rule without id in ${source.origin} was skipped` });
+        warnings.push({ kind: 'invalid-rule', message: t('replacementRulesRuleWithoutId', { place: source.origin }) });
+        continue;
+      }
+      // Rules of the issue reach the deployments without review: they never read a secret
+      if (source.origin === 'issue' && rule.secret !== undefined) {
+        warnings.push({ kind: 'invalid-rule', ruleId: rule.id, message: t('replacementRulesSecretInIssue', { id: rule.id }) });
         continue;
       }
       const existing = merged.get(rule.id);
@@ -129,14 +136,7 @@ export function mergeReplacementRules(
             existing.enabled = rule.enabled !== false;
           }
         } else {
-          const values = rule.values ? { ...(existing.values || {}), ...rule.values } : existing.values;
-          Object.assign(existing, stripUndefined(rule));
-          if (values) {
-            existing.values = values;
-          }
-          if (rule.enabled !== undefined) {
-            existing.enabled = rule.enabled !== false;
-          }
+          mergeRuleInto(existing, rule);
         }
         if (!existing.origins.includes(source.origin)) {
           existing.origins.push(source.origin);
@@ -144,7 +144,7 @@ export function mergeReplacementRules(
         continue;
       }
       if (!rule.type) {
-        warnings.push({ kind: 'unknown-override', ruleId: rule.id, message: `Rule ${rule.id} in ${source.origin} changes a rule that does not exist` });
+        warnings.push({ kind: 'unknown-override', ruleId: rule.id, message: t('replacementRulesUnknownOverride', { id: rule.id, place: source.origin }) });
         continue;
       }
       merged.set(rule.id, { ...stripUndefined(rule), id: rule.id, enabled: rule.enabled !== false, origins: [source.origin] });
@@ -156,48 +156,48 @@ export function mergeReplacementRules(
 /** Why a merged rule cannot be applied, or null when it is valid */
 export function validateReplacementRule(rule: ReplacementRule): string | null {
   if (!rule.id || !RULE_ID_PATTERN.test(rule.id)) {
-    return `id "${rule.id || ''}" must use lowercase letters, digits and "-"`;
+    return t('replacementRulesReasonId', { id: rule.id || '' });
   }
   if (!rule.type || !REPLACEMENT_RULE_TYPES.includes(rule.type)) {
-    return `type must be one of ${REPLACEMENT_RULE_TYPES.join(', ')}`;
+    return t('replacementRulesReasonType', { types: REPLACEMENT_RULE_TYPES.join(', ') });
   }
   const files = toFileList(rule.files);
   if (files.length === 0) {
-    return 'files is required';
+    return t('replacementRulesReasonFiles');
   }
   if (rule.type === 'xml-value' || rule.type === 'xml-remove') {
     if (!rule.xmlPath) {
-      return 'xmlPath is required';
+      return t('replacementRulesReasonXmlPath');
     }
     const pathError = validateXmlPath(rule.xmlPath);
     if (pathError) {
-      return `xmlPath: ${pathError}`;
+      return t('replacementRulesReasonXmlPathInvalid', { error: pathError });
     }
   }
   if (rule.type === 'text') {
     if (!rule.find) {
-      return 'find is required';
+      return t('replacementRulesReasonFind');
     }
     if (rule.regex === true) {
       try {
         new RegExp(rule.find, 'g');
       } catch (e: any) {
-        return `find is not a valid regular expression: ${e.message}`;
+        return t('replacementRulesReasonRegex', { error: e.message });
       }
     }
   }
   const valueSources = [rule.value !== undefined, rule.values !== undefined && Object.keys(rule.values).length > 0, !!rule.secret].filter(Boolean).length;
   if (rule.type === 'xml-remove' && valueSources > 0) {
-    return 'an xml-remove rule takes no value, values or secret';
+    return t('replacementRulesReasonRemoveNoValue');
   }
   if (rule.type !== 'xml-remove' && valueSources !== 1) {
-    return 'set exactly one of value, values or secret';
+    return t('replacementRulesReasonOneValue');
   }
   if (rule.secret && !/^[A-Za-z_][A-Za-z0-9_]*$/.test(rule.secret)) {
-    return `secret "${rule.secret}" must be the name of a CI/CD variable`;
+    return t('replacementRulesReasonSecretName', { secret: rule.secret });
   }
   if ((rule.includeTargetBranches || []).length > 0 && (rule.excludeTargetBranches || []).length > 0) {
-    return 'includeTargetBranches and excludeTargetBranches cannot be both set';
+    return t('replacementRulesReasonBranchFilters');
   }
   return null;
 }
@@ -268,6 +268,40 @@ export function normalizeRuleList(value: any): ReplacementRule[] {
       }
       return normalized as ReplacementRule;
     });
+}
+
+/**
+ * Change a merged rule with the fields of a higher place. Setting one value source replaces the
+ * other ones; values over a single value keep it as the default of the other orgs.
+ */
+function mergeRuleInto(existing: MergedReplacementRule, rule: ReplacementRule): void {
+  let values = existing.values;
+  if (rule.secret !== undefined) {
+    delete existing.value;
+    values = undefined;
+  } else if (rule.value !== undefined) {
+    delete existing.secret;
+    values = undefined;
+  } else if (rule.values !== undefined) {
+    if (existing.secret !== undefined) {
+      delete existing.secret;
+      values = { ...rule.values };
+    } else if (existing.value !== undefined) {
+      values = { [DEFAULT_VALUE_KEY]: existing.value, ...(existing.values || {}), ...rule.values };
+      delete existing.value;
+    } else {
+      values = { ...(existing.values || {}), ...rule.values };
+    }
+  }
+  Object.assign(existing, stripUndefined(rule));
+  if (values) {
+    existing.values = values;
+  } else {
+    delete existing.values;
+  }
+  if (rule.enabled !== undefined) {
+    existing.enabled = rule.enabled !== false;
+  }
 }
 
 function readYamlFile(file: string): any {

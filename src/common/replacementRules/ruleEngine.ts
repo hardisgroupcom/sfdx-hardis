@@ -73,9 +73,13 @@ interface ResolvedRule {
 /** Apply the rules of a deployment target (write: true), or preview them (write: false) */
 export async function applyReplacementRules(options: ApplyReplacementRulesOptions): Promise<ReplacementRulesSession> {
   const commandThis = options.commandThis;
-  const recovered = restoreLeftoverReplacementFiles();
-  if (recovered > 0) {
-    uxLog('warning', commandThis, c.yellow(t('replacementRulesRecovered', { count: recovered })));
+  // Only a deployment repairs the files of a killed run: a preview must never write, even while
+  // another deployment of this folder is running
+  if (options.write) {
+    const recovered = restoreLeftoverReplacementFiles();
+    if (recovered > 0) {
+      uxLog('warning', commandThis, c.yellow(t('replacementRulesRecovered', { count: recovered })));
+    }
   }
   const backup = new ReplacementFileBackup();
   const session: ReplacementRulesSession = {
@@ -280,11 +284,48 @@ export async function resolveTarget(targetBranch: string | null, apiVersion: num
   return { targetBranch: null, label: t('replacementRulesDevSandboxTarget'), apiVersion };
 }
 
-/** Deployment API version: explicit, sf org-api-version config, then the max version of the target org */
-export async function resolveDeployApiVersion(options: Pick<ApplyReplacementRulesOptions, 'apiVersion' | 'conn' | 'targetUsername'>): Promise<number | null> {
+/**
+ * Deployment API version, the one Salesforce reads the metadata with: explicit (preview
+ * --api-version), else the lowest of the connection version (SF_ORG_API_VERSION, org-api-version
+ * config, or the max version of the target org), sourceApiVersion of sfdx-project.json and the
+ * version of the package.xml files.
+ */
+export async function resolveDeployApiVersion(
+  options: Pick<ApplyReplacementRulesOptions, 'apiVersion' | 'conn' | 'targetUsername' | 'packageXmlFiles'>
+): Promise<number | null> {
   if (options.apiVersion) {
     return options.apiVersion;
   }
+  const candidates: number[] = [];
+  const connectionVersion = await resolveConnectionApiVersion(options);
+  if (connectionVersion) {
+    candidates.push(connectionVersion);
+  }
+  try {
+    if (fs.existsSync('sfdx-project.json')) {
+      const sourceApiVersion = parseApiVersion((await fs.readJson('sfdx-project.json'))?.sourceApiVersion);
+      if (sourceApiVersion) {
+        candidates.push(sourceApiVersion);
+      }
+    }
+  } catch {
+    // Unreadable project file: the other versions decide
+  }
+  for (const packageXmlFile of options.packageXmlFiles || []) {
+    try {
+      const match = /<version>\s*([\d.]+)\s*<\/version>/.exec(await fs.readFile(packageXmlFile, 'utf8'));
+      const manifestVersion = parseApiVersion(match?.[1]);
+      if (manifestVersion) {
+        candidates.push(manifestVersion);
+      }
+    } catch {
+      // Missing package.xml: the other versions decide
+    }
+  }
+  return candidates.length > 0 ? Math.min(...candidates) : null;
+}
+
+async function resolveConnectionApiVersion(options: Pick<ApplyReplacementRulesOptions, 'conn' | 'targetUsername'>): Promise<number | null> {
   const fromEnv = parseApiVersion(process.env.SF_ORG_API_VERSION);
   if (fromEnv) {
     return fromEnv;
@@ -308,7 +349,7 @@ export async function resolveDeployApiVersion(options: Pick<ApplyReplacementRule
       return parseApiVersion(await conn.retrieveMaxApiVersion());
     }
   } catch {
-    // Unknown version: built-in rules are skipped
+    // Unknown org version: the source versions decide
   }
   return null;
 }

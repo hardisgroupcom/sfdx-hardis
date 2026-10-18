@@ -7,6 +7,7 @@ import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { ReplacementCommandBase } from '../../../../common/replacementRules/replacementCommandBase.js';
 import { validateReplacementRule } from '../../../../common/replacementRules/ruleConfig.js';
+import { checkRulePlace } from '../../../../common/replacementRules/ruleUpdateUtils.js';
 import {
   applyRuleFields,
   buildRuleFieldsFromFlags,
@@ -39,7 +40,7 @@ The rule is stored in one place:
 
 - \`project\`: \`config/.sfdx-hardis.yml\`
 - \`branch\`: \`config/branches/.sfdx-hardis.<branch>.yml\`, applied only when deploying to that branch
-- \`issue\`: the "sfdx-hardis Replacement Rules" issue of the git provider (work item on Azure DevOps, Pull Request on Bitbucket), applied at the next deployment job without any commit
+- \`issue\`: the "sfdx-hardis Replacement Rules" issue of the git provider (work item on Azure DevOps, Pull Request on Bitbucket), applied at the next deployment job without any commit. It is read only when its author has write access to the repository, and its rules cannot use \`secret\`
 
 See [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) for the full reference.
 
@@ -109,7 +110,7 @@ Required in agent mode: \`--layer\` (and \`--branch\` with \`--layer branch\`), 
       rule.id = flags.id;
     }
 
-    const error = validateReplacementRule(rule);
+    const error = validateReplacementRule(rule) || checkRulePlace(rule, place);
     if (error) {
       throw new SfError(t('replacementRulesInvalidRule', { id: rule.id || '', reason: error }));
     }

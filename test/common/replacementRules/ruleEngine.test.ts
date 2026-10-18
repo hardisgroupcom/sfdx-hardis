@@ -220,6 +220,28 @@ replacementRules:
     expect(read(files.layout)).to.equal(LAYOUT);
   });
 
+  it('reads the metadata with the lowest of the org, project and package.xml versions', async () => {
+    writeConfig('sfdx-project.json', JSON.stringify({ packageDirectories: [{ path: 'force-app', default: true }], sourceApiVersion: '64.0' }));
+    writeConfig('package.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+    <types><members>Get_Cases</members><name>Flow</name></types>
+    <version>62.0</version>
+</Package>
+`);
+    const session = await applyReplacementRules({ targetBranch: 'main', write: false, readIssue: false, packageXmlFiles: ['package.xml'] });
+    expect(session.report.target.apiVersion).to.equal(62);
+    expect(session.report.results.some((result) => result.ruleId === 'builtin-flow-metrics-data-cloud' && result.status === 'changed')).to.equal(true);
+  });
+
+  it('never restores the files of another run during a preview', async () => {
+    await applyReplacementRules({ targetBranch: 'uat', apiVersion: 68, write: true, readIssue: false });
+    expect(read(files.layout)).to.not.include('platformActionList');
+    await applyReplacementRules({ targetBranch: 'uat', apiVersion: 68, write: false, readIssue: false });
+    // The preview left the files of the running deployment alone
+    expect(read(files.layout)).to.not.include('platformActionList');
+    expect(restoreLeftoverReplacementFiles()).to.equal(2);
+  });
+
   it('skips everything with SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true', async () => {
     process.env.SFDX_HARDIS_SKIP_REPLACEMENT_RULES = 'true';
     const session = await applyReplacementRules({ targetBranch: 'main', apiVersion: 60, write: true, readIssue: false });

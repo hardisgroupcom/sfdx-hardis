@@ -47,6 +47,25 @@ export function redactSecrets(text: string): string {
   return result;
 }
 
+/**
+ * Redact the output of a command. A JSON output keeps its structure: only its string values are
+ * redacted, so a short secret like "true" or "100" cannot break the parsing of a result.
+ */
+export function redactCommandOutput(output: string): string {
+  if (registeredSecrets.size === 0 || typeof output !== 'string' || output === '') {
+    return output;
+  }
+  const trimmed = output.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      return JSON.stringify(redactSecretsDeep(JSON.parse(trimmed)), null, 2);
+    } catch {
+      // Not a single JSON document: redacted as text
+    }
+  }
+  return redactSecrets(output);
+}
+
 /** Redact every string of a JSON-like value, without changing its shape */
 export function redactSecretsDeep<T>(value: T): T {
   if (registeredSecrets.size === 0) {

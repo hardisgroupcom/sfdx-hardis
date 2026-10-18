@@ -32,6 +32,9 @@ export async function readIssueRules(options: { useCache?: boolean } = {}): Prom
       const dashboard = await provider.findDashboard(title);
       if (!dashboard) {
         state = { available: true, rules: [] };
+      } else if (!(await provider.isDashboardAuthorTrusted(dashboard))) {
+        // Its rules would reach production without review: ignored, and said in the comments
+        state = { available: true, number: dashboard.id, url: dashboard.url, rules: [], error: t('replacementRulesIssueNotTrusted', { url: dashboard.url }) };
       } else {
         const body = await provider.getDashboardBody(dashboard);
         state = {
@@ -55,6 +58,9 @@ export async function writeIssueRules(rules: ReplacementRule[]): Promise<{ numbe
   const title = provider.getDashboardTitle(REPLACEMENT_RULES_ISSUE_TITLE);
   const body = buildIssueBody(rules, provider.getDashboardFormat());
   let dashboard = await provider.findDashboard(title);
+  if (dashboard && !(await provider.isDashboardAuthorTrusted(dashboard))) {
+    throw new SfError(t('replacementRulesIssueNotTrusted', { url: dashboard.url }));
+  }
   if (dashboard) {
     await provider.updateDashboardBody(dashboard, title, body);
   } else {

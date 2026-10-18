@@ -486,6 +486,14 @@ export abstract class GitProviderRoot {
     throw new SfError(`Method updateDashboardBody is not implemented on ${this.getLabel()}`);
   }
 
+  // True when the dashboard was created by someone allowed to change the repository. Rules read from
+  // a dashboard reach the deployments without review: an issue anyone can open must not be trusted.
+  // Azure DevOps work items and Bitbucket Pull Requests already need write access to be created.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async isDashboardAuthorTrusted(dashboard: DashboardRef): Promise<boolean> {
+    return true;
+  }
+
   // Current body of a dashboard, as people may have edited it in the web UI (the replacement rules
   // issue is read from its body)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
