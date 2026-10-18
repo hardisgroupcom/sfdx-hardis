@@ -33,6 +33,7 @@ SFDX_HARDIS_BRANCH="${SFDX_HARDIS_BRANCH:-$(git -C "$ROOT" branch --show-current
 STEPS="${STEPS:-org repo issue check deploy assert-org preview local report}"
 SECRET_VALUE="${SECRET_VALUE:-rr-e2e-secret-$(date +%s)-Zq9}"
 mkdir -p "$LOGS"
+# shellcheck source=/dev/null
 [ -f "$LOGS/run.env" ] && source "$LOGS/run.env"
 export LOGS
 
@@ -174,6 +175,8 @@ fi
 
 # --------------------------------------------------------------- assert-org: what the org holds now
 check_org_values() {
+  # viewsetup is kept in the signature but not asserted: a scratch org can keep ViewSetup off (see the local step)
+  # shellcheck disable=SC2034
   local prefix="$1" endpoint="$2" single="$3" secret="$4" issue="$5" host="$6" viewsetup="$7"
   sf data query --use-tooling-api -o "$RR_ORG" --json -q "SELECT Name, Value FROM ExternalString WHERE Name LIKE 'E2E_%'" >"$LOGS/$prefix-labels.json" 2>&1
   local labels="$LOGS/$prefix-labels.json"
