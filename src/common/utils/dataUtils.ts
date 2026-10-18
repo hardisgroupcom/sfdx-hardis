@@ -213,6 +213,21 @@ export async function findDataWorkspaceByName(projectName: string, throwIfNotFou
   throw new SfError(`There is no sfdmu folder named ${projectName} in your workspace (${DATA_FOLDERS_ROOT})`);
 }
 
+/**
+ * Folder of an SFDMU workspace: a workspace name under scripts/data, or a project-relative path to
+ * an SFDMU folder (dataPackages entries can point outside scripts/data). Null when neither exists.
+ */
+export async function resolveDataWorkspacePath(sfdmuProject: string): Promise<string | null> {
+  if (!sfdmuProject) {
+    return null;
+  }
+  const workspacePath = await findDataWorkspaceByName(sfdmuProject, false);
+  if (workspacePath) {
+    return workspacePath;
+  }
+  return fs.existsSync(sfdmuProject) && fs.statSync(sfdmuProject).isDirectory() ? sfdmuProject : null;
+}
+
 export async function hasDataWorkspaces(cwd: string = process.cwd()) {
   const dataFolderToSearch = path.join(cwd, 'scripts', 'data');
   if (!fs.existsSync(dataFolderToSearch)) {

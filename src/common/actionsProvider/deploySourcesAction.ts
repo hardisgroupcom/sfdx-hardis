@@ -30,7 +30,7 @@ export class DeploySourcesAction extends ActionsProvider {
     }
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
-    const config = await getConfig('user');
+    const config = orgInitContext.config || (await getConfig('user'));
     await initOrgMetadatas(
       config,
       orgInitContext.orgUsername,

@@ -124,6 +124,7 @@ In agent mode:
           uxLog('action', this, c.cyan(t('orgInitNoStepSelected')));
           return { status: 0, orgUsername, orgType, steps: [], outputString: 'No step selected' };
         }
+        uxLog('action', this, c.cyan(t('orgInitSelectedSteps', { count: (stepIds || []).length })));
       }
     }
     const results = await runOrgInitSteps({

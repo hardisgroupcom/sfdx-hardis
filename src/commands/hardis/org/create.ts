@@ -11,7 +11,7 @@ import * as path from 'path';
 import { clearCache } from '../../../common/cache/index.js';
 import { elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, uxLog } from '../../../common/utils/index.js';
 import { openOrgInBrowser, promptUserEmail } from '../../../common/utils/orgUtils.js';
-import { runOrgInitSteps } from '../../../common/utils/orgInitUtils.js';
+import { assertOrgInitStepsValid, runOrgInitSteps } from '../../../common/utils/orgInitUtils.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
 import { getConfig } from '../../../config/index.js';
 import { t } from '../../../common/utils/i18n.js';
@@ -121,6 +121,8 @@ In agent mode:
     this.agentMode = flags.agent === true;
     elapseStart(`Create and initialize sandbox org`);
     await this.initConfig();
+    // A mistake in the steps is found before the sandbox is created, not after
+    await assertOrgInitStepsValid(this.configInfo, 'sandbox');
     await this.createSandboxOrg();
     try {
       await this.updateSandboxOrgUser();

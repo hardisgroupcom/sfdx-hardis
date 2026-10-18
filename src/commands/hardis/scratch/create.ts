@@ -19,7 +19,13 @@ import {
   uxLog,
 } from '../../../common/utils/index.js';
 import { getScratchSignupEnv, openOrgInBrowser, promptUserEmail } from '../../../common/utils/orgUtils.js';
-import { PROJECT_SCRATCH_DEF_FILE, runOrgInitSteps, validateScratchOrgDef } from '../../../common/utils/orgInitUtils.js';
+import {
+  assertOrgInitStepsValid,
+  PROJECT_SCRATCH_DEF_FILE,
+  resetSourceTracking,
+  runOrgInitSteps,
+  validateScratchOrgDef,
+} from '../../../common/utils/orgInitUtils.js';
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
 import { getOrgSfdxAuthUrl } from '../../../common/utils/credentialUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -47,7 +53,7 @@ Key functionalities:
 - **Custom Scratch Definition:** Dynamically builds project-scratch-def.json files with user-specific configurations including email, username patterns, and org shape settings (set variable **SCRATCH_ORG_SHAPE** to use org shapes).
 - **Scratch Org Definition Check:** Validates \`config/project-scratch-def.json\` against the Salesforce CLI schema before asking the Dev Hub for an org, and lists every issue found.
 - **Initialization Steps:** Runs the org initialization steps of the project in their order: packages, project sources, permission sets, Apex scripts, data, custom commands... They are defined in \`orgInitSteps\` (edit them from the Org Initialization panel of the VS Code extension). Without that key, the steps are built from the older keys \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, \`dataPackages\` and the \`scripts/data/ScratchInit\` folder.
-- **Pool Readiness:** When filling a scratch org pool (\`--pool\`), the steps flagged \`runAtPoolFill\` (all of them by default) run right away, so a scratch org taken from the pool is ready to use. Taking an org from the pool runs the remaining steps.
+- **Pool Readiness:** When filling a scratch org pool (\`--pool\`), the steps flagged \`runAtPoolFill\` (all of them by default) run right away, so a scratch org taken from the pool is ready to use. Taking an org from the pool runs the remaining steps, then resets its source tracking (\`sf project reset tracking\`), so a pull only lists the changes made from then on.
 - **User Configuration:** Automatically configures the scratch org admin user with proper names, email, country settings, and marketing user permissions.
 - **Password Generation:** Creates and stores secure passwords for easy scratch org access during development.
 - **CI/CD Integration:** Provides specialized handling for continuous integration environments including automated cleanup and pool management.
@@ -174,6 +180,11 @@ In agent mode:
         debugMode: this.debugMode,
         config: this.configInfo,
       });
+      // The pool job pushed the sources from its own runner: here, a pull must only list the
+      // changes made from now on, not the whole project
+      if (this.scratchOrgFromPool) {
+        await resetSourceTracking(this.scratchOrgUsername);
+      }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
       uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
@@ -287,16 +298,6 @@ In agent mode:
     // Build project-scratch-def-branch-user.json
     uxLog("action", this, c.cyan(t('buildingCustomProjectScratchDefJson')));
     this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
-    // Salesforce CLI only warns on an invalid definition, then the org creation fails far later
-    const scratchDefIssues = validateScratchOrgDef(this.projectScratchDef);
-    if (scratchDefIssues.length > 0) {
-      throw new SfError(
-        t('scratchOrgDefInvalid', {
-          file: PROJECT_SCRATCH_DEF_FILE,
-          issues: scratchDefIssues.map((issue) => `- ${issue}`).join('\n'),
-        })
-      );
-    }
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
     // Keep only first 15 and last 15 chars if scratch org alias is too long
@@ -360,6 +361,11 @@ In agent mode:
         return;
       }
     }
+
+    // Checked only when a new org is requested: a reused org or one taken from the pool needs no
+    // definition, and a mistake found now does not cost a scratch org
+    this.checkScratchOrgDefinition();
+    await assertOrgInitStepsValid(this.configInfo, 'scratch');
 
     // Fix @salesforce/cli bug: remove shape.zip if found
     const tmpShapeFolder = path.join(os.tmpdir(), 'shape');
@@ -460,6 +466,31 @@ In agent mode:
       this,
       c.cyan(t('createdScratchOrgWithUser', { alias: c.green(this.scratchOrgAlias), username: c.green(this.scratchOrgUsername) }))
     );
+  }
+
+  // Salesforce CLI only warns on an invalid definition, and the org creation then fails far later
+  public checkScratchOrgDefinition() {
+    const validation = validateScratchOrgDef(JSON.parse(fs.readFileSync(PROJECT_SCRATCH_DEF_FILE, 'utf-8')));
+    if (validation.errors.length > 0) {
+      throw new SfError(
+        t('scratchOrgDefInvalid', {
+          file: PROJECT_SCRATCH_DEF_FILE,
+          issues: validation.errors.map((issue) => `- ${issue}`).join('\n'),
+        })
+      );
+    }
+    if (validation.warnings.length > 0) {
+      uxLog(
+        "warning",
+        this,
+        c.yellow(
+          t('scratchOrgDefWarnings', {
+            file: PROJECT_SCRATCH_DEF_FILE,
+            warnings: validation.warnings.map((warning) => `- ${warning}`).join('\n'),
+          })
+        )
+      );
+    }
   }
 
   public buildScratchCreateErrorMessage(createResult) {

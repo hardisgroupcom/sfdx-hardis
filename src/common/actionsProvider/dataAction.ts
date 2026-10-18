@@ -1,9 +1,8 @@
 import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
-import fs from '../utils/fsUtils.js';
 import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
-import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
+import { importData, resolveDataWorkspacePath } from '../utils/dataUtils.js';
 
 export class DataAction extends ActionsProvider {
   public getLabel(): string {
@@ -47,14 +46,4 @@ export class DataAction extends ActionsProvider {
       return { statusCode: 'failed', output: `Error during data import: ${error}` };
     }
   }
-}
-
-// A workspace name under scripts/data, or a project-relative path to an SFDMU folder
-// (dataPackages entries can point outside scripts/data)
-async function resolveDataWorkspacePath(sfdmuProject: string): Promise<string | null> {
-  const workspacePath = await findDataWorkspaceByName(sfdmuProject, false);
-  if (workspacePath) {
-    return workspacePath;
-  }
-  return fs.existsSync(sfdmuProject) && fs.statSync(sfdmuProject).isDirectory() ? sfdmuProject : null;
 }

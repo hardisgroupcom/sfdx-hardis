@@ -22,7 +22,7 @@ export class InstallPackagesAction extends ActionsProvider {
     if (!orgInitContext) {
       return { statusCode: 'failed', skippedReason: t('orgInitStepOutsideOrgInit', { type: cmd.type }) };
     }
-    const config = await getConfig('user');
+    const config = orgInitContext.config || (await getConfig('user'));
     const packages: any[] = config.installedPackages || [];
     if (packages.length === 0) {
       uxLog('log', this, c.grey(t('orgInitNoPackagesToInstall')));

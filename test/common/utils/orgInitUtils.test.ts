@@ -5,7 +5,9 @@ import { ActionsProvider, PrePostCommand } from '../../../src/common/actionsProv
 import { ACTION_TYPES, validateActionParameters } from '../../../src/common/utils/actionUtils.js';
 import { isBuiltInActionType, validateCustomFunctionDefinition } from '../../../src/common/utils/customFunctionUtils.js';
 import { runSingleDeploymentAction, SingleActionRunContext } from '../../../src/common/utils/prePostCommandUtils.js';
+import { resolveDataWorkspacePath } from '../../../src/common/utils/dataUtils.js';
 import {
+  assertOrgInitStepsValid,
   buildLegacyOrgInitSteps,
   checkOrgInitSteps,
   getOrgInitSteps,
@@ -92,6 +94,10 @@ describe('orgInitUtils', () => {
       expect(step.label).to.equal('x');
     });
 
+    it('runs deploy-sources on scratch orgs only by default', () => {
+      expect(normalizeOrgInitStep({ id: 'x', type: 'deploy-sources' }).orgTypes).to.deep.equal(['scratch']);
+    });
+
     it('keeps explicit values and drops unknown org types', () => {
       const step = normalizeOrgInitStep({ id: 'x', type: 'apex', enabled: false, runAtPoolFill: false, orgTypes: ['sandbox', 'production' as any] });
       expect(step.enabled).to.equal(false);
@@ -141,7 +147,7 @@ describe('orgInitUtils', () => {
         normalizeOrgInitStep({ id: 'xml', type: 'remove-packagexml-items' }),
         normalizeOrgInitStep({ id: 'when', type: 'command', command: 'echo', when: 'post-deploy' }),
         normalizeOrgInitStep({ id: 'when', type: 'command', command: 'echo' }),
-        normalizeOrgInitStep({ id: 'sources', type: 'deploy-sources' }),
+        normalizeOrgInitStep({ id: 'sources', type: 'deploy-sources', orgTypes: ['scratch', 'sandbox'] }),
         normalizeOrgInitStep({ id: 'permsets', type: 'assign-permission-sets' }),
         normalizeOrgInitStep({ id: 'unknown', type: 'notAFunction' }),
       ]);
@@ -156,6 +162,46 @@ describe('orgInitUtils', () => {
         normalizeOrgInitStep({ id: 'data', type: 'data', parameters: { sfdmuProject: 'other/Folder' } }),
       ]);
       expect(errors).to.deep.equal([]);
+    });
+  });
+
+  describe('assertOrgInitStepsValid', () => {
+    it('throws before an org is created when an applicable step cannot run', async () => {
+      let error: Error | null = null;
+      try {
+        await assertOrgInitStepsValid(
+          { orgInitSteps: [{ id: 'apex', type: 'apex', parameters: { apexScript: 'scripts/apex/missing.apex' } }] },
+          'scratch'
+        );
+      } catch (e) {
+        error = e as Error;
+      }
+      expect(error?.message).to.contain('apex');
+    });
+
+    it('ignores the steps of the other org type', async () => {
+      await assertOrgInitStepsValid(
+        {
+          orgInitSteps: [
+            { id: 'apex', type: 'apex', parameters: { apexScript: 'scripts/apex/missing.apex' }, orgTypes: ['sandbox'] },
+            { id: 'sources', type: 'deploy-sources' },
+          ],
+        },
+        'scratch'
+      );
+    });
+  });
+
+  describe('resolveDataWorkspacePath', () => {
+    it('finds a workspace by name, a project-relative folder, and refuses a file', async () => {
+      await fs.ensureDir(path.join('scripts', 'data', 'Accounts'));
+      await fs.ensureDir(path.join('other', 'Folder'));
+      await fs.writeFile('notAFolder.json', '{}');
+      // Names resolve under the scripts/data folder of the process start directory, paths from the project
+      expect(await resolveDataWorkspacePath(path.join('scripts', 'data', 'Accounts'))).to.contain('Accounts');
+      expect(await resolveDataWorkspacePath('other/Folder')).to.equal('other/Folder');
+      expect(await resolveDataWorkspacePath('notAFolder.json')).to.equal(null);
+      expect(await resolveDataWorkspacePath('')).to.equal(null);
     });
   });
 
@@ -249,17 +295,29 @@ describe('orgInitUtils', () => {
 
   describe('validateScratchOrgDef', () => {
     it('accepts a valid definition', () => {
-      expect(validateScratchOrgDef({ edition: 'Developer', features: ['EnableSetPasswordInApi'], settings: { lightningExperienceSettings: { enableS1DesktopEnabled: true } } })).to.deep.equal([]);
+      expect(
+        validateScratchOrgDef({
+          edition: 'Developer',
+          features: ['EnableSetPasswordInApi', 'MaxApexCodeSize:20'],
+          settings: { LightningExperienceSettings: { enableS1DesktopEnabled: true } },
+        })
+      ).to.deep.equal({ errors: [], warnings: [] });
     });
 
-    it('reports an unknown settings name and a wrong type', () => {
-      const issues = validateScratchOrgDef({ hasSampleData: 'yes', settings: { notARealSettings: {} } });
-      expect(issues.some((issue) => issue.startsWith('hasSampleData'))).to.equal(true);
-      expect(issues.some((issue) => issue.startsWith('settings.notARealSettings'))).to.equal(true);
+    it('blocks on a wrong type, and only warns on an unknown settings name or feature', () => {
+      const validation = validateScratchOrgDef({
+        hasSampleData: 'yes',
+        features: ['NotARealFeature'],
+        settings: { notARealSettings: {} },
+      });
+      expect(validation.errors.some((issue) => issue.startsWith('hasSampleData'))).to.equal(true);
+      expect(validation.errors.some((issue) => issue.startsWith('settings.'))).to.equal(false);
+      expect(validation.warnings.some((issue) => issue.startsWith('settings.notARealSettings'))).to.equal(true);
+      expect(validation.warnings.some((issue) => issue.startsWith('features.NotARealFeature'))).to.equal(true);
     });
 
     it('refuses a value that is not an object', () => {
-      expect(validateScratchOrgDef([])).to.have.length(1);
+      expect(validateScratchOrgDef([]).errors).to.have.length(1);
     });
 
     it('reads editions, features and settings names from the Salesforce CLI schema', () => {

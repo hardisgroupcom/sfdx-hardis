@@ -32,6 +32,8 @@ export interface OrgInitContext {
   orgType: 'scratch' | 'sandbox';
   projectScratchDef: any;
   debugMode: boolean;
+  // Config the run reads (getConfig('user')), so every step sees the same values
+  config: any;
 }
 
 export interface PrePostCommand {

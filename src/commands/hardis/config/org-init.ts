@@ -91,7 +91,8 @@ The command has no prompt: agent mode behaves the same.
     if (scratchDefFile && !fs.existsSync(scratchDefFile)) {
       throw new SfError(t('fileNotFound', { filePath: scratchDefFile }));
     }
-    const config = await getConfig('project');
+    // Same layers as the commands that run the steps (project, branch, user)
+    const config = await getConfig('user');
     const payload = await getOrgInitConfigPayload(config, scratchDefFile);
     uxLog('other', this, c.grey(JSON.stringify(payload, null, 2)));
     return payload as AnyJson;

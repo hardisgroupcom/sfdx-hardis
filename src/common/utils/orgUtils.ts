@@ -637,27 +637,32 @@ export async function initOrgMetadatas(
   }
 }
 
-// Assign permission sets to user
-export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string) {
+// Assign permission sets to user. Returns the failures ("name: message"), an existing assignment is not one.
+export async function initPermissionSetAssignments(permSets: Array<any>, orgUsername: string): Promise<string[]> {
   uxLog("action", this, c.cyan(t('assigningPermissionSets')));
+  const failures: string[] = [];
   for (const permSet of permSets) {
-    uxLog("action", this, c.cyan(t('assigningToOrgUser', { permSet: c.bold(permSet.name || permSet), orgUsername })));
-    const assignCommand = `sf org assign permset --name ${permSet.name || permSet} --target-org ${orgUsername}`;
+    const permSetName = permSet?.name || permSet;
+    uxLog("action", this, c.cyan(t('assigningToOrgUser', { permSet: c.bold(permSetName), orgUsername })));
+    const assignCommand = `sf org assign permset --name "${permSetName}" --target-org ${orgUsername}`;
     const assignResult = await execSfdxJson(assignCommand, this, {
       fail: false,
       output: false,
     });
-    if (
-      assignResult?.result?.failures?.length > 0 &&
-      !assignResult?.result?.failures[0].message.includes('Duplicate')
-    ) {
-      uxLog(
-        "error",
-        this,
-        c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSet.name || permSet), message: assignResult?.result?.failures[0].message }))
-      );
+    const failureMessage: string = assignResult?.result?.failures?.[0]?.message || '';
+    const errorMessage = failureMessage
+      ? failureMessage.includes('Duplicate')
+        ? ''
+        : failureMessage
+      : assignResult?.status !== 0
+        ? assignResult?.errorMessage || assignResult?.message || 'unknown error'
+        : '';
+    if (errorMessage) {
+      uxLog("error", this, c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSetName), message: errorMessage })));
+      failures.push(`${permSetName}: ${errorMessage}`);
     }
   }
+  return failures;
 }
 
 export async function getOrgAliasUsername(alias: string) {

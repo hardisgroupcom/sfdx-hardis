@@ -1,5 +1,6 @@
 import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
-import { execSfdxJson, uxLog } from '../utils/index.js';
+import { uxLog } from '../utils/index.js';
+import { initPermissionSetAssignments } from '../utils/orgUtils.js';
 import { t } from '../utils/i18n.js';
 import c from 'chalk';
 
@@ -24,26 +25,8 @@ export class AssignPermissionSetsAction extends ActionsProvider {
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
-    const orgUsername = cmd.orgInitContext?.orgUsername || this.customUsernameToUse;
-    const failures: string[] = [];
-    for (const permSetName of listPermissionSetNames(cmd)) {
-      uxLog('action', this, c.cyan(t('assigningToOrgUser', { permSet: c.bold(permSetName), orgUsername })));
-      const assignResult = await execSfdxJson(
-        `sf org assign permset --name ${permSetName}` + (orgUsername ? ` --target-org ${orgUsername}` : ''),
-        this,
-        { fail: false, output: false }
-      );
-      const failureMessage: string = assignResult?.result?.failures?.[0]?.message || '';
-      // An assignment that already exists is what we want, not a failure
-      if (failureMessage && !failureMessage.includes('Duplicate')) {
-        uxLog('error', this, c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSetName), message: failureMessage })));
-        failures.push(`${permSetName}: ${failureMessage}`);
-      } else if (!failureMessage && assignResult?.status !== 0) {
-        const errorMessage = assignResult?.errorMessage || assignResult?.message || 'unknown error';
-        uxLog('error', this, c.red(t('errorAssigningPermSetToUser', { permSet: c.bold(permSetName), message: errorMessage })));
-        failures.push(`${permSetName}: ${errorMessage}`);
-      }
-    }
+    const orgUsername = cmd.orgInitContext?.orgUsername || this.customUsernameToUse || '';
+    const failures = await initPermissionSetAssignments(listPermissionSetNames(cmd), orgUsername);
     if (failures.length > 0) {
       return { statusCode: 'failed', output: failures.join('\n') };
     }

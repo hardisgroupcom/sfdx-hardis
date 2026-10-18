@@ -5,7 +5,7 @@ import * as yaml from 'js-yaml';
 import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
-import { findDataWorkspaceByName } from './dataUtils.js';
+import { resolveDataWorkspacePath } from './dataUtils.js';
 import { DEPLOYMENT_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
 import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
@@ -259,7 +259,7 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
     if (!sfdmuProject) {
       errors.push(t('actionValidationNoSfdmuProject'));
     } else {
-      const workspace = await findDataWorkspaceByName(sfdmuProject, false);
+      const workspace = await resolveDataWorkspacePath(sfdmuProject);
       if (!workspace) {
         errors.push(t('sfdmuWorkspaceNotFound', { name: sfdmuProject }));
       }

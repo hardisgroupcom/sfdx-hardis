@@ -5,9 +5,8 @@ import { createRequire } from 'module';
 import * as path from 'path';
 import { ActionResult, ActionsProvider, buildActionOutput, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { ORG_INIT_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
-import { elapseEnd, elapseStart, uxLog } from './index.js';
+import { elapseEnd, elapseStart, execSfdxJson, uxLog } from './index.js';
 import { uxLogTableWithReport } from './filesUtils.js';
-import { findDataWorkspaceByName } from './dataUtils.js';
 import fs from './fsUtils.js';
 import { t } from './i18n.js';
 
@@ -96,6 +95,7 @@ export async function getOrgInitConfigPayload(config: any, scratchDefFile?: stri
       exists: scratchDef !== null,
       content: scratchDef?.content ?? null,
       issues: scratchDef?.issues || [],
+      warnings: scratchDef?.warnings || [],
     },
     scratchOrgDuration: config?.scratchOrgDuration ?? null,
     scratchDefHints: getScratchOrgDefHints(),
@@ -200,7 +200,8 @@ export function normalizeOrgInitStep(rawStep: Partial<PrePostCommand>): PrePostC
   const orgTypes = (Array.isArray(step.orgTypes) ? step.orgTypes : []).filter((orgType) =>
     ALL_ORG_TYPES.includes(orgType)
   );
-  step.orgTypes = orgTypes.length > 0 ? orgTypes : [...ALL_ORG_TYPES];
+  // A sandbox gets its metadata from a backpromote: deploy-sources defaults to scratch orgs only
+  step.orgTypes = orgTypes.length > 0 ? orgTypes : step.type === 'deploy-sources' ? ['scratch'] : [...ALL_ORG_TYPES];
   return step;
 }
 
@@ -224,6 +225,15 @@ export async function checkOrgInitSteps(steps: PrePostCommand[]): Promise<OrgIni
     errors.push(...(await checkOrgInitStepType(step)).map((message) => ({ stepId, message })));
   }
   return errors;
+}
+
+/**
+ * Throws when a step that applies to this org type cannot run (missing Apex script, unknown type...).
+ * Called before an org is created, so a typo never costs a scratch org or a sandbox.
+ */
+export async function assertOrgInitStepsValid(config: any, orgType: OrgInitOrgType): Promise<void> {
+  const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType, phase: 'all' });
+  await throwOnDefinitionErrors(steps);
 }
 
 /** Steps that apply to the org type and the phase, in their run order. */
@@ -268,14 +278,7 @@ export async function runOrgInitSteps(options: OrgInitRunOptions): Promise<OrgIn
     uxLog('action', this, c.cyan(t('orgInitNoApplicableSteps', { orgType: options.orgType })));
     return [];
   }
-  const definitionErrors = await checkOrgInitSteps(steps);
-  if (definitionErrors.length > 0) {
-    throw new SfError(
-      t('orgInitInvalidSteps', {
-        errors: definitionErrors.map((error) => `- [${error.stepId}] ${error.message}`).join('\n'),
-      })
-    );
-  }
+  await throwOnDefinitionErrors(steps);
   uxLog(
     'action',
     this,
@@ -292,6 +295,29 @@ export async function runOrgInitSteps(options: OrgInitRunOptions): Promise<OrgIn
   return results;
 }
 
+/**
+ * Makes the source tracking of an org start now: a pull then only lists the changes made from now on.
+ * Used when a scratch org is taken from the pool, whose sources the pool job pushed from its own
+ * runner. The starting point is kept in the local project, so it runs where the org is taken.
+ * A failure is a warning: the org stays usable.
+ */
+export async function resetSourceTracking(orgUsername: string): Promise<boolean> {
+  uxLog('action', this, c.cyan(t('orgInitResettingSourceTracking', { orgUsername: c.green(orgUsername) })));
+  const resetRes = await execSfdxJson(`sf project reset tracking --target-org ${orgUsername} --no-prompt`, this, {
+    fail: false,
+    output: false,
+  });
+  if (resetRes?.status !== 0) {
+    uxLog(
+      'warning',
+      this,
+      c.yellow(t('orgInitSourceTrackingResetFailed', { orgUsername, message: resetRes?.message || resetRes?.errorMessage || '' }))
+    );
+    return false;
+  }
+  return true;
+}
+
 /** Scratch org or sandbox, read from the Organization record. Production is refused by callers. */
 export async function detectOrgInitOrgType(conn: Connection): Promise<OrgInitOrgType | 'production'> {
   const orgRes = await conn.query('SELECT IsSandbox, TrialExpirationDate FROM Organization LIMIT 1');
@@ -306,7 +332,9 @@ export async function detectOrgInitOrgType(conn: Connection): Promise<OrgInitOrg
 }
 
 /** Reads config/project-scratch-def.json, or returns null when the file does not exist. */
-export function readProjectScratchDef(filePath: string = PROJECT_SCRATCH_DEF_FILE): { content: any; issues: string[] } | null {
+export function readProjectScratchDef(
+  filePath: string = PROJECT_SCRATCH_DEF_FILE
+): { content: any; issues: string[]; warnings: string[] } | null {
   if (!fs.existsSync(filePath)) {
     return null;
   }
@@ -314,36 +342,31 @@ export function readProjectScratchDef(filePath: string = PROJECT_SCRATCH_DEF_FIL
   try {
     content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (e) {
-    return { content: null, issues: [t('scratchOrgDefNotJson', { message: (e as Error).message })] };
+    return { content: null, issues: [t('scratchOrgDefNotJson', { message: (e as Error).message })], warnings: [] };
   }
-  return { content, issues: validateScratchOrgDef(content) };
+  const validation = validateScratchOrgDef(content);
+  return { content, issues: validation.errors, warnings: validation.warnings };
 }
 
 /**
- * Issues of a scratch org definition, empty when it is valid.
- * sfdx-core only warns on an invalid file: scratch:create fails before asking for an org instead.
+ * Validates a scratch org definition.
+ * errors: what the Salesforce CLI schema refuses (wrong types, not an object): scratch:create
+ * fails before asking for an org, where sfdx-core only warns.
+ * warnings: settings names and features the bundled Salesforce CLI schema does not know. Salesforce
+ * can be newer than the schema, so they never block.
  */
-export function validateScratchOrgDef(content: any): string[] {
+export function validateScratchOrgDef(content: any): { errors: string[]; warnings: string[] } {
   if (!content || typeof content !== 'object' || Array.isArray(content)) {
-    return [t('scratchOrgDefNotObject')];
+    return { errors: [t('scratchOrgDefNotObject')], warnings: [] };
   }
   const definition = { ...content };
   delete definition['$schema'];
-  const issues: string[] = [];
+  const errors: string[] = [];
   const result = ScratchOrgDefSchema.safeParse(definition);
   if (!result.success) {
-    issues.push(...result.error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`));
+    errors.push(...result.error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`));
   }
-  // The zod schema lets unknown settings through: Salesforce refuses them when it creates the org
-  const knownSettings = getScratchOrgDefHints().settingsNames;
-  if (knownSettings.length > 0 && definition.settings && typeof definition.settings === 'object') {
-    for (const settingsName of Object.keys(definition.settings)) {
-      if (!knownSettings.includes(settingsName)) {
-        issues.push(`settings.${settingsName}: ${t('scratchOrgDefUnknownSettings')}`);
-      }
-    }
-  }
-  return issues;
+  return { errors, warnings: listUnknownScratchOrgDefValues(definition) };
 }
 
 /** Values the panel offers in its scratch org definition form, read from the sfdx-core schema. */
@@ -420,17 +443,43 @@ async function checkBuiltInStepParameters(step: PrePostCommand): Promise<string[
     const hasPermissionSets = Array.isArray(permissionSets) ? permissionSets.length > 0 : !!permissionSets;
     return hasPermissionSets ? [] : [t('orgInitNoPermissionSets', { label: step.label })];
   }
-  if (type === 'data') {
-    // A data step can also point to a project-relative SFDMU folder (dataPackages entries)
-    const sfdmuProject = step.parameters?.sfdmuProject || '';
-    if (!sfdmuProject) {
-      return [t('actionValidationNoSfdmuProject')];
-    }
-    const workspace = (await findDataWorkspaceByName(sfdmuProject, false)) || (fs.existsSync(sfdmuProject) ? sfdmuProject : null);
-    return workspace ? [] : [t('sfdmuWorkspaceNotFound', { name: sfdmuProject })];
-  }
   const { validateActionParameters } = await import('./actionUtils.js');
   return await validateActionParameters(step);
+}
+
+async function throwOnDefinitionErrors(steps: PrePostCommand[]): Promise<void> {
+  const definitionErrors = await checkOrgInitSteps(steps);
+  if (definitionErrors.length > 0) {
+    throw new SfError(
+      t('orgInitInvalidSteps', {
+        errors: definitionErrors.map((error) => `- [${error.stepId}] ${error.message}`).join('\n'),
+      })
+    );
+  }
+}
+
+// Settings names and features the bundled schema does not list, compared without case
+function listUnknownScratchOrgDefValues(definition: any): string[] {
+  const hints = getScratchOrgDefHints();
+  const warnings: string[] = [];
+  const knownSettings = hints.settingsNames.map((name) => name.toLowerCase());
+  if (knownSettings.length > 0 && definition.settings && typeof definition.settings === 'object') {
+    for (const settingsName of Object.keys(definition.settings)) {
+      if (!knownSettings.includes(settingsName.toLowerCase())) {
+        warnings.push(`settings.${settingsName}: ${t('scratchOrgDefUnknownSettings')}`);
+      }
+    }
+  }
+  const knownFeatures = hints.features.map((feature) => feature.toLowerCase());
+  if (knownFeatures.length > 0 && Array.isArray(definition.features)) {
+    for (const feature of definition.features) {
+      const name = String(feature).split(':')[0].toLowerCase();
+      if (!knownFeatures.includes(String(feature).toLowerCase()) && !knownFeatures.includes(`${name}:<value>`)) {
+        warnings.push(`features.${feature}: ${t('scratchOrgDefUnknownFeature')}`);
+      }
+    }
+  }
+  return warnings;
 }
 
 async function runSelectedSteps(steps: PrePostCommand[], options: OrgInitRunOptions): Promise<OrgInitStepResult[]> {
@@ -470,6 +519,7 @@ async function runOneStep(step: PrePostCommand, options: OrgInitRunOptions): Pro
       orgType: options.orgType,
       projectScratchDef: options.projectScratchDef || {},
       debugMode: options.debugMode === true,
+      config: options.config,
     },
   };
   const provider = await ActionsProvider.buildActionInstance(cmd);

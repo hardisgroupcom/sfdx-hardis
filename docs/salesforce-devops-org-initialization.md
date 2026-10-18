@@ -124,3 +124,5 @@ When `orgInitSteps` is not defined, sfdx-hardis builds the steps from the older 
 The Org Initialization panel shows that list. The first save writes `orgInitSteps` and removes `initPermissionSets`, `scratchOrgInitApexScripts` and `sandboxOrgInitApexScripts`. Once `orgInitSteps` exists, the older properties are ignored for org initialization.
 
 All these steps now run when the scratch org pool is filled. Before, the pool only installed the packages and the rest ran when someone took the org.
+
+The pool job pushes the sources from its own runner. When you take a scratch org from the pool, sfdx-hardis resets its source tracking (`sf project reset tracking`), so a pull only lists the changes made after you took it.
