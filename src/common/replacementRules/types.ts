@@ -125,7 +125,9 @@ export interface ReplacementWarning {
 
 export interface ReplacementRulesReport {
   target: ReplacementTarget;
-  skipped?: 'env' | 'no-rules';
+  skipped?: 'env' | 'config' | 'no-rules';
+  // Config file holding skipReplacementRules: true, when skipped is 'config'
+  skippedBy?: string;
   results: ReplacementFileResult[];
   warnings: ReplacementWarning[];
   // Rules that applied, with the number of files they changed

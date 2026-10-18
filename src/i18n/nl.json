@@ -3616,6 +3616,7 @@
   "replacementRulesSelectRuleToUpdate": "Bij te werken vervangingsregel",
   "replacementRulesSelectType": "Wat moet de regel doen?",
   "replacementRulesSelectValueSource": "Waar komt de waarde vandaan?",
+  "replacementRulesSkippedByConfig": "Vervangingsregels overgeslagen ({{key}}: true in {{file}})",
   "replacementRulesSkippedByEnv": "Vervangingsregels overgeslagen ({{variable}}=true)",
   "replacementRulesTextMatches": "{{count}} overeenkomsten",
   "replacementRulesTypeText": "Een tekst of reguliere expressie zoeken en vervangen, in elk bestand",

@@ -26,6 +26,7 @@ import {
 } from './types.js';
 
 export const REPLACEMENT_RULES_CONFIG_KEY = 'replacementRules';
+export const SKIP_REPLACEMENT_RULES_CONFIG_KEY = 'skipReplacementRules';
 const RULE_ID_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 const PROJECT_CONFIG_CANDIDATES = ['.sfdx-hardis.yml', '.sfdx-hardis.yaml', 'config/.sfdx-hardis.yaml', 'config/.sfdx-hardis.yml'];
 
@@ -59,6 +60,22 @@ export function resolveBranchConfigFile(branch: string): string {
 export async function readProjectReplacementRules(): Promise<ReplacementRule[]> {
   const config = await getConfig('project');
   return normalizeRuleList(config?.[REPLACEMENT_RULES_CONFIG_KEY]);
+}
+
+/**
+ * The config file that turns every replacement rule off (`skipReplacementRules: true`), built-in ones
+ * included: the branch file of the target, else the project config (remote `extends` included). Null when none does.
+ */
+export async function findSkipReplacementRulesFile(targetBranch: string | null): Promise<string | null> {
+  if (targetBranch) {
+    const branchFile = resolveBranchConfigFile(targetBranch);
+    const branchValue = readYamlFile(branchFile)[SKIP_REPLACEMENT_RULES_CONFIG_KEY];
+    if (branchValue != null) {
+      return branchValue === true ? branchFile : null;
+    }
+  }
+  const config = await getConfig('project');
+  return config?.[SKIP_REPLACEMENT_RULES_CONFIG_KEY] === true ? resolveProjectConfigFile() : null;
 }
 
 export function readBranchReplacementRules(branch: string): ReplacementRule[] {

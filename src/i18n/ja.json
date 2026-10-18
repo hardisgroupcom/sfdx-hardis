@@ -3614,6 +3614,7 @@
   "replacementRulesSelectRuleToUpdate": "更新する置換ルール",
   "replacementRulesSelectType": "ルールで何を行いますか?",
   "replacementRulesSelectValueSource": "値の取得元はどこですか?",
+  "replacementRulesSkippedByConfig": "置換ルールをスキップしました ({{file}} の {{key}}: true)",
   "replacementRulesSkippedByEnv": "置換ルールをスキップしました ({{variable}}=true)",
   "replacementRulesTextMatches": "{{count}} 件一致",
   "replacementRulesTypeText": "任意のファイル内のテキストまたは正規表現を検索して置換する",

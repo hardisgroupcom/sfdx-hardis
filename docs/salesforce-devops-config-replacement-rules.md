@@ -18,6 +18,7 @@ description: With sfdx-hardis, change metadata files right before each deploymen
 - [Built-in rules](#built-in-rules)
 - [Commands and VS Code panel](#commands-and-vs-code-panel)
 - [Pull Request comments](#pull-request-comments)
+- [Turn every rule off](#turn-every-rule-off)
 - [Good to know](#good-to-know)
 
 ---
@@ -35,6 +36,8 @@ They apply to:
 - [Backpromote](salesforce-devops-backpromote.md) deployments to developer sandboxes.
 
 Only the files that are deployed are changed (the components of the package.xml, so a delta deployment stays a delta deployment).
+
+Your own rules only exist once you write them. [Built-in rules](#built-in-rules) are on by default, without any configuration. If they cause trouble, [turn every rule off](#turn-every-rule-off) with one setting.
 
 Rules are configured from the **Replacement Rules** panel of VS Code (settings menu of the DevOps Pipeline), or with [commands](#commands-and-vs-code-panel).
 
@@ -237,9 +240,25 @@ The deployment check and deployment comments have a **Replacement rules** sectio
 
 ---
 
+### Turn every rule off
+
+To stop all replacement rules at once, built-in ones included, for example while you investigate a deployment that behaves differently than expected:
+
+- In `config/.sfdx-hardis.yml`, for every org of the project:
+
+  ```yaml
+  skipReplacementRules: true
+  ```
+
+- In the branch config file of one major org (`config/branches/.sfdx-hardis.uat.yml`), for that org only. `skipReplacementRules: false` there runs the rules for that org even when the project file skips them.
+- With the CI/CD variable `SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true`, without a commit. It wins over the config files.
+
+The files are then deployed exactly as git holds them, and the Pull Request comments say the rules were skipped. To turn off only one rule, set `enabled: false` on its id instead (see [Built-in rules](#built-in-rules)).
+
+---
+
 ### Good to know
 
 - Files are changed in place during the deployment and always put back, also when the deployment fails or the job is interrupted. A run killed before restoring them (power loss) is repaired by the next run in the same folder.
 - A plain scratch org push (source tracking, without manifest) does not apply the rules: tracking would record the changed files, and the restored files would then look modified at every push.
-- `SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true` skips every rule, built-in ones included. The Pull Request comment says so.
 - Native `replacements` of `sfdx-project.json` keep working: sf CLI applies them when building the deployment.

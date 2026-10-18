@@ -4049,6 +4049,17 @@
       "title": "Skip Minimize Profiles",
       "type": "array"
     },
+    "skipReplacementRules": {
+      "$id": "#/properties/skipReplacementRules",
+      "default": false,
+      "description": "Skips every replacement rule (Beta), built-in ones included, before deployments, scratch org pushes, org init and backpromote. Set it in config/.sfdx-hardis.yml for the whole project, or in the branch config file of one major org. Same effect as the env variable SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true. The Pull Request comments say the rules were skipped.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/#turn-every-rule-off",
+      "examples": [
+        true
+      ],
+      "title": "Skip replacement rules (Beta)",
+      "type": "boolean"
+    },
     "skipUpdateForceIgnore": {
       "$id": "#/properties/skipUpdateForceIgnore",
       "default": false,

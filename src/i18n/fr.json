@@ -3616,6 +3616,7 @@
   "replacementRulesSelectRuleToUpdate": "Règle de remplacement à mettre à jour",
   "replacementRulesSelectType": "Que doit faire la règle ?",
   "replacementRulesSelectValueSource": "D'où vient la valeur ?",
+  "replacementRulesSkippedByConfig": "Règles de remplacement ignorées ({{key}}: true dans {{file}})",
   "replacementRulesSkippedByEnv": "Règles de remplacement ignorées ({{variable}}=true)",
   "replacementRulesTextMatches": "{{count}} correspondances",
   "replacementRulesTypeText": "Rechercher et remplacer un texte ou une expression régulière, dans n'importe quel fichier",

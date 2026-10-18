@@ -14,6 +14,9 @@ export function buildReplacementRulesMarkdown(report: ReplacementRulesReport | n
   if (report.skipped === 'env') {
     return `⚠️ Replacement rules were skipped for ${target} (SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true)`;
   }
+  if (report.skipped === 'config') {
+    return `⚠️ Replacement rules were skipped for ${target} (\`skipReplacementRules: true\` in \`${report.skippedBy}\`)`;
+  }
   const applied = report.appliedRules;
   const warnings = report.warnings;
   if (applied.length === 0 && warnings.length === 0) {

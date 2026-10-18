@@ -5,6 +5,7 @@ import * as path from 'path';
 import { applyReplacementRules } from '../../../src/common/replacementRules/ruleEngine.js';
 import { restoreLeftoverReplacementFiles } from '../../../src/common/replacementRules/fileBackup.js';
 import { buildReplacementRulesMarkdown } from '../../../src/common/replacementRules/replacementReport.js';
+import { findSkipReplacementRulesFile } from '../../../src/common/replacementRules/ruleConfig.js';
 import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 import { clearRegisteredSecrets, redactSecrets } from '../../../src/common/utils/secretMaskingUtils.js';
 
@@ -290,5 +291,23 @@ replacementRules:
     expect(session.report.skipped).to.equal('env');
     expect(read(files.flow)).to.equal(FLOW);
     expect(buildReplacementRulesMarkdown(session.report)).to.include('skipped');
+  });
+
+  it('skips everything with skipReplacementRules: true in the project config', async () => {
+    fs.appendFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), '\nskipReplacementRules: true\n');
+    const session = await applyReplacementRules({ targetBranch: 'main', apiVersion: 60, write: true, readIssue: false });
+    expect(session.report.skipped).to.equal('config');
+    expect(read(files.flow)).to.equal(FLOW);
+    expect(buildReplacementRulesMarkdown(session.report)).to.include('skipReplacementRules: true');
+  });
+
+  it('reads skipReplacementRules in the branch file of the target before the project config', async () => {
+    fs.appendFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), '\nskipReplacementRules: true\n');
+    expect(await findSkipReplacementRulesFile('uat')).to.equal(path.join('config', 'branches', '.sfdx-hardis.uat.yml'));
+    expect(await findSkipReplacementRulesFile('main')).to.equal(null);
+    fs.appendFileSync(path.join(projectDir, 'config', '.sfdx-hardis.yml'), '\nskipReplacementRules: true\n');
+    fs.appendFileSync(path.join(projectDir, 'config', 'branches', '.sfdx-hardis.main.yml'), '\nskipReplacementRules: false\n');
+    expect(await findSkipReplacementRulesFile('main')).to.equal(null);
+    expect(await findSkipReplacementRulesFile(null)).to.equal('config/.sfdx-hardis.yml');
   });
 });

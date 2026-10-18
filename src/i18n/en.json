@@ -3620,6 +3620,7 @@
   "replacementRulesSelectRuleToUpdate": "Replacement rule to update",
   "replacementRulesSelectType": "What should the rule do?",
   "replacementRulesSelectValueSource": "Where does the value come from?",
+  "replacementRulesSkippedByConfig": "Replacement rules skipped ({{key}}: true in {{file}})",
   "replacementRulesSkippedByEnv": "Replacement rules skipped ({{variable}}=true)",
   "replacementRulesTextMatches": "{{count}} matches",
   "replacementRulesTypeText": "Find and replace a text or a regular expression, in any file",

@@ -19,10 +19,12 @@ import { removeFlowEnds } from './flowEndsHandler.js';
 import { ReplacementFileBackup, restoreLeftoverReplacementFiles } from './fileBackup.js';
 import { readIssueRules } from './issueRulesStore.js';
 import {
+  findSkipReplacementRulesFile,
   mergeReplacementRules,
   readBranchReplacementRules,
   readProjectReplacementRules,
   ReplacementRulesSource,
+  SKIP_REPLACEMENT_RULES_CONFIG_KEY,
   toFileList,
   validateReplacementRule,
 } from './ruleConfig.js';
@@ -107,6 +109,14 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
 
   // Target and rules
   const target = await resolveTarget(options.targetBranch, null);
+  const skipFile = await findSkipReplacementRulesFile(target.targetBranch);
+  if (skipFile) {
+    session.report.skipped = 'config';
+    session.report.skippedBy = skipFile;
+    session.report.target = target;
+    uxLog('warning', commandThis, c.yellow(t('replacementRulesSkippedByConfig', { key: SKIP_REPLACEMENT_RULES_CONFIG_KEY, file: skipFile })));
+    return session;
+  }
   const { rules, warnings, issue } = await loadEffectiveRules(target.targetBranch, { readIssue: options.readIssue !== false });
   session.report.warnings.push(...warnings);
   session.report.issue = issue;

@@ -3616,6 +3616,7 @@
   "replacementRulesSelectRuleToUpdate": "Regla de reemplazo que actualizar",
   "replacementRulesSelectType": "¿Qué debe hacer la regla?",
   "replacementRulesSelectValueSource": "¿De dónde procede el valor?",
+  "replacementRulesSkippedByConfig": "Reglas de reemplazo omitidas ({{key}}: true en {{file}})",
   "replacementRulesSkippedByEnv": "Reglas de reemplazo omitidas ({{variable}}=true)",
   "replacementRulesTextMatches": "{{count}} coincidencias",
   "replacementRulesTypeText": "Buscar y reemplazar un texto o una expresión regular, en cualquier archivo",

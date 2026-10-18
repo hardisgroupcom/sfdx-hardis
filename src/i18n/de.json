@@ -3615,6 +3615,7 @@
   "replacementRulesSelectRuleToUpdate": "Zu aktualisierende Ersetzungsregel",
   "replacementRulesSelectType": "Was soll die Regel tun?",
   "replacementRulesSelectValueSource": "Woher stammt der Wert?",
+  "replacementRulesSkippedByConfig": "Ersetzungsregeln übersprungen ({{key}}: true in {{file}})",
   "replacementRulesSkippedByEnv": "Ersetzungsregeln übersprungen ({{variable}}=true)",
   "replacementRulesTextMatches": "{{count}} Treffer",
   "replacementRulesTypeText": "Einen Text oder regulären Ausdruck in beliebigen Dateien suchen und ersetzen",
