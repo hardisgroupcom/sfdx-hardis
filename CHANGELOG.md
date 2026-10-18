@@ -4,6 +4,7 @@
 
 - [Org initialization](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/): one ordered list of steps sets up new scratch orgs and sandboxes, edited from the new Org Initialization panel of VS Code.
   - New [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/): run these steps on an existing scratch org or sandbox.
+  - New [hardis:config:org-init](https://sfdx-hardis.cloudity.com/hardis/config/org-init/): the steps and the scratch org definition for a UI, with the languages, countries and releases of the Dev Hub, and settings or org shape features read from an org.
   - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): a scratch org taken from the pool is now fully initialized with a clean source tracking, and errors in the scratch org definition or the steps are reported before the org is requested, and a project without devHubAlias can create scratch orgs again.
   - [hardis:work:new](https://sfdx-hardis.cloudity.com/hardis/work/new/): no longer offers to initialize a selected sandbox.
 - New [hardis:ticket:post-comment](https://sfdx-hardis.cloudity.com/hardis/ticket/post-comment/): post a markdown comment on JIRA, Azure Boards, ServiceNow or Aha! tickets, or update the one posted before.

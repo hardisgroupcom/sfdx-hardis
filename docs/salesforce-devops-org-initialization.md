@@ -73,6 +73,13 @@ While the steps run, `SF_TARGET_ORG`, `SFDX_HARDIS_ORG_USERNAME` and `SFDX_HARDI
 
 `config/project-scratch-def.json` defines the edition, the features and the settings of the scratch orgs. The panel shows a form for the main fields and a JSON editor for `settings`, and checks the file against the Salesforce CLI schema before saving it.
 
+- **Language, country and release** are picked from lists read from your default Dev Hub (or your default org): its user languages and countries, and its API versions with their release names.
+- **Features** are picked from the list Salesforce CLI knows, with a number field for the ones that take one (`MaxApexCodeSize`...). **Import from an org shape** creates an [org shape](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) of an org and adds its features. Org Shape must be enabled in that org and in the Dev Hub.
+- **Settings** can be imported from any connected org, production included: pick the settings types, the panel reads them with the Metadata API and merges them into the definition. Check them before saving, some values cannot be set on a scratch org.
+- The **Documentation** buttons open the Salesforce pages that list the features and the settings.
+
+The panel reads these values with [hardis:config:org-init](hardis/config/org-init.md) (`--org-values`, `--import-settings`, `--import-features-from-shape`).
+
 [hardis:scratch:create](hardis/scratch/create.md) runs the same check before it asks the Dev Hub for an org, and lists every issue it finds.
 
 ### Configuration reference

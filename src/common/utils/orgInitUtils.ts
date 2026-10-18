@@ -62,6 +62,19 @@ export const ORG_INIT_LEGACY_KEYS = [
   'sandboxOrgInitApexScripts',
 ];
 export const PROJECT_SCRATCH_DEF_FILE = path.join('config', 'project-scratch-def.json');
+export const SCRATCH_DEF_FEATURES_DOC_URL =
+  'https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_def_file_config_values.htm';
+export const SCRATCH_DEF_SETTINGS_DOC_URL = 'https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_settings.htm';
+
+export interface ScratchOrgDefHints {
+  editions: string[];
+  features: string[];
+  settingsNames: string[];
+  // Metadata API page of each settings type, read from the Salesforce CLI schema
+  settingsDocUrls: Record<string, string>;
+  featuresDocUrl: string;
+  settingsDocUrl: string;
+}
 
 // Deployment actions only: they mean nothing when an org is initialized
 const DEPLOYMENT_ONLY_STEP_FIELDS = [
@@ -370,7 +383,7 @@ export function validateScratchOrgDef(content: any): { errors: string[]; warning
 }
 
 /** Values the panel offers in its scratch org definition form, read from the sfdx-core schema. */
-export function getScratchOrgDefHints(): { editions: string[]; features: string[]; settingsNames: string[] } {
+export function getScratchOrgDefHints(): ScratchOrgDefHints {
   if (scratchOrgDefHintsCache) {
     return scratchOrgDefHintsCache;
   }
@@ -384,10 +397,21 @@ export function getScratchOrgDefHints(): { editions: string[]; features: string[
   }
   const features = new Set<string>();
   collectFeatureNames(schema?.properties?.features?.items, features);
+  const settingsProperties = schema?.properties?.settings?.properties || {};
+  const settingsDocUrls: Record<string, string> = {};
+  for (const [name, property] of Object.entries<any>(settingsProperties)) {
+    const docUrl = /https:\/\/\S+\.htm/.exec(String(property?.description || ''))?.[0];
+    if (docUrl) {
+      settingsDocUrls[name] = docUrl;
+    }
+  }
   scratchOrgDefHintsCache = {
     editions: schema?.properties?.edition?.enum || [],
     features: [...features].sort(),
-    settingsNames: Object.keys(schema?.properties?.settings?.properties || {}).sort(),
+    settingsNames: Object.keys(settingsProperties).sort(),
+    settingsDocUrls,
+    featuresDocUrl: SCRATCH_DEF_FEATURES_DOC_URL,
+    settingsDocUrl: SCRATCH_DEF_SETTINGS_DOC_URL,
   };
   return scratchOrgDefHintsCache;
 }
@@ -400,7 +424,7 @@ export function listOrgInitStepTypes(): { type: string; orgTypes: OrgInitOrgType
   }));
 }
 
-let scratchOrgDefHintsCache: { editions: string[]; features: string[]; settingsNames: string[] } | null = null;
+let scratchOrgDefHintsCache: ScratchOrgDefHints | null = null;
 
 // dataPackages paths are written from the project root, data steps name a workspace of scripts/data
 function toDataWorkspaceName(dataPath: string): string {

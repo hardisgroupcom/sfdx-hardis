@@ -6,6 +6,12 @@ import { uxLog } from '../../../common/utils/index.js';
 import fs from '../../../common/utils/fsUtils.js';
 import { getOrgInitConfigPayload } from '../../../common/utils/orgInitUtils.js';
 import { t } from '../../../common/utils/i18n.js';
+import {
+  getScratchOrgDefOrgValues,
+  importFeaturesFromOrgShape,
+  importSettingsFromOrg,
+  resolveScratchOrgDefSourceOrg,
+} from '../../../common/utils/scratchOrgDefOrgUtils.js';
 import { getConfig } from '../../../config/index.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -32,6 +38,12 @@ The payload contains:
 
 With \`--validate-scratch-def\`, the scratch org definition is read from that file instead, so a UI can validate a definition before writing it.
 
+Three options read values from an org (\`--source-org\`, else the default Dev Hub, else the default org) so a UI can fill the definition from it:
+
+- \`--org-values\` adds \`orgValues\`: the languages and countries of its users, and its API versions with their release names (current, previous, and the next one for \`preview\`).
+- \`--import-settings accountSettings,lightningExperienceSettings\` adds \`importedSettings\`: those settings read with the Metadata API, written as a scratch org definition expects them.
+- \`--import-features-from-shape\` creates an [org shape](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) of the org and adds \`importedShape\` with its features. Org Shape must be enabled in that org.
+
 Run [hardis:org:init](${'https://sfdx-hardis.cloudity.com/hardis/org/init/'}) to run the steps on an org.
 
 ### Agent Mode
@@ -49,19 +61,36 @@ The command has no prompt: agent mode behaves the same.
 
 - The steps come from \`getOrgInitSteps()\` (\`src/common/utils/orgInitUtils.ts\`), the same function \`hardis:scratch:create\`, \`hardis:org:create\` and \`hardis:org:init\` use.
 - The scratch org definition is validated with \`ScratchOrgDefSchema\` from \`@salesforce/core\`, then each \`settings\` entry is checked against the settings names of the Salesforce CLI JSON schema.
-- The command is read-only and needs no org.
+- Without the org options, the command is read-only and needs no org. \`--import-features-from-shape\` runs \`sf org create shape\` and waits for the \`ShapeRepresentation\` record to be active.
 </details>
 `;
 
   public static examples = [
     '$ sf hardis:config:org-init --json',
     '$ sf hardis:config:org-init --validate-scratch-def ./tmp/project-scratch-def.json --json',
+    '$ sf hardis:config:org-init --org-values --json',
+    '$ sf hardis:config:org-init --import-settings accountSettings,securitySettings --source-org my-org --json',
+    '$ sf hardis:config:org-init --import-features-from-shape --source-org my-org --json',
     '$ sf hardis:config:org-init --agent --json',
   ];
 
   public static flags: any = {
     'validate-scratch-def': Flags.string({
       description: 'Scratch org definition file to validate instead of config/project-scratch-def.json',
+    }),
+    'org-values': Flags.boolean({
+      default: false,
+      description: 'Add the languages, countries and releases of the source org',
+    }),
+    'import-settings': Flags.string({
+      description: 'Comma-separated settings names of a scratch org definition (accountSettings...) to read from the source org',
+    }),
+    'import-features-from-shape': Flags.boolean({
+      default: false,
+      description: 'Create an org shape of the source org and return its features',
+    }),
+    'source-org': Flags.string({
+      description: 'Alias or username of the org to read values from. Default: the default Dev Hub, else the default org',
     }),
     /* jscpd:ignore-start */
     agent: Flags.boolean({
@@ -94,6 +123,22 @@ The command has no prompt: agent mode behaves the same.
     // Same layers as the commands that run the steps (project, branch, user)
     const config = await getConfig('user');
     const payload = await getOrgInitConfigPayload(config, scratchDefFile);
+    const importSettings = String(flags['import-settings'] || '')
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean);
+    if (flags['org-values'] || importSettings.length > 0 || flags['import-features-from-shape']) {
+      const org = await resolveScratchOrgDefSourceOrg(flags['source-org']);
+      if (flags['org-values']) {
+        payload.orgValues = await getScratchOrgDefOrgValues(org);
+      }
+      if (importSettings.length > 0) {
+        payload.importedSettings = await importSettingsFromOrg(org, importSettings);
+      }
+      if (flags['import-features-from-shape']) {
+        payload.importedShape = await importFeaturesFromOrgShape(org);
+      }
+    }
     uxLog('other', this, c.grey(JSON.stringify(payload, null, 2)));
     return payload as AnyJson;
   }

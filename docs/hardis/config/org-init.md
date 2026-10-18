@@ -21,6 +21,12 @@ The payload contains:
 
 With `--validate-scratch-def`, the scratch org definition is read from that file instead, so a UI can validate a definition before writing it.
 
+Three options read values from an org (`--source-org`, else the default Dev Hub, else the default org) so a UI can fill the definition from it:
+
+- `--org-values` adds `orgValues`: the languages and countries of its users, and its API versions with their release names (current, previous, and the next one for `preview`).
+- `--import-settings accountSettings,lightningExperienceSettings` adds `importedSettings`: those settings read with the Metadata API, written as a scratch org definition expects them.
+- `--import-features-from-shape` creates an [org shape](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) of the org and adds `importedShape` with its features. Org Shape must be enabled in that org.
+
 Run [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/) to run the steps on an org.
 
 ### Agent Mode
@@ -38,21 +44,25 @@ The command has no prompt: agent mode behaves the same.
 
 - The steps come from `getOrgInitSteps()` (`src/common/utils/orgInitUtils.ts`), the same function `hardis:scratch:create`, `hardis:org:create` and `hardis:org:init` use.
 - The scratch org definition is validated with `ScratchOrgDefSchema` from `@salesforce/core`, then each `settings` entry is checked against the settings names of the Salesforce CLI JSON schema.
-- The command is read-only and needs no org.
+- Without the org options, the command is read-only and needs no org. `--import-features-from-shape` runs `sf org create shape` and waits for the `ShapeRepresentation` record to be active.
 </details>
 
 
 ## Parameters
 
-| Name                 |  Type   | Description                                                                        | Default | Required | Options |
-|:---------------------|:-------:|:-----------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
-| agent                | boolean | Run in non-interactive mode for agents and automation                              |         |          |         |
-| debug<br/>-d         | boolean | Activate debug mode (more logs)                                                    |         |          |         |
-| flags-dir            | option  | Import flag values from a directory.                                               |         |          |         |
-| json                 | boolean | Format output as json.                                                             |         |          |         |
-| skipauth             | boolean | Skip authentication check when a default username is required                      |         |          |         |
-| validate-scratch-def | option  | Scratch org definition file to validate instead of config/project-scratch-def.json |         |          |         |
-| websocket            | option  | Websocket host:port for VsCode SFDX Hardis UI integration                          |         |          |         |
+| Name                       |  Type   | Description                                                                                                 | Default | Required | Options |
+|:---------------------------|:-------:|:------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------:|
+| agent                      | boolean | Run in non-interactive mode for agents and automation                                                       |         |          |         |
+| debug<br/>-d               | boolean | Activate debug mode (more logs)                                                                             |         |          |         |
+| flags-dir                  | option  | Import flag values from a directory.                                                                        |         |          |         |
+| import-features-from-shape | boolean | Create an org shape of the source org and return its features                                               |         |          |         |
+| import-settings            | option  | Comma-separated settings names of a scratch org definition (accountSettings...) to read from the source org |         |          |         |
+| json                       | boolean | Format output as json.                                                                                      |         |          |         |
+| org-values                 | boolean | Add the languages, countries and releases of the source org                                                 |         |          |         |
+| skipauth                   | boolean | Skip authentication check when a default username is required                                               |         |          |         |
+| source-org                 | option  | Alias or username of the org to read values from. Default: the default Dev Hub, else the default org        |         |          |         |
+| validate-scratch-def       | option  | Scratch org definition file to validate instead of config/project-scratch-def.json                          |         |          |         |
+| websocket                  | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                   |         |          |         |
 
 ## Examples
 
@@ -62,6 +72,18 @@ $ sf hardis:config:org-init --json
 
 ```shell
 $ sf hardis:config:org-init --validate-scratch-def ./tmp/project-scratch-def.json --json
+```
+
+```shell
+$ sf hardis:config:org-init --org-values --json
+```
+
+```shell
+$ sf hardis:config:org-init --import-settings accountSettings,securitySettings --source-org my-org --json
+```
+
+```shell
+$ sf hardis:config:org-init --import-features-from-shape --source-org my-org --json
 ```
 
 ```shell
