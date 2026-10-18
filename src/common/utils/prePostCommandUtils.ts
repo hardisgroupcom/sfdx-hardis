@@ -1,3 +1,4 @@
+import { isOrgInitOnlyActionType } from '../actionsProvider/actionTypes.js';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from './fsUtils.js';
@@ -348,6 +349,14 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
     cmd.result = { statusCode: "failed", skippedReason: branchFilterVerdict.reason };
     uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${branchFilterVerdict.reason}`));
     recordActionProducedNothing(cmd, branchFilterVerdict.reason);
+    return 'definition-error';
+  }
+  // install-packages, deploy-sources and assign-permission-sets only exist in orgInitSteps
+  if (isOrgInitOnlyActionType(cmd.type)) {
+    const reason = t('actionTypeOrgInitOnly', { type: cmd.type });
+    cmd.result = { statusCode: "failed", skippedReason: reason };
+    uxLog("error", this, c.red(`[DeploymentActions] Action ${cmd.label} is not valid: ${reason}`));
+    recordActionProducedNothing(cmd, reason);
     return 'definition-error';
   }
   cmd.pipelineContext = withActionContext(ctx.pipelineContext, cmd);

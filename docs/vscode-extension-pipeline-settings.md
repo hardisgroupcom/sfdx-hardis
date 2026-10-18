@@ -75,9 +75,8 @@ Scope **Global Settings**. They are written in `config/.sfdx-hardis.yml`.
 | **(4)** | Available projects | `availableProjects` | List of business projects that are managed in the same repository. If defined, when creating a new User Story, it will be prompted to the contributor then used to create the git branch name. If a value contains a comma, the left part will be used for key and the right part as label for the users. |
 | **(5)** | Allowed org types | `allowedOrgTypes` | Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default |
 | **(6)** | Contributors can share Dev Sandboxes | `sharedDevSandboxes` | Set to true if contributors can share dev sandboxes If active, contributors are never offered to initialize their sandbox on New User Story, to avoid overwriting their colleagues work by accident Default: `false`. |
-| **(7)** | Offer to initialize the sandbox on New User Story | `offerSandboxInit` | Set to true to have New User Story (hardis:work:new) offer to initialize the selected dev sandbox: install the installed packages, assign initPermissionSets, run scratchOrgInitApexScripts and load scripts/data/ScratchInit. It never deploys metadata: bring what the team merged into a sandbox with a backpromote. Ignored when sharedDevSandboxes is true. Default: `false`. [Docs](salesforce-devops-create-new-user-story.md) |
-| **(8)** | User Story name validation regex | `newTaskNameRegex` | If you define a regular expression, it will be used to validate the name of new User Stories. For example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*' The regex is tested against the User Story name as typed by the user, so it can require spaces. Once the name is validated, spaces and special characters are replaced by '-' to build the git branch name. |
-| **(9)** | Example string for User Story name validation regex | `newTaskNameRegexExample` | If you activated User Story name validation via RegEx, define an example value that will be displayed to users. Example: 'MYPROJECT-168 Update account status validation rule' |
+| **(7)** | User Story name validation regex | `newTaskNameRegex` | If you define a regular expression, it will be used to validate the name of new User Stories. For example, you can enforce a Jira number in the name with regex '^MYPROJECT-[0-9]+ .*' The regex is tested against the User Story name as typed by the user, so it can require spaces. Once the name is validated, spaces and special characters are replaced by '-' to build the git branch name. |
+| **(8)** | Example string for User Story name validation regex | `newTaskNameRegexExample` | If you activated User Story name validation via RegEx, define an example value that will be displayed to users. Example: 'MYPROJECT-168 Update account status validation rule' |
 
 ### Salesforce Project
 
@@ -134,8 +133,6 @@ More rows appear depending on the other settings of the tab:
 | **(1)** | Dev Hub org alias | `devHubAlias` | Dev Hub alias, usually DevHub_ProjectName |
 | **(2)** | Dev Hub Instance URL | `devHubInstanceUrl` | Dev Hub instance URL used for authenticating to DevHub from CI jobs Default: `https://login.salesforce.com`. |
 | **(3)** | Dev Hub Username | `devHubUsername` | Dev Hub username, used to authenticate to DevHub from CI jobs |
-| **(4)** | Initial Permission Sets | `initPermissionSets` | When creating a scratch org, Admin user will be automatically assigned to those permission sets. Example: PS_Admin |
-| **(5)** | Scratch org init apex scripts | `scratchOrgInitApexScripts` | Apex scripts to call after scratch org initialization. Example: scripts/apex/init-scratch.apex |
 
 ### Security & Privacy
 

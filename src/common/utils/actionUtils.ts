@@ -6,6 +6,7 @@ import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { findDataWorkspaceByName } from './dataUtils.js';
+import { DEPLOYMENT_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
 import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { clearListMajorOrgsCache } from './orgConfigUtils.js';
@@ -651,7 +652,8 @@ export async function getPrIdFromUserConfig(): Promise<string | null> {
   }
 }
 
-export const ACTION_TYPES: PrePostCommand['type'][] = ['command', 'data', 'apex', 'publish-community', 'manual', 'schedule-batch', 'run-batch', 'remove-packagexml-items'];
+// Org initialization types (install-packages, deploy-sources...) are left out on purpose: they only exist in orgInitSteps
+export const ACTION_TYPES: PrePostCommand['type'][] = [...DEPLOYMENT_ACTION_TYPES];
 export const ACTION_CONTEXTS: PrePostCommand['context'][] = ['all', 'check-deployment-only', 'process-deployment-only'];
 export const ACTION_SCOPES: ActionScope[] = ['project', 'branch', 'pr'];
 export const ACTION_WHENS: ActionWhen[] = ['pre-deploy', 'post-deploy'];

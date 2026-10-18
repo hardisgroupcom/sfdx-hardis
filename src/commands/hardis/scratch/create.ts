@@ -18,16 +18,8 @@ import {
   isCI,
   uxLog,
 } from '../../../common/utils/index.js';
-import {
-  getScratchSignupEnv,
-  initApexScripts,
-  initOrgData,
-  initOrgMetadatas,
-  initPermissionSetAssignments,
-  installPackages,
-  openOrgInBrowser,
-  promptUserEmail,
-} from '../../../common/utils/orgUtils.js';
+import { getScratchSignupEnv, openOrgInBrowser, promptUserEmail } from '../../../common/utils/orgUtils.js';
+import { PROJECT_SCRATCH_DEF_FILE, runOrgInitSteps, validateScratchOrgDef } from '../../../common/utils/orgInitUtils.js';
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
 import { getOrgSfdxAuthUrl } from '../../../common/utils/credentialUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
@@ -53,11 +45,9 @@ Key functionalities:
 - **Intelligent Org Management:** Automatically generates unique scratch org aliases based on username, git branch, and timestamp, with options to reuse existing orgs or force creation of new ones.
 - **Scratch Org Pool Integration:** Supports fetching pre-configured scratch orgs from pools for faster development cycles and CI/CD optimization.
 - **Custom Scratch Definition:** Dynamically builds project-scratch-def.json files with user-specific configurations including email, username patterns, and org shape settings (set variable **SCRATCH_ORG_SHAPE** to use org shapes).
-- **Package Installation:** Automatically installs all configured packages defined in \`installedPackages\` configuration property.
-- **Metadata Deployment:** Pushes source code and deploys metadata using optimized deployment strategies for scratch org environments.
-- **Permission Set Assignment:** Assigns specified permission sets defined in \`initPermissionSets\` configuration to the scratch org user.
-- **Apex Script Execution:** Runs custom Apex initialization scripts defined in \`scratchOrgInitApexScripts\` for org-specific setup.
-- **Data Loading:** Loads initial data using SFDMU data packages from \`dataPackages\` configuration for realistic development environments.
+- **Scratch Org Definition Check:** Validates \`config/project-scratch-def.json\` against the Salesforce CLI schema before asking the Dev Hub for an org, and lists every issue found.
+- **Initialization Steps:** Runs the org initialization steps of the project in their order: packages, project sources, permission sets, Apex scripts, data, custom commands... They are defined in \`orgInitSteps\` (edit them from the Org Initialization panel of the VS Code extension). Without that key, the steps are built from the older keys \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, \`dataPackages\` and the \`scripts/data/ScratchInit\` folder.
+- **Pool Readiness:** When filling a scratch org pool (\`--pool\`), the steps flagged \`runAtPoolFill\` (all of them by default) run right away, so a scratch org taken from the pool is ready to use. Taking an org from the pool runs the remaining steps.
 - **User Configuration:** Automatically configures the scratch org admin user with proper names, email, country settings, and marketing user permissions.
 - **Password Generation:** Creates and stores secure passwords for easy scratch org access during development.
 - **CI/CD Integration:** Provides specialized handling for continuous integration environments including automated cleanup and pool management.
@@ -65,7 +55,7 @@ Key functionalities:
 
 The command configuration can be customized using:
 
-- \`config/.sfdx-hardis.yml\` file with properties like \`installedPackages\`, \`initPermissionSets\`, \`scratchOrgInitApexScripts\`, and \`dataPackages\`.
+- \`config/.sfdx-hardis.yml\` file with properties like \`orgInitSteps\`, \`installedPackages\`, \`scratchOrgDuration\` and \`poolConfig\`.
 - Environment variable **SCRATCH_ORG_SHAPE** with shape org id, if you want to use org shapes
 - Environment variables **SF_SCRATCH_SIGNUP_CONNECTED_APP** and **SF_SCRATCH_SIGNUP_CALLBACK_URL**: by default the new org is signed up with the Salesforce CLI built-in app (\`PlatformCLI\`), so a Dev Hub authenticated through an External Client App works (Salesforce CLI 2.147.7 or later). Not applied when you set **SF_SCRATCH_SIGNUP_CONNECTED_APP** or **SFDX_CLIENT_SECRET**.
 
@@ -79,11 +69,8 @@ The command's technical implementation involves:
 - **Scratch Org Definition Building:** Dynamically constructs \`project-scratch-def.json\` with user email, custom usernames, org shapes, and feature flags like StateAndCountryPicklist and MarketingUser.
 - **Pool Integration:** Implements scratch org pool fetching using \`fetchScratchOrg\` for rapid org provisioning in development and CI environments.
 - **Salesforce CLI Integration:** Executes \`sf org create scratch\` commands with proper parameter handling including wait times, duration, and dev hub targeting.
-- **Package Installation Pipeline:** Uses \`installPackages\` utility to install managed and unmanaged packages with dependency resolution and error handling.
-- **Metadata Deployment:** Leverages \`initOrgMetadatas\` for optimized source pushing and metadata deployment specific to scratch org environments.
-- **Permission Set Assignment:** Implements \`initPermissionSetAssignments\` for automated permission set assignment to scratch org users.
-- **Apex Script Execution:** Runs custom Apex initialization scripts using \`initApexScripts\` for org-specific configuration and setup.
-- **Data Loading Integration:** Uses SFDMU integration through \`initOrgData\` for comprehensive data loading from configured data packages.
+- **Initialization Steps:** \`runOrgInitSteps\` (\`src/common/utils/orgInitUtils.ts\`) runs the steps with the deployment actions providers, plus the \`install-packages\`, \`deploy-sources\` and \`assign-permission-sets\` types. The phase is \`pool-fill\` with \`--pool\`, \`after-pool-fetch\` for an org taken from the pool, \`all\` otherwise.
+- **Definition Validation:** \`validateScratchOrgDef\` uses \`ScratchOrgDefSchema\` from \`@salesforce/core\`, then checks each \`settings\` name against the Salesforce CLI JSON schema.
 - **User Management:** Performs SOQL queries and DML operations to configure scratch org users with proper names, emails, country codes, and permission flags.
 - **Authentication Management:** Handles SFDX auth URL generation and storage for CI/CD environments and scratch org pool management.
 - **Error Recovery:** Implements comprehensive error handling with scratch org cleanup, pool management, and detailed error messaging for troubleshooting.
@@ -176,22 +163,17 @@ In agent mode:
     await this.createScratchOrg(flags);
     try {
       await this.updateScratchOrgUser();
-      await installPackages(this.configInfo.installedPackages || [], this.scratchOrgAlias);
-      if (this.pool === false) {
-        await initOrgMetadatas(
-          this.configInfo,
-          this.scratchOrgUsername,
-          this.scratchOrgAlias,
-          this.projectScratchDef,
-          this.debugMode,
-          {
-            scratch: true,
-          }
-        );
-        await initPermissionSetAssignments(this.configInfo.initPermissionSets || [], this.scratchOrgUsername);
-        await initApexScripts(this.configInfo.scratchOrgInitApexScripts || [], this.scratchOrgUsername);
-        await initOrgData(path.join('.', 'scripts', 'data', 'ScratchInit'), this.scratchOrgUsername);
-      }
+      // Pool fill: the steps flagged runAtPoolFill (all by default), so an org taken from the pool
+      // is ready. Org taken from the pool: the steps left. New org: every step.
+      await runOrgInitSteps({
+        orgUsername: this.scratchOrgUsername,
+        orgAlias: this.scratchOrgAlias,
+        orgType: 'scratch',
+        phase: this.pool ? 'pool-fill' : this.scratchOrgFromPool ? 'after-pool-fetch' : 'all',
+        projectScratchDef: this.projectScratchDef,
+        debugMode: this.debugMode,
+        config: this.configInfo,
+      });
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
       uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
@@ -305,6 +287,16 @@ In agent mode:
     // Build project-scratch-def-branch-user.json
     uxLog("action", this, c.cyan(t('buildingCustomProjectScratchDefJson')));
     this.projectScratchDef = JSON.parse(fs.readFileSync('./config/project-scratch-def.json', 'utf-8'));
+    // Salesforce CLI only warns on an invalid definition, then the org creation fails far later
+    const scratchDefIssues = validateScratchOrgDef(this.projectScratchDef);
+    if (scratchDefIssues.length > 0) {
+      throw new SfError(
+        t('scratchOrgDefInvalid', {
+          file: PROJECT_SCRATCH_DEF_FILE,
+          issues: scratchDefIssues.map((issue) => `- ${issue}`).join('\n'),
+        })
+      );
+    }
     this.projectScratchDef.orgName = this.scratchOrgAlias;
     this.projectScratchDef.adminEmail = this.userEmail;
     // Keep only first 15 and last 15 chars if scratch org alias is too long

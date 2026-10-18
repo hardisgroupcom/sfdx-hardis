@@ -1,6 +1,7 @@
 import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
+import fs from '../utils/fsUtils.js';
 import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
 import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
 
@@ -16,7 +17,7 @@ export class DataAction extends ActionsProvider {
       uxLog('error', this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: 'No sfdmuProject parameter provided' };
     }
-    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject, false);
+    const sfdmuProjectPath = await resolveDataWorkspacePath(sfdmuProject);
     if (!sfdmuProjectPath) {
       uxLog('error', this, c.red(`[DeploymentActions] Data workspace ${sfdmuProject} does not exist for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: `Data workspace ${sfdmuProject} does not exist` };
@@ -33,7 +34,7 @@ export class DataAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
-    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
+    const sfdmuProjectPath = await resolveDataWorkspacePath(sfdmuProject);
     const importOptions: any = {}
     if (this.customUsernameToUse) {
       importOptions.targetUsername = this.customUsernameToUse;
@@ -46,4 +47,14 @@ export class DataAction extends ActionsProvider {
       return { statusCode: 'failed', output: `Error during data import: ${error}` };
     }
   }
+}
+
+// A workspace name under scripts/data, or a project-relative path to an SFDMU folder
+// (dataPackages entries can point outside scripts/data)
+async function resolveDataWorkspacePath(sfdmuProject: string): Promise<string | null> {
+  const workspacePath = await findDataWorkspaceByName(sfdmuProject, false);
+  if (workspacePath) {
+    return workspacePath;
+  }
+  return fs.existsSync(sfdmuProject) && fs.statSync(sfdmuProject).isDirectory() ? sfdmuProject : null;
 }

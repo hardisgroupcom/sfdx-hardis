@@ -16,7 +16,7 @@ Key functionalities:
 - **Dynamic Naming:** Generates a unique sandbox alias based on the current username, Git branch, and a timestamp.
 - **Sandbox Creation:** Executes the Salesforce CLI command to create the sandbox, including setting it as the default org and waiting for its completion.
 - **User Update:** Updates the main sandbox user's details (e.g., Last Name, First Name) and can fix country values or marketing user permissions if needed.
-- **Initialization Scripts:** Runs predefined Apex scripts, assigns permission sets, and imports initial data into the newly created sandbox, based on configurations in your project.
+- **Initialization Steps:** Runs the org initialization steps of the project that apply to sandboxes, in their order (`orgInitSteps`, edited from the Org Initialization panel of the VS Code extension). Without that key, the steps are built from the older keys `initPermissionSets`, `sandboxOrgInitApexScripts`, `dataPackages` and the `scripts/data/SandboxInit` folder. Run [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/) to run them again later.
 - **Error Handling:** Provides detailed error messages for common sandbox creation issues, including Salesforce-specific errors.
 
 <details markdown="1">
@@ -29,7 +29,7 @@ The command's technical implementation involves:
 - **File System Operations:** Uses Node.js `fs` to manage sandbox definition files (reading `project-sandbox-def.json`, writing a user-specific definition file) and temporary directories.
 - **Salesforce CLI Execution:** Executes Salesforce CLI commands (`sf org create sandbox`, `sf data get record`, `sf data update record`, `sf org open`) using `execSfdxJson` for sandbox creation, user updates, and opening the org in a browser.
 - **Cache Management:** Clears the Salesforce CLI org list cache (`clearCache('sf org list')`) to ensure the newly created sandbox is immediately recognized.
-- **Initialization Utilities:** Calls a suite of utility functions (`initPermissionSetAssignments`, `initApexScripts`, `initOrgData`) to perform post-creation setup tasks.
+- **Initialization Steps:** Calls `runOrgInitSteps` (`src/common/utils/orgInitUtils.ts`) with the `sandbox` org type to perform post-creation setup tasks.
 - **Error Assertions:** Uses `assert` to check the success of Salesforce CLI commands and provides custom error messages for better debugging.
 - **WebSocket Communication:** Uses `WebSocketClient.sendRefreshStatusMessage` to notify connected VS Code clients about the new sandbox.
 - **Required Plugin Check:** Explicitly lists `sfdmu` as a required plugin, indicating its role in data initialization.

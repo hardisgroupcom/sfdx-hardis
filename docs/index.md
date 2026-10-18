@@ -704,6 +704,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 |:------------------------------------------------------------------------------|:---------------------------------------|
 | [**hardis:config:get**](hardis/config/get.md)                                 | Deploy metadata sources to org         |
 | [**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md) | Get monitoring & notification defaults |
+| [**hardis:config:org-init**](hardis/config/org-init.md)                       | Get org initialization configuration   |
 
 ### hardis:datacloud
 
@@ -821,6 +822,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:files:import**](hardis/org/files/import.md)                                           | Import files                                                                                                             |
 | [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                   | Fix listviews with                                                                                                       |
 | [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)                     | Generate Full Org package.xml                                                                                            |
+| [**hardis:org:init**](hardis/org/init.md)                                                           | Initialize a scratch org or a sandbox                                                                                    |
 | [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                         | List metadata components of an org                                                                                       |
 | [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                             | Monitor org                                                                                                              |
 | [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                       | Backup DX sources                                                                                                        |
