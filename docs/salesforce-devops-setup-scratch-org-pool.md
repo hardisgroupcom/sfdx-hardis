@@ -116,6 +116,7 @@ To enable it on a major branch:
 Good to know:
 
 - The scratch org of a Pull Request is created from the newest Active snapshot of its target branch whose commit is in the history of the Pull Request. When there is none, it is created empty and the job log says why.
+- When the Pull Request changes `config/project-scratch-def.json` or a file under its `settingsPath`, the scratch org is created empty: a scratch org from a snapshot keeps the features and settings of the snapshot commit.
 - The Apex init scripts (`scratchOrgInitApexScripts`) and the init data (`scripts/data/ScratchInit`) are not run again in a scratch org created from a snapshot: their results are already in it.
 - A snapshot child takes a few minutes to create, more than an empty scratch org. Snapshots pay off when the full deployment takes longer than that.
 - Salesforce writes that snapshots "are intended to include only dependent packages, metadata, and test data".

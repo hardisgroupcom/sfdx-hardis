@@ -3693,6 +3693,7 @@
   "scratchSnapshotNoneUsable": "none of the {{count}} active snapshots of branch {{branch}} was taken from a commit in the history of this Pull Request",
   "scratchSnapshotNotEnabled": "useScratchOrgSnapshot is not enabled for branch {{branch}}",
   "scratchSnapshotNotUsed": "Scratch org created without a snapshot: {{reason}}",
+  "scratchSnapshotScratchDefChanged": "the scratch org definition or its settings changed since the snapshot commit {{sha}}: a scratch org created from a snapshot cannot take new features or settings",
   "scratchSnapshotSourceOrgFailed": "The scratch org to take the snapshot from could not be created",
   "scratchSnapshotTaking": "Taking snapshot {{name}} of branch {{branch}} at commit {{sha}}...",
   "scratchSnapshotTimeout": "Snapshot {{name}} was not Active after {{minutes}} minutes (set SCRATCH_ORG_SNAPSHOT_WAIT to wait longer)",

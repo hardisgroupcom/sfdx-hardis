@@ -3686,6 +3686,7 @@
   "scratchSnapshotNoneUsable": "ブランチ {{branch}} のアクティブなスナップショット {{count}} 件のうち、このプルリクエストの履歴にあるコミットから作成されたものはありません",
   "scratchSnapshotNotEnabled": "ブランチ {{branch}} で useScratchOrgSnapshot が有効になっていません",
   "scratchSnapshotNotUsed": "スナップショットを使用せずにスクラッチ組織を作成します: {{reason}}",
+  "scratchSnapshotScratchDefChanged": "スクラッチ組織の定義またはその設定がスナップショットのコミット {{sha}} 以降に変更されています。スナップショットから作成したスクラッチ組織には新しい機能や設定を適用できません",
   "scratchSnapshotSourceOrgFailed": "スナップショットの作成元となるスクラッチ組織を作成できませんでした",
   "scratchSnapshotTaking": "コミット {{sha}} 時点のブランチ {{branch}} のスナップショット {{name}} を作成しています...",
   "scratchSnapshotTimeout": "{{minutes}} 分経過してもスナップショット {{name}} がアクティブになりませんでした (待機時間を延ばすには SCRATCH_ORG_SNAPSHOT_WAIT を設定してください)",

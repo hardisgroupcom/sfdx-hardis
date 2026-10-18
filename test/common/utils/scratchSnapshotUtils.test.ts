@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, scopeDeltaToDeployManifest } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { execFileSync } from 'child_process';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, scopeDeltaToDeployManifest, scratchDefChangedSince } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -133,5 +134,52 @@ describe('scopeDeltaToDeployManifest', () => {
 
   it('returns the delta unchanged when the sources are pushed', async () => {
     expect(await scopeDeltaToDeployManifest(delta, {})).to.equal(delta);
+  });
+});
+
+describe('scratchDefChangedSince', () => {
+  let dir: string;
+  let sha: string;
+  const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir }).toString().trim();
+  const write = (file: string, text: string) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  const commit = () => {
+    git('add', '-A');
+    git('commit', '-q', '-m', 'change');
+  };
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scratch-def-'));
+    git('init', '-q');
+    write('config/project-scratch-def.json', JSON.stringify({ edition: 'Developer', settingsPath: 'config/settings' }));
+    write('config/settings/Security.settings-meta.xml', '<SecuritySettings/>');
+    write('force-app/main/default/classes/A.cls', 'public class A {}');
+    git('add', '-A');
+    git('commit', '-q', '-m', 'snapshot commit');
+    sha = git('rev-parse', 'HEAD');
+  });
+
+  afterEach(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('is false when only the sources changed since the snapshot commit', () => {
+    write('force-app/main/default/classes/A.cls', 'public class A { }');
+    commit();
+    expect(scratchDefChangedSince(sha, dir)).to.equal(false);
+  });
+
+  it('is true when the scratch org definition changed, as the snapshot child cannot take new features', () => {
+    write('config/project-scratch-def.json', JSON.stringify({ edition: 'Developer', settingsPath: 'config/settings', features: ['Communities'] }));
+    commit();
+    expect(scratchDefChangedSince(sha, dir)).to.equal(true);
+  });
+
+  it('is true when a file under the settingsPath of the definition changed', () => {
+    write('config/settings/Security.settings-meta.xml', '<SecuritySettings><x/></SecuritySettings>');
+    commit();
+    expect(scratchDefChangedSince(sha, dir)).to.equal(true);
   });
 });
