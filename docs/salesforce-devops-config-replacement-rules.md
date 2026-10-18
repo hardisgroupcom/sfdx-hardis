@@ -177,7 +177,7 @@ The deployment API version is the lowest of the connection version (the `org-api
 | builtin-gen-computing-summary-def-accesses | Profile / Permission Set `genComputingSummaryDefAccesses`       | below 66.0          | on      |
 | builtin-aura-static-res-pref               | LightningExperienceSettings `enableAuraSecStaticResCRUCPref`    | 68.0 or above       | on      |
 | builtin-analytics-incremental-upsert       | AnalyticsSettings `incrementalUpsertEnabled`                    | 68.0 or above       | on      |
-| builtin-help-menu-prefs                    | UserEngagementSettings `enableHelpMenuShow*`                    | 65.0 or above       | on      |
+| builtin-help-menu-settings                 | UserEngagementSettings `enableHelpMenuShow*`                    | 65.0 or above       | on      |
 | builtin-enhanced-sites-pref                | SiteSettings `enableEnhancedSitesAndContentPlatform`            | 63.0 or above       | on      |
 | builtin-voice-whatsapp-pref                | ServiceCloudVoiceSettings `enableDigitalVoiceWhatsapp`          | 65.0 or above       | on      |
 | builtin-view-all-fields-true               | Profile / Permission Set `viewAllFields` set to true            | below 63.0          | off     |

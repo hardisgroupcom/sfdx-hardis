@@ -3,7 +3,7 @@
 // release), or no longer accepts them.
 //
 // Sources: Metadata API Developer Guide v60 to v68 ("Available in API version N and later",
-// "Removed in API version N"), Gearset help on dayOfMonthToRun, forcedotcom/code-analyzer#2098 on <ends>.
+// "Removed in API version N"), forcedotcom/code-analyzer#2098 on <ends>.
 // To refresh: search the guide of the new release for these two sentences.
 //
 // Elements whose removal changes what a component does are disabled by default: when one of them
@@ -43,7 +43,7 @@ export const BUILT_IN_REPLACEMENT_RULES: BuiltInReplacementRule[] = [
     xmlPaths: ['Flow/start/schedule/dayOfMonthToRun'],
     introducedIn: 66,
     defaultEnabled: true,
-    source: `${MDAPI} v66 (FlowSchedule), Gearset help article on dayOfMonthToRun`,
+    source: `${MDAPI} v66 (FlowSchedule)`,
   },
   {
     id: 'builtin-flow-schedule-frequency-number',
@@ -165,7 +165,7 @@ export const BUILT_IN_REPLACEMENT_RULES: BuiltInReplacementRule[] = [
     source: `${MDAPI} v68 (AnalyticsSettings)`,
   },
   {
-    id: 'builtin-help-menu-prefs',
+    id: 'builtin-help-menu-settings',
     description: 'Help menu settings of User Engagement',
     files: ['**/UserEngagement.settings-meta.xml'],
     xmlPaths: [

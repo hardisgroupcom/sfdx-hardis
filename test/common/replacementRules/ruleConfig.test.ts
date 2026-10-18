@@ -138,7 +138,7 @@ describe('replacement rules - flags', () => {
   });
 
   it('refuses a bad --value-for and an unknown --unset', () => {
-    expect(() => buildRuleFieldsFromFlags({ 'value-for': ['nobranch'] })).to.throw();
+    expect(() => buildRuleFieldsFromFlags({ 'value-for': ['missing-equal-sign'] })).to.throw();
     expect(() => applyRuleFields(endpointRule, {}, [], ['nope'])).to.throw();
   });
 });
