@@ -38,21 +38,21 @@ Only the files that are deployed are changed (the components of the package.xml,
 
 ### Rule types
 
-| Type         | What it does                                                                    | Example                                                  |
-|--------------|---------------------------------------------------------------------------------|----------------------------------------------------------|
-| `xml-value`  | Writes the value of the target org in an XML element, whatever git holds        | `NamedCredential/endpoint`                               |
-| `xml-remove` | Removes an XML element before deploying                                         | `Layout/platformActionList`                              |
+| Type         | What it does                                                                     | Example                                                    |
+|--------------|----------------------------------------------------------------------------------|------------------------------------------------------------|
+| `xml-value`  | Writes the value of the target org in an XML element, whatever git holds         | `NamedCredential/endpoint`                                 |
+| `xml-remove` | Removes an XML element before deploying                                          | `Layout/platformActionList`                                |
 | `text`       | Finds and replaces a text or a regular expression, in any file (Apex, LWC, JSON) | `https://pay-[a-z]+\.example\.com` in `PaymentService.cls` |
 
 `xmlPath` is a path of elements from the root, without namespace:
 
-| Path                                              | Matches                                             |
-|---------------------------------------------------|-----------------------------------------------------|
-| `NamedCredential/endpoint`                        | The `endpoint` element under the root               |
-| `//dayOfMonthToRun`                               | `dayOfMonthToRun` at any depth                      |
-| `Flow/screens//fields/styleProperties`            | `styleProperties` of screen fields, at any depth    |
-| `Workflow/alerts[fullName=Escalation_Alert]/senderAddress` | The sender of one email alert              |
-| `Layout/excludeButtons[.=SmartFillEnrich]`        | The `excludeButtons` element holding this value     |
+| Path                                                       | Matches                                          |
+|------------------------------------------------------------|--------------------------------------------------|
+| `NamedCredential/endpoint`                                 | The `endpoint` element under the root            |
+| `//dayOfMonthToRun`                                        | `dayOfMonthToRun` at any depth                   |
+| `Flow/screens//fields/styleProperties`                     | `styleProperties` of screen fields, at any depth |
+| `Workflow/alerts[fullName=Escalation_Alert]/senderAddress` | The sender of one email alert                    |
+| `Layout/excludeButtons[.=SmartFillEnrich]`                 | The `excludeButtons` element holding this value  |
 
 An `xml-value` rule never creates a missing element: it reports "not found". A `text` rule replaces every occurrence, and its replacement is literal (no `$1`), so a value containing `$` is safe.
 
@@ -159,36 +159,36 @@ When the deployment API version of the target org is older than the sources (sou
 
 The deployment API version is the lowest of the connection version (the `org-api-version` sf config or `SF_ORG_API_VERSION` when set, otherwise the maximum API version of the target org), the `sourceApiVersion` of `sfdx-project.json` and the version of the deployed package.xml: Salesforce reads the metadata with that version.
 
-| Id                                         | Element                                                         | Removed when API is | Default |
-|--------------------------------------------|-----------------------------------------------------------------|---------------------|---------|
-| builtin-flow-ends                          | Flow `ends`, and the connectors pointing to them                | below 68.0          | on      |
-| builtin-flow-groups                        | Flow `groups`, element `group`                                  | below 68.0          | on      |
-| builtin-flow-schedule-day-of-month         | Flow `start/schedule/dayOfMonthToRun`                           | below 66.0          | on      |
-| builtin-flow-schedule-frequency-number     | Flow `start/schedule/frequencyNumber`                           | below 66.0          | on      |
-| builtin-flow-screen-style-settings         | Flow `screens/styleSettings`                                    | below 66.0          | on      |
-| builtin-flow-screen-field-style            | Flow screen fields `styleProperties`                            | below 64.0          | on      |
-| builtin-flow-choice-icon                   | Flow `choices/choiceIcon`                                       | below 64.0          | on      |
-| builtin-flow-metrics-data-cloud            | Flow `areMetricsLoggedToDataCloud`                              | below 63.0          | on      |
-| builtin-flow-custom-properties             | Flow `customProperties`                                         | below 63.0          | on      |
-| builtin-view-all-fields-false              | Profile / Permission Set `viewAllFields` set to false           | below 63.0          | on      |
-| builtin-agent-accesses                     | Profile / Permission Set `agentAccesses`                        | below 63.0          | on      |
-| builtin-email-routing-address-accesses     | Permission Set `emailRoutingAddressAccesses`                    | below 62.0          | on      |
-| builtin-service-presence-status-accesses   | Profile / Permission Set `servicePresenceStatusAccesses`        | below 64.0          | on      |
-| builtin-gen-computing-summary-def-accesses | Profile / Permission Set `genComputingSummaryDefAccesses`       | below 66.0          | on      |
-| builtin-aura-static-res-pref               | LightningExperienceSettings `enableAuraSecStaticResCRUCPref`    | 68.0 or above       | on      |
-| builtin-analytics-incremental-upsert       | AnalyticsSettings `incrementalUpsertEnabled`                    | 68.0 or above       | on      |
-| builtin-help-menu-settings                 | UserEngagementSettings `enableHelpMenuShow*`                    | 65.0 or above       | on      |
-| builtin-enhanced-sites-pref                | SiteSettings `enableEnhancedSitesAndContentPlatform`            | 63.0 or above       | on      |
-| builtin-voice-whatsapp-pref                | ServiceCloudVoiceSettings `enableDigitalVoiceWhatsapp`          | 65.0 or above       | on      |
-| builtin-view-all-fields-true               | Profile / Permission Set `viewAllFields` set to true            | below 63.0          | off     |
-| builtin-flow-schedule-days-of-week         | Flow `start/schedule/daysOfWeekToRun`                           | below 66.0          | off     |
-| builtin-flow-get-records-limit             | Flow `recordLookups/limit`                                      | below 63.0          | off     |
-| builtin-flow-upsert                        | Flow `recordCreates` upsert options                             | below 62.0          | off     |
-| builtin-flow-create-matching-records       | Flow `recordCreates` matching record filters                    | below 61.0          | off     |
-| builtin-flow-action-wait                   | Flow `actionCalls` wait options                                 | below 61.0          | off     |
-| builtin-flow-action-timeout                | Flow `actionCalls/timeoutConnector`                             | below 62.0          | off     |
-| builtin-flow-action-timeout-path-usage     | Flow `actionCalls/timeoutPathUsage`                             | below 66.0          | off     |
-| builtin-flow-decision-attributes           | Flow decision and rule `attributes`                             | below 65.0          | off     |
+| Id                                         | Element                                                      | Removed when API is | Default |
+|--------------------------------------------|--------------------------------------------------------------|---------------------|---------|
+| builtin-flow-ends                          | Flow `ends`, and the connectors pointing to them             | below 68.0          | on      |
+| builtin-flow-groups                        | Flow `groups`, element `group`                               | below 68.0          | on      |
+| builtin-flow-schedule-day-of-month         | Flow `start/schedule/dayOfMonthToRun`                        | below 66.0          | on      |
+| builtin-flow-schedule-frequency-number     | Flow `start/schedule/frequencyNumber`                        | below 66.0          | on      |
+| builtin-flow-screen-style-settings         | Flow `screens/styleSettings`                                 | below 66.0          | on      |
+| builtin-flow-screen-field-style            | Flow screen fields `styleProperties`                         | below 64.0          | on      |
+| builtin-flow-choice-icon                   | Flow `choices/choiceIcon`                                    | below 64.0          | on      |
+| builtin-flow-metrics-data-cloud            | Flow `areMetricsLoggedToDataCloud`                           | below 63.0          | on      |
+| builtin-flow-custom-properties             | Flow `customProperties`                                      | below 63.0          | on      |
+| builtin-view-all-fields-false              | Profile / Permission Set `viewAllFields` set to false        | below 63.0          | on      |
+| builtin-agent-accesses                     | Profile / Permission Set `agentAccesses`                     | below 63.0          | on      |
+| builtin-email-routing-address-accesses     | Permission Set `emailRoutingAddressAccesses`                 | below 62.0          | on      |
+| builtin-service-presence-status-accesses   | Profile / Permission Set `servicePresenceStatusAccesses`     | below 64.0          | on      |
+| builtin-gen-computing-summary-def-accesses | Profile / Permission Set `genComputingSummaryDefAccesses`    | below 66.0          | on      |
+| builtin-aura-static-res-pref               | LightningExperienceSettings `enableAuraSecStaticResCRUCPref` | 68.0 or above       | on      |
+| builtin-analytics-incremental-upsert       | AnalyticsSettings `incrementalUpsertEnabled`                 | 68.0 or above       | on      |
+| builtin-help-menu-settings                 | UserEngagementSettings `enableHelpMenuShow*`                 | 65.0 or above       | on      |
+| builtin-enhanced-sites-pref                | SiteSettings `enableEnhancedSitesAndContentPlatform`         | 63.0 or above       | on      |
+| builtin-voice-whatsapp-pref                | ServiceCloudVoiceSettings `enableDigitalVoiceWhatsapp`       | 65.0 or above       | on      |
+| builtin-view-all-fields-true               | Profile / Permission Set `viewAllFields` set to true         | below 63.0          | off     |
+| builtin-flow-schedule-days-of-week         | Flow `start/schedule/daysOfWeekToRun`                        | below 66.0          | off     |
+| builtin-flow-get-records-limit             | Flow `recordLookups/limit`                                   | below 63.0          | off     |
+| builtin-flow-upsert                        | Flow `recordCreates` upsert options                          | below 62.0          | off     |
+| builtin-flow-create-matching-records       | Flow `recordCreates` matching record filters                 | below 61.0          | off     |
+| builtin-flow-action-wait                   | Flow `actionCalls` wait options                              | below 61.0          | off     |
+| builtin-flow-action-timeout                | Flow `actionCalls/timeoutConnector`                          | below 62.0          | off     |
+| builtin-flow-action-timeout-path-usage     | Flow `actionCalls/timeoutPathUsage`                          | below 66.0          | off     |
+| builtin-flow-decision-attributes           | Flow decision and rule `attributes`                          | below 65.0          | off     |
 
 Rules marked **off** remove elements that change what a component does (without `limit`, a Get Records element returns every record). When such an element is found, the Pull Request comment says the deployment will fail and which rule removes it. Turn one on, or any built-in rule off, with `enabled`:
 
@@ -206,13 +206,13 @@ replacementRules:
 
 Every action exists as a command, and every command runs without prompt with `--agent`:
 
-| Command                                                              | Purpose                                                       |
-|----------------------------------------------------------------------|---------------------------------------------------------------|
+| Command                                                                     | Purpose                                                            |
+|-----------------------------------------------------------------------------|--------------------------------------------------------------------|
 | [hardis:project:replacement:list](hardis/project/replacement/list.md)       | Rules of every place, effective rules of every org, built-in rules |
-| [hardis:project:replacement:create](hardis/project/replacement/create.md)   | Add a rule to a place                                         |
-| [hardis:project:replacement:update](hardis/project/replacement/update.md)   | Change a rule, or turn a rule on or off                       |
-| [hardis:project:replacement:delete](hardis/project/replacement/delete.md)   | Remove a rule from a place                                    |
-| [hardis:project:replacement:preview](hardis/project/replacement/preview.md) | What the rules would change for a target org, without writing |
+| [hardis:project:replacement:create](hardis/project/replacement/create.md)   | Add a rule to a place                                              |
+| [hardis:project:replacement:update](hardis/project/replacement/update.md)   | Change a rule, or turn a rule on or off                            |
+| [hardis:project:replacement:delete](hardis/project/replacement/delete.md)   | Remove a rule from a place                                         |
+| [hardis:project:replacement:preview](hardis/project/replacement/preview.md) | What the rules would change for a target org, without writing      |
 
 ```sh
 sf hardis:project:replacement:preview --target-branch main --api-version 67.0
