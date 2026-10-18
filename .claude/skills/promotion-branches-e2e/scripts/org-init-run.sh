@@ -88,6 +88,20 @@ assert_count() {
     record "$id" FAIL "$desc ($query: $got, expected $want)"
   fi
 }
+# The package of the section installed in <org>: SubscriberPackage.NamespacePrefix cannot be filtered
+# in a tooling query, so every installed package is read and the namespace counted here
+# <id> <org> <description>
+assert_package_installed() {
+  local got
+  got=$(env -u NODE_OPTIONS sf data query --use-tooling-api --target-org "$2" \
+    --query "SELECT SubscriberPackage.NamespacePrefix FROM InstalledSubscriberPackage" --json 2>/dev/null |
+    node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).result.records.filter((r)=>r.SubscriberPackage&&r.SubscriberPackage.NamespacePrefix===process.argv[1]).length)}catch(e){console.log(-1)}})" "$OI_PACKAGE_NAMESPACE")
+  if [ "$got" = "1" ]; then
+    record "$1" OK "$3 ($OI_PACKAGE_NAMESPACE installed)"
+  else
+    record "$1" FAIL "$3 ($OI_PACKAGE_NAMESPACE found $got time(s), expected 1)"
+  fi
+}
 # Accounts named <name> in <org>
 accounts() { soql_count "$1" "SELECT Id FROM Account WHERE Name = '$2'"; }
 # The username of the scratch org a scratch:create wrote in the local user config of <folder>
@@ -349,6 +363,11 @@ write_config legacy
 git add -A && git commit -qm "chore: org initialization end to end project" && git push -q -u origin "$OI_BRANCH"
 echo "OI_BRANCH=$OI_BRANCH" >"$LOGS/oi-vars.sh"
 
+# OI_GROUPS=pool runs only O9 to O12 (one scratch org created): the project gets every step type now
+if [ "${OI_GROUPS:-all}" = "pool" ]; then
+  write_config all
+  git add -A && git commit -qm "chore: every org initialization step type" && git push -q origin "$OI_BRANCH"
+else
 # ------------------------------------------------------------------ O0 legacy keys
 echo "=== O0: the steps built from the older keys ==="
 (cd "$OI" && p_cli hardis:config:org-init --json) >"$OI_LOGS/config-legacy.json" 2>"$LOGS/oi-config-legacy.err"
@@ -419,8 +438,7 @@ assert_log O4 oi-create-all 0 "scratch:create initializes the org with every ste
   "Step 13/13: Apex marker run when the org is taken" \
   "13 succeeded, 0 failed, 0 skipped" "!Disabled step" "!Sandbox only step"
 if [ -n "$SCRATCH1" ]; then
-  assert_count O4a "$SCRATCH1" "install-packages: the package is installed" \
-    "SELECT Id FROM InstalledSubscriberPackage WHERE SubscriberPackage.NamespacePrefix = '$OI_PACKAGE_NAMESPACE'" 1 tooling
+  assert_package_installed O4a "$SCRATCH1" "install-packages: the package is installed"
   assert_count O4b "$SCRATCH1" "deploy-sources: the project classes are in the org" \
     "SELECT Id FROM ApexClass WHERE Name IN ('OrgInitBatch', 'OrgInitSchedulable', 'PromoE2EAlphaTest')" 3
   assert_count O4c "$SCRATCH1" "assign-permission-sets: the permission set is assigned" \
@@ -470,6 +488,7 @@ else
   record O8 FAIL "scratch org of O4 not deleted: $(head -c 300 "$OI_LOGS/delete-scratch1.json" 2>/dev/null)"
 fi
 
+fi
 # ------------------------------------------------------------------ O9 / O10 the pool
 echo "=== O9: the pool in the git provider ==="
 oi_cli oi-pool-create "$OI" hardis:scratch:pool:create --agent --storage-service gitProvider --max-scratch-orgs 1
@@ -503,6 +522,8 @@ git clone -q "$ORIGIN_URL" "$OI_DEV" && git -C "$OI_DEV" checkout -q "$OI_BRANCH
 (cd "$OI_DEV" && env -u NODE_OPTIONS sf config set target-dev-hub="$DEVHUB" >/dev/null 2>&1)
 oi_cli oi-pool-fetch "$OI_DEV" hardis:scratch:create --agent --target-dev-hub "$DEVHUB"
 FETCHED=$(scratch_username_of "$OI_DEV")
+# An org taken from the pool is saved by alias only: its username is in the log
+[ -z "$FETCHED" ] && FETCHED=$(grep -aoE "from pool with user \S+" "$LOGS/oi-pool-fetch.log" | tail -1 | awk '{print $NF}' | sed -E 's/\x1b\[[0-9;]*m//g')
 echo "FETCHED=$FETCHED" >>"$LOGS/oi-vars.sh"
 assert_log O11 oi-pool-fetch 0 "scratch:create takes the org from the pool, runs the fetch-only step and resets the tracking" \
   "from pool" "Step 1/1: Apex marker run when the org is taken" "Resetting the source tracking" "!sf org create scratch"
