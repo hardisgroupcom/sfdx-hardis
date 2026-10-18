@@ -37,11 +37,17 @@ mkdir -p "$LOGS"
 [ -f "$LOGS/run.env" ] && source "$LOGS/run.env"
 export LOGS
 
-result() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >>"$LOGS/results.tsv"; echo "[$2] $1 - $3"; }
+result() {
+  printf '%s\t%s\t%s\n' "$1" "$2" "$3" >>"$LOGS/results.tsv"
+  echo "[$2] $1 - $3"
+}
 assert_contains() { if grep -qF -- "$3" "$2"; then result "$1" OK "$4"; else result "$1" FAIL "$4 (missing: $3)"; fi; }
 assert_absent() { if grep -qF -- "$3" "$2"; then result "$1" FAIL "$4 (found: $3)"; else result "$1" OK "$4"; fi; }
-save() { printf 'export %s=%q\n' "$1" "$2" >>"$LOGS/run.env"; export "$1=$2"; }
-step() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac; }
+save() {
+  printf 'export %s=%q\n' "$1" "$2" >>"$LOGS/run.env"
+  export "$1=$2"
+}
+step() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac }
 sfj() { node "$DEV_JS" "$@" --json 2>/dev/null; }
 
 echo "Run $RUN - work $WORK - logs $LOGS - branch under test $SFDX_HARDIS_BRANCH"
@@ -50,15 +56,21 @@ echo "Run $RUN - work $WORK - logs $LOGS - branch under test $SFDX_HARDIS_BRANCH
 if step org; then
   if ! sf org display -o "$RR_ORG" --json 2>/dev/null | grep -q '"connectedStatus": "Connected"\|"status": "Active"'; then
     sf org logout -o "$RR_ORG" --no-prompt >/dev/null 2>&1
-    sf org create scratch --target-dev-hub "$DEVHUB" --alias "$RR_ORG" --edition developer --duration-days 2 --wait 20 --json >"$LOGS/org-create.json" 2>&1 \
-      || { result ORG FAIL "scratch org not created, see org-create.json"; exit 1; }
+    sf org create scratch --target-dev-hub "$DEVHUB" --alias "$RR_ORG" --edition developer --duration-days 2 --wait 20 --json >"$LOGS/org-create.json" 2>&1 ||
+      {
+        result ORG FAIL "scratch org not created, see org-create.json"
+        exit 1
+      }
   fi
   # Recent sf CLI versions hide secrets in "sf org display": the auth URL has its own command
   AUTH_URL=$(sf org auth show-sfdx-auth-url -o "$RR_ORG" --json 2>/dev/null | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{try{process.stdout.write(JSON.parse(d).result.sfdxAuthUrl||'')}catch{}})")
   if [[ "$AUTH_URL" != force://* ]]; then
     AUTH_URL=$(SF_TEMP_SHOW_SECRETS=true sf org display -o "$RR_ORG" --verbose --json | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(JSON.parse(d).result.sfdxAuthUrl||''))")
   fi
-  [[ "$AUTH_URL" == force://* ]] || { result ORG FAIL "no sfdxAuthUrl for $RR_ORG"; exit 1; }
+  [[ "$AUTH_URL" == force://* ]] || {
+    result ORG FAIL "no sfdxAuthUrl for $RR_ORG"
+    exit 1
+  }
   ORG_API=$(sf org display -o "$RR_ORG" --json | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>process.stdout.write(String(JSON.parse(d).result.apiVersion||'')))")
   save ORG_API "$ORG_API"
   printf '%s' "$AUTH_URL" >"$LOGS/auth-url.txt"
@@ -67,9 +79,15 @@ fi
 
 # --------------------------------------------------------------- repo: project, workflows, remote, secrets
 if step repo; then
-  WORK="$WORK" API=67.0 bash "$SKILL_DIR/scripts/rr-build-project.sh" >>"$LOGS/build.log" 2>&1 || { result REPO FAIL "project not built"; exit 1; }
-  node "$PROMO_SCRIPTS/ci-workflows-prepare.cjs" --provider github "$ROOT" "$WORK" "$SFDX_HARDIS_BRANCH" >>"$LOGS/build.log" 2>&1 \
-    || { result REPO FAIL "workflows not written, see build.log"; exit 1; }
+  WORK="$WORK" API=67.0 bash "$SKILL_DIR/scripts/rr-build-project.sh" >>"$LOGS/build.log" 2>&1 || {
+    result REPO FAIL "project not built"
+    exit 1
+  }
+  node "$PROMO_SCRIPTS/ci-workflows-prepare.cjs" --provider github "$ROOT" "$WORK" "$SFDX_HARDIS_BRANCH" >>"$LOGS/build.log" 2>&1 ||
+    {
+      result REPO FAIL "workflows not written, see build.log"
+      exit 1
+    }
   # The rule secret of integration reaches the sfdx-hardis steps, like a project maps its own secrets
   node -e "
     const fs=require('fs');
@@ -78,7 +96,10 @@ if step repo; then
       s=s.replace(/^(\s*)SFDX_AUTH_URL_INTEGRATION:.*$/m, (m,i)=>m+'\n'+i+'RR_E2E_SECRET_INTEGRATION: \${{ secrets.RR_E2E_SECRET_INTEGRATION }}');
       if(!s.includes('RR_E2E_SECRET_INTEGRATION')) { console.error('no SFDX_AUTH_URL_INTEGRATION line in '+f); process.exit(1); }
       fs.writeFileSync(p,s);
-    }" "$WORK" || { result REPO FAIL "secret not mapped in the workflows"; exit 1; }
+    }" "$WORK" || {
+    result REPO FAIL "secret not mapped in the workflows"
+    exit 1
+  }
   (cd "$WORK" && git add -A && git commit -q -m "CI workflows of the sfdx-hardis branch $SFDX_HARDIS_BRANCH")
   if [ -z "${REPO:-}" ]; then
     owner="${GH_E2E_OWNER:-$(gh api user --jq .login)}"
@@ -96,7 +117,10 @@ if step repo; then
     for b in INTEGRATION UAT PREPROD MAIN; do gh secret set "SFDX_AUTH_URL_$b" -R "$REPO" <"$LOGS/auth-url.txt" >/dev/null; done
     printf '%s' "$SECRET_VALUE" | gh secret set RR_E2E_SECRET_INTEGRATION -R "$REPO" >/dev/null
     gh api -X PUT "repos/$REPO/actions/permissions" -F enabled=true -f allowed_actions=all >/dev/null
-  ) || { result REPO FAIL "repository $REPO not created"; exit 1; }
+  ) || {
+    result REPO FAIL "repository $REPO not created"
+    exit 1
+  }
   save SECRET_VALUE "$SECRET_VALUE"
   result REPO OK "repository $REPO, branches main integration uat preprod, secrets set"
 fi
@@ -139,7 +163,10 @@ if step check; then
   # shellcheck source=/dev/null
   source "$PROMO_SCRIPTS/ci-provider-github.sh"
   ci_wait_check "$PR_NUMBER" "$head_sha" check
-  if [ "$(cat "$LOGS/check.code")" = "0" ]; then result CHECK OK "validation job succeeded"; else result CHECK FAIL "validation job failed, see check.log"; CHECK_FAILED=1; fi
+  if [ "$(cat "$LOGS/check.code")" = "0" ]; then result CHECK OK "validation job succeeded"; else
+    result CHECK FAIL "validation job failed, see check.log"
+    CHECK_FAILED=1
+  fi
   L="$LOGS/check.log"
   assert_contains CHECK-APPLY "$L" "Applying replacement rules for integration" "rules applied for the target branch of the Pull Request"
   for id in e2e-endpoint e2e-single e2e-secret e2e-issue e2e-apex-host e2e-remove-view-setup builtin-unknown-user-permissions builtin-flow-ends; do
@@ -181,7 +208,8 @@ check_org_values() {
   sf data query --use-tooling-api -o "$RR_ORG" --json -q "SELECT Name, Value FROM ExternalString WHERE Name LIKE 'E2E_%'" >"$LOGS/$prefix-labels.json" 2>&1
   local labels="$LOGS/$prefix-labels.json"
   for pair in "E2E_Endpoint=$endpoint" "E2E_Single=$single" "E2E_Secret=$secret" "E2E_Issue=$issue" "E2E_Missing_Secret=git-value"; do
-    name="${pair%%=*}"; expected="${pair#*=}"
+    name="${pair%%=*}"
+    expected="${pair#*=}"
     # sf can print a warning (update available...) before the JSON: parse from the first brace
     got=$(node -e "const t=require('fs').readFileSync(process.argv[1],'utf8');const j=JSON.parse(t.slice(t.indexOf('{')));const r=(j.result.records||[]).find(x=>x.Name===process.argv[2]);process.stdout.write(r?String(r.Value):'<missing>')" "$labels" "$name")
     if [ "$got" = "$expected" ]; then result "$prefix-$name" OK "label $name = expected value"; else result "$prefix-$name" FAIL "label $name: got '$got'"; fi
@@ -233,7 +261,8 @@ fi
 
 # --------------------------------------------------------------- report
 if step report; then
-  ok=$(grep -c $'\tOK\t' "$LOGS/results.tsv"); fail=$(grep -c $'\tFAIL\t' "$LOGS/results.tsv")
+  ok=$(grep -c $'\tOK\t' "$LOGS/results.tsv")
+  fail=$(grep -c $'\tFAIL\t' "$LOGS/results.tsv")
   {
     echo "# Replacement rules e2e - $RUN"
     echo
