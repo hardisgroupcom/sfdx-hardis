@@ -180,7 +180,14 @@ In agent mode, all interactive prompts are skipped and default values are used.
         const sfdxPath = await which('sf');
         const childEnv = Object.assign({}, process.env);
         applySfPerformanceEnv('sf ' + commandArgs.join(' '), childEnv);
-        const child = spawn(sfdxPath || 'sf', commandArgs, { cwd: process.cwd(), env: childEnv });
+        // On Windows sf is sf.cmd, which Node only spawns through a shell (spawn EINVAL otherwise).
+        // The shell finds sf in the PATH: its path, which can hold spaces, is not passed to it.
+        const isWindows = process.platform === 'win32';
+        const child = spawn(isWindows ? 'sf' : sfdxPath || 'sf', commandArgs, {
+          cwd: process.cwd(),
+          env: childEnv,
+          shell: isWindows,
+        });
         uxLog("log", this, '[pool] ' + c.grey(t('hardisScratchCreateStarted', { value: i })));
         // handle errors
         child.on('error', (err) => {

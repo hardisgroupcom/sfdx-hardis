@@ -36,8 +36,11 @@ e2e_defaults "promo-e2e-$PROVIDER"
 # shellcheck source=/dev/null
 source "$SCRIPTS_DIR/promotion-provider.sh"
 DEVHUB="${DEVHUB:-$ORG}"
-OI="${OI_WORK:-$WORK-oi}"
-OI_DEV="${OI_DEV_WORK:-$WORK-oi-dev}"
+# OI_RUN names a second run of this section on the same repository (its branch and clones differ)
+OI_SUFFIX="${OI_RUN:+-$OI_RUN}"
+OI_BRANCH="e2e/org-init$OI_SUFFIX"
+OI="${OI_WORK:-$WORK-oi$OI_SUFFIX}"
+OI_DEV="${OI_DEV_WORK:-$WORK-oi-dev$OI_SUFFIX}"
 OI_LOGS="$LOGS/org-init"
 mkdir -p "$OI_LOGS"
 RESULTS="$LOGS/results-section6septies.txt"
@@ -89,7 +92,8 @@ assert_count() {
 accounts() { soql_count "$1" "SELECT Id FROM Account WHERE Name = '$2'"; }
 # The username of the scratch org a scratch:create wrote in the local user config of <folder>
 scratch_username_of() {
-  grep -h "^scratchOrgUsername:" "$1"/config/user/*.yml 2>/dev/null | tail -1 | sed -E "s/^scratchOrgUsername: *//; s/['\"]//g"
+  # The user config is a dotfile: config/user/.sfdx-hardis.<user>.yml
+  grep -h "^scratchOrgUsername:" "$1"/config/user/.sfdx-hardis*.yml 2>/dev/null | tail -1 | sed -E "s/^scratchOrgUsername: *//; s/['\"]//g"
 }
 active_scratch_orgs() {
   soql_count "$DEVHUB" "SELECT Id FROM ActiveScratchOrg"
@@ -256,7 +260,7 @@ echo "=== section 6septies: the org initialization project ==="
 ORIGIN_URL=$(git -C "$WORK" remote get-url origin)
 git clone -q "$ORIGIN_URL" "$OI" || exit 1
 cd "$OI" || exit 1
-git checkout -q -b e2e/org-init origin/integration
+git checkout -q -b "$OI_BRANCH" origin/integration
 mkdir -p scripts/apex scripts/functions scripts/e2e scripts/data/OrgInitAccounts \
   force-app/main/default/permissionsets force-app/main/default/classes
 apex_marker org-init-apex OrgInitApex
@@ -333,6 +337,7 @@ cat >config/project-scratch-def.json <<'JSON'
   "features": ["EnableSetPasswordInApi", "Communities"],
   "settings": {
     "lightningExperienceSettings": { "enableS1DesktopEnabled": true },
+    "enhancedNotesSettings": { "enableEnhancedNotes": true },
     "communitiesSettings": { "enableNetworksEnabled": true },
     "experienceBundleSettings": { "enableExperienceBundleMetadata": true }
   }
@@ -341,8 +346,8 @@ JSON
 # The pool commands spawn sf: the Dev Hub of the folder is its default one
 env -u NODE_OPTIONS sf config set target-dev-hub="$DEVHUB" >/dev/null 2>&1
 write_config legacy
-git add -A && git commit -qm "chore: org initialization end to end project" && git push -q -u origin e2e/org-init
-echo "OI_BRANCH=e2e/org-init" >"$LOGS/oi-vars.sh"
+git add -A && git commit -qm "chore: org initialization end to end project" && git push -q -u origin "$OI_BRANCH"
+echo "OI_BRANCH=$OI_BRANCH" >"$LOGS/oi-vars.sh"
 
 # ------------------------------------------------------------------ O0 legacy keys
 echo "=== O0: the steps built from the older keys ==="
@@ -401,7 +406,7 @@ fi
 
 # ------------------------------------------------------------------ O4 every step type
 echo "=== O4: scratch:create runs every step type ==="
-git add -A && git commit -qm "chore: every org initialization step type" && git push -q origin e2e/org-init
+git add -A && git commit -qm "chore: every org initialization step type" && git push -q origin "$OI_BRANCH"
 oi_cli oi-create-all "$OI" hardis:scratch:create --agent --forcenew --target-dev-hub "$DEVHUB"
 SCRATCH1=$(scratch_username_of "$OI")
 echo "SCRATCH1=$SCRATCH1" >>"$LOGS/oi-vars.sh"
@@ -469,7 +474,7 @@ fi
 echo "=== O9: the pool in the git provider ==="
 oi_cli oi-pool-create "$OI" hardis:scratch:pool:create --agent --storage-service gitProvider --max-scratch-orgs 1
 assert_log O9 oi-pool-create 0 "pool:create creates the dashboard in the git provider" "!rror"
-git add -A && git commit -qm "chore: scratch org pool" && git push -q origin e2e/org-init
+git add -A && git commit -qm "chore: scratch org pool" && git push -q origin "$OI_BRANCH"
 echo "=== O10: the pool is filled ==="
 oi_cli oi-pool-refresh "$OI" hardis:scratch:pool:refresh
 assert_log O10 oi-pool-refresh 0 "pool:refresh creates the scratch org of the pool" "exited with code 0" "!exited with code 1"
@@ -494,7 +499,7 @@ fi
 
 # ------------------------------------------------------------------ O11 a developer takes the org
 echo "=== O11: a developer takes the org from a fresh clone ==="
-git clone -q "$ORIGIN_URL" "$OI_DEV" && git -C "$OI_DEV" checkout -q e2e/org-init
+git clone -q "$ORIGIN_URL" "$OI_DEV" && git -C "$OI_DEV" checkout -q "$OI_BRANCH"
 (cd "$OI_DEV" && env -u NODE_OPTIONS sf config set target-dev-hub="$DEVHUB" >/dev/null 2>&1)
 oi_cli oi-pool-fetch "$OI_DEV" hardis:scratch:create --agent --target-dev-hub "$DEVHUB"
 FETCHED=$(scratch_username_of "$OI_DEV")

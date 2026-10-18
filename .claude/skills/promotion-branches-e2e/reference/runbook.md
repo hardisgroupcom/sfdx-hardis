@@ -1333,6 +1333,18 @@ Traps:
   gets it from the password manager, the section exports it to every command.
 - **The fresh clone is the point of O11**: the folder that filled the pool has source tracking
   files for that org, a developer's machine has none.
+- **The package needs Enhanced Notes.** `Files Attachment Notes` uses `ContentNote`: without
+  `enhancedNotesSettings.enableEnhancedNotes` in the definition its install fails, and every step
+  after it is `Not run` (which is the stop on failure working, not the feature failing).
+- **The user config is a dotfile**: `config/user/.sfdx-hardis.<user>.yml`, which a `*.yml` glob
+  skips. The section reads the scratch org username there.
+- **`OI_RUN=<n>` replays the section** with its own branch (`e2e/org-init-<n>`) and clones. On a
+  repository whose pool dashboard was written with another key, the refresh refuses to fill a pool it
+  cannot read: replay on a fresh repository (`build-repo.sh` is enough, the section needs no story),
+  or keep `SFDX_HARDIS_POOL_ENCRYPTION_KEY` of the first run.
+- **`scratch:create` without `devHubAlias`** passed `--target-dev-hub undefined` to
+  `sf org create scratch` until 2026-10-18: this section found it, the fix uses the Dev Hub the
+  command resolved.
 
 ## 7. Traps met while writing this
 
