@@ -8,13 +8,17 @@ and the first run of the new section 6septies. GitHub only.
 **Repositories under test** (private, created empty for this run):
 
 - sections 3, 4, 4bis, 6quater and 6sexies: `nvuillam/sfdx-hardis-promo-e2e-53`
-- section 6septies, org initialization and scratch org pool: `nvuillam/sfdx-hardis-promo-e2e-54`
-  (`OI_RUN=2`), then the pool groups replayed alone on `nvuillam/sfdx-hardis-promo-e2e-55`
+- section 6septies, org initialization and scratch org pool: `nvuillam/sfdx-hardis-promo-e2e-57`
+  (the complete run, 37 OK), after `-54` (`OI_RUN=2`), the pool groups alone on `-55`, and `-56`
+  (a Dev Hub with no free active scratch org)
 - `nvuillam/sfdx-hardis-promo-e2e-52`: first attempt, stopped by the workstation (see "What was
   restarted, and why")
 
-**Salesforce org:** the Developer Edition org of `E2E_ORG`, also the Dev Hub of the section 6septies
-scratch orgs (3 active, 6 a day; the sfdx-hardis CI tests held one slot all along).
+**Salesforce orgs:** the Developer Edition org of `E2E_ORG` for the pipeline. The section 6septies
+scratch orgs came from two Org Farm Dev Hubs (3 active, 6 a day each): `-54` and `-55` used
+`DevHub`, the `DEVHUB` of `.env` (the first version of this report said `E2E_ORG`, wrongly), and
+`-57` used the Dev Hub of `E2E_ORG`, set with `DEVHUB=<its username>`. The same section ran green on
+two Dev Hubs.
 **sfdx-hardis:** `feat/org-init-steps`, from `11b6fffd1` up to `3dd86e582`, through `bin/dev.js`
 for sections 4 to 6sexies and `bin/run.js` (fresh `yarn compile`) for the last runs of section
 6septies; `sf` linked to the same working copy for the pool refresh child processes.
@@ -29,6 +33,7 @@ ___
 | 3, 4 and 4bis: stories, promotions, two go-lives, release notes, retrofit, pipeline | 42     | 42 | 0    | 0    |
 | 6quater: gate, recovery, set-status ahead, forecast (`-53`)                         | 18     | 17 | 0    | 1    |
 | 6sexies: identical actions, I1 to I10 (`-53`)                                       | 21     | 20 | 0    | 1    |
+| 6septies: org initialization and pool, O0 to O12 (`-57`, `E2E_ORG` Dev Hub)         | 37     | 37 | 0    | 0    |
 | 6septies: org initialization and pool, O0 to O12 (`-54`, `OI_RUN=2`)                | 34     | 32 | 2    | 0    |
 | 6septies: pool groups O9 to O12 alone (`-55`, `OI_GROUPS=pool`)                     | 9      | 3  | 6    | 0    |
 
@@ -80,7 +85,7 @@ I1 to I6, I9 and I10 OK. I7 and I8 skipped (`DEV_ORG`).
 | O11   | From a fresh clone, `scratch:create` takes that org, runs only the fetch-only step and resets the source tracking                                                                                                                                                                          | OK (`-54`): `Fetched org ... from pool`, `Step 1/1`, `Resetting the source tracking`                                                                                                                          |
 | O11a  | The org taken is the org of the pool                                                                                                                                                                                                                                                       | FAIL in the harness: an org taken from the pool is saved in the user config by alias only, and the section looked for its username there. Fixed (the username is read from the log)                           |
 | O11b  | The fetch-only step ran when the org was taken                                                                                                                                                                                                                                             | OK (`-55`, on a new org since the pool was empty)                                                                                                                                                             |
-| O11c  | Pull and push previews empty right after the fetch                                                                                                                                                                                                                                         | Not covered end to end, see below                                                                                                                                                                             |
+| O11c  | Pull and push previews empty right after the fetch                                                                                                                                                                                                                                         | OK (`-57`)                                                                                                                                                                                                    |
 | O11d  | A change made in the org afterwards shows in the pull preview                                                                                                                                                                                                                              | OK (`-55`, on a new org)                                                                                                                                                                                      |
 | O12   | The pool empty, its history holds the org taken                                                                                                                                                                                                                                            | OK (`-54`)                                                                                                                                                                                                    |
 
@@ -115,11 +120,6 @@ ___
 
 ## What this run did not cover
 
-- **O11c, the empty previews right after a pool fetch, end to end.** In `-54` the harness could not
-  find the org taken (O11a); in `-55` the pool scratch org was killed by the workstation, and the Dev
-  Hub had no daily scratch org left for another try. What stands: the fetch ran the reset in `-54`
-  (O11), and the reset was proven by hand on a throwaway org (above). Next run: `OI_GROUPS=pool` on
-  a fresh repository.
 - **Sandboxes.** `hardis:org:create` (sandbox creation) and `hardis:org:init` on a sandbox are not
   exercised: no sandbox can be created from the Developer Edition org. The sandbox-only step is only
   proven not to run on a scratch org.
@@ -133,6 +133,11 @@ ___
 ___
 
 ## What was restarted, and why
+
+- **`-56` and `-57`**: `-56` ran on `DevHub`, whose 3 active scratch orgs were taken (two by other work,
+  one leaked by `-55`, deleted since): every creation stopped on `LIMIT_EXCEEDED`. `-57` ran the whole
+  section on the `E2E_ORG` Dev Hub, with `bin/run.js`: 37 OK, the pool fill and the developer fetch
+  included, and O11c covered for the first time.
 
 - **`-52`**: the workstation was short on memory (other VS Code windows and another Claude session
   running a training end to end test) and the run was stopped in section 6quater, after its story S8
