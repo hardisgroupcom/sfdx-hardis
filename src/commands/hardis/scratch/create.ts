@@ -166,6 +166,9 @@ In agent mode:
     this.agentMode = flags.agent === true;
     elapseStart(`Create and initialize scratch org`);
     await this.initConfig();
+    // Without devHubAlias in the config, the Dev Hub the command resolved (--target-dev-hub, else the
+    // default Dev Hub of sf): passing nothing made sf org create scratch fail on "undefined"
+    this.devHubAlias = this.devHubAlias || flags['target-dev-hub']?.getUsername();
     await this.createScratchOrg(flags);
     try {
       await this.updateScratchOrgUser();

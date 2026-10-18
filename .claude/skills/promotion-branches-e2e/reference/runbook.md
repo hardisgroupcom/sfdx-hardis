@@ -1273,6 +1273,67 @@ Traps:
   `status_check`, `open_story`) through `scripts/section-lib.sh`.
 - Ran green on GitHub and GitLab on 2026-10-04 (twice on GitHub) and again on 2026-10-07.
 
+## 6septies. Org initialization and the scratch org pool
+
+The steps that set up a new scratch org or sandbox (`orgInitSteps`, `hardis:org:init`,
+`hardis:config:org-init`) and the scratch org pool stored in the git provider. `scripts/org-init-run.sh`
+runs after `promotion-run.sh`, on the same repository, in clones of its own (`$WORK-oi` for the
+project, `$WORK-oi-dev` for the developer who takes an org from the pool), on a branch
+`e2e/org-init` created from integration. Nothing is deployed to `ORG`.
+
+```bash
+export PROVIDER=github ORG REPO WORK LOGS DEV API      # plus the variables of the other providers
+export DEVHUB=<Dev Hub alias or username>              # default ORG: 2 free ACTIVE scratch orgs needed
+bash .claude/skills/promotion-branches-e2e/scripts/org-init-run.sh   # results-section6septies.txt
+```
+
+The project of the section adds to the base one: the permission set `PromoE2EOrgInit`, a batch
+class `OrgInitBatch` and a schedulable class `OrgInitSchedulable`, Apex scripts that each insert an
+Account with a known name, the SFDMU workspace `OrgInitAccounts` (two Accounts from a CSV), the
+custom function `e2eMarker` (`scripts/functions/e2e-marker.cjs`, inserts an Account named by its
+input in `SFDX_HARDIS_ORG_USERNAME`), a scratch org definition with Experience Cloud, and the public
+package `Files Attachment Notes` (`OI_PACKAGE_ID`, `OI_PACKAGE_NAME`, `OI_PACKAGE_NAMESPACE` to use
+another). Every step leaves something a SOQL query finds: the section never trusts a log alone.
+
+The steps of the `all` configuration, in their run order: install packages, deploy sources, assign
+permission sets, Apex, data, command (`sf data create record` without `--target-org`, which proves
+`SF_TARGET_ORG`), run batch, schedule batch, the custom function, a command creating the site, a
+command waiting for its `Network` record, publish community, then an Apex step with
+`runAtPoolFill: false`, a disabled step and a sandbox-only step.
+
+| Group | Checks                                                                                                                                                                                                                       |
+|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| O0    | With `initPermissionSets` and `scratchOrgInitApexScripts` and no `orgInitSteps`, `hardis:config:org-init --json` builds the four legacy steps, all with `runAtPoolFill`, and names the two older keys                         |
+| O1    | `action:create --type deploy-sources` is refused: the three org initialization types never become deployment actions                                                                                                          |
+| O2    | A step whose Apex script does not exist stops `scratch:create` before `sf org create scratch` runs                                                                                                                            |
+| O3    | `hasSampleData: "yes"` in the definition stops `scratch:create` the same way. O2 and O3 together: the Dev Hub counts as many active scratch orgs after them as before                                                         |
+| O4    | `scratch:create` runs the 13 steps in order, `13 succeeded`, and never the disabled nor the sandbox-only one. Then one query per type: package installed, classes deployed, permission set assigned, each marker Account, the scheduled job, the site |
+| O5    | `hardis:org:init --steps apex-marker` runs that step alone: the marker Account is there twice                                                                                                                                 |
+| O6    | A failing command with `allowFailure` goes on, the next failing one stops, the step after it is `Not run` and its Account does not exist                                                                                     |
+| O7    | `hardis:org:init` on `ORG` (a Developer Edition org, so production) is refused before any step                                                                                                                               |
+| O8    | The scratch org of O4 is deleted: the pool needs its slot                                                                                                                                                                     |
+| O9    | `hardis:scratch:pool:create --agent --storage-service gitProvider --max-scratch-orgs 1` creates the dashboard                                                                                                                 |
+| O10   | `hardis:scratch:pool:refresh` fills the pool: the org of the pool holds the markers of the steps run at pool fill, and not the fetch-only one                                                                                 |
+| O11   | From a fresh clone, `scratch:create` takes that org from the pool, runs only the fetch-only step, resets the source tracking: pull and push previews are empty, and a label changed in the org afterwards shows in the pull preview |
+| O12   | The pool is empty and its history holds the org taken; both scratch orgs are deleted                                                                                                                                         |
+
+Traps:
+
+- **Two active scratch orgs.** A Developer Edition Dev Hub allows 3 active scratch orgs and 6 a day;
+  the section uses 2 at once at most (O4, then the pool org after O8) and deletes them. Check the
+  limits before a run: `sf org list limits --target-org <DEVHUB>` (`ActiveScratchOrgs`).
+- **`pool:refresh` spawns `sf hardis:scratch:create --pool`**, the `sf` of the computer, not
+  `bin/dev.js`: the sfdx-hardis under test must be the one `sf` runs (`sf plugins link` of the
+  working copy, then `yarn compile`, so the linked `lib/` holds the branch).
+- **A local run opens the org in the browser.** The section exports `SF_CONTAINER_MODE=true`, which
+  prints the link instead, and the pool child processes inherit it.
+- **The site is created asynchronously.** `publish-community` right after `sf community create`
+  finds no site: the wait step polls the `Network` record, then gives the site 30 more seconds.
+- **The pool key is made for the run** unless `SFDX_HARDIS_POOL_ENCRYPTION_KEY` is set: a developer
+  gets it from the password manager, the section exports it to every command.
+- **The fresh clone is the point of O11**: the folder that filled the pool has source tracking
+  files for that org, a developer's machine has none.
+
 ## 7. Traps met while writing this
 
 - **The Dev Hub has a daily scratch org signup limit, and it resets at midnight in the org's own
