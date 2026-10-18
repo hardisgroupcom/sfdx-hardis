@@ -45,6 +45,7 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 ## Replacement Rules Skills
 
 - `replacement-rules-e2e` skill: the end to end test of replacement rules (Beta) against a scratch org and a throwaway private GitHub repository running the CI workflows of the branch under test. Run it whenever replacement rules, their built-in rules or the VS Code Replacement Rules panel change in a way unit tests cannot cover.
+- `replacement-rules-builtin-update` skill: update the built-in replacement rules for a new Salesforce release (new elements from `describeValueType`, the user permissions list from the PermissionSet describe) and regenerate `docs/salesforce-devops-config-replacement-rules-builtin.md`. Load it when a new API version is out or in preview, or when a deployment fails on an element or a user permission a built-in rule should remove.
 
 ## VS Code Extension (vscode-sfdx-hardis)
 

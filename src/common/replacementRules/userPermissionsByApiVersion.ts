@@ -2,7 +2,7 @@
 // Built from the PermissionSet describe (Permissions<Name> fields) of an Enterprise Edition sandbox and a
 // Developer Edition org at API 50 to 68. Used when the target org cannot be described: with a connection,
 // builtin-unknown-user-permissions reads the exact list of the org (licenses and features included).
-// To refresh: describe /services/data/vNN.0/sobjects/PermissionSet for each version and diff the fields.
+// To refresh: skill replacement-rules-builtin-update (scripts/refresh-user-permissions.mjs).
 
 export const USER_PERMISSIONS_INTRODUCED_IN: Record<number, string[]> = {
   58: [

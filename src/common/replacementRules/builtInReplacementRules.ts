@@ -4,7 +4,8 @@
 //
 // Sources: Metadata API Developer Guide v60 to v68 ("Available in API version N and later",
 // "Removed in API version N"), forcedotcom/code-analyzer#2098 on <ends>.
-// To refresh: search the guide of the new release for these two sentences.
+// To refresh: skill replacement-rules-builtin-update (diff of describeValueType between two API
+// versions, then the guide of the new release for these two sentences).
 //
 // Elements whose removal changes what a component does are disabled by default: when one of them
 // is found, a warning says the deployment will fail and which rule removes it.
