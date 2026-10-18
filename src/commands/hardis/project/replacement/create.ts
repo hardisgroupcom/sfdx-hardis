@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { ReplacementCommandBase } from '../../../../common/replacementRules/command/replacementCommandBase.js';
+import { ReplacementCommandBase } from './base.js';
 import { validateReplacementRule } from '../../../../common/replacementRules/config/ruleConfig.js';
 import { checkRulePlace } from '../../../../common/replacementRules/config/ruleUpdateUtils.js';
 import {
@@ -14,7 +14,7 @@ import {
   readRuleFromFlags,
   replacementRuleFieldFlags,
   replacementRuleLayerFlags,
-} from '../../../../common/replacementRules/command/ruleFlags.js';
+} from '../../../../common/replacementRules/utils/ruleFlags.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

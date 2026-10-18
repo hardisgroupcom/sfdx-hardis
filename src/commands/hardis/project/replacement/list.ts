@@ -6,7 +6,7 @@ import c from 'chalk';
 import { uxLog } from '../../../../common/utils/index.js';
 import { uxLogTableWithReport } from '../../../../common/utils/filesUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { ReplacementCommandBase } from '../../../../common/replacementRules/command/replacementCommandBase.js';
+import { ReplacementCommandBase } from './base.js';
 import { buildReplacementRulesInventory, summarizeRuleDefinitions } from '../../../../common/replacementRules/config/ruleInventory.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);

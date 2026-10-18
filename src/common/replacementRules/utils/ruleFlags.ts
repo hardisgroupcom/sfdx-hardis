@@ -6,7 +6,7 @@ import { SfError } from '@salesforce/core';
 import fs from '../../utils/fsUtils.js';
 import { t } from '../../utils/i18n.js';
 import { normalizeRuleList } from '../config/ruleConfig.js';
-import { REPLACEMENT_RULE_LAYERS, REPLACEMENT_RULE_TYPES, ReplacementRule } from '../utils/types.js';
+import { REPLACEMENT_RULE_LAYERS, REPLACEMENT_RULE_TYPES, ReplacementRule } from './types.js';
 
 // i18n keys of the rule types, for prompts
 export const RULE_TYPE_LABEL_KEYS: Record<string, string> = {

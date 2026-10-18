@@ -1,20 +1,20 @@
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import { uxLog } from '../../utils/index.js';
-import { prompts } from '../../utils/prompts.js';
-import { t } from '../../utils/i18n.js';
-import { listMajorOrgs } from '../../utils/orgConfigUtils.js';
-import { WebSocketClient } from '../../websocketClient.js';
+import { uxLog } from '../../../../common/utils/index.js';
+import { prompts } from '../../../../common/utils/prompts.js';
+import { t } from '../../../../common/utils/i18n.js';
+import { listMajorOrgs } from '../../../../common/utils/orgConfigUtils.js';
+import { WebSocketClient } from '../../../../common/websocketClient.js';
 import {
   readRulesFromFile,
   resolveBranchConfigFile,
   resolveProjectConfigFile,
   writeRulesToFile,
-} from '../config/ruleConfig.js';
-import { readIssueRules, writeIssueRules } from '../config/issueRulesStore.js';
-import { DEFAULT_VALUE_KEY, REPLACEMENT_RULE_TYPES, ReplacementRule, ReplacementRuleLayer, RulePlace } from '../utils/types.js';
-import { RULE_TYPE_LABEL_KEYS } from './ruleFlags.js';
+} from '../../../../common/replacementRules/config/ruleConfig.js';
+import { readIssueRules, writeIssueRules } from '../../../../common/replacementRules/config/issueRulesStore.js';
+import { DEFAULT_VALUE_KEY, REPLACEMENT_RULE_TYPES, ReplacementRule, ReplacementRuleLayer, RulePlace } from '../../../../common/replacementRules/utils/types.js';
+import { RULE_TYPE_LABEL_KEYS } from '../../../../common/replacementRules/utils/ruleFlags.js';
 
 /**
  * Base class of hardis:project:replacement:* commands: where a rule is stored, how the rules of a

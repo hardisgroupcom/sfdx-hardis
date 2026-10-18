@@ -8,7 +8,7 @@ import {
 } from '../../../src/common/replacementRules/config/ruleConfig.js';
 import { builtInRuleAppliesToApiVersion, BUILT_IN_REPLACEMENT_RULES } from '../../../src/common/replacementRules/builtIn/builtInReplacementRules.js';
 import { resolveRuleValue } from '../../../src/common/replacementRules/engine/ruleEngine.js';
-import { applyRuleFields, buildRuleFieldsFromFlags } from '../../../src/common/replacementRules/command/ruleFlags.js';
+import { applyRuleFields, buildRuleFieldsFromFlags } from '../../../src/common/replacementRules/utils/ruleFlags.js';
 import { validateXmlPath } from '../../../src/common/replacementRules/utils/xmlPath.js';
 import { ReplacementRule } from '../../../src/common/replacementRules/utils/types.js';
 

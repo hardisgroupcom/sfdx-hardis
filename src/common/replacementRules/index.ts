@@ -4,8 +4,9 @@
 //   engine/                  applies the rules to the files of a deployment (applyReplacementRules)
 //   config/                  where rules are stored (project, branch files, issue) and how they merge
 //   builtIn/                 list of the built-in rules, user permissions by API version, doc page
-//   command/                 base class and flags of the hardis:project:replacement:* commands
-//   utils/                   types, element paths, API version helpers
+//   utils/                   types, element paths, API version helpers, flags of the commands
+//
+// The base class of the hardis:project:replacement:* commands is src/commands/hardis/project/replacement/base.ts.
 
 import { BuiltInRemovalRule } from './builtInRemovalRule.js';
 import { FlowEndsBuiltInRule } from './flowEndsBuiltInRule.js';
