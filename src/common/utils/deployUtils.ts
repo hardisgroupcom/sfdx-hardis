@@ -2073,8 +2073,8 @@ async function startDeploymentReplacementRules(
   options: { targetUsername: string; conn: any; replacementRules?: { targetBranch: string | null } | false }
 ): Promise<{ restore: () => number } | null> {
   try {
-    const { applyReplacementRules } = await import('../replacementRules/ruleEngine.js');
-    const { buildReplacementRulesMarkdown } = await import('../replacementRules/replacementReport.js');
+    const { applyReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
+    const { buildReplacementRulesMarkdown } = await import('../replacementRules/engine/replacementReport.js');
     const session = await applyReplacementRules({
       targetBranch: options.replacementRules ? options.replacementRules.targetBranch : null,
       conn: options.conn,

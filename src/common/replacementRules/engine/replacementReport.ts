@@ -1,7 +1,7 @@
 // What the Pull Request comments say about the replacement rules of a deployment.
 // Values are never written: only rule ids, where they come from, and the number of files.
 
-import { ReplacementRuleOrigin, ReplacementRulesReport } from './types.js';
+import { ReplacementRuleOrigin, ReplacementRulesReport } from '../utils/types.js';
 
 const MAX_LISTED_RULES = 30;
 

@@ -6,15 +6,15 @@
 // changes the value of one org.
 
 import * as path from 'path';
-import fs from '../utils/fsUtils.js';
+import fs from '../../utils/fsUtils.js';
 import yaml from 'js-yaml';
 import { glob } from 'glob';
-import { getConfig } from '../../config/index.js';
-import { dumpRepositoryYaml } from '../utils/yamlUtils.js';
-import { clearListMajorOrgsCache } from '../utils/orgConfigUtils.js';
-import { BUILT_IN_REPLACEMENT_RULES } from './builtInReplacementRules.js';
-import { validateXmlPath } from './xmlPath.js';
-import { t } from '../utils/i18n.js';
+import { getConfig } from '../../../config/index.js';
+import { dumpRepositoryYaml } from '../../utils/yamlUtils.js';
+import { clearListMajorOrgsCache } from '../../utils/orgConfigUtils.js';
+import { BUILT_IN_REPLACEMENT_RULES } from '../builtIn/builtInReplacementRules.js';
+import { validateXmlPath } from '../utils/xmlPath.js';
+import { t } from '../../utils/i18n.js';
 import {
   BuiltInReplacementRule,
   DEFAULT_VALUE_KEY,
@@ -23,7 +23,7 @@ import {
   ReplacementRule,
   ReplacementRuleOrigin,
   ReplacementWarning,
-} from './types.js';
+} from '../utils/types.js';
 
 export const REPLACEMENT_RULES_CONFIG_KEY = 'replacementRules';
 export const SKIP_REPLACEMENT_RULES_CONFIG_KEY = 'skipReplacementRules';

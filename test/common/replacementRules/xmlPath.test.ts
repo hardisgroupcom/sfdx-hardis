@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as xmldom from '@xmldom/xmldom';
-import { compileXmlPath, removeXmlNode, selectXmlPath, validateXmlPath } from '../../../src/common/replacementRules/xmlPath.js';
-import { removeFlowEnds } from '../../../src/common/replacementRules/flowEndsHandler.js';
+import { compileXmlPath, removeXmlNode, selectXmlPath, validateXmlPath } from '../../../src/common/replacementRules/utils/xmlPath.js';
+import { removeFlowEnds } from '../../../src/common/replacementRules/flowEndsBuiltInRule.js';
 
 const parse = (xml: string) => new xmldom.DOMParser().parseFromString(xml, 'text/xml');
 const serialize = (doc: any) => new xmldom.XMLSerializer().serializeToString(doc);

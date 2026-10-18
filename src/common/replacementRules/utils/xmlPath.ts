@@ -64,6 +64,18 @@ export function validateXmlPath(xmlPath: string): string | null {
   }
 }
 
+/** Trimmed text of the first child element named childName, empty when there is none */
+export function childElementText(node: any, childName: string): string {
+  let child = node?.firstChild;
+  while (child) {
+    if (child.nodeType === 1 && (child.localName || child.nodeName) === childName) {
+      return (child.textContent || '').trim();
+    }
+    child = child.nextSibling;
+  }
+  return '';
+}
+
 function parseXmlPath(xmlPathInput: string): XmlPathStep[] {
   const xmlPath = String(xmlPathInput || '').trim();
   if (xmlPath === '') {

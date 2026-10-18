@@ -14,7 +14,7 @@ rules does what the documentation says. About 35 minutes, most of it waiting for
 (each one clones, builds and links the sfdx-hardis branch under test).
 
 The feature: `docs/salesforce-devops-config-replacement-rules.md`, the code in
-`src/common/replacementRules/`, the engine entry `applyReplacementRules` (`ruleEngine.ts`).
+`src/common/replacementRules/`, the engine entry `applyReplacementRules` (`engine/ruleEngine.ts`).
 
 ## What this skill contains
 

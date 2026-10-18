@@ -5,12 +5,12 @@
 
 import yaml from 'js-yaml';
 import { SfError } from '@salesforce/core';
-import { GitProvider } from '../gitProvider/index.js';
-import { DashboardFormat, GitProviderRoot } from '../gitProvider/gitProviderRoot.js';
-import { CONSTANTS } from '../../config/index.js';
-import { t } from '../utils/i18n.js';
+import { GitProvider } from '../../gitProvider/index.js';
+import { DashboardFormat, GitProviderRoot } from '../../gitProvider/gitProviderRoot.js';
+import { CONSTANTS } from '../../../config/index.js';
+import { t } from '../../utils/i18n.js';
 import { cleanRuleForStorage, normalizeRuleList, REPLACEMENT_RULES_CONFIG_KEY } from './ruleConfig.js';
-import { IssueRulesState, ReplacementRule } from './types.js';
+import { IssueRulesState, ReplacementRule } from '../utils/types.js';
 
 export const REPLACEMENT_RULES_ISSUE_TITLE = 'sfdx-hardis Replacement Rules';
 export const REPLACEMENT_RULES_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-devops-config-replacement-rules/`;

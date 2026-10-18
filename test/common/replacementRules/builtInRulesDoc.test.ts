@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import * as fs from 'fs';
-import { BUILT_IN_RULES_DOC_FILE, buildBuiltInRulesDocMarkdown } from '../../../src/common/replacementRules/builtInRulesDoc.js';
-import { BUILT_IN_REPLACEMENT_RULES } from '../../../src/common/replacementRules/builtInReplacementRules.js';
+import { BUILT_IN_RULES_DOC_FILE, buildBuiltInRulesDocMarkdown } from '../../../src/common/replacementRules/builtIn/builtInRulesDoc.js';
+import { BUILT_IN_REPLACEMENT_RULES } from '../../../src/common/replacementRules/builtIn/builtInReplacementRules.js';
 
 describe('replacement rules - built-in rules documentation', () => {
   it('is up to date with the code', () => {

@@ -953,7 +953,7 @@ export async function deployBackpromotePackage(options: {
     ` --wait ${getEnvVar('SFDX_DEPLOY_WAIT_MINUTES') || '120'}` +
     ' --json';
   // A developer sandbox gets the default values of the replacement rules
-  const { runWithReplacementRules } = await import('../replacementRules/ruleEngine.js');
+  const { runWithReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
   const result = await runWithReplacementRules(
     { targetBranch: null, targetUsername: options.username, packageXmlFiles: [packageXml], commandThis: options.commandThis },
     () => runDeploy(command, 'backpromote', options.commandThis, options.debugMode)

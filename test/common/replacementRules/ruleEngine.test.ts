@@ -2,10 +2,10 @@ import { expect } from 'chai';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { applyReplacementRules } from '../../../src/common/replacementRules/ruleEngine.js';
-import { restoreLeftoverReplacementFiles } from '../../../src/common/replacementRules/fileBackup.js';
-import { buildReplacementRulesMarkdown } from '../../../src/common/replacementRules/replacementReport.js';
-import { findSkipReplacementRulesFile } from '../../../src/common/replacementRules/ruleConfig.js';
+import { applyReplacementRules } from '../../../src/common/replacementRules/engine/ruleEngine.js';
+import { restoreLeftoverReplacementFiles } from '../../../src/common/replacementRules/engine/fileBackup.js';
+import { buildReplacementRulesMarkdown } from '../../../src/common/replacementRules/engine/replacementReport.js';
+import { findSkipReplacementRulesFile } from '../../../src/common/replacementRules/config/ruleConfig.js';
 import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 import { clearRegisteredSecrets, redactSecrets } from '../../../src/common/utils/secretMaskingUtils.js';
 

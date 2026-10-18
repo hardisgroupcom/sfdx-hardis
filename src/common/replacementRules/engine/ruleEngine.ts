@@ -1,23 +1,26 @@
 // Applies the replacement rules to the files of a deployment, or computes what they would change
-// (preview). See ruleConfig.ts for the layers, builtInReplacementRules.ts for the built-in list.
+// (preview). See config/ruleConfig.ts for the layers, builtIn/builtInReplacementRules.ts for the built-in
+// list, and replacementRuleRoot.ts with its subclasses for what each rule type does to a file.
 
 import * as path from 'path';
 import c from 'chalk';
 import picomatch from 'picomatch';
 import * as xmldom from '@xmldom/xmldom';
 import { ConfigAggregator, Connection, Org, OrgConfigProperties } from '@salesforce/core';
-import fs from '../utils/fsUtils.js';
-import { uxLog } from '../utils/index.js';
-import { t } from '../utils/i18n.js';
-import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { buildActionTargetBranchCandidates, evaluateActionBranchFilter, normalizeBranchName } from '../utils/actionUtils.js';
-import { getSfdxProjectPackageDirectories, PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS } from '../utils/projectUtils.js';
-import { registerSecretValue } from '../utils/secretMaskingUtils.js';
-import { getSecretsProvider } from '../secretsProvider/index.js';
-import { builtInRuleAppliesToApiVersion } from './builtInReplacementRules.js';
-import { removeFlowEnds } from './flowEndsHandler.js';
+import fs from '../../utils/fsUtils.js';
+import { uxLog } from '../../utils/index.js';
+import { t } from '../../utils/i18n.js';
+import { listMajorOrgs } from '../../utils/orgConfigUtils.js';
+import { buildActionTargetBranchCandidates, evaluateActionBranchFilter, normalizeBranchName } from '../../utils/actionUtils.js';
+import { getSfdxProjectPackageDirectories, PACKAGE_DIRECTORY_GLOB_IGNORE_PATTERNS } from '../../utils/projectUtils.js';
+import { registerSecretValue } from '../../utils/secretMaskingUtils.js';
+import { getSecretsProvider } from '../../secretsProvider/index.js';
+import { builtInRuleAppliesToApiVersion } from '../builtIn/builtInReplacementRules.js';
+import { createReplacementRule } from '../index.js';
+import { ReplacementRuleRoot } from '../replacementRuleRoot.js';
+import { formatApiVersion, parseApiVersion } from '../utils/apiVersionUtils.js';
 import { ReplacementFileBackup, restoreLeftoverReplacementFiles } from './fileBackup.js';
-import { readIssueRules } from './issueRulesStore.js';
+import { readIssueRules } from '../config/issueRulesStore.js';
 import {
   findSkipReplacementRulesFile,
   mergeReplacementRules,
@@ -27,7 +30,7 @@ import {
   SKIP_REPLACEMENT_RULES_CONFIG_KEY,
   toFileList,
   validateReplacementRule,
-} from './ruleConfig.js';
+} from '../config/ruleConfig.js';
 import {
   DEFAULT_VALUE_KEY,
   MergedReplacementRule,
@@ -35,8 +38,7 @@ import {
   ReplacementRulesReport,
   ReplacementTarget,
   ReplacementWarning,
-} from './types.js';
-import { removeXmlNode, selectXmlPath } from './xmlPath.js';
+} from '../utils/types.js';
 
 export const SKIP_REPLACEMENT_RULES_ENV = 'SFDX_HARDIS_SKIP_REPLACEMENT_RULES';
 
@@ -64,14 +66,9 @@ export interface ReplacementRulesSession {
   restore: () => number;
 }
 
-// What some built-in rules need to know about the target org, computed once per run
-interface EngineContext {
-  // mode org: the user permissions the org has; mode version: the ones its API version does not know
-  userPermissions?: { mode: 'org' | 'version'; names: Set<string> } | null;
-}
-
 interface ResolvedRule {
   rule: MergedReplacementRule;
+  handler: ReplacementRuleRoot;
   value: string | null;
   matcher: (file: string) => boolean;
   matchedFiles: number;
@@ -142,7 +139,7 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
       if (!rule.enabled && !rule.builtIn.warnWhenDisabled) {
         continue;
       }
-      resolved.push({ rule, value: null, matcher: buildMatcher(toFileList(rule.files)), matchedFiles: 0, found: 0 });
+      resolved.push({ rule, handler: createReplacementRule(rule), value: null, matcher: buildMatcher(toFileList(rule.files)), matchedFiles: 0, found: 0 });
       continue;
     }
     if (!rule.enabled) {
@@ -152,8 +149,9 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
     if (!verdict.run) {
       continue;
     }
+    const handler = createReplacementRule(rule);
     let value: string | null = null;
-    if (rule.type !== 'xml-remove') {
+    if (handler.needsValue()) {
       if (rule.secret && secretsProvider) {
         const secret = await secretsProvider.getSecret(rule.secret, target.targetBranch);
         if (secret.value == null) {
@@ -174,7 +172,7 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
         }
       }
     }
-    resolved.push({ rule, value, matcher: buildMatcher(toFileList(rule.files)), matchedFiles: 0, found: 0 });
+    resolved.push({ rule, handler, value, matcher: buildMatcher(toFileList(rule.files)), matchedFiles: 0, found: 0 });
   }
   if (resolved.length === 0) {
     session.report.skipped = 'no-rules';
@@ -183,12 +181,8 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
   }
 
   uxLog('action', commandThis, c.cyan(t('replacementRulesApplying', { target: target.label })));
-  const context: EngineContext = {};
-  if (resolved.some((item) => item.rule.enabled && item.rule.builtIn?.handler === 'unknownUserPermissions')) {
-    context.userPermissions = await resolveUserPermissionsCheck(options, target.apiVersion);
-    if (context.userPermissions) {
-      uxLog('log', commandThis, c.grey(t(context.userPermissions.mode === 'org' ? 'replacementRulesUserPermissionsFromOrg' : 'replacementRulesUserPermissionsFromList', { count: context.userPermissions.names.size, apiVersion: formatApiVersion(target.apiVersion) })));
-    }
+  for (const item of resolved) {
+    await item.handler.prepare({ target, conn: options.conn, targetUsername: options.targetUsername, commandThis });
   }
   const files = await listCandidateFiles(options.packageXmlFiles, commandThis);
   for (const file of files) {
@@ -197,7 +191,7 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
       continue;
     }
     try {
-      await processFile(file, rulesOfFile, target, session.report, options.write ? backup : null, context);
+      await processFile(file, rulesOfFile, target, session.report, options.write ? backup : null);
     } catch (e: any) {
       session.report.warnings.push({ kind: 'file-error', message: t('replacementRulesFileError', { file, message: e.message }) });
     }
@@ -348,82 +342,6 @@ export async function resolveDeployApiVersion(
   return candidates.length > 0 ? Math.min(...candidates) : null;
 }
 
-/**
- * The user permissions check of the target org: the Permissions<Name> fields of its PermissionSet
- * describe (what its API version, licenses and features allow), else the permissions its API
- * version does not know, from userPermissionsByApiVersion.ts. Null when neither is available.
- */
-async function resolveUserPermissionsCheck(
-  options: Pick<ApplyReplacementRulesOptions, 'conn' | 'targetUsername'>,
-  apiVersion: number | null
-): Promise<EngineContext['userPermissions']> {
-  try {
-    let conn: any = options.conn || null;
-    if (!conn && options.targetUsername) {
-      conn = (await Org.create({ aliasOrUsername: options.targetUsername })).getConnection();
-    }
-    if (conn) {
-      const describe = await conn.sobject('PermissionSet').describe();
-      const names = new Set<string>(
-        (describe?.fields || [])
-          .map((field: any) => String(field.name || ''))
-          .filter((name: string) => name.startsWith('Permissions'))
-          .map((name: string) => name.substring('Permissions'.length))
-      );
-      if (names.size > 0) {
-        return { mode: 'org', names };
-      }
-    }
-  } catch {
-    // Org not reachable: the list by API version decides
-  }
-  if (apiVersion == null) {
-    return null;
-  }
-  const { USER_PERMISSIONS_INTRODUCED_IN, USER_PERMISSIONS_REMOVED_IN } = await import('./userPermissionsByApiVersion.js');
-  const unknown = new Set<string>();
-  for (const [version, names] of Object.entries(USER_PERMISSIONS_INTRODUCED_IN)) {
-    if (apiVersion < Number(version)) {
-      names.forEach((name) => unknown.add(name));
-    }
-  }
-  for (const [version, names] of Object.entries(USER_PERMISSIONS_REMOVED_IN)) {
-    if (apiVersion >= Number(version)) {
-      names.forEach((name) => unknown.add(name));
-    }
-  }
-  return { mode: 'version', names: unknown };
-}
-
-// Removes the userPermissions entries the target org does not have. Returns the number removed
-function removeUnknownUserPermissions(doc: any, xmlPaths: string[], check: EngineContext['userPermissions']): number {
-  if (!check) {
-    return 0;
-  }
-  let removed = 0;
-  for (const xmlPath of xmlPaths) {
-    for (const node of selectXmlPath(xmlPath, doc)) {
-      let name = '';
-      let child = node.firstChild;
-      while (child) {
-        if (child.nodeType === 1 && (child.localName || child.nodeName) === 'name') {
-          name = (child.textContent || '').trim();
-        }
-        child = child.nextSibling;
-      }
-      if (!name) {
-        continue;
-      }
-      const unknown = check.mode === 'org' ? !check.names.has(name) : check.names.has(name);
-      if (unknown) {
-        removeXmlNode(node);
-        removed++;
-      }
-    }
-  }
-  return removed;
-}
-
 async function resolveConnectionApiVersion(options: Pick<ApplyReplacementRulesOptions, 'conn' | 'targetUsername'>): Promise<number | null> {
   const fromEnv = parseApiVersion(process.env.SF_ORG_API_VERSION);
   if (fromEnv) {
@@ -458,26 +376,25 @@ async function processFile(
   rulesOfFile: ResolvedRule[],
   target: ReplacementTarget,
   report: ReplacementRulesReport,
-  backup: ReplacementFileBackup | null,
-  context: EngineContext = {}
+  backup: ReplacementFileBackup | null
 ): Promise<void> {
   const original = await fs.readFile(file, 'utf8');
   let content = original;
   // Text rules work on the raw content, before the XML ones
-  for (const item of rulesOfFile.filter((entry) => entry.rule.type === 'text')) {
+  for (const item of rulesOfFile.filter((entry) => entry.handler.scope === 'text')) {
     item.matchedFiles++;
-    const { content: updated, count } = replaceText(content, item.rule, item.value as string);
-    item.found += count;
-    pushResult(report, file, item, updated !== content ? 'changed' : count > 0 ? 'unchanged' : 'not-found', count, count > 0 ? t('replacementRulesTextMatches', { count }) : undefined);
-    content = updated;
+    const outcome = item.handler.applyToText(content, item.value);
+    item.found += outcome.found;
+    pushResult(report, file, item, outcome.status, outcome.changed || outcome.found, outcome.detail);
+    content = outcome.content;
   }
-  const xmlRules = rulesOfFile.filter((entry) => entry.rule.type !== 'text');
+  const xmlRules = rulesOfFile.filter((entry) => entry.handler.scope === 'xml');
   if (xmlRules.length > 0 && file.toLowerCase().endsWith('.xml')) {
     const doc = new xmldom.DOMParser().parseFromString(content, 'text/xml');
     let xmlChanged = false;
     for (const item of xmlRules) {
       item.matchedFiles++;
-      const outcome = applyXmlRule(doc, item, target, context);
+      const outcome = item.handler.applyToXml(doc, item.value, target);
       item.found += outcome.found;
       xmlChanged = xmlChanged || outcome.changed > 0;
       pushResult(report, file, item, outcome.status, outcome.changed || outcome.found, outcome.detail);
@@ -490,75 +407,6 @@ async function processFile(
     await backup.backupFile(file);
     await fs.writeFile(file, content, 'utf8');
   }
-}
-
-function applyXmlRule(
-  doc: any,
-  item: ResolvedRule,
-  target: ReplacementTarget,
-  context: EngineContext = {}
-): { found: number; changed: number; status: ReplacementFileResult['status']; detail?: string } {
-  const rule = item.rule;
-  if (rule.builtIn) {
-    const builtIn = rule.builtIn;
-    if (!rule.enabled) {
-      // Disabled rule with warnWhenDisabled: report the element the deployment will fail on
-      const found = builtIn.xmlPaths.reduce((total, xmlPath) => total + selectXmlPath(xmlPath, doc).length, 0);
-      return found > 0
-        ? { found, changed: 0, status: 'risky-element', detail: builtIn.xmlPaths.join(', ') }
-        : { found: 0, changed: 0, status: 'not-found' };
-    }
-    let removed = 0;
-    if (builtIn.handler === 'flowEnds') {
-      removed = removeFlowEnds(doc);
-    } else if (builtIn.handler === 'unknownUserPermissions') {
-      removed = removeUnknownUserPermissions(doc, builtIn.xmlPaths, context.userPermissions || null);
-    } else {
-      for (const xmlPath of builtIn.xmlPaths) {
-        for (const node of selectXmlPath(xmlPath, doc)) {
-          removeXmlNode(node);
-          removed++;
-        }
-      }
-    }
-    return removed > 0
-      ? { found: removed, changed: removed, status: 'changed', detail: t('replacementRulesRemovedForApi', { count: removed, apiVersion: formatApiVersion(target.apiVersion) }) }
-      : { found: 0, changed: 0, status: 'not-found' };
-  }
-  const nodes = selectXmlPath(rule.xmlPath as string, doc);
-  if (nodes.length === 0) {
-    return { found: 0, changed: 0, status: 'not-found' };
-  }
-  if (rule.type === 'xml-remove') {
-    for (const node of nodes) {
-      removeXmlNode(node);
-    }
-    return { found: nodes.length, changed: nodes.length, status: 'changed', detail: t('replacementRulesRemovedElements', { count: nodes.length }) };
-  }
-  let changed = 0;
-  for (const node of nodes) {
-    if ((node.textContent ?? '') !== item.value) {
-      node.textContent = item.value;
-      changed++;
-    }
-  }
-  return { found: nodes.length, changed, status: changed > 0 ? 'changed' : 'unchanged' };
-}
-
-function replaceText(content: string, rule: MergedReplacementRule, value: string): { content: string; count: number } {
-  const find = rule.find as string;
-  if (rule.regex === true) {
-    const regex = new RegExp(find, 'g');
-    let count = 0;
-    // A function replacement keeps "$" in the value literal (a secret can contain one)
-    const updated = content.replace(regex, () => {
-      count++;
-      return value;
-    });
-    return { content: updated, count };
-  }
-  const parts = content.split(find);
-  return { content: parts.join(value), count: parts.length - 1 };
 }
 
 function pushResult(
@@ -653,15 +501,6 @@ function buildMatcher(globs: string[]): (file: string) => boolean {
 
 function toRelativePosix(file: string): string {
   return path.relative(process.cwd(), path.resolve(file)).replace(/\\/g, '/');
-}
-
-function parseApiVersion(value: string | null | undefined): number | null {
-  const parsed = parseFloat(String(value || ''));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-function formatApiVersion(apiVersion: number | null): string {
-  return apiVersion == null ? '?' : apiVersion.toFixed(1);
 }
 
 function logWarnings(warnings: ReplacementWarning[], commandThis: any): void {

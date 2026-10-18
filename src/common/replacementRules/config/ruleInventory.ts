@@ -2,13 +2,13 @@
 // effective rules of every target, the built-in rules. Read by agents and the VS Code panel.
 // Never holds a secret value: only variable names.
 
-import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { t } from '../utils/i18n.js';
-import { buildActionTargetBranchCandidates, evaluateActionBranchFilter } from '../utils/actionUtils.js';
-import { getSecretsProvider } from '../secretsProvider/index.js';
-import { BUILT_IN_REPLACEMENT_RULES } from './builtInReplacementRules.js';
+import { listMajorOrgs } from '../../utils/orgConfigUtils.js';
+import { t } from '../../utils/i18n.js';
+import { buildActionTargetBranchCandidates, evaluateActionBranchFilter } from '../../utils/actionUtils.js';
+import { getSecretsProvider } from '../../secretsProvider/index.js';
+import { BUILT_IN_REPLACEMENT_RULES } from '../builtIn/builtInReplacementRules.js';
 import { readIssueRules } from './issueRulesStore.js';
-import { resolveRuleValue } from './ruleEngine.js';
+import { resolveRuleValue } from '../engine/ruleEngine.js';
 import {
   mergeReplacementRules,
   readAllBranchReplacementRules,
@@ -18,7 +18,7 @@ import {
   resolveProjectConfigFile,
   validateReplacementRule,
 } from './ruleConfig.js';
-import { DEFAULT_VALUE_KEY, MergedReplacementRule, ReplacementRule, ReplacementRuleLayer, ReplacementRuleOrigin } from './types.js';
+import { DEFAULT_VALUE_KEY, MergedReplacementRule, ReplacementRule, ReplacementRuleLayer, ReplacementRuleOrigin } from '../utils/types.js';
 
 export interface RuleDefinition {
   layer: ReplacementRuleLayer;

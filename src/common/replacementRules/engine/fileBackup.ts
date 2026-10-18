@@ -7,8 +7,8 @@ import * as crypto from 'crypto';
 import * as nodeFs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import fs from '../utils/fsUtils.js';
-import { createTempDir } from '../utils/index.js';
+import fs from '../../utils/fsUtils.js';
+import { createTempDir } from '../../utils/index.js';
 
 interface BackupEntry {
   file: string;

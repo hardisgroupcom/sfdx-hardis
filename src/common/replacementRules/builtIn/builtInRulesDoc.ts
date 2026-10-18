@@ -5,7 +5,7 @@
 
 import { BUILT_IN_REPLACEMENT_RULES } from './builtInReplacementRules.js';
 import { USER_PERMISSIONS_INTRODUCED_IN, USER_PERMISSIONS_REMOVED_IN } from './userPermissionsByApiVersion.js';
-import { BuiltInReplacementRule } from './types.js';
+import { BuiltInReplacementRule } from '../utils/types.js';
 
 export const BUILT_IN_RULES_DOC_FILE = 'docs/salesforce-devops-config-replacement-rules-builtin.md';
 

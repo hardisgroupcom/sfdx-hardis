@@ -1,9 +1,9 @@
 import { expect } from 'chai';
-import { buildIssueBody, clearIssueRulesCache, parseIssueRules, readIssueRules, writeIssueRules } from '../../../src/common/replacementRules/issueRulesStore.js';
+import { buildIssueBody, clearIssueRulesCache, parseIssueRules, readIssueRules, writeIssueRules } from '../../../src/common/replacementRules/config/issueRulesStore.js';
 import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import { CiVariablesSecretsProvider } from '../../../src/common/secretsProvider/ciVariablesSecretsProvider.js';
 import { clearRegisteredSecrets, redactCommandOutput, redactSecrets, redactSecretsDeep, registerSecretValue } from '../../../src/common/utils/secretMaskingUtils.js';
-import { ReplacementRule } from '../../../src/common/replacementRules/types.js';
+import { ReplacementRule } from '../../../src/common/replacementRules/utils/types.js';
 
 const rules: ReplacementRule[] = [
   { id: 'partner-site-admin', type: 'xml-value', files: '**/sites/*.site-meta.xml', xmlPath: 'CustomSite/siteAdmin', values: { main: 'admin@example.com', default: 'admin@example.com.sandbox' } },

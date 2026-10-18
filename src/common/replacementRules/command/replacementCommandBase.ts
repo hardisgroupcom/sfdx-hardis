@@ -1,19 +1,19 @@
 import { SfCommand } from '@salesforce/sf-plugins-core';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
-import { uxLog } from '../utils/index.js';
-import { prompts } from '../utils/prompts.js';
-import { t } from '../utils/i18n.js';
-import { listMajorOrgs } from '../utils/orgConfigUtils.js';
-import { WebSocketClient } from '../websocketClient.js';
+import { uxLog } from '../../utils/index.js';
+import { prompts } from '../../utils/prompts.js';
+import { t } from '../../utils/i18n.js';
+import { listMajorOrgs } from '../../utils/orgConfigUtils.js';
+import { WebSocketClient } from '../../websocketClient.js';
 import {
   readRulesFromFile,
   resolveBranchConfigFile,
   resolveProjectConfigFile,
   writeRulesToFile,
-} from './ruleConfig.js';
-import { readIssueRules, writeIssueRules } from './issueRulesStore.js';
-import { DEFAULT_VALUE_KEY, REPLACEMENT_RULE_TYPES, ReplacementRule, ReplacementRuleLayer, RulePlace } from './types.js';
+} from '../config/ruleConfig.js';
+import { readIssueRules, writeIssueRules } from '../config/issueRulesStore.js';
+import { DEFAULT_VALUE_KEY, REPLACEMENT_RULE_TYPES, ReplacementRule, ReplacementRuleLayer, RulePlace } from '../utils/types.js';
 import { RULE_TYPE_LABEL_KEYS } from './ruleFlags.js';
 
 /**

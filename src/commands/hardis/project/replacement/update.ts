@@ -5,17 +5,17 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { isCI, uxLog } from '../../../../common/utils/index.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { ReplacementCommandBase } from '../../../../common/replacementRules/replacementCommandBase.js';
-import { upsertRuleInList } from '../../../../common/replacementRules/ruleConfig.js';
-import { checkRuleUpdate, listKnownRuleIds } from '../../../../common/replacementRules/ruleUpdateUtils.js';
+import { ReplacementCommandBase } from '../../../../common/replacementRules/command/replacementCommandBase.js';
+import { upsertRuleInList } from '../../../../common/replacementRules/config/ruleConfig.js';
+import { checkRuleUpdate, listKnownRuleIds } from '../../../../common/replacementRules/config/ruleUpdateUtils.js';
 import {
   applyRuleFields,
   buildRuleFieldsFromFlags,
   readRuleFromFlags,
   replacementRuleFieldFlags,
   replacementRuleLayerFlags,
-} from '../../../../common/replacementRules/ruleFlags.js';
-import { ReplacementRule } from '../../../../common/replacementRules/types.js';
+} from '../../../../common/replacementRules/command/ruleFlags.js';
+import { ReplacementRule } from '../../../../common/replacementRules/utils/types.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');

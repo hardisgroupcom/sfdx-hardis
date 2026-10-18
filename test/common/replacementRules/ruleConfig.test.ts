@@ -5,12 +5,12 @@ import {
   normalizeRuleList,
   upsertRuleInList,
   validateReplacementRule,
-} from '../../../src/common/replacementRules/ruleConfig.js';
-import { builtInRuleAppliesToApiVersion, BUILT_IN_REPLACEMENT_RULES } from '../../../src/common/replacementRules/builtInReplacementRules.js';
-import { resolveRuleValue } from '../../../src/common/replacementRules/ruleEngine.js';
-import { applyRuleFields, buildRuleFieldsFromFlags } from '../../../src/common/replacementRules/ruleFlags.js';
-import { validateXmlPath } from '../../../src/common/replacementRules/xmlPath.js';
-import { ReplacementRule } from '../../../src/common/replacementRules/types.js';
+} from '../../../src/common/replacementRules/config/ruleConfig.js';
+import { builtInRuleAppliesToApiVersion, BUILT_IN_REPLACEMENT_RULES } from '../../../src/common/replacementRules/builtIn/builtInReplacementRules.js';
+import { resolveRuleValue } from '../../../src/common/replacementRules/engine/ruleEngine.js';
+import { applyRuleFields, buildRuleFieldsFromFlags } from '../../../src/common/replacementRules/command/ruleFlags.js';
+import { validateXmlPath } from '../../../src/common/replacementRules/utils/xmlPath.js';
+import { ReplacementRule } from '../../../src/common/replacementRules/utils/types.js';
 
 const endpointRule: ReplacementRule = {
   id: 'payment-api-endpoint',

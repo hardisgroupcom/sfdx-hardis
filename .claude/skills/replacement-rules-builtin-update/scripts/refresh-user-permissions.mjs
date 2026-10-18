@@ -1,4 +1,4 @@
-// Refreshes src/common/replacementRules/userPermissionsByApiVersion.ts from the PermissionSet
+// Refreshes src/common/replacementRules/builtIn/userPermissionsByApiVersion.ts from the PermissionSet
 // describe of one or more orgs, at every API version from --from to --to.
 //
 //   node refresh-user-permissions.mjs --org DevHub --org MySandbox --to 69 [--from 50] [--min-intro 58] [--dry-run]
@@ -11,7 +11,7 @@
 import fs from 'fs';
 import { Org } from '@salesforce/core';
 
-const TARGET_FILE = 'src/common/replacementRules/userPermissionsByApiVersion.ts';
+const TARGET_FILE = 'src/common/replacementRules/builtIn/userPermissionsByApiVersion.ts';
 
 const args = parseArgs(process.argv.slice(2));
 const orgs = args.org || [];

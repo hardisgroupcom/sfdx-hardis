@@ -1,11 +1,11 @@
 // Checks of hardis:project:replacement:update: a full rule must be valid, an override must change
 // a rule that exists somewhere else, and a built-in rule can only be turned on or off.
 
-import { BUILT_IN_REPLACEMENT_RULES, findBuiltInReplacementRule } from './builtInReplacementRules.js';
+import { BUILT_IN_REPLACEMENT_RULES, findBuiltInReplacementRule } from '../builtIn/builtInReplacementRules.js';
 import { readIssueRules } from './issueRulesStore.js';
 import { readAllBranchReplacementRules, readRulesFromFile, resolveProjectConfigFile, validateReplacementRule } from './ruleConfig.js';
-import { ReplacementRule, RulePlace } from './types.js';
-import { t } from '../utils/i18n.js';
+import { ReplacementRule, RulePlace } from '../utils/types.js';
+import { t } from '../../utils/i18n.js';
 
 /** Why a rule cannot be stored in this place whatever it holds, or null */
 export function checkRulePlace(rule: ReplacementRule, place: RulePlace): string | null {

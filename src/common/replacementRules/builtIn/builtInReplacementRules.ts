@@ -10,7 +10,7 @@
 // Elements whose removal changes what a component does are disabled by default: when one of them
 // is found, a warning says the deployment will fail and which rule removes it.
 
-import { BuiltInReplacementRule } from './types.js';
+import { BuiltInReplacementRule } from '../utils/types.js';
 
 const MDAPI = 'Metadata API Developer Guide';
 const FLOWS = ['**/*.flow-meta.xml'];
