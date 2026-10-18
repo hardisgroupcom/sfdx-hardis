@@ -8,6 +8,7 @@ import { soqlQuery } from './apiUtils.js';
 import { callSfdxGitDelta } from './gitUtils.js';
 import { countPackageXmlItems } from './xmlUtils.js';
 import { removePackageXmlContent } from './deployUtils.js';
+import { appendPackageModifications, extendPackageFileWithDependencies } from './deltaUtils.js';
 import { getScratchDeployManifest } from './orgUtils.js';
 import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
@@ -103,8 +104,10 @@ export function pickScratchSnapshot(
 export async function deploySnapshotDelta(snapshot: ScratchSnapshot, configInfo: any, targetUsername: string, commandThis: any, debugMode = false) {
   const deltaDir = await createTempDir();
   await callSfdxGitDelta(snapshot.sha, 'HEAD', deltaDir, { debugMode });
-  const packageXml = await scopeDeltaToDeployManifest(path.join(deltaDir, 'package', 'package.xml'), configInfo, debugMode);
+  const deltaPackageXml = path.join(deltaDir, 'package', 'package.xml');
   const destructiveChangesXml = path.join(deltaDir, 'destructiveChanges', 'destructiveChanges.xml');
+  await extendSnapshotDeltaWithDependencies(snapshot.sha, deltaPackageXml, destructiveChangesXml, configInfo);
+  const packageXml = await scopeDeltaToDeployManifest(deltaPackageXml, configInfo, debugMode);
   const toDeploy = await countPackageXmlItems(packageXml);
   const toDelete = await countPackageXmlItems(destructiveChangesXml);
   uxLog("action", commandThis, c.cyan(t('scratchSnapshotDelta', { sha: snapshot.sha.slice(0, 8), toDeploy, toDelete })));
@@ -116,6 +119,18 @@ export async function deploySnapshotDelta(snapshot: ScratchSnapshot, configInfo:
     deployCommand += ` --post-destructive-changes "${destructiveChangesXml}"`;
   }
   await execSfdxJson(deployCommand, commandThis, { fail: true, output: true, debug: debugMode });
+}
+
+// Same switch as deploy:smart: adds what depends on the changed items, as the record types of a changed field.
+// It needs the full manifest, so it applies in deploy mode only
+export async function extendSnapshotDeltaWithDependencies(snapshotSha: string, deltaPackageXml: string, destructiveChangesXml: string, configInfo: any) {
+  const manifest = getScratchDeployManifest(configInfo);
+  if (!manifest || !(process.env.USE_DELTA_DEPLOYMENT_WITH_DEPENDENCIES === 'true' || configInfo.useDeltaDeploymentWithDependencies === true)) {
+    return;
+  }
+  uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentExtendingPackageXml')));
+  await extendPackageFileWithDependencies(deltaPackageXml, manifest, destructiveChangesXml);
+  await appendPackageModifications(snapshotSha, 'HEAD', manifest, deltaPackageXml);
 }
 
 // In deploy mode an empty scratch org gets only the configured manifest: the delta keeps that scope, as

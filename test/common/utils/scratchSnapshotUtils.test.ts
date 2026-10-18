@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, scopeDeltaToDeployManifest, scratchDefChangedSince } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -181,5 +181,70 @@ describe('scratchDefChangedSince', () => {
     write('config/settings/Security.settings-meta.xml', '<SecuritySettings><x/></SecuritySettings>');
     commit();
     expect(scratchDefChangedSince(sha, dir)).to.equal(true);
+  });
+});
+
+describe('extendSnapshotDeltaWithDependencies', () => {
+  const xml = (types: Record<string, string[]>) =>
+    '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n' +
+    Object.entries(types)
+      .map(([name, members]) => `  <types>\n${members.map((m) => `    <members>${m}</members>\n`).join('')}    <name>${name}</name>\n  </types>\n`)
+      .join('') +
+    '  <version>62.0</version>\n</Package>\n';
+  const fullManifest = { CustomField: ['Account.Foo__c'], CustomObject: ['Account'], RecordType: ['Account.Business', 'Account.Partner'] };
+  const cwd = process.cwd();
+  let dir: string;
+  let sha: string;
+  let delta: string;
+  let destructive: string;
+  const git = (...args: string[]) => execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: dir }).toString().trim();
+  const commitManifest = (types: Record<string, string[]>) => {
+    fs.writeFileSync(path.join(dir, 'manifest', 'package.xml'), xml(types));
+    git('add', '-A');
+    git('commit', '-q', '-m', 'manifest');
+  };
+
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-deps-'));
+    fs.mkdirSync(path.join(dir, 'manifest'));
+    git('init', '-q');
+    commitManifest(fullManifest);
+    sha = git('rev-parse', 'HEAD');
+    delta = path.join(dir, 'delta.xml');
+    destructive = path.join(dir, 'destructive.xml');
+    fs.writeFileSync(delta, xml({ CustomField: ['Account.Foo__c'] }));
+    fs.writeFileSync(destructive, xml({}));
+    process.env.DEBUG_DEPLOY = 'true';
+    process.env.PACKAGE_XML_TO_DEPLOY = 'manifest/package.xml';
+    process.chdir(dir);
+  });
+
+  afterEach(() => {
+    process.chdir(cwd);
+    delete process.env.DEBUG_DEPLOY;
+    delete process.env.PACKAGE_XML_TO_DEPLOY;
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('adds the record types of the object of a changed field, as deploy:smart does', async () => {
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, { useDeltaDeploymentWithDependencies: true });
+    expect((await parsePackageXmlFile(delta)).RecordType).to.deep.equal(['Account.Business', 'Account.Partner']);
+  });
+
+  it('adds the items added to the manifest since the snapshot commit', async () => {
+    commitManifest({ ...fullManifest, ApexClass: ['NewService'] });
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, { useDeltaDeploymentWithDependencies: true });
+    expect((await parsePackageXmlFile(delta)).ApexClass).to.deep.equal(['NewService']);
+  });
+
+  it('leaves the delta unchanged when the sources are pushed, as there is no full manifest to read', async () => {
+    delete process.env.DEBUG_DEPLOY;
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, { useDeltaDeploymentWithDependencies: true });
+    expect(await parsePackageXmlFile(delta)).to.deep.equal({ CustomField: ['Account.Foo__c'] });
+  });
+
+  it('leaves the delta unchanged when useDeltaDeploymentWithDependencies is off', async () => {
+    await extendSnapshotDeltaWithDependencies(sha, delta, destructive, {});
+    expect(await parsePackageXmlFile(delta)).to.deep.equal({ CustomField: ['Account.Foo__c'] });
   });
 });
