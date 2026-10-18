@@ -225,7 +225,9 @@ export async function resolveDataWorkspacePath(sfdmuProject: string): Promise<st
   if (workspacePath) {
     return workspacePath;
   }
-  return fs.existsSync(sfdmuProject) && fs.statSync(sfdmuProject).isDirectory() ? sfdmuProject : null;
+  // A path is a workspace only when it holds the export.json of SFDMU: a typo in a folder name
+  // must fail when the action is defined, not during the deployment
+  return fs.existsSync(path.join(sfdmuProject, 'export.json')) ? sfdmuProject : null;
 }
 
 export async function hasDataWorkspaces(cwd: string = process.cwd()) {

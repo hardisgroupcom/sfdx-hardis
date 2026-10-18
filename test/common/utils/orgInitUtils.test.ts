@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { AuthInfo, Connection } from '@salesforce/core';
 import * as path from 'path';
 import fs from '../../../src/common/utils/fsUtils.js';
 import { ActionsProvider, PrePostCommand } from '../../../src/common/actionsProvider/actionsProvider.js';
@@ -12,6 +13,7 @@ import {
   checkOrgInitSteps,
   getOrgInitSteps,
   getScratchOrgDefHints,
+  getScratchOrgShape,
   normalizeOrgInitStep,
   runOrgInitSteps,
   selectOrgInitSteps,
@@ -156,8 +158,16 @@ describe('orgInitUtils', () => {
       expect(errors.filter((error) => error.stepId === 'when').length).to.equal(2);
     });
 
+    it('ignores deployment-only fields left empty', async () => {
+      const errors = await checkOrgInitSteps([
+        normalizeOrgInitStep({ id: 'a', type: 'command', command: 'echo', when: null, customUsername: '', includeTargetBranches: [] } as any),
+      ]);
+      expect(errors).to.deep.equal([]);
+    });
+
     it('accepts a data step pointing to a project-relative folder', async () => {
       await fs.ensureDir(path.join('other', 'Folder'));
+      await fs.writeFile(path.join('other', 'Folder', 'export.json'), '{}');
       const errors = await checkOrgInitSteps([
         normalizeOrgInitStep({ id: 'data', type: 'data', parameters: { sfdmuProject: 'other/Folder' } }),
       ]);
@@ -195,22 +205,39 @@ describe('orgInitUtils', () => {
   describe('resolveDataWorkspacePath', () => {
     it('finds a workspace by name, a project-relative folder, and refuses a file', async () => {
       await fs.ensureDir(path.join('scripts', 'data', 'Accounts'));
+      await fs.writeFile(path.join('scripts', 'data', 'Accounts', 'export.json'), '{}');
       await fs.ensureDir(path.join('other', 'Folder'));
+      await fs.writeFile(path.join('other', 'Folder', 'export.json'), '{}');
+      await fs.ensureDir(path.join('other', 'NotAWorkspace'));
       await fs.writeFile('notAFolder.json', '{}');
       // Names resolve under the scripts/data folder of the process start directory, paths from the project
       expect(await resolveDataWorkspacePath(path.join('scripts', 'data', 'Accounts'))).to.contain('Accounts');
       expect(await resolveDataWorkspacePath('other/Folder')).to.equal('other/Folder');
       expect(await resolveDataWorkspacePath('notAFolder.json')).to.equal(null);
+      // A folder without the export.json of SFDMU is a typo, not a workspace
+      expect(await resolveDataWorkspacePath('other/NotAWorkspace')).to.equal(null);
       expect(await resolveDataWorkspacePath('')).to.equal(null);
     });
   });
 
   describe('runOrgInitSteps', () => {
     const originalBuild = ActionsProvider.buildActionInstance;
+    const originalAuthInfoCreate = AuthInfo.create;
+    const originalConnectionCreate = Connection.create;
     let ranIds: string[] = [];
+    let connectionFails = false;
 
     beforeEach(() => {
       ranIds = [];
+      connectionFails = false;
+      // No real org: the connection to the org being initialized is a placeholder
+      (AuthInfo as any).create = async () => {
+        if (connectionFails) {
+          throw new Error('No authorization information found');
+        }
+        return {};
+      };
+      (Connection as any).create = async () => ({ fake: true });
       // Each step result comes from its command: "fail" fails, anything else succeeds
       ActionsProvider.buildActionInstance = (async () => ({
         customUsernameToUse: null,
@@ -224,6 +251,51 @@ describe('orgInitUtils', () => {
 
     afterEach(() => {
       ActionsProvider.buildActionInstance = originalBuild;
+      (AuthInfo as any).create = originalAuthInfoCreate;
+      (Connection as any).create = originalConnectionCreate;
+    });
+
+    it('runs no step when the org cannot be reached, and keeps the previous connection', async () => {
+      connectionFails = true;
+      const previousConn = { previous: true };
+      globalThis.jsForceConn = previousConn as any;
+      let error: Error | null = null;
+      try {
+        await runOrgInitSteps({
+          orgUsername: 'user@example.com',
+          orgType: 'scratch',
+          phase: 'all',
+          config: { orgInitSteps: [{ id: 'one', type: 'command', command: 'echo 1' }] },
+        });
+      } catch (e) {
+        error = e as Error;
+      }
+      expect(error?.message).to.contain('user@example.com');
+      expect(ranIds).to.deep.equal([]);
+      expect(globalThis.jsForceConn).to.equal(previousConn);
+      globalThis.jsForceConn = undefined as any;
+    });
+
+    it('refuses a requested step that does not apply to the org', async () => {
+      let error: Error | null = null;
+      try {
+        await runOrgInitSteps({
+          orgUsername: 'user@example.com',
+          orgType: 'sandbox',
+          phase: 'all',
+          stepIds: ['scratchOnly', 'disabled'],
+          config: {
+            orgInitSteps: [
+              { id: 'scratchOnly', type: 'command', command: 'echo 1', orgTypes: ['scratch'] },
+              { id: 'disabled', type: 'command', command: 'echo 2', enabled: false },
+            ],
+          },
+        });
+      } catch (e) {
+        error = e as Error;
+      }
+      expect(error?.message).to.contain('scratchOnly, disabled');
+      expect(ranIds).to.deep.equal([]);
     });
 
     it('stops at the first failure and reports the remaining steps as skipped', async () => {
@@ -293,7 +365,30 @@ describe('orgInitUtils', () => {
     });
   });
 
+  describe('getScratchOrgShape', () => {
+    afterEach(() => {
+      delete process.env.SCRATCH_ORG_SHAPE;
+    });
+
+    it('reads scratchOrgShape from the config of the major branch, SCRATCH_ORG_SHAPE wins', async () => {
+      await fs.ensureDir(path.join('config', 'branches'));
+      await fs.writeFile(path.join('config', 'branches', '.sfdx-hardis.integration.yml'), 'scratchOrgShape: 00D000000000AAA');
+      // Outside a git repository, the scratch org belongs to developmentBranch
+      expect(await getScratchOrgShape({ developmentBranch: 'integration' })).to.equal('00D000000000AAA');
+      expect(await getScratchOrgShape({ developmentBranch: 'main' })).to.equal(null);
+      expect(await getScratchOrgShape({ developmentBranch: 'main', scratchOrgShape: '00D000000000PRJ' })).to.equal('00D000000000PRJ');
+      process.env.SCRATCH_ORG_SHAPE = '00D000000000ENV';
+      expect(await getScratchOrgShape({ developmentBranch: 'integration' })).to.equal('00D000000000ENV');
+    });
+  });
+
   describe('validateScratchOrgDef', () => {
+    it('needs no edition when the scratch orgs are created from an org shape', () => {
+      expect(validateScratchOrgDef({ orgName: 'x' }).errors.join()).to.contain('edition');
+      expect(validateScratchOrgDef({ orgName: 'x' }, { orgShape: '00D000000000001' }).errors).to.deep.equal([]);
+      expect(validateScratchOrgDef({ orgName: 'x', sourceOrg: '00D000000000001' }).errors).to.deep.equal([]);
+    });
+
     it('accepts a valid definition', () => {
       expect(
         validateScratchOrgDef({

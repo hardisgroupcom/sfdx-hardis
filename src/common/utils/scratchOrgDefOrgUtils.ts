@@ -105,17 +105,35 @@ export async function importFeaturesFromOrgShape(org: Org): Promise<ImportedOrgS
   const username = org.getUsername() || '';
   await assertOrgShapeAvailable(conn);
   uxLog('action', this, c.cyan(t('scratchOrgDefCreatingOrgShape', { org: c.green(username) })));
+  // Without a shape id in the answer, only a shape created from now on is the new one
+  const requestedAt = new Date(Date.now() - 60 * 1000);
   const createRes = await execSfdxJson(`sf org create shape --target-org ${username}`, this, { fail: false, output: false });
   if (createRes?.status !== 0) {
     throw new SfError(t('scratchOrgDefOrgShapeFailed', { message: createRes?.message || JSON.stringify(createRes) }));
   }
   const shapeId = createRes?.result?.shapeId || '';
-  const shape = await waitForOrgShape(conn, shapeId);
+  const shape = await waitForOrgShape(conn, shapeId, requestedAt);
   return {
     shapeId: shape.Id,
     features: parseShapeFeatures(shape.Features),
     settings: parseShapeSettings(shape.Settings),
   };
+}
+
+/**
+ * Active org shapes of the connected orgs, as sf org list shape reads them: the orgId of one of
+ * them is what scratchOrgShape (sourceOrg of the definition) takes.
+ */
+export async function listActiveOrgShapes(): Promise<{ orgId: string; username: string; alias: string; createdDate: string }[]> {
+  const res = await execSfdxJson('sf org list shape', this, { fail: false, output: false });
+  return (Array.isArray(res?.result) ? res.result : [])
+    .filter((shape: any) => shape?.orgId && String(shape.status || '').toLowerCase() === 'active')
+    .map((shape: any) => ({
+      orgId: String(shape.orgId),
+      username: String(shape.username || ''),
+      alias: String(shape.alias || ''),
+      createdDate: String(shape.createdDate || ''),
+    }));
 }
 
 /** Label of the release after the one given: Winter '26 is followed by Spring '26, Summer '26, Winter '27. */
@@ -233,9 +251,11 @@ async function assertOrgShapeAvailable(conn: Connection): Promise<void> {
   }
 }
 
-async function waitForOrgShape(conn: Connection, shapeId: string): Promise<any> {
+async function waitForOrgShape(conn: Connection, shapeId: string, requestedAt: Date): Promise<any> {
   const start = Date.now();
-  const where = shapeId ? `WHERE Id = '${shapeId.replace(/[^A-Za-z0-9]/g, '')}'` : '';
+  const where = shapeId
+    ? `WHERE Id = '${shapeId.replace(/[^A-Za-z0-9]/g, '')}'`
+    : `WHERE CreatedDate >= ${requestedAt.toISOString().replace(/\.\d{3}Z$/, 'Z')}`;
   while (Date.now() - start < SHAPE_TIMEOUT_MS) {
     const res = await conn.query(`SELECT Id, Status, Features, Settings, CreatedDate FROM ShapeRepresentation ${where} ORDER BY CreatedDate DESC LIMIT 1`);
     const shape: any = res.records[0];

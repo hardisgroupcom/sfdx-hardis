@@ -76,6 +76,7 @@ While the steps run, `SF_TARGET_ORG`, `SFDX_HARDIS_ORG_USERNAME` and `SFDX_HARDI
 - **Language, country and release** are picked from lists read from your default Dev Hub (or your default org): its user languages and countries, and its API versions with their release names.
 - **Features** are picked from the list Salesforce CLI knows, with a number field for the ones that take one (`MaxApexCodeSize`...). **Import from an org shape** creates an [org shape](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) of an org and adds its features. Org Shape must be enabled in that org and in the Dev Hub.
 - **Settings** can be imported from any connected org, production included: pick the settings types, the panel reads them with the Metadata API and merges them into the definition. Check them before saving, some values cannot be set on a scratch org.
+- **Org shape**: pick the active org shape the scratch orgs are created from (`scratchOrgShape`, overridden by the `SCRATCH_ORG_SHAPE` variable). It belongs to a major branch: the panel writes it in `config/branches/.sfdx-hardis.<branch>.yml`, and a scratch org uses the shape of the branch its User Story started from, or none. With an org shape, the definition needs no edition. Importing the features of an org shape is different: it copies them into the definition, and the scratch orgs are still created from the edition.
 - The **Documentation** buttons open the Salesforce pages that list the features and the settings.
 
 The panel reads these values with [hardis:config:org-init](hardis/config/org-init.md) (`--org-values`, `--import-settings`, `--import-features-from-shape`).
@@ -130,6 +131,9 @@ When `orgInitSteps` is not defined, sfdx-hardis builds the steps from the older 
 
 The Org Initialization panel shows that list. The first save writes `orgInitSteps` and removes `initPermissionSets`, `scratchOrgInitApexScripts` and `sandboxOrgInitApexScripts`. Once `orgInitSteps` exists, the older properties are ignored for org initialization.
 
-All these steps now run when the scratch org pool is filled. Before, the pool only installed the packages and the rest ran when someone took the org.
+All these steps now run when the scratch org pool is filled. Before, the pool only installed the packages and the rest ran when someone took the org. A scratch org filled by an older sfdx-hardis version gets every step when someone takes it.
 
-The pool job pushes the sources from its own runner. When you take a scratch org from the pool, sfdx-hardis resets its source tracking (`sf project reset tracking`), so a pull only lists the changes made after you took it.
+The pool job pushes the sources from its own runner, and stores the commit and the branch they came from with the org. When you take a scratch org from the pool:
+
+1. If your branch is on another commit, sfdx-hardis deploys what changed between the two (with deletions), so the org matches your branch. When that commit is not in your local history, it fetches the branch of the pool job first (the branch your User Story started from), and deploys every source again if the commit is still missing.
+2. It resets the source tracking (`sf project reset tracking`), so a pull only lists the changes made after you took the org.

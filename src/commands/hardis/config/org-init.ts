@@ -10,6 +10,7 @@ import {
   getScratchOrgDefOrgValues,
   importFeaturesFromOrgShape,
   importSettingsFromOrg,
+  listActiveOrgShapes,
   resolveScratchOrgDefSourceOrg,
 } from '../../../common/utils/scratchOrgDefOrgUtils.js';
 import { getConfig } from '../../../config/index.js';
@@ -42,6 +43,7 @@ Three options read values from an org (\`--source-org\`, else the default Dev Hu
 
 - \`--org-values\` adds \`orgValues\`: the languages and countries of its users, and its API versions with their release names (current, previous, and the next one for \`preview\`).
 - \`--import-settings accountSettings,lightningExperienceSettings\` adds \`importedSettings\`: those settings read with the Metadata API, written as a scratch org definition expects them.
+- \`--list-org-shapes\` adds \`orgShapes\`: the active org shapes of the connected orgs. The \`orgId\` of one of them is the value of \`scratchOrgShape\`, the org shape new scratch orgs are created from (\`SCRATCH_ORG_SHAPE\` wins over it). A definition used with an org shape needs no \`edition\`; \`--scratch-org-shape\` validates a definition with another shape than the configured one.
 - \`--import-features-from-shape\` creates an [org shape](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_shape_intro.htm) of the org and adds \`importedShape\` with its features. Org Shape must be enabled in that org.
 
 Run [hardis:org:init](${'https://sfdx-hardis.cloudity.com/hardis/org/init/'}) to run the steps on an org.
@@ -71,6 +73,7 @@ The command has no prompt: agent mode behaves the same.
     '$ sf hardis:config:org-init --org-values --json',
     '$ sf hardis:config:org-init --import-settings accountSettings,securitySettings --source-org my-org --json',
     '$ sf hardis:config:org-init --import-features-from-shape --source-org my-org --json',
+    '$ sf hardis:config:org-init --list-org-shapes --json',
     '$ sf hardis:config:org-init --agent --json',
   ];
 
@@ -88,6 +91,13 @@ The command has no prompt: agent mode behaves the same.
     'import-features-from-shape': Flags.boolean({
       default: false,
       description: 'Create an org shape of the source org and return its features',
+    }),
+    'list-org-shapes': Flags.boolean({
+      default: false,
+      description: 'Add the active org shapes of the connected orgs',
+    }),
+    'scratch-org-shape': Flags.string({
+      description: 'With --validate-scratch-def: org id of the org shape the definition is used with, "none" for no shape. Default: scratchOrgShape',
     }),
     'source-org': Flags.string({
       description: 'Alias or username of the org to read values from. Default: the default Dev Hub, else the default org',
@@ -122,7 +132,15 @@ The command has no prompt: agent mode behaves the same.
     }
     // Same layers as the commands that run the steps (project, branch, user)
     const config = await getConfig('user');
+    // The panel validates a definition with the org shape picked on screen, saved or not
+    const shapeFlag = flags['scratch-org-shape'] as string | undefined;
+    if (shapeFlag !== undefined) {
+      config.scratchOrgShape = shapeFlag === 'none' ? null : shapeFlag;
+    }
     const payload = await getOrgInitConfigPayload(config, scratchDefFile);
+    if (flags['list-org-shapes']) {
+      payload.orgShapes = await listActiveOrgShapes();
+    }
     const importSettings = String(flags['import-settings'] || '')
       .split(',')
       .map((name) => name.trim())

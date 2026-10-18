@@ -22,8 +22,12 @@ import { getScratchSignupEnv, openOrgInBrowser, promptUserEmail } from '../../..
 import {
   assertOrgInitStepsValid,
   PROJECT_SCRATCH_DEF_FILE,
+  getHeadCommit,
+  getScratchOrgShape,
+  PoolOrgInitInfo,
   resetSourceTracking,
   runOrgInitSteps,
+  syncPoolOrgSources,
   validateScratchOrgDef,
 } from '../../../common/utils/orgInitUtils.js';
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
@@ -75,7 +79,7 @@ The command's technical implementation involves:
 - **Scratch Org Definition Building:** Dynamically constructs \`project-scratch-def.json\` with user email, custom usernames, org shapes, and feature flags like StateAndCountryPicklist and MarketingUser.
 - **Pool Integration:** Implements scratch org pool fetching using \`fetchScratchOrg\` for rapid org provisioning in development and CI environments.
 - **Salesforce CLI Integration:** Executes \`sf org create scratch\` commands with proper parameter handling including wait times, duration, and dev hub targeting.
-- **Initialization Steps:** \`runOrgInitSteps\` (\`src/common/utils/orgInitUtils.ts\`) runs the steps with the deployment actions providers, plus the \`install-packages\`, \`deploy-sources\` and \`assign-permission-sets\` types. The phase is \`pool-fill\` with \`--pool\`, \`after-pool-fetch\` for an org taken from the pool, \`all\` otherwise.
+- **Initialization Steps:** \`runOrgInitSteps\` (\`src/common/utils/orgInitUtils.ts\`) runs the steps with the deployment actions providers, plus the \`install-packages\`, \`deploy-sources\` and \`assign-permission-sets\` types. The phase is \`pool-fill\` with \`--pool\`, \`after-pool-fetch\` for an org taken from the pool, \`all\` otherwise. With \`--pool\`, the result stores \`orgInit\` (the commit and branch whose sources were deployed). An org taken from the pool gets the delta between that commit and the working copy (\`callSfdxGitDelta\`, then \`sf project deploy start\`), then \`sf project reset tracking\`. A pool org without \`orgInit\` (filled by an older version) runs every step. The scratch org definition is validated with \`sourceOrg\` set from \`scratchOrgShape\` / \`SCRATCH_ORG_SHAPE\`, so an org shape definition needs no edition.
 - **Definition Validation:** \`validateScratchOrgDef\` uses \`ScratchOrgDefSchema\` from \`@salesforce/core\`, then checks each \`settings\` name against the Salesforce CLI JSON schema.
 - **User Management:** Performs SOQL queries and DML operations to configure scratch org users with proper names, emails, country codes, and permission flags.
 - **Authentication Management:** Handles SFDX auth URL generation and storage for CI/CD environments and scratch org pool management.
@@ -157,6 +161,7 @@ In agent mode:
   protected authFileJson: any;
   protected projectName: string;
   protected scratchOrgFromPool: any;
+  protected poolOrgInit: PoolOrgInitInfo | undefined;
 
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ScratchCreate);
@@ -174,18 +179,44 @@ In agent mode:
       await this.updateScratchOrgUser();
       // Pool fill: the steps flagged runAtPoolFill (all by default), so an org taken from the pool
       // is ready. Org taken from the pool: the steps left. New org: every step.
-      await runOrgInitSteps({
+      // A pool org without orgInit was filled by an older sfdx-hardis, which only installed the
+      // packages: it gets every step.
+      const poolOrgInit: PoolOrgInitInfo | undefined = this.scratchOrgFromPool?.orgInit;
+      if (this.scratchOrgFromPool && !poolOrgInit) {
+        uxLog('action', this, c.cyan(t('orgInitPoolOrgFromOlderVersion')));
+      }
+      const stepResults = await runOrgInitSteps({
         orgUsername: this.scratchOrgUsername,
         orgAlias: this.scratchOrgAlias,
         orgType: 'scratch',
-        phase: this.pool ? 'pool-fill' : this.scratchOrgFromPool ? 'after-pool-fetch' : 'all',
+        phase: this.pool ? 'pool-fill' : this.scratchOrgFromPool && poolOrgInit ? 'after-pool-fetch' : 'all',
         projectScratchDef: this.projectScratchDef,
         debugMode: this.debugMode,
         config: this.configInfo,
       });
-      // The pool job pushed the sources from its own runner: here, a pull must only list the
-      // changes made from now on, not the whole project
+      if (this.pool) {
+        // Stored with the org in the pool: the commit whose sources were deployed, if any
+        const sourcesDeployed = stepResults.some((result) => result.type === 'deploy-sources' && result.status === 'success');
+        this.poolOrgInit = {
+          filledAt: new Date().toISOString(),
+          sourcesCommit: sourcesDeployed ? await getHeadCommit() : null,
+          sourcesBranch: sourcesDeployed ? (await getCurrentGitBranch()) || null : null,
+        };
+      }
       if (this.scratchOrgFromPool) {
+        // The pool job deployed the sources of its own commit: deploy what changed since then
+        if (poolOrgInit?.sourcesCommit) {
+          await syncPoolOrgSources({
+            orgUsername: this.scratchOrgUsername,
+            orgAlias: this.scratchOrgAlias,
+            fromCommit: poolOrgInit.sourcesCommit,
+            fromBranch: poolOrgInit.sourcesBranch,
+            config: this.configInfo,
+            projectScratchDef: this.projectScratchDef,
+            debugMode: this.debugMode,
+          });
+        }
+        // A pull must only list the changes made from now on, not the whole project
         await resetSourceTracking(this.scratchOrgUsername);
       }
     } catch (e) {
@@ -234,6 +265,7 @@ In agent mode:
       scratchOrgPassword: this.scratchOrgPassword,
       scratchOrgSfdxAuthUrl: this.scratchOrgSfdxAuthUrl,
       authFileJson: this.authFileJson,
+      orgInit: (this.poolOrgInit as any) ?? null,
       outputString: 'Created and initialized scratch org',
     };
   }
@@ -306,8 +338,9 @@ In agent mode:
     // Keep only first 15 and last 15 chars if scratch org alias is too long
     const aliasForUsername = this.scratchOrgAlias.length > 30 ? this.scratchOrgAlias.slice(0, 15) + this.scratchOrgAlias.slice(-15) : this.scratchOrgAlias;
     this.projectScratchDef.username = `${this.userEmail.split('@')[0].slice(0, 20)}@hardis-scratch-${aliasForUsername}.com`;
-    if (process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape) {
-      this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
+    const scratchOrgShape = await getScratchOrgShape(this.configInfo);
+    if (scratchOrgShape) {
+      this.projectScratchDef.sourceOrg = scratchOrgShape;
     }
     uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(this.projectScratchDef, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
@@ -367,7 +400,7 @@ In agent mode:
 
     // Checked only when a new org is requested: a reused org or one taken from the pool needs no
     // definition, and a mistake found now does not cost a scratch org
-    this.checkScratchOrgDefinition();
+    await this.checkScratchOrgDefinition();
     await assertOrgInitStepsValid(this.configInfo, 'scratch');
 
     // Fix @salesforce/cli bug: remove shape.zip if found
@@ -472,8 +505,10 @@ In agent mode:
   }
 
   // Salesforce CLI only warns on an invalid definition, and the org creation then fails far later
-  public checkScratchOrgDefinition() {
-    const validation = validateScratchOrgDef(JSON.parse(fs.readFileSync(PROJECT_SCRATCH_DEF_FILE, 'utf-8')));
+  public async checkScratchOrgDefinition() {
+    const validation = validateScratchOrgDef(JSON.parse(fs.readFileSync(PROJECT_SCRATCH_DEF_FILE, 'utf-8')), {
+      orgShape: await getScratchOrgShape(this.configInfo),
+    });
     if (validation.errors.length > 0) {
       throw new SfError(
         t('scratchOrgDefInvalid', {

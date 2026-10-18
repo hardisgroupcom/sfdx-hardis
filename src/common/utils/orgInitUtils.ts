@@ -5,7 +5,8 @@ import { createRequire } from 'module';
 import * as path from 'path';
 import { ActionResult, ActionsProvider, buildActionOutput, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { ORG_INIT_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
-import { elapseEnd, elapseStart, execSfdxJson, uxLog } from './index.js';
+import * as yaml from 'js-yaml';
+import { createTempDir, elapseEnd, elapseStart, execSfdxJson, getCurrentGitBranch, git, uxLog } from './index.js';
 import { uxLogTableWithReport } from './filesUtils.js';
 import fs from './fsUtils.js';
 import { t } from './i18n.js';
@@ -55,6 +56,16 @@ export interface OrgInitStepResult {
   durationSeconds?: number;
 }
 
+/** Stored with a scratch org of the pool, by the job that filled it. */
+export interface PoolOrgInitInfo {
+  filledAt: string;
+  // Commit whose sources the pool job deployed, null when no deploy-sources step ran at pool fill
+  sourcesCommit: string | null;
+  // Branch the pool job ran on: developmentBranch or one of allowedTargetBranches, the branches a
+  // User Story starts from, so fetching it brings sourcesCommit into the local history
+  sourcesBranch?: string | null;
+}
+
 export const ORG_INIT_STEPS_CONFIG_KEY = 'orgInitSteps';
 export const ORG_INIT_LEGACY_KEYS = [
   'initPermissionSets',
@@ -96,7 +107,8 @@ const ALL_ORG_TYPES: OrgInitOrgType[] = ['scratch', 'sandbox'];
 export async function getOrgInitConfigPayload(config: any, scratchDefFile?: string): Promise<any> {
   const stepsInfo = getOrgInitSteps(config);
   const scratchDefPath = scratchDefFile || PROJECT_SCRATCH_DEF_FILE;
-  const scratchDef = readProjectScratchDef(scratchDefPath);
+  const orgShape = await getScratchOrgShape(config);
+  const scratchDef = readProjectScratchDef(scratchDefPath, { orgShape });
   return {
     source: stepsInfo.source,
     legacyKeys: stepsInfo.legacyKeys,
@@ -111,6 +123,10 @@ export async function getOrgInitConfigPayload(config: any, scratchDefFile?: stri
       warnings: scratchDef?.warnings || [],
     },
     scratchOrgDuration: config?.scratchOrgDuration ?? null,
+    // Org id whose org shape creates the scratch orgs (scratchOrgShape of the major branch, or
+    // SCRATCH_ORG_SHAPE), and that branch: the panel writes scratchOrgShape in its config file
+    scratchOrgShape: orgShape,
+    scratchOrgMajorBranch: await getScratchOrgMajorBranch(config),
     scratchDefHints: getScratchOrgDefHints(),
   };
 }
@@ -137,14 +153,14 @@ export function getOrgInitSteps(config: any): OrgInitStepsInfo {
  */
 export function buildLegacyOrgInitSteps(config: any): PrePostCommand[] {
   const steps: Partial<PrePostCommand>[] = [];
-  steps.push({ id: 'legacy-install-packages', label: 'Install packages', type: 'install-packages', orgTypes: ['scratch'] });
-  steps.push({ id: 'legacy-deploy-sources', label: 'Deploy project sources', type: 'deploy-sources', orgTypes: ['scratch'] });
+  steps.push({ id: 'legacy-install-packages', label: t('orgInitLegacyInstallPackages'), type: 'install-packages', orgTypes: ['scratch'] });
+  steps.push({ id: 'legacy-deploy-sources', label: t('orgInitLegacyDeploySources'), type: 'deploy-sources', orgTypes: ['scratch'] });
   const permissionSets = (config?.initPermissionSets || []).map((permSet: any) => permSet?.name || permSet).filter(Boolean);
   if (permissionSets.length > 0) {
     // A failed assignment used to be logged without stopping the initialization
     steps.push({
       id: 'legacy-permission-sets',
-      label: 'Assign permission sets',
+      label: t('orgInitLegacyAssignPermissionSets'),
       type: 'assign-permission-sets',
       parameters: { permissionSets },
       orgTypes: ALL_ORG_TYPES,
@@ -154,7 +170,7 @@ export function buildLegacyOrgInitSteps(config: any): PrePostCommand[] {
   (config?.scratchOrgInitApexScripts || []).forEach((apexScript: string, index: number) => {
     steps.push({
       id: `legacy-scratch-apex-${index + 1}`,
-      label: `Run ${path.basename(String(apexScript))}`,
+      label: t('orgInitLegacyRunApex', { script: path.basename(String(apexScript)) }),
       type: 'apex',
       parameters: { apexScript },
       orgTypes: ['scratch'],
@@ -163,7 +179,7 @@ export function buildLegacyOrgInitSteps(config: any): PrePostCommand[] {
   (config?.sandboxOrgInitApexScripts || []).forEach((apexScript: string, index: number) => {
     steps.push({
       id: `legacy-sandbox-apex-${index + 1}`,
-      label: `Run ${path.basename(String(apexScript))}`,
+      label: t('orgInitLegacyRunApex', { script: path.basename(String(apexScript)) }),
       type: 'apex',
       parameters: { apexScript },
       orgTypes: ['sandbox'],
@@ -172,7 +188,7 @@ export function buildLegacyOrgInitSteps(config: any): PrePostCommand[] {
   if (fs.existsSync(path.join('scripts', 'data', 'ScratchInit'))) {
     steps.push({
       id: 'legacy-data-scratchinit',
-      label: 'Load ScratchInit data',
+      label: t('orgInitLegacyLoadData', { name: 'ScratchInit' }),
       type: 'data',
       parameters: { sfdmuProject: 'ScratchInit' },
       orgTypes: ['scratch'],
@@ -181,7 +197,7 @@ export function buildLegacyOrgInitSteps(config: any): PrePostCommand[] {
   if (fs.existsSync(path.join('scripts', 'data', 'SandboxInit'))) {
     steps.push({
       id: 'legacy-data-sandboxinit',
-      label: 'Load SandboxInit data',
+      label: t('orgInitLegacyLoadData', { name: 'SandboxInit' }),
       type: 'data',
       parameters: { sfdmuProject: 'SandboxInit' },
       orgTypes: ['sandbox'],
@@ -193,7 +209,7 @@ export function buildLegacyOrgInitSteps(config: any): PrePostCommand[] {
       const sfdmuProject = toDataWorkspaceName(dataPackage.dataPath);
       steps.push({
         id: `legacy-data-package-${index + 1}`,
-        label: `Load ${path.basename(sfdmuProject)} data`,
+        label: t('orgInitLegacyLoadData', { name: path.basename(sfdmuProject) }),
         type: 'data',
         parameters: { sfdmuProject },
         orgTypes: ALL_ORG_TYPES,
@@ -231,7 +247,7 @@ export async function checkOrgInitSteps(steps: PrePostCommand[]): Promise<OrgIni
       addError(t('orgInitStepDuplicateId', { id: step.id }));
     }
     seenIds.add(step.id);
-    const deploymentOnlyFields = DEPLOYMENT_ONLY_STEP_FIELDS.filter((field) => (step as any)[field] !== undefined);
+    const deploymentOnlyFields = DEPLOYMENT_ONLY_STEP_FIELDS.filter((field) => isSetValue((step as any)[field]));
     if (deploymentOnlyFields.length > 0) {
       addError(t('orgInitStepDeploymentOnlyFields', { label: step.label, fields: deploymentOnlyFields.join(', ') }));
     }
@@ -287,6 +303,18 @@ export async function runOrgInitSteps(options: OrgInitRunOptions): Promise<OrgIn
     }
   }
   const steps = selectOrgInitSteps(stepsInfo.steps, options);
+  if (options.stepIds) {
+    const selectedIds = steps.map((step) => step.id);
+    const notApplicable = options.stepIds.filter((stepId) => !selectedIds.includes(stepId));
+    if (notApplicable.length > 0) {
+      throw new SfError(
+        t('orgInitStepsNotApplicable', {
+          ids: notApplicable.join(', '),
+          orgType: options.orgType,
+        })
+      );
+    }
+  }
   if (steps.length === 0) {
     uxLog('action', this, c.cyan(t('orgInitNoApplicableSteps', { orgType: options.orgType })));
     return [];
@@ -331,6 +359,84 @@ export async function resetSourceTracking(orgUsername: string): Promise<boolean>
   return true;
 }
 
+/** Commit checked out in the working copy, null outside a git repository. */
+export async function getHeadCommit(): Promise<string | null> {
+  try {
+    return (await git({ output: false, displayCommand: false }).revparse(['HEAD'])).trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A scratch org taken from the pool holds the sources of the commit the pool job deployed.
+ * Deploys what changed between that commit and the working copy, so the org matches the
+ * branch of the developer before its source tracking is reset.
+ * When that commit is not in the local history (shallow clone, rewritten branch), every
+ * source is deployed again.
+ */
+export async function syncPoolOrgSources(options: {
+  orgUsername: string;
+  orgAlias?: string;
+  fromCommit: string;
+  fromBranch?: string | null;
+  config: any;
+  projectScratchDef?: any;
+  debugMode?: boolean;
+}): Promise<void> {
+  const headCommit = await getHeadCommit();
+  if (!headCommit || headCommit === options.fromCommit) {
+    uxLog('log', this, c.grey(t('orgInitPoolSourcesUpToDate', { commit: options.fromCommit.substring(0, 8) })));
+    return;
+  }
+  let isKnownCommit = await isCommitInLocalHistory(options.fromCommit);
+  if (!isKnownCommit && options.fromBranch) {
+    // The branch of the pool job is one a User Story starts from: its history holds the commit
+    await git({ output: false, displayCommand: true })
+      .fetch(['origin', options.fromBranch])
+      .catch((e) => uxLog('other', this, c.grey(`Unable to fetch ${options.fromBranch}: ${(e as Error).message}`)));
+    isKnownCommit = await isCommitInLocalHistory(options.fromCommit);
+  }
+  if (!isKnownCommit) {
+    uxLog('action', this, c.cyan(t('orgInitPoolSourcesFullDeploy', { commit: options.fromCommit.substring(0, 8) })));
+    const { initOrgMetadatas } = await import('./orgUtils.js');
+    await initOrgMetadatas(
+      options.config,
+      options.orgUsername,
+      options.orgAlias || options.orgUsername,
+      options.projectScratchDef || {},
+      options.debugMode || false,
+      { scratch: true }
+    );
+    return;
+  }
+  uxLog(
+    'action',
+    this,
+    c.cyan(t('orgInitPoolSourcesDelta', { from: options.fromCommit.substring(0, 8), to: headCommit.substring(0, 8) }))
+  );
+  const { callSfdxGitDelta } = await import('./gitUtils.js');
+  const { countPackageXmlItems } = await import('./xmlUtils.js');
+  const tmpDir = await createTempDir();
+  await callSfdxGitDelta(options.fromCommit, headCommit, tmpDir, {
+    debugMode: options.debugMode,
+    skipWebSocketNotification: true,
+  });
+  const packageXml = path.join(tmpDir, 'package', 'package.xml');
+  const destructiveXml = path.join(tmpDir, 'destructiveChanges', 'destructiveChanges.xml');
+  const toDeploy = fs.existsSync(packageXml) ? await countPackageXmlItems(packageXml) : 0;
+  const toDelete = fs.existsSync(destructiveXml) ? await countPackageXmlItems(destructiveXml) : 0;
+  if (toDeploy === 0 && toDelete === 0) {
+    uxLog('log', this, c.grey(t('orgInitPoolSourcesNoMetadataChange')));
+    return;
+  }
+  // Post-destructive changes need a manifest: sfdx-git-delta always writes one, empty or not
+  const deployCommand =
+    `sf project deploy start --target-org ${options.orgUsername} --manifest "${packageXml}" --ignore-conflicts --wait 120` +
+    (toDelete > 0 ? ` --post-destructive-changes "${destructiveXml}"` : '');
+  await execSfdxJson(deployCommand, this, { fail: true, output: true, debug: options.debugMode || false });
+}
+
 /** Scratch org or sandbox, read from the Organization record. Production is refused by callers. */
 export async function detectOrgInitOrgType(conn: Connection): Promise<OrgInitOrgType | 'production'> {
   const orgRes = await conn.query('SELECT IsSandbox, TrialExpirationDate FROM Organization LIMIT 1');
@@ -346,7 +452,8 @@ export async function detectOrgInitOrgType(conn: Connection): Promise<OrgInitOrg
 
 /** Reads config/project-scratch-def.json, or returns null when the file does not exist. */
 export function readProjectScratchDef(
-  filePath: string = PROJECT_SCRATCH_DEF_FILE
+  filePath: string = PROJECT_SCRATCH_DEF_FILE,
+  options: { orgShape?: string | null } = {}
 ): { content: any; issues: string[]; warnings: string[] } | null {
   if (!fs.existsSync(filePath)) {
     return null;
@@ -357,8 +464,54 @@ export function readProjectScratchDef(
   } catch (e) {
     return { content: null, issues: [t('scratchOrgDefNotJson', { message: (e as Error).message })], warnings: [] };
   }
-  const validation = validateScratchOrgDef(content);
+  const validation = validateScratchOrgDef(content, options);
   return { content, issues: validation.errors, warnings: validation.warnings };
+}
+
+/**
+ * Org id whose org shape creates the scratch orgs. A scratch org belongs to a major branch, so
+ * scratchOrgShape is read from the config of that branch (config/branches/.sfdx-hardis.<branch>.yml).
+ * SCRATCH_ORG_SHAPE wins; a scratchOrgShape of the project config is still read, as before.
+ */
+export async function getScratchOrgShape(config: any): Promise<string | null> {
+  if (process.env.SCRATCH_ORG_SHAPE) {
+    return process.env.SCRATCH_ORG_SHAPE;
+  }
+  const majorBranch = await getScratchOrgMajorBranch(config);
+  const branchShape = majorBranch ? readBranchConfigValue(majorBranch, 'scratchOrgShape') : undefined;
+  return branchShape || config?.scratchOrgShape || null;
+}
+
+/**
+ * The major branch a scratch org is created for: the current branch when it is developmentBranch or
+ * one of availableTargetBranches (the pool job runs there), else the branch the User Story started
+ * from (localStorageBranchTargets, written by hardis:work:new), else developmentBranch.
+ */
+export async function getScratchOrgMajorBranch(config: any): Promise<string | null> {
+  const majorBranches = [config?.developmentBranch, ...(config?.availableTargetBranches || [])]
+    .map((branch: any) => (typeof branch === 'string' ? branch : branch?.branch))
+    .filter(Boolean);
+  const currentBranch = await getCurrentGitBranch();
+  if (currentBranch && majorBranches.includes(currentBranch)) {
+    return currentBranch;
+  }
+  const startedFrom = currentBranch ? config?.localStorageBranchTargets?.[currentBranch] : null;
+  return startedFrom || config?.developmentBranch || null;
+}
+
+function readBranchConfigValue(branch: string, key: string): any {
+  const formattedBranch = branch.replace('/', '__');
+  for (const extension of ['yml', 'yaml']) {
+    const file = path.join('config', 'branches', `.sfdx-hardis.${formattedBranch}.${extension}`);
+    if (fs.existsSync(file)) {
+      try {
+        return (yaml.load(fs.readFileSync(file, 'utf8')) as any)?.[key];
+      } catch (e) {
+        uxLog('other', this, c.grey(`Unable to read ${file}: ${(e as Error).message}`));
+      }
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -368,16 +521,25 @@ export function readProjectScratchDef(
  * warnings: settings names and features the bundled Salesforce CLI schema does not know. Salesforce
  * can be newer than the schema, so they never block.
  */
-export function validateScratchOrgDef(content: any): { errors: string[]; warnings: string[] } {
+export function validateScratchOrgDef(content: any, options: { orgShape?: string | null } = {}): { errors: string[]; warnings: string[] } {
   if (!content || typeof content !== 'object' || Array.isArray(content)) {
     return { errors: [t('scratchOrgDefNotObject')], warnings: [] };
   }
   const definition = { ...content };
   delete definition['$schema'];
+  // scratch:create sets sourceOrg from scratchOrgShape (or SCRATCH_ORG_SHAPE): the org shape gives
+  // the edition, so the definition has none
+  if (options.orgShape && !definition.sourceOrg) {
+    definition.sourceOrg = options.orgShape;
+  }
   const errors: string[] = [];
   const result = ScratchOrgDefSchema.safeParse(definition);
   if (!result.success) {
-    errors.push(...result.error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`));
+    errors.push(
+      ...result.error.issues
+        .filter((issue) => !(definition.sourceOrg && issue.path.join('.') === 'edition'))
+        .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+    );
   }
   return { errors, warnings: listUnknownScratchOrgDefValues(definition) };
 }
@@ -574,13 +736,7 @@ async function targetOrgForSteps(options: OrgInitRunOptions): Promise<() => void
   process.env.SF_TARGET_ORG = options.orgUsername;
   process.env.SFDX_HARDIS_ORG_USERNAME = options.orgUsername;
   process.env.SFDX_HARDIS_ORG_TYPE = options.orgType;
-  try {
-    const authInfo = await AuthInfo.create({ username: options.orgUsername });
-    globalThis.jsForceConn = await Connection.create({ authInfo });
-  } catch (e) {
-    uxLog('other', this, c.grey(`[OrgInit] No connection to ${options.orgUsername}: ${(e as Error).message}`));
-  }
-  return () => {
+  const restore = () => {
     for (const [key, value] of Object.entries(previousEnv)) {
       if (value === undefined) {
         delete process.env[key];
@@ -590,6 +746,29 @@ async function targetOrgForSteps(options: OrgInitRunOptions): Promise<() => void
     }
     globalThis.jsForceConn = previousConn;
   };
+  try {
+    const authInfo = await AuthInfo.create({ username: options.orgUsername });
+    globalThis.jsForceConn = await Connection.create({ authInfo });
+  } catch (e) {
+    restore();
+    throw new SfError(t('orgInitNoConnection', { org: options.orgUsername, message: (e as Error).message }));
+  }
+  return restore;
+}
+
+async function isCommitInLocalHistory(commit: string): Promise<boolean> {
+  return await git({ output: false, displayCommand: false })
+    .catFile(['-e', `${commit}^{commit}`])
+    .then(() => true)
+    .catch(() => false);
+}
+
+// A value written in the config: undefined, null, an empty string or an empty list are not
+function isSetValue(value: any): boolean {
+  if (value === undefined || value === null || value === '') {
+    return false;
+  }
+  return !(Array.isArray(value) && value.length === 0);
 }
 
 function buildStepResult(step: PrePostCommand, result: ActionResult, durationSeconds?: number): OrgInitStepResult {
