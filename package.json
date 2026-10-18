@@ -144,7 +144,15 @@
   ],
   "license": "AGPL-3.0",
   "oclif": {
-    "commands": "./lib/commands",
+    "commands": {
+      "strategy": "pattern",
+      "target": "./lib/commands",
+      "globPatterns": [
+        "**/*.+(js|cjs|mjs|ts|tsx|mts|cts)",
+        "!**/*.+(d.ts|test.ts|test.js|spec.ts|spec.js|d.mts|d.cts)?(x)",
+        "!**/base.+(js|cjs|mjs|ts|tsx|mts|cts)"
+      ]
+    },
     "bin": "sf",
     "topicSeparator": " ",
     "devPlugins": [

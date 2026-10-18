@@ -3645,6 +3645,201 @@
       "title": "Project Name",
       "type": "string"
     },
+    "replacementRules": {
+      "$id": "#/properties/replacementRules",
+      "description": "Rules applied to the metadata files right before each deployment, for the org the deployment goes to: set an XML element to the value of the target org (xml-value), remove an XML element (xml-remove), or find and replace a text (text). A value is the same for every org (value), one per target branch with a default (values), or read from a CI/CD variable (secret). Rules of the branch config file of the target and of the \"sfdx-hardis Replacement Rules\" git provider issue change the rules with the same id. Built-in rules (ids starting with builtin-) remove the elements the deployment API version of the target org does not accept, and can be turned off with enabled: false.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/",
+      "examples": [
+        [
+          {
+            "id": "payment-api-endpoint",
+            "type": "xml-value",
+            "files": "**/namedCredentials/Payment_API.namedCredential-meta.xml",
+            "xmlPath": "NamedCredential/endpoint",
+            "values": {
+              "main": "https://pay.example.com",
+              "default": "https://pay-sandbox.example.com"
+            }
+          },
+          {
+            "id": "payment-api-password",
+            "type": "xml-value",
+            "files": "**/namedCredentials/Payment_API.namedCredential-meta.xml",
+            "xmlPath": "NamedCredential/password",
+            "secret": "PAYMENT_API_PASSWORD"
+          },
+          {
+            "id": "apex-payment-host",
+            "type": "text",
+            "files": "**/classes/PaymentService.cls",
+            "find": "https://pay-[a-z]+.example.com",
+            "regex": true,
+            "values": {
+              "main": "https://pay.example.com"
+            }
+          },
+          {
+            "id": "builtin-flow-schedule-day-of-month",
+            "enabled": false
+          }
+        ]
+      ],
+      "items": {
+        "$id": "#/properties/replacementRules/items",
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Replacement rule, or the fields of a rule of a lower place it changes",
+        "properties": {
+          "id": {
+            "$id": "#/properties/replacementRules/items/properties/id",
+            "description": "Unique id of the rule: lowercase letters, digits and \"-\". The same id in the branch config file or the issue changes this rule.",
+            "examples": [
+              "payment-api-endpoint"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "description": {
+            "$id": "#/properties/replacementRules/items/properties/description",
+            "description": "Shown in logs and Pull Request comments",
+            "title": "Description",
+            "type": "string"
+          },
+          "enabled": {
+            "$id": "#/properties/replacementRules/items/properties/enabled",
+            "default": true,
+            "description": "false turns the rule off, including a built-in rule",
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "type": {
+            "$id": "#/properties/replacementRules/items/properties/type",
+            "description": "xml-value: set the value of an XML element. xml-remove: remove an XML element. text: find and replace a text or a regular expression in any file.",
+            "enum": [
+              "xml-value",
+              "xml-remove",
+              "text"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "files": {
+            "$id": "#/properties/replacementRules/items/properties/files",
+            "description": "Glob of the files the rule applies to, from the repository root",
+            "examples": [
+              "**/namedCredentials/*.namedCredential-meta.xml"
+            ],
+            "title": "Files",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          "xmlPath": {
+            "$id": "#/properties/replacementRules/items/properties/xmlPath",
+            "description": "Element path, without namespace: NamedCredential/endpoint, Profile/userPermissions[name=ViewSetup] (one user permission, to remove), //dayOfMonthToRun (any depth), Workflow/alerts[fullName=MyAlert]/senderAddress, Layout/excludeButtons[.=MyButton]",
+            "examples": [
+              "NamedCredential/endpoint",
+              "Profile/userPermissions[name=ViewSetup]"
+            ],
+            "title": "Element path",
+            "type": "string"
+          },
+          "find": {
+            "$id": "#/properties/replacementRules/items/properties/find",
+            "description": "Text to find, with type: text",
+            "title": "Find",
+            "type": "string"
+          },
+          "regex": {
+            "$id": "#/properties/replacementRules/items/properties/regex",
+            "default": false,
+            "description": "find is a regular expression. The replacement is literal.",
+            "title": "Regular expression",
+            "type": "boolean"
+          },
+          "value": {
+            "$id": "#/properties/replacementRules/items/properties/value",
+            "description": "Same value for every org",
+            "title": "Value",
+            "type": "string"
+          },
+          "values": {
+            "$id": "#/properties/replacementRules/items/properties/values",
+            "description": "Value per target branch. default applies to dev sandboxes, scratch orgs and the branches without their own value.",
+            "examples": [
+              {
+                "uat": "https://pay-uat.example.com",
+                "main": "https://pay.example.com",
+                "default": "https://pay-sandbox.example.com"
+              }
+            ],
+            "title": "Values per org",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "secret": {
+            "$id": "#/properties/replacementRules/items/properties/secret",
+            "description": "Name of the CI/CD variable holding the value: NAME_<BRANCH> is read first, then NAME. Never write a value here. The value is masked in every log. Not allowed in the rules of the git provider issue.",
+            "examples": [
+              "PAYMENT_API_PASSWORD"
+            ],
+            "title": "Secret variable",
+            "type": "string"
+          },
+          "includeTargetBranches": {
+            "$id": "#/properties/replacementRules/items/properties/includeTargetBranches",
+            "description": "Target branches the rule applies to (dev-sandboxes for any other org)",
+            "title": "Only for target branches",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "excludeTargetBranches": {
+            "$id": "#/properties/replacementRules/items/properties/excludeTargetBranches",
+            "description": "Target branches the rule does not apply to",
+            "title": "Not for target branches",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "required": {
+            "$id": "#/properties/replacementRules/items/properties/required",
+            "default": false,
+            "description": "Warn in the Pull Request comment when the files of the rule are deployed but nothing matches",
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "title": "Replacement rules (Beta)",
+      "type": "array"
+    },
+    "secretsProvider": {
+      "$id": "#/properties/secretsProvider",
+      "default": "ciVariables",
+      "description": "Where the secrets of the replacement rules are read from. ciVariables: CI/CD variables (NAME_<BRANCH>, then NAME).",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/",
+      "enum": [
+        "ciVariables"
+      ],
+      "title": "Secrets provider",
+      "type": "string"
+    },
     "refreshSandboxConfig": {
       "$id": "#/properties/refreshSandboxConfig",
       "description": "Configuration for sandbox refresh. Will be used by command hardis:org:refresh:before-refresh and hardis:org:refresh:after-refresh",
@@ -3853,6 +4048,17 @@
       },
       "title": "Skip Minimize Profiles",
       "type": "array"
+    },
+    "skipReplacementRules": {
+      "$id": "#/properties/skipReplacementRules",
+      "default": false,
+      "description": "Skips every replacement rule (Beta), built-in ones included, before deployments, scratch org pushes, org init and backpromote. Set it in config/.sfdx-hardis.yml for the whole project, or in the branch config file of one major org. Same effect as the env variable SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true. The Pull Request comments say the rules were skipped.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/#turn-every-rule-off",
+      "examples": [
+        true
+      ],
+      "title": "Skip replacement rules (Beta)",
+      "type": "boolean"
     },
     "skipUpdateForceIgnore": {
       "$id": "#/properties/skipUpdateForceIgnore",
@@ -4128,7 +4334,7 @@
         ],
         "title": "Action"
       },
-      "title": "Org initialization steps",
+      "title": "Org initialization steps (Beta)",
       "type": "array"
     },
     "sharedDevSandboxes": {

@@ -444,7 +444,11 @@ export async function syncPoolOrgSources(options: {
   const deployCommand =
     `sf project deploy start --target-org ${options.orgUsername} --manifest "${packageXml}" --ignore-conflicts --wait 120` +
     (toDelete > 0 ? ` --post-destructive-changes "${destructiveXml}"` : '');
-  await execSfdxJson(deployCommand, this, { fail: true, output: true, debug: options.debugMode || false });
+  // A pool org gets the default values of the replacement rules
+  const { runWithReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
+  await runWithReplacementRules({ targetBranch: null, targetUsername: options.orgUsername, packageXmlFiles: [packageXml] }, () =>
+    execSfdxJson(deployCommand, this, { fail: true, output: true, debug: options.debugMode || false })
+  );
 }
 
 /** Scratch org or sandbox, read from the Organization record. Production is refused by callers. */

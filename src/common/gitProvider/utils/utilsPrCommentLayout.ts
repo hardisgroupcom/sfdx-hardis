@@ -526,6 +526,11 @@ function buildDetailSections(prData: Partial<PullRequestData>, commands: PhasedC
   if (prData.noOverwriteMarkdownBody) {
     sections.push({ id: 'no-overwrite', markdown: prData.noOverwriteMarkdownBody, dropLabel: 'the protected components' });
   }
+  if (prData.replacementRulesMarkdownBody) {
+    // Kept when it holds warnings (a missing secret means the value from git was deployed)
+    const hasWarnings = prData.replacementRulesMarkdownBody.startsWith('<details open>');
+    sections.push({ id: 'replacement-rules', keep: hasWarnings, markdown: prData.replacementRulesMarkdownBody, dropLabel: 'the replacement rules' });
+  }
   if (prData.flowDeletionMarkdownBody) {
     sections.push({ id: 'flow-deletion', markdown: prData.flowDeletionMarkdownBody, dropLabel: 'the Flow deletions' });
   }

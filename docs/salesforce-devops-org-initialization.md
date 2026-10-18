@@ -1,11 +1,13 @@
 ---
-title: Initialize scratch orgs and sandboxes
+title: Initialize scratch orgs and sandboxes (Beta)
 description: With sfdx-hardis, define once the steps that set up a new scratch org or sandbox (packages, sources, permission sets, Apex scripts, data, commands) and edit them from VS Code
 ---
 
 <!-- markdownlint-disable MD013 -->
 
-## Initialize scratch orgs and sandboxes (optional)
+## Initialize scratch orgs and sandboxes (optional, Beta)
+
+> **This feature is in Beta.** Its behavior may still change from feedback. Please report any issue or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 A new scratch org or developer sandbox is empty: it needs the project packages, the sources, the permission sets of the team, a few Apex scripts and some test data before anyone can work in it. sfdx-hardis runs these **org initialization steps** for you, in the order your project defines.
 

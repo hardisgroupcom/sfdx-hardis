@@ -1,3 +1,4 @@
+import { redactSecretsDeep } from '../utils/secretMaskingUtils.js';
 import { SfError } from "@salesforce/core";
 import c from "chalk";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
@@ -310,7 +311,8 @@ export abstract class GitProviderRoot {
   public async tryPostPullRequestMessage(prMessage: PullRequestMessageRequest): Promise<PullRequestMessageResult> {
     let prResult: PullRequestMessageResult | null = null;
     try {
-      prResult = await this.postPullRequestMessage(prMessage);
+      // A secret read by sfdx-hardis (replacement rules) is never posted
+      prResult = await this.postPullRequestMessage(redactSecretsDeep(prMessage));
     } catch (e) {
       uxLog("warning", this, c.yellow(`[GitProvider] Error while trying to post pull request message.\n${(e as Error).message}\n${(e as Error).stack}`));
       prResult = { posted: false, providerResult: { error: e } };
@@ -482,6 +484,21 @@ export abstract class GitProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
     throw new SfError(`Method updateDashboardBody is not implemented on ${this.getLabel()}`);
+  }
+
+  // True when the dashboard was created by someone allowed to change the repository. Rules read from
+  // a dashboard reach the deployments without review: an issue anyone can open must not be trusted.
+  // Azure DevOps work items and Bitbucket Pull Requests already need write access to be created.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async isDashboardAuthorTrusted(dashboard: DashboardRef): Promise<boolean> {
+    return true;
+  }
+
+  // Current body of a dashboard, as people may have edited it in the web UI (the replacement rules
+  // issue is read from its body)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getDashboardBody(dashboard: DashboardRef): Promise<string> {
+    throw new SfError(`Method getDashboardBody is not implemented on ${this.getLabel()}`);
   }
 
   // All the comments that are not deleted, oldest first. The ids grow with the creation order.

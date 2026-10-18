@@ -15,6 +15,7 @@ import { httpPost } from '../utils/httpUtils.js';
 import { CiRunCandidate, classifyJobKind, selectCiRuns } from './utils/jobKindUtils.js';
 import { SfError } from '@salesforce/core';
 import { isJenkins, getJenkinsBranchName, getJenkinsPrNumber, getJenkinsBuildNumber, getJenkinsJobUrl } from "./utils/jenkinsUtils.js";
+import { POOL_DASHBOARD_TITLE } from "../utils/poolDashboardUtils.js";
 const { Bitbucket } = bbPkg;
 
 // Oldest commit date of a window, used to bound the merged PRs listing (see
@@ -26,6 +27,15 @@ function getOldestBitbucketCommitDate(commits: any[]): string | null {
 // Technical branch and file of the dashboard Pull Request (see findDashboard)
 const DASHBOARD_BRANCH = 'sfdx-hardis/scratch-orgs-pool';
 const DASHBOARD_BRANCH_FILE = '.sfdx-hardis-dashboard.md';
+
+// Bitbucket accepts one open Pull Request per pair of branches: each dashboard has its own technical
+// branch. The scratch org pool keeps the branch it always had
+function dashboardBranchFor(title: string): string {
+  if (title === POOL_DASHBOARD_TITLE) {
+    return DASHBOARD_BRANCH;
+  }
+  return `sfdx-hardis/${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+}
 // Above this number of deleted comments, the dashboard Pull Request is replaced by a new one
 const DASHBOARD_MAX_DELETED_COMMENTS = 500;
 
@@ -503,7 +513,8 @@ export class BitbucketProvider extends GitProviderRoot {
     // A Pull Request needs a difference with its target: one commit on the technical branch,
     // which this call also creates when it does not exist yet
     const commitForm = new FormData();
-    commitForm.append('branch', DASHBOARD_BRANCH);
+    const dashboardBranch = dashboardBranchFor(title);
+    commitForm.append('branch', dashboardBranch);
     commitForm.append('message', 'Technical branch of the sfdx-hardis dashboard Pull Request: do not merge, do not delete');
     commitForm.append(DASHBOARD_BRANCH_FILE, `Technical file of the "${title}" Pull Request, managed by sfdx-hardis.\nDo not merge this branch.\n${new Date().toISOString()}\n`);
     await httpPost(
@@ -517,13 +528,19 @@ export class BitbucketProvider extends GitProviderRoot {
       _body: {
         title,
         description: toBitbucketMarkup(body, 'newDescription'),
-        source: { branch: { name: DASHBOARD_BRANCH } },
+        source: { branch: { name: dashboardBranch } },
         destination: { branch: { name: mainBranch } },
         close_source_branch: false,
       } as any,
     });
     const pullRequest = result?.data as any;
     return { id: pullRequest.id, url: pullRequest.links?.html?.href || '' };
+  }
+
+  public async getDashboardBody(dashboard: DashboardRef): Promise<string> {
+    const { workspace, repoSlug } = this.dashboardRepository();
+    const result = await this.bitbucket.repositories.getPullRequest({ workspace, repo_slug: repoSlug, pull_request_id: dashboard.id });
+    return (result?.data as any)?.description || '';
   }
 
   public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {
