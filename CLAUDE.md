@@ -42,6 +42,10 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 - `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches or backpromote change in a way unit tests cannot cover.
 - `backpromote` skill: how a coding agent drives `sf hardis:work:backpromote` (plan, decide, run, solve the merges it asks for, confirm manual actions) and where the feature lives in both repositories. Load it for any work on backpromote, on the "Backpromotes" Pull Request comments or on the VS Code Backpromote panel.
 
+## Replacement Rules Skills
+
+- `replacement-rules-e2e` skill: the end to end test of replacement rules (Beta) against a scratch org and a throwaway private GitHub repository running the CI workflows of the branch under test. Run it whenever replacement rules, their built-in rules or the VS Code Replacement Rules panel change in a way unit tests cannot cover.
+
 ## VS Code Extension (vscode-sfdx-hardis)
 
 Most users run sfdx-hardis through the VS Code extension [vscode-sfdx-hardis](https://github.com/hardisgroupcom/vscode-sfdx-hardis) (local clone: `../vscode-sfdx-hardis`). Every task run from this repository must take its impact on the extension into account.
