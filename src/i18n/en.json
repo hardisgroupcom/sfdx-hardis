@@ -3626,6 +3626,8 @@
   "replacementRulesTypeXmlRemove": "Remove an XML element",
   "replacementRulesTypeXmlValue": "Set the value of an XML element",
   "replacementRulesUnknownOverride": "Replacement rule {{id}} in {{place}} changes a rule that does not exist",
+  "replacementRulesUserPermissionsFromList": "Target org not reachable: {{count}} user permissions unknown to API {{apiVersion}}, from the list of sfdx-hardis",
+  "replacementRulesUserPermissionsFromOrg": "{{count}} user permissions read from the target org",
   "replacementRulesValueSourcePerOrg": "One value per org, with a default",
   "replacementRulesValueSourceSecret": "A secret CI/CD variable",
   "replacementRulesValueSourceSingle": "The same value for every org",

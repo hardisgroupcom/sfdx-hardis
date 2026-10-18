@@ -50,7 +50,9 @@ export interface BuiltInReplacementRule {
   // When disabled and the element is found, warn that the deployment will fail
   warnWhenDisabled?: boolean;
   // Custom processing instead of a plain removal
-  handler?: 'flowEnds';
+  handler?: 'flowEnds' | 'unknownUserPermissions';
+  // Applies whatever the deployment API version (the handler decides what to remove)
+  anyApiVersion?: boolean;
   source: string;
 }
 

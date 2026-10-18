@@ -14,10 +14,12 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 
 export default class ReplacementPreview extends ReplacementCommandBase {
-  public static title = 'Preview replacement rules';
+  public static title = 'Preview replacement rules (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Shows what the replacement rules would change in the local files for a deployment to a target org. Nothing is written.**
 

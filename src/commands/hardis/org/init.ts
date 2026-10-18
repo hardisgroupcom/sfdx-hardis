@@ -18,11 +18,13 @@ Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
 export default class OrgInit extends SfCommand<any> {
-  public static title = 'Initialize a scratch org or a sandbox';
+  public static title = 'Initialize a scratch org or a sandbox (Beta)';
 
   public static description = `Runs the initialization steps of the project on an existing scratch org or sandbox.
 
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Brings an org to the state a new scratch org or sandbox gets when it is created: packages, project sources, permission sets, Apex scripts, data and custom commands, in the order the project defines.**
 

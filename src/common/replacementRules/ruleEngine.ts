@@ -62,6 +62,12 @@ export interface ReplacementRulesSession {
   restore: () => number;
 }
 
+// What some built-in rules need to know about the target org, computed once per run
+interface EngineContext {
+  // mode org: the user permissions the org has; mode version: the ones its API version does not know
+  userPermissions?: { mode: 'org' | 'version'; names: Set<string> } | null;
+}
+
 interface ResolvedRule {
   rule: MergedReplacementRule;
   value: string | null;
@@ -167,6 +173,13 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
   }
 
   uxLog('action', commandThis, c.cyan(t('replacementRulesApplying', { target: target.label })));
+  const context: EngineContext = {};
+  if (resolved.some((item) => item.rule.enabled && item.rule.builtIn?.handler === 'unknownUserPermissions')) {
+    context.userPermissions = await resolveUserPermissionsCheck(options, target.apiVersion);
+    if (context.userPermissions) {
+      uxLog('log', commandThis, c.grey(t(context.userPermissions.mode === 'org' ? 'replacementRulesUserPermissionsFromOrg' : 'replacementRulesUserPermissionsFromList', { count: context.userPermissions.names.size, apiVersion: formatApiVersion(target.apiVersion) })));
+    }
+  }
   const files = await listCandidateFiles(options.packageXmlFiles, commandThis);
   for (const file of files) {
     const rulesOfFile = resolved.filter((item) => item.matcher(file));
@@ -174,7 +187,7 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
       continue;
     }
     try {
-      await processFile(file, rulesOfFile, target, session.report, options.write ? backup : null);
+      await processFile(file, rulesOfFile, target, session.report, options.write ? backup : null, context);
     } catch (e: any) {
       session.report.warnings.push({ kind: 'file-error', message: t('replacementRulesFileError', { file, message: e.message }) });
     }
@@ -325,6 +338,82 @@ export async function resolveDeployApiVersion(
   return candidates.length > 0 ? Math.min(...candidates) : null;
 }
 
+/**
+ * The user permissions check of the target org: the Permissions<Name> fields of its PermissionSet
+ * describe (what its API version, licenses and features allow), else the permissions its API
+ * version does not know, from userPermissionsByApiVersion.ts. Null when neither is available.
+ */
+async function resolveUserPermissionsCheck(
+  options: Pick<ApplyReplacementRulesOptions, 'conn' | 'targetUsername'>,
+  apiVersion: number | null
+): Promise<EngineContext['userPermissions']> {
+  try {
+    let conn: any = options.conn || null;
+    if (!conn && options.targetUsername) {
+      conn = (await Org.create({ aliasOrUsername: options.targetUsername })).getConnection();
+    }
+    if (conn) {
+      const describe = await conn.sobject('PermissionSet').describe();
+      const names = new Set<string>(
+        (describe?.fields || [])
+          .map((field: any) => String(field.name || ''))
+          .filter((name: string) => name.startsWith('Permissions'))
+          .map((name: string) => name.substring('Permissions'.length))
+      );
+      if (names.size > 0) {
+        return { mode: 'org', names };
+      }
+    }
+  } catch {
+    // Org not reachable: the list by API version decides
+  }
+  if (apiVersion == null) {
+    return null;
+  }
+  const { USER_PERMISSIONS_INTRODUCED_IN, USER_PERMISSIONS_REMOVED_IN } = await import('./userPermissionsByApiVersion.js');
+  const unknown = new Set<string>();
+  for (const [version, names] of Object.entries(USER_PERMISSIONS_INTRODUCED_IN)) {
+    if (apiVersion < Number(version)) {
+      names.forEach((name) => unknown.add(name));
+    }
+  }
+  for (const [version, names] of Object.entries(USER_PERMISSIONS_REMOVED_IN)) {
+    if (apiVersion >= Number(version)) {
+      names.forEach((name) => unknown.add(name));
+    }
+  }
+  return { mode: 'version', names: unknown };
+}
+
+// Removes the userPermissions entries the target org does not have. Returns the number removed
+function removeUnknownUserPermissions(doc: any, xmlPaths: string[], check: EngineContext['userPermissions']): number {
+  if (!check) {
+    return 0;
+  }
+  let removed = 0;
+  for (const xmlPath of xmlPaths) {
+    for (const node of selectXmlPath(xmlPath, doc)) {
+      let name = '';
+      let child = node.firstChild;
+      while (child) {
+        if (child.nodeType === 1 && (child.localName || child.nodeName) === 'name') {
+          name = (child.textContent || '').trim();
+        }
+        child = child.nextSibling;
+      }
+      if (!name) {
+        continue;
+      }
+      const unknown = check.mode === 'org' ? !check.names.has(name) : check.names.has(name);
+      if (unknown) {
+        removeXmlNode(node);
+        removed++;
+      }
+    }
+  }
+  return removed;
+}
+
 async function resolveConnectionApiVersion(options: Pick<ApplyReplacementRulesOptions, 'conn' | 'targetUsername'>): Promise<number | null> {
   const fromEnv = parseApiVersion(process.env.SF_ORG_API_VERSION);
   if (fromEnv) {
@@ -359,7 +448,8 @@ async function processFile(
   rulesOfFile: ResolvedRule[],
   target: ReplacementTarget,
   report: ReplacementRulesReport,
-  backup: ReplacementFileBackup | null
+  backup: ReplacementFileBackup | null,
+  context: EngineContext = {}
 ): Promise<void> {
   const original = await fs.readFile(file, 'utf8');
   let content = original;
@@ -377,7 +467,7 @@ async function processFile(
     let xmlChanged = false;
     for (const item of xmlRules) {
       item.matchedFiles++;
-      const outcome = applyXmlRule(doc, item, target);
+      const outcome = applyXmlRule(doc, item, target, context);
       item.found += outcome.found;
       xmlChanged = xmlChanged || outcome.changed > 0;
       pushResult(report, file, item, outcome.status, outcome.changed || outcome.found, outcome.detail);
@@ -395,7 +485,8 @@ async function processFile(
 function applyXmlRule(
   doc: any,
   item: ResolvedRule,
-  target: ReplacementTarget
+  target: ReplacementTarget,
+  context: EngineContext = {}
 ): { found: number; changed: number; status: ReplacementFileResult['status']; detail?: string } {
   const rule = item.rule;
   if (rule.builtIn) {
@@ -410,6 +501,8 @@ function applyXmlRule(
     let removed = 0;
     if (builtIn.handler === 'flowEnds') {
       removed = removeFlowEnds(doc);
+    } else if (builtIn.handler === 'unknownUserPermissions') {
+      removed = removeUnknownUserPermissions(doc, builtIn.xmlPaths, context.userPermissions || null);
     } else {
       for (const xmlPath of builtIn.xmlPaths) {
         for (const node of selectXmlPath(xmlPath, doc)) {

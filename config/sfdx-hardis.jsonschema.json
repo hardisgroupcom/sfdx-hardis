@@ -3826,7 +3826,7 @@
           "id"
         ]
       },
-      "title": "Replacement rules",
+      "title": "Replacement rules (Beta)",
       "type": "array"
     },
     "secretsProvider": {
@@ -4323,7 +4323,7 @@
         ],
         "title": "Action"
       },
-      "title": "Org initialization steps",
+      "title": "Org initialization steps (Beta)",
       "type": "array"
     },
     "sharedDevSandboxes": {

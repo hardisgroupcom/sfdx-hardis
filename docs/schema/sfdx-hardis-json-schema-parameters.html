@@ -16826,7 +16826,7 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a></div><h4>Replacement rules</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a></div><h4>Replacement rules (Beta)</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <div class="description collapse" id="collapseDescription_replacementRules">
             <p>Rules applied to the metadata files right before each deployment, for the org the deployment goes to: set an XML element to the value of the target org (xml-value), remove an XML element (xml-remove), or find and replace a text (text). A value is the same for every org (value), one per target branch with a default (values), or read from a CI/CD variable (secret). Rules of the branch config file of the target and of the "sfdx-hardis Replacement Rules" git provider issue change the rules with the same id. Built-in rules (ids starting with builtin-) remove the elements the deployment API version of the target org does not accept, and can be turned off with enabled: false.</p>
 
@@ -19236,7 +19236,7 @@ Deprecated: use orgInitSteps, edited from the Org Initialization panel of the VS
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a></div><h4>Org initialization steps</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a></div><h4>Org initialization steps (Beta)</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
 <div class="description collapse" id="collapseDescription_orgInitSteps">
             <p>Ordered list of the steps that initialize a new scratch org (hardis:scratch:create), a new sandbox (hardis:org:create), or an existing one (hardis:org:init). Edit it from the Org Initialization panel of the VS Code extension.<br />
 When this property is not defined, the steps are built from the older properties installedPackages, initPermissionSets, scratchOrgInitApexScripts, sandboxOrgInitApexScripts, dataPackages (importInSandboxOrgs) and the scripts/data/ScratchInit and scripts/data/SandboxInit folders. When it is defined, those older properties are ignored for org initialization.</p>

@@ -3622,6 +3622,8 @@
   "replacementRulesTypeXmlRemove": "Usunięcie elementu XML",
   "replacementRulesTypeXmlValue": "Ustawienie wartości elementu XML",
   "replacementRulesUnknownOverride": "Reguła zastępowania {{id}} w {{place}} zmienia regułę, która nie istnieje",
+  "replacementRulesUserPermissionsFromList": "Docelowa org jest niedostępna: {{count}} uprawnień użytkownika nieznanych dla API {{apiVersion}}, według listy sfdx-hardis",
+  "replacementRulesUserPermissionsFromOrg": "Odczytano {{count}} uprawnień użytkownika z docelowej org",
   "replacementRulesValueSourcePerOrg": "Jedna wartość na org, z wartością domyślną",
   "replacementRulesValueSourceSecret": "Sekretna zmienna CI/CD",
   "replacementRulesValueSourceSingle": "Ta sama wartość dla każdego org",

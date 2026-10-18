@@ -4,7 +4,9 @@
 ## Description
 
 
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Adds a replacement rule: a change applied to the metadata files right before each deployment, for the org the deployment goes to.**
 

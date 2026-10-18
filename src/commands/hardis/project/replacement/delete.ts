@@ -13,10 +13,12 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 
 export default class ReplacementDelete extends ReplacementCommandBase {
-  public static title = 'Delete replacement rule';
+  public static title = 'Delete replacement rule (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Removes a replacement rule, or an override of a rule, from one place (project config, branch config file or git provider issue).**
 

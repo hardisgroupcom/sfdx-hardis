@@ -4,7 +4,9 @@
 ## Description
 
 
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Shows what the replacement rules would change in the local files for a deployment to a target org. Nothing is written.**
 

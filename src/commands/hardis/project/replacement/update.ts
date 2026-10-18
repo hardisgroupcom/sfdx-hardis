@@ -22,10 +22,12 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 
 export default class ReplacementUpdate extends ReplacementCommandBase {
-  public static title = 'Update replacement rule';
+  public static title = 'Update replacement rule (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Changes a replacement rule in one place (project config, branch config file or git provider issue).**
 

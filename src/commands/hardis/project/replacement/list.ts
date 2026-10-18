@@ -14,10 +14,12 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 
 export default class ReplacementList extends ReplacementCommandBase {
-  public static title = 'List replacement rules';
+  public static title = 'List replacement rules (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Lists the replacement rules of the project: the rules of every place, the effective rules of every target org, and the built-in rules.**
 

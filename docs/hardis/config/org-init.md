@@ -5,7 +5,9 @@
 
 Returns how the project initializes its scratch orgs and sandboxes, without connecting to any org.
 
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Gives configuration UIs (e.g. the Org Initialization panel of the [VS Code sfdx-hardis extension](https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis)) everything they need to show and edit the org initialization steps, so they never rebuild the list themselves.**
 

@@ -145,6 +145,16 @@ export const BUILT_IN_REPLACEMENT_RULES: BuiltInReplacementRule[] = [
     defaultEnabled: true,
     source: `${MDAPI} v66 (Profile, PermissionSet)`,
   },
+  {
+    id: 'builtin-unknown-user-permissions',
+    description: 'User permissions the target org does not have: unknown to its API version, or not enabled by its licenses and features',
+    files: PROFILES_AND_PERMISSION_SETS,
+    xmlPaths: ['Profile/userPermissions', 'PermissionSet/userPermissions'],
+    anyApiVersion: true,
+    defaultEnabled: true,
+    handler: 'unknownUserPermissions',
+    source: 'PermissionSet describe of the target org (Permissions<Name> fields), else the list of userPermissionsByApiVersion.ts',
+  },
   // Settings no longer accepted
   {
     id: 'builtin-aura-static-res-pref',
@@ -295,6 +305,9 @@ export const BUILT_IN_REPLACEMENT_RULES: BuiltInReplacementRule[] = [
 
 /** True when the built-in rule concerns this deployment API version */
 export function builtInRuleAppliesToApiVersion(rule: BuiltInReplacementRule, apiVersion: number | null): boolean {
+  if (rule.anyApiVersion) {
+    return true;
+  }
   if (apiVersion == null) {
     return false;
   }

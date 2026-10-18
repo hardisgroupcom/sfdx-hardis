@@ -4,7 +4,9 @@
 ## Description
 
 
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Removes a replacement rule, or an override of a rule, from one place (project config, branch config file or git provider issue).**
 

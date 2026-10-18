@@ -43,6 +43,24 @@ const LAYOUT = `<?xml version="1.0" encoding="UTF-8"?>
 </Layout>
 `;
 
+const PROFILE = `<?xml version="1.0" encoding="UTF-8"?>
+<Profile xmlns="http://soap.sforce.com/2006/04/metadata">
+    <custom>true</custom>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ApiEnabled</name>
+    </userPermissions>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>NotInThisOrg</name>
+    </userPermissions>
+    <userPermissions>
+        <enabled>true</enabled>
+        <name>ViewSetup</name>
+    </userPermissions>
+</Profile>
+`;
+
 describe('replacement rules - engine', () => {
   let previousCwd: string;
   let projectDir: string;
@@ -240,6 +258,30 @@ replacementRules:
     // The preview left the files of the running deployment alone
     expect(read(files.layout)).to.not.include('platformActionList');
     expect(restoreLeftoverReplacementFiles()).to.equal(2);
+  });
+
+  it('removes the user permissions the target org does not have, read from its PermissionSet describe', async () => {
+    writeConfig('force-app/main/default/profiles/Sales.profile-meta.xml', PROFILE);
+    const conn: any = {
+      retrieveMaxApiVersion: async () => '68.0',
+      sobject: () => ({ describe: async () => ({ fields: [{ name: 'Id' }, { name: 'PermissionsApiEnabled' }, { name: 'PermissionsViewSetup' }] }) }),
+    };
+    const session = await applyReplacementRules({ targetBranch: 'main', conn, write: true, readIssue: false });
+    const profile = read('force-app/main/default/profiles/Sales.profile-meta.xml');
+    expect(profile).to.include('<name>ApiEnabled</name>');
+    expect(profile).to.include('<name>ViewSetup</name>');
+    expect(profile).to.not.include('NotInThisOrg');
+    expect(session.report.appliedRules.map((rule) => rule.id)).to.include('builtin-unknown-user-permissions');
+    session.restore();
+  });
+
+  it('removes the user permissions unknown to the API version when the org cannot be described', async () => {
+    writeConfig('force-app/main/default/profiles/Sales.profile-meta.xml', PROFILE.replace('NotInThisOrg', 'AutomatedDealTracking'));
+    // AutomatedDealTracking was removed in API 65
+    const session = await applyReplacementRules({ targetBranch: 'main', apiVersion: 66, write: false, readIssue: false });
+    const result = session.report.results.find((item) => item.ruleId === 'builtin-unknown-user-permissions');
+    expect(result?.status).to.equal('changed');
+    expect(result?.count).to.equal(1);
   });
 
   it('skips everything with SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true', async () => {

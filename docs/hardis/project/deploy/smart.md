@@ -135,14 +135,14 @@ When components of the deployment package are protected by `package-no-overwrite
 
 See [Overwrite management documentation](https://sfdx-hardis.cloudity.com/salesforce-devops-config-overwrite/)
 
-### Replacement rules
+### Replacement rules (Beta)
 
 Right before the deployment, `replacementRules` change the files of the deployment package for the target org, then the files are put back:
 
 - Set an XML element to the value of the target org (endpoint of a Named Credential, sender of an email alert...), remove an XML element, or find and replace a text in any file.
 - A value is the same for every org, one per target branch with a `default`, or read from a CI/CD variable (`secret`, masked in every log and comment).
 - Rules come from `config/.sfdx-hardis.yml`, the branch file of the target, and the "sfdx-hardis Replacement Rules" issue of the git provider (no commit needed, read only when opened by a user with write access, never a secret).
-- Built-in rules remove the XML elements the deployment API version does not accept (for example Flow `ends` below API 68.0): the lowest of the org version, `sourceApiVersion` and the package.xml version.
+- Built-in rules remove the XML elements the deployment API version does not accept (for example Flow `ends` below API 68.0): the lowest of the org version, `sourceApiVersion` and the package.xml version. They also remove the user permissions of Profiles and Permission Sets the target org does not have, read from the org.
 - The Pull Request comment lists the rules applied and their warnings. `SFDX_HARDIS_SKIP_REPLACEMENT_RULES=true` skips them.
 
 The target branch is `--target-branch` when given, else the target of the Pull Request in a check job, else the deployed branch. Quick Deploy reuses the validated package, which got the same changes.

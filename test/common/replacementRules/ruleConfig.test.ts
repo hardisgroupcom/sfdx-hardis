@@ -149,7 +149,7 @@ describe('replacement rules - built-in list', () => {
     expect(new Set(ids).size).to.equal(ids.length);
     for (const rule of BUILT_IN_REPLACEMENT_RULES) {
       expect(rule.id.startsWith('builtin-'), rule.id).to.equal(true);
-      expect(rule.introducedIn != null || rule.removedIn != null, rule.id).to.equal(true);
+      expect(rule.introducedIn != null || rule.removedIn != null || rule.anyApiVersion === true, rule.id).to.equal(true);
       expect(rule.files.length, rule.id).to.be.greaterThan(0);
       for (const xmlPath of rule.xmlPaths) {
         expect(validateXmlPath(xmlPath), `${rule.id} ${xmlPath}`).to.equal(null);

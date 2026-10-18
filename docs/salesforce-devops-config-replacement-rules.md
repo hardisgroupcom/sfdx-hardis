@@ -1,11 +1,13 @@
 ---
-title: Replacement rules on a Salesforce CI/CD Project
+title: Replacement rules (Beta) on a Salesforce CI/CD Project
 description: With sfdx-hardis, change metadata files right before each deployment for the org they go to - per org values, secrets from CI/CD variables, and removal of XML elements an older API version refuses
 ---
 
 <!-- markdownlint-disable MD013 MD033 -->
 
-## Replacement rules
+## Replacement rules (Beta)
+
+> **This feature is in Beta.** Its behavior may still change from feedback. Please report any issue or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 - [What are replacement rules?](#what-are-replacement-rules)
 - [Rule types](#rule-types)
@@ -33,6 +35,10 @@ They apply to:
 - [Backpromote](salesforce-devops-backpromote.md) deployments to developer sandboxes.
 
 Only the files that are deployed are changed (the components of the package.xml, so a delta deployment stays a delta deployment).
+
+Rules are configured from the **Replacement Rules** panel of VS Code (settings menu of the DevOps Pipeline), or with [commands](#commands-and-vs-code-panel).
+
+![Replacement Rules panel: the rules of the project, the uat branch file and the issue](assets/images/replacement-rules-panel.png)
 
 ---
 
@@ -68,6 +74,10 @@ replacementRules:
     includeTargetBranches: [main]
 ```
 
+In the VS Code panel, **New rule** opens the editor. The help of the **Element** field lists the common paths.
+
+![Rule editor removing one user permission of the Profiles deployed to production](assets/images/replacement-rules-editor.png)
+
 The same rule works for Permission Sets with `files: "**/permissionsets/*.permissionset-meta.xml"` and `xmlPath: PermissionSet/userPermissions[name=ViewSetup]`.
 
 An `xml-value` rule never creates a missing element: it reports "not found". A `text` rule replaces every occurrence, and its replacement is literal (no `$1`), so a value containing `$` is safe.
@@ -98,6 +108,10 @@ replacementRules:
 - `required: true`: warns in the Pull Request comment when the files of the rule are deployed but nothing matched.
 
 The target branch is the target of the Pull Request in a deployment check, and the branch being deployed in a deployment job.
+
+The **Values per org** tab of the panel shows the value each org gets, and the CI/CD variables a secret is read from:
+
+![Values per org: one row per rule, one column per major branch and one for developer sandboxes and scratch orgs](assets/images/replacement-rules-values.png)
 
 ---
 
@@ -171,42 +185,17 @@ The issue holds rules in a YAML block of its body. Editing it changes the rules 
 
 ### Built-in rules
 
-When the deployment API version of the target org is older than the sources (sources retrieved from a preview sandbox, production still on the previous release), some XML elements make the deployment fail with errors like `Element {http://soap.sforce.com/2006/04/metadata}dayOfMonthToRun invalid at this location`. Built-in rules remove them before deploying. Others remove elements Salesforce stopped accepting.
+Some deployments fail on what the target org does not accept, not on your metadata: sources retrieved from a sandbox on the next Salesforce release hold XML elements production does not know yet (`Element {http://soap.sforce.com/2006/04/metadata}dayOfMonthToRun invalid at this location`), and a Profile can grant a user permission the target org does not have (`Unknown user permission`). Built-in rules remove them before deploying:
 
-The deployment API version is the lowest of the connection version (the `org-api-version` sf config or `SF_ORG_API_VERSION` when set, otherwise the maximum API version of the target org), the `sourceApiVersion` of `sfdx-project.json` and the version of the deployed package.xml: Salesforce reads the metadata with that version.
+- **XML elements** the deployment API version of the target org does not know yet, or does not accept anymore, like the Flow `ends` saved from Winter '27 when production is still on Summer '26.
+- **User permissions** of Profiles and Permission Sets the target org does not have: sfdx-hardis reads the permissions of the org itself, so a permission of a cloud or a license the org lacks is removed too.
+- Elements whose removal would change what a component does (without `limit`, a Get Records element returns every record) are **off by default**: the Pull Request comment warns that the deployment will fail and names the rule to turn on.
 
-| Id                                         | Element                                                      | Removed when API is | Default |
-|--------------------------------------------|--------------------------------------------------------------|---------------------|---------|
-| builtin-flow-ends                          | Flow `ends`, and the connectors pointing to them             | below 68.0          | on      |
-| builtin-flow-groups                        | Flow `groups`, element `group`                               | below 68.0          | on      |
-| builtin-flow-schedule-day-of-month         | Flow `start/schedule/dayOfMonthToRun`                        | below 66.0          | on      |
-| builtin-flow-schedule-frequency-number     | Flow `start/schedule/frequencyNumber`                        | below 66.0          | on      |
-| builtin-flow-screen-style-settings         | Flow `screens/styleSettings`                                 | below 66.0          | on      |
-| builtin-flow-screen-field-style            | Flow screen fields `styleProperties`                         | below 64.0          | on      |
-| builtin-flow-choice-icon                   | Flow `choices/choiceIcon`                                    | below 64.0          | on      |
-| builtin-flow-metrics-data-cloud            | Flow `areMetricsLoggedToDataCloud`                           | below 63.0          | on      |
-| builtin-flow-custom-properties             | Flow `customProperties`                                      | below 63.0          | on      |
-| builtin-view-all-fields-false              | Profile / Permission Set `viewAllFields` set to false        | below 63.0          | on      |
-| builtin-agent-accesses                     | Profile / Permission Set `agentAccesses`                     | below 63.0          | on      |
-| builtin-email-routing-address-accesses     | Permission Set `emailRoutingAddressAccesses`                 | below 62.0          | on      |
-| builtin-service-presence-status-accesses   | Profile / Permission Set `servicePresenceStatusAccesses`     | below 64.0          | on      |
-| builtin-gen-computing-summary-def-accesses | Profile / Permission Set `genComputingSummaryDefAccesses`    | below 66.0          | on      |
-| builtin-aura-static-res-pref               | LightningExperienceSettings `enableAuraSecStaticResCRUCPref` | 68.0 or above       | on      |
-| builtin-analytics-incremental-upsert       | AnalyticsSettings `incrementalUpsertEnabled`                 | 68.0 or above       | on      |
-| builtin-help-menu-settings                 | UserEngagementSettings `enableHelpMenuShow*`                 | 65.0 or above       | on      |
-| builtin-enhanced-sites-pref                | SiteSettings `enableEnhancedSitesAndContentPlatform`         | 63.0 or above       | on      |
-| builtin-voice-whatsapp-pref                | ServiceCloudVoiceSettings `enableDigitalVoiceWhatsapp`       | 65.0 or above       | on      |
-| builtin-view-all-fields-true               | Profile / Permission Set `viewAllFields` set to true         | below 63.0          | off     |
-| builtin-flow-schedule-days-of-week         | Flow `start/schedule/daysOfWeekToRun`                        | below 66.0          | off     |
-| builtin-flow-get-records-limit             | Flow `recordLookups/limit`                                   | below 63.0          | off     |
-| builtin-flow-upsert                        | Flow `recordCreates` upsert options                          | below 62.0          | off     |
-| builtin-flow-create-matching-records       | Flow `recordCreates` matching record filters                 | below 61.0          | off     |
-| builtin-flow-action-wait                   | Flow `actionCalls` wait options                              | below 61.0          | off     |
-| builtin-flow-action-timeout                | Flow `actionCalls/timeoutConnector`                          | below 62.0          | off     |
-| builtin-flow-action-timeout-path-usage     | Flow `actionCalls/timeoutPathUsage`                          | below 66.0          | off     |
-| builtin-flow-decision-attributes           | Flow decision and rule `attributes`                          | below 65.0          | off     |
+The full list, with the API version of each rule and every user permission, is on its own page: [Built-in replacement rules](salesforce-devops-config-replacement-rules-builtin.md).
 
-Rules marked **off** remove elements that change what a component does (without `limit`, a Get Records element returns every record). When such an element is found, the Pull Request comment says the deployment will fail and which rule removes it. Turn one on, or any built-in rule off, with `enabled`:
+![Built-in rules tab of the panel, each rule turned on or off in the project or the issue](assets/images/replacement-rules-builtin.png)
+
+Turn a built-in rule on or off with `enabled`, in any place:
 
 ```yaml
 replacementRules:
@@ -235,6 +224,10 @@ sf hardis:project:replacement:preview --target-branch main --api-version 67.0
 ```
 
 In VS Code, the **Replacement Rules** panel (DevOps Pipeline settings menu) shows the rules, a grid of values per org, the built-in rules and the preview. It runs these commands: the files it writes are the same as the ones written from the terminal.
+
+The **Preview** tab runs `hardis:project:replacement:preview` for the org you pick, and lists what each rule would change in your local files:
+
+![Preview of the rules for a deployment to production](assets/images/replacement-rules-preview.png)
 
 ---
 

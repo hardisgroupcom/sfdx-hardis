@@ -3620,6 +3620,8 @@
   "replacementRulesTypeXmlRemove": "XML 要素を削除する",
   "replacementRulesTypeXmlValue": "XML 要素の値を設定する",
   "replacementRulesUnknownOverride": "{{place}} の置換ルール {{id}} は、存在しないルールを変更しようとしています",
+  "replacementRulesUserPermissionsFromList": "対象 org に接続できません: sfdx-hardis のリストによると、{{count}} 件のユーザー権限は API {{apiVersion}} で認識されません",
+  "replacementRulesUserPermissionsFromOrg": "対象 org から {{count}} 件のユーザー権限を読み取りました",
   "replacementRulesValueSourcePerOrg": "組織ごとに 1 つの値 (デフォルト値あり)",
   "replacementRulesValueSourceSecret": "シークレットの CI/CD 変数",
   "replacementRulesValueSourceSingle": "すべての組織で同じ値",

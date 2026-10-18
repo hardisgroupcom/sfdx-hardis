@@ -21,10 +21,12 @@ const messages = Messages.loadMessages('sfdx-hardis', 'org');
 /* jscpd:ignore-end */
 
 export default class ReplacementCreate extends ReplacementCommandBase {
-  public static title = 'Create replacement rule';
+  public static title = 'Create replacement rule (Beta)';
 
   public static description = `
-## Command Behavior
+## Command Behavior (Beta)
+
+> **This command is currently in Beta.** Please report any issues or feedback on the [sfdx-hardis GitHub repository](https://github.com/hardisgroupcom/sfdx-hardis/issues).
 
 **Adds a replacement rule: a change applied to the metadata files right before each deployment, for the org the deployment goes to.**
 

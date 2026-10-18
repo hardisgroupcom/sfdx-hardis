@@ -3622,6 +3622,8 @@
   "replacementRulesTypeXmlRemove": "Een XML-element verwijderen",
   "replacementRulesTypeXmlValue": "De waarde van een XML-element instellen",
   "replacementRulesUnknownOverride": "Vervangingsregel {{id}} in {{place}} wijzigt een regel die niet bestaat",
+  "replacementRulesUserPermissionsFromList": "Doel-org niet bereikbaar: {{count}} gebruikersmachtigingen onbekend voor API {{apiVersion}}, volgens de lijst van sfdx-hardis",
+  "replacementRulesUserPermissionsFromOrg": "{{count}} gebruikersmachtigingen gelezen uit de doel-org",
   "replacementRulesValueSourcePerOrg": "Eén waarde per org, met een standaardwaarde",
   "replacementRulesValueSourceSecret": "Een geheime CI/CD-variabele",
   "replacementRulesValueSourceSingle": "Dezelfde waarde voor elke org",
