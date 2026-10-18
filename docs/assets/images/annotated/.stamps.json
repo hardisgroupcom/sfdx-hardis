@@ -12,8 +12,8 @@
     "out": "be52ddf84cdf1adb"
   },
   "vscode-guide/pipeline-settings-menu.png": {
-    "spec": "3da350fe5a7de929",
-    "out": "47ed461721be8fad"
+    "spec": "7793bfea561e5185",
+    "out": "d2a2856f8d6e8f80"
   },
   "vscode-guide/pipeline-packages-menu.png": {
     "spec": "5b4c03f6eb125e8f",
@@ -128,75 +128,75 @@
     "out": "4c4a3b47928ff304"
   },
   "vscode-guide/pipeline-settings-ref-global-deployment.png": {
-    "spec": "778272a7b0616912",
-    "out": "cfe12d981b1a64a7"
+    "spec": "dfa02ab6d097464a",
+    "out": "892af1a06d6a1e2c"
   },
   "vscode-guide/pipeline-settings-ref-global-deployment-2.png": {
-    "spec": "ab7a6f0d4c3e061e",
-    "out": "f3b74550d4ba29f0"
+    "spec": "22e7f7720b0f78ae",
+    "out": "f33b70626f84fbdd"
   },
   "vscode-guide/pipeline-settings-ref-global-pre-post-deploy-commands.png": {
-    "spec": "47c11286b1c65c30",
-    "out": "4d818cf18be74429"
+    "spec": "f7dcb1dcbc9c7ed5",
+    "out": "1cd0b6cdd0d3c8a1"
   },
   "vscode-guide/pipeline-settings-ref-global-user-stories.png": {
-    "spec": "c1ca54efb80e0603",
-    "out": "fe876e3df1b10fa2"
+    "spec": "f05bb38958cbf32b",
+    "out": "98ee08f0fc44d4ec"
   },
   "vscode-guide/pipeline-settings-ref-global-user-stories-2.png": {
-    "spec": "a70f16a33f147f4b",
-    "out": "29a62b32b3d1b176"
+    "spec": "c371bf7d1c77c7ae",
+    "out": "4af66047e99fe7b4"
   },
   "vscode-guide/pipeline-settings-ref-global-salesforce-project.png": {
-    "spec": "f5aa8336d4a46e02",
-    "out": "e53dbe93d8004172"
+    "spec": "048a169975b86257",
+    "out": "734545638e8a7cda"
   },
   "vscode-guide/pipeline-settings-ref-global-ticketing.png": {
-    "spec": "4fc3a11db1285e22",
-    "out": "7b9a4cbdea15fde3"
+    "spec": "fced4cba3fbac421",
+    "out": "8976c4590f76c6ae"
   },
   "vscode-guide/pipeline-settings-ref-global-agent.png": {
-    "spec": "97fc6d0be15b7c04",
-    "out": "5e3109de6b7808ce"
+    "spec": "e163c0a6d5d9296d",
+    "out": "26af6fd5898c23c2"
   },
   "vscode-guide/pipeline-settings-ref-global-dev-hub.png": {
-    "spec": "514956d6e736d5bc",
-    "out": "ccd1d34ae0e4e741"
+    "spec": "867c09af3a6ee072",
+    "out": "6c91cb5d3b5c9065"
   },
   "vscode-guide/pipeline-settings-ref-global-security-privacy.png": {
-    "spec": "cf5afa567318c99b",
-    "out": "e312c46770c8b0c3"
+    "spec": "56dc7a8da946630f",
+    "out": "0828bc70cfd26185"
   },
   "vscode-guide/pipeline-settings-ref-global-security-privacy-2.png": {
-    "spec": "0b50261fbca4a495",
-    "out": "ad155393faa45dd6"
+    "spec": "5e679e22f623c49e",
+    "out": "b32f4214abe30dee"
   },
   "vscode-guide/pipeline-settings-ref-global-danger-zone.png": {
-    "spec": "c0c072b3d45341c3",
-    "out": "447b59ce53192513"
+    "spec": "7aa304e78819d4d3",
+    "out": "30a9996f6ca2e408"
   },
   "vscode-guide/pipeline-settings-ref-global-danger-zone-2.png": {
-    "spec": "61f1a34dfb6e7755",
-    "out": "13047df234e4e5f1"
+    "spec": "f5b6267a79861b58",
+    "out": "dff30412b66b35f6"
   },
   "vscode-guide/pipeline-settings-ref-global-other.png": {
-    "spec": "0fda8ff73ce1391e",
-    "out": "6d928e6febf049e4"
+    "spec": "34a2c974cacac559",
+    "out": "854780138de14910"
   },
   "vscode-guide/pipeline-settings-ref-branch-deployment.png": {
-    "spec": "9580302dee2548a9",
-    "out": "f588d72008498f40"
+    "spec": "4a8a658c7e297a55",
+    "out": "2ba8453634fae0de"
   },
   "vscode-guide/pipeline-settings-ref-branch-pre-post-deploy-commands.png": {
-    "spec": "3e310eceed023176",
-    "out": "0771bb23709b6557"
+    "spec": "c99990e361d36bb3",
+    "out": "b44295c8fb890c6a"
   },
   "vscode-guide/pipeline-settings-ref-branch-agent.png": {
-    "spec": "7e6cabd2fbe58254",
-    "out": "0f391027ee163828"
+    "spec": "ad8767ae03ebb5cf",
+    "out": "2170d52169b9846c"
   },
   "vscode-guide/pipeline-settings-ref-branch-danger-zone.png": {
-    "spec": "d0e2f6f2650c9555",
-    "out": "e1e42fcba4a7127c"
+    "spec": "5ccae2e0286e8e72",
+    "out": "28a20bb3b3fd9ab2"
   }
 }
