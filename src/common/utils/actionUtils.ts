@@ -6,7 +6,8 @@ import * as path from 'path';
 import { getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { resolveDataWorkspacePath } from './dataUtils.js';
-import { DEPLOYMENT_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
+import { DEPLOYMENT_ACTION_TYPES, DEPLOYMENT_ONLY_ACTION_TYPES, RESERVED_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
+import type { ActionsProvider } from '../actionsProvider/actionsProvider.js';
 import { getConfig } from '../../config/index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { clearListMajorOrgsCache } from './orgConfigUtils.js';
@@ -107,13 +108,13 @@ export function normalizeBranchName(name: string): string {
 }
 
 /**
- * Context an action really runs in. A run-batch action changes the data of the org: it is a
- * deployment-only action, whatever its context holds. A manual step to do before the deployment
+ * Context an action really runs in. Some types are deployment-only actions, whatever their
+ * context holds (DEPLOYMENT_ONLY_ACTION_TYPES). A manual step to do before the deployment
  * runs nothing and has to be done before the merge: the validation job always lists it, whatever
  * its context holds, or a step declared for the deployment job only would never hold the merge.
  */
 export function getEffectiveActionContext(cmd: Pick<PrePostCommand, 'type' | 'context' | 'when'>, when?: ActionWhen): PrePostCommand['context'] {
-  if (cmd.type === "run-batch") {
+  if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(cmd.type)) {
     return "process-deployment-only";
   }
   if (cmd.type === "manual" && (when || cmd.when) === "pre-deploy") {
@@ -229,6 +230,42 @@ export async function listActionTargetBranchChoices(): Promise<{ title: string; 
 }
 
 /**
+ * True when --run-only-once-by-org or --no-run-only-once-by-org is on the command line.
+ * The flag defaults to true, so its parsed value cannot tell a default from a choice.
+ */
+export function isRunOnlyOnceByOrgFlagPassed(argv: string[]): boolean {
+  return (argv || []).some((arg) => /^--(no-)?run-only-once-by-org(=|$)/.test(arg));
+}
+
+/**
+ * Provider class of a built-in action type: its methods say what is specific to the type (flags,
+ * prompts, allowed phases, validation). null for a custom function or an unknown type.
+ */
+export async function getBuiltInActionProvider(type: string | undefined | null): Promise<ActionsProvider | null> {
+  if (!type || !RESERVED_ACTION_TYPES.includes(type)) {
+    return null;
+  }
+  const { ActionsProvider: ActionsProviderClass } = await import('../actionsProvider/actionsProvider.js');
+  return ActionsProviderClass.buildActionInstance({ type } as PrePostCommand, { quiet: true });
+}
+
+/** Refuses a flag that only another built-in type accepts: it would be silently ignored. */
+export async function assertNoFlagsOfOtherTypes(type: string, flags: any): Promise<void> {
+  for (const otherType of DEPLOYMENT_ACTION_TYPES) {
+    if (otherType === type) {
+      continue;
+    }
+    const provider = await getBuiltInActionProvider(otherType);
+    const passedFlags = (provider?.getFlagNames() || []).filter((flag) => flags?.[flag] !== undefined);
+    if (passedFlags.length > 0) {
+      throw new SfError(
+        t('actionFlagsOnOtherType', { flags: passedFlags.map((flag) => `--${flag}`).join(', '), owner: otherType, type })
+      );
+    }
+  }
+}
+
+/**
  * Validate type-specific parameters for an action.
  * Returns an array of error messages (empty if valid).
  */
@@ -241,6 +278,20 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
 
   if ((action.includeTargetBranches || []).length > 0 && (action.excludeTargetBranches || []).length > 0) {
     errors.push(t('actionValidationBranchFiltersMutuallyExclusive'));
+  }
+
+  // The phases a built-in type may run in are declared by its provider class
+  const provider = await getBuiltInActionProvider(type);
+  const allowedWhen = provider?.getAllowedWhen();
+  if (allowedWhen && actionWhen && !allowedWhen.includes(actionWhen)) {
+    errors.push(t('actionTypeWrongPhase', { type, when: allowedWhen.join(', ') }));
+  }
+
+  // A type whose provider checks its own definition
+  const providerErrors = await provider?.getDefinitionErrors(action, actionWhen);
+  if (providerErrors) {
+    errors.push(...providerErrors);
+    return errors;
   }
 
   if (type === 'command') {
@@ -279,9 +330,6 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
     if (!action.parameters?.cronExpression) {
       errors.push(t('actionValidationNoCronExpression'));
     }
-  } else if (type === 'run-batch') {
-    const { listRunBatchParameterErrors } = await import('../actionsProvider/runBatchAction.js');
-    errors.push(...listRunBatchParameterErrors(action));
   } else if (type === 'remove-packagexml-items') {
     const { findInvalidPackageXmlItems, normalizePackageXmlItems } = await import('../actionsProvider/removePackageXmlItemsAction.js');
     const items = normalizePackageXmlItems(action.parameters?.packageXmlItems);
@@ -292,9 +340,6 @@ export async function validateActionParameters(action: Partial<PrePostCommand>, 
       if (invalidItems.length > 0) {
         errors.push(t('actionValidationInvalidPackageXmlItems', { items: invalidItems.join(' | ') }));
       }
-    }
-    if (actionWhen === 'post-deploy') {
-      errors.push(t('actionValidationPackageXmlItemsPreDeployOnly'));
     }
   } else {
     errors.push(...(await validateCustomFunctionAction(action, type, actionWhen)));
@@ -438,10 +483,15 @@ async function validateCustomFunctionAction(
  */
 export async function listAvailableActionTypes(when?: ActionWhen): Promise<{ title: string; value: string; description?: string }[]> {
   const { listCustomFunctions } = await import('./customFunctionUtils.js');
-  const choices: { title: string; value: string; description?: string }[] = ACTION_TYPES.map((actionType) => ({
-    title: String(actionType),
-    value: String(actionType),
-  }));
+  const choices: { title: string; value: string; description?: string }[] = [];
+  for (const actionType of ACTION_TYPES) {
+    // A built-in type restricted to the other phase is not offered
+    const allowedWhen = when ? (await getBuiltInActionProvider(String(actionType)))?.getAllowedWhen() : null;
+    if (allowedWhen && !allowedWhen.includes(when!)) {
+      continue;
+    }
+    choices.push({ title: String(actionType), value: String(actionType) });
+  }
   const customFunctions = (await listCustomFunctions()).filter((fn) => !when || !fn.when || fn.when === when);
   for (const customFunction of customFunctions) {
     choices.push({

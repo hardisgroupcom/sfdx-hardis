@@ -1,4 +1,4 @@
-import { ActionsProvider, ActionResult, PrePostCommand } from './actionsProvider.js';
+import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand } from './actionsProvider.js';
 import { uxLog } from '../utils/index.js';
 import { countPackageXmlItems, isPackageXmlEmpty, removePackageXmlFilesContent } from '../utils/xmlUtils.js';
 import { t } from '../utils/i18n.js';
@@ -55,6 +55,11 @@ export function findInvalidPackageXmlItems(items: string[]): string[] {
 export class RemovePackageXmlItemsAction extends ActionsProvider {
   public getLabel(): string {
     return 'RemovePackageXmlItemsAction';
+  }
+
+  // Filtering package.xml only makes sense before the metadata deployment
+  public getAllowedWhen(): ActionWhen[] | null {
+    return ['pre-deploy'];
   }
 
   // Filtering package.xml only affects the current deployment, so it must run every time

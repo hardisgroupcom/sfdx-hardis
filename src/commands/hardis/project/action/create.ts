@@ -12,7 +12,10 @@ import {
   ACTION_CONTEXTS,
   ActionScope,
   ActionWhen,
+  assertNoFlagsOfOtherTypes,
   buildAction,
+  getBuiltInActionProvider,
+  isRunOnlyOnceByOrgFlagPassed,
   listAvailableActionTypes,
   logActionSummary,
   parseBranchListFlag,
@@ -24,7 +27,7 @@ import {
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
 import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
-import { hasRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
+import { DEPLOYMENT_ONLY_ACTION_TYPES, resolveRunOnlyOnceByOrg } from '../../../../common/actionsProvider/actionTypes.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -76,6 +79,16 @@ A \`run-batch\` action runs a \`Database.Batchable\` Apex class once, before or 
 
 A run-batch action only runs in the \`process-deployment-only\` context, never during a deployment check.
 
+### Activate User Access Policies
+
+A deployment always leaves the User Access Policies it contains in Design status, even an active one. A \`user-access-policy\` action, run after the deployment, sets them back to Active.
+
+- \`policies\`: developer names of the policies.
+- \`activate: true\` (default) activates them with the Salesforce API. A policy already active is left as is.
+- \`applyToAll: true\` also runs **Apply To All** for each policy. Salesforce has no API for it, so the action clicks the button of the Setup page in a headless Chrome. It then waits until Salesforce records the run, for 5 minutes at most.
+
+A user-access-policy action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), because each new deployment of a policy turns it off again.
+
 A manual action declared \`pre-deploy\` is always stored with the \`all\` context: it has to be done before the merge, so the deployment check lists it too.
 
 ### Agent Mode
@@ -89,7 +102,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items
+- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`)
 
 In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
@@ -111,6 +124,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type data --label "Import test data" --sfdmu-project TestData',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30',
+    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
   ];
 
@@ -124,7 +138,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items) or the id of a project custom function',
+      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'Human-readable label for the action',
@@ -174,6 +188,17 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     }),
     'packagexml-items': Flags.string({
       description: 'Semicolon-separated list of package.xml items to remove before deployment, each in format TypeName:Member1,Member2 (for remove-packagexml-items type). Example: "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
+    }),
+    policies: Flags.string({
+      description: 'Comma-separated developer names of User Access Policies (for user-access-policy type)',
+    }),
+    activate: Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: activate the policies after the deployment (default: true)',
+    }),
+    'apply-to-all': Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser (default: false)',
     }),
     'function-input': Flags.string({
       multiple: true,
@@ -236,8 +261,12 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       ? this.requireFlag(flags.type, 'type') as PrePostCommand['type']
       : flags.type || await this.promptType(when);
 
-    if (type !== 'run-batch' && hasRunBatchFlags(flags)) {
-      throw new SfError(t('actionRunBatchFlagsOnOtherType', { type }));
+    await assertNoFlagsOfOtherTypes(type, flags);
+    // What is specific to a built-in type is in its provider class
+    const provider = await getBuiltInActionProvider(type);
+    const allowedWhen = provider?.getAllowedWhen();
+    if (allowedWhen && !allowedWhen.includes(when)) {
+      throw new SfError(t('actionTypeWrongPhase', { type, when: allowedWhen.join(', ') }));
     }
 
     // Collect label
@@ -249,7 +278,10 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     const parameters: Record<string, any> = {};
     let command = '';
 
-    if (type === 'command') {
+    const providerParameters = await provider?.collectParameters(flags, agentMode || isCI, {});
+    if (providerParameters) {
+      Object.assign(parameters, providerParameters);
+    } else if (type === 'command') {
       command = agentMode || isCI
         ? this.requireFlag(flags.command, 'command')
         : flags.command || await this.promptText(t('enterCommand'), '');
@@ -284,15 +316,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
           parameters.jobName = jobName;
         }
       }
-    } else if (type === 'run-batch') {
-      parameters.className = agentMode || isCI
-        ? this.requireFlag(flags['class-name'], 'class-name')
-        : flags['class-name'] || await this.promptText(t('enterClassName'), '');
-      Object.assign(parameters, await this.collectRunBatchParameters(flags, agentMode || isCI));
     } else if (type === 'remove-packagexml-items') {
-      if (when !== 'pre-deploy') {
-        throw new SfError(t('actionValidationPackageXmlItemsPreDeployOnly'));
-      }
       const itemsRaw: string = agentMode || isCI
         ? this.requireFlag(flags['packagexml-items'], 'packagexml-items')
         : flags['packagexml-items'] || await this.promptText(t('enterPackageXmlItems'), '');
@@ -331,11 +355,15 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     const manualBeforeDeployment = type === 'manual' && when === 'pre-deploy';
     const context = (manualBeforeDeployment
       ? 'all'
-      : flags.context || (!agentMode && !isCI && type !== 'run-batch' ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
+      : flags.context || (!agentMode && !isCI && !DEPLOYMENT_ONLY_ACTION_TYPES.includes(type) ? await this.promptContext(defaultContext as PrePostCommand['context']) : defaultContext)) as PrePostCommand['context'];
 
     // Collect optional flags (only prompt in interactive mode)
     let allowFailure = flags['allow-failure'] === true ? true : functionDefaults?.allowFailure === true;
     let runOnlyOnceByOrg = flags['run-only-once-by-org'];
+    // A type may run at every deployment by default
+    if (!resolveRunOnlyOnceByOrg({ type }) && !isRunOnlyOnceByOrgFlagPassed(this.argv)) {
+      runOnlyOnceByOrg = false;
+    }
     if (functionDefaults?.runOnlyOnceByOrg !== undefined && flags['run-only-once-by-org'] === true) {
       // true is also the flag default, so it cannot be told apart from "not passed": let the
       // function default win, and --no-run-only-once-by-org still forces false.

@@ -20,6 +20,7 @@ export type BuiltInActionType =
   | 'schedule-batch'
   | 'run-batch'
   | 'remove-packagexml-items'
+  | 'user-access-policy'
   // Org initialization steps only (orgInitSteps), never deployment actions
   | 'install-packages'
   | 'deploy-sources'
@@ -173,6 +174,10 @@ export abstract class ActionsProvider {
       const RemovePackageXmlItemsAction = await import('./removePackageXmlItemsAction.js');
       actionInstance = new RemovePackageXmlItemsAction.RemovePackageXmlItemsAction();
     }
+    else if (type === 'user-access-policy') {
+      const UserAccessPolicyAction = await import('./userAccessPolicyAction.js');
+      actionInstance = new UserAccessPolicyAction.UserAccessPolicyAction();
+    }
     else if (type === 'install-packages') {
       const InstallPackagesAction = await import('./installPackagesAction.js');
       actionInstance = new InstallPackagesAction.InstallPackagesAction();
@@ -212,6 +217,41 @@ export abstract class ActionsProvider {
   // (for example actions that only alter the current deployment context, not the org)
   public supportsRunOnlyOnceByOrg(): boolean {
     return true;
+  }
+
+  // Phases an action of this type may run in, or null when it may run in both
+  public getAllowedWhen(): ActionWhen[] | null {
+    return null;
+  }
+
+  // Flags of hardis:project:action:create and update that only this type accepts
+  public getFlagNames(): string[] {
+    return [];
+  }
+
+  /**
+   * Parameters of a new or edited action of this type, for hardis:project:action:create and update:
+   * from the flags when headless, from prompts seeded with the current values otherwise.
+   * null when the type does not collect its parameters itself.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async collectParameters(_flags: any, _headless: boolean, _current: PrePostCommand['parameters']): Promise<Record<string, any> | null> {
+    return null;
+  }
+
+  // Parameters of the action once the flags of hardis:project:action:update are applied
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public applyFlags(parameters: PrePostCommand['parameters'], _flags: any): PrePostCommand['parameters'] {
+    return parameters;
+  }
+
+  /**
+   * Errors of an action definition of this type, as translated messages (empty when valid), checked
+   * when the action is saved. null when the type is checked by the generic validation.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getDefinitionErrors(_action: Partial<PrePostCommand>, _when?: ActionWhen): Promise<string[] | null> {
+    return null;
   }
 
   /**

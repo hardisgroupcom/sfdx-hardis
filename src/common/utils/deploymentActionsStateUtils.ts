@@ -5,6 +5,7 @@ import { GitProvider } from '../gitProvider/index.js';
 import { ONLY_BOXES_ARE_EDITED, TICK_HINT_FOR_AN_ACTION } from '../gitProvider/utils/utilsPrCommentWording.js';
 import { PullRequestCommentRef } from '../gitProvider/gitProviderRoot.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { resolveRunOnlyOnceByOrg } from '../actionsProvider/actionTypes.js';
 import { evaluateActionBranchFilter, getEffectiveActionContext, readActions } from './actionUtils.js';
 import { uxLog } from './index.js';
 import { t } from './i18n.js';
@@ -965,7 +966,7 @@ function buildActionPropertiesSection(actionId: string, def?: ActionDef): string
 
   rows.push(['Type', def.type]);
   rows.push(['Context', def.context ?? 'all']);
-  rows.push(['Run only once per org', def.runOnlyOnceByOrg !== false ? 'yes' : 'no']);
+  rows.push(['Run only once per org', resolveRunOnlyOnceByOrg(def) ? 'yes' : 'no']);
   rows.push(['Allow failure', def.allowFailure === true ? 'yes' : 'no']);
   if (def.customUsername) {
     rows.push(['Custom username', `\`${def.customUsername}\``]);
