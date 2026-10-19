@@ -1501,9 +1501,38 @@ describe('buildFlowDeletionMarkdown', () => {
     expect(markdown).to.contain('> blocked because reasons');
   });
 
-  it('marks an absent Flow as a no-op', () => {
-    const markdown = buildFlowDeletionMarkdown([outcome({ status: 'FLOW_DELETE_NOOP', versionsToDelete: [] })]);
-    expect(markdown).to.contain('➖');
+  it('returns no section when every Flow was already deleted', () => {
+    const noops = [
+      outcome({ flowName: 'GoneFlow1', status: 'FLOW_DELETE_NOOP', versionsToDelete: [] }),
+      outcome({ flowName: 'GoneFlow2', status: 'FLOW_DELETE_NOOP', versionsToDelete: [] }),
+    ];
+    expect(buildFlowDeletionMarkdown(noops)).to.equal('');
+    expect(buildFlowDeletionMarkdown(noops, { preflight: true })).to.equal('');
+    expect(buildFlowDeletionMarkdown(noops, { afterDeployment: true })).to.equal('');
+  });
+
+  it('leaves already deleted Flows out of the table', () => {
+    const markdown = buildFlowDeletionMarkdown([
+      outcome({ versionsDeleted: [1, 2] }),
+      outcome({ flowName: 'GoneFlow', status: 'FLOW_DELETE_NOOP', versionsToDelete: [] }),
+    ]);
+    expect(markdown).to.contain('1 Flow(s) and their versions');
+    expect(tableLine(markdown, '| `MyFlow`')).to.contain('✅');
+    expect(markdown).to.not.contain('GoneFlow');
+    expect(markdown).to.not.contain('➖');
+  });
+
+  it('keeps the incomplete title when an already deleted Flow sits next to a failed one', () => {
+    const markdown = buildFlowDeletionMarkdown(
+      [
+        outcome({ flowName: 'GoneFlow', status: 'FLOW_DELETE_NOOP', versionsToDelete: [] }),
+        outcome({ status: 'FLOW_DELETE_ERROR', message: 'still referenced' }),
+      ],
+      { afterDeployment: true }
+    );
+    expect(markdown.split('\n')[0]).to.equal('## ⚠️ Flow deletion incomplete');
+    expect(markdown).to.contain('1 Flow(s) and their versions');
+    expect(markdown).to.not.contain('GoneFlow');
   });
 
   it('titles a deletion after the deployment that left a Flow in the org as incomplete, with a note above the table', () => {
