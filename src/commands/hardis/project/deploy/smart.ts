@@ -324,7 +324,7 @@ A \`--check\` simulation changes nothing in the org. A read-only preflight repor
 
 On a real deployment, each Flow goes through:
 
-1. Existence check. A Flow that is already gone is reported as \`FLOW_DELETE_NOOP\`, not an error (same for a Flow with no deletable version, for example one from a managed package).
+1. Existence check. A Flow that is already gone is reported as \`FLOW_DELETE_NOOP\`, not an error (same for a Flow with no deletable version, for example one from a managed package). It is left out of the Pull Request comment, and still listed in the console table and the CSV report.
 2. Deactivation through the Tooling API (\`FlowDefinition.activeVersionNumber = 0\`), which stops new Flow Interviews from starting.
 3. Flow Interview gate. If interviews remain and \`FLOW_DELETE_INTERVIEWS\` is not set, the Flow is reported as \`FLOW_DELETE_BLOCKED\`. The Flow stays deactivated, so retrying the pipeline once those interviews resolve completes the deletion.
 4. Flow Interview deletion, only when \`FLOW_DELETE_INTERVIEWS\` authorizes it.
