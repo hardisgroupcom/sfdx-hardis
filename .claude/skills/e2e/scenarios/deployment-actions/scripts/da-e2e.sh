@@ -6,12 +6,18 @@
 # in the Pull Request comments and in the org.
 #
 #   bash .claude/skills/e2e/scenarios/deployment-actions/scripts/da-e2e.sh            # the whole run
-#   RUN=da-e2e-1 STEPS="assert-deploy report" bash .claude/skills/e2e/scenarios/deployment-actions/scripts/da-e2e.sh
+#   RUN=da-e2e-1 STEPS="check deploy assert-deploy rerun report" bash .claude/skills/e2e/scenarios/deployment-actions/scripts/da-e2e.sh
 #
 # Steps: org repo pr check deploy assert-deploy rerun report
 #
-# Settings: ORG (scratch org alias, default da-e2e-int, created when missing), DEVHUB (default DevHub),
-# SFDX_HARDIS_BRANCH (default: current branch, must be pushed), REPO, RUN.
+# Settings, from the environment, else the .env of the working copy:
+#   DA_ORG              scratch org alias (default da-e2e-int), created and prepared when missing
+#   DEVHUB              Dev Hub that creates it (default DevHub)
+#   SFDX_HARDIS_BRANCH  branch the CI jobs build (default: current branch, must be pushed)
+#   DA_REPO             owner/name to create (default <gh login>/sfdx-hardis-da-e2e-<n+1>)
+#   RUN                 run name; DA_WORK and DA_LOGS default to <OS temp>/<run> and <run>-logs
+# The DA_ prefix keeps the ORG, REPO, WORK and LOGS the promotion-branches harness exports in a shell
+# from pointing this run at the promotion org or folders.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -19,33 +25,33 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMO_SCRIPTS="$HERE/../../promotion-branches/scripts"
 # shellcheck source=/dev/null
 source "$PROMO_SCRIPTS/env-lib.sh"
-e2e_load_env GH_E2E_OWNER
+e2e_load_env GH_E2E_OWNER DEVHUB SFDX_HARDIS_BRANCH DA_ORG DA_REPO
 ROOT="$E2E_ROOT"
 
 DEV_JS="$ROOT/bin/dev.js"
-ORG="${ORG:-da-e2e-int}"
+ORG="${DA_ORG:-da-e2e-int}"
 DEVHUB="${DEVHUB:-DevHub}"
 RUN="${RUN:-da-e2e-$(date +%Y%m%d-%H%M)}"
-WORK="${WORK:-$E2E_TMP/$RUN}"
-LOGS="${LOGS:-$E2E_TMP/$RUN-logs}"
+WORK="${DA_WORK:-$E2E_TMP/$RUN}"
+LOGS="${DA_LOGS:-$E2E_TMP/$RUN-logs}"
+REPO="${DA_REPO:-}"
 SFDX_HARDIS_BRANCH="${SFDX_HARDIS_BRANCH:-$(git -C "$ROOT" branch --show-current)}"
 STEPS="${STEPS:-org repo pr check deploy assert-deploy rerun report}"
 mkdir -p "$LOGS"
 # shellcheck source=/dev/null
 [ -f "$LOGS/run.env" ] && source "$LOGS/run.env"
-export LOGS
+export LOGS REPO
 
+# One row per check: a replayed check replaces the row of the previous attempt
 result() {
+  if [ -f "$LOGS/results.tsv" ]; then
+    awk -F'\t' -v id="$1" '$1 != id' "$LOGS/results.tsv" >"$LOGS/results.tsv.tmp" && mv "$LOGS/results.tsv.tmp" "$LOGS/results.tsv"
+  fi
   printf '%s\t%s\t%s\n' "$1" "$2" "$3" >>"$LOGS/results.tsv"
   echo "[$2] $1 - $3"
 }
 assert_contains() { if grep -qF -- "$3" "$2"; then result "$1" OK "$4"; else result "$1" FAIL "$4 (missing: $3)"; fi; }
 assert_absent() { if grep -qF -- "$3" "$2"; then result "$1" FAIL "$4 (found: $3)"; else result "$1" OK "$4"; fi; }
-assert_count_ge() {
-  local n
-  n=$(grep -cF -- "$3" "$2")
-  if [ "$n" -ge "$4" ]; then result "$1" OK "$5 ($n)"; else result "$1" FAIL "$5 (found $n, expected at least $4: $3)"; fi
-}
 save() {
   printf 'export %s=%q\n' "$1" "$2" >>"$LOGS/run.env"
   export "$1=$2"
@@ -53,6 +59,7 @@ save() {
 step() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac }
 # sf can print a warning before its JSON: parse from the first brace
 json_field() { node -e "const t=require('fs').readFileSync(0,'utf8');try{const j=JSON.parse(t.slice(t.indexOf('{')));const v=($1);process.stdout.write(v===undefined||v===null?'':String(v))}catch(e){}"; }
+# A query the sf CLI answers with nothing (busy machine, network) is tried again before it counts
 soql() {
   local out attempt
   for attempt in 1 2 3; do
@@ -65,18 +72,49 @@ soql() {
   done
   printf '%s' "$out"
 }
-latest_uac() { soql "SELECT CreatedDate FROM UserAccessChange ORDER BY CreatedDate DESC LIMIT 1" | json_field "j.result.records[0]?.CreatedDate"; }
-policy_status() { soql "SELECT Status FROM UserAccessPolicy WHERE DeveloperName = 'UAP_Spike_Policy'" | json_field "j.result.records[0]?.Status"; }
-policy_id() { soql "SELECT Id FROM UserAccessPolicy WHERE DeveloperName = 'UAP_Spike_Policy'" | json_field "j.result.records[0]?.Id"; }
+# A value of the first record, or "<query failed>": a failed query never reads as an empty org
+soql_value() { soql "$1" | json_field "j.status === 0 ? (($2) ?? '') : '<query failed>'"; }
+# The number of records, or nothing when the query failed
+soql_count() { soql "$1" | json_field "j.status === 0 ? j.result.totalSize : undefined"; }
+# id, query, eq|ge, value, message: a query that fails is a FAIL, never a count of 0
+assert_count() {
+  local n
+  n=$(soql_count "$2")
+  if [ -z "$n" ]; then
+    result "$1" FAIL "$5 (query failed: $2)"
+  elif { [ "$3" = eq ] && [ "$n" -eq "$4" ]; } || { [ "$3" = ge ] && [ "$n" -ge "$4" ]; }; then
+    result "$1" OK "$5 ($n)"
+  else
+    result "$1" FAIL "$5 (got $n, expected $3 $4)"
+  fi
+}
+latest_uac() { soql_value "SELECT CreatedDate FROM UserAccessChange ORDER BY CreatedDate DESC LIMIT 1" "j.result.records[0]?.CreatedDate"; }
+policy_status() { soql_value "SELECT Status FROM UserAccessPolicy WHERE DeveloperName = 'UAP_Spike_Policy'" "j.result.records[0]?.Status"; }
+policy_id() { soql_value "SELECT Id FROM UserAccessPolicy WHERE DeveloperName = 'UAP_Spike_Policy'" "j.result.records[0]?.Id"; }
+# A field of the action of the given type in the actions file of the Pull Request
+action_field() {
+  node -e "
+    const yaml = require(process.argv[1] + '/node_modules/js-yaml');
+    const doc = yaml.load(require('fs').readFileSync(process.argv[2], 'utf8')) || {};
+    const all = [...(doc.commandsPreDeploy || []), ...(doc.commandsPostDeploy || [])];
+    const action = all.find((a) => a.type === process.argv[3]);
+    const value = action ? action[process.argv[4]] : undefined;
+    process.stdout.write(value === undefined ? '<none>' : String(value));
+  " "$ROOT" "$1" "$2" "$3"
+}
 # shellcheck source=/dev/null
 source "$PROMO_SCRIPTS/ci-provider-github.sh"
 
 echo "Run $RUN - work $WORK - logs $LOGS - branch under test $SFDX_HARDIS_BRANCH - org $ORG"
 
 # --------------------------------------------------------------- org: the integration org, in a known state
+# Before each deployment job: the policy Active (as in a real project), no test account, no scheduled
+# job, and the users of the test without the permission set Apply To All gives back
 prepare_org() {
   local label="$1"
-  # The scheduled job holds E2EBatch: while it waits, a deployment of the class is refused
+  # The scheduled job holds E2EBatch: while it waits, a deployment of the class is refused.
+  # Two transactions: Salesforce refuses setup and non-setup DML in one (MIXED_DML_OPERATION), and the
+  # whole anonymous Apex is then rolled back, the scheduled job included
   cat >"$LOGS/prepare-$label-data.apex" <<'APEX'
 delete [SELECT Id FROM Account WHERE Name LIKE 'DA_E2E%'];
 for (CronTrigger ct : [SELECT Id FROM CronTrigger WHERE CronJobDetail.Name = 'E2EBatch_Schedule']) {
@@ -94,16 +132,27 @@ APEX
       exit 1
     fi
   done
-  # The policy is active in the org before the deployment, as in a real project
-  local id
+  local id status
   id=$(policy_id)
-  [ -n "$id" ] && sf api request rest "services/data/v66.0/sobjects/UserAccessPolicy/$id" -X PATCH -b '{"Status":"Active"}' -o "$ORG" >/dev/null 2>&1
-  save "UAC_BEFORE_$label" "$(latest_uac)"
-  echo "org prepared ($label): policy $(policy_status), last access change ${UAC_BEFORE_DEPLOY:-}"
+  if [ -z "$id" ] || [ "$id" = "<query failed>" ]; then
+    result "PREPARE-$label" FAIL "policy UAP_Spike_Policy not found before the $label job"
+    exit 1
+  fi
+  sf api request rest "services/data/v66.0/sobjects/UserAccessPolicy/$id" -X PATCH -b '{"Status":"Active"}' -o "$ORG" >"$LOGS/prepare-$label-policy.txt" 2>&1
+  status=$(policy_status)
+  if [ "$status" != "Active" ]; then
+    result "PREPARE-$label" FAIL "policy is $status before the $label job, see prepare-$label-policy.txt"
+    exit 1
+  fi
+  local before
+  before=$(latest_uac)
+  save "UAC_BEFORE_$label" "$before"
+  result "PREPARE-$label" OK "org reset before the $label job: policy Active, last access change ${before:-none}"
 }
 
-# A scratch org with User Access Policies on, the policy and its permission set in Design, and one
-# Chatter Free user matching the policy: what the project deploys must already be there to be reset
+# A scratch org with User Access Policies on, the policy and its permission set deployed (Salesforce
+# sets the policy to Design), and one Chatter Free user matching the policy: what the project deploys
+# must already be in the org for the deployment to reset it
 bootstrap_org() {
   local boot="$LOGS/bootstrap"
   rm -rf "$boot" && mkdir -p "$boot/force-app/main/default/permissionsets" "$boot/force-app/main/default/useraccesspolicies" "$boot/config"
@@ -118,10 +167,14 @@ bootstrap_org() {
   cp "$boot/project/force-app/main/default/useraccesspolicies/"* "$boot/force-app/main/default/useraccesspolicies/"
   (cd "$boot" && sf project deploy start -d force-app -o "$ORG" -w 20 --json >"$LOGS/bootstrap-deploy.json" 2>&1) || return 1
   local users profile_id
-  users=$(soql "SELECT COUNT() FROM User WHERE Username LIKE 'da-e2e-user%' AND IsActive = true" | json_field "j.result.totalSize")
-  if [ "${users:-0}" = "0" ]; then
-    profile_id=$(soql "SELECT Id FROM Profile WHERE Name = 'Chatter Free User'" | json_field "j.result.records[0]?.Id")
-    local name="da-e2e-user-$(date +%s)"
+  users=$(soql_count "SELECT COUNT() FROM User WHERE Username LIKE 'da-e2e-user%' AND IsActive = true")
+  # A failed count is not "no user": creating one more would leave two
+  [ -n "$users" ] || return 1
+  if [ "$users" = "0" ]; then
+    profile_id=$(soql_value "SELECT Id FROM Profile WHERE Name = 'Chatter Free User'" "j.result.records[0]?.Id")
+    [[ "$profile_id" == 00e* ]] || return 1
+    local name
+    name="da-e2e-user-$(date +%s)"
     sf data create record -o "$ORG" -s User -v "Username='$name@example.invalid' LastName='$name' Email='$name@example.invalid' Alias='dae2e' TimeZoneSidKey='Europe/Paris' LocaleSidKey='en_US' EmailEncodingKey='UTF-8' LanguageLocaleKey='en_US' ProfileId='$profile_id'" --json >"$LOGS/bootstrap-user.json" 2>&1 || return 1
   fi
 }
@@ -137,8 +190,8 @@ if step org; then
     exit 1
   }
   printf '%s' "$AUTH_URL" >"$LOGS/auth-url.txt"
+  result ORG OK "org $ORG ready"
   prepare_org DEPLOY
-  if [ "$(policy_status)" = "Active" ]; then result ORG OK "org $ORG ready, policy Active before the deployment"; else result ORG FAIL "policy not active before the deployment"; fi
 fi
 
 # --------------------------------------------------------------- repo: project, workflows, remote, secrets
@@ -158,20 +211,21 @@ if step repo; then
     REPO="$owner/sfdx-hardis-da-e2e-$((${highest:-0} + 1))"
   fi
   save REPO "$REPO"
-  (
-    cd "$WORK" || exit 1
-    gh repo create "$REPO" --private >>"$LOGS/build.log" 2>&1 || exit 1
-    gh api -X PUT "repos/$REPO/actions/permissions" -F enabled=false >/dev/null
-    git remote add origin "https://github.com/$REPO.git"
-    git push -q -u origin main
-    for b in integration uat preprod; do git branch "$b" && git push -q origin "$b"; done
-    for b in INTEGRATION UAT PREPROD MAIN; do gh secret set "SFDX_AUTH_URL_$b" -R "$REPO" <"$LOGS/auth-url.txt" >/dev/null; done
-    gh api -X PUT "repos/$REPO/actions/permissions" -F enabled=true -f allowed_actions=all >/dev/null
-  ) || {
-    result REPO FAIL "repository $REPO not created"
+  # The remote of the shared harness: private repository, major branches, logins, Actions on
+  (cd "$WORK" && ci_create_remote "$(cat "$LOGS/auth-url.txt")") || {
+    result REPO FAIL "repository $REPO not created, see build.log"
     exit 1
   }
-  result REPO OK "repository $REPO, branches main integration uat preprod, secrets set"
+  # The harness does not stop on a failed push or secret: check what the jobs need
+  branches=$(gh api "repos/$REPO/branches" --jq '[.[].name] | sort | join(" ")' 2>/dev/null)
+  secrets=$(gh secret list -R "$REPO" --json name --jq '[.[].name | select(startswith("SFDX_AUTH_URL_"))] | length' 2>/dev/null)
+  actions=$(gh api "repos/$REPO/actions/permissions" --jq .enabled 2>/dev/null)
+  if [ "$branches" = "integration main preprod uat" ] && [ "$secrets" = "4" ] && [ "$actions" = "true" ]; then
+    result REPO OK "repository $REPO, branches $branches, 4 logins, Actions on"
+  else
+    result REPO FAIL "repository $REPO incomplete: branches '$branches', logins ${secrets:-?}, Actions ${actions:-?}"
+    exit 1
+  fi
 fi
 
 # --------------------------------------------------------------- pr: one action of each type, created by the CLI
@@ -207,7 +261,8 @@ if step pr; then
   assert_contains REFUSE-FLAG "$LOGS/refuse-flag.json" "only apply to the run-batch type" "a run-batch flag is refused on another type"
   F="$WORK/scripts/actions/.sfdx-hardis.$PR_NUMBER.yml"
   cp "$F" "$LOGS/pr-actions.yml"
-  assert_contains YAML-UAP-ONCE "$F" "runOnlyOnceByOrg: false" "the user-access-policy action runs at every deployment"
+  once=$(action_field "$F" user-access-policy runOnlyOnceByOrg)
+  if [ "$once" = "false" ]; then result YAML-UAP-ONCE OK "the user-access-policy action runs at every deployment"; else result YAML-UAP-ONCE FAIL "runOnlyOnceByOrg of the user-access-policy action: $once"; fi
   assert_contains YAML-RUN-BATCH "$F" "className: E2EBatch" "run-batch parameters collected by its provider"
   assert_contains YAML-REMOVE "$F" "ApexClass:E2ESkipped" "remove-packagexml-items items stored"
   (cd "$WORK" && git add -A && git commit -q -m "Deployment actions" && git push -q)
@@ -242,19 +297,21 @@ if step deploy && [ -n "${CHECK_FAILED:-}" ]; then
 elif step deploy; then
   gh pr merge "$PR_NUMBER" -R "$REPO" --merge >>"$LOGS/build.log" 2>&1
   sleep 10
-  merge_sha=$(gh pr view "$PR_NUMBER" -R "$REPO" --json mergeCommit --jq .mergeCommit.oid)
+  merge_sha=$(ci_merge_sha "$PR_NUMBER")
   save MERGE_SHA "$merge_sha"
   ci_wait_deploy integration "$merge_sha" deploy
   if [ "$(cat "$LOGS/deploy.code")" = "0" ]; then result DEPLOY OK "deployment job succeeded"; else result DEPLOY FAIL "deployment job failed, see deploy.log"; fi
 fi
 
 # --------------------------------------------------------------- assert-deploy: logs, comments, org
+# Reads the org as the deployment job left it: replay it before the rerun step, never after
 if step assert-deploy; then
   L="$LOGS/deploy.log"
   # context all + runOnlyOnceByOrg: the validation job ran it, so it counts as done in integration
   assert_contains DEP-PRE-COMMAND "$L" "Skipping DA E2E pre command (from PR #$PR_NUMBER): already run in integration" "pre command run by the validation is not run again"
   assert_contains DEP-REMOVE "$L" "Removed 1 item(s) from" "E2ESkipped removed from the deployment package"
   assert_contains DEP-PROJECT-ONCE "$L" "DA_E2E_PROJECT_ONCE_MARKER" "project command ran"
+  assert_contains DEP-PROJECT-UAP-RAN "$L" "Running action DA E2E project policy every time" "project policy action (no runOnlyOnceByOrg key) ran"
   assert_contains DEP-UAP-ACTIVATED "$L" "User access policy UAP_Spike_Policy is active" "the deployment reset the policy and the action activated it"
   assert_contains DEP-UAP-APPLIED "$L" "User access policy UAP_Spike_Policy was applied to all users" "Apply To All ran in the CI container"
   assert_contains DEP-SCHEDULE "$L" "Successfully scheduled job 'E2EBatch_Schedule'" "schedule-batch scheduled the class"
@@ -262,18 +319,18 @@ if step assert-deploy; then
   status=$(policy_status)
   if [ "$status" = "Active" ]; then result ORG-POLICY OK "policy Active after the deployment"; else result ORG-POLICY FAIL "policy is $status after the deployment"; fi
   uac=$(latest_uac)
-  if [ -n "$uac" ] && [ "$uac" != "${UAC_BEFORE_DEPLOY:-}" ]; then result ORG-UAC OK "new UserAccessChange ($uac)"; else result ORG-UAC FAIL "no new UserAccessChange (before ${UAC_BEFORE_DEPLOY:-none}, now ${uac:-none})"; fi
-  n=$(soql "SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'" | json_field "j.result.totalSize")
-  if [ "${n:-0}" -ge 1 ]; then result ORG-PSA OK "Apply To All gave the permission set back ($n users)"; else result ORG-PSA FAIL "no permission set assignment restored"; fi
-  desc=$(soql "SELECT Description FROM Account WHERE Name = 'DA_E2E_APEX' LIMIT 1" | json_field "j.result.records[0]?.Description")
+  if [ -n "$uac" ] && [ "$uac" != "<query failed>" ] && [ "$uac" != "${UAC_BEFORE_DEPLOY:-}" ]; then result ORG-UAC OK "new UserAccessChange ($uac)"; else result ORG-UAC FAIL "no new UserAccessChange (before ${UAC_BEFORE_DEPLOY:-none}, now ${uac:-none})"; fi
+  assert_count ORG-PSA "SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'" ge 1 "Apply To All gave the permission set back"
+  desc=$(soql_value "SELECT Description FROM Account WHERE Name = 'DA_E2E_APEX' LIMIT 1" "j.result.records[0]?.Description")
   if [ "$desc" = "batched-by-da-e2e" ]; then result ORG-APEX-BATCH OK "apex created the account, run-batch updated it"; else result ORG-APEX-BATCH FAIL "account description: '${desc:-<no account>}'"; fi
-  n=$(soql "SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name = 'E2EBatch_Schedule'" | json_field "j.result.totalSize")
-  if [ "${n:-0}" = "1" ]; then result ORG-CRON OK "E2EBatch_Schedule scheduled"; else result ORG-CRON FAIL "scheduled jobs: ${n:-0}"; fi
-  n=$(soql "SELECT COUNT() FROM ApexClass WHERE Name = 'E2ESkipped'" | json_field "j.result.totalSize")
-  if [ "${n:-0}" = "0" ]; then result ORG-SKIPPED OK "E2ESkipped not deployed"; else result ORG-SKIPPED FAIL "E2ESkipped is in the org"; fi
+  assert_count ORG-CRON "SELECT COUNT() FROM CronTrigger WHERE CronJobDetail.Name = 'E2EBatch_Schedule'" eq 1 "E2EBatch_Schedule scheduled"
+  assert_count ORG-SKIPPED "SELECT COUNT() FROM ApexClass WHERE Name = 'E2ESkipped'" eq 0 "E2ESkipped not deployed"
   ci_pr_comments "$PR_NUMBER" deploy-comments
   C="$LOGS/deploy-comments.log"
-  assert_contains DEP-COMMENT-MANUAL "$C" "DA E2E manual step" "manual step in the comments"
+  # The marker of the manual step for integration: only the deployment job writes it, the validation
+  # comment lists the label alone
+  manual_id=$(action_field "$LOGS/pr-actions.yml" manual id)
+  assert_contains DEP-COMMENT-MANUAL "$C" "sfdx-hardis-manual-action id:$manual_id org:integration" "manual step to do in integration, in the deployment comment"
   assert_absent DEP-COMMENT-FAILED "$C" "❌" "no failed action in the comments"
 fi
 
@@ -286,16 +343,17 @@ if step rerun; then
   assert_contains RERUN-PRE-ONCE "$L" "DA E2E pre command (from PR #$PR_NUMBER): already run" "pre command skipped: already run in the org"
   assert_contains RERUN-APEX-ONCE "$L" "DA E2E apex account (from PR #$PR_NUMBER): already run" "apex action skipped: already run"
   assert_contains RERUN-BATCH-ONCE "$L" "DA E2E run batch (from PR #$PR_NUMBER): already run" "run-batch skipped: already run"
-  assert_absent RERUN-PROJECT-UAP-RAN "$L" "DA E2E project policy every time: already run" "project policy action without runOnlyOnceByOrg runs again"
+  assert_contains RERUN-PROJECT-ONCE "$L" "Skipping DA E2E project command once: already run" "project command (no runOnlyOnceByOrg key, once per org by default) skipped"
+  assert_contains RERUN-PROJECT-UAP-RAN "$L" "Running action DA E2E project policy every time" "project policy action (no runOnlyOnceByOrg key, every deployment for its type) ran again"
   assert_absent RERUN-PR-UAP-RAN "$L" "DA E2E policy apply to all (from PR #$PR_NUMBER): already run" "PR policy action runs again"
   assert_contains RERUN-UAP-APPLIED "$L" "User access policy UAP_Spike_Policy was applied to all users" "Apply To All ran again"
-  n=$(soql "SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'" | json_field "j.result.totalSize")
-  if [ "${n:-0}" -ge 1 ]; then result RERUN-ORG-PSA OK "permission set given back again ($n users)"; else result RERUN-ORG-PSA FAIL "no permission set assignment after the rerun"; fi
+  assert_count RERUN-ORG-PSA "SELECT COUNT() FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'" ge 1 "permission set given back again"
   status=$(policy_status)
   if [ "$status" = "Active" ]; then result RERUN-ORG-POLICY OK "policy Active after the rerun"; else result RERUN-ORG-POLICY FAIL "policy is $status after the rerun"; fi
+  uac=$(latest_uac)
+  if [ -n "$uac" ] && [ "$uac" != "<query failed>" ] && [ "$uac" != "${UAC_BEFORE_RERUN:-}" ]; then result RERUN-ORG-UAC OK "new UserAccessChange ($uac)"; else result RERUN-ORG-UAC FAIL "no new UserAccessChange (before ${UAC_BEFORE_RERUN:-none}, now ${uac:-none})"; fi
   # Accounts were deleted before the rerun and the apex action did not run again
-  n=$(soql "SELECT COUNT() FROM Account WHERE Name = 'DA_E2E_APEX'" | json_field "j.result.totalSize")
-  if [ "${n:-0}" = "0" ]; then result RERUN-ORG-APEX OK "apex action not run twice"; else result RERUN-ORG-APEX FAIL "apex action ran again ($n accounts)"; fi
+  assert_count RERUN-ORG-APEX "SELECT COUNT() FROM Account WHERE Name = 'DA_E2E_APEX'" eq 0 "apex action not run twice"
 fi
 
 # --------------------------------------------------------------- report

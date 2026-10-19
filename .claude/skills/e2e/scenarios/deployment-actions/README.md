@@ -38,21 +38,26 @@ bash .claude/skills/e2e/scenarios/deployment-actions/scripts/da-e2e.sh
 RUN=da-e2e-1 STEPS="check deploy assert-deploy rerun report" bash .claude/skills/e2e/scenarios/deployment-actions/scripts/da-e2e.sh
 ```
 
-Settings: `ORG` (scratch org alias, default `da-e2e-int`, created and prepared when missing),
-`DEVHUB`, `SFDX_HARDIS_BRANCH` (default: current branch), `REPO` (default
-`<gh login>/sfdx-hardis-da-e2e-<n+1>`), `RUN` (folders `$TMP/<run>` and `$TMP/<run>-logs`).
+Settings, from the environment, else the `.env` of the working copy: `DA_ORG` (scratch org alias,
+default `da-e2e-int`, created and prepared when missing), `DEVHUB`, `SFDX_HARDIS_BRANCH` (default:
+current branch), `DA_REPO` (default `<gh login>/sfdx-hardis-da-e2e-<n+1>`), `RUN` (folders
+`$TMP/<run>` and `$TMP/<run>-logs`, or `DA_WORK` and `DA_LOGS`). The `DA_` prefix keeps the `ORG`,
+`REPO`, `WORK` and `LOGS` that the promotion-branches harness exports in a shell away from this run.
+
+A replayed check replaces its row in `$LOGS/results.tsv`. `assert-deploy` reads the org as the
+deployment job left it: replay it before `rerun`, never after (the rerun resets the org).
 
 ## What each step proves
 
 | Step            | Proves                                                                                                                                                                                                                                                                                                                      |
 |-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `org`           | The scratch org exists with User Access Policies on, the policy and its permission set deployed, a Chatter Free `da-e2e-user` user. Before each deployment: the policy is Active, the users lost the permission set, the test accounts and scheduled job are gone.                                                          |
+| `org`           | The scratch org exists with User Access Policies on, the policy and its permission set deployed (the policy lands in Design), a Chatter Free `da-e2e-user` user. Before each deployment: the policy is Active, the users lost the permission set, the test accounts and scheduled job are gone.                             |
 | `repo`          | The sample project, the CI workflows of the branch under test, a private repository with `main integration uat preprod`, the logins.                                                                                                                                                                                        |
 | `pr`            | A Pull Request to `integration`; `action:create --agent` creates `command` and `remove-packagexml-items` before the deployment, `apex`, `run-batch`, `schedule-batch`, `user-access-policy` (Apply To All) and `manual` after it; a policy action before the deployment and a run-batch flag on an apex action are refused. |
 | `check`         | The validation job runs the `context: all` actions (command, package.xml removal), never a deployment-only one (no policy activation, no Apply To All, no project command); every action is in the Pull Request comment.                                                                                                    |
 | `deploy`        | Merge, the deployment job succeeds.                                                                                                                                                                                                                                                                                         |
 | `assert-deploy` | The deployment reset the policy and the action activated it; Apply To All ran in the CI container (new `UserAccessChange`, permission set given back); the Apex script created an account the batch updated; the job is scheduled; the removed class is not in the org; the manual step is in the comments, nothing failed. |
-| `rerun`         | The deployment job run again: the actions with `runOnlyOnceByOrg` are skipped as already run, both policy actions run again (the project one has no `runOnlyOnceByOrg` key: its type runs at every deployment), the Apex script does not run twice.                                                                         |
+| `rerun`         | The deployment job run again: the actions with `runOnlyOnceByOrg` are skipped as already run, both policy actions run again (the project one has no `runOnlyOnceByOrg` key: its type runs at every deployment, while the project command without the key is skipped), the Apex script does not run twice.                   |
 | `report`        | `$LOGS/report.md`.                                                                                                                                                                                                                                                                                                          |
 
 Not covered: `data` (SFDMU is not in the CI job) and `publish-community` (needs an Experience site).
@@ -72,6 +77,10 @@ Not covered: `data` (SFDMU is not in the CI job) and `publish-community` (needs 
   A reset that fails stops the run.
 - A Dev Hub at its active scratch org limit fails the `org` step with `LIMIT_EXCEEDED`: delete a
   throwaway scratch org, or pass another `DEVHUB`.
+- A query that fails makes its check FAIL with the query, never a count of 0: an empty org and an
+  unreadable one must not look the same.
+- The validation comment already lists the manual step: the deployment comment is checked by the
+  marker of the step for `integration`, which only the deployment job writes.
 - Never edit `da-e2e.sh` while it runs (bash reads the script as it goes). Fix it after the run, then
   replay the steps with `RUN=<run> STEPS=...`.
 - After the run, delete the repository (`gh repo delete <repo> --yes`) and the scratch org
