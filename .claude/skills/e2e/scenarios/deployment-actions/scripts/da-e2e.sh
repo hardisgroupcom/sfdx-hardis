@@ -61,8 +61,8 @@ step() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac }
 json_field() { node -e "const t=require('fs').readFileSync(0,'utf8');try{const j=JSON.parse(t.slice(t.indexOf('{')));const v=($1);process.stdout.write(v===undefined||v===null?'':String(v))}catch(e){}"; }
 # A query the sf CLI answers with nothing (busy machine, network) is tried again before it counts
 soql() {
-  local out attempt
-  for attempt in 1 2 3; do
+  local out
+  for _ in 1 2 3; do
     out=$(sf data query -o "$ORG" --json -q "$1" 2>/dev/null)
     if printf '%s' "$out" | grep -q '"status": 0'; then
       printf '%s' "$out"
