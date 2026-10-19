@@ -283,6 +283,6 @@ In agent mode:
       },
     });
 
-    return { ...deploymentSummaryBase, outputFile: this.outputFile } as AnyJson;
+    return { ...deploymentSummaryBase, outputFile: this.outputFilesRes?.csvFile ?? this.outputFile } as AnyJson;
   }
 }

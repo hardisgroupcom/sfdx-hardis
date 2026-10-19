@@ -253,7 +253,7 @@ In agent mode the command runs fully automatically. There are no interactive pro
       passedCases,
       failedCases,
       failedAssertions,
-      outputFile: this.outputFile,
+      outputFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 }

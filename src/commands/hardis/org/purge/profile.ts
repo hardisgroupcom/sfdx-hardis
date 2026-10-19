@@ -238,7 +238,7 @@ In agent mode:
     return {
       orgId: flags['target-org'].getOrgId(),
       outputString: "Successfully purged profiles.",
-      outputFile: this.outputFile,
+      outputFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       outputFilesRes: this.outputFilesRes
     };
   }

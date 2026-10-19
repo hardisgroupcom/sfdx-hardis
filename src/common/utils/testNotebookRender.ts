@@ -219,7 +219,8 @@ export async function writeNotebook(
 ): Promise<string> {
   const withSummary = options.withSummary !== false;
   await fs.ensureDir(path.dirname(path.resolve(outputPath)));
-  // Another name when the usual file is open in Excel: the path written is returned
+  // Another name when the usual file is open in Excel, never an existing one: a notebook a tester
+  // filled in, or the input notebook, must not be overwritten. The path written is returned.
   return await writeReportFile(outputPath, (filePath) => {
     if (format === 'xlsx') {
       return _writeXlsx(filePath, kind, cases, withSummary);
@@ -228,7 +229,7 @@ export async function writeNotebook(
       return _writeCsv(filePath, kind, cases, withSummary);
     }
     return _writeMarkdown(filePath, kind, cases);
-  });
+  }, null, { newFileOnly: true });
 }
 
 export interface TemplateOptions {

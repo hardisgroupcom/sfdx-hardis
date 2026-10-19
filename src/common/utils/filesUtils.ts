@@ -28,7 +28,7 @@ import { FileDownloader } from './fileDownloader.js';
 import { ApiLimitsManager } from './limitUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
 import { t } from './i18n.js';
-import { writeReportFile } from './reportFileWriteUtils.js';
+import { reportFileRequestedPath, writeReportFile } from './reportFileWriteUtils.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -1628,8 +1628,11 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     await fs.ensureDir(xlsDirName);
-    // The previous report is overwritten, or kept when it is open in Excel: the new one then gets another name
-    const xslxFile = await writeReportFile(path.join(xlsDirName, xslFileName), (filePath) => csvToXls(outputPath, filePath, options), this);
+    const targetXlsxFile = path.join(xlsDirName, xslFileName);
+    await removePreviousReport(targetXlsxFile);
+    const workbook = await buildXlsFromCsv(outputPath, options);
+    // Another name when the usual file is open in Excel
+    const xslxFile = await writeReportFile(targetXlsxFile, (filePath) => workbook.xlsx.writeFile(filePath), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
@@ -1653,11 +1656,21 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
   }
 }
 
-async function csvToXls(csvFile: string, xslxFile: string, options: ExcelExportOptions) {
+async function buildXlsFromCsv(csvFile: string, options: ExcelExportOptions): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
   const worksheet = await workbook.csv.readFile(csvFile);
   applyWorksheetFormatting(worksheet, options);
-  await workbook.xlsx.writeFile(xslxFile);
+  return workbook;
+}
+
+// A report that can not be regenerated must not leave the previous run's file at the usual name.
+// A file open in Excel can not be deleted: it is kept, and the new report gets another name.
+async function removePreviousReport(filePath: string): Promise<void> {
+  try {
+    await fs.remove(filePath);
+  } catch {
+    // Locked: writeReportFile writes the new report under another name
+  }
 }
 
 // Returns the path of the XLSX file written (another name when the usual one is open in Excel),
@@ -1667,8 +1680,11 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
     await fs.ensureDir(xlsDirName);
-    // The previous report is overwritten, or kept when it is open in Excel: the new one then gets another name
-    const xslxFile = await writeReportFile(path.join(xlsDirName, xslFileName), (filePath) => csvFilesToXls(csvFilesPath, filePath, options), this);
+    const targetXlsxFile = path.join(xlsDirName, xslFileName);
+    await removePreviousReport(targetXlsxFile);
+    const workbook = await buildXlsFromCsvFiles(csvFilesPath, options);
+    // Another name when the usual file is open in Excel
+    const xslxFile = await writeReportFile(targetXlsxFile, (filePath) => workbook.xlsx.writeFile(filePath), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
@@ -1693,7 +1709,7 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
   }
 }
 
-async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: ExcelExportOptions) {
+async function buildXlsFromCsvFiles(csvFiles: string[], options: ExcelExportOptions): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
   let worksheet: ExcelJS.Worksheet;
   const usedWorksheetNames = new Set<string>();
@@ -1772,20 +1788,21 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
 
   for (const csvFile of csvFiles) {
     if (!csvFile) {
-      console.warn(`[csvFilesToXls] Skipping null/undefined csvFile:`, csvFile);
+      console.warn(`[buildXlsFromCsvFiles] Skipping null/undefined csvFile:`, csvFile);
       continue;
     }
     if (!fs.existsSync(csvFile)) {
-      console.warn(`[csvFilesToXls] Skipping missing csvFile:`, csvFile);
+      console.warn(`[buildXlsFromCsvFiles] Skipping missing csvFile:`, csvFile);
       continue;
     }
     const stat = await fs.stat(csvFile);
     if (!stat || stat.size === 0) {
-      console.warn(`[csvFilesToXls] Skipping empty csvFile:`, csvFile);
+      console.warn(`[buildXlsFromCsvFiles] Skipping empty csvFile:`, csvFile);
       continue;
     }
     worksheet = await workbook.csv.readFile(csvFile, buildReadOptions());
-    const desiredWorksheetName = options.worksheetNames?.[csvFile] ?? path.basename(csvFile).replace('.csv', '');
+    // A CSV written as "Users-2.csv" because "Users.csv" was open in Excel still gives a "Users" sheet
+    const desiredWorksheetName = options.worksheetNames?.[csvFile] ?? path.basename(reportFileRequestedPath(csvFile)).replace('.csv', '');
     const worksheetName = makeUniqueWorksheetName(desiredWorksheetName);
     worksheet.name = worksheetName;
     usedWorksheetNames.add(worksheetName);
@@ -1812,7 +1829,7 @@ async function csvFilesToXls(csvFiles: string[], xslxFile: string, options: Exce
   if (options.postProcessWorkbook) {
     await options.postProcessWorkbook(workbook, { worksheetNameByCsvFile });
   }
-  await workbook.xlsx.writeFile(xslxFile);
+  return workbook;
 }
 
 // Extra width (in characters) reserved on auto-fit columns so the filter dropdown button does not
