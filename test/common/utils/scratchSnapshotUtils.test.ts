@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -246,5 +246,33 @@ describe('extendSnapshotDeltaWithDependencies', () => {
   it('leaves the delta unchanged when useDeltaDeploymentWithDependencies is off', async () => {
     await extendSnapshotDeltaWithDependencies(sha, delta, destructive, {});
     expect(await parsePackageXmlFile(delta)).to.deep.equal({ CustomField: ['Account.Foo__c'] });
+  });
+});
+
+describe('selectSnapshotOrgInitStepIds', () => {
+  const config = {
+    orgInitSteps: [
+      { id: 'packages', type: 'install-packages' },
+      { id: 'sources', type: 'deploy-sources' },
+      { id: 'permsets', type: 'assign-permission-sets', parameters: { permissionSets: ['Admin'] } },
+      { id: 'script', type: 'apex', parameters: { apexScript: 'scripts/apex/init.apex' } },
+      { id: 'per-org-data', type: 'data', runAtPoolFill: false, parameters: { sfdmuProject: 'Users' } },
+      { id: 'off', type: 'apex', enabled: false },
+      { id: 'sandbox-only', type: 'apex', orgTypes: ['sandbox'] },
+    ],
+  };
+
+  it('runs in the source what a pool fill runs', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'source')).to.deep.equal(['packages', 'sources', 'permsets', 'script']);
+  });
+
+  it('runs in a child the steps left, plus the permission set assignments, never the full deployment', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'child')).to.deep.equal(['permsets', 'per-org-data']);
+  });
+
+  it('always deploys the sources in the source, even when the deployment is kept for after a pool fetch', () => {
+    const late = { orgInitSteps: config.orgInitSteps.map((step) => (step.id === 'sources' ? { ...step, runAtPoolFill: false } : step)) };
+    expect(selectSnapshotOrgInitStepIds(late, 'source')).to.include('sources');
+    expect(selectSnapshotOrgInitStepIds(late, 'child')).to.not.include('sources');
   });
 });
