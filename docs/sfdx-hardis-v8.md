@@ -13,25 +13,28 @@ v8 ships the **sfdx-hardis plugin** and the **VS Code extension** together.
 
 The headline is **Deployment Actions leaving beta**. But there is a lot more:
 
-| What changed                                                                                  | Why you care                                                                                                     |
-|-----------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| [**VS Code extension rebuilt**](#the-vs-code-extension-got-a-full-redesign)                   | One consistent design, readable tables, and a command panel that shows a whole run on a single screen            |
-| [**Everything runs faster**](#everything-runs-faster)                                         | Save / Publish my User Story reaches its first question in 5 seconds instead of 16                               |
-| [**Deployment Actions are generally available**](#deployment-actions-are-generally-available) | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org |
-| [**Promotion branches (Beta)**](#promotion-branches-beta-ship-only-the-approved-user-stories) | Ship only the approved User Stories to production, with their deployment actions, tests and release notes        |
-| [**Backpromote (Beta)**](#backpromote-beta-catch-your-sandbox-up-with-the-team)               | Bring what your teammates merged into your developer sandbox, by hand or with a coding agent                     |
-| [**Pull Requests explorer**](#find-any-pull-request-without-leaving-vs-code)                  | Find any Pull Request and read its tickets, actions, validation and deployment results in VS Code                |
-| [**Metadata dependencies**](#know-what-uses-a-component-before-you-change-it)                 | See what uses an Apex class, a Flow or a field before you change or delete it                                    |
-| [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)       | You know in one second which comment you are reading and how the deployment went                                 |
-| [**Smaller footprint, safer supply chain**](#lighter-and-safer)                               | Half the npm packages removed: faster installs and fewer dependencies to trust                                   |
-| [**Personal data anonymized**](#personal-data-no-longer-leaves-your-org-in-clear-text)        | Names, emails, user Ids and IP addresses are pseudonymized in every report and every notification channel        |
-| [**Usage and cost monitoring**](#watch-what-your-org-consumes-and-what-it-costs)              | Entitlements, consumption alerts and Agentforce credits, in percentages and in your own currency                 |
-| [**Ask a coding agent**](#ask-a-coding-agent-about-your-org-and-your-pipeline)                | Your monitoring repository explains itself to a coding agent, which answers about the org and the pipeline       |
-| [**Sandbox refresh covered end to end**](#sandbox-refresh-covered-end-to-end)                 | Connected Apps, Scheduled Apex and restores that survive a failure                                               |
-| [**Flow deletion in destructive changes**](#deleting-a-flow-is-now-part-of-the-deployment)    | Deleting a Flow no longer means a manual step in every org                                                       |
-| [**Pipelines run in the Docker image**](#pipelines-run-in-the-sfdx-hardis-docker-image)       | Faster jobs that a bad dependency release can no longer break                                                    |
-| [**Free training with badges**](#learn-it-hands-on-free-training-with-badges)                 | A free course builds a complete pipeline on free orgs, click by click, and awards a badge per level              |
-| [**Professional support by Cloudity**](#free-and-supported-if-you-want-it)                    | Still free and open-source, with setup, support subscriptions and Release Manager as a Service if you need them  |
+| What changed                                                                                                   | Why you care                                                                                                            |
+|----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| [**VS Code extension rebuilt**](#the-vs-code-extension-got-a-full-redesign)                                    | One consistent design, readable tables, and a command panel that shows a whole run on a single screen                   |
+| [**Everything runs faster**](#everything-runs-faster)                                                          | Save / Publish my User Story reaches its first question in 5 seconds instead of 16                                      |
+| [**Deployment Actions are generally available**](#deployment-actions-are-generally-available)                  | Everything that must happen around a deployment is declared on the Pull Request and runs by itself, in every org        |
+| [**Promotion branches (Beta)**](#promotion-branches-beta-ship-only-the-approved-user-stories)                  | Ship only the approved User Stories to production, with their deployment actions, tests and release notes               |
+| [**Backpromote (Beta)**](#backpromote-beta-catch-your-sandbox-up-with-the-team)                                | Bring what your teammates merged into your developer sandbox, by hand or with a coding agent                            |
+| [**Scratch org pool in your git provider**](#a-scratch-org-pool-with-no-extra-infrastructure)                  | Scratch orgs ready in seconds, stored encrypted in your git provider, with a dashboard and a VS Code panel              |
+| [**Org initialization (Beta)**](#org-initialization-beta-every-new-scratch-org-or-sandbox-set-up-the-same-way) | One ordered list of steps sets up every new scratch org and sandbox, configured from a VS Code panel                    |
+| [**Replacement rules (Beta)**](#replacement-rules-beta-the-right-values-in-every-org)                          | Endpoints, emails and secrets set per org at deployment time, and the XML elements an older org refuses removed for you |
+| [**Pull Requests explorer**](#find-any-pull-request-without-leaving-vs-code)                                   | Find any Pull Request and read its tickets, actions, validation and deployment results in VS Code                       |
+| [**Metadata dependencies**](#know-what-uses-a-component-before-you-change-it)                                  | See what uses an Apex class, a Flow or a field before you change or delete it                                           |
+| [**Pull Request comments redesigned**](#pull-request-comments-you-can-read-at-a-glance)                        | You know in one second which comment you are reading and how the deployment went                                        |
+| [**Smaller footprint, safer supply chain**](#lighter-and-safer)                                                | Half the npm packages removed: faster installs and fewer dependencies to trust                                          |
+| [**Personal data anonymized**](#personal-data-no-longer-leaves-your-org-in-clear-text)                         | Names, emails, user Ids and IP addresses are pseudonymized in every report and every notification channel               |
+| [**Usage and cost monitoring**](#watch-what-your-org-consumes-and-what-it-costs)                               | Entitlements, consumption alerts and Agentforce credits, in percentages and in your own currency                        |
+| [**Ask a coding agent**](#ask-a-coding-agent-about-your-org-and-your-pipeline)                                 | Your monitoring repository explains itself to a coding agent, which answers about the org and the pipeline              |
+| [**Sandbox refresh covered end to end**](#sandbox-refresh-covered-end-to-end)                                  | Connected Apps, Scheduled Apex and restores that survive a failure                                                      |
+| [**Flow deletion in destructive changes**](#deleting-a-flow-is-now-part-of-the-deployment)                     | Deleting a Flow no longer means a manual step in every org                                                              |
+| [**Pipelines run in the Docker image**](#pipelines-run-in-the-sfdx-hardis-docker-image)                        | Faster jobs that a bad dependency release can no longer break                                                           |
+| [**Free training with badges**](#learn-it-hands-on-free-training-with-badges)                                  | A free course builds a complete pipeline on free orgs, click by click, and awards a badge per level                     |
+| [**Professional support by Cloudity**](#free-and-supported-if-you-want-it)                                     | Still free and open-source, with setup, support subscriptions and Release Manager as a Service if you need them         |
 
 ---
 
@@ -274,6 +277,67 @@ A [**backpromote**](salesforce-devops-backpromote.md) deploys into your sandbox 
 - **With a coding agent, or without**: do it all by hand in the panel, let Claude Code, Codex or GitHub Copilot solve the merges and fix the deployment errors, or paste one prompt and let the agent run [hardis:work:backpromote](hardis/work/backpromote.md) from start to end.
 - **Its history is kept on the Pull Requests**, so the next backpromote starts where the previous one ended, from any computer and for everyone sharing the sandbox.
 - Production and the orgs of major branches are never offered as targets.
+
+---
+
+## A scratch org pool with no extra infrastructure
+
+Creating a scratch org, installing its packages and pushing the sources takes minutes, for every Pull Request job and every new User Story. A [**scratch org pool**](salesforce-devops-setup-scratch-org-pool.md) keeps scratch orgs ready: a scheduled job creates them during the night, and a job or a developer takes one in seconds.
+
+The pool used to need a storage service of its own. It now lives **in your git provider**: an issue on GitHub and GitLab, a work item on Azure DevOps, a Pull Request that is never merged on Bitbucket Cloud.
+
+![Scratch Orgs Pool Dashboard in a GitHub issue](assets/images/scratch-org-pool-dashboard.png)
+
+- **Nothing to install or pay for**: [hardis:scratch:pool:create](hardis/scratch/pool/create.md) creates the dashboard, and the CI templates already carry the refresh job.
+- **Credentials are encrypted and signed** with a key only your CI variables and your team hold. The dashboard shows what anyone with access to the repository may read: aliases, expiration dates, who took which org for which branch, and the failed creations.
+- **A VS Code panel**, opened from the settings menu of the DevOps Pipeline: take a scratch org, refill or reset the pool, set the encryption key, and see the Dev Hub limits.
+- **Rotate the key** without leaving orphan scratch orgs behind, and a refresh run from a computer never empties a pool it cannot read.
+
+![Scratch Org Pool panel](assets/images/scratch-org-pool-panel.png)
+
+*Ships in v8.18.0.*
+
+---
+
+## Org initialization (Beta): every new scratch org or sandbox set up the same way
+
+A new scratch org or developer sandbox is empty: it needs the packages, the sources, the permission sets of the team, a few Apex scripts and some test data before anyone can work in it. These used to be scattered settings, run in a fixed order, a little differently for scratch orgs and for sandboxes.
+
+[**Org initialization**](salesforce-devops-org-initialization.md) gathers them in **one ordered list of steps**, edited from a new **Org Initialization** panel, opened from the settings menu of the DevOps Pipeline.
+
+![Org Initialization panel](assets/images/org-initialization.png)
+
+- **Every kind of step**: install packages, deploy the project sources, assign permission sets, Apex scripts, SFDMU data, commands, batch runs and schedules, publish an Experience site, and your own custom functions.
+- **Each step decides** whether it runs on scratch orgs, sandboxes or both, whether a failure stops the initialization, and whether it runs when the pool is filled. Switch a step off without deleting it.
+- **A scratch org taken from the pool is ready**: every step runs when the pool is filled, and its source tracking starts clean, so your first pull only lists your own changes.
+- **Run the steps again on any scratch org or sandbox** with **Run now** in the panel, or [hardis:org:init](hardis/org/init.md). Production orgs are refused.
+- **The scratch org definition** has its own tab: a form for the common fields, a JSON editor for the settings, and a check against the Salesforce CLI schema before anything is saved. [hardis:scratch:create](hardis/scratch/create.md) runs the same check, and checks the steps, before it requests an org.
+- **Existing projects keep working**: without the new list, the steps are built from your current settings, in the order they always ran. The panel converts them on the first save.
+
+*Ships in v8.19.0.*
+
+---
+
+## Replacement rules (Beta): the right values in every org
+
+A Named Credential endpoint, the sender of an email alert or the admin of an Experience site is not the same in UAT and in production. Sources retrieved from a sandbox already on the next Salesforce release hold XML elements production refuses, and the deployment fails.
+
+[**Replacement rules**](salesforce-devops-config-replacement-rules.md) change the files right before each deployment, for the org it goes to, then put them back. Git keeps one version of each file.
+
+![Replacement Rules panel](assets/images/replacement-rules-panel.png)
+
+- **Set a value per org**: the value of each major branch, a `default` for developer sandboxes and scratch orgs, or a secret read from a CI/CD variable and masked in every log.
+- **Remove an element**: for example one user permission of a Profile with `Profile/userPermissions[name=ViewSetup]`.
+- **Find and replace** a text or a regular expression in any file: a host hardcoded in Apex, a URL in a Lightning Web Component.
+- **Built-in rules** remove the elements the API version of the target org does not accept yet, like the Flow `ends` of Winter '27 when production is still on Summer '26, and the user permissions of Profiles and Permission Sets the target org does not have. See the [built-in rules](salesforce-devops-config-replacement-rules-builtin.md).
+- **Fix a failing deployment without a commit**: a release manager can change a rule in the "sfdx-hardis Replacement Rules" issue of the git provider.
+- **Configured from VS Code** with the new **Replacement Rules** panel, opened from the settings menu of the DevOps Pipeline, or with the [hardis:project:replacement](hardis/project/replacement/list.md) commands, also usable by coding agents.
+
+![Values per org](assets/images/replacement-rules-values.png)
+
+The Pull Request comments list the rules applied to each deployment, and warn when a secret is missing.
+
+*Ships in v8.20.0.*
 
 ---
 

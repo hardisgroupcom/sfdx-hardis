@@ -11,6 +11,8 @@ This step only concerns projects that work with **scratch orgs**. If you use san
 
 Creating a scratch org, installing its packages and pushing the sources takes minutes. A pool keeps scratch orgs ready: a scheduled job creates them during the night, and a Pull Request job or a developer takes one in seconds.
 
+When the pool is filled, each scratch org gets the [org initialization steps](salesforce-devops-org-initialization.md) flagged **Run when filling the pool** (all of them by default), so the org taken from the pool is ready to use.
+
 - [How it works](#how-it-works)
 - [Configure the pool](#configure-the-pool)
 - [Schedule the pool refresh](#schedule-the-pool-refresh)

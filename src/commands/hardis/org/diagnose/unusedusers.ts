@@ -221,7 +221,7 @@ In agent mode:
       status: this.statusCode,
       summary: summary,
       users: this.users,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes.xlsxFile,
     };
   }

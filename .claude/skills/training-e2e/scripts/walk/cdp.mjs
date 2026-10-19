@@ -61,3 +61,13 @@ export async function dump(page, label = "") {
 export async function text(f) {
   return (await f.evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
 }
+// The error a Setup save left, in the top page or in any frame: the classic wizards and edit
+// pages print theirs inside their iframe. Returns the first match, or null.
+export async function saveError(page) {
+  for (const f of page.frames()) {
+    const t = await text(f).catch(() => "");
+    const m = t.match(/(Error: [^.]{0,200}|Review all error messages[^.]{0,120}|We hit a snag[^.]{0,200})/);
+    if (m) return m[0];
+  }
+  return null;
+}

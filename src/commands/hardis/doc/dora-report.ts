@@ -288,7 +288,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       outputFile: mdOutputFile,
       docsOutputFile: docsDoraOutputFile,
       pdfFile: pdfOutputFile,
-      csvFile: csvPath,
+      csvFile: csvResult.csvFile ?? csvPath,
     } as AnyJson;
   }
 

@@ -187,7 +187,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     return {
       status: 0,
       licenses: this.licenses,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes.xlsxFile,
     };
   }

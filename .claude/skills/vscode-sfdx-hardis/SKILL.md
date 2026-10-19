@@ -56,7 +56,7 @@ When in doubt, grep the extension for the command id, the flag, the config key o
 The extension has its own agent setup. For every file under `vscode-sfdx-hardis`, read and follow it instead of the sfdx-hardis conventions:
 
 - `vscode-sfdx-hardis/CLAUDE.md`: build commands, architecture, LWC and styling rules (theme-aware `resources/global-theme.css` kit, no hardcoded colors, `s-hardis-datatable`, tinted neutral buttons), i18n key order, panel performance rules.
-- `vscode-sfdx-hardis/.claude/skills/`: `analyze`, `design`, `implement`, `test`, `document`, `pr-watch-fix`, `megalinter`, `megalinter-check`, `megalinter-fix`, `megalinter-setup`, `fix-duplicate`, `fix-security`, `monitoring`.
+- `vscode-sfdx-hardis/.claude/skills/`: `analyze`, `design`, `implement`, `test`, `document`, `pr-watch-fix`, `fix-duplicate`, `fix-security`, `monitoring`. MegaLinter skills come from the `megalinter` plugin, enabled in `.claude/settings.json`.
 - `vscode-sfdx-hardis/.claude/agents/`: `analyze`, `design`, `implement`, `test`, `document`, `pr-fix`, `pr-watch`, and the MegaLinter agents.
 
 Each phase of the sfdx-hardis workflow has its extension counterpart:

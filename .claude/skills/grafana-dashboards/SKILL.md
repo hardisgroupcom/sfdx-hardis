@@ -6,7 +6,7 @@ user-invocable: false
 
 # Grafana Dashboards v2 (Org Monitoring by sfdx-hardis)
 
-Everything needed to build, modify and validate the v2 Grafana dashboards without rediscovering the constraints. The generic Grafana skills (`dashboarding`, `promql`, `loki`, `alerting-irm` in `.claude/skills/`) cover Grafana itself; THIS skill covers the sfdx-hardis-specific rules.
+Everything needed to build, modify and validate the v2 Grafana dashboards without rediscovering the constraints. The generic Grafana skills (`grafana-core:dashboarding`, `grafana-core:promql`, `grafana-core:alerting-irm`, `grafana-lgtm:loki`, from the plugins enabled in `.claude/settings.json`) cover Grafana itself; THIS skill covers the sfdx-hardis-specific rules.
 
 ## Source of truth
 

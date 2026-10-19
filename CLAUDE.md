@@ -34,13 +34,18 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 - `monitoring-notifications` skill: load it whenever a monitoring command, notification type, routing threshold, metric key, or logElements shape is created, updated, or deleted.
 - `grafana-dashboards` skill: rules and workflow for the "Org Monitoring by sfdx-hardis" v2 dashboards (`docs/grafana/dashboards-v2`). Load it for any dashboard or alert-rule work, and for every indicator evolution: **any change to a monitoring indicator must also handle its impact on the Grafana dashboards.**
 - `monitoring-agents-md` skill: the `AGENTS.md` that the monitoring backup writes for coding agents. Load it for any change to what it describes: the backup output, the monitoring pipelines and commands, what is sent to Grafana, monitoring config keys, the CI/CD pipeline behavior, git provider APIs or token variables. **A change that makes it wrong must update it in the same PR.**
-- Generic Grafana skills (`dashboarding`, `promql`, `loki`, `alerting-irm`) are vendored in `.claude/skills/` from [grafana/skills](https://github.com/grafana/skills) via `npx skills` (tracked in `skills-lock.json`, refresh with `npx skills update`). They are agent-agnostic: any coding agent reading `.claude/skills/` can use them.
+- Generic Grafana skills (`grafana-core:dashboarding`, `grafana-core:promql`, `grafana-core:alerting-irm`, `grafana-lgtm:loki`...) and MegaLinter skills and agents (`megalinter:megalinter-check`, `megalinter:megalinter-fix`, `megalinter:megalinter-runner`...) come from Claude Code plugins enabled for this repository in `.claude/settings.json`: `grafana-core` and `grafana-lgtm` from [grafana/skills](https://github.com/grafana/skills), `megalinter` from [oxsecurity/megalinter](https://github.com/oxsecurity/megalinter). Never copy them into `.claude/`. Update them with `claude plugin update <plugin>@<marketplace>`.
 
 ## Promotion Branches Skills
 
 - `promotion-branches` skill: how the promotion branches feature (`enablePromotionBranches`, `sf hardis:project:promotion:create`) works across sfdx-hardis and vscode-sfdx-hardis, its invariants, and every file to touch. Load it for any work on promotion branches, on the Pull Request scope of `deploy:smart`, on release notes filtering, or on the DevOps Pipeline windows, counters and toggles.
 - `promotion-branches-e2e` skill: the runbook, the job simulators and the regression scripts to prove the feature again end to end against a real org and a throwaway private repository. Run it whenever promotion branches or backpromote change in a way unit tests cannot cover.
 - `backpromote` skill: how a coding agent drives `sf hardis:work:backpromote` (plan, decide, run, solve the merges it asks for, confirm manual actions) and where the feature lives in both repositories. Load it for any work on backpromote, on the "Backpromotes" Pull Request comments or on the VS Code Backpromote panel.
+
+## Replacement Rules Skills
+
+- `replacement-rules-e2e` skill: the end to end test of replacement rules (Beta) against a scratch org and a throwaway private GitHub repository running the CI workflows of the branch under test. Run it whenever replacement rules, their built-in rules or the VS Code Replacement Rules panel change in a way unit tests cannot cover.
+- `replacement-rules-builtin-update` skill: update the built-in replacement rules for a new Salesforce release (new elements from `describeValueType`, the user permissions list from the PermissionSet describe) and regenerate `docs/salesforce-devops-config-replacement-rules-builtin.md`. Load it when a new API version is out or in preview, or when a deployment fails on an element or a user permission a built-in rule should remove.
 
 ## VS Code Extension (vscode-sfdx-hardis)
 

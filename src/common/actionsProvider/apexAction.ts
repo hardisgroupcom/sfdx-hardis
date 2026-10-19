@@ -32,7 +32,7 @@ export class ApexAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const apexScript = (cmd.parameters?.apexScript as string) || '';
-    const apexCommand = `sf apex run --file ${apexScript}` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
+    const apexCommand = `sf apex run --file "${apexScript}"` + (this.customUsernameToUse ? ` --target-org ${this.customUsernameToUse}` : '');
     const res = await execCommand(apexCommand, null, { fail: false, output: true });
     if (res.status === 0) {
       return { statusCode: 'success', output: buildActionOutput(res) };

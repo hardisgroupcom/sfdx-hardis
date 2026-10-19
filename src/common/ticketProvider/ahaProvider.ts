@@ -3,11 +3,13 @@ import sortArray from '../utils/sortArray.js';
 // Type-only: a value import here would close a runtime cycle index -> provider -> index
 import type { Ticket, TicketsFromStringOptions } from './index.js';
 import { recordTicketCollectionIssue, TicketProviderRoot } from './ticketProviderRoot.js';
-import { extractRegexMatches, getCurrentGitBranch, uxLog } from '../utils/index.js';
+import { extractRegexMatches, uxLog } from '../utils/index.js';
 import { PROVIDER_BATCH_PROFILES, mapInAdaptiveBatchesSettled } from '../utils/adaptiveBatch.js';
-import { CONSTANTS, getConfig, getEnvVar } from '../../config/index.js';
+import { getConfig, getEnvVar } from '../../config/index.js';
 import { httpGet, httpPost, httpPut } from '../utils/httpUtils.js';
-import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
+import { CommonPullRequestInfo } from '../gitProvider/index.js';
+import { convertMarkdownToHtml } from '../notifProvider/utils/markdownToHtml.js';
+import { PostCommentOptions, PostCommentResult, buildDeploymentCommentMarkdown, hasMarker, htmlMarker } from './utils/ticketComment.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { t } from '../utils/i18n.js';
 import {
@@ -45,6 +47,7 @@ export class AhaProvider extends TicketProviderRoot {
   public static readonly providerKey = 'aha' as const;
   public static readonly providerLabel = 'Aha!';
   public static readonly supportsTicketDetails = true;
+  public static readonly supportsComments = true;
   public static readonly onlyWhenDeclared = true;
 
   protected host: string;
@@ -318,13 +321,13 @@ export class AhaProvider extends TicketProviderRoot {
     }
     uxLog('action', this, c.cyan('[AhaProvider] ' + t('ahaProviderPostingComments', { count: ahaTickets.length })));
     const tag = await this.getDeploymentTag();
-    const comment = await this.buildDeploymentComment(org, pullRequestInfo);
+    const commentMarkdown = await buildDeploymentCommentMarkdown(org, pullRequestInfo);
     // Comments, then tags, each in the adaptive batches of the Aha! ladder: a deployment of many
     // features must slow down when Aha! throttles, not lose the writes that come after
     const commented = await mapInAdaptiveBatchesSettled(
       ahaTickets,
       async (ticket) => {
-        await httpPost(`${this.featureApiUrl(ticket.id)}/comments`, { comment: { body: comment } }, this.requestConfig());
+        await this.postComment(ticket.id, commentMarkdown);
         return true;
       },
       {
@@ -361,6 +364,27 @@ export class AhaProvider extends TicketProviderRoot {
       })));
     }
     return tickets;
+  }
+
+  /**
+   * Posts a markdown comment on a feature, written as HTML. With a marker, hidden in an HTML
+   * comment, the most recent comment holding it is updated instead.
+   */
+  public async postComment(ticketId: string, markdown: string, options: PostCommentOptions = {}): Promise<PostCommentResult> {
+    const reference = (ticketId || '').trim();
+    const body = { comment: { body: (await convertMarkdownToHtml(markdown)) + htmlMarker(options.marker) } };
+    const existing = options.marker ? await this.findMarkedComment(reference, options.marker) : null;
+    const response = existing
+      ? await httpPut(`${this.host}/api/v1/comments/${encodeURIComponent(String(existing.id))}`, body, this.requestConfig())
+      : await httpPost(`${this.featureApiUrl(reference)}/comments`, body, this.requestConfig());
+    const comment = response?.data?.comment;
+    return {
+      ticketId: reference,
+      provider: AhaProvider.providerLabel,
+      action: existing ? 'updated' : 'created',
+      commentId: String(comment?.id ?? existing?.id ?? ''),
+      url: comment?.url || AhaProvider.featureUrl(this.host, reference),
+    };
   }
 
   /**
@@ -425,19 +449,6 @@ export class AhaProvider extends TicketProviderRoot {
       truncated: false,
       error: null,
     };
-  }
-
-  private static escapeHtml(value: string): string {
-    return String(value || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  private static htmlLink(label: string, url: string): string {
-    const safeLabel = AhaProvider.escapeHtml(label);
-    return /^https?:\/\//i.test(url || '') ? `<a href="${AhaProvider.escapeHtml(url)}">${safeLabel}</a>` : safeLabel;
   }
 
   private logBackoff = (size: number, e: unknown, waitMs: number): void => {
@@ -513,23 +524,6 @@ export class AhaProvider extends TicketProviderRoot {
     return this.host;
   }
 
-  /** Aha! renders a comment as HTML, so the links hide behind their label like they do in JIRA */
-  private async buildDeploymentComment(org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<string> {
-    const orgLabel = org.replace('https://', '').replace('.my.salesforce.com', '');
-    const branchName = (await getCurrentGitBranch()) || '';
-    const branchUrl = (await GitProvider.getCurrentBranchUrl()) || '';
-    let html = `<p>Deployed by ${AhaProvider.htmlLink('sfdx-hardis', `${CONSTANTS.DOC_URL_ROOT}/`)} in <b>${AhaProvider.htmlLink(orgLabel, org)}</b>`;
-    if (branchName) {
-      html += ` from branch <b>${AhaProvider.htmlLink(branchName, branchUrl)}</b>`;
-    }
-    html += '</p>';
-    if (pullRequestInfo?.webUrl) {
-      const author = pullRequestInfo.authorName ? `, by ${AhaProvider.escapeHtml(pullRequestInfo.authorName)}` : '';
-      html += `<p>Related PR: ${AhaProvider.htmlLink(pullRequestInfo.title || pullRequestInfo.webUrl, pullRequestInfo.webUrl)}${author}</p>`;
-    }
-    return html;
-  }
-
   /**
    * Adds a tag to a feature without losing the ones it has.
    *
@@ -543,5 +537,12 @@ export class AhaProvider extends TicketProviderRoot {
       return;
     }
     await httpPut(this.featureApiUrl(reference), { feature: { tags: [...currentTags, tag] } }, this.requestConfig({ fields: 'tags' }));
+  }
+
+  /** The most recent comment holding the marker, the comments being sorted by creation date */
+  private async findMarkedComment(reference: string, marker: string): Promise<any | null> {
+    const { comments } = await this.fetchAllComments(reference);
+    const marked = comments.filter((comment: any) => hasMarker(comment?.body, marker));
+    return marked.length > 0 ? marked[marked.length - 1] : null;
   }
 }

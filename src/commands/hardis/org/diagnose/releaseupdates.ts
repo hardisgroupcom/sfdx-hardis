@@ -153,7 +153,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     return {
       status: this.releaseUpdatesRecords.length > 0 ? 1 : 0,
       suspectRecords: this.releaseUpdatesRecords,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 }

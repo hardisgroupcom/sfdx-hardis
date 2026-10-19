@@ -319,8 +319,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     // copied into every monitoring repository, so the remote says which server this is
     const scheduledFromMain = confirmPush.value === true && fs.existsSync(GITHUB_MONITORING_WORKFLOW_PATH) && (await this.isGithubRemote())
       ? await this.scheduleGithubMonitoringFromMain(branchName)
-      : false;
-    if (!scheduledFromMain) {
+      : 'notScheduled';
+    // After a refused push, the instruction is to sign in again and run the command again,
+    // already given: the manual scheduling steps would contradict it
+    if (scheduledFromMain === 'notScheduled') {
       const branch = await getCurrentGitBranch();
       uxLog(
         "warning",
@@ -365,7 +367,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }
   }
 
-  private async scheduleGithubMonitoringFromMain(branchName: string): Promise<boolean> {
+  private async scheduleGithubMonitoringFromMain(branchName: string): Promise<'scheduled' | 'notScheduled' | 'pushRefused'> {
     let stashed = false;
     try {
       // The command has just rewritten the certificate key of this branch, so the
@@ -400,19 +402,28 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
         if (status.files.some((file) => file.path === GITHUB_MONITORING_WORKFLOW_PATH)) {
           await git().add([GITHUB_MONITORING_WORKFLOW_PATH]);
           await git().commit(buildConventionalCommitMessage({ subject: `run the monitoring of ${branchName}` }), [GITHUB_MONITORING_WORKFLOW_PATH]);
+        }
+        // Push whenever main is ahead, not only after a new commit: when a previous run had its
+        // push refused (workflow scope), the workflow commit is already on the local main, this
+        // run finds nothing to change, and main on GitHub would stay without the workflow
+        const ahead = Number((await git().raw(['rev-list', '--count', 'origin/main..main'])).trim());
+        if (ahead > 0) {
           await git().push('origin', 'main');
         }
       } finally {
         await git().checkout(branchName);
       }
       uxLog("success", this, c.green(t('monitoringWorkflowScheduledFromMain', { branchName })));
-      return true;
+      return 'scheduled';
     } catch (e) {
-      uxLog("warning", this, c.yellow(t('monitoringWorkflowNotScheduled', { message: (e as Error).message })));
+      // A refused push is fixed by signing in again and running the command again, not by
+      // copying the workflow by hand: give that one instruction only
       if (isGitWorkflowScopeError(e)) {
         uxLog("action", this, c.yellow(t('gitPushRefusedWorkflowScope')), { alwaysVisible: true });
+        return 'pushRefused';
       }
-      return false;
+      uxLog("warning", this, c.yellow(t('monitoringWorkflowNotScheduled', { message: (e as Error).message })));
+      return 'notScheduled';
     } finally {
       // Whatever happened above, the learner gets their working tree back
       if (stashed) {

@@ -31,6 +31,7 @@ export { isCI, isAgentMode } from './envUtils.js';
 import { isCI, isAgentMode } from './envUtils.js';
 import { storeGitCredentials } from './gitCredentialUtils.js';
 import { anonymizeRows, getChannelAnonymizationLevel, getChannelAnonymizationLevelSync } from './anonymizeUtils.js';
+import { hasRegisteredSecrets, redactCommandOutput, redactSecrets, redactSecretsDeep } from './secretMaskingUtils.js';
 
 export type GitInstanceOptions = {
   output?: boolean;
@@ -1190,6 +1191,9 @@ export async function execCommand(
   }
   try {
     commandResult = await exec(command, execOptions);
+    // A secret read by sfdx-hardis (replacement rules) never leaves the process through a command output
+    commandResult.stdout = redactCommandOutput(commandResult.stdout);
+    commandResult.stderr = redactCommandOutput(commandResult.stderr);
     if (spinner) {
       spinner.succeed(commandLog);
     }
@@ -1203,6 +1207,11 @@ export async function execCommand(
       );
     }
   } catch (e) {
+    if (hasRegisteredSecrets()) {
+      (e as any).stdout = redactCommandOutput((e as any).stdout);
+      (e as any).stderr = redactCommandOutput((e as any).stderr);
+      (e as Error).message = redactSecrets((e as Error).message);
+    }
     if (spinner) {
       spinner.fail(commandLog);
     }
@@ -1678,6 +1687,8 @@ export function uxLog(logType: LogType, commandThis: any, textInit: string, opti
     typeof optionsOrSensitive === 'boolean' ? { sensitive: optionsOrSensitive } : (optionsOrSensitive || {});
   const sensitive = options.sensitive === true;
   const alwaysVisible = options.alwaysVisible === true;
+  // Secret values (replacement rules) are replaced with *** in the console, the log file and VS Code
+  textInit = redactSecrets(textInit);
   const text = textInit.includes('[sfdx-hardis]') ? textInit : '[sfdx-hardis]' + (textInit.startsWith('[') ? '' : ' ') + textInit;
   // Console log
   if (commandThis?.ux) {
@@ -1725,7 +1736,7 @@ export function uxLogTable(commandThis: any, tableData: any[], columnsOrder: str
   }
   // Anonymize sensitive data in CI console logs (retained artifacts) and strip row markers.
   // Sync best-effort level resolution: the async chokepoints (files, notifications) are exact.
-  tableData = anonymizeRows(tableData, getChannelAnonymizationLevelSync('files'));
+  tableData = redactSecretsDeep(anonymizeRows(tableData, getChannelAnonymizationLevelSync('files')));
   let columns: string[];
   let displayData = tableData;
   if (columnsOrder && columnsOrder.length > 0) {

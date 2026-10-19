@@ -176,7 +176,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
     // Post notifications after successful deployment
     if (this.checkOnly === false && this.deployStatus === "valid") {
-      await handlePostDeploymentNotifications(flags, flags["target-org"]?.getUsername(), false, false, this.debugMode, this.message);
+      await handlePostDeploymentNotifications(flags["target-org"], flags["target-org"]?.getUsername(), false, false, this.debugMode, this.message);
     }
     // Fallback
     else {

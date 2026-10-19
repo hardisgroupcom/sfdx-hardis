@@ -14,7 +14,7 @@ This command guides you through the process of preparing your local environment 
 
 Key features include:
 
-- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from `origin/<target>` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the `branchPrefixChoices` property in `.sfdx-hardis.yml`.
+- **Git Branch Management:** Creates a new Git branch with a formatted name based on your User Story details, based on the latest version of the target branch. The new branch is created from `origin/<target>` instead of checking out the target branch locally, so it works even when the target branch is already checked out in another git worktree. Branch naming conventions can be customized via the `branchPrefixChoices` property in `.sfdx-hardis.yml`. A new User Story never reuses an existing branch: if a branch with the same name already exists, locally or on the remote, the command says so and asks for another name (in `--agent` mode or in CI, where nobody can answer, it adds a number suffix instead: `-2`, `-3`...). When the remote can not be reached, only the branches of the last fetch are checked, with a warning.
 
 - **Org Provisioning & Initialization:** Facilitates the creation and initialization of either a scratch org or a source-tracked sandbox. The configuration for org initialization (e.g., package installation, source push, permission set assignments, Apex script execution, data loading) can be defined in `config/.sfdx-hardis.yml
 - **Project-Specific Configuration:** Supports defining multiple target branches (`availableTargetBranches`) and projects (`availableProjects`) in `.sfdx-hardis.yml`, allowing for tailored User Stories workflows.
@@ -22,7 +22,7 @@ Key features include:
 - **User Story Name Validation:** Enforces User Story name formatting using `newTaskNameRegex` and provides examples via `newTaskNameRegexExample`. The regex is applied to the name as you type it, so a pattern such as `^MYPROJECT-[0-9]+ .*` can require spaces. Once validated, the name is converted into a git-compatible branch name, where spaces and special characters become `-`.
 
 - **Shared Development Sandboxes:** Accounts for scenarios with shared development sandboxes, adjusting prompts to prevent accidental overwrites.
-- **Sandbox initialization:** Only when `offerSandboxInit: true` is set, the command offers to initialize the selected sandbox: installed packages, `initPermissionSets`, `scratchOrgInitApexScripts` and `scripts/data/ScratchInit`. It never deploys metadata.
+- **Sandbox initialization:** The command never initializes a selected sandbox. Run [hardis:org:init](https://sfdx-hardis.cloudity.com/hardis/org/init/) to run the org initialization steps on it. A new scratch org, or one taken from the pool, gets them when it is created.
 
 - **Developer sandbox metadata:** The metadata of an existing sandbox is not updated by this command. To bring into it what the team merged in the target branch, use [hardis:work:backpromote](https://sfdx-hardis.cloudity.com/salesforce-devops-backpromote/) (the Backpromote panel in VS Code).
 
@@ -53,6 +53,7 @@ In `--agent` mode, the command also computes automatically:
 
 - branch prefix: value provided by `--branch-prefix`, otherwise first configured branch prefix choice, fallback `feature`
 - scratch mode: always create a new scratch org
+- branch name: when a branch with the same name already exists, locally or on the remote, a number suffix (`-2`, `-3`...) is added, and a warning names the branch created
 
 In `--agent` mode, the command intentionally skips:
 
@@ -68,9 +69,9 @@ Advanced instructions are available in the [Create New User Story documentation]
 
 The command's logic orchestrates various underlying processes:
 
-- **Git Operations:** Utilizes `checkGitClean` and `createWorkBranchFromTarget` to manage Git repository state and branches. `createWorkBranchFromTarget` fetches `origin/<target>` and creates the new branch from it (falling back to the local target ref), checks out the branch if it already exists, and fails with a clear message if it is checked out in another git worktree.
+- **Git Operations:** Utilizes `checkGitClean` and `createWorkBranchFromTarget` to manage Git repository state and branches. `createWorkBranchFromTarget` fetches `origin/<target>` and creates the new branch from it (falling back to the local target ref), refuses a branch that already exists (`workBranchExists` checks the local branches and `git ls-remote --heads origin`, and drops a stale remote-tracking ref of a branch deleted on the remote), and fails with a clear message if it is checked out in another git worktree.
 - **Interactive Prompts:** Leverages the `prompts` library to gather user input for User Story type, source types, and User Story names.
-- **Configuration Management:** Reads and applies project-specific configurations from `.sfdx-hardis.yml` using `getConfig` and `setConfig- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including `initApexScripts`, `initOrgData`, `initPermissionSetAssignments`, `installPackages`, and `makeSureOrgIsConnected- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., `sf config set target-org`, `sf org open`) via `execCommand` and `execSfdxJson- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling `ScratchCreate.run` or `SandboxCreate.run` as needed. A scratch org that a major branch deploys to is never offered for reuse.
+- **Configuration Management:** Reads and applies project-specific configurations from `.sfdx-hardis.yml` using `getConfig` and `setConfig- **Org Initialization Utilities:** Calls a suite of utility functions for org setup, including `makeSureOrgIsConnected- **Salesforce CLI Interaction:** Executes Salesforce CLI commands (e.g., `sf config set target-org`, `sf org open`) via `execCommand` and `execSfdxJson- **Dynamic Org Selection:** Presents choices for scratch orgs or sandboxes based on project configuration and existing orgs, dynamically calling `ScratchCreate.run` or `SandboxCreate.run` as needed. A scratch org that a major branch deploys to is never offered for reuse.
 - **WebSocket Communication:** Sends refresh status messages via `WebSocketClient.sendRefreshStatusMessage()` to update connected VS Code clients.
 </details>
 

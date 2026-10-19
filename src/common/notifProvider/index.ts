@@ -1,3 +1,4 @@
+import { redactSecretsDeep } from '../utils/secretMaskingUtils.js';
 import { isCI, uxLog } from "../utils/index.js";
 import c from "chalk";
 import { NotifProviderRoot } from "./notifProviderRoot.js";
@@ -54,7 +55,9 @@ export abstract class NotifProvider {
 
   // Post notifications to all configured channels
   // This method is sync to allow the command to continue and not negatively impact performances
-  static async postNotifications(notifMessage: NotifMessage) {
+  static async postNotifications(notifMessageInput: NotifMessage) {
+    // A secret read by sfdx-hardis (replacement rules) is never sent
+    const notifMessage = redactSecretsDeep(notifMessageInput);
     const config = await getConfig("user");
     const notificationsDisable =
       config.notificationsDisable ?? (process.env?.NOTIFICATIONS_DISABLE ? process.env.NOTIFICATIONS_DISABLE.split(",") : []);

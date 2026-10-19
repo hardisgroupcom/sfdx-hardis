@@ -348,7 +348,7 @@ In agent mode, the audit trail report is generated without interactive prompts, 
       message: msg,
       suspectRecords: this.suspectRecords,
       suspectUsers: this.suspectUsers,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 

@@ -10,6 +10,7 @@ import { countPackageXmlItems } from './xmlUtils.js';
 import { removePackageXmlContent } from './deployUtils.js';
 import { appendPackageModifications, extendPackageFileWithDependencies } from './deltaUtils.js';
 import { getScratchDeployManifest } from './orgUtils.js';
+import { getOrgInitSteps, selectOrgInitSteps } from './orgInitUtils.js';
 import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { getEnvVar } from '../../config/index.js';
@@ -98,6 +99,17 @@ export function pickScratchSnapshot(
     }
   }
   return null;
+}
+
+// The org init steps of a snapshot route, as a pool: the source runs what a pool fill runs, always with the
+// deployment of the sources; a child runs the rest, plus the permission set assignments, as its admin user is new
+export function selectSnapshotOrgInitStepIds(config: any, role: 'source' | 'child'): string[] {
+  const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: 'all' });
+  const selected =
+    role === 'source'
+      ? steps.filter((step) => step.runAtPoolFill !== false || step.type === 'deploy-sources')
+      : steps.filter((step) => step.type !== 'deploy-sources' && (step.runAtPoolFill === false || step.type === 'assign-permission-sets'));
+  return selected.map((step) => step.id);
 }
 
 // Deploys what changed between the commit of the snapshot and HEAD, deletions included

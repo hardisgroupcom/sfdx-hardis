@@ -157,7 +157,7 @@ In agent mode, both \`--query\` (or \`--query-template\`) and \`--target-orgs\` 
       allRecords: this.allRecords,
       successOrgs: this.successOrgs,
       errorOrgs: this.errorOrgs,
-      csvLogFile: this.outputFile,
+      csvLogFile: outputFilesRes.csvFile ?? this.outputFile,
       xlsxLogFile: outputFilesRes.xlsxFile,
     };
   }
