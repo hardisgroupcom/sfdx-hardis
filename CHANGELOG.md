@@ -4,6 +4,7 @@
 
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): on GitHub, running the command again after GitHub refused the push of the workflow on `main` now pushes it, instead of saying it was done.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): Flows that are already deleted no longer show in the Flow deletion section of the Pull Request comments.
+- Reports: when a CSV or Excel report is open in Excel, the new one is written next to it as `report-2.xlsx` with a warning, instead of not being generated.
 
 ## [8.19.0] 2026-10-19
 

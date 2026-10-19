@@ -1,4 +1,3 @@
-import path from 'path';
 import { Flags, SfCommand, requiredOrgFlagWithDeprecations } from '@salesforce/sf-plugins-core';
 import { AnyJson } from '@salesforce/ts-types';
 import { Connection, Messages } from '@salesforce/core';
@@ -677,7 +676,7 @@ In agent mode:
     reportName: string,
     fileTitle: string,
     includeSum = false
-  ): Promise<string> {
+  ): Promise<string | undefined> {
     const csvPath = await generateReportPath(reportName, '', { withDate: true });
     const csvData = rows.map((row) => {
       const csvRow: Record<string, any> = {
@@ -694,12 +693,13 @@ In agent mode:
       }
       return csvRow;
     });
-    await generateCsvFile(csvData, csvPath, {
+    // The path written: another name when the usual file is open in Excel, none when writing failed
+    const result = await generateCsvFile(csvData, csvPath, {
       fileTitle,
       noExcel: true,
       skipNotifyToWebSocket: true,
     });
-    return csvPath;
+    return result.csvFile;
   }
 
   // True for the parent of a compound field (Address or Geolocation). Such fields can't be
@@ -1032,8 +1032,10 @@ In agent mode:
         `Field usage - ${context.sObjectName}`,
         includeSumColumn
       );
-      csvFilesForXlsx.push(csvPath);
-      reportFiles.push({ type: 'csv', file: csvPath });
+      if (csvPath) {
+        csvFilesForXlsx.push(csvPath);
+        reportFiles.push({ type: 'csv', file: csvPath });
+      }
     }
 
     if (aggregatedRows.length > 0) {
@@ -1043,8 +1045,10 @@ In agent mode:
         'Object field usage summary',
         includeSumColumn
       );
-      csvFilesForXlsx.unshift(summaryCsv);
-      reportFiles.push({ type: 'csv', file: summaryCsv });
+      if (summaryCsv) {
+        csvFilesForXlsx.unshift(summaryCsv);
+        reportFiles.push({ type: 'csv', file: summaryCsv });
+      }
     }
 
     if (aggregatedSkipped.length > 0) {
@@ -1053,25 +1057,25 @@ In agent mode:
         this,
         c.yellow(t('fieldsSkippedAcrossObjects', { count: aggregatedSkipped.length }))
       );
-      const skippedCsv = await generateReportPath('object-field-usage-skipped-fields', '', { withDate: true });
-      await generateCsvFile(aggregatedSkipped, skippedCsv, {
+      const skippedCsvPath = await generateReportPath('object-field-usage-skipped-fields', '', { withDate: true });
+      const skippedResult = await generateCsvFile(aggregatedSkipped, skippedCsvPath, {
         fileTitle: 'Object field usage - skipped fields',
         noExcel: true,
       });
-      csvFilesForXlsx.push(skippedCsv);
-      reportFiles.push({ type: 'csv', file: skippedCsv });
+      const skippedCsv: string | undefined = skippedResult.csvFile;
+      if (skippedCsv) {
+        csvFilesForXlsx.push(skippedCsv);
+        reportFiles.push({ type: 'csv', file: skippedCsv });
+      }
     }
 
     if (csvFilesForXlsx.length > 0) {
       const consolidatedBase = await generateReportPath('object-field-usage', '', { withDate: true });
       uxLog("action", this, c.cyan(t('generatingConsolidatedXlsxReport')));
-      await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
-      const consolidatedXlsx = path.join(
-        path.dirname(consolidatedBase),
-        'xls',
-        path.basename(consolidatedBase).replace('.csv', '.xlsx')
-      );
-      reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
+      const consolidatedXlsx = await createXlsxFromCsvFiles(csvFilesForXlsx, consolidatedBase, { fileTitle: 'Object field usage (all)' });
+      if (consolidatedXlsx) {
+        reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
+      }
     }
 
     uxLog("action", this, c.cyan(t('summary')));

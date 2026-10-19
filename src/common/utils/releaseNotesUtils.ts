@@ -39,6 +39,7 @@ import { getNotificationButtons } from "./notifUtils.js";
 import { prompts } from "./prompts.js";
 import { WebSocketClient } from "../websocketClient.js";
 import { t } from "./i18n.js";
+import { writeReportFile } from "./reportFileWriteUtils.js";
 import { CONSTANTS } from "../../config/index.js";
 
 // ---------------------------------------------------------------------------
@@ -1593,7 +1594,7 @@ export async function buildReleaseNotesXlsx(
 
     // Build multi-tab XLSX directly in the output directory
     const xlsxFileName = path.basename(outputBasePath).replace(/\.\w+$/, ".xlsx");
-    const xlsxFile = path.join(path.dirname(outputBasePath), xlsxFileName);
+    const targetXlsxFile = path.join(path.dirname(outputBasePath), xlsxFileName);
     const workbook = new ExcelJS.Workbook();
     for (const csvFile of csvFiles) {
       const worksheet = await workbook.csv.readFile(csvFile);
@@ -1606,7 +1607,8 @@ export async function buildReleaseNotesXlsx(
         },
       });
     }
-    await workbook.xlsx.writeFile(xlsxFile);
+    // Another name when the usual file is open in Excel
+    const xlsxFile = await writeReportFile(targetXlsxFile, (filePath) => workbook.xlsx.writeFile(filePath), commandRef);
     uxLog("action", commandRef, c.cyan(t("pleaseSeeDetailedXlsxLogIn", { xslxFile: c.bold(xlsxFile) })));
     WebSocketClient.sendReportFileMessage(xlsxFile, `${t("releaseNotesReportTitle")} (XLSX)`, "report");
     return xlsxFile;

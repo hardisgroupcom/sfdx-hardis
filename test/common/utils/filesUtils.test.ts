@@ -4,6 +4,7 @@ import * as os from 'os';
 import * as path from 'path';
 import ExcelJS from 'exceljs';
 import { countLinesInFile, createXlsxFromCsvFiles } from '../../../src/common/utils/filesUtils.js';
+import { writeReportFile } from '../../../src/common/utils/reportFileWriteUtils.js';
 
 describe('filesUtils', () => {
   let tmpDir: string;
@@ -102,6 +103,44 @@ describe('filesUtils', () => {
       const keyPrefixCell = ws.getCell(2, 2);
       expect(keyPrefixCell.value).to.equal(1);
       expect(typeof keyPrefixCell.value).to.equal('number');
+    });
+
+    it('names the sheet of a CSV written as Users-2.csv after the usual Users.csv, and returns the XLSX written', async () => {
+      const usualCsv = path.join(tmpDir, 'Users.csv');
+      await fs.writeFile(usualCsv, 'old');
+      // Users.csv is open in Excel: the CSV goes to Users-2.csv
+      const writtenCsv = await writeReportFile(
+        usualCsv,
+        async (filePath) => {
+          if (filePath === usualCsv) {
+            throw Object.assign(new Error('locked'), { code: 'EBUSY' });
+          }
+          await fs.writeFile(filePath, 'Name\nJohn\n');
+        },
+        null,
+        { fallback: true }
+      );
+      const base = path.join(tmpDir, 'extract.csv');
+      const xlsxFile = await createXlsxFromCsvFiles([writtenCsv], base, {});
+      expect(xlsxFile).to.equal(path.join(tmpDir, 'xls', 'extract.xlsx'));
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.readFile(xlsxFile as string);
+      expect(wb.worksheets.map((ws) => ws.name)).to.deep.equal(['Users']);
+    });
+
+    it('removes the previous XLSX when the new one can not be built, so no stale report keeps the usual name', async () => {
+      const csvPath = path.join(tmpDir, 'report.csv');
+      await fs.writeFile(csvPath, 'Name\nJohn\n');
+      const previousXlsx = path.join(tmpDir, 'xls', 'report.xlsx');
+      await fs.mkdir(path.dirname(previousXlsx), { recursive: true });
+      await fs.writeFile(previousXlsx, 'previous run');
+      const xlsxFile = await createXlsxFromCsvFiles([csvPath], csvPath, {
+        postProcessWorkbook: () => {
+          throw new Error('build failed');
+        },
+      });
+      expect(xlsxFile).to.equal(undefined);
+      expect(fs.existsSync(previousXlsx)).to.equal(false);
     });
   });
 

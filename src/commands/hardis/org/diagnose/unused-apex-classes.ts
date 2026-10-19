@@ -134,7 +134,7 @@ In agent mode, the command runs fully automatically. The inactivity threshold de
       status: this.statusCode,
       summary: summary,
       asyncClassList: this.asyncClassList,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes.xlsxFile,
     };
   }

@@ -175,7 +175,10 @@ The command has no interactive prompts, so agent mode behaves like a normal run.
       uxLogTable(this, summaryRows);
 
       const report = await buildPermissionsAuditReport(this, auditData, outputFile, source);
-      uxLog('action', this, c.cyan(t('unsecurePermissionsReportGenerated', { file: report.xlsxFile })));
+      // No file when the XLSX could not be written (the cause is already logged)
+      if (report.xlsxFile) {
+        uxLog('action', this, c.cyan(t('unsecurePermissionsReportGenerated', { file: report.xlsxFile })));
+      }
     }
 
     if ((this.argv || []).includes('unsecure-permissions')) {

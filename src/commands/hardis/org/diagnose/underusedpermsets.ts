@@ -303,7 +303,7 @@ In agent mode, the command runs fully automatically. The threshold defaults to 5
       limitedUserPermSets: this.limitedUserPermSets,
       zeroUserPermSetGroups: this.zeroUserPermSetGroups,
       limitedUserPermSetGroups: this.limitedUserPermSetGroups,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 

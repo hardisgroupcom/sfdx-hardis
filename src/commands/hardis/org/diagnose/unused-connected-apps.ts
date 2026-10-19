@@ -240,7 +240,7 @@ In agent mode, the command runs fully automatically with no interactive prompts.
     return {
       status: numberWarnings > 0 ? 1 : 0,
       allConnectedAppResults: this.connectedAppResults,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 

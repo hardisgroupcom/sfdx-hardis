@@ -230,7 +230,7 @@ In agent mode, the command runs fully automatically. The API version threshold d
       deprecatedClasses: this.deprecatedClasses.length,
       deprecatedTriggers: this.deprecatedTriggers.length,
       total: totalCount,
-      outputFile: this.outputFile,
+      outputFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 }

@@ -3630,6 +3630,7 @@
   "replacementRulesValueSourceSingle": "La même valeur pour toutes les orgs",
   "replacingMineByEverythingInListViews": "Remplacement de 'Mine' par 'Everything' dans les vues de liste pour permettre les déploiements",
   "replacingQuickactionsContentWithDummyContentThat": "Remplacement du contenu des QuickActions par un contenu factice qui passera toujours...",
+  "reportFileLockedWrittenAs": "{{file}} est ouvert dans une autre application (Excel ?), le rapport a donc été écrit dans {{newFile}}. Fermez-le pour conserver le nom de fichier habituel la prochaine fois.",
   "reportFiles": "Fichiers de rapport :",
   "reportIncludesPreviousRuns": "Le rapport inclut également les actions enregistrées par les exécutions précédentes de cette commande pour ce sandbox.",
   "repositoryLabel": "Dépôt",

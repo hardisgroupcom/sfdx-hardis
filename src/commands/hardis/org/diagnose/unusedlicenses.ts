@@ -242,7 +242,7 @@ In agent mode, the bulk-delete confirmation prompt is skipped (no unused PSLAs a
       message: msg,
       summary: summary,
       unusedPermissionSetLicenseAssignments: this.unusedPermissionSetLicenseAssignments,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 
