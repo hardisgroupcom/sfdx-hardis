@@ -1,12 +1,3 @@
----
-name: promotion-branches-e2e
-description: Run the hardcore end to end test of the promotion branches feature, and of backpromote (Beta), against real Salesforce orgs and a throwaway private GitHub, GitLab, Azure DevOps or Bitbucket Cloud repository, then write the report. Use when promotion branches (enablePromotionBranches, hardis:project:promotion:create) or backpromote (hardis:work:backpromote, the VS Code Backpromote panel) changed and must be proven again, or when the user asks for the promotion branches / backpromote end to end / hardcore test.
-argument-hint: "[org username] [repo slug] [what to focus on]"
-allowed-tools: Bash, Read, Grep, Glob, Edit, Write, AskUserQuestion
-user-invocable: true
-model: opus
----
-
 # Promotion branches: end to end test
 
 Rebuild, from nothing, a four level pipeline that exercises every path of the promotion branches
@@ -73,7 +64,7 @@ not already, so you know what each assertion is protecting.
 2. Do the logins `.env` cannot carry: `gh auth login`, `glab auth login --hostname <GITLAB_E2E_HOST>`,
    `sf org login web --alias <E2E_ORG>`; `yarn install` here; clone vscode-sfdx-hardis next to this
    working copy on the matching branch and `yarn install && yarn compile` there.
-3. Run `bash .claude/skills/promotion-branches-e2e/scripts/preflight.sh` (add `--provider <p>` for
+3. Run `bash .claude/skills/e2e/scenarios/promotion-branches/scripts/preflight.sh` (add `--provider <p>` for
    one provider). It is read-only and prints, for each MISSING item, the command that fixes it.
    Fix and run it again until nothing is MISSING. Run it before every run on any computer: it also
    catches an expired token, a stopped GitLab runner or an extension that is not compiled.
@@ -112,7 +103,7 @@ failure cannot be an artefact of the previous run's state.
    export PROVIDER=gitlab PROJECT_ID=<id> PROJECT_PATH=<group/name> GL_HOST=https://<host> GL_TOKEN="$(glab config get token --host <host>)"
    export PROVIDER=azure AZ_REPO_NAME="sfdx-hardis-promo-e2e-az-<n>"      # AZ_ORG, AZ_PROJECT, token: .env
    export PROVIDER=bitbucket BB_REPO="sfdx-hardis-promo-e2e-bb-<n>"       # BB_WORKSPACE, token: .env
-   source .claude/skills/promotion-branches-e2e/scripts/promotion-provider.sh   # the job simulators, by hand
+   source .claude/skills/e2e/scenarios/promotion-branches/scripts/promotion-provider.sh   # the job simulators, by hand
    ```
 
    Create the repository as runbook sections 2, 8, 8bis and 8ter say, then the scripted sections
@@ -120,7 +111,7 @@ failure cannot be an artefact of the previous run's state.
    its repository itself:
 
    ```bash
-   PROVIDER=<github|gitlab|azure|bitbucket> bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh
+   PROVIDER=<github|gitlab|azure|bitbucket> bash .claude/skills/e2e/scenarios/promotion-branches/scripts/ci-workflows-run.sh
    ```
 
    | Section                                    | GitHub    | GitLab    | Azure DevOps | Bitbucket Cloud     |
@@ -207,7 +198,7 @@ failure cannot be an artefact of the previous run's state.
 7. **Run the flag-off A/B regression check** (runbook section 7ter). `TOTAL DIFFERING LINES: 0`,
    or 1 when a merged branch is named `promotion/...`.
 8. **Write the report** in this skill's `reports/` folder, one per provider:
-   `.claude/skills/promotion-branches-e2e/reports/promotion-branches-e2e-report-github.md`,
+   `.claude/skills/e2e/scenarios/promotion-branches/reports/promotion-branches-e2e-report-github.md`,
    `…-gitlab.md`, `…-azure.md` and `…-bitbucket.md`. Never write them at the repository root.
    Pipeline under test, the stories, the promotions performed, a table per test group with expected
    versus result (backpromote steps B0 to B9 included), what the run found, what it did not cover,

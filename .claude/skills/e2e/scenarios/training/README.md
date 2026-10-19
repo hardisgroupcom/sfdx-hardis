@@ -1,12 +1,3 @@
----
-name: training-e2e
-description: Walk the sfdx-hardis training course end to end as a learner would, against a real Developer Edition org and a real fork, checking that every step works and that every screenshot still matches the text, and fixing what it finds. Use when the user asks to test the training, walk the labs, run the course end to end, verify a level, check that the course is still up to date, or when a change to sfdx-hardis or vscode-sfdx-hardis is big enough that reading the labs is not enough.
-argument-hint: "[level or lab, e.g. 1, 2.3, all] [org alias] [what to focus on]"
-allowed-tools: Bash, Read, Grep, Glob, Edit, Write, WebFetch, AskUserQuestion
-user-invocable: true
-model: opus
----
-
 # Testing the training course end to end
 
 Do the course. Not read it: do it, in a real fork, against real orgs, one lab at a time, and fix
@@ -40,7 +31,7 @@ defects nobody predicted.
 ## Before starting
 
 ```bash
-bash .claude/skills/training-e2e/scripts/preflight.sh
+bash .claude/skills/e2e/scenarios/training/scripts/preflight.sh
 ```
 
 It prints OK, WARN or MISSING per item. A MISSING is something to **ask the user for**, because the

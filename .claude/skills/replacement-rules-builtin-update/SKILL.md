@@ -165,7 +165,7 @@ still hold an unknown word: add it to the cspell `words` list only if it is a re
   it from the extension (`yarn screenshots replacement-rules-tabs` there, then `scripts/build-doc-images.py`).
 - Training impact: none, the labs do not list built-in rules.
 - When a rule has a handler, or the release changes how the deployment API version behaves, run the
-  `replacement-rules-e2e` skill (its sample project takes `API=<N-1>` to deploy below the new release).
+  `replacement-rules` scenario of the `e2e` skill (its sample project takes `API=<N-1>` to deploy below the new release).
 
 ## Traps
 
