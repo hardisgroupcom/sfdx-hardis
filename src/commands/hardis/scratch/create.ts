@@ -331,20 +331,10 @@ In agent mode:
     if (process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape) {
       this.projectScratchDef.sourceOrg = process.env.SCRATCH_ORG_SHAPE || this.configInfo.scratchOrgShape;
     }
-    // A pool keeps empty scratch orgs, so the pool refresh never creates them from a snapshot
-    if (this.pool === false) {
-      this.snapshot = await this.resolveSnapshot(flags);
-    }
-    let scratchDefToWrite = this.projectScratchDef;
-    if (this.snapshot) {
-      const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, this.snapshot.name);
-      scratchDefToWrite = scratchDef;
-      uxLog("action", this, c.cyan(t('creatingScratchOrgFromSnapshot', { snapshot: c.green(this.snapshot.name), droppedKeys: droppedKeys.join(', ') || '-' })));
-    }
-    uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(scratchDefToWrite, null, 2)));
+    uxLog("log", this, c.grey(t('projectScratchDef') + JSON.stringify(this.projectScratchDef, null, 2)));
     const projectScratchDefLocal = `./config/user/project-scratch-def-${this.scratchOrgAlias}.json`;
     await fs.ensureDir(path.dirname(projectScratchDefLocal));
-    await fs.writeFile(projectScratchDefLocal, JSON.stringify(scratchDefToWrite, null, 2));
+    await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
     WebSocketClient.sendReportFileMessage(projectScratchDefLocal, t('scratchOrgDefinition'), "report");
 
     // Check current scratch org
@@ -358,10 +348,18 @@ In agent mode:
     if (matchingScratchOrgs?.length > 0 && !this.forceNew && this.pool == false) {
       this.scratchOrgInfo = matchingScratchOrgs[0];
       this.scratchOrgUsername = this.scratchOrgInfo.username;
-      // A reused scratch org was not created from the snapshot: it gets the full initialization
-      this.snapshot = null;
       uxLog("action", this, c.cyan(t('reusingOrgWithUser', { scratchOrgAlias: c.green(this.scratchOrgAlias), scratchOrgUsername: c.green(this.scratchOrgUsername) })));
       return;
+    }
+    // Looked up after the reuse check: a reused scratch org was not created from a snapshot and gets the full
+    // initialization. A pool keeps empty scratch orgs, so the pool refresh never creates them from a snapshot
+    if (this.pool === false) {
+      this.snapshot = await this.resolveSnapshot(flags);
+    }
+    if (this.snapshot) {
+      const { scratchDef, droppedKeys } = buildSnapshotScratchDef(this.projectScratchDef, this.snapshot.name);
+      uxLog("action", this, c.cyan(t('creatingScratchOrgFromSnapshot', { snapshot: c.green(this.snapshot.name), droppedKeys: droppedKeys.join(', ') || '-' })));
+      await fs.writeFile(projectScratchDefLocal, JSON.stringify(scratchDef, null, 2));
     }
     // Try to fetch a scratch org from the pool. Never for the source org of a snapshot, which must start empty
     const buildingSnapshotSource = process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] === 'true';
