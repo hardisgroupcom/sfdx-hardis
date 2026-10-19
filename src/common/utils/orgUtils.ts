@@ -567,10 +567,11 @@ export function getScratchSignupEnv(env: NodeJS.ProcessEnv = process.env): Recor
 }
 
 // The definition file of a scratch org created from a snapshot, without the keys the CLI rejects with a snapshot
-// (SNAPSHOT_UNSUPPORTED_OPTIONS in @salesforce/core). The input is left untouched: initOrgMetadatas reads its features.
+// (SNAPSHOT_UNSUPPORTED_OPTIONS in @salesforce/core) and the two more the Salesforce snapshot docs exclude
+// (release, hasSampleData). The input is left untouched: initOrgMetadatas reads its features.
 export function buildSnapshotScratchDef(projectScratchDef: any, snapshot: string): { scratchDef: any; droppedKeys: string[] } {
   const scratchDef = { ...projectScratchDef, snapshot };
-  const droppedKeys = ['features', 'orgPreferences', 'edition', 'sourceOrg', 'settingsPath', 'releaseVersion'].filter(
+  const droppedKeys = ['features', 'orgPreferences', 'edition', 'sourceOrg', 'settingsPath', 'releaseVersion', 'release', 'hasSampleData'].filter(
     (key) => key in scratchDef
   );
   for (const key of droppedKeys) {

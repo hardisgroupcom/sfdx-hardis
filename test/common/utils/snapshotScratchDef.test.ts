@@ -7,6 +7,8 @@ describe('buildSnapshotScratchDef', () => {
     edition: 'Developer',
     features: ['EnableSetPasswordInApi', 'DeferSharingCalc'],
     sourceOrg: '00D000000000001',
+    release: 'Preview',
+    hasSampleData: true,
     settings: { lightningExperienceSettings: { enableS1DesktopEnabled: true } },
   };
 
@@ -17,7 +19,7 @@ describe('buildSnapshotScratchDef', () => {
       settings: { lightningExperienceSettings: { enableS1DesktopEnabled: true } },
       snapshot: 'Base362b4b6',
     });
-    expect(droppedKeys).to.deep.equal(['features', 'edition', 'sourceOrg']);
+    expect(droppedKeys).to.deep.equal(['features', 'edition', 'sourceOrg', 'release', 'hasSampleData']);
   });
 
   it('leaves the project definition untouched, as initOrgMetadatas still reads its features', () => {
