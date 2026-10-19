@@ -130,7 +130,15 @@ export async function deploySnapshotDelta(snapshot: ScratchSnapshot, configInfo:
   if (toDelete > 0) {
     deployCommand += ` --post-destructive-changes "${destructiveChangesXml}"`;
   }
-  await execSfdxJson(deployCommand, commandThis, { fail: true, output: true, debug: debugMode });
+  const deploy = () => execSfdxJson(deployCommand, commandThis, { fail: true, output: true, debug: debugMode });
+  // As the full deployment of an empty scratch org: replacement rules with their default values in deploy mode,
+  // none when the sources are pushed
+  if (!getScratchDeployManifest(configInfo)) {
+    await deploy();
+    return;
+  }
+  const { runWithReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
+  await runWithReplacementRules({ targetBranch: null, targetUsername, packageXmlFiles: [packageXml] }, deploy);
 }
 
 // Same switch as deploy:smart: adds what depends on the changed items, as the record types of a changed field.
