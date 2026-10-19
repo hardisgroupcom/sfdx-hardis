@@ -3628,6 +3628,7 @@
   "replacementRulesValueSourceSingle": "すべての組織で同じ値",
   "replacingMineByEverythingInListViews": "デプロイを成功させるためにListViewの 'Mine' を 'Everything' に置換しています",
   "replacingQuickactionsContentWithDummyContentThat": "QuickActionsの内容を常にパスするダミーコンテンツに置換しています...",
+  "reportFileLockedWrittenAs": "{{file}} が別のアプリケーション (Excel など) で開かれているため、レポートは {{newFile}} に書き込まれました。次回から通常のファイル名を維持するには、ファイルを閉じてください。",
   "reportFiles": "レポートファイル：",
   "reportIncludesPreviousRuns": "このレポートには、このsandboxに対してこのコマンドが過去に実行された際に記録されたアクションも含まれています。",
   "repositoryLabel": "リポジトリ",

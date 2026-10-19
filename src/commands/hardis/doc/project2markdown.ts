@@ -49,6 +49,7 @@ import { PromisePool } from '@supercharge/promise-pool';
 import { UtilsAi } from '../../../common/aiProvider/utils/utils.js';
 import ExcelJS from 'exceljs';
 import { t } from '../../../common/utils/i18n.js';
+import { writeReportFile } from '../../../common/utils/reportFileWriteUtils.js';
 
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -2528,7 +2529,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     uxLog("action", this, c.cyan(t('generatingExcelFileWithAllMetadata')));
 
     const workbook = new ExcelJS.Workbook();
-    const excelFilePath = path.join(this.outputMarkdownRoot, "project-documentation.xlsx");
+    const targetExcelFilePath = path.join(this.outputMarkdownRoot, "project-documentation.xlsx");
 
     // Collect metadata counts
     const nonProcessBuilderFlows = this.flowDescriptions.filter(flow => flow.processType !== "Workflow");
@@ -2710,7 +2711,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     for (const worksheet of workbook.worksheets) {
       linkifyWorksheetUrls(worksheet);
     }
-    await workbook.xlsx.writeFile(excelFilePath);
+    // Another name when the usual file is open in Excel
+    const excelFilePath = await writeReportFile(targetExcelFilePath, (filePath) => workbook.xlsx.writeFile(filePath), this);
     uxLog("success", this, c.green(t('successfullyGeneratedExcelFileAt', { excelFilePath })));
 
     // Open file in VS Code if available

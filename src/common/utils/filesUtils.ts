@@ -28,6 +28,7 @@ import { FileDownloader } from './fileDownloader.js';
 import { ApiLimitsManager } from './limitUtils.js';
 import { parseSoqlAndReapplyLimit } from './workaroundUtils.js';
 import { t } from './i18n.js';
+import { writeReportFile } from './reportFileWriteUtils.js';
 
 export const filesFolderRoot = path.join('.', 'scripts', 'files');
 
@@ -1597,23 +1598,24 @@ export async function generateCsvFile(
     }
     data = anonymizeRows(data, anonymizationLevel);
     const csvContent = Papa.unparse(data);
-    await fs.writeFile(outputPath, csvContent, 'utf8');
+    // A CSV left open in Excel is locked: the report is then written under another name
+    const csvFile = await writeReportFile(outputPath, (filePath) => fs.writeFile(filePath, csvContent, 'utf8'), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
-      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(outputPath) }))));
+      uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedCsvLogIn', { outputPath: c.bold(csvFile) }))));
     }
-    result.csvFile = outputPath;
+    result.csvFile = csvFile;
     if (!isAgentMode() && !WebSocketClient.isAliveWithLwcUI() && !options?.skipNotifyToWebSocket) {
-      WebSocketClient.requestOpenFile(outputPath);
+      WebSocketClient.requestOpenFile(csvFile);
     }
     const csvFileTitle = options?.fileTitle ? `${options.fileTitle} (CSV)` : options?.csvFileTitle ?? "Report (CSV)";
     if (!options?.skipNotifyToWebSocket) {
-      WebSocketClient.sendReportFileMessage(outputPath, csvFileTitle, "report");
+      WebSocketClient.sendReportFileMessage(csvFile, csvFileTitle, "report");
     }
     if (data.length > 0 && !options?.noExcel) {
-      await createXlsxFromCsv(outputPath, options, result);
+      await createXlsxFromCsv(csvFile, options, result);
     } else if (data.length === 0) {
       // noExcel is a deliberate caller choice: only log when the skip reason really is emptiness.
-      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath })));
+      uxLog("other", this, c.grey(t('noXlsFileGeneratedAsIsEmpty', { outputPath: csvFile })));
     }
   } catch (e) {
     uxLog("warning", this, c.yellow(t('errorWhileGeneratingCsvLogFile') + (e as Error).message + '\n' + (e as Error).stack));
@@ -1625,11 +1627,9 @@ export async function createXlsxFromCsv(outputPath: string, options: ExcelExport
   try {
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
-    const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
-    // Delete existing file if any
-    await fs.remove(xslxFile);
-    await csvToXls(outputPath, xslxFile, options);
+    // The previous report is overwritten, or kept when it is open in Excel: the new one then gets another name
+    const xslxFile = await writeReportFile(path.join(xlsDirName, xslFileName), (filePath) => csvToXls(outputPath, filePath, options), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
@@ -1660,21 +1660,20 @@ async function csvToXls(csvFile: string, xslxFile: string, options: ExcelExportO
   await workbook.xlsx.writeFile(xslxFile);
 }
 
-export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath: string, options: ExcelExportOptions = {}) {
+// Returns the path of the XLSX file written (another name when the usual one is open in Excel),
+// or undefined when it could not be generated (the cause is logged as a warning).
+export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath: string, options: ExcelExportOptions = {}): Promise<string | undefined> {
   try {
     const xlsDirName = path.join(path.dirname(outputPath), 'xls');
     const xslFileName = path.basename(outputPath).replace('.csv', '.xlsx');
-    const xslxFile = path.join(xlsDirName, xslFileName);
     await fs.ensureDir(xlsDirName);
-    // Delete existing file if any
-    await fs.remove(xslxFile);
-    await csvFilesToXls(csvFilesPath, xslxFile, options);
+    // The previous report is overwritten, or kept when it is open in Excel: the new one then gets another name
+    const xslxFile = await writeReportFile(path.join(xlsDirName, xslFileName), (filePath) => csvFilesToXls(csvFilesPath, filePath, options), this);
     if (!WebSocketClient.isAliveWithLwcUI()) {
       uxLog("action", this, c.cyan(c.italic(t('pleaseSeeDetailedXlsxLogIn', { xslxFile: c.bold(xslxFile) }))));
     }
     const xlsFileTitle = options?.fileTitle ? `${options.fileTitle} (XLSX)` : options?.xlsFileTitle ?? "Report (XLSX)";
     WebSocketClient.sendReportFileMessage(xslxFile, xlsFileTitle, "report");
-    // result.xlsxFile = xslxFile;
     if (!isAgentMode() && !isCI && !(process.env.NO_OPEN === 'true') && !WebSocketClient.isAliveWithLwcUI()) {
       try {
         uxLog("other", this, c.italic(c.grey(t('openingXlsxFileDefineNoopenTrueTo', { xslxFile: c.bold(xslxFile) }))));
@@ -1683,12 +1682,14 @@ export async function createXlsxFromCsvFiles(csvFilesPath: string[], outputPath:
         uxLog("warning", this, c.yellow(t('errorWhileOpeningXlsxFile') + (e as Error).message + '\n' + (e as Error).stack));
       }
     }
+    return xslxFile;
   } catch (e2) {
     uxLog(
       "warning",
       this,
       c.yellow('Error while generating XLSX log file:\n' + (e2 as Error).message + '\n' + (e2 as Error).stack)
     );
+    return undefined;
   }
 }
 
