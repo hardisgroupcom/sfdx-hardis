@@ -5,6 +5,7 @@ import fs from './fsUtils.js';
 import { execSfdxJson, getCurrentGitBranch, isCI, uxLog } from './index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { resolveRunOnlyOnceByOrg } from '../actionsProvider/actionTypes.js';
 import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
@@ -694,7 +695,7 @@ export function getDevOrgSkipReason(def: PrePostCommand, prNumber: number, prId:
   if (def.type === 'remove-packagexml-items') {
     return t('actionRunDevOrgSkipPackageXml');
   }
-  if (def.runOnlyOnceByOrg !== false) {
+  if (resolveRunOnlyOnceByOrg(def)) {
     // With a Pull Request, the Backpromotes comment knows what ran in THIS org (sandbox name and org
     // id), where the dev-sandboxes column of the Deployment Actions comment is shared by every
     // developer org. Without one, the local results are all there is.

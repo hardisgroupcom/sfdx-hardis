@@ -1237,6 +1237,7 @@
               "run-batch",
               "publish-community",
               "manual",
+              "user-access-policy",
               "notifySlack"
             ],
             "anyOf": [
@@ -1248,7 +1249,8 @@
                   "schedule-batch",
                   "run-batch",
                   "publish-community",
-                  "manual"
+                  "manual",
+                  "user-access-policy"
                 ],
                 "enumNames": [
                   "Command",
@@ -1257,7 +1259,8 @@
                   "Schedule Batch",
                   "Run Batch",
                   "Publish Community",
-                  "Manual Action"
+                  "Manual Action",
+                  "User Access Policy"
                 ]
               },
               {
@@ -1360,6 +1363,35 @@
               "successEvenIfBatchErrors": {
                 "$id": "#/properties/commandsPostDeploy/items/properties/parameters/successEvenIfBatchErrors",
                 "description": "For 'run-batch' actions in wait mode: keep the action successful when the batch completes with batches in error. A failed or aborted batch and a timeout still fail the action",
+                "type": "boolean",
+                "default": false
+              },
+              "policies": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/policies",
+                "description": "For 'user-access-policy' actions: developer names of the User Access Policies to activate after the deployment, or to apply to all users",
+                "title": "User Access Policies",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "examples": [
+                  [
+                    "Sales_Rep_Access",
+                    "Sales_Manager_Access"
+                  ]
+                ]
+              },
+              "activate": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/activate",
+                "description": "For 'user-access-policy' actions: activate the policies with the Salesforce API. A deployment always leaves them in Design status",
+                "title": "Activate",
+                "type": "boolean",
+                "default": true
+              },
+              "applyToAll": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/applyToAll",
+                "description": "For 'user-access-policy' actions: also run Apply To All for each policy. Salesforce has no API for it, so sfdx-hardis clicks the button of the Setup page in a headless Chrome",
+                "title": "Apply to all users",
                 "type": "boolean",
                 "default": false
               }

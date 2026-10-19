@@ -75,9 +75,31 @@ External integrations use a root class + concrete implementations:
 - **notifProvider**: Slack, MS Teams, Email, API webhook. Slack and Teams share the logical `messaging` channel; each provider declares its channel via `getChannel()`. Routing is filtered per notification type and per channel via severity thresholds. See the `monitoring-notifications` skill.
 - **ticketProvider**: Jira, Azure Boards, ServiceNow, Aha!, generic
 - **aiProvider**: LangChain-based (Anthropic, Google GenAI, Ollama, OpenAI) + Codex + Agentforce
-- **actionsProvider**: Post-deploy actions (Apex, data, manual, community publish, schedule batch)
+- **actionsProvider**: Deployment actions and org initialization steps (command, Apex, data, manual, community publish, schedule batch, run batch, package.xml items removal, user access policies...)
 - **keyValueProviders**: Salesforce org, local test
 - **docBuilder**: Documentation generation
+
+### Deployment action types: everything specific lives in the provider class
+
+Everything specific to one action type goes in its `ActionsProvider` subclass (`src/common/actionsProvider/<type>Action.ts`), and nowhere else: its flags, its prompts, its parameter normalization, its validation, the phases it may run in, its `runOnlyOnceByOrg` default. Generic code never names a type nor imports a type-specific helper: `hardis/project/action/base.ts`, `create.ts`, `update.ts`, `actionUtils.ts` and the Pull Request comment code only call the provider through the base-class hooks.
+
+| Hook (base default)                                      | Used by                                                                                                    |
+|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| `getFlagNames()` (`[]`)                                  | `assertNoFlagsOfOtherTypes`: create and update refuse a flag that only another type accepts                |
+| `getAllowedWhen()` (`null` = both phases)                | create refuses the other phase, `validateActionParameters` checks it, `listAvailableActionTypes(when)` hides the type, the provider's `checkParameters` refuses a hand-written action in the wrong phase |
+| `collectParameters(flags, headless, current)` (`null`)   | create and the interactive update: flags when headless, prompts seeded with the current values otherwise   |
+| `applyFlags(parameters, flags)` (unchanged)              | update in agent mode                                                                                       |
+| `getDefinitionErrors(action, when)` (`null`)             | `validateActionParameters`, when an action is saved                                                        |
+| `checkParameters`, `getIdentityParameters`, `run`        | the execution loop                                                                                         |
+
+Generic code reaches the provider with `getBuiltInActionProvider(type)` (`actionUtils.ts`, `null` for a custom function). A hook returning `null` means "not handled by the provider": the older types (command, apex, data, publish-community, manual, schedule-batch, remove-packagexml-items) still have branches in the generic code. Do not add new branches there: move a type to its class when you touch it and the user agrees.
+
+Exceptions that stay outside the class:
+
+- The oclif flag declarations of `action:create` and `action:update`: oclif reads them statically.
+- The registries of `actionTypes.ts`, read by synchronous code (forecast, Pull Request comment, developer org runs, backpromote) where no provider class can be loaded: `DEPLOYMENT_ONLY_ACTION_TYPES` (read through `getEffectiveActionContext`) and `RUN_AT_EVERY_DEPLOYMENT_BY_DEFAULT_ACTION_TYPES` (read through `resolveRunOnlyOnceByOrg(def)`, which every reader of `runOnlyOnceByOrg` must use instead of `def.runOnlyOnceByOrg !== false`, so a hand-written action without the key gets the default of its type).
+
+Load prompt helpers (`actionPromptUtils.js`) with a dynamic import inside `collectParameters`, so running an action never loads them. A provider class must not be imported statically by `deploymentActionsStateUtils.ts` or by anything `actionsProvider.ts` imports: that creates an import cycle (`Cannot access 'ActionsProvider' before initialization`).
 
 ## Monitoring Pipeline (`src/common/monitoring/`, `src/common/notifProvider/`)
 
