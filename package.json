@@ -46,7 +46,7 @@
     "simple-git": "4.0.2",
     "undici": "8.11.2",
     "ws": "8.22.0",
-    "xpath": "0.0.34",
+    "xpath": "0.0.35",
     "yaml": "2.9.1"
   },
   "resolutions": {
