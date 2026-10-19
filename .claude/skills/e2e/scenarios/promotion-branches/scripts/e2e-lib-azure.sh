@@ -2,7 +2,7 @@
 # Job simulators for the promotion branches end to end test, Azure DevOps flavour. Source this file.
 #
 #   export ORG AZ_ORG AZ_PROJECT AZ_REPO_ID AZ_REPO_NAME AZ_TOKEN WORK LOGS DEV
-#   source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-azure.sh
+#   source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib-azure.sh
 #
 # sfdx-hardis picks Azure DevOps when SYSTEM_ACCESSTOKEN (or CI_SFDX_HARDIS_AZURE_TOKEN, or
 # AZURE_DEVOPS_EXT_PAT) is set, and reads the repository and the Pull Request from

@@ -4,7 +4,7 @@
 # Salesforce orgs. One line per item, OK / MISSING / WARN, and for each MISSING the command that
 # fixes it. Nothing is created, nothing prints a token.
 #
-#   bash .claude/skills/promotion-branches-e2e/scripts/preflight.sh [--provider github|gitlab|azure|bitbucket]
+#   bash .claude/skills/e2e/scenarios/promotion-branches/scripts/preflight.sh [--provider github|gitlab|azure|bitbucket]
 #
 # Without --provider every provider is checked. Exit code 1 when an item is MISSING.
 set -uo pipefail

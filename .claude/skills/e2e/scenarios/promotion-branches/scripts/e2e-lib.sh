@@ -2,7 +2,7 @@
 # Job simulators for the promotion branches end to end test. Source this file, do not execute it.
 #
 #   export ORG REPO WORK LOGS DEV
-#   source .claude/skills/promotion-branches-e2e/scripts/e2e-lib.sh
+#   source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib.sh
 #
 # GitHub Actions is not needed: sfdx-hardis resolves the Pull Request from the environment, so
 # running the CLI locally with the right variables reproduces a real job exactly.

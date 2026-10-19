@@ -184,4 +184,4 @@ Run the list again at the end. What is left is either new, or something you miss
 
 - `training-update`: the editing rules, the translations, the screenshots, the checks
 - `training-impact`: when the fix has to happen in the product instead of the lab
-- `training-e2e`: when several remarks on the same lab say it should be walked again
+- `e2e` skill, `training` scenario: when several remarks on the same lab say it should be walked again
