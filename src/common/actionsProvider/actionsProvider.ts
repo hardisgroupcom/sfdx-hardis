@@ -19,7 +19,22 @@ export type BuiltInActionType =
   | 'manual'
   | 'schedule-batch'
   | 'run-batch'
-  | 'remove-packagexml-items';
+  | 'remove-packagexml-items'
+  // Org initialization steps only (orgInitSteps), never deployment actions
+  | 'install-packages'
+  | 'deploy-sources'
+  | 'assign-permission-sets';
+
+/** What an org initialization step needs to know about the org it initializes. */
+export interface OrgInitContext {
+  orgUsername: string;
+  orgAlias: string;
+  orgType: 'scratch' | 'sandbox';
+  projectScratchDef: any;
+  debugMode: boolean;
+  // Config the run reads (getConfig('user')), so every step sees the same values
+  config: any;
+}
 
 export interface PrePostCommand {
   id: string;
@@ -41,6 +56,7 @@ export interface PrePostCommand {
     batchSize?: number;      // for 'run-batch' actions (optional, defaults to 200)
     waitTimeoutMinutes?: number; // for 'run-batch' actions in wait mode (optional, defaults to 60)
     successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
+    permissionSets?: string[]; // for 'assign-permission-sets' org initialization steps
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
     [key: string]: any;
   };
@@ -64,6 +80,12 @@ export interface PrePostCommand {
   // Pipeline variables of the current run, attached by the execution loop before the action runs.
   // Custom function actions pass them to their script as SFDX_HARDIS_* environment variables.
   pipelineContext?: PipelineContext;
+  // Org initialization steps (orgInitSteps) only
+  enabled?: boolean;
+  orgTypes?: ('scratch' | 'sandbox')[];
+  runAtPoolFill?: boolean;
+  // Attached by the org initialization runner before the step runs
+  orgInitContext?: OrgInitContext;
 }
 
 export type ActionResult = {
@@ -150,6 +172,18 @@ export abstract class ActionsProvider {
     else if (type === 'remove-packagexml-items') {
       const RemovePackageXmlItemsAction = await import('./removePackageXmlItemsAction.js');
       actionInstance = new RemovePackageXmlItemsAction.RemovePackageXmlItemsAction();
+    }
+    else if (type === 'install-packages') {
+      const InstallPackagesAction = await import('./installPackagesAction.js');
+      actionInstance = new InstallPackagesAction.InstallPackagesAction();
+    }
+    else if (type === 'deploy-sources') {
+      const DeploySourcesAction = await import('./deploySourcesAction.js');
+      actionInstance = new DeploySourcesAction.DeploySourcesAction();
+    }
+    else if (type === 'assign-permission-sets') {
+      const AssignPermissionSetsAction = await import('./assignPermissionSetsAction.js');
+      actionInstance = new AssignPermissionSetsAction.AssignPermissionSetsAction();
     }
     else {
       // Not a built-in type: it must be the id of a project custom function. Resolving it here

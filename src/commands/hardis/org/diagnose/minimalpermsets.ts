@@ -308,7 +308,7 @@ In agent mode, the command runs fully automatically. The permission threshold de
       minimalPermissionSets: this.minimalPermSets.length,
       errorCount: this.errorCount,
       minimalPermSets: this.minimalPermSets,
-      outputFile: this.outputFile,
+      outputFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 }

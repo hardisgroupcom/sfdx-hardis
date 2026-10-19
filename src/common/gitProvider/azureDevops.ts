@@ -1,4 +1,5 @@
 import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardFormat, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
+import { POOL_DASHBOARD_TITLE } from "../utils/poolDashboardUtils.js";
 import { CiRunCandidate, classifyJobKind, selectCiRuns } from "./utils/jobKindUtils.js";
 import { Build, BuildQueryOrder, BuildReason, BuildResult, BuildStatus, TaskResult } from "azure-devops-node-api/interfaces/BuildInterfaces.js";
 import { toAzureDevopsWording } from "./utils/utilsAzureDevopsWording.js";
@@ -402,8 +403,9 @@ ${this.getPipelineVariablesConfig()}
 
   // The dashboard is a Task work item, found by its title like the attachments work item
   public async findDashboard(title: string): Promise<DashboardRef | null> {
+    // The forced work item is the one of the scratch org pool: other dashboards are found by title
     const forcedId = process.env.AZURE_SCRATCH_POOL_WORK_ITEM_ID;
-    if (forcedId) {
+    if (forcedId && title.startsWith(POOL_DASHBOARD_TITLE)) {
       return { id: Number(forcedId), url: this.buildWorkItemWebUrl(Number(forcedId)) };
     }
     const witApi = await this.azureApi.getWorkItemTrackingApi();
@@ -432,6 +434,12 @@ ${this.getPipelineVariablesConfig()}
       "Task",
     );
     return { id: Number(workItem.id), url: this.buildWorkItemWebUrl(Number(workItem.id)) };
+  }
+
+  public async getDashboardBody(dashboard: DashboardRef): Promise<string> {
+    const witApi = await this.azureApi.getWorkItemTrackingApi();
+    const workItem = await witApi.getWorkItem(dashboard.id, ['System.Description'], undefined, undefined, this.dashboardTeamProject());
+    return (workItem?.fields || {})['System.Description'] || '';
   }
 
   public async updateDashboardBody(dashboard: DashboardRef, title: string, body: string): Promise<void> {

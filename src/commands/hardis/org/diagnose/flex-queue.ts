@@ -228,7 +228,7 @@ In agent mode, the command runs fully automatically. The \`--threshold\` default
       holdingCount: count,
       threshold,
       maxJobs: APEX_FLEX_QUEUE_MAX_JOBS,
-      outputFile: this.outputFile,
+      outputFile: this.outputFilesRes?.csvFile ?? this.outputFile,
     };
   }
 }

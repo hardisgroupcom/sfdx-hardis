@@ -196,7 +196,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
 
     return {
       result: JSON.parse(JSON.stringify(result)),
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes?.xlsxFile,
       conversationCount: exportRecords.length
     };

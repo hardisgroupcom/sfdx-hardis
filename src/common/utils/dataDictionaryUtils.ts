@@ -1,4 +1,3 @@
-import path from 'path';
 import fs from './fsUtils.js';
 import Papa from 'papaparse';
 import { Connection } from '@salesforce/core';
@@ -715,7 +714,8 @@ export async function writeDataDictionaryReports(
     // does not read it as a number, but right-align it so it still reads like numeric data.
     'length/precision': { horizontalAlignment: 'right' },
   };
-  await createXlsxFromCsvFiles(csvFiles, consolidatedBase, {
+  // The path written: another name when the usual file is open in Excel
+  const consolidatedXlsx = await createXlsxFromCsvFiles(csvFiles, consolidatedBase, {
     fileTitle: 'Data dictionary',
     worksheetNames,
     columnsCustomStyles,
@@ -731,12 +731,9 @@ export async function writeDataDictionaryReports(
         relPath,
       }),
   });
-  const consolidatedXlsx = path.join(
-    path.dirname(consolidatedBase),
-    'xls',
-    path.basename(consolidatedBase).replace('.csv', '.xlsx')
-  );
-  reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
+  if (consolidatedXlsx) {
+    reportFiles.push({ type: 'xlsx', file: consolidatedXlsx });
+  }
 
   return reportFiles;
 }

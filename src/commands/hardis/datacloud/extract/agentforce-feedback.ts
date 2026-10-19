@@ -198,7 +198,7 @@ In agent mode, all interactive prompts are skipped and default values are used.
       sqlResult: JSON.parse(JSON.stringify(result)),
       feedbacksGood: feedbackStats.goodCount,
       feedbacksBad: feedbackStats.badCount,
-      csvLogFile: this.outputFile,
+      csvLogFile: this.outputFilesRes?.csvFile ?? this.outputFile,
       xlsxLogFile: this.outputFilesRes?.xlsxFile,
     };
   }

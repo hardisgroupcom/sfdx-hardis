@@ -2,7 +2,7 @@ import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from
 import { uxLog } from '../utils/index.js';
 import c from 'chalk';
 import { normalizeIdentityPath } from '../utils/deploymentActionIdentityUtils.js';
-import { findDataWorkspaceByName, importData } from '../utils/dataUtils.js';
+import { importData, resolveDataWorkspacePath } from '../utils/dataUtils.js';
 
 export class DataAction extends ActionsProvider {
   public getLabel(): string {
@@ -16,7 +16,7 @@ export class DataAction extends ActionsProvider {
       uxLog('error', this, c.red(`[DeploymentActions] No sfdmuProject parameter provided for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: 'No sfdmuProject parameter provided' };
     }
-    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject, false);
+    const sfdmuProjectPath = await resolveDataWorkspacePath(sfdmuProject);
     if (!sfdmuProjectPath) {
       uxLog('error', this, c.red(`[DeploymentActions] Data workspace ${sfdmuProject} does not exist for action ${cmd.label}`));
       return { statusCode: 'failed', skippedReason: `Data workspace ${sfdmuProject} does not exist` };
@@ -33,7 +33,7 @@ export class DataAction extends ActionsProvider {
     const validity = await this.checkValidityIssues(cmd);
     if (validity) return validity;
     const sfdmuProject = (cmd.parameters?.sfdmuProject as string) || '';
-    const sfdmuProjectPath = await findDataWorkspaceByName(sfdmuProject);
+    const sfdmuProjectPath = await resolveDataWorkspacePath(sfdmuProject);
     const importOptions: any = {}
     if (this.customUsernameToUse) {
       importOptions.targetUsername = this.customUsernameToUse;

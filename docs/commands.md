@@ -14,10 +14,11 @@
 
 ## hardis:config
 
-| Command                                                                       | Title                                  |
-|:------------------------------------------------------------------------------|:---------------------------------------|
-| [**hardis:config:get**](hardis/config/get.md)                                 | Deploy metadata sources to org         |
-| [**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md) | Get monitoring & notification defaults |
+| Command                                                                       | Title                                       |
+|:------------------------------------------------------------------------------|:--------------------------------------------|
+| [**hardis:config:get**](hardis/config/get.md)                                 | Deploy metadata sources to org              |
+| [**hardis:config:monitoring-defaults**](hardis/config/monitoring-defaults.md) | Get monitoring & notification defaults      |
+| [**hardis:config:org-init**](hardis/config/org-init.md)                       | Get org initialization configuration (Beta) |
 
 ## hardis:datacloud
 
@@ -135,6 +136,7 @@
 | [**hardis:org:files:import**](hardis/org/files/import.md)                                           | Import files                                                                                                             |
 | [**hardis:org:fix:listviewmine**](hardis/org/fix/listviewmine.md)                                   | Fix listviews with                                                                                                       |
 | [**hardis:org:generate:packagexmlfull**](hardis/org/generate/packagexmlfull.md)                     | Generate Full Org package.xml                                                                                            |
+| [**hardis:org:init**](hardis/org/init.md)                                                           | Initialize a scratch org or a sandbox (Beta)                                                                             |
 | [**hardis:org:list:metadata**](hardis/org/list/metadata.md)                                         | List metadata components of an org                                                                                       |
 | [**hardis:org:monitor:all**](hardis/org/monitor/all.md)                                             | Monitor org                                                                                                              |
 | [**hardis:org:monitor:backup**](hardis/org/monitor/backup.md)                                       | Backup DX sources                                                                                                        |
@@ -184,7 +186,6 @@
 
 | Command                                                                                           | Title                                                                                                                                                                                                                  |
 |:--------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [**hardis:project:action:base**](hardis/project/action/base.md)                                   |                                                                                                                                                                                                                        |
 | [**hardis:project:action:create**](hardis/project/action/create.md)                               | Create deployment action                                                                                                                                                                                               |
 | [**hardis:project:action:delete**](hardis/project/action/delete.md)                               | Delete deployment action                                                                                                                                                                                               |
 | [**hardis:project:action:link-pull-request**](hardis/project/action/link-pull-request.md)         | Link draft actions to a pull request                                                                                                                                                                                   |
@@ -228,7 +229,6 @@
 | [**hardis:project:deploy:validate**](hardis/project/deploy/validate.md)                           | sfdx-hardis wrapper for **sf project deploy validate** that displays tips to solve deployment errors.                                                                                                                  |
 | [**hardis:project:fix:profiletabs**](hardis/project/fix/profiletabs.md)                           | Fix profiles to add tabs that are not retrieved by SF CLI                                                                                                                                                              |
 | [**hardis:project:fix:v53flexipages**](hardis/project/fix/v53flexipages.md)                       | Fix flexipages for v53                                                                                                                                                                                                 |
-| [**hardis:project:function:base**](hardis/project/function/base.md)                               |                                                                                                                                                                                                                        |
 | [**hardis:project:function:create**](hardis/project/function/create.md)                           | Create custom function                                                                                                                                                                                                 |
 | [**hardis:project:function:delete**](hardis/project/function/delete.md)                           | Delete custom function                                                                                                                                                                                                 |
 | [**hardis:project:function:list**](hardis/project/function/list.md)                               | List custom functions                                                                                                                                                                                                  |
@@ -242,6 +242,11 @@
 | [**hardis:project:pipeline:describe**](hardis/project/pipeline/describe.md)                       | Describe the pipeline of the project                                                                                                                                                                                   |
 | [**hardis:project:promotion:create**](hardis/project/promotion/create.md)                         | Create a promotion branch (Beta)                                                                                                                                                                                       |
 | [**hardis:project:promotion:list-candidates**](hardis/project/promotion/list-candidates.md)       | List the User Stories waiting for promotion (Beta)                                                                                                                                                                     |
+| [**hardis:project:replacement:create**](hardis/project/replacement/create.md)                     | Create replacement rule (Beta)                                                                                                                                                                                         |
+| [**hardis:project:replacement:delete**](hardis/project/replacement/delete.md)                     | Delete replacement rule (Beta)                                                                                                                                                                                         |
+| [**hardis:project:replacement:list**](hardis/project/replacement/list.md)                         | List replacement rules (Beta)                                                                                                                                                                                          |
+| [**hardis:project:replacement:preview**](hardis/project/replacement/preview.md)                   | Preview replacement rules (Beta)                                                                                                                                                                                       |
+| [**hardis:project:replacement:update**](hardis/project/replacement/update.md)                     | Update replacement rule (Beta)                                                                                                                                                                                         |
 | [**hardis:project:skills:import**](hardis/project/skills/import.md)                               | Import Skills                                                                                                                                                                                                          |
 
 ## hardis:scratch

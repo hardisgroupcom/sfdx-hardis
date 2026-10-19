@@ -622,7 +622,7 @@ export async function runFlowDeletionPreflight(
     if (versions.length === 0) {
       outcome.status = 'FLOW_DELETE_NOOP';
       outcome.message = t('flowDeletionFlowAbsent', { flow: pending.flowName });
-      uxLog('warning', commandThis, c.yellow(outcome.message));
+      uxLog('log', commandThis, c.grey(outcome.message));
       outcomes.push(outcome);
       continue;
     }
@@ -878,7 +878,7 @@ async function deleteOneFlow(
   if (versions.length === 0) {
     outcome.status = 'FLOW_DELETE_NOOP';
     outcome.message = t('flowDeletionFlowAbsent', { flow: pending.flowName });
-    uxLog('warning', commandThis, c.yellow(outcome.message));
+    uxLog('log', commandThis, c.grey(outcome.message));
     return outcome;
   }
 
@@ -1214,9 +1214,12 @@ export async function writeFlowDeletionReport(
 // On a preflight, the title and a note say that nothing has been deleted yet, and the columns only
 // a real deletion fills are left out.
 export function buildFlowDeletionMarkdown(
-  outcomes: FlowDeletionOutcome[],
+  allOutcomes: FlowDeletionOutcome[],
   options: FlowDeletionReportOptions = {}
 ): string {
+  // Already deleted Flows come back at every step of the promotion chain: listing them is noise.
+  // The console table and the CSV report still show them.
+  const outcomes = allOutcomes.filter((outcome) => outcome.status !== 'FLOW_DELETE_NOOP');
   if (outcomes.length === 0) {
     return '';
   }

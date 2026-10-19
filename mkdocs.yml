@@ -159,6 +159,9 @@ nav:
               - Overwrite management: salesforce-devops-config-overwrite.md
               - Delta deployments: salesforce-devops-config-delta-deployment.md
               - Automated cleaning: salesforce-devops-config-cleaning.md
+              - Replacement rules (Beta):
+                  - Overview: salesforce-devops-config-replacement-rules.md
+                  - Built-in rules: salesforce-devops-config-replacement-rules-builtin.md
               - Source retrieve issues: salesforce-devops-retrieve.md
               - Repository clean up: salesforce-devops-manual-repo-clean.md
               - Environment variables: all-env-variables.md
@@ -175,6 +178,7 @@ nav:
           - 5. Retrieve an existing org (optional): salesforce-devops-setup-existing-org.md
           - 6. Scratch org pool (optional): salesforce-devops-setup-scratch-org-pool.md
           - 7. First Pull Request: salesforce-devops-setup-merge-request.md
+          - Initialize scratch orgs and sandboxes (optional, Beta): salesforce-devops-org-initialization.md
           - Publish job artifacts: salesforce-devops-setup-publish-artifacts.md
           - Setup checklist: salesforce-devops-setup-checklist.md
   - Org Monitoring:
@@ -311,6 +315,7 @@ nav:
           - clear: hardis/cache/clear.md
       - hardis:config:
           - get: hardis/config/get.md
+          - org-init: hardis/config/org-init.md
       - hardis:datacloud:
           - agentforce-conversations: hardis/datacloud/extract/agentforce-conversations.md
           - agentforce-feedback: hardis/datacloud/extract/agentforce-feedback.md
@@ -380,6 +385,7 @@ nav:
           - files import: hardis/org/files/import.md
           - fix listviewmine: hardis/org/fix/listviewmine.md
           - generate packagexmlfull: hardis/org/generate/packagexmlfull.md
+          - init: hardis/org/init.md
           - list metadata: hardis/org/list/metadata.md
           - monitor all: hardis/org/monitor/all.md
           - monitor backup: hardis/org/monitor/backup.md

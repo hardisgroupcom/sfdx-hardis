@@ -1037,7 +1037,7 @@ export async function writeMetadataDepsReports(
   const dependenciesCsv = path.join(reportDir, `${stem}.csv`);
   const summaryCsv = path.join(reportDir, `${stem}-summary.csv`);
   const xlsxBase = path.join(reportDir, `${stem}.csv`);
-  const xlsxFile = path.join(reportDir, 'xls', `${stem}.xlsx`);
+  const targetXlsxFile = path.join(reportDir, 'xls', `${stem}.xlsx`);
   const fields = ['id', 'apiName', 'name', 'type', 'versions'];
   const uses = direction === 'uses';
   const summary = [
@@ -1068,7 +1068,8 @@ export async function writeMetadataDepsReports(
     t(uses ? 'metadataDepsReportUsesCsv' : 'metadataDepsReportCsv'),
     'report'
   );
-  await createXlsxFromCsvFiles([summaryCsv, dependenciesCsv], xlsxBase, {
+  // The path written: another name when the usual file is open in Excel
+  const xlsxFile = await createXlsxFromCsvFiles([summaryCsv, dependenciesCsv], xlsxBase, {
     xlsFileTitle: t(uses ? 'metadataDepsReportUsesXlsx' : 'metadataDepsReportXlsx'),
     worksheetNames: {
       [summaryCsv]: 'Summary',
@@ -1077,9 +1078,9 @@ export async function writeMetadataDepsReports(
     forceTextColumns: ['id', 'Id', 'Value'],
   });
   await fs.remove(summaryCsv);
-  if (!(await fs.pathExists(xlsxFile))) {
+  if (!xlsxFile) {
     // createXlsxFromCsvFiles logs the cause as a warning instead of throwing
-    throw new SfError(t('metadataDepsXlsxGenerationFailed', { file: xlsxFile }));
+    throw new SfError(t('metadataDepsXlsxGenerationFailed', { file: targetXlsxFile }));
   }
   uxLog('log', commandThis, c.grey(dependenciesCsv));
   uxLog('log', commandThis, c.grey(xlsxFile));

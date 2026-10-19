@@ -11595,7 +11595,8 @@ List here, as git glob patterns relative to the repository root, the files that 
             />
         </svg>
     <a href="#initPermissionSets" onclick="anchorLink('initPermissionSets')">initPermissionSets</a></div><h4>Initial Permission Sets</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
-<span class="description"><p>When creating a scratch org, Admin user will be automatically assigned to those permission sets. Example: PS_Admin</p>
+<span class="description"><p>When creating a scratch org or a sandbox, its admin user is assigned to those permission sets. Example: PS_Admin<br />
+Deprecated: use orgInitSteps, edited from the Org Initialization panel of the VS Code extension. Ignored when orgInitSteps is defined.</p>
 </span>
         
 
@@ -16804,6 +16805,1151 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionreplacementRules">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules"
+                        aria-expanded="" aria-controls="replacementRules" onclick="setAnchor('#replacementRules')"><span class="property-name">replacementRules</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules"
+             data-parent="#accordionreplacementRules">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a></div><h4>Replacement rules (Beta)</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<div class="description collapse" id="collapseDescription_replacementRules">
+            <p>Rules applied to the metadata files right before each deployment, for the org the deployment goes to: set an XML element to the value of the target org (xml-value), remove an XML element (xml-remove), or find and replace a text (text). A value is the same for every org (value), one per target branch with a default (values), or read from a CI/CD variable (secret). Rules of the branch config file of the target and of the "sfdx-hardis Replacement Rules" git provider issue change the rules with the same id. Built-in rules (ids starting with builtin-) remove the elements the deployment API version of the target org does not accept, and can be turned off with enabled: false.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_replacementRules"
+               aria-expanded="false" aria-controls="collapseDescriptionreplacementRules"
+            ></a>
+        </div>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Replacement rule, or the fields of a rule of a lower place it changes</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionreplacementRules_items_id">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_id">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_id"
+                        aria-expanded="" aria-controls="replacementRules_items_id" onclick="setAnchor('#replacementRules_items_id')"><span class="property-name">id</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_id"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_id"
+             data-parent="#accordionreplacementRules_items_id">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_id" onclick="anchorLink('replacementRules_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Unique id of the rule: lowercase letters, digits and "-". The same id in the branch config file or the issue changes this rule.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_id_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;payment-api-endpoint&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_description">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_description">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_description"
+                        aria-expanded="" aria-controls="replacementRules_items_description" onclick="setAnchor('#replacementRules_items_description')"><span class="property-name">description</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_description"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_description"
+             data-parent="#accordionreplacementRules_items_description">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_description" onclick="anchorLink('replacementRules_items_description')">description</a></div><h4>Description</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Shown in logs and Pull Request comments</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_enabled">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_enabled">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_enabled"
+                        aria-expanded="" aria-controls="replacementRules_items_enabled" onclick="setAnchor('#replacementRules_items_enabled')"><span class="property-name">enabled</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_enabled"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_enabled"
+             data-parent="#accordionreplacementRules_items_enabled">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_enabled" onclick="anchorLink('replacementRules_items_enabled')">enabled</a></div><h4>Enabled</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>false turns the rule off, including a built-in rule</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_type">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_type">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_type"
+                        aria-expanded="" aria-controls="replacementRules_items_type" onclick="setAnchor('#replacementRules_items_type')"><span class="property-name">type</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_type"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_type"
+             data-parent="#accordionreplacementRules_items_type">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_type" onclick="anchorLink('replacementRules_items_type')">type</a></div><h4>Type</h4><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<span class="description"><p>xml-value: set the value of an XML element. xml-remove: remove an XML element. text: find and replace a text or a regular expression in any file.</p>
+</span><div class="enum-value" id="replacementRules_items_type_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"xml-value"</li><li class="list-group-item enum-item">"xml-remove"</li><li class="list-group-item enum-item">"text"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_files">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_files">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_files"
+                        aria-expanded="" aria-controls="replacementRules_items_files" onclick="setAnchor('#replacementRules_items_files')"><span class="property-name">files</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_files"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_files"
+             data-parent="#accordionreplacementRules_items_files">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a></div><h4>Files</h4><br/>
+<span class="description"><p>Glob of the files the rule applies to, from the repository root</p>
+</span><div class="any-of-value" id="replacementRules_items_files_anyOf"><h2 class="handle">
+  <label>Any of</label>
+</h2><ul class="nav nav-tabs" id="tabsreplacementRules_items_files_anyOf_anyOf" role="tablist"><li class="nav-item">
+            <a class="nav-link active anyOf-option"
+               id="replacementRules_items_files_anyOf_i0" data-toggle="tab" href="#tab-pane_replacementRules_items_files_anyOf_i0" role="tab"
+               onclick="setAnchor('#replacementRules_items_files_anyOf_i0')"
+            >Option 1</a>
+        </li><li class="nav-item">
+            <a class="nav-link anyOf-option"
+               id="replacementRules_items_files_anyOf_i1" data-toggle="tab" href="#tab-pane_replacementRules_items_files_anyOf_i1" role="tab"
+               onclick="setAnchor('#replacementRules_items_files_anyOf_i1')"
+            >Option 2</a>
+        </li></ul>
+<div class="tab-content card"><div class="tab-pane fade card-body active show"
+             id="tab-pane_replacementRules_items_files_anyOf_i0" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf" onclick="anchorLink('replacementRules_items_files_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i0" onclick="anchorLink('replacementRules_items_files_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div><div class="tab-pane fade card-body "
+             id="tab-pane_replacementRules_items_files_anyOf_i1" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf" onclick="anchorLink('replacementRules_items_files_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i1" onclick="anchorLink('replacementRules_items_files_anyOf_i1')">item 1</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items_files_anyOf_i1_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files" onclick="anchorLink('replacementRules_items_files')">files</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf" onclick="anchorLink('replacementRules_items_files_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i1" onclick="anchorLink('replacementRules_items_files_anyOf_i1')">item 1</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_files_anyOf_i1_items" onclick="anchorLink('replacementRules_items_files_anyOf_i1_items')">item 1 items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+        </div></div></div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_files_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;**/namedCredentials/*.namedCredential-meta.xml&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_xmlPath">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_xmlPath">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_xmlPath"
+                        aria-expanded="" aria-controls="replacementRules_items_xmlPath" onclick="setAnchor('#replacementRules_items_xmlPath')"><span class="property-name">xmlPath</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_xmlPath"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_xmlPath"
+             data-parent="#accordionreplacementRules_items_xmlPath">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_xmlPath" onclick="anchorLink('replacementRules_items_xmlPath')">xmlPath</a></div><h4>Element path</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Element path, without namespace: NamedCredential/endpoint, Profile/userPermissions[name=ViewSetup] (one user permission, to remove), //dayOfMonthToRun (any depth), Workflow/alerts[fullName=MyAlert]/senderAddress, Layout/excludeButtons[.=MyButton]</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="replacementRules_items_xmlPath_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;NamedCredential/endpoint&quot;</span>
+</pre></div>
+</div><div id="replacementRules_items_xmlPath_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;Profile/userPermissions[name=ViewSetup]&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_find">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_find">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_find"
+                        aria-expanded="" aria-controls="replacementRules_items_find" onclick="setAnchor('#replacementRules_items_find')"><span class="property-name">find</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_find"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_find"
+             data-parent="#accordionreplacementRules_items_find">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_find" onclick="anchorLink('replacementRules_items_find')">find</a></div><h4>Find</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Text to find, with type: text</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_regex">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_regex">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_regex"
+                        aria-expanded="" aria-controls="replacementRules_items_regex" onclick="setAnchor('#replacementRules_items_regex')"><span class="property-name">regex</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_regex"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_regex"
+             data-parent="#accordionreplacementRules_items_regex">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_regex" onclick="anchorLink('replacementRules_items_regex')">regex</a></div><h4>Regular expression</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>find is a regular expression. The replacement is literal.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_value">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_value">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_value"
+                        aria-expanded="" aria-controls="replacementRules_items_value" onclick="setAnchor('#replacementRules_items_value')"><span class="property-name">value</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_value"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_value"
+             data-parent="#accordionreplacementRules_items_value">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_value" onclick="anchorLink('replacementRules_items_value')">value</a></div><h4>Value</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Same value for every org</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_values">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_values">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_values"
+                        aria-expanded="" aria-controls="replacementRules_items_values" onclick="setAnchor('#replacementRules_items_values')"><span class="property-name">values</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_values"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_values"
+             data-parent="#accordionreplacementRules_items_values">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_values" onclick="anchorLink('replacementRules_items_values')">values</a></div><h4>Values per org</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Value per target branch. default applies to dev sandboxes, scratch orgs and the branches without their own value.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_values_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="s2">&quot;uat&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-uat.example.com&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;main&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay.example.com&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;default&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-sandbox.example.com&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_values_additionalProperties">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_values_additionalProperties">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_values_additionalProperties"
+                        aria-expanded="" aria-controls="replacementRules_items_values_additionalProperties" onclick="setAnchor('#replacementRules_items_values_additionalProperties')"><em><span class="property-name">Additional Properties</span></em></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_values_additionalProperties"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_values_additionalProperties"
+             data-parent="#accordionreplacementRules_items_values_additionalProperties">
+            <div class="card-body pl-5"><p class="additional-properties">Each additional property must conform to the following schema</p>
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_values" onclick="anchorLink('replacementRules_items_values')">values</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_values_additionalProperties" onclick="anchorLink('replacementRules_items_values_additionalProperties')">additionalProperties</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_secret">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_secret">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_secret"
+                        aria-expanded="" aria-controls="replacementRules_items_secret" onclick="setAnchor('#replacementRules_items_secret')"><span class="property-name">secret</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_secret"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_secret"
+             data-parent="#accordionreplacementRules_items_secret">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_secret" onclick="anchorLink('replacementRules_items_secret')">secret</a></div><h4>Secret variable</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Name of the CI/CD variable holding the value: NAME_&lt;BRANCH&gt; is read first, then NAME. Never write a value here. The value is masked in every log. Not allowed in the rules of the git provider issue.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="replacementRules_items_secret_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;PAYMENT_API_PASSWORD&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_includeTargetBranches">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_includeTargetBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_includeTargetBranches"
+                        aria-expanded="" aria-controls="replacementRules_items_includeTargetBranches" onclick="setAnchor('#replacementRules_items_includeTargetBranches')"><span class="property-name">includeTargetBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_includeTargetBranches"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_includeTargetBranches"
+             data-parent="#accordionreplacementRules_items_includeTargetBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_includeTargetBranches" onclick="anchorLink('replacementRules_items_includeTargetBranches')">includeTargetBranches</a></div><h4>Only for target branches</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Target branches the rule applies to (dev-sandboxes for any other org)</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items_includeTargetBranches_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_includeTargetBranches" onclick="anchorLink('replacementRules_items_includeTargetBranches')">includeTargetBranches</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_includeTargetBranches_items" onclick="anchorLink('replacementRules_items_includeTargetBranches_items')">includeTargetBranches items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_excludeTargetBranches">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_excludeTargetBranches">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_excludeTargetBranches"
+                        aria-expanded="" aria-controls="replacementRules_items_excludeTargetBranches" onclick="setAnchor('#replacementRules_items_excludeTargetBranches')"><span class="property-name">excludeTargetBranches</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_excludeTargetBranches"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_excludeTargetBranches"
+             data-parent="#accordionreplacementRules_items_excludeTargetBranches">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_excludeTargetBranches" onclick="anchorLink('replacementRules_items_excludeTargetBranches')">excludeTargetBranches</a></div><h4>Not for target branches</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Target branches the rule does not apply to</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="replacementRules_items_excludeTargetBranches_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_excludeTargetBranches" onclick="anchorLink('replacementRules_items_excludeTargetBranches')">excludeTargetBranches</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_excludeTargetBranches_items" onclick="anchorLink('replacementRules_items_excludeTargetBranches_items')">excludeTargetBranches items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionreplacementRules_items_required">
+    <div class="card">
+        <div class="card-header" id="headingreplacementRules_items_required">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#replacementRules_items_required"
+                        aria-expanded="" aria-controls="replacementRules_items_required" onclick="setAnchor('#replacementRules_items_required')"><span class="property-name">required</span></button>
+            </h2>
+        </div>
+
+        <div id="replacementRules_items_required"
+             class="collapse property-definition-div" aria-labelledby="headingreplacementRules_items_required"
+             data-parent="#accordionreplacementRules_items_required">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules" onclick="anchorLink('replacementRules')">replacementRules</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items" onclick="anchorLink('replacementRules_items')">replacementRules items</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#replacementRules_items_required" onclick="anchorLink('replacementRules_items_required')">required</a></div><h4>Required</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Warn in the Pull Request comment when the files of the rule are deployed but nothing matches</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#replacementRules_ex1" aria-controls="replacementRules_ex1"></button><div id="replacementRules_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;payment-api-endpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;xml-value&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;files&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;**/namedCredentials/Payment_API.namedCredential-meta.xml&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;xmlPath&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;NamedCredential/endpoint&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;main&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay.example.com&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;default&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-sandbox.example.com&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;payment-api-password&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;xml-value&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;files&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;**/namedCredentials/Payment_API.namedCredential-meta.xml&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;xmlPath&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;NamedCredential/password&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;secret&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;PAYMENT_API_PASSWORD&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;apex-payment-host&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;files&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;**/classes/PaymentService.cls&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;find&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay-[a-z]+.example.com&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;regex&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;values&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;main&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;https://pay.example.com&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;builtin-flow-schedule-day-of-month&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;enabled&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">false</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionsecretsProvider">
+    <div class="card">
+        <div class="card-header" id="headingsecretsProvider">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#secretsProvider"
+                        aria-expanded="" aria-controls="secretsProvider" onclick="setAnchor('#secretsProvider')"><span class="property-name">secretsProvider</span></button>
+            </h2>
+        </div>
+
+        <div id="secretsProvider"
+             class="collapse property-definition-div" aria-labelledby="headingsecretsProvider"
+             data-parent="#accordionsecretsProvider">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#secretsProvider" onclick="anchorLink('secretsProvider')">secretsProvider</a></div><h4>Secrets provider</h4><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "ciVariables"</span><br/>
+<span class="description"><p>Where the secrets of the replacement rules are read from. ciVariables: CI/CD variables (NAME_&lt;BRANCH&gt;, then NAME).</p>
+</span><div class="enum-value" id="secretsProvider_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"ciVariables"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionrefreshSandboxConfig">
     <div class="card">
         <div class="card-header" id="headingrefreshSandboxConfig">
@@ -17530,7 +18676,8 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
             />
         </svg>
     <a href="#scratchOrgInitApexScripts" onclick="anchorLink('scratchOrgInitApexScripts')">scratchOrgInitApexScripts</a></div><h4>Scratch org init apex scripts</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
-<span class="description"><p>Apex scripts to call after scratch org initialization. Example: scripts/apex/init-scratch.apex</p>
+<span class="description"><p>Apex scripts to call after scratch org initialization. Example: scripts/apex/init-scratch.apex<br />
+Deprecated: use orgInitSteps, edited from the Org Initialization panel of the VS Code extension. Ignored when orgInitSteps is defined.</p>
 </span>
         
 
@@ -17577,6 +18724,75 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionsandboxOrgInitApexScripts">
+    <div class="card">
+        <div class="card-header" id="headingsandboxOrgInitApexScripts">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#sandboxOrgInitApexScripts"
+                        aria-expanded="" aria-controls="sandboxOrgInitApexScripts" onclick="setAnchor('#sandboxOrgInitApexScripts')"><span class="property-name">sandboxOrgInitApexScripts</span></button>
+            </h2>
+        </div>
+
+        <div id="sandboxOrgInitApexScripts"
+             class="collapse property-definition-div" aria-labelledby="headingsandboxOrgInitApexScripts"
+             data-parent="#accordionsandboxOrgInitApexScripts">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#sandboxOrgInitApexScripts" onclick="anchorLink('sandboxOrgInitApexScripts')">sandboxOrgInitApexScripts</a></div><h4>Sandbox init apex scripts</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Apex scripts to call after sandbox creation (hardis:org:create). Example: scripts/apex/init-sandbox.apex<br />
+Deprecated: use orgInitSteps, edited from the Org Initialization panel of the VS Code extension. Ignored when orgInitSteps is defined.</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="sandboxOrgInitApexScripts_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#sandboxOrgInitApexScripts" onclick="anchorLink('sandboxOrgInitApexScripts')">sandboxOrgInitApexScripts</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#sandboxOrgInitApexScripts_items" onclick="anchorLink('sandboxOrgInitApexScripts_items')">sandboxOrgInitApexScripts items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="sandboxOrgInitApexScripts_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;scripts/apex/init-sandbox.apex&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionscratchOrgDuration">
     <div class="card">
         <div class="card-header" id="headingscratchOrgDuration">
@@ -17607,6 +18823,44 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         <p><span class="badge badge-light restriction numeric-restriction" id="scratchOrgDuration_number">Value must be greater or equal to <code>1</code> and lesser or equal to <code>30</code></span></p>
 
         
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionscratchOrgShape">
+    <div class="card">
+        <div class="card-header" id="headingscratchOrgShape">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#scratchOrgShape"
+                        aria-expanded="" aria-controls="scratchOrgShape" onclick="setAnchor('#scratchOrgShape')"><span class="property-name">scratchOrgShape</span></button>
+            </h2>
+        </div>
+
+        <div id="scratchOrgShape"
+             class="collapse property-definition-div" aria-labelledby="headingscratchOrgShape"
+             data-parent="#accordionscratchOrgShape">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#scratchOrgShape" onclick="anchorLink('scratchOrgShape')">scratchOrgShape</a></div><h4>Scratch org shape</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Org id of the org whose org shape creates the scratch orgs (sourceOrg of the scratch org definition). Set it in the config of a major branch (developmentBranch or one of availableTargetBranches): a scratch org uses the shape of the branch its User Story started from, else the one of the project config, and none means no org shape for that branch. The definition then needs no edition. The SCRATCH<em>ORG</em>SHAPE environment variable wins over it.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="scratchOrgShape_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;00D0000000ShapeOrg&quot;</span>
+</pre></div>
+</div>
             </div>
         </div>
     </div>
@@ -17859,6 +19113,44 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
         </div>
     </div>
 </div>
+<div class="accordion" id="accordionskipReplacementRules">
+    <div class="card">
+        <div class="card-header" id="headingskipReplacementRules">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#skipReplacementRules"
+                        aria-expanded="" aria-controls="skipReplacementRules" onclick="setAnchor('#skipReplacementRules')"><span class="property-name">skipReplacementRules</span></button>
+            </h2>
+        </div>
+
+        <div id="skipReplacementRules"
+             class="collapse property-definition-div" aria-labelledby="headingskipReplacementRules"
+             data-parent="#accordionskipReplacementRules">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#skipReplacementRules" onclick="anchorLink('skipReplacementRules')">skipReplacementRules</a></div><h4>Skip replacement rules (Beta)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Skips every replacement rule (Beta), built-in ones included, before deployments, scratch org pushes, org init and backpromote. Set it in config/.sfdx-hardis.yml for the whole project, or in the branch config file of one major org. Same effect as the env variable SFDX<em>HARDIS</em>SKIP<em>REPLACEMENT</em>RULES=true. The Pull Request comments say the rules were skipped.</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="skipReplacementRules_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionskipUpdateForceIgnore">
     <div class="card">
         <div class="card-header" id="headingskipUpdateForceIgnore">
@@ -17948,10 +19240,8 @@ In that case, set the path to a custom package-no-overwrite XML file in a branch
                 d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
             />
         </svg>
-    <a href="#offerSandboxInit" onclick="anchorLink('offerSandboxInit')">offerSandboxInit</a></div><h4>Offer to initialize the sandbox on New User Story</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
-<span class="description"><p>Set to true to have New User Story (hardis:work:new) offer to initialize the selected dev sandbox: install the installed packages, assign initPermissionSets, run scratchOrgInitApexScripts and load scripts/data/ScratchInit.<br />
-It never deploys metadata: bring what the team merged into a sandbox with a backpromote.<br />
-Ignored when sharedDevSandboxes is true.</p>
+    <a href="#offerSandboxInit" onclick="anchorLink('offerSandboxInit')">offerSandboxInit</a></div><h4>Offer to initialize the sandbox on New User Story (deprecated)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>Deprecated and ignored: New User Story (hardis:work:new) never initializes a selected sandbox anymore. Run sf hardis:org:init to run the org initialization steps (orgInitSteps) on a sandbox.</p>
 </span>
         
 
@@ -17959,6 +19249,1443 @@ Ignored when sharedDevSandboxes is true.</p>
         
 
         
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps"
+                        aria-expanded="" aria-controls="orgInitSteps" onclick="setAnchor('#orgInitSteps')"><span class="property-name">orgInitSteps</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps"
+             data-parent="#accordionorgInitSteps">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a></div><h4>Org initialization steps (Beta)</h4><span class="badge badge-dark value-type">Type: array of object</span><br/>
+<div class="description collapse" id="collapseDescription_orgInitSteps">
+            <p>Ordered list of the steps that initialize a new scratch org (hardis:scratch:create), a new sandbox (hardis:org:create), or an existing one (hardis:org:init). Edit it from the Org Initialization panel of the VS Code extension.<br />
+When this property is not defined, the steps are built from the older properties installedPackages, initPermissionSets, scratchOrgInitApexScripts, sandboxOrgInitApexScripts, dataPackages (importInSandboxOrgs) and the scripts/data/ScratchInit and scripts/data/SandboxInit folders. When it is defined, those older properties are ignored for org initialization.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_orgInitSteps"
+               aria-expanded="false" aria-controls="collapseDescriptionorgInitSteps"
+            ></a>
+        </div>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="orgInitSteps_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a></div><h4>Action</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Org initialization step</p>
+</span> <span class="badge badge-info no-additional">No Additional Properties</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionorgInitSteps_items_id">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_id">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_id"
+                        aria-expanded="" aria-controls="orgInitSteps_items_id" onclick="setAnchor('#orgInitSteps_items_id')"><span class="property-name">id</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_id"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_id"
+             data-parent="#accordionorgInitSteps_items_id">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_id" onclick="anchorLink('orgInitSteps_items_id')">id</a></div><h4>Id</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Identifier of the step, generated by the VS Code Org Initialization panel when the step is created. sf hardis:org:init --steps selects steps by this id.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_label">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_label">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_label"
+                        aria-expanded="" aria-controls="orgInitSteps_items_label" onclick="setAnchor('#orgInitSteps_items_label')"><span class="property-name">label</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_label"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_label"
+             data-parent="#accordionorgInitSteps_items_label">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_label" onclick="anchorLink('orgInitSteps_items_label')">label</a></div><h4>Label</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Label of the step (what does it do ?)</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_type">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_type">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_type"
+                        aria-expanded="" aria-controls="orgInitSteps_items_type" onclick="setAnchor('#orgInitSteps_items_type')"><span class="property-name">type</span> <span class="badge badge-warning required-property">Required</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_type"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_type"
+             data-parent="#accordionorgInitSteps_items_type">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_type" onclick="anchorLink('orgInitSteps_items_type')">type</a></div><h4>Type</h4><br/>
+<span class="description"><p>Type of the step: a built-in type, or the id of a custom function declared in customFunctions without a deployment phase (when). install-packages installs the packages of installedPackages, deploy-sources pushes the project sources (scratch orgs only), assign-permission-sets assigns permission sets to the org user. These three types only exist in orgInitSteps, never in deployment actions.</p>
+</span><div class="any-of-value" id="orgInitSteps_items_type_anyOf"><h2 class="handle">
+  <label>Any of</label>
+</h2><ul class="nav nav-tabs" id="tabsorgInitSteps_items_type_anyOf_anyOf" role="tablist"><li class="nav-item">
+            <a class="nav-link active anyOf-option"
+               id="orgInitSteps_items_type_anyOf_i0" data-toggle="tab" href="#tab-pane_orgInitSteps_items_type_anyOf_i0" role="tab"
+               onclick="setAnchor('#orgInitSteps_items_type_anyOf_i0')"
+            >Option 1</a>
+        </li><li class="nav-item">
+            <a class="nav-link anyOf-option"
+               id="orgInitSteps_items_type_anyOf_i1" data-toggle="tab" href="#tab-pane_orgInitSteps_items_type_anyOf_i1" role="tab"
+               onclick="setAnchor('#orgInitSteps_items_type_anyOf_i1')"
+            >Option 2</a>
+        </li></ul>
+<div class="tab-content card"><div class="tab-pane fade card-body active show"
+             id="tab-pane_orgInitSteps_items_type_anyOf_i0" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_type" onclick="anchorLink('orgInitSteps_items_type')">type</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_type_anyOf" onclick="anchorLink('orgInitSteps_items_type_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_type_anyOf_i0" onclick="anchorLink('orgInitSteps_items_type_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="orgInitSteps_items_type_anyOf_i0_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"install-packages"</li><li class="list-group-item enum-item">"deploy-sources"</li><li class="list-group-item enum-item">"assign-permission-sets"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"run-batch"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"publish-community"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+        </div><div class="tab-pane fade card-body "
+             id="tab-pane_orgInitSteps_items_type_anyOf_i1" role="tabpanel">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_type" onclick="anchorLink('orgInitSteps_items_type')">type</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_type_anyOf" onclick="anchorLink('orgInitSteps_items_type_anyOf')">anyOf</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_type_anyOf_i1" onclick="anchorLink('orgInitSteps_items_type_anyOf_i1')">item 1</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Id of a custom function declared in the customFunctions property of config/.sfdx-hardis.yml</p>
+</span>
+        
+
+        
+        
+
+        
+        </div></div></div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="orgInitSteps_items_type_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;install-packages&quot;</span>
+</pre></div>
+</div><div id="orgInitSteps_items_type_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;deploy-sources&quot;</span>
+</pre></div>
+</div><div id="orgInitSteps_items_type_ex3" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;assign-permission-sets&quot;</span>
+</pre></div>
+</div><div id="orgInitSteps_items_type_ex4" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;apex&quot;</span>
+</pre></div>
+</div><div id="orgInitSteps_items_type_ex5" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;data&quot;</span>
+</pre></div>
+</div><div id="orgInitSteps_items_type_ex6" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;command&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters" onclick="setAnchor('#orgInitSteps_items_parameters')"><span class="property-name">parameters</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters"
+             data-parent="#accordionorgInitSteps_items_parameters">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a></div><h4>Parameters</h4><span class="badge badge-dark value-type">Type: object</span><br/>
+<span class="description"><p>Known parameters used by action implementations. Additional keys allowed.</p>
+</span>
+        
+
+        
+        
+
+        
+<div class="accordion" id="accordionorgInitSteps_items_parameters_apexScript">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_apexScript">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_apexScript"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_apexScript" onclick="setAnchor('#orgInitSteps_items_parameters_apexScript')"><span class="property-name">apexScript</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_apexScript"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_apexScript"
+             data-parent="#accordionorgInitSteps_items_parameters_apexScript">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_apexScript" onclick="anchorLink('orgInitSteps_items_parameters_apexScript')">apexScript</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Apex script path to run for 'apex' actions</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_sfdmuProject">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_sfdmuProject">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_sfdmuProject"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_sfdmuProject" onclick="setAnchor('#orgInitSteps_items_parameters_sfdmuProject')"><span class="property-name">sfdmuProject</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_sfdmuProject"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_sfdmuProject"
+             data-parent="#accordionorgInitSteps_items_parameters_sfdmuProject">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_sfdmuProject" onclick="anchorLink('orgInitSteps_items_parameters_sfdmuProject')">sfdmuProject</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Path to SFDMU project for 'data' actions</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_communityName">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_communityName">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_communityName"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_communityName" onclick="setAnchor('#orgInitSteps_items_parameters_communityName')"><span class="property-name">communityName</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_communityName"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_communityName"
+             data-parent="#accordionorgInitSteps_items_parameters_communityName">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_communityName" onclick="anchorLink('orgInitSteps_items_parameters_communityName')">communityName</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Community name for 'publish-community' actions</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_className">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_className">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_className"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_className" onclick="setAnchor('#orgInitSteps_items_parameters_className')"><span class="property-name">className</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_className"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_className"
+             data-parent="#accordionorgInitSteps_items_parameters_className">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_className" onclick="anchorLink('orgInitSteps_items_parameters_className')">className</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Apex class name for 'schedule-batch' actions (a Schedulable class) and 'run-batch' actions (a Database.Batchable class). A global class of a managed package is written with its namespace: ns.ClassName</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_cronExpression">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_cronExpression">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_cronExpression"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_cronExpression" onclick="setAnchor('#orgInitSteps_items_parameters_cronExpression')"><span class="property-name">cronExpression</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_cronExpression"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_cronExpression"
+             data-parent="#accordionorgInitSteps_items_parameters_cronExpression">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_cronExpression" onclick="anchorLink('orgInitSteps_items_parameters_cronExpression')">cronExpression</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Cron expression used to schedule the Apex batch class for 'schedule-batch' actions</p>
+</span>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="orgInitSteps_items_parameters_cronExpression_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;0 0 2 * * ?&quot;</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_jobName">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_jobName">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_jobName"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_jobName" onclick="setAnchor('#orgInitSteps_items_parameters_jobName')"><span class="property-name">jobName</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_jobName"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_jobName"
+             data-parent="#accordionorgInitSteps_items_parameters_jobName">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_jobName" onclick="anchorLink('orgInitSteps_items_parameters_jobName')">jobName</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Scheduled job name for 'schedule-batch' actions. Defaults to &lt;className&gt;_Schedule</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_runMode">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_runMode">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_runMode"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_runMode" onclick="setAnchor('#orgInitSteps_items_parameters_runMode')"><span class="property-name">runMode</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_runMode"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_runMode"
+             data-parent="#accordionorgInitSteps_items_parameters_runMode">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_runMode" onclick="anchorLink('orgInitSteps_items_parameters_runMode')">runMode</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span> <span class="badge badge-success default-value">Default: "wait"</span><br/>
+<span class="description"><p>For 'run-batch' actions: wait for the batch to succeed, or launch it without waiting for its result</p>
+</span><div class="enum-value" id="orgInitSteps_items_parameters_runMode_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"wait"</li><li class="list-group-item enum-item">"no-wait"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_batchSize">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_batchSize">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_batchSize"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_batchSize" onclick="setAnchor('#orgInitSteps_items_parameters_batchSize')"><span class="property-name">batchSize</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_batchSize"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_batchSize"
+             data-parent="#accordionorgInitSteps_items_parameters_batchSize">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_batchSize" onclick="anchorLink('orgInitSteps_items_parameters_batchSize')">batchSize</a></div><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 200</span><br/>
+<span class="description"><p>Batch size passed to Database.executeBatch for 'run-batch' actions</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="orgInitSteps_items_parameters_batchSize_number">Value must be greater or equal to <code>1</code> and lesser or equal to <code>2000</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_waitTimeoutMinutes">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_waitTimeoutMinutes">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_waitTimeoutMinutes"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_waitTimeoutMinutes" onclick="setAnchor('#orgInitSteps_items_parameters_waitTimeoutMinutes')"><span class="property-name">waitTimeoutMinutes</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_waitTimeoutMinutes"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_waitTimeoutMinutes"
+             data-parent="#accordionorgInitSteps_items_parameters_waitTimeoutMinutes">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_waitTimeoutMinutes" onclick="anchorLink('orgInitSteps_items_parameters_waitTimeoutMinutes')">waitTimeoutMinutes</a></div><span class="badge badge-dark value-type">Type: integer</span> <span class="badge badge-success default-value">Default: 60</span><br/>
+<span class="description"><p>For 'run-batch' actions in wait mode: minutes after which the action fails if the batch is not over. The batch keeps running in the org</p>
+</span>
+        
+
+        
+        <p><span class="badge badge-light restriction numeric-restriction" id="orgInitSteps_items_parameters_waitTimeoutMinutes_number">Value must be greater or equal to <code>1</code></span></p>
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_successEvenIfBatchErrors">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_successEvenIfBatchErrors">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_successEvenIfBatchErrors"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_successEvenIfBatchErrors" onclick="setAnchor('#orgInitSteps_items_parameters_successEvenIfBatchErrors')"><span class="property-name">successEvenIfBatchErrors</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_successEvenIfBatchErrors"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_successEvenIfBatchErrors"
+             data-parent="#accordionorgInitSteps_items_parameters_successEvenIfBatchErrors">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_successEvenIfBatchErrors" onclick="anchorLink('orgInitSteps_items_parameters_successEvenIfBatchErrors')">successEvenIfBatchErrors</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>For 'run-batch' actions in wait mode: keep the action successful when the batch completes with batches in error. A failed or aborted batch and a timeout still fail the action</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_permissionSets">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_permissionSets">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_permissionSets"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_permissionSets" onclick="setAnchor('#orgInitSteps_items_parameters_permissionSets')"><span class="property-name">permissionSets</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_permissionSets"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_permissionSets"
+             data-parent="#accordionorgInitSteps_items_parameters_permissionSets">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_permissionSets" onclick="anchorLink('orgInitSteps_items_parameters_permissionSets')">permissionSets</a></div><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>Permission sets or permission set groups to assign to the user of the org, for 'assign-permission-sets' steps</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="orgInitSteps_items_parameters_permissionSets_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_permissionSets" onclick="anchorLink('orgInitSteps_items_parameters_permissionSets')">permissionSets</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_permissionSets_items" onclick="anchorLink('orgInitSteps_items_parameters_permissionSets_items')">permissionSets items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_parameters_additionalProperties">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_parameters_additionalProperties">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_parameters_additionalProperties"
+                        aria-expanded="" aria-controls="orgInitSteps_items_parameters_additionalProperties" onclick="setAnchor('#orgInitSteps_items_parameters_additionalProperties')"><em><span class="property-name">Additional Properties</span></em></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_parameters_additionalProperties"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_parameters_additionalProperties"
+             data-parent="#accordionorgInitSteps_items_parameters_additionalProperties">
+            <div class="card-body pl-5"><p class="additional-properties">Additional Properties of any type are allowed.</p>
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters" onclick="anchorLink('orgInitSteps_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_parameters_additionalProperties" onclick="anchorLink('orgInitSteps_items_parameters_additionalProperties')">additionalProperties</a></div><span class="badge badge-dark value-type">Type: object</span><br/>
+
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_command">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_command">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_command"
+                        aria-expanded="" aria-controls="orgInitSteps_items_command" onclick="setAnchor('#orgInitSteps_items_command')"><span class="property-name">command</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_command"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_command"
+             data-parent="#accordionorgInitSteps_items_command">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_command" onclick="anchorLink('orgInitSteps_items_command')">command</a></div><h4>Command</h4><span class="badge badge-dark value-type">Type: string</span><br/>
+<span class="description"><p>Command line to run</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_allowFailure">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_allowFailure">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_allowFailure"
+                        aria-expanded="" aria-controls="orgInitSteps_items_allowFailure" onclick="setAnchor('#orgInitSteps_items_allowFailure')"><span class="property-name">allowFailure</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_allowFailure"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_allowFailure"
+             data-parent="#accordionorgInitSteps_items_allowFailure">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_allowFailure" onclick="anchorLink('orgInitSteps_items_allowFailure')">allowFailure</a></div><h4>Allow failure</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>When true, a failure of this step is reported as a warning and the next steps still run. When false (default), a failure stops the org initialization.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_enabled">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_enabled">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_enabled"
+                        aria-expanded="" aria-controls="orgInitSteps_items_enabled" onclick="setAnchor('#orgInitSteps_items_enabled')"><span class="property-name">enabled</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_enabled"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_enabled"
+             data-parent="#accordionorgInitSteps_items_enabled">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_enabled" onclick="anchorLink('orgInitSteps_items_enabled')">enabled</a></div><h4>Enabled</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>Set to false to keep the step in the list without running it</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_orgTypes">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_orgTypes">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_orgTypes"
+                        aria-expanded="" aria-controls="orgInitSteps_items_orgTypes" onclick="setAnchor('#orgInitSteps_items_orgTypes')"><span class="property-name">orgTypes</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_orgTypes"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_orgTypes"
+             data-parent="#accordionorgInitSteps_items_orgTypes">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_orgTypes" onclick="anchorLink('orgInitSteps_items_orgTypes')">orgTypes</a></div><h4>Org types</h4><span class="badge badge-dark value-type">Type: array of enum (of string)</span> <span class="badge badge-success default-value">Default: ["scratch", "sandbox"]</span><br/>
+<span class="description"><p>Org types the step runs on. deploy-sources steps only run on scratch orgs: a sandbox gets its metadata from a backpromote.</p>
+</span>
+        
+
+        
+        
+
+        <p><span class="badge badge-light restriction unique-items-restriction" id="orgInitSteps_items_orgTypes_uniqueItems">All items must be unique</span></p> <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="orgInitSteps_items_orgTypes_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_orgTypes" onclick="anchorLink('orgInitSteps_items_orgTypes')">orgTypes</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_orgTypes_items" onclick="anchorLink('orgInitSteps_items_orgTypes_items')">orgTypes items</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
+<div class="enum-value" id="orgInitSteps_items_orgTypes_items_enum">
+            <h4>Must be one of:</h4>
+            <ul class="list-group"><li class="list-group-item enum-item">"scratch"</li><li class="list-group-item enum-item">"sandbox"</li></ul>
+            </div>
+        
+
+        
+        
+
+        
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordionorgInitSteps_items_runAtPoolFill">
+    <div class="card">
+        <div class="card-header" id="headingorgInitSteps_items_runAtPoolFill">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#orgInitSteps_items_runAtPoolFill"
+                        aria-expanded="" aria-controls="orgInitSteps_items_runAtPoolFill" onclick="setAnchor('#orgInitSteps_items_runAtPoolFill')"><span class="property-name">runAtPoolFill</span></button>
+            </h2>
+        </div>
+
+        <div id="orgInitSteps_items_runAtPoolFill"
+             class="collapse property-definition-div" aria-labelledby="headingorgInitSteps_items_runAtPoolFill"
+             data-parent="#accordionorgInitSteps_items_runAtPoolFill">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps" onclick="anchorLink('orgInitSteps')">orgInitSteps</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items" onclick="anchorLink('orgInitSteps_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#orgInitSteps_items_runAtPoolFill" onclick="anchorLink('orgInitSteps_items_runAtPoolFill')">runAtPoolFill</a></div><h4>Run when filling the scratch org pool</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>When true (default), the step runs when a scratch org pool is filled, so a scratch org taken from the pool is ready to use. When false, it runs when a developer takes the scratch org from the pool.</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><button class="btn btn-light example-show collapsed" data-toggle="collapse" data-target="#orgInitSteps_ex1" aria-controls="orgInitSteps_ex1"></button><div id="orgInitSteps_ex1" class="collapse jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;install-packages&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Install packages&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;install-packages&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;orgTypes&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;scratch&quot;</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;deploy-sources&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Deploy project sources&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;deploy-sources&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;orgTypes&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;scratch&quot;</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;assign-permsets&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Assign permission sets&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;assign-permission-sets&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;permissionSets&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">&quot;PS_Admin&quot;</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;init-custom-settings&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Initialize custom settings&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;apex&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;apexScript&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;scripts/apex/init-custom-settings.apex&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="s2">&quot;allowFailure&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">        </span><span class="s2">&quot;id&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;load-accounts&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;label&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;Load test accounts&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;type&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;parameters&quot;</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="s2">&quot;sfdmuProject&quot;</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;ScratchInit&quot;</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="s2">&quot;runAtPoolFill&quot;</span><span class="o">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
             </div>
         </div>
     </div>

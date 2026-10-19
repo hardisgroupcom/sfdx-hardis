@@ -1,3 +1,4 @@
+import { RESERVED_ACTION_TYPES } from '../actionsProvider/actionTypes.js';
 import c from 'chalk';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -74,21 +75,11 @@ export interface CustomFunctionDefinition {
 }
 
 /**
- * Built-in action types. A custom function id may not shadow one of them, otherwise the action
- * type would silently resolve to the built-in provider instead of the function.
- * Duplicated from actionUtils.ACTION_TYPES on purpose: importing it here would create a cycle
- * (actionUtils imports this module to validate custom function actions).
+ * Built-in action types, deployment actions and org initialization steps. A custom function id
+ * may not shadow one of them, otherwise the action type would silently resolve to the built-in
+ * provider instead of the function.
  */
-const BUILT_IN_ACTION_TYPES = [
-  'command',
-  'data',
-  'apex',
-  'publish-community',
-  'manual',
-  'schedule-batch',
-  'run-batch',
-  'remove-packagexml-items',
-];
+const BUILT_IN_ACTION_TYPES = RESERVED_ACTION_TYPES;
 
 /** A function id ends up as a YAML key and an env var suffix, so keep it boring. */
 const FUNCTION_ID_REGEX = /^[A-Za-z][A-Za-z0-9_-]*$/;

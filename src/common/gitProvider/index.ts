@@ -1121,6 +1121,8 @@ export declare type PullRequestData = {
   deploymentComponentTypesMarkdownBody?: string;
   // package-no-overwrite.xml components kept in the org or created this once
   noOverwriteMarkdownBody?: string;
+  // Replacement rules applied to the metadata before the deployment, with their warnings
+  replacementRulesMarkdownBody?: string;
   codeCoverageMarkdownBody?: string;
   // Number of deployment errors and of failing Apex tests, for the run summary of the comment
   errorCount?: number;

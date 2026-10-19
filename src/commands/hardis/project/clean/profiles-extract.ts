@@ -139,8 +139,8 @@ In agent mode:
       if (profileFieldAccess.length > 0) {
         const reportDir = await getReportDirectory();
         this.outputFile = path.join(reportDir, 'ProfileFieldAccess.csv');
-        await generateCsvFile(profileFieldAccess, this.outputFile, { fileTitle: 'Profile Field Access', noExcel: true, skipNotifyToWebSocket: true });
-        this.csvFiles.push(this.outputFile);
+        const csvResult = await generateCsvFile(profileFieldAccess, this.outputFile, { fileTitle: 'Profile Field Access', noExcel: true, skipNotifyToWebSocket: true });
+        this.pushCsv(csvResult);
       } else {
         uxLog('log', this, c.yellow(t('noProfileFieldAccessRecordsFoundSkipping')));
       }
@@ -317,11 +317,11 @@ In agent mode:
       const objectsToWrite = sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name));
       sortArray(objectsToWrite, { by: 'API_Name', order: 'asc' });
       // Without xlsx
-      await generateCsvFile(objectsToWrite, this.outputFile, { fileTitle: 'profiles extract', noExcel: true, skipNotifyToWebSocket: true });
+      const csvResult = await generateCsvFile(objectsToWrite, this.outputFile, { fileTitle: 'profiles extract', noExcel: true, skipNotifyToWebSocket: true });
       // With xlsx
       // this.outputFilesRes = await generateCsvFile(sobjectsWithRecords.filter((sobj) => selectedObjects.includes(sobj.API_Name)), this.outputFile, { fileTitle: 'profiles extract' });
 
-      this.csvFiles.push(this.outputFile);
+      this.pushCsv(csvResult);
 
     } catch (error) {
       uxLog('log', this, c.red(t('failedToFetchSobjects')));
@@ -355,8 +355,8 @@ In agent mode:
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Users.csv');
     sortArray(usersRecords, { by: 'User', order: 'asc' });
-    await generateCsvFile(usersRecords, this.outputFile, { fileTitle: 'Users extract', noExcel: true, skipNotifyToWebSocket: true });
-    this.csvFiles.push(this.outputFile);
+    const csvResult = await generateCsvFile(usersRecords, this.outputFile, { fileTitle: 'Users extract', noExcel: true, skipNotifyToWebSocket: true });
+    this.pushCsv(csvResult);
     return;
   }
 
@@ -389,8 +389,8 @@ In agent mode:
 
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'persona.csv');
-    await generateCsvFile(persona, this.outputFile, { fileTitle: 'persona extract', noExcel: true, skipNotifyToWebSocket: true });
-    this.csvFiles.push(this.outputFile);
+    const csvResult = await generateCsvFile(persona, this.outputFile, { fileTitle: 'persona extract', noExcel: true, skipNotifyToWebSocket: true });
+    this.pushCsv(csvResult);
     return numberOfPersonas;
   }
 
@@ -422,8 +422,8 @@ In agent mode:
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Relation.csv');
     sortArray(relationRecords, { by: 'Object', order: 'asc' });
-    await generateCsvFile(relationRecords, this.outputFile, { fileTitle: 'Relation Object Persona', noExcel: true, skipNotifyToWebSocket: true });
-    this.csvFiles.push(this.outputFile);
+    const csvResult = await generateCsvFile(relationRecords, this.outputFile, { fileTitle: 'Relation Object Persona', noExcel: true, skipNotifyToWebSocket: true });
+    this.pushCsv(csvResult);
     return;
   }
 
@@ -459,8 +459,8 @@ In agent mode:
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'RecordTypes.csv');
     sortArray(recordTypesRecords, { by: 'Object', order: 'asc' });
-    await generateCsvFile(recordTypesRecords, this.outputFile, { fileTitle: 'Record Types extract', noExcel: true, skipNotifyToWebSocket: true });
-    this.csvFiles.push(this.outputFile);
+    const csvResult = await generateCsvFile(recordTypesRecords, this.outputFile, { fileTitle: 'Record Types extract', noExcel: true, skipNotifyToWebSocket: true });
+    this.pushCsv(csvResult);
     return;
   }
 
@@ -494,8 +494,8 @@ In agent mode:
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Applications.csv');
     sortArray(appsRecords, { by: 'Application', order: 'asc' });
-    await generateCsvFile(appsRecords, this.outputFile, { fileTitle: 'Applications extract', noExcel: true, skipNotifyToWebSocket: true });
-    this.csvFiles.push(this.outputFile);
+    const csvResult = await generateCsvFile(appsRecords, this.outputFile, { fileTitle: 'Applications extract', noExcel: true, skipNotifyToWebSocket: true });
+    this.pushCsv(csvResult);
     return;
   }
   /* jscpd:ignore-end */
@@ -526,8 +526,8 @@ In agent mode:
     const reportDir = await getReportDirectory();
     this.outputFile = path.join(reportDir, 'Permissions.csv');
     sortArray(permissionsRecords, { by: 'Permission_Label', order: 'asc' });
-    await generateCsvFile(permissionsRecords, this.outputFile, { fileTitle: 'Permissions extract', noExcel: true, skipNotifyToWebSocket: true });
-    this.csvFiles.push(this.outputFile);
+    const csvResult = await generateCsvFile(permissionsRecords, this.outputFile, { fileTitle: 'Permissions extract', noExcel: true, skipNotifyToWebSocket: true });
+    this.pushCsv(csvResult);
     return;
   }
 
@@ -551,8 +551,8 @@ In agent mode:
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'Tabs.csv');
       sortArray(tabsRecords, { by: 'Tab_Label', order: 'asc' });
-      await generateCsvFile(tabsRecords, this.outputFile, { fileTitle: 'Tabs extract', noExcel: true, skipNotifyToWebSocket: true });
-      this.csvFiles.push(this.outputFile);
+      const csvResult = await generateCsvFile(tabsRecords, this.outputFile, { fileTitle: 'Tabs extract', noExcel: true, skipNotifyToWebSocket: true });
+      this.pushCsv(csvResult);
     } catch (error) {
       uxLog('warning', this, c.yellow(t('failedToQueryTabs', { error: (error as Error).message })));
     }
@@ -638,8 +638,8 @@ In agent mode:
           const reportDir = await getReportDirectory();
           const outputFile = path.join(reportDir, `${objName} Fields.csv`);
           sortArray(fieldsRecords, { by: 'API_Name', order: 'asc' });
-          await generateCsvFile(fieldsRecords, outputFile, { fileTitle: `${objName} Fields extract`, noExcel: true, skipNotifyToWebSocket: true });
-          outputFiles[index] = outputFile;
+          const csvResult = await generateCsvFile(fieldsRecords, outputFile, { fileTitle: `${objName} Fields extract`, noExcel: true, skipNotifyToWebSocket: true });
+          outputFiles[index] = csvResult.csvFile;
         } catch (error) {
           uxLog('warning', this, c.yellow(t('failedToDescribeFieldsFor', { objName, error: (error as Error).message })));
         } finally {
@@ -685,12 +685,12 @@ In agent mode:
       const reportDir = await getReportDirectory();
       this.outputFile = path.join(reportDir, 'PermissionSets.csv');
       sortArray(permissionSetsRecords, { by: 'Name', order: 'asc' });
-      await generateCsvFile(permissionSetsRecords, this.outputFile, {
+      const csvResult = await generateCsvFile(permissionSetsRecords, this.outputFile, {
         fileTitle: 'Permission Sets extract',
         noExcel: true,
         skipNotifyToWebSocket: true,
       });
-      this.csvFiles.push(this.outputFile);
+      this.pushCsv(csvResult);
     } catch (error) {
       uxLog('warning', this, c.yellow(t('failedToQueryPermissionsets', { error: (error as Error).message })));
     }
@@ -702,6 +702,14 @@ In agent mode:
       cols[`=persona!A${i + 1}`] = '';
     }
     return cols;
+  }
+
+  // Adds the CSV actually written to the final workbook: another name when the usual one is open in
+  // Excel, nothing when writing failed, so a stale file from a previous run is never merged.
+  private pushCsv(csvResult: any): void {
+    if (csvResult?.csvFile) {
+      this.csvFiles.push(csvResult.csvFile);
+    }
   }
 
 }

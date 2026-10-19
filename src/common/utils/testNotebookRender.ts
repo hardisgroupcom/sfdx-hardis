@@ -13,6 +13,7 @@ import path from 'path';
 import { SfError } from '@salesforce/core';
 import fs from './fsUtils.js';
 import { t } from './i18n.js';
+import { writeReportFile } from './reportFileWriteUtils.js';
 import {
   NormalizedTestCase,
   renderStepsFlat,
@@ -218,14 +219,17 @@ export async function writeNotebook(
 ): Promise<string> {
   const withSummary = options.withSummary !== false;
   await fs.ensureDir(path.dirname(path.resolve(outputPath)));
-  if (format === 'xlsx') {
-    await _writeXlsx(outputPath, kind, cases, withSummary);
-  } else if (format === 'csv') {
-    await _writeCsv(outputPath, kind, cases, withSummary);
-  } else {
-    await _writeMarkdown(outputPath, kind, cases);
-  }
-  return outputPath;
+  // Another name when the usual file is open in Excel, never an existing one: a notebook a tester
+  // filled in, or the input notebook, must not be overwritten. The path written is returned.
+  return await writeReportFile(outputPath, (filePath) => {
+    if (format === 'xlsx') {
+      return _writeXlsx(filePath, kind, cases, withSummary);
+    }
+    if (format === 'csv') {
+      return _writeCsv(filePath, kind, cases, withSummary);
+    }
+    return _writeMarkdown(filePath, kind, cases);
+  }, null, { newFileOnly: true });
 }
 
 export interface TemplateOptions {

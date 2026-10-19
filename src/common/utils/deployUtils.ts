@@ -403,6 +403,9 @@ export async function smartDeploy(
     destructiveChangesAfterDeployment?: boolean;
     extraCommands?: any[];
     deferSuccessPullRequestComment?: boolean;
+    // Target of the replacement rules: a major branch, null for a dev sandbox or scratch org
+    // (the default), false to skip them
+    replacementRules?: { targetBranch: string | null } | false;
   }
 ): Promise<any> {
   elapseStart('all deployments');
@@ -480,8 +483,6 @@ export async function smartDeploy(
     await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
-  // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions
-  await replaceQuickActionsWithDummy();
   // Run deployment pre-commands
   // Expose the package.xml files of the deployment plan so pre-deploy actions can update them
   // (ex: remove-packagexml-items actions filter their content before the metadata deploy step)
@@ -491,136 +492,161 @@ export async function smartDeploy(
   } finally {
     delete globalThis.pendingDeploymentPackageXmlFiles;
   }
-  // Process items of deployment plan
-  uxLog("action", this, c.cyan(t('processingSplitDeploymentsBuildFromDeploymentPlan')));
-  uxLog("other", this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
+  // Replacement rules: the files of the deployment are changed in place for the target org, and
+  // always restored. Quick deploy reuses the validated package, which got the same changes.
+  const replacementSession = options.replacementRules === false
+    ? null
+    : await startDeploymentReplacementRules(splitDeployments, commandThis, options);
+  // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions.
+  // Done after the replacement rules: restoreQuickActions puts back the files the rules changed, then
+  // the restore of the rules puts back the files of git, in the reverse order of the changes.
+  await replaceQuickActionsWithDummy();
   // Deployments that were actually sent to the org. A deployment whose package.xml ends up empty is
   // skipped below, and when every one of them is skipped nothing sets the deployment result: the
   // Pull Request comment then displays no status, no banner and no code coverage section.
   let processedDeploymentCount = 0;
-  for (const deployment of splitDeployments) {
-    elapseStart(`deploy ${deployment.label}`);
+  try {
+    // Process items of deployment plan
+    uxLog("action", this, c.cyan(t('processingSplitDeploymentsBuildFromDeploymentPlan')));
+    uxLog("other", this, c.whiteBright(JSON.stringify(splitDeployments, null, 2)));
+    for (const deployment of splitDeployments) {
+      elapseStart(`deploy ${deployment.label}`);
 
-    // Skip this deployment if package.xml is empty AND it's not a special destructive changes deployment
-    // AND there are no destructive changes
-    const isDestructiveChangesDeployment = deployment.label === 'package-for-destructive-changes';
-    const packageXmlEmpty = await isPackageXmlEmpty(deployment.packageXmlFile, { ignoreStandaloneParentItems: true });
+      // Skip this deployment if package.xml is empty AND it's not a special destructive changes deployment
+      // AND there are no destructive changes
+      const isDestructiveChangesDeployment = deployment.label === 'package-for-destructive-changes';
+      const packageXmlEmpty = await isPackageXmlEmpty(deployment.packageXmlFile, { ignoreStandaloneParentItems: true });
 
-    if (packageXmlEmpty && !isDestructiveChangesDeployment && !hasDestructiveChanges) {
-      uxLog(
-        "log",
-        commandThis,
-        c.grey(
-          `Skipped ${c.bold(
-            deployment.label
-          )} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(
-            c.italic('This may be related to filtering using package-no-overwrite.xml or packageDeployOnChange.xml')
-          )}`
-        )
-      );
-      deployXmlCount--;
-      elapseEnd(`deploy ${deployment.label}`);
-      continue;
-    }
-    let message = '';
-    // Wait before deployment item process if necessary
-    if (deployment.waitBefore) {
-      uxLog("log", commandThis, `Waiting ${deployment.waitBefore} seconds before deployment according to deployment plan`);
-      await new Promise((resolve) => setTimeout(resolve, deployment.waitBefore * 1000));
-    }
-    // Deployment of type package.xml file
-    if (deployment.packageXmlFile) {
-      const nbDeployedItems = await countPackageXmlItems(deployment.packageXmlFile);
-
-      if (nbDeployedItems === 0 && !hasDestructiveChanges) {
+      if (packageXmlEmpty && !isDestructiveChangesDeployment && !hasDestructiveChanges) {
         uxLog(
-          "warning",
+          "log",
           commandThis,
-          c.yellow(
-            `Skipping deployment of ${c.bold(deployment.label)} because package.xml is empty and there are no destructive changes.`
+          c.grey(
+            `Skipped ${c.bold(
+              deployment.label
+            )} deployment because package.xml is empty or contains only standalone parent items.\n${c.grey(
+              c.italic('This may be related to filtering using package-no-overwrite.xml or packageDeployOnChange.xml')
+            )}`
           )
         );
         deployXmlCount--;
         elapseEnd(`deploy ${deployment.label}`);
         continue;
       }
-      processedDeploymentCount++;
+      let message = '';
+      // Wait before deployment item process if necessary
+      if (deployment.waitBefore) {
+        uxLog("log", commandThis, `Waiting ${deployment.waitBefore} seconds before deployment according to deployment plan`);
+        await new Promise((resolve) => setTimeout(resolve, deployment.waitBefore * 1000));
+      }
+      // Deployment of type package.xml file
+      if (deployment.packageXmlFile) {
+        const nbDeployedItems = await countPackageXmlItems(deployment.packageXmlFile);
 
-      uxLog(
-        "action",
-        commandThis,
-        c.cyan(
-          `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile
-          } (${nbDeployedItems} items)${hasDestructiveChanges ? ' with destructive changes' : ''}...`
-        )
-      );
-      await warnOnDuplicateFolderMetadataApiNames(deployment.packageXmlFile, commandThis);
-      const branchConfig = await getConfig('branch');
-      // Try QuickDeploy
-      if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
-        const deploymentCheckId = await GitProvider.getDeploymentCheckId();
-        if (deploymentCheckId) {
-          const quickDeployCommand =
-            `sf project deploy quick` +
-            ` --job-id ${deploymentCheckId} ` +
-            (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
-            ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
-            (debugMode ? ' --verbose' : '') +
-            (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
-          const quickDeployStartTime = Date.now();
-          const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
-            output: false,
-            debug: debugMode,
-            fail: false,
-          });
-          if (quickDeployRes.status === 0) {
-            uxLog("success", commandThis, c.green(t('successfullyProcessedQuickdeployForDeploymentid', { deploymentCheckId })));
-            uxLog(
-              "warning",
-              commandThis,
-              c.yellow(
-                'If you do not want to use QuickDeploy feature, define env variable SFDX_HARDIS_QUICK_DEPLOY=false'
-              )
-            );
-            quickDeploy = true;
-            deploymentMetrics.quickDeploy = true;
-            // Records the success and explains why no Apex test ran on this job
-            setPullRequestData(buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: true }));
-            // Store complete deployment result as a CI artifact, then display a readable summary
-            const quickDeployReportFile = await writeDeployResultReportFile(
-              { status: quickDeployRes.status, result: quickDeployRes.result },
-              deployment.label
-            );
-            logDeployResultSummary(commandThis, { status: quickDeployRes.status, result: quickDeployRes.result }, {
-              check: check,
-              label: deployment.label,
-              delta: options.delta === true,
-              quickDeploy: true,
-              durationMs: Date.now() - quickDeployStartTime,
-              reportFile: quickDeployReportFile,
+        if (nbDeployedItems === 0 && !hasDestructiveChanges) {
+          uxLog(
+            "warning",
+            commandThis,
+            c.yellow(
+              `Skipping deployment of ${c.bold(deployment.label)} because package.xml is empty and there are no destructive changes.`
+            )
+          );
+          deployXmlCount--;
+          elapseEnd(`deploy ${deployment.label}`);
+          continue;
+        }
+        processedDeploymentCount++;
+
+        uxLog(
+          "action",
+          commandThis,
+          c.cyan(
+            `${check ? 'Simulating deployment of' : 'Deploying'} ${c.bold(deployment.label)} package: ${deployment.packageXmlFile
+            } (${nbDeployedItems} items)${hasDestructiveChanges ? ' with destructive changes' : ''}...`
+          )
+        );
+        await warnOnDuplicateFolderMetadataApiNames(deployment.packageXmlFile, commandThis);
+        const branchConfig = await getConfig('branch');
+        // Try QuickDeploy
+        if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
+          const deploymentCheckId = await GitProvider.getDeploymentCheckId();
+          if (deploymentCheckId) {
+            const quickDeployCommand =
+              `sf project deploy quick` +
+              ` --job-id ${deploymentCheckId} ` +
+              (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
+              ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
+              (debugMode ? ' --verbose' : '') +
+              (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '');
+            const quickDeployStartTime = Date.now();
+            const quickDeployRes = await execSfdxJson(quickDeployCommand, commandThis, {
+              output: false,
+              debug: debugMode,
+              fail: false,
             });
-            const quickDeployResultJson = quickDeployRes.result;
-            if (quickDeployResultJson) {
-              deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
-              accumulateComponentChanges(deploymentMetrics, quickDeployResultJson);
-              recordDeployedMetadataInPrData(deploymentMetrics, check, true);
-              recordDeployResult(quickDeployResultJson, { quickDeploy: true });
-              deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
-              deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
-              deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
-              deploymentMetrics.testsFailed += Number(quickDeployResultJson.numberTestErrors || 0);
-              deploymentMetrics.testsTotal += Number(quickDeployResultJson.numberTestsTotal || 0);
+            if (quickDeployRes.status === 0) {
+              uxLog("success", commandThis, c.green(t('successfullyProcessedQuickdeployForDeploymentid', { deploymentCheckId })));
+              uxLog(
+                "warning",
+                commandThis,
+                c.yellow(
+                  'If you do not want to use QuickDeploy feature, define env variable SFDX_HARDIS_QUICK_DEPLOY=false'
+                )
+              );
+              quickDeploy = true;
+              deploymentMetrics.quickDeploy = true;
+              // Records the success and explains why no Apex test ran on this job
+              setPullRequestData(buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: true }));
+              // Store complete deployment result as a CI artifact, then display a readable summary
+              const quickDeployReportFile = await writeDeployResultReportFile(
+                { status: quickDeployRes.status, result: quickDeployRes.result },
+                deployment.label
+              );
+              logDeployResultSummary(commandThis, { status: quickDeployRes.status, result: quickDeployRes.result }, {
+                check: check,
+                label: deployment.label,
+                delta: options.delta === true,
+                quickDeploy: true,
+                durationMs: Date.now() - quickDeployStartTime,
+                reportFile: quickDeployReportFile,
+              });
+              const quickDeployResultJson = quickDeployRes.result;
+              if (quickDeployResultJson) {
+                deploymentMetrics.componentsDeployed += Number(quickDeployResultJson.numberComponentsDeployed || 0);
+                accumulateComponentChanges(deploymentMetrics, quickDeployResultJson);
+                recordDeployedMetadataInPrData(deploymentMetrics, check, true);
+                recordDeployResult(quickDeployResultJson, { quickDeploy: true });
+                deploymentMetrics.componentsTotal += Number(quickDeployResultJson.numberComponentsTotal || 0);
+                deploymentMetrics.componentsFailed += Number(quickDeployResultJson.numberComponentErrors || 0);
+                deploymentMetrics.testsRun += Number(quickDeployResultJson.numberTestsCompleted || 0);
+                deploymentMetrics.testsFailed += Number(quickDeployResultJson.numberTestErrors || 0);
+                deploymentMetrics.testsTotal += Number(quickDeployResultJson.numberTestsTotal || 0);
+              }
+              continue;
+            } else {
+              uxLog(
+                "warning",
+                commandThis,
+                c.yellow(
+                  `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${summarizeDeployErrorMessage(quickDeployRes.errorMessage)}.`
+                )
+              );
+              uxLog("success", commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok 😊"));
+              const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
+              if (!isProdOrg) {
+                testlevel = 'NoTestRun';
+                uxLog(
+                  "success",
+                  commandThis,
+                  c.green(
+                    'Note: run with NoTestRun to improve perfs as we had previously succeeded to simulate the deployment'
+                  )
+                );
+              }
             }
-            continue;
-          } else {
-            uxLog(
-              "warning",
-              commandThis,
-              c.yellow(
-                `Unable to perform QuickDeploy for deploymentId ${deploymentCheckId}.\n${summarizeDeployErrorMessage(quickDeployRes.errorMessage)}.`
-              )
-            );
-            uxLog("success", commandThis, c.green("Switching back to effective deployment not using QuickDeploy: that's ok 😊"));
+          }
+          // Adjust testlevel for deployment if needed for special case testCoverageNotBlocking
+          else if (check === false && branchConfig?.testCoverageNotBlocking === true) {
             const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
             if (!isProdOrg) {
               testlevel = 'NoTestRun';
@@ -628,218 +654,206 @@ export async function smartDeploy(
                 "success",
                 commandThis,
                 c.green(
-                  'Note: run with NoTestRun to improve perfs as we had previously succeeded to simulate the deployment'
+                  'Note: run with NoTestRun as we had previously succeeded to simulate the deployment with testCoverageNotBlocking=true'
                 )
               );
             }
           }
         }
-        // Adjust testlevel for deployment if needed for special case testCoverageNotBlocking
-        else if (check === false && branchConfig?.testCoverageNotBlocking === true) {
-          const isProdOrg = await isProductionOrg(options.targetUsername || "", options);
-          if (!isProdOrg) {
-            testlevel = 'NoTestRun';
+        // No QuickDeploy Available, or QuickDeploy failing : try full deploy
+        const reportDir = await getReportDirectory();
+        const hasCoverageFormatterJson =
+          process.env?.COVERAGE_FORMATTER_JSON === "true" && testlevel !== 'NoTestRun' ?
+            true :
+            (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) ?
+              false :
+              true
+          ;
+        const hasCoverageFormatterJsonSummary = (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) ? false : true;
+        const deployCommand =
+          `sf project deploy` +
+          // (check && testlevel !== 'NoTestRun' ? ' validate' : ' start') + // Not until validate command is correct and accepts ignore-warnings
+          ' start' +
+          // (check && testlevel === 'NoTestRun' ? ' --dry-run' : '') + // validate with NoTestRun does not work, so use --dry-run
+          (check ? ' --dry-run' : '') +
+          ` --manifest "${deployment.packageXmlFile}"` +
+          ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff for example
+          ' --ignore-conflicts' + // With CICD we are supposed to ignore them
+          ((hasCoverageFormatterJson || hasCoverageFormatterJsonSummary) ? ` --results-dir "${reportDir}"` : '') +
+          ` --test-level ${testlevel}` +
+          (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
+          (options.preDestructiveChanges ? ` --pre-destructive-changes "${options.preDestructiveChanges}"` : '') +
+          (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes "${options.postDestructiveChanges}"` : '') +
+          (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
+          (hasCoverageFormatterJsonSummary ? ' --coverage-formatters json-summary' : '') +
+          (hasCoverageFormatterJson ? ' --coverage-formatters json' : '') +
+          (debugMode ? ' --verbose' : '') +
+          ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
+          (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
+          ` --json`;
+        let deployRes;
+        const deployCommandStartTime = Date.now();
+        try {
+          deployRes = await execCommand(deployCommand, commandThis, {
+            output: false,
+            debug: debugMode,
+            fail: true,
+            retry: deployment.retry || null,
+          });
+        } catch (e: any) {
+          await generateApexCoverageOutputFile();
+
+          // Special handling for "nothing to deploy" error with destructive changes
+          if ((e.stdout + e.stderr).includes("No local changes to deploy") && hasDestructiveChanges) {
+
+            uxLog("warning", commandThis, c.yellow(c.bold(
+              'Received "Nothing to Deploy" error, but destructive changes are present. ' +
+              'This can happen when only destructive changes are being deployed.'
+            )));
+
+            // Create a minimal response to avoid terminal freeze
+            deployRes = {
+              status: 0,  // Treat as success
+              stdout: JSON.stringify({
+                status: 0,
+                result: {
+                  success: true,
+                  id: "destructiveChangesOnly",
+                  details: {
+                    componentSuccesses: [],
+                    runTestResult: null
+                  }
+                }
+              }),
+              stderr: ""
+            };
+          } else {
+            deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
+          }
+        }
+
+        // Accumulate deploy result metrics for this split deployment (before deployRes.stdout gets overwritten below)
+        try {
+          const deployResultJson = deployRes.result ?? JSON.parse(deployRes.stdout || '{}')?.result;
+          if (deployResultJson) {
+            deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
+            accumulateComponentChanges(deploymentMetrics, deployResultJson);
+            recordDeployedMetadataInPrData(deploymentMetrics, check);
+            recordDeployResult(deployResultJson);
+            deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
+            deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
+            deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);
+            deploymentMetrics.testsFailed += Number(deployResultJson.numberTestErrors || 0);
+            deploymentMetrics.testsTotal += Number(deployResultJson.numberTestsTotal || 0);
+          }
+        } catch {
+          // Deploy result JSON not parseable for this split deployment: metrics for it are skipped
+        }
+        deploymentMetrics.success = deploymentMetrics.success && deployRes.status === 0;
+
+        if (typeof deployRes === 'object') {
+          deployRes.stdout = JSON.stringify(deployRes);
+        }
+        await generateApexCoverageOutputFile();
+
+        // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
+        const deployResultJsonForReport = deployRes.result
+          ? { status: deployRes.status, result: deployRes.result }
+          : findJsonInString(`${deployRes.stdout || ''}${deployRes.stderr || ''}`);
+        const deployResultReportFile = await writeDeployResultReportFile(deployResultJsonForReport, deployment.label);
+
+        // Set deployment id
+        await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
+        // Stored so the Pull Request comment only promises Quick Deploy for validations that ran tests
+        if (check) {
+          setPullRequestData({ checkTestLevel: testlevel });
+        }
+
+        // Check org coverage if found in logs
+        const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');
+
+        // Display a readable summary of the deployment, before the code coverage check that can throw an error
+        logDeployResultSummary(commandThis, deployResultJsonForReport, {
+          check: check,
+          label: deployment.label,
+          delta: options.delta === true,
+          quickDeploy: quickDeploy,
+          orgCoveragePercent: orgCoveragePercent,
+          durationMs: Date.now() - deployCommandStartTime,
+          reportFile: deployResultReportFile,
+        });
+
+        if (orgCoveragePercent) {
+          deploymentMetrics.codeCoveragePercent = Number(orgCoveragePercent);
+          try {
+            await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
+          } catch (errCoverage) {
+            await postDeploymentPullRequestComment(check);
+            killBoringExitHandlers();
+            throw errCoverage;
+          }
+        } else {
+          // Handle notif message when there is no apex
+          const prDataCodeCoverage: Partial<PullRequestData> = {
+            ...buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: quickDeploy }),
+            testsNotRunReason: testlevel === 'NoTestRun' ? 'smart-tests' : branchConfig?.skipCodeCoverage === true ? 'coverage-skipped' : 'no-apex',
+            codeCoverageMarkdownBody:
+              testlevel === 'NoTestRun'
+                ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
+                branchConfig?.skipCodeCoverage === true
+                  ? '✅⚠️ Code coverage has been skipped for this level'
+                  : '✅ No code coverage: It seems there is not Apex in this project',
+          };
+          setPullRequestData(prDataCodeCoverage);
+        }
+
+        let extraInfo = options?.delta === true ? 'DELTA Deployment' : 'FULL Deployment';
+        if (quickDeploy === true) {
+          extraInfo += ' (using Quick Deploy)';
+        }
+
+        // Display deployment status
+        if (deployRes.status === 0) {
+          message =
+            `[sfdx-hardis] Successfully ${check ? 'checked deployment of' : 'deployed'} ${c.bold(
+              deployment.label
+            )} to target Salesforce org - ` + extraInfo;
+          uxLog("success", commandThis, c.green(message));
+          if (deployRes?.testCoverageNotBlockingActivated === true) {
             uxLog(
-              "success",
+              "warning",
               commandThis,
-              c.green(
-                'Note: run with NoTestRun as we had previously succeeded to simulate the deployment with testCoverageNotBlocking=true'
+              c.yellow(
+                'There is a code coverage issue, but the check is passing by design because you configured testCoverageNotBlocking: true in your branch .sfdx-hardis.yml'
               )
             );
           }
-        }
-      }
-      // No QuickDeploy Available, or QuickDeploy failing : try full deploy
-      const reportDir = await getReportDirectory();
-      const hasCoverageFormatterJson =
-        process.env?.COVERAGE_FORMATTER_JSON === "true" && testlevel !== 'NoTestRun' ?
-          true :
-          (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) ?
-            false :
-            true
-        ;
-      const hasCoverageFormatterJsonSummary = (testlevel === 'NoTestRun' || branchConfig?.skipCodeCoverage === true) ? false : true;
-      const deployCommand =
-        `sf project deploy` +
-        // (check && testlevel !== 'NoTestRun' ? ' validate' : ' start') + // Not until validate command is correct and accepts ignore-warnings
-        ' start' +
-        // (check && testlevel === 'NoTestRun' ? ' --dry-run' : '') + // validate with NoTestRun does not work, so use --dry-run
-        (check ? ' --dry-run' : '') +
-        ` --manifest "${deployment.packageXmlFile}"` +
-        ' --ignore-warnings' + // So it does not fail in for objectTranslations stuff for example
-        ' --ignore-conflicts' + // With CICD we are supposed to ignore them
-        ((hasCoverageFormatterJson || hasCoverageFormatterJsonSummary) ? ` --results-dir "${reportDir}"` : '') +
-        ` --test-level ${testlevel}` +
-        (options.testClasses && testlevel !== 'NoTestRun' ? ` --tests ${options.testClasses}` : '') +
-        (options.preDestructiveChanges ? ` --pre-destructive-changes "${options.preDestructiveChanges}"` : '') +
-        (options.postDestructiveChanges && !(options.destructiveChangesAfterDeployment === true) ? ` --post-destructive-changes "${options.postDestructiveChanges}"` : '') +
-        (options.targetUsername ? ` -o ${options.targetUsername}` : '') +
-        (hasCoverageFormatterJsonSummary ? ' --coverage-formatters json-summary' : '') +
-        (hasCoverageFormatterJson ? ' --coverage-formatters json' : '') +
-        (debugMode ? ' --verbose' : '') +
-        ` --wait ${getEnvVar("SFDX_DEPLOY_WAIT_MINUTES") || '120'}` +
-        (process.env.SFDX_DEPLOY_DEV_DEBUG ? ' --dev-debug' : '') +
-        ` --json`;
-      let deployRes;
-      const deployCommandStartTime = Date.now();
-      try {
-        deployRes = await execCommand(deployCommand, commandThis, {
-          output: false,
-          debug: debugMode,
-          fail: true,
-          retry: deployment.retry || null,
-        });
-      } catch (e: any) {
-        await generateApexCoverageOutputFile();
-
-        // Special handling for "nothing to deploy" error with destructive changes
-        if ((e.stdout + e.stderr).includes("No local changes to deploy") && hasDestructiveChanges) {
-
-          uxLog("warning", commandThis, c.yellow(c.bold(
-            'Received "Nothing to Deploy" error, but destructive changes are present. ' +
-            'This can happen when only destructive changes are being deployed.'
-          )));
-
-          // Create a minimal response to avoid terminal freeze
-          deployRes = {
-            status: 0,  // Treat as success
-            stdout: JSON.stringify({
-              status: 0,
-              result: {
-                success: true,
-                id: "destructiveChangesOnly",
-                details: {
-                  componentSuccesses: [],
-                  runTestResult: null
-                }
-              }
-            }),
-            stderr: ""
-          };
         } else {
-          deployRes = await handleDeployError(e, check, branchConfig, commandThis, options, deployment);
+          message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org - ` + extraInfo;
+          uxLog("error", commandThis, c.red(c.bold(deployRes.errorMessage)));
+          await displayDeploymentLink(deployRes.errorMessage, options);
         }
-      }
-
-      // Accumulate deploy result metrics for this split deployment (before deployRes.stdout gets overwritten below)
-      try {
-        const deployResultJson = deployRes.result ?? JSON.parse(deployRes.stdout || '{}')?.result;
-        if (deployResultJson) {
-          deploymentMetrics.componentsDeployed += Number(deployResultJson.numberComponentsDeployed || 0);
-          accumulateComponentChanges(deploymentMetrics, deployResultJson);
-          recordDeployedMetadataInPrData(deploymentMetrics, check);
-          recordDeployResult(deployResultJson);
-          deploymentMetrics.componentsTotal += Number(deployResultJson.numberComponentsTotal || 0);
-          deploymentMetrics.componentsFailed += Number(deployResultJson.numberComponentErrors || 0);
-          deploymentMetrics.testsRun += Number(deployResultJson.numberTestsCompleted || 0);
-          deploymentMetrics.testsFailed += Number(deployResultJson.numberTestErrors || 0);
-          deploymentMetrics.testsTotal += Number(deployResultJson.numberTestsTotal || 0);
+        // Restore quickActions after deployment of main package
+        if (deployment.packageXmlFile.includes('mainPackage.xml')) {
+          await restoreQuickActions();
         }
-      } catch {
-        // Deploy result JSON not parseable for this split deployment: metrics for it are skipped
+        elapseEnd(`deploy ${deployment.label}`);
       }
-      deploymentMetrics.success = deploymentMetrics.success && deployRes.status === 0;
-
-      if (typeof deployRes === 'object') {
-        deployRes.stdout = JSON.stringify(deployRes);
+      // Deployment of type data import
+      else if (deployment.dataPath) {
+        const dataPath = path.resolve(deployment.dataPath);
+        await importData(dataPath, commandThis, options);
+        processedDeploymentCount++;
       }
-      await generateApexCoverageOutputFile();
-
-      // Keep the complete deployment result available as a CI artifact, as it is not displayed in the console anymore
-      const deployResultJsonForReport = deployRes.result
-        ? { status: deployRes.status, result: deployRes.result }
-        : findJsonInString(`${deployRes.stdout || ''}${deployRes.stderr || ''}`);
-      const deployResultReportFile = await writeDeployResultReportFile(deployResultJsonForReport, deployment.label);
-
-      // Set deployment id
-      await getDeploymentId(deployRes.stdout + deployRes.stderr || '');
-      // Stored so the Pull Request comment only promises Quick Deploy for validations that ran tests
-      if (check) {
-        setPullRequestData({ checkTestLevel: testlevel });
+      // Wait after deployment item process if necessary
+      if (deployment.waitAfter) {
+        uxLog("log", commandThis, `Waiting ${deployment.waitAfter} seconds after deployment according to deployment plan`);
+        await new Promise((resolve) => setTimeout(resolve, deployment.waitAfter * 1000));
       }
-
-      // Check org coverage if found in logs
-      const orgCoveragePercent = await extractOrgCoverageFromLog(deployRes.stdout + deployRes.stderr || '');
-
-      // Display a readable summary of the deployment, before the code coverage check that can throw an error
-      logDeployResultSummary(commandThis, deployResultJsonForReport, {
-        check: check,
-        label: deployment.label,
-        delta: options.delta === true,
-        quickDeploy: quickDeploy,
-        orgCoveragePercent: orgCoveragePercent,
-        durationMs: Date.now() - deployCommandStartTime,
-        reportFile: deployResultReportFile,
-      });
-
-      if (orgCoveragePercent) {
-        deploymentMetrics.codeCoveragePercent = Number(orgCoveragePercent);
-        try {
-          await checkDeploymentOrgCoverage(Number(orgCoveragePercent), { check: check, testlevel: testlevel, testClasses: options.testClasses });
-        } catch (errCoverage) {
-          await postDeploymentPullRequestComment(check);
-          killBoringExitHandlers();
-          throw errCoverage;
-        }
-      } else {
-        // Handle notif message when there is no apex
-        const prDataCodeCoverage: Partial<PullRequestData> = {
-          ...buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: quickDeploy }),
-          testsNotRunReason: testlevel === 'NoTestRun' ? 'smart-tests' : branchConfig?.skipCodeCoverage === true ? 'coverage-skipped' : 'no-apex',
-          codeCoverageMarkdownBody:
-            testlevel === 'NoTestRun'
-              ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
-              branchConfig?.skipCodeCoverage === true
-                ? '✅⚠️ Code coverage has been skipped for this level'
-                : '✅ No code coverage: It seems there is not Apex in this project',
-        };
-        setPullRequestData(prDataCodeCoverage);
-      }
-
-      let extraInfo = options?.delta === true ? 'DELTA Deployment' : 'FULL Deployment';
-      if (quickDeploy === true) {
-        extraInfo += ' (using Quick Deploy)';
-      }
-
-      // Display deployment status
-      if (deployRes.status === 0) {
-        message =
-          `[sfdx-hardis] Successfully ${check ? 'checked deployment of' : 'deployed'} ${c.bold(
-            deployment.label
-          )} to target Salesforce org - ` + extraInfo;
-        uxLog("success", commandThis, c.green(message));
-        if (deployRes?.testCoverageNotBlockingActivated === true) {
-          uxLog(
-            "warning",
-            commandThis,
-            c.yellow(
-              'There is a code coverage issue, but the check is passing by design because you configured testCoverageNotBlocking: true in your branch .sfdx-hardis.yml'
-            )
-          );
-        }
-      } else {
-        message = `[sfdx-hardis] Unable to deploy ${c.bold(deployment.label)} to target Salesforce org - ` + extraInfo;
-        uxLog("error", commandThis, c.red(c.bold(deployRes.errorMessage)));
-        await displayDeploymentLink(deployRes.errorMessage, options);
-      }
-      // Restore quickActions after deployment of main package
-      if (deployment.packageXmlFile.includes('mainPackage.xml')) {
-        await restoreQuickActions();
-      }
-      elapseEnd(`deploy ${deployment.label}`);
+      messages.push(message);
     }
-    // Deployment of type data import
-    else if (deployment.dataPath) {
-      const dataPath = path.resolve(deployment.dataPath);
-      await importData(dataPath, commandThis, options);
-      processedDeploymentCount++;
-    }
-    // Wait after deployment item process if necessary
-    if (deployment.waitAfter) {
-      uxLog("log", commandThis, `Waiting ${deployment.waitAfter} seconds after deployment according to deployment plan`);
-      await new Promise((resolve) => setTimeout(resolve, deployment.waitAfter * 1000));
-    }
-    messages.push(message);
+  } finally {
+    replacementSession?.restore();
   }
   // Nothing was sent to the org because every planned deployment was skipped: report the same
   // success as the paths that detect an empty package.xml before building the deployment plan,
@@ -2046,6 +2060,34 @@ async function postDeploymentPullRequestComment(check: boolean, options: { defer
   await publishDeploymentComponentsReport(check);
   if (options.defer !== true) {
     await GitProvider.managePostPullRequestComment(check);
+  }
+}
+
+/**
+ * Apply the replacement rules to the files of the deployment plan, and give their summary to the
+ * Pull Request comment. A failure is a warning: the deployment goes on with the files of git.
+ */
+async function startDeploymentReplacementRules(
+  splitDeployments: any[],
+  commandThis: any,
+  options: { targetUsername: string; conn: any; replacementRules?: { targetBranch: string | null } | false }
+): Promise<{ restore: () => number } | null> {
+  try {
+    const { applyReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
+    const { buildReplacementRulesMarkdown } = await import('../replacementRules/engine/replacementReport.js');
+    const session = await applyReplacementRules({
+      targetBranch: options.replacementRules ? options.replacementRules.targetBranch : null,
+      conn: options.conn,
+      targetUsername: options.targetUsername,
+      packageXmlFiles: splitDeployments.filter((deployment) => deployment.packageXmlFile).map((deployment) => deployment.packageXmlFile),
+      write: true,
+      commandThis,
+    });
+    setPullRequestData({ replacementRulesMarkdownBody: buildReplacementRulesMarkdown(session.report) });
+    return session;
+  } catch (e: any) {
+    uxLog("warning", commandThis, c.yellow(t('replacementRulesError', { message: e.message })));
+    return null;
   }
 }
 

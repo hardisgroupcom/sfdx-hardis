@@ -43,8 +43,10 @@ export class CommandAction extends ActionsProvider {
 
     // For cert-dependent commands in CI, re-authenticate keeping the JWT certificate file
     // available during execution, then delete it whatever the command outcome.
+    // Not during an org initialization: the re-authentication targets the major org of the branch,
+    // and would make it the default org while the steps initialize a scratch org or a sandbox
     const keptCertFilePath =
-      isCI && commandNeedsCertKeepAlive(cmd.command) ? await this.reauthKeepingCertFile() : null;
+      isCI && !cmd.orgInitContext && commandNeedsCertKeepAlive(cmd.command) ? await this.reauthKeepingCertFile() : null;
     try {
       const res = await execCommand(cmd.command, null, { fail: false, output: true });
       return { statusCode: res.status === 0 ? 'success' : 'failed', output: buildActionOutput(res) };
