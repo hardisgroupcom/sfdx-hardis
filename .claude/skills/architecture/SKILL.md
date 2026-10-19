@@ -83,14 +83,14 @@ External integrations use a root class + concrete implementations:
 
 Everything specific to one action type goes in its `ActionsProvider` subclass (`src/common/actionsProvider/<type>Action.ts`), and nowhere else: its flags, its prompts, its parameter normalization, its validation, the phases it may run in, its `runOnlyOnceByOrg` default. Generic code never names a type nor imports a type-specific helper: `hardis/project/action/base.ts`, `create.ts`, `update.ts`, `actionUtils.ts` and the Pull Request comment code only call the provider through the base-class hooks.
 
-| Hook (base default)                                      | Used by                                                                                                    |
-|----------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
-| `getFlagNames()` (`[]`)                                  | `assertNoFlagsOfOtherTypes`: create and update refuse a flag that only another type accepts                |
-| `getAllowedWhen()` (`null` = both phases)                | create refuses the other phase, `validateActionParameters` checks it, `listAvailableActionTypes(when)` hides the type, the provider's `checkParameters` refuses a hand-written action in the wrong phase |
-| `collectParameters(flags, headless, current)` (`null`)   | create and the interactive update: flags when headless, prompts seeded with the current values otherwise   |
-| `applyFlags(parameters, flags)` (unchanged)              | update in agent mode                                                                                       |
-| `getDefinitionErrors(action, when)` (`null`)             | `validateActionParameters`, when an action is saved                                                        |
-| `checkParameters`, `getIdentityParameters`, `run`        | the execution loop                                                                                         |
+| Hook (base default)                                    | Used by                                                                                                                                                                                                  |
+|--------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `getFlagNames()` (`[]`)                                | `assertNoFlagsOfOtherTypes`: create and update refuse a flag that only another type accepts                                                                                                              |
+| `getAllowedWhen()` (`null` = both phases)              | create refuses the other phase, `validateActionParameters` checks it, `listAvailableActionTypes(when)` hides the type, the provider's `checkParameters` refuses a hand-written action in the wrong phase |
+| `collectParameters(flags, headless, current)` (`null`) | create and the interactive update: flags when headless, prompts seeded with the current values otherwise                                                                                                 |
+| `applyFlags(parameters, flags)` (unchanged)            | update in agent mode                                                                                                                                                                                     |
+| `getDefinitionErrors(action, when)` (`null`)           | `validateActionParameters`, when an action is saved                                                                                                                                                      |
+| `checkParameters`, `getIdentityParameters`, `run`      | the execution loop                                                                                                                                                                                       |
 
 Generic code reaches the provider with `getBuiltInActionProvider(type)` (`actionUtils.ts`, `null` for a custom function). A hook returning `null` means "not handled by the provider": the older types (command, apex, data, publish-community, manual, schedule-batch, remove-packagexml-items) still have branches in the generic code. Do not add new branches there: move a type to its class when you touch it and the user agrees.
 
