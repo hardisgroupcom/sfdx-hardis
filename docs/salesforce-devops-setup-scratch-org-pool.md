@@ -120,10 +120,10 @@ Good to know:
 - The scratch org of a Pull Request is created from the newest Active snapshot of its target branch whose commit is in the history of the Pull Request. When there is none, it is created empty and the job log says why.
 - When the Pull Request changes `config/project-scratch-def.json` or a file under its `settingsPath`, the scratch org is created empty: a scratch org from a snapshot keeps the features and settings of the snapshot commit.
 - With `CI_SCRATCH_MODE=deploy`, `useDeltaDeploymentWithDependencies` applies to the delta as it does in deployments: the delta also gets what depends on the changed items, as the record types of a changed field.
-- The Apex init scripts (`scratchOrgInitApexScripts`) and the init data (`scripts/data/ScratchInit`) are not run again in a scratch org created from a snapshot: their results are already in it.
+- The [org initialization steps](salesforce-devops-org-initialization.md) run as for a scratch org pool: the steps run when filling the pool (`runAtPoolFill`, on by default) run once, in the scratch org of the snapshot, and their result is in every scratch org created from it. A scratch org from a snapshot gets the delta, then the steps with `runAtPoolFill: false` and the permission set assignments, as its admin user is new.
 - A snapshot child takes a few minutes to create, more than an empty scratch org. Snapshots pay off when the full deployment takes longer than that.
 - Salesforce writes that snapshots "are intended to include only dependent packages, metadata, and test data".
-- Scratch orgs from a snapshot do not use the pool: the pool keeps empty scratch orgs.
+- Scratch orgs from a snapshot do not use the pool. Both give a Pull Request a scratch org with the sources already deployed: a pool org is ready at once, but each one is a live scratch org until a job takes it; a snapshot holds no scratch org, and each Pull Request waits a few minutes for its signup.
 - Every snapshot counts in the active snapshots allocation of the Dev Hub, and the Dev Hub also limits the snapshots taken per day. When that limit is reached, Pull Requests keep using the previous snapshot.
 
 ### Use the pool from VS Code

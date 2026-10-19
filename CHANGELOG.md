@@ -7,6 +7,8 @@
   - New command [hardis:scratch:snapshot:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/): on a push to the branch, deploys it into an empty scratch org, takes the snapshot and keeps the newest `scratchOrgSnapshotKeep` (default 2).
   - CI/CD pipeline templates: a job that runs it on every git platform, and the scratch org jobs pass the target branch in `FORCE_TARGET_BRANCH`.
   - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): new env var **SCRATCH_ORG_SNAPSHOT** to create the scratch org from a snapshot given by name.
+  - The [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/) run as for a pool: the snapshot holds the result of the steps run when filling the pool, and each Pull Request scratch org gets the delta, then the other steps.
+- Delta deployment with `useDeltaDeploymentWithDependencies`: a command that reads two manifests no longer extends the second delta with the components of the first.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): on GitHub, running the command again after GitHub refused the push of the workflow on `main` now pushes it, instead of saying it was done.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): Flows that are already deleted no longer show in the Flow deletion section of the Pull Request comments.
 - Reports: when a CSV or Excel report is open in Excel, the new one is written next to it as `report-2.xlsx` with a warning, instead of not being generated.
