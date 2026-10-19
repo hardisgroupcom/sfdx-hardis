@@ -1,4 +1,4 @@
-import { isOrgInitOnlyActionType } from '../actionsProvider/actionTypes.js';
+import { isOrgInitOnlyActionType, resolveRunOnlyOnceByOrg } from '../actionsProvider/actionTypes.js';
 import { SfError } from '@salesforce/core';
 import c from 'chalk';
 import fs from './fsUtils.js';
@@ -448,7 +448,7 @@ export async function runSingleDeploymentAction(cmd: PrePostCommand, ctx: Single
   }
   if (!skipAction) {
     // true by default, except for action types that must run at every deployment
-    const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && cmd.runOnlyOnceByOrg !== false && ctx.skipRunOnlyOnceCheck !== true;
+    const runOnlyOnceByOrg = actionsInstance.supportsRunOnlyOnceByOrg() && resolveRunOnlyOnceByOrg(cmd) && ctx.skipRunOnlyOnceCheck !== true;
     if (runOnlyOnceByOrg) {
       const gitProviderInst = await GitProvider.getInstance();
       if (!gitProviderInst) {

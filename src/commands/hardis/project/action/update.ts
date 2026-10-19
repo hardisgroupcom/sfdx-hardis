@@ -11,7 +11,9 @@ import {
   ActionScope,
   ActionWhen,
   applyBranchFilterFlagsToAction,
+  assertNoFlagsOfOtherTypes,
   findActionById,
+  getBuiltInActionProvider,
   listAvailableActionTypes,
   logActionSummary,
   readActions,
@@ -24,7 +26,7 @@ import {
 import { CONSTANTS } from '../../../../config/index.js';
 import { PrePostCommand } from '../../../../common/actionsProvider/actionsProvider.js';
 import { normalizePackageXmlItems } from '../../../../common/actionsProvider/removePackageXmlItemsAction.js';
-import { RUN_BATCH_CONTEXT, applyRunBatchFlags, hasRunBatchFlags } from '../../../../common/actionsProvider/runBatchAction.js';
+import { DEPLOYMENT_ONLY_ACTION_TYPES, resolveRunOnlyOnceByOrg } from '../../../../common/actionsProvider/actionTypes.js';
 import { getCustomFunctionById, isBuiltInActionType } from '../../../../common/utils/customFunctionUtils.js';
 import { castFunctionInputValues, parseFunctionInputFlags } from '../../../../common/utils/customFunctionFlagUtils.js';
 
@@ -71,6 +73,7 @@ Required in agent mode:
 - Changing \`--type\` clears old type-specific parameters and requires new ones.
 - \`--move-to-pr\` requires \`--scope pr\` and the number of the original Pull Request in \`--pr-id\`. When the action is not in its YAML file, it is read from the description of the Pull Request through the git provider API.
 - A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
+- A \`user-access-policy\` action is updated with \`--policies\`, \`--activate\` and \`--apply-to-all\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
 - A \`manual\` action declared \`pre-deploy\` is always stored with the \`all\` context.
 </details>
 
@@ -89,6 +92,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     '$ sf hardis:project:action:update',
     '$ sf hardis:project:action:update --agent --scope branch --when pre-deploy --action-id abc-123 --label "New label" --context process-deployment-only',
     '$ sf hardis:project:action:update --agent --scope project --when post-deploy --action-id abc-123 --include-target-branches "uat,preprod"',
+    '$ sf hardis:project:action:update --agent --scope project --when post-deploy --action-id abc-123 --policies "Sales_Rep_Access,Sales_Manager_Access" --no-apply-to-all',
     '$ sf hardis:project:action:update --agent --scope pr --pr-id 123 --when post-deploy --action-id abc-123 --move-to-pr current',
   ];
 
@@ -111,7 +115,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
     type: Flags.string({
-      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items) or the id of a project custom function',
+      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'New label for the action',
@@ -156,6 +160,17 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     }),
     'packagexml-items': Flags.string({
       description: 'New semicolon-separated list of package.xml items to remove, each in format TypeName:Member1,Member2 (for remove-packagexml-items type)',
+    }),
+    policies: Flags.string({
+      description: 'New comma-separated developer names of User Access Policies (for user-access-policy type)',
+    }),
+    activate: Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: activate the policies after the deployment',
+    }),
+    'apply-to-all': Flags.boolean({
+      allowNo: true,
+      description: 'For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser',
     }),
     'new-when': Flags.string({
       options: ['pre-deploy', 'post-deploy'],
@@ -341,14 +356,19 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     const newLabel = await this.promptText(t('enterActionLabel'), action.label);
     if (newLabel) action.label = newLabel;
 
-    const newType = await this.promptSelect(t('selectActionType'), await listAvailableActionTypes(action.when), action.type);
+    const newType = await this.promptSelect(t('selectActionType'), await listAvailableActionTypes(targetWhen), action.type);
     if (newType && newType !== action.type) {
       action.type = newType;
       action.parameters = {};
       action.command = '';
     }
 
-    if (action.type === 'command') {
+    // What is specific to a built-in type is in its provider class
+    const provider = await getBuiltInActionProvider(action.type);
+    const providerParameters = await provider?.collectParameters({}, false, action.parameters);
+    if (providerParameters) {
+      action.parameters = providerParameters;
+    } else if (action.type === 'command') {
       const val = await this.promptText(t('enterCommand'), action.command || '');
       if (val) action.command = val;
     } else if (action.type === 'apex') {
@@ -370,14 +390,6 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       if (ce) action.parameters = { ...action.parameters, cronExpression: ce };
       const jn = await this.promptText(t('enterJobName'), action.parameters?.jobName || '');
       if (jn) action.parameters = { ...action.parameters, jobName: jn };
-    } else if (action.type === 'run-batch') {
-      const cn = await this.promptText(t('enterClassName'), action.parameters?.className || '');
-      if (cn) action.parameters = { ...action.parameters, className: cn };
-      // Asked again as a whole, so leaving the wait mode drops the wait-only parameters
-      action.parameters = {
-        className: action.parameters?.className,
-        ...(await this.collectRunBatchParameters({}, false, action.parameters)),
-      };
     } else if (action.type === 'remove-packagexml-items') {
       const itemsRaw = await this.promptText(t('enterPackageXmlItems'), normalizePackageXmlItems(action.parameters?.packageXmlItems).join(';'));
       if (itemsRaw) {
@@ -394,9 +406,9 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       action.parameters = await this.promptCustomFunctionInputs(definition, action.parameters || {});
     }
 
-    if (action.type === 'run-batch') {
-      // run-batch only runs in one context: there is nothing to ask
-      action.context = RUN_BATCH_CONTEXT;
+    if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(action.type)) {
+      // These types only run in one context: there is nothing to ask
+      action.context = 'process-deployment-only';
     } else if (action.type === 'manual' && targetWhen === 'pre-deploy') {
       // Listed by the validation job whatever its context: nothing to ask either
       action.context = 'all';
@@ -436,13 +448,12 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     if (flags['class-name']) action.parameters = { ...action.parameters, className: flags['class-name'] };
     if (flags['cron-expression']) action.parameters = { ...action.parameters, cronExpression: flags['cron-expression'] };
     if (flags['job-name']) action.parameters = { ...action.parameters, jobName: flags['job-name'] };
-    if (action.type === 'run-batch') {
-      action.parameters = applyRunBatchFlags(action.parameters, flags);
-      // A run-batch action takes its only context, unless one is passed and then validated
-      if (!flags.context) action.context = RUN_BATCH_CONTEXT;
-    } else if (hasRunBatchFlags(flags)) {
-      throw new SfError(t('actionRunBatchFlagsOnOtherType', { type: action.type }));
-    }
+    await assertNoFlagsOfOtherTypes(action.type, flags);
+    // What is specific to a built-in type is in its provider class
+    const provider = await getBuiltInActionProvider(action.type);
+    if (provider) action.parameters = provider.applyFlags(action.parameters, flags);
+    // These types take their only context, unless one is passed and then validated
+    if (DEPLOYMENT_ONLY_ACTION_TYPES.includes(action.type) && !flags.context) action.context = 'process-deployment-only';
     if (flags['packagexml-items']) {
       action.parameters = {
         ...action.parameters,
@@ -452,6 +463,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     if (flags.context) action.context = flags.context;
     applyBranchFilterFlagsToAction(action, flags['include-target-branches'], flags['exclude-target-branches']);
     if (flags['allow-failure'] !== undefined) action.allowFailure = flags['allow-failure'];
+    // A type may run at every deployment by default
+    if (flags.type && !resolveRunOnlyOnceByOrg({ type: flags.type })) action.runOnlyOnceByOrg = false;
     if (flags['run-only-once-by-org'] !== undefined) action.runOnlyOnceByOrg = flags['run-only-once-by-org'];
     if (action.type === 'remove-packagexml-items') action.runOnlyOnceByOrg = false;
     if (flags['custom-username']) action.customUsername = flags['custom-username'];

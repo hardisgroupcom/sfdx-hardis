@@ -47,6 +47,16 @@ A `run-batch` action runs a `Database.Batchable` Apex class once, before or afte
 
 A run-batch action only runs in the `process-deployment-only` context, never during a deployment check.
 
+### Activate User Access Policies
+
+A deployment always leaves the User Access Policies it contains in Design status, even an active one. A `user-access-policy` action, run after the deployment, sets them back to Active.
+
+- `policies`: developer names of the policies.
+- `activate: true` (default) activates them with the Salesforce API. A policy already active is left as is.
+- `applyToAll: true` also runs **Apply To All** for each policy. Salesforce has no API for it, so the action clicks the button of the Setup page in a headless Chrome. It then waits until Salesforce records the run, for 5 minutes at most.
+
+A user-access-policy action is `post-deploy` only, and only runs in the `process-deployment-only` context. It runs at every deployment by default (`runOnlyOnceByOrg: false`), because each new deployment of a policy turns it off again.
+
 A manual action declared `pre-deploy` is always stored with the `all` context: it has to be done before the merge, so the deployment check lists it too.
 
 ### Agent Mode
@@ -60,7 +70,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - `--scope`, `--when`, `--type`, `--label`
-- Type-specific flags: `--command` for command, `--apex-script` for apex, `--sfdmu-project` for data, `--community-name` for publish-community, `--instructions` for manual, `--class-name` and `--cron-expression` for schedule-batch, `--class-name` for run-batch (`--run-mode` defaults to `wait`), `--packagexml-items` for remove-packagexml-items
+- Type-specific flags: `--command` for command, `--apex-script` for apex, `--sfdmu-project` for data, `--community-name` for publish-community, `--instructions` for manual, `--class-name` and `--cron-expression` for schedule-batch, `--class-name` for run-batch (`--run-mode` defaults to `wait`), `--packagexml-items` for remove-packagexml-items, `--policies` for user-access-policy (`--activate` defaults to `true`, `--apply-to-all` to `false`)
 
 In agent mode, `--context` defaults to `process-deployment-only`. `--run-only-once-by-org` defaults to `true` (use `--no-run-only-once-by-org` to disable); other optional boolean flags default to `false`.
 
@@ -80,9 +90,11 @@ Use `--include-target-branches` or `--exclude-target-branches` (comma-separated,
 
 | Name                         |  Type   | Description                                                                                                                                                                                                              | Default | Required |                          Options                          |
 |:-----------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:---------------------------------------------------------:|
+| activate                     | boolean | For user-access-policy type: activate the policies after the deployment (default: true)                                                                                                                                  |         |          |                                                           |
 | agent                        | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                    |         |          |                                                           |
 | allow-failure                | boolean | Allow action to fail without blocking deployment                                                                                                                                                                         |         |          |                                                           |
 | apex-script                  | option  | Path to Apex script file (for apex type)                                                                                                                                                                                 |         |          |                                                           |
+| apply-to-all                 | boolean | For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser (default: false)                                                                                     |         |          |                                                           |
 | batch-size                   | option  | Batch size for run-batch type (optional, 1 to 2000, defaults to 200)                                                                                                                                                     |         |          |                                                           |
 | branch                       | option  | Target branch name (for branch scope, defaults to current branch)                                                                                                                                                        |         |          |                                                           |
 | class-name                   | option  | Apex batch class name (for schedule-batch and run-batch types). Write a global class of a managed package with its namespace: ns.ClassName                                                                               |         |          |                                                           |
@@ -101,13 +113,14 @@ Use `--include-target-branches` or `--exclude-target-branches` (comma-separated,
 | json                         | boolean | Format output as json.                                                                                                                                                                                                   |         |          |                                                           |
 | label                        | option  | Human-readable label for the action                                                                                                                                                                                      |         |          |                                                           |
 | packagexml-items             | option  | Semicolon-separated list of package.xml items to remove before deployment, each in format TypeName:Member1,Member2 (for remove-packagexml-items type). Example: "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2" |         |          |                                                           |
+| policies                     | option  | Comma-separated developer names of User Access Policies (for user-access-policy type)                                                                                                                                    |         |          |                                                           |
 | pr-id                        | option  | Pull request ID (for pr scope, defaults to draft)                                                                                                                                                                        |         |          |                                                           |
 | run-mode                     | option  | For run-batch type: wait for the batch to succeed, or launch it without waiting for its result (default: wait)                                                                                                           |         |          |                     wait<br/>no-wait                      |
 | run-only-once-by-org         | boolean | Execute action only once per target org (default: true)                                                                                                                                                                  |         |          |                                                           |
 | scope                        | option  | Configuration scope: project, branch, or pr                                                                                                                                                                              |         |          |                 project<br/>branch<br/>pr                 |
 | sfdmu-project                | option  | SFDMU workspace name (for data type)                                                                                                                                                                                     |         |          |                                                           |
 | success-even-if-batch-errors | boolean | For run-batch type in wait mode: keep the action successful when the batch completes with errors                                                                                                                         |         |          |                                                           |
-| type                         | option  | Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items) or the id of a project custom function                                              |         |          |                                                           |
+| type                         | option  | Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy) or the id of a project custom function                          |         |          |                                                           |
 | wait-timeout                 | option  | Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)                                                                                                                              |         |          |                                                           |
 | websocket                    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                |         |          |                                                           |
 | when                         | option  | When to run the action: pre-deploy or post-deploy                                                                                                                                                                        |         |          |                pre-deploy<br/>post-deploy                 |
@@ -132,6 +145,10 @@ $ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-depl
 
 ```shell
 $ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30
+```
+
+```shell
+$ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all
 ```
 
 ```shell

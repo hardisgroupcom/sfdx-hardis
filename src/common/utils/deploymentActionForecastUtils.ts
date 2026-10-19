@@ -7,6 +7,7 @@
 import { getConfig } from '../../config/index.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { ActionWhen, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { resolveRunOnlyOnceByOrg } from '../actionsProvider/actionTypes.js';
 import { buildActionTargetBranchCandidates, evaluateActionBranchFilter } from './actionUtils.js';
 import { DeploymentActionStateEntry, getActionStateEntry } from './deploymentActionsStateUtils.js';
 import { getEffectiveActionContext } from './prePostCommandUtils.js';
@@ -133,7 +134,7 @@ export function forecastAction(
   if (verdict.run === false && !verdict.invalid) {
     return make('not-for-branch', 'branch-filter');
   }
-  const runsAtEveryDeployment = def.runOnlyOnceByOrg === false || def.type === 'remove-packagexml-items';
+  const runsAtEveryDeployment = !resolveRunOnlyOnceByOrg(def) || def.type === 'remove-packagexml-items';
   if (entry?.status === 'success' && !runsAtEveryDeployment) {
     return make('done', 'done-in-branch');
   }

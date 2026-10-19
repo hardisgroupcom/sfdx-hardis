@@ -467,6 +467,46 @@ Like for `schedule-batch`, a class of a managed package is written with its name
 
 </details>
 
+#### Activate User Access Policies
+
+A deployment always leaves the [User Access Policies](https://help.salesforce.com/s/articleView?id=platform.perm_user_access_policies.htm&type=5) it contains in Design status, even one that was active in the org before. Their automation stops until someone activates them again in Setup. This action activates them right after the deployment, and can also run **Apply To All** on them, so the users that already match the criteria get their permission sets, groups and package licenses.
+
+The policy picker proposes the policies of the org and of the project.
+
+<details markdown="1"><summary>Technical: user-access-policy action (YAML)</summary>
+
+- **Activate** (`activate`, on by default): the action sets the status of each policy to Active with the Salesforce API, then reads it again to check it. A policy already active is left as it is. When Salesforce refuses, for example for a policy without filter or action, the action fails with the message of Salesforce.
+- **Apply to all users** (`applyToAll`, off by default): Salesforce has no API for it. The action opens the page of the policy that **Preview Users** shows, in a headless Chrome, clicks **Apply To All**, then waits until Salesforce records the run, for 5 minutes at most. That page is not an API: if Salesforce changes it, the action fails and says how to apply the policy by hand.
+
+Apply To All needs Chrome or Chromium on the machine running the job. It is in the sfdx-hardis Docker images. On another image, set `PUPPETEER_EXECUTABLE_PATH` to its path. Activating alone never needs a browser.
+
+The action runs after the deployment only, and only in the `process-deployment-only` context: a deployment check deploys nothing. It runs at every deployment by default (`runOnlyOnceByOrg: false`), because each new deployment of a policy turns it off again. With `applyToAll`, that also means a new Apply To All at each deployment: set `runOnlyOnceByOrg: true` when once per org is enough.
+
+User Access Policies must be enabled in the org: **Setup > User Management Settings > User Access Policies**, or the `userAccessPoliciesEnabled` field of the `UserManagement` settings.
+
+| Custom parameter        | Required? | Description                                                                  | Example              |
+|-------------------------|:---------:|------------------------------------------------------------------------------|----------------------|
+| `parameters.policies`   |    Yes    | Developer names of the policies.                                             | `[Sales_Rep_Access]` |
+| `parameters.activate`   |    No     | Activates the policies. Defaults to `true`.                                  | `true`               |
+| `parameters.applyToAll` |    No     | Runs Apply To All for each policy, from the Setup page. Defaults to `false`. | `true`               |
+
+```yaml
+commandsPostDeploy:
+  - id: 0b6c2a43-8f7e-4f0e-9a51-6a3a6d1c2e11
+    label: Activate the sales access policies
+    type: user-access-policy
+    parameters:
+      policies:
+        - Sales_Rep_Access
+        - Sales_Manager_Access
+      activate: true
+      applyToAll: true
+    context: process-deployment-only
+    runOnlyOnceByOrg: false
+```
+
+</details>
+
 #### Remove items from package.xml
 
 Excludes some metadata from the deployment without touching your repository: the listed items are removed from the calculated package.xml just before deploying. Useful for org-specific components that exist in git but must not reach a given org.

@@ -1,4 +1,4 @@
-import { Connection } from '@salesforce/core';
+import { Connection, SfError } from '@salesforce/core';
 import { ActionsProvider, ActionResult, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import {
   HIDDEN_APEX_BODY,
@@ -55,11 +55,6 @@ export function applyRunBatchFlags(parameters: PrePostCommand['parameters'], fla
   if (flags['wait-timeout'] !== undefined) updated.waitTimeoutMinutes = flags['wait-timeout'];
   if (flags['success-even-if-batch-errors'] !== undefined) updated.successEvenIfBatchErrors = flags['success-even-if-batch-errors'];
   return normalizeRunBatchParameters(updated);
-}
-
-/** True when a run-batch flag of action:create or action:update is passed. */
-export function hasRunBatchFlags(flags: any): boolean {
-  return RUN_BATCH_FLAGS.some((flag) => flags?.[flag] !== undefined);
 }
 
 /**
@@ -196,6 +191,60 @@ export class RunBatchAction extends ActionsProvider {
       return { statusCode: 'failed', skippedReason: errors.join('\n') };
     }
     return null;
+  }
+
+  public getFlagNames(): string[] {
+    return RUN_BATCH_FLAGS;
+  }
+
+  /**
+   * The class name, then the other run-batch parameters: flags when headless, prompts seeded with
+   * the current values otherwise. Asked again as a whole, so leaving the wait mode drops the
+   * wait-only parameters.
+   */
+  public async collectParameters(flags: any, headless: boolean, current: PrePostCommand['parameters'] = {}): Promise<Record<string, any>> {
+    if (headless) {
+      if (!flags['class-name']) {
+        throw new SfError(t('missingRequiredFlag', { flag: 'class-name' }));
+      }
+      return { className: flags['class-name'], ...applyRunBatchFlags({ runMode: 'wait' }, flags) };
+    }
+    // Loaded only when prompting, so running the action never loads the prompt dependencies
+    const { promptActionConfirm, promptActionSelect, promptActionText } = await import('../utils/actionPromptUtils.js');
+    const collected: Record<string, any> = applyRunBatchFlags({ ...(current || {}) }, flags);
+    collected.className = flags['class-name'] || (await promptActionText(t('enterClassName'), current?.className || '')) || current?.className;
+    if (!flags['run-mode']) {
+      collected.runMode = await promptActionSelect(t('selectRunBatchMode'), [
+        { title: t('runBatchModeWait'), value: 'wait' },
+        { title: t('runBatchModeNoWait'), value: 'no-wait' },
+      ], collected.runMode || 'wait');
+    }
+    if (flags['batch-size'] === undefined) {
+      collected.batchSize = await promptActionText(t('enterBatchSize'), collected.batchSize ? String(collected.batchSize) : '');
+    }
+    if (collected.runMode !== 'no-wait') {
+      if (flags['wait-timeout'] === undefined) {
+        collected.waitTimeoutMinutes = await promptActionText(
+          t('enterWaitTimeoutMinutes'),
+          collected.waitTimeoutMinutes ? String(collected.waitTimeoutMinutes) : ''
+        );
+      }
+      if (flags['success-even-if-batch-errors'] === undefined) {
+        collected.successEvenIfBatchErrors = await promptActionConfirm(
+          t('actionPromptSuccessEvenIfBatchErrors'),
+          collected.successEvenIfBatchErrors === true
+        );
+      }
+    }
+    return normalizeRunBatchParameters(collected);
+  }
+
+  public applyFlags(parameters: PrePostCommand['parameters'], flags: any): Record<string, any> {
+    return applyRunBatchFlags(parameters, flags);
+  }
+
+  public async getDefinitionErrors(action: Partial<PrePostCommand>): Promise<string[]> {
+    return listRunBatchParameterErrors(action);
   }
 
   // With the defaults applied: an unset batch size runs what an explicit 200 runs. Without waiting,

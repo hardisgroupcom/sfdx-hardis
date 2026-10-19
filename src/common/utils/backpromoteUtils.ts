@@ -6,6 +6,7 @@ import * as path from 'path';
 import { git, uxLog } from './index.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { ActionsProvider, PrePostCommand } from '../actionsProvider/actionsProvider.js';
+import { resolveRunOnlyOnceByOrg } from '../actionsProvider/actionTypes.js';
 import { authOrg } from './authUtils.js';
 import { findUserByUsernameLike } from './orgUtils.js';
 import { parsePromotionBranchName } from './promotionBranchUtils.js';
@@ -776,7 +777,7 @@ export async function executeBackpromoteActions(options: {
   globalThis.jsForceConn = options.conn;
   for (const action of toRun) {
     const previous = options.alreadyRun.get(backpromoteActionKey(action.prId, phase, action.id));
-    if (previous && previous.status === 'success' && action.runOnlyOnceByOrg !== false) {
+    if (previous && previous.status === 'success' && resolveRunOnlyOnceByOrg(action)) {
       uxLog('log', options.commandThis, c.grey(t('backpromoteActionAlreadyRun', { label: action.label, date: previous.date.substring(0, 10) })));
       settle(action, 'skipped');
       continue;

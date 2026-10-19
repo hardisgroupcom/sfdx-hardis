@@ -4365,7 +4365,7 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
     <a href="#commandsPostDeploy_items_type_anyOf_i0" onclick="anchorLink('commandsPostDeploy_items_type_anyOf_i0')">item 0</a></div><span class="badge badge-dark value-type">Type: enum (of string)</span><br/>
 <div class="enum-value" id="commandsPostDeploy_items_type_anyOf_i0_enum">
             <h4>Must be one of:</h4>
-            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"run-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li></ul>
+            <ul class="list-group"><li class="list-group-item enum-item">"command"</li><li class="list-group-item enum-item">"data"</li><li class="list-group-item enum-item">"apex"</li><li class="list-group-item enum-item">"schedule-batch"</li><li class="list-group-item enum-item">"run-batch"</li><li class="list-group-item enum-item">"publish-community"</li><li class="list-group-item enum-item">"manual"</li><li class="list-group-item enum-item">"user-access-policy"</li></ul>
             </div>
         
 
@@ -4443,7 +4443,9 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
 </pre></div>
 </div><div id="commandsPostDeploy_items_type_ex7" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;manual&quot;</span>
 </pre></div>
-</div><div id="commandsPostDeploy_items_type_ex8" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;notifySlack&quot;</span>
+</div><div id="commandsPostDeploy_items_type_ex8" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;user-access-policy&quot;</span>
+</pre></div>
+</div><div id="commandsPostDeploy_items_type_ex9" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="s2">&quot;notifySlack&quot;</span>
 </pre></div>
 </div>
             </div>
@@ -5150,6 +5152,227 @@ Example: availableTargetBranches: [preprod, integration] and availableTargetBran
         </svg>
     <a href="#commandsPostDeploy_items_parameters_successEvenIfBatchErrors" onclick="anchorLink('commandsPostDeploy_items_parameters_successEvenIfBatchErrors')">successEvenIfBatchErrors</a></div><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
 <span class="description"><p>For 'run-batch' actions in wait mode: keep the action successful when the batch completes with batches in error. A failed or aborted batch and a timeout still fail the action</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_parameters_policies">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_parameters_policies">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_parameters_policies"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_parameters_policies" onclick="setAnchor('#commandsPostDeploy_items_parameters_policies')"><span class="property-name">policies</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_parameters_policies"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_parameters_policies"
+             data-parent="#accordioncommandsPostDeploy_items_parameters_policies">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_policies" onclick="anchorLink('commandsPostDeploy_items_parameters_policies')">policies</a></div><h4>User Access Policies</h4><span class="badge badge-dark value-type">Type: array of string</span><br/>
+<span class="description"><p>For 'user-access-policy' actions: developer names of the User Access Policies to activate after the deployment, or to apply to all users</p>
+</span>
+        
+
+        
+        
+
+         <span class="badge badge-info no-additional">No Additional Items</span><h4>Each item of this array must be:</h4>
+    <div class="card">
+        <div class="card-body items-definition" id="commandsPostDeploy_items_parameters_policies_items">
+            
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_policies" onclick="anchorLink('commandsPostDeploy_items_parameters_policies')">policies</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_policies_items" onclick="anchorLink('commandsPostDeploy_items_parameters_policies_items')">policies items</a></div><span class="badge badge-dark value-type">Type: string</span><br/>
+
+        
+
+        
+        
+
+        
+        </div>
+    </div><br/>
+<div class="badge badge-secondary">Example:</div>
+<br/><div id="commandsPostDeploy_items_parameters_policies_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;Sales_Rep_Access&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;Sales_Manager_Access&quot;</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_parameters_activate">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_parameters_activate">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_parameters_activate"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_parameters_activate" onclick="setAnchor('#commandsPostDeploy_items_parameters_activate')"><span class="property-name">activate</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_parameters_activate"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_parameters_activate"
+             data-parent="#accordioncommandsPostDeploy_items_parameters_activate">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_activate" onclick="anchorLink('commandsPostDeploy_items_parameters_activate')">activate</a></div><h4>Activate</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: true</span><br/>
+<span class="description"><p>For 'user-access-policy' actions: activate the policies with the Salesforce API. A deployment always leaves them in Design status</p>
+</span>
+        
+
+        
+        
+
+        
+            </div>
+        </div>
+    </div>
+</div>
+<div class="accordion" id="accordioncommandsPostDeploy_items_parameters_applyToAll">
+    <div class="card">
+        <div class="card-header" id="headingcommandsPostDeploy_items_parameters_applyToAll">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#commandsPostDeploy_items_parameters_applyToAll"
+                        aria-expanded="" aria-controls="commandsPostDeploy_items_parameters_applyToAll" onclick="setAnchor('#commandsPostDeploy_items_parameters_applyToAll')"><span class="property-name">applyToAll</span></button>
+            </h2>
+        </div>
+
+        <div id="commandsPostDeploy_items_parameters_applyToAll"
+             class="collapse property-definition-div" aria-labelledby="headingcommandsPostDeploy_items_parameters_applyToAll"
+             data-parent="#accordioncommandsPostDeploy_items_parameters_applyToAll">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy" onclick="anchorLink('commandsPostDeploy')">commandsPostDeploy</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items" onclick="anchorLink('commandsPostDeploy_items')">Action</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters" onclick="anchorLink('commandsPostDeploy_items_parameters')">parameters</a>
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#commandsPostDeploy_items_parameters_applyToAll" onclick="anchorLink('commandsPostDeploy_items_parameters_applyToAll')">applyToAll</a></div><h4>Apply to all users</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<span class="description"><p>For 'user-access-policy' actions: also run Apply To All for each policy. Salesforce has no API for it, so sfdx-hardis clicks the button of the Setup page in a headless Chrome</p>
 </span>
         
 
