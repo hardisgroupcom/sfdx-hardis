@@ -53,7 +53,18 @@ save() {
 step() { case " $STEPS " in *" $1 "*) return 0 ;; *) return 1 ;; esac }
 # sf can print a warning before its JSON: parse from the first brace
 json_field() { node -e "const t=require('fs').readFileSync(0,'utf8');try{const j=JSON.parse(t.slice(t.indexOf('{')));const v=($1);process.stdout.write(v===undefined||v===null?'':String(v))}catch(e){}"; }
-soql() { sf data query -o "$ORG" --json -q "$1" 2>/dev/null; }
+soql() {
+  local out attempt
+  for attempt in 1 2 3; do
+    out=$(sf data query -o "$ORG" --json -q "$1" 2>/dev/null)
+    if printf '%s' "$out" | grep -q '"status": 0'; then
+      printf '%s' "$out"
+      return 0
+    fi
+    sleep 5
+  done
+  printf '%s' "$out"
+}
 latest_uac() { soql "SELECT CreatedDate FROM UserAccessChange ORDER BY CreatedDate DESC LIMIT 1" | json_field "j.result.records[0]?.CreatedDate"; }
 policy_status() { soql "SELECT Status FROM UserAccessPolicy WHERE DeveloperName = 'UAP_Spike_Policy'" | json_field "j.result.records[0]?.Status"; }
 policy_id() { soql "SELECT Id FROM UserAccessPolicy WHERE DeveloperName = 'UAP_Spike_Policy'" | json_field "j.result.records[0]?.Id"; }
@@ -65,14 +76,24 @@ echo "Run $RUN - work $WORK - logs $LOGS - branch under test $SFDX_HARDIS_BRANCH
 # --------------------------------------------------------------- org: the integration org, in a known state
 prepare_org() {
   local label="$1"
-  cat >"$LOGS/prepare-$label.apex" <<'APEX'
+  # The scheduled job holds E2EBatch: while it waits, a deployment of the class is refused
+  cat >"$LOGS/prepare-$label-data.apex" <<'APEX'
 delete [SELECT Id FROM Account WHERE Name LIKE 'DA_E2E%'];
-delete [SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'];
 for (CronTrigger ct : [SELECT Id FROM CronTrigger WHERE CronJobDetail.Name = 'E2EBatch_Schedule']) {
     System.abortJob(ct.Id);
 }
 APEX
-  sf apex run -o "$ORG" --file "$LOGS/prepare-$label.apex" --json >"$LOGS/prepare-$label.json" 2>&1
+  cat >"$LOGS/prepare-$label-setup.apex" <<'APEX'
+delete [SELECT Id FROM PermissionSetAssignment WHERE PermissionSet.Name = 'UAP_Spike_PS' AND Assignee.Username LIKE 'da-e2e-user%'];
+APEX
+  local part
+  for part in data setup; do
+    sf apex run -o "$ORG" --file "$LOGS/prepare-$label-$part.apex" --json >"$LOGS/prepare-$label-$part.json" 2>&1
+    if ! grep -q '"status": 0' "$LOGS/prepare-$label-$part.json"; then
+      result "PREPARE-$label" FAIL "org not reset before the $label job ($part), see prepare-$label-$part.json"
+      exit 1
+    fi
+  done
   # The policy is active in the org before the deployment, as in a real project
   local id
   id=$(policy_id)

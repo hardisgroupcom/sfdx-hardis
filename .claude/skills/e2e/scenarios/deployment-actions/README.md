@@ -65,6 +65,13 @@ Not covered: `data` (SFDMU is not in the CI job) and `publish-community` (needs 
 - A `context: all` action with `runOnlyOnceByOrg: true` that the validation job ran counts as done in
   the org branch: the deployment job skips it as already run. That is expected.
 - Apply To All needs Chrome: the `sfdx-hardis-ubuntu` image of the CI job has it.
+- The job `E2EBatch_Schedule` holds the class `E2EBatch`: while it waits, Salesforce refuses a new
+  deployment of the class ("allowing deployments with Apex jobs"). The reset before each job aborts it.
+- The reset runs two anonymous Apex scripts, data then permission set assignments: in one transaction
+  Salesforce refuses the mix (`MIXED_DML_OPERATION`) and rolls everything back, scheduled job included.
+  A reset that fails stops the run.
+- A Dev Hub at its active scratch org limit fails the `org` step with `LIMIT_EXCEEDED`: delete a
+  throwaway scratch org, or pass another `DEVHUB`.
 - Never edit `da-e2e.sh` while it runs (bash reads the script as it goes). Fix it after the run, then
   replay the steps with `RUN=<run> STEPS=...`.
 - After the run, delete the repository (`gh repo delete <repo> --yes`) and the scratch org
