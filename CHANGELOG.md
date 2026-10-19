@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): on GitHub, running the command again after GitHub refused the push of the workflow on `main` now pushes it, instead of saying it was done.
+
 ## [8.19.0] 2026-10-19
 
 - [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) (Beta): change metadata right before each deployment for the target org, with values per org, secrets from CI/CD variables, and removal of the XML elements an older API version refuses, edited from the new Replacement Rules panel of VS Code.
