@@ -252,6 +252,10 @@ In agent mode:
         // A pull must only list the changes made from now on, not the whole project
         await resetSourceTracking(this.scratchOrgUsername);
       }
+      if (this.snapshot) {
+        // Same for a snapshot child: its tracking lists every component of the snapshot as a remote change
+        await resetSourceTracking(this.scratchOrgUsername);
+      }
     } catch (e) {
       elapseEnd(`Create and initialize scratch org`);
       uxLog("log", this, c.grey(t('error2') + (e as Error).message + '\n' + (e as Error).stack));
