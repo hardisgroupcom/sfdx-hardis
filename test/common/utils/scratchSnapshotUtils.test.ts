@@ -13,16 +13,16 @@ const main = 'project=acme branch=main';
 
 describe('pickScratchSnapshot', () => {
   const records = [
-    record('SHaaaaaaaaaaaaa', `sfdx-hardis project=acme branch=main sha=${shaNew}`),
-    record('SHbbbbbbbbbbbbb', `sfdx-hardis project=acme branch=main sha=${shaOld}`),
+    record('SH0000000000001', `sfdx-hardis project=acme branch=main sha=${shaNew}`),
+    record('SH0000000000002', `sfdx-hardis project=acme branch=main sha=${shaOld}`),
   ];
 
   it('takes the newest snapshot whose commit is in the history of HEAD', () => {
-    expect(pickScratchSnapshot(records, main, () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
+    expect(pickScratchSnapshot(records, main, () => true)).to.deep.equal({ name: 'SH0000000000001', sha: shaNew });
   });
 
   it('takes an older snapshot when the newest commit is not in the history, as for a branch behind its target', () => {
-    expect(pickScratchSnapshot(records, main, (sha) => sha === shaOld)).to.deep.equal({ name: 'SHbbbbbbbbbbbbb', sha: shaOld });
+    expect(pickScratchSnapshot(records, main, (sha) => sha === shaOld)).to.deep.equal({ name: 'SH0000000000002', sha: shaOld });
   });
 
   it('returns null when no snapshot commit is in the history', () => {
@@ -30,23 +30,23 @@ describe('pickScratchSnapshot', () => {
   });
 
   it('ignores the snapshots of a branch whose name only starts the same, which the LIKE query also returns', () => {
-    const other = [record('SHccccccccccccc', `sfdx-hardis project=acme branch=main_v2 sha=${shaNew}`)];
+    const other = [record('SH0000000000003', `sfdx-hardis project=acme branch=main_v2 sha=${shaNew}`)];
     expect(pickScratchSnapshot(other, main, () => true)).to.equal(null);
   });
 
   it('accepts the 64 character commit sha of a SHA-256 repository', () => {
     const sha256 = 'c'.repeat(64);
-    const records256 = [record('SHccccccccccccc', `sfdx-hardis project=acme branch=main sha=${sha256}`)];
-    expect(pickScratchSnapshot(records256, main, () => true)).to.deep.equal({ name: 'SHccccccccccccc', sha: sha256 });
+    const records256 = [record('SH0000000000003', `sfdx-hardis project=acme branch=main sha=${sha256}`)];
+    expect(pickScratchSnapshot(records256, main, () => true)).to.deep.equal({ name: 'SH0000000000003', sha: sha256 });
   });
 
   it('ignores a description without a full commit sha', () => {
-    const broken = [record('SHddddddddddddd', 'sfdx-hardis project=acme branch=main sha=abc123')];
+    const broken = [record('SH0000000000004', 'sfdx-hardis project=acme branch=main sha=abc123')];
     expect(pickScratchSnapshot(broken, main, () => true)).to.equal(null);
   });
 
   it('ignores the snapshots of another project on the same Dev Hub, whatever their branch', () => {
-    const otherProject = [record('SHeeeeeeeeeeeee', `sfdx-hardis project=other branch=main sha=${shaNew}`)];
+    const otherProject = [record('SH0000000000005', `sfdx-hardis project=other branch=main sha=${shaNew}`)];
     expect(pickScratchSnapshot(otherProject, main, () => true)).to.equal(null);
   });
 });
@@ -64,8 +64,8 @@ describe('snapshot name and description', () => {
 
   it('writes a description that the Pull Request side reads back', () => {
     const scope = 'project=acme branch=release/1.0';
-    const record = { SnapshotName: 'SHaaaaaaaaaaaaa', Description: getSnapshotDescription(scope, shaNew) };
-    expect(pickScratchSnapshot([record], scope, () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
+    const record = { SnapshotName: 'SH0000000000001', Description: getSnapshotDescription(scope, shaNew) };
+    expect(pickScratchSnapshot([record], scope, () => true)).to.deep.equal({ name: 'SH0000000000001', sha: shaNew });
   });
 
   it('scopes the snapshots by the project name, PROJECT_NAME first', async () => {
