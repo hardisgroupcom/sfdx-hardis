@@ -165,7 +165,11 @@ check_org() {
     [ "$want" = "-" ] && continue
     got=$(printf '%s' "$labels" | json_of "j.status!==0?'<query failed>':((j.result.records||[]).find(r=>r.Name==='$name')||{Value:'<missing>'}).Value")
     if [ "$got" = "$want" ]; then
-      [ "$name" = PRA_Secret ] && record "$p-$name" OK "label $name holds PRA_SECRET_${branch^^}" || record "$p-$name" OK "label $name = $want"
+      if [ "$name" = PRA_Secret ]; then
+        record "$p-$name" OK "label $name holds PRA_SECRET_${branch^^}"
+      else
+        record "$p-$name" OK "label $name = $want"
+      fi
     else
       [ "$name" = PRA_Secret ] && got="<another value, not PRA_SECRET_${branch^^}: $(printf '%s' "$got" | head -c 12)...>"
       record "$p-$name" FAIL "label $name: expected $([ "$name" = PRA_Secret ] && echo "PRA_SECRET_${branch^^}" || echo "$want"), got '$got'"
