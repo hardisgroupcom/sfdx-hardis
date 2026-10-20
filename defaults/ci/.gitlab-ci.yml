@@ -206,6 +206,11 @@ refresh_scratch_org_snapshot:
       fi
     - sf hardis:auth:login --devhub
     - sf hardis:scratch:snapshot:refresh
+  artifacts:
+    when: always
+    paths:
+      - hardis-report
+    expire_in: 1 week
 
 # Run apex unit tests in testing scratch org
 test_apex:
