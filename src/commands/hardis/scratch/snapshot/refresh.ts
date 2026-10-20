@@ -34,7 +34,7 @@ Key functionalities:
 - **Snapshot of the branch head:** Creates an empty scratch org with [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/) (full deployment and the org initialization steps run when filling the pool), takes a snapshot of it, waits until the snapshot is Active, then deletes the scratch org.
 - **One snapshot per branch and commit:** The snapshot name is \`SH\`, the first 7 characters of the commit sha and 6 characters of a hash of the branch name, and its description holds the branch and the full sha. Running it again on the same commit does nothing.
 - **Pruning:** Keeps the newest \`scratchOrgSnapshotKeep\` Active snapshots of the branch (default 2) and deletes the older ones. Keeping more lets Pull Requests whose branch is behind the target branch use a snapshot too, but every snapshot counts in the active snapshots allocation of the Dev Hub.
-- **Daily limit:** The \`DailyOrgSnapshots\` and \`ActiveOrgSnapshots\` limits of the Dev Hub are read before the source org is created. When every active snapshot slot is taken, the oldest snapshots of the branch are deleted first, down to \`scratchOrgSnapshotKeep\` minus one, to make room for the new one. When a limit still has nothing left, or the Dev Hub still refuses the snapshot because of a limit, it logs a warning and ends without error: Pull Requests keep using the previous snapshot, with a larger delta.
+- **Daily limit:** The \`DailyOrgSnapshots\` and \`ActiveOrgSnapshots\` limits of the Dev Hub are read before the source org is created. When every active snapshot slot is taken and \`scratchOrgSnapshotKeep\` is 2 or more, the oldest snapshots of the branch are deleted first, down to \`scratchOrgSnapshotKeep\` minus one, to make room for the new one; the newest one always stays. When a limit still has nothing left, or the Dev Hub still refuses the snapshot because of a limit, it logs a warning and ends without error: Pull Requests keep using the previous snapshot, with a larger delta.
 
 The Pull Request side is in [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): in CI, it creates the scratch org from the newest Active snapshot of the target branch whose commit is in the history of the Pull Request, and deploys only what changed since that commit.
 
@@ -114,8 +114,9 @@ The command has no prompt.
       }
       // A full source org takes a daily scratch org and the whole deployment: check the snapshot limits first
       let exhaustedLimit = getExhaustedSnapshotLimit(await this.readDevHubLimits(devHubConn));
-      // The prune runs once the new snapshot is Active, so a full active allocation would never free itself
-      if (exhaustedLimit?.startsWith('ActiveOrgSnapshots')) {
+      // The prune runs once the new snapshot is Active, so a full active allocation would never free itself.
+      // The newest snapshot always stays, as the new one can still fail
+      if (exhaustedLimit?.startsWith('ActiveOrgSnapshots') && keep > 1) {
         uxLog("action", this, c.cyan(t('scratchSnapshotMakingRoom', { branch })));
         if ((await pruneScratchSnapshots(devHubConn, devHubUsername, branch, keep - 1, this)).length > 0) {
           exhaustedLimit = null;
