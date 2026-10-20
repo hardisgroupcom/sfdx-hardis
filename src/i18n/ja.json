@@ -3836,6 +3836,7 @@
   "scratchSnapshotDelta": "スナップショットのコミット {{sha}} 以降の変更をデプロイしています: デプロイするコンポーネント {{toDeploy}} 件、削除するコンポーネント {{toDelete}} 件",
   "scratchSnapshotFailed": "スナップショット {{name}} が失敗しました: {{error}}",
   "scratchSnapshotLimitReached": "制限のため Dev Hub がスナップショットを拒否しました。プルリクエストは前のスナップショットを引き続き使用します: {{message}}",
+  "scratchSnapshotLimitsUnread": "Dev Hub のスナップショットの制限を読み取れなかったため、更新を続行します: {{message}}",
   "scratchSnapshotNoTargetBranch": "プルリクエストのターゲットブランチが不明です (FORCE_TARGET_BRANCH を設定してください)",
   "scratchSnapshotNoneUsable": "ブランチ {{branch}} のアクティブなスナップショット {{count}} 件のうち、このプルリクエストの履歴にあるコミットから作成されたものはありません",
   "scratchSnapshotNotEnabled": "ブランチ {{branch}} で useScratchOrgSnapshot が有効になっていません",

@@ -113,7 +113,7 @@ The command has no prompt.
         });
       }
       // A full source org takes a daily scratch org and the whole deployment: check the snapshot limits first
-      const exhaustedLimit = getExhaustedSnapshotLimit(await devHubConn.limits().catch(() => null));
+      const exhaustedLimit = getExhaustedSnapshotLimit(await this.readDevHubLimits(devHubConn));
       if (exhaustedLimit) {
         uxLog("warning", this, c.yellow(t('scratchSnapshotLimitReached', { message: exhaustedLimit })));
         return { outputString: `Snapshot of branch ${branch} not taken: limit reached` };
@@ -126,6 +126,16 @@ The command has no prompt.
 
     const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, branch, keep, this);
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
+  }
+
+  // Null when the limits cannot be read: the refresh goes on, and a LIMIT_EXCEEDED from the snapshot call still stops it
+  protected async readDevHubLimits(devHubConn: any): Promise<any> {
+    try {
+      return await devHubConn.limits();
+    } catch (e) {
+      uxLog("warning", this, c.yellow(t('scratchSnapshotLimitsUnread', { message: (e as Error).message })));
+      return null;
+    }
   }
 
   // Returns false when the Dev Hub refused the snapshot because of a limit

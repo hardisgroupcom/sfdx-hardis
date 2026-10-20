@@ -3838,6 +3838,7 @@
   "scratchSnapshotDelta": "Bereitstellung der Änderungen seit dem Snapshot-Commit {{sha}}: {{toDeploy}} Komponenten bereitzustellen, {{toDelete}} zu löschen",
   "scratchSnapshotFailed": "Snapshot {{name}} ist fehlgeschlagen: {{error}}",
   "scratchSnapshotLimitReached": "Der Dev Hub hat den Snapshot wegen eines Limits abgelehnt, Pull Requests verwenden weiter den vorherigen Snapshot: {{message}}",
+  "scratchSnapshotLimitsUnread": "Die Snapshot-Limits des Dev Hub konnten nicht gelesen werden, der Refresh läuft weiter: {{message}}",
   "scratchSnapshotNoTargetBranch": "der Ziel-Branch des Pull Requests ist unbekannt (setzen Sie FORCE_TARGET_BRANCH)",
   "scratchSnapshotNoneUsable": "keiner der {{count}} aktiven Snapshots des Branches {{branch}} wurde aus einem Commit im Verlauf dieses Pull Requests erstellt",
   "scratchSnapshotNotEnabled": "useScratchOrgSnapshot ist für den Branch {{branch}} nicht aktiviert",

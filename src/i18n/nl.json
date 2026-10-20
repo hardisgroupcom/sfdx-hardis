@@ -3839,6 +3839,7 @@
   "scratchSnapshotDelta": "De wijzigingen sinds de snapshot-commit {{sha}} worden geïmplementeerd: {{toDeploy}} componenten te implementeren, {{toDelete}} te verwijderen",
   "scratchSnapshotFailed": "Snapshot {{name}} is mislukt: {{error}}",
   "scratchSnapshotLimitReached": "De Dev Hub heeft de snapshot geweigerd vanwege een limiet, pull requests blijven de vorige snapshot gebruiken: {{message}}",
+  "scratchSnapshotLimitsUnread": "De snapshotlimieten van de Dev Hub konden niet worden gelezen, de vernieuwing gaat door: {{message}}",
   "scratchSnapshotNoTargetBranch": "de doel-branch van de pull request is onbekend (stel FORCE_TARGET_BRANCH in)",
   "scratchSnapshotNoneUsable": "geen van de {{count}} actieve snapshots van branch {{branch}} is gemaakt vanaf een commit in de geschiedenis van deze pull request",
   "scratchSnapshotNotEnabled": "useScratchOrgSnapshot is niet ingeschakeld voor branch {{branch}}",
