@@ -292,6 +292,17 @@ describe('selectSnapshotOrgInitStepIds', () => {
     expect(selectSnapshotOrgInitStepIds(config, 'child')).to.deep.equal(['permsets', 'per-org-data']);
   });
 
+  it('installs the packages in a child before its delta, so a package the delta needs is there', () => {
+    expect(selectSnapshotOrgInitStepIds(config, 'child-packages')).to.deep.equal(['packages']);
+    const late = { orgInitSteps: config.orgInitSteps.map((step) => (step.id === 'packages' ? { ...step, runAtPoolFill: false } : step)) };
+    expect(selectSnapshotOrgInitStepIds(late, 'child-packages')).to.deep.equal(['packages']);
+    expect(selectSnapshotOrgInitStepIds(late, 'child')).to.not.include('packages');
+  });
+
+  it('installs the packages of a project without orgInitSteps in a child too', () => {
+    expect(selectSnapshotOrgInitStepIds({ installedPackages: [] }, 'child-packages')).to.deep.equal(['legacy-install-packages']);
+  });
+
   it('always deploys the sources in the source, even when the deployment is kept for after a pool fetch', () => {
     const late = { orgInitSteps: config.orgInitSteps.map((step) => (step.id === 'sources' ? { ...step, runAtPoolFill: false } : step)) };
     expect(selectSnapshotOrgInitStepIds(late, 'source')).to.include('sources');
