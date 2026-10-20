@@ -15,6 +15,7 @@ import {
   waitSnapshotActive,
 } from '../../../../common/utils/scratchSnapshotUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { getEnvVar } from '../../../../config/index.js';
 import ScratchCreate from '../create.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -97,7 +98,7 @@ The command has no prompt.
     }
     const sha = (await git().revparse(['HEAD'])).trim();
     const name = getSnapshotName(branch, sha);
-    const timeoutMinutes = parsePositiveSetting(process.env.SCRATCH_ORG_SNAPSHOT_WAIT, 60);
+    const timeoutMinutes = parsePositiveSetting(getEnvVar('SCRATCH_ORG_SNAPSHOT_WAIT'), 60);
 
     const existing = await getSnapshotRecord(devHubConn, name);
     if (existing?.Status === 'Active') {

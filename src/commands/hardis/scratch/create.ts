@@ -48,7 +48,7 @@ import {
 import { getOrgSfdxAuthUrl } from '../../../common/utils/credentialUtils.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { WebSocketClient } from '../../../common/websocketClient.js';
-import { getConfig, setConfig } from '../../../config/index.js';
+import { getConfig, getEnvVar, setConfig } from '../../../config/index.js';
 import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -669,8 +669,9 @@ In agent mode:
     if (process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] === 'true') {
       return null;
     }
-    if (process.env.SCRATCH_ORG_SNAPSHOT) {
-      return { name: process.env.SCRATCH_ORG_SNAPSHOT, sha: '' };
+    const snapshotName = getEnvVar('SCRATCH_ORG_SNAPSHOT');
+    if (snapshotName) {
+      return { name: snapshotName, sha: '' };
     }
     if (!isCI) {
       return null;
