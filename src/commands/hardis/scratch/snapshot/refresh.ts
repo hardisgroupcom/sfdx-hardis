@@ -86,8 +86,11 @@ The command has no prompt.
 
   public static requiresProject = true;
 
+  private debugMode = false;
+
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(ScratchSnapshotRefresh);
+    this.debugMode = flags.debug || false;
     const devHubConn = flags['target-dev-hub'].getConnection();
     const devHubUsername = flags['target-dev-hub'].getUsername();
     const branch = (await getCurrentGitBranch()) || '';
@@ -111,6 +114,7 @@ The command has no prompt.
         await execSfdxJson(`sf org delete snapshot --snapshot ${name} --target-dev-hub ${devHubUsername} --no-prompt`, this, {
           fail: true,
           output: true,
+          debug: this.debugMode,
         });
       }
       // A full source org takes a daily scratch org and the whole deployment: check the snapshot limits first
@@ -153,7 +157,7 @@ The command has no prompt.
     let createResult: any;
     try {
       // The refresh has no prompt, outside CI too: a missing userEmail fails instead of asking
-      createResult = await ScratchCreate.run(['--forcenew', '--agent', '--target-dev-hub', devHubUsername]);
+      createResult = await ScratchCreate.run(['--forcenew', '--agent', '--target-dev-hub', devHubUsername, ...(this.debugMode ? ['--debug'] : [])]);
     } finally {
       delete process.env[SCRATCH_SNAPSHOT_DISABLED_ENV];
     }
@@ -166,7 +170,7 @@ The command has no prompt.
       const snapshotResult = await execSfdxJson(
         `sf org create snapshot --source-org ${sourceOrg} --name ${name} --description "${getSnapshotDescription(branch, sha)}" --target-dev-hub ${devHubUsername}`,
         this,
-        { fail: false, output: true }
+        { fail: false, output: true, debug: this.debugMode }
       );
       if (snapshotResult?.status !== 0) {
         const message = String(snapshotResult?.message || snapshotResult?.errorMessage || '');
@@ -181,7 +185,7 @@ The command has no prompt.
       uxLog("success", this, c.green(t('scratchSnapshotActive', { name, branch })));
       return true;
     } finally {
-      await execSfdxJson(`sf org delete scratch --no-prompt --target-org ${sourceOrg}`, this, { fail: false, output: true });
+      await execSfdxJson(`sf org delete scratch --no-prompt --target-org ${sourceOrg}`, this, { fail: false, output: true, debug: this.debugMode });
     }
   }
 }
