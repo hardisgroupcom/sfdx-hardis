@@ -14,6 +14,7 @@ import { getOrgInitSteps, selectOrgInitSteps } from './orgInitUtils.js';
 import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { getEnvVar } from '../../config/index.js';
+import { isAncestor } from './backpromoteGitUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
 
@@ -36,7 +37,7 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
     return { reason: t('scratchSnapshotNotEnabled', { branch: targetBranch }) };
   }
   const snapshotRecords = await listActiveSnapshots(devHubConn, targetBranch);
-  const snapshot = pickScratchSnapshot(snapshotRecords, targetBranch, isAncestorOfHead);
+  const snapshot = pickScratchSnapshot(snapshotRecords, targetBranch, (sha) => isAncestor(sha, 'HEAD'));
   if (!snapshot) {
     return { reason: t('scratchSnapshotNoneUsable', { branch: targetBranch, count: snapshotRecords.length }) };
   }
@@ -256,9 +257,4 @@ export function parsePositiveSetting(value: unknown, defaultValue: number): numb
 
 export function getSnapshotDescriptionPrefix(branch: string): string {
   return `sfdx-hardis branch=${branch} sha=`;
-}
-
-function isAncestorOfHead(sha: string): boolean {
-  // Exit code 1: not an ancestor. 128: the commit is not in this clone (shallow history)
-  return spawnSync('git', ['merge-base', '--is-ancestor', sha, 'HEAD']).status === 0;
 }
