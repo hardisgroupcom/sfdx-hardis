@@ -3744,6 +3744,7 @@
   "scratchSnapshotFailed": "O snapshot {{name}} falhou: {{error}}",
   "scratchSnapshotLimitReached": "O Dev Hub recusou o snapshot por causa de um limite, os Pull Requests continuam usando o snapshot anterior: {{message}}",
   "scratchSnapshotLimitsUnread": "Não foi possível ler os limites de snapshots do Dev Hub, a atualização continua: {{message}}",
+  "scratchSnapshotMakingRoom": "Todos os espaços de snapshots ativos do Dev Hub estão ocupados: excluindo os snapshots mais antigos da branch {{branch}} para abrir espaço para o novo",
   "scratchSnapshotNoTargetBranch": "a branch de destino do Pull Request é desconhecida (defina FORCE_TARGET_BRANCH)",
   "scratchSnapshotNoneUsable": "nenhum dos {{count}} snapshots ativos da branch {{branch}} foi criado a partir de um commit do histórico deste Pull Request",
   "scratchSnapshotNotEnabled": "useScratchOrgSnapshot não está ativado para a branch {{branch}}",
