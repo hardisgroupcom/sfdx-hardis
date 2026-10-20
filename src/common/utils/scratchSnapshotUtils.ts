@@ -29,7 +29,7 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
   if (!(await listMajorOrgs()).some((majorOrg) => majorOrg.useScratchOrgSnapshot === true)) {
     return {};
   }
-  const targetBranch = process.env.FORCE_TARGET_BRANCH || (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch;
+  const targetBranch = getEnvVar('FORCE_TARGET_BRANCH') || (await GitProvider.getPullRequestInfo({ useCache: true }))?.targetBranch;
   if (!targetBranch) {
     return { reason: t('scratchSnapshotNoTargetBranch') };
   }
