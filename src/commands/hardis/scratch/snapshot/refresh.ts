@@ -150,7 +150,8 @@ The command has no prompt.
     process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] = 'true';
     let createResult: any;
     try {
-      createResult = await ScratchCreate.run(['--forcenew', '--target-dev-hub', devHubUsername]);
+      // The refresh has no prompt, outside CI too: a missing userEmail fails instead of asking
+      createResult = await ScratchCreate.run(['--forcenew', '--agent', '--target-dev-hub', devHubUsername]);
     } finally {
       delete process.env[SCRATCH_SNAPSHOT_DISABLED_ENV];
     }
