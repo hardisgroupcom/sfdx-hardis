@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
@@ -82,6 +82,28 @@ describe('getExhaustedSnapshotLimit', () => {
   it('returns null when the Dev Hub does not report the limits, so the refresh goes on as before', () => {
     expect(getExhaustedSnapshotLimit(null)).to.equal(null);
     expect(getExhaustedSnapshotLimit({ DailyScratchOrgs: { Max: 6, Remaining: 0 } })).to.equal(null);
+  });
+});
+
+describe('isSnapshotSignupRetryable', () => {
+  // The shape execSfdxJson returns for a failed `sf org create scratch --json`
+  const failure = (name: string, message: string) => ({
+    status: 1,
+    errorMessage: `[sfdx-hardis][ERROR] Error processing command\n{\n  "name": "${name}",\n  "message": "${message}"\n}`,
+  });
+
+  it('retries a signup the snapshot itself refused', () => {
+    expect(isSnapshotSignupRetryable(failure('INVALID_ACCESS_LEVEL', 'We couldn’t create the snapshot INVALID_ACCESS_LEVEL.'))).to.equal(true);
+  });
+
+  it('does not retry a signup that timed out, as the first org may still be created', () => {
+    expect(isSnapshotSignupRetryable(failure('ScratchOrgInfoTimeoutError', 'The scratch org did not complete within your wait time.'))).to.equal(false);
+    expect(isSnapshotSignupRetryable(failure('MyDomainResolverTimeoutError', 'Unable to resolve the My Domain URL.'))).to.equal(false);
+    expect(isSnapshotSignupRetryable({ status: 1, errorMessage: 'Socket timeout occurred while listening for results' })).to.equal(false);
+  });
+
+  it('does not retry when no scratch org is left', () => {
+    expect(isSnapshotSignupRetryable(failure('LIMIT_EXCEEDED', 'The signup request failed because this organization has reached its daily scratch org signup limit'))).to.equal(false);
   });
 });
 

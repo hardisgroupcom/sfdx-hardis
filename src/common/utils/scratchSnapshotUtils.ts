@@ -181,6 +181,13 @@ export function getSnapshotDescription(branch: string, sha: string): string {
   return `${getSnapshotDescriptionPrefix(branch)}${sha}`;
 }
 
+// A failed snapshot signup is retried without the snapshot, except when the retry would fail the same way or sign up
+// a second org: a timeout (the first org may still be created) or a scratch org limit
+export function isSnapshotSignupRetryable(createResult: any): boolean {
+  const message = String(createResult?.errorMessage || createResult?.message || '');
+  return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED/.test(message);
+}
+
 // The snapshot limit that has nothing left, read before the refresh builds its source org. Null when both have room
 // or the Dev Hub does not report them.
 export function getExhaustedSnapshotLimit(limits: any): string | null {

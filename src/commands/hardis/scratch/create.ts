@@ -39,6 +39,7 @@ import {
 import { addScratchOrgToPool, fetchScratchOrg } from '../../../common/utils/poolUtils.js';
 import {
   deploySnapshotDelta,
+  isSnapshotSignupRetryable,
   resolveScratchSnapshot,
   SCRATCH_SNAPSHOT_DISABLED_ENV,
   ScratchSnapshot,
@@ -477,7 +478,7 @@ In agent mode:
       });
     let createResult = await runCreateCommand();
     // A resolved snapshot can be pruned or expire between its lookup and the signup: then create an empty scratch org
-    if ((!createResult || createResult.status !== 0 || !createResult.result) && this.snapshot?.sha) {
+    if ((!createResult || createResult.status !== 0 || !createResult.result) && this.snapshot?.sha && isSnapshotSignupRetryable(createResult)) {
       uxLog("warning", this, c.yellow(t('scratchSnapshotNotUsed', { reason: this.buildScratchCreateErrorMessage(createResult) })));
       this.snapshot = null;
       await fs.writeFile(projectScratchDefLocal, JSON.stringify(this.projectScratchDef, null, 2));
