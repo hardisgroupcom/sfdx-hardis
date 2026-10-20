@@ -183,6 +183,7 @@ refresh_scratch_org_pool:
 # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/
 refresh_scratch_org_snapshot:
   stage: deploy
+  timeout: 150 minutes # Keep it above SCRATCH_ORG_SNAPSHOT_WAIT (60 by default) plus the deployment
   tags:
     # Change or even remove tags if standard runners
     - ubuntu
