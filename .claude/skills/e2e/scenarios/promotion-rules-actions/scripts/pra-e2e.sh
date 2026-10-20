@@ -146,7 +146,7 @@ merge_deploy() {
   ci_wait_deploy "$branch" "$(ci_merge_sha "$number")" "$label"
   retry_infra_failure "$label"
   if [ "$PRA_TEST_LEVEL" != NoTestRun ]; then
-    assert_log "$label-QUICK" "$label" - "the deployment job quick deploys the validation of its target"       "Successfully processed QuickDeploy for deploymentId" "!Unable to perform QuickDeploy"
+    assert_log "$label-QUICK" "$label" - "the deployment job quick deploys the validation of its target" "Successfully processed QuickDeploy for deploymentId" "!Unable to perform QuickDeploy"
   fi
   assert_no_secret "$label-NOSECRET" "$label"
   ci_pr_comments "$number" "$label-comments"
