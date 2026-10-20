@@ -13,7 +13,7 @@ import { getScratchDeployManifest } from './orgUtils.js';
 import { getOrgInitSteps, selectOrgInitSteps } from './orgInitUtils.js';
 import fs from './fsUtils.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
-import { getEnvVar } from '../../config/index.js';
+import { getConfig, getEnvVar } from '../../config/index.js';
 import { isAncestor } from './backpromoteGitUtils.js';
 import { GitProvider } from '../gitProvider/index.js';
 import { t } from './i18n.js';
@@ -36,8 +36,9 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
   if (!(await getScratchSnapshotBranchConfig(targetBranch)).enabled) {
     return { reason: t('scratchSnapshotNotEnabled', { branch: targetBranch }) };
   }
-  const snapshotRecords = await listActiveSnapshots(devHubConn, targetBranch);
-  const snapshot = pickScratchSnapshot(snapshotRecords, targetBranch, (sha) => isAncestor(sha, 'HEAD'));
+  const scope = await getSnapshotScope(targetBranch);
+  const snapshotRecords = await listActiveSnapshots(devHubConn, scope);
+  const snapshot = pickScratchSnapshot(snapshotRecords, scope, (sha) => isAncestor(sha, 'HEAD'));
   if (!snapshot) {
     return { reason: t('scratchSnapshotNoneUsable', { branch: targetBranch, count: snapshotRecords.length }) };
   }
@@ -57,9 +58,15 @@ export async function getScratchSnapshotBranchConfig(branch: string): Promise<{ 
   };
 }
 
-export async function listActiveSnapshots(devHubConn: any, branch: string): Promise<any[]> {
+// The project and the branch a snapshot belongs to: projects sharing a Dev Hub must not see each other's snapshots
+export async function getSnapshotScope(branch: string): Promise<string> {
+  const projectName = getEnvVar('PROJECT_NAME') || (await getConfig('project')).projectName || '';
+  return `project=${projectName} branch=${branch}`;
+}
+
+export async function listActiveSnapshots(devHubConn: any, scope: string): Promise<any[]> {
   // LIKE treats _ as a wildcard, so the exact prefix is checked again on the records
-  const prefix = getSnapshotDescriptionPrefix(branch);
+  const prefix = getSnapshotDescriptionPrefix(scope);
   const likePrefix = prefix.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   const res = await soqlQuery(
     `SELECT Id, SnapshotName, Description, CreatedDate FROM OrgSnapshot WHERE Status = 'Active' AND Description LIKE '${likePrefix}%' ORDER BY CreatedDate DESC`,
@@ -71,10 +78,10 @@ export async function listActiveSnapshots(devHubConn: any, branch: string): Prom
 // Records must be sorted newest first
 export function pickScratchSnapshot(
   snapshotRecords: any[],
-  branch: string,
+  scope: string,
   isAncestor: (sha: string) => boolean
 ): ScratchSnapshot | null {
-  const prefix = getSnapshotDescriptionPrefix(branch);
+  const prefix = getSnapshotDescriptionPrefix(scope);
   for (const record of snapshotRecords) {
     const description: string = record.Description || '';
     const sha = description.startsWith(prefix) ? description.slice(prefix.length) : '';
@@ -172,10 +179,10 @@ export async function scopeDeltaToDeployManifest(deltaPackageXml: string, config
   return scopedPackageXml;
 }
 
-// Snapshot names are 15 alphanumeric characters at most. The branch is part of the name, as two major branches
-// can have the same head commit and each needs its own snapshot
-export function getSnapshotName(branch: string, sha: string): string {
-  return 'SH' + sha.slice(0, 7) + createHash('sha1').update(branch).digest('hex').slice(0, 6);
+// Snapshot names are 15 alphanumeric characters at most. The scope is part of the name, as two major branches, or
+// two projects sharing history, can have the same head commit and each needs its own snapshot
+export function getSnapshotName(scope: string, sha: string): string {
+  return 'SH' + sha.slice(0, 7) + createHash('sha1').update(scope).digest('hex').slice(0, 6);
 }
 
 export async function getSnapshotRecord(devHubConn: any, name: string): Promise<any | null> {
@@ -183,8 +190,8 @@ export async function getSnapshotRecord(devHubConn: any, name: string): Promise<
   return res.records?.[0] || null;
 }
 
-export function getSnapshotDescription(branch: string, sha: string): string {
-  return `${getSnapshotDescriptionPrefix(branch)}${sha}`;
+export function getSnapshotDescription(scope: string, sha: string): string {
+  return `${getSnapshotDescriptionPrefix(scope)}${sha}`;
 }
 
 // A failed snapshot signup is retried without the snapshot, except when the retry would fail the same way or sign up
@@ -230,8 +237,8 @@ export async function waitSnapshotActive(devHubConn: any, name: string, timeoutM
 }
 
 // Keeps the newest Active snapshots of the branch: a Pull Request behind its target branch uses an older one
-export async function pruneScratchSnapshots(devHubConn: any, devHubUsername: string, branch: string, keep: number, commandThis: any): Promise<string[]> {
-  const branchSnapshots = await listActiveSnapshots(devHubConn, branch);
+export async function pruneScratchSnapshots(devHubConn: any, devHubUsername: string, scope: string, keep: number, commandThis: any): Promise<string[]> {
+  const branchSnapshots = await listActiveSnapshots(devHubConn, scope);
   const deleted: string[] = [];
   for (const record of branchSnapshots.slice(keep)) {
     uxLog("action", commandThis, c.cyan(t('scratchSnapshotDeleting', { name: record.SnapshotName })));
@@ -259,6 +266,6 @@ export function parsePositiveSetting(value: unknown, defaultValue: number): numb
   return Math.max(1, parsed);
 }
 
-export function getSnapshotDescriptionPrefix(branch: string): string {
-  return `sfdx-hardis branch=${branch} sha=`;
+export function getSnapshotDescriptionPrefix(scope: string): string {
+  return `sfdx-hardis ${scope} sha=`;
 }

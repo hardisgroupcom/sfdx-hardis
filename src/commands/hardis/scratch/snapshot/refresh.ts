@@ -9,6 +9,7 @@ import {
   getSnapshotDescription,
   getSnapshotName,
   getSnapshotRecord,
+  getSnapshotScope,
   parsePositiveSetting,
   pruneScratchSnapshots,
   SCRATCH_SNAPSHOT_DISABLED_ENV,
@@ -33,7 +34,7 @@ Run it in CI on every push to a major branch. It does nothing unless the branch 
 Key functionalities:
 
 - **Snapshot of the branch head:** Creates an empty scratch org with [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/) (full deployment and the org initialization steps run when filling the pool), takes a snapshot of it, waits until the snapshot is Active, then deletes the scratch org.
-- **One snapshot per branch and commit:** The snapshot name is \`SH\`, the first 7 characters of the commit sha and 6 characters of a hash of the branch name, and its description holds the branch and the full sha. Running it again on the same commit does nothing.
+- **One snapshot per branch and commit:** The snapshot name is \`SH\`, the first 7 characters of the commit sha and 6 characters of a hash of the project name (\`projectName\`) and the branch name, and its description holds the project, the branch and the full sha, so projects that share a Dev Hub never use or delete each other's snapshots. Running it again on the same commit does nothing.
 - **Pruning:** Keeps the newest \`scratchOrgSnapshotKeep\` Active snapshots of the branch (default 2) and deletes the older ones. Keeping more lets Pull Requests whose branch is behind the target branch use a snapshot too, but every snapshot counts in the active snapshots allocation of the Dev Hub.
 - **Daily limit:** The \`DailyOrgSnapshots\` and \`ActiveOrgSnapshots\` limits of the Dev Hub are read before the source org is created. When every active snapshot slot is taken and \`scratchOrgSnapshotKeep\` is 2 or more, the oldest snapshots of the branch are deleted first, down to \`scratchOrgSnapshotKeep\` minus one, to make room for the new one; the newest one always stays. When a limit still has nothing left, or the Dev Hub still refuses the snapshot because of a limit, it logs a warning and ends without error: Pull Requests keep using the previous snapshot, with a larger delta.
 
@@ -100,7 +101,8 @@ The command has no prompt.
       return { outputString: `Snapshots are not enabled for branch ${branch}` };
     }
     const sha = (await git().revparse(['HEAD'])).trim();
-    const name = getSnapshotName(branch, sha);
+    const scope = await getSnapshotScope(branch);
+    const name = getSnapshotName(scope, sha);
     const timeoutMinutes = parsePositiveSetting(getEnvVar('SCRATCH_ORG_SNAPSHOT_WAIT'), 60);
 
     const existing = await getSnapshotRecord(devHubConn, name);
@@ -123,7 +125,7 @@ The command has no prompt.
       // The newest snapshot always stays, as the new one can still fail
       if (exhaustedLimit?.startsWith('ActiveOrgSnapshots') && keep > 1) {
         uxLog("action", this, c.cyan(t('scratchSnapshotMakingRoom', { branch })));
-        if ((await pruneScratchSnapshots(devHubConn, devHubUsername, branch, keep - 1, this)).length > 0) {
+        if ((await pruneScratchSnapshots(devHubConn, devHubUsername, scope, keep - 1, this)).length > 0) {
           exhaustedLimit = null;
         }
       }
@@ -131,13 +133,13 @@ The command has no prompt.
         uxLog("warning", this, c.yellow(t('scratchSnapshotLimitReached', { message: exhaustedLimit })));
         return { outputString: `Snapshot of branch ${branch} not taken: limit reached` };
       }
-      const created = await this.createSnapshot(devHubConn, devHubUsername, branch, sha, name, timeoutMinutes);
+      const created = await this.createSnapshot(devHubConn, devHubUsername, branch, scope, sha, name, timeoutMinutes);
       if (!created) {
         return { outputString: `Snapshot of branch ${branch} not taken: limit reached` };
       }
     }
 
-    const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, branch, keep, this);
+    const deleted = await pruneScratchSnapshots(devHubConn, devHubUsername, scope, keep, this);
     return { outputString: `Snapshot ${name} of branch ${branch} is Active`, snapshotName: name, sha, deleted };
   }
 
@@ -152,7 +154,7 @@ The command has no prompt.
   }
 
   // Returns false when the Dev Hub refused the snapshot because of a limit
-  protected async createSnapshot(devHubConn: any, devHubUsername: string, branch: string, sha: string, name: string, timeoutMinutes: number): Promise<boolean> {
+  protected async createSnapshot(devHubConn: any, devHubUsername: string, branch: string, scope: string, sha: string, name: string, timeoutMinutes: number): Promise<boolean> {
     process.env[SCRATCH_SNAPSHOT_DISABLED_ENV] = 'true';
     let createResult: any;
     try {
@@ -168,7 +170,7 @@ The command has no prompt.
     try {
       uxLog("action", this, c.cyan(t('scratchSnapshotTaking', { name: c.green(name), branch, sha: sha.slice(0, 8) })));
       const snapshotResult = await execSfdxJson(
-        `sf org create snapshot --source-org ${sourceOrg} --name ${name} --description "${getSnapshotDescription(branch, sha)}" --target-dev-hub ${devHubUsername}`,
+        `sf org create snapshot --source-org ${sourceOrg} --name ${name} --description "${getSnapshotDescription(scope, sha)}" --target-dev-hub ${devHubUsername}`,
         this,
         { fail: false, output: true, debug: this.debugMode }
       );

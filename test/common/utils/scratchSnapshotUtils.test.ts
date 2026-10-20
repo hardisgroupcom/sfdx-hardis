@@ -3,61 +3,80 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import { getExhaustedSnapshotLimit, getSnapshotDescription, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
+import { getExhaustedSnapshotLimit, getSnapshotDescription, getSnapshotScope, isSnapshotSignupRetryable, getSnapshotName, parsePositiveSetting, pickScratchSnapshot, extendSnapshotDeltaWithDependencies, scopeDeltaToDeployManifest, scratchDefChangedSince, selectSnapshotOrgInitStepIds } from '../../../src/common/utils/scratchSnapshotUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
 
 const shaNew = 'a'.repeat(40);
 const shaOld = 'b'.repeat(40);
 const record = (name: string, description: string) => ({ SnapshotName: name, Description: description });
+const main = 'project=acme branch=main';
 
 describe('pickScratchSnapshot', () => {
   const records = [
-    record('SHaaaaaaaaaaaaa', `sfdx-hardis branch=main sha=${shaNew}`),
-    record('SHbbbbbbbbbbbbb', `sfdx-hardis branch=main sha=${shaOld}`),
+    record('SHaaaaaaaaaaaaa', `sfdx-hardis project=acme branch=main sha=${shaNew}`),
+    record('SHbbbbbbbbbbbbb', `sfdx-hardis project=acme branch=main sha=${shaOld}`),
   ];
 
   it('takes the newest snapshot whose commit is in the history of HEAD', () => {
-    expect(pickScratchSnapshot(records, 'main', () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
+    expect(pickScratchSnapshot(records, main, () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
   });
 
   it('takes an older snapshot when the newest commit is not in the history, as for a branch behind its target', () => {
-    expect(pickScratchSnapshot(records, 'main', (sha) => sha === shaOld)).to.deep.equal({ name: 'SHbbbbbbbbbbbbb', sha: shaOld });
+    expect(pickScratchSnapshot(records, main, (sha) => sha === shaOld)).to.deep.equal({ name: 'SHbbbbbbbbbbbbb', sha: shaOld });
   });
 
   it('returns null when no snapshot commit is in the history', () => {
-    expect(pickScratchSnapshot(records, 'main', () => false)).to.equal(null);
+    expect(pickScratchSnapshot(records, main, () => false)).to.equal(null);
   });
 
   it('ignores the snapshots of a branch whose name only starts the same, which the LIKE query also returns', () => {
-    const other = [record('SHccccccccccccc', `sfdx-hardis branch=main_v2 sha=${shaNew}`)];
-    expect(pickScratchSnapshot(other, 'main', () => true)).to.equal(null);
+    const other = [record('SHccccccccccccc', `sfdx-hardis project=acme branch=main_v2 sha=${shaNew}`)];
+    expect(pickScratchSnapshot(other, main, () => true)).to.equal(null);
   });
 
   it('accepts the 64 character commit sha of a SHA-256 repository', () => {
     const sha256 = 'c'.repeat(64);
-    const records256 = [record('SHccccccccccccc', `sfdx-hardis branch=main sha=${sha256}`)];
-    expect(pickScratchSnapshot(records256, 'main', () => true)).to.deep.equal({ name: 'SHccccccccccccc', sha: sha256 });
+    const records256 = [record('SHccccccccccccc', `sfdx-hardis project=acme branch=main sha=${sha256}`)];
+    expect(pickScratchSnapshot(records256, main, () => true)).to.deep.equal({ name: 'SHccccccccccccc', sha: sha256 });
   });
 
   it('ignores a description without a full commit sha', () => {
-    const broken = [record('SHddddddddddddd', 'sfdx-hardis branch=main sha=abc123')];
-    expect(pickScratchSnapshot(broken, 'main', () => true)).to.equal(null);
+    const broken = [record('SHddddddddddddd', 'sfdx-hardis project=acme branch=main sha=abc123')];
+    expect(pickScratchSnapshot(broken, main, () => true)).to.equal(null);
+  });
+
+  it('ignores the snapshots of another project on the same Dev Hub, whatever their branch', () => {
+    const otherProject = [record('SHeeeeeeeeeeeee', `sfdx-hardis project=other branch=main sha=${shaNew}`)];
+    expect(pickScratchSnapshot(otherProject, main, () => true)).to.equal(null);
   });
 });
 
 describe('snapshot name and description', () => {
   it('names the snapshot with 15 alphanumeric characters, as Salesforce requires', () => {
-    expect(getSnapshotName('main', '0123456789abcdef0123456789abcdef01234567')).to.match(/^SH0123456[0-9a-f]{6}$/);
+    expect(getSnapshotName(main, '0123456789abcdef0123456789abcdef01234567')).to.match(/^SH0123456[0-9a-f]{6}$/);
   });
 
-  it('gives two branches at the same commit different snapshot names', () => {
+  it('gives two branches, or two projects, at the same commit different snapshot names', () => {
     const sha = '0123456789abcdef0123456789abcdef01234567';
-    expect(getSnapshotName('uat', sha)).to.not.equal(getSnapshotName('integration', sha));
+    expect(getSnapshotName('project=acme branch=uat', sha)).to.not.equal(getSnapshotName('project=acme branch=integration', sha));
+    expect(getSnapshotName('project=acme branch=main', sha)).to.not.equal(getSnapshotName('project=other branch=main', sha));
   });
 
   it('writes a description that the Pull Request side reads back', () => {
-    const record = { SnapshotName: 'SHaaaaaaaaaaaaa', Description: getSnapshotDescription('release/1.0', shaNew) };
-    expect(pickScratchSnapshot([record], 'release/1.0', () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
+    const scope = 'project=acme branch=release/1.0';
+    const record = { SnapshotName: 'SHaaaaaaaaaaaaa', Description: getSnapshotDescription(scope, shaNew) };
+    expect(pickScratchSnapshot([record], scope, () => true)).to.deep.equal({ name: 'SHaaaaaaaaaaaaa', sha: shaNew });
+  });
+
+  it('scopes the snapshots by the project name, PROJECT_NAME first', async () => {
+    const previous = process.env.PROJECT_NAME;
+    process.env.PROJECT_NAME = 'acme';
+    try {
+      expect(await getSnapshotScope('main')).to.equal('project=acme branch=main');
+    } finally {
+      if (previous === undefined) delete process.env.PROJECT_NAME;
+      else process.env.PROJECT_NAME = previous;
+    }
   });
 });
 
