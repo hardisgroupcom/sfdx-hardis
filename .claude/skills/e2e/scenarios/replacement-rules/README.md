@@ -1,12 +1,3 @@
----
-name: replacement-rules-e2e
-description: Run the end to end test of replacement rules (Beta) - a scratch org, a throwaway private GitHub repository running the sfdx-hardis CI workflows built from the branch under test, and every rule pattern proven in the org (values per org, branch file override, secrets from CI variables, regex in Apex, XML removal, built-in Flow ends and unknown user permissions, issue override, warnings, default values of a developer deployment, preview and list). Use when replacement rules (replacementRules, hardis:project:replacement:*, the VS Code Replacement Rules panel, the built-in rules) changed and must be proven again, or when the user asks for the replacement rules end to end test.
-argument-hint: "[run name] [steps]"
-allowed-tools: Bash, Read, Grep, Glob, Edit, Write
-user-invocable: true
-model: opus
----
-
 # Replacement rules: end to end test
 
 Proves, against a real scratch org and real GitHub Actions jobs, that every pattern of replacement
@@ -24,7 +15,7 @@ The feature: `docs/salesforce-devops-config-replacement-rules.md`, the code in
 | `scripts/rr-build-project.sh` | The sample project: custom labels, an Apex class, a Permission Set holding a user permission no org has, a Flow with Winter '27 `<ends>`, `sourceApiVersion` 67.0, one rule per pattern in `config/.sfdx-hardis.yml`, an override in the `integration` branch file. |
 | `reports/`                    | One report per run (copy `$LOGS/report.md` there, named `<date>-<run>.md`).                                                                                                                                                                                         |
 
-It reuses the harness of the `promotion-branches-e2e` skill (same `.env`, same GitHub login):
+It reuses the CI harness of the [promotion-branches scenario](../promotion-branches/README.md) (same `.env`, same GitHub login):
 `env-lib.sh` (settings), `ci-workflows-prepare.cjs` (the sfdx-hardis GitHub workflows plus a step
 that clones, builds and links the branch under test, and the `SFDX_AUTH_URL_<BRANCH>` logins) and
 `ci-provider-github.sh` (waits for a workflow run, saves its log).
@@ -40,9 +31,9 @@ that clones, builds and links the branch under test, and the `SFDX_AUTH_URL_<BRA
 ## Run it
 
 ```sh
-bash .claude/skills/replacement-rules-e2e/scripts/rr-e2e.sh
+bash .claude/skills/e2e/scenarios/replacement-rules/scripts/rr-e2e.sh
 # replay some steps of a run (its settings are kept in $LOGS/run.env)
-RUN=rr-e2e-1 STEPS="assert-org local report" bash .claude/skills/replacement-rules-e2e/scripts/rr-e2e.sh
+RUN=rr-e2e-1 STEPS="assert-org local report" bash .claude/skills/e2e/scenarios/replacement-rules/scripts/rr-e2e.sh
 ```
 
 Run it in the background (it takes more than ten minutes) and watch `[FAIL]` lines of its output.

@@ -2,7 +2,7 @@
 # Job simulators for the promotion branches end to end test, GitLab flavour. Source this file.
 #
 #   export ORG PROJECT_ID PROJECT_PATH GL_HOST GL_TOKEN WORK LOGS DEV
-#   source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-gitlab.sh
+#   source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib-gitlab.sh
 #
 # sfdx-hardis picks GitLab when CI_SFDX_HARDIS_GITLAB_TOKEN (or CI_JOB_TOKEN) is set, and reads the
 # project and the merge request from CI_PROJECT_ID / CI_MERGE_REQUEST_IID, so running the CLI

@@ -9,8 +9,9 @@
   - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): new env var **SCRATCH_ORG_SNAPSHOT** to create the scratch org from a snapshot given by name.
   - The [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/) run as for a pool: the snapshot holds the result of the steps run when filling the pool, and each Pull Request scratch org gets the delta, then the other steps.
 - Delta deployment with `useDeltaDeploymentWithDependencies`: a command that reads two manifests no longer extends the second delta with the components of the first.
-- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): on GitHub, running the command again after GitHub refused the push of the workflow on `main` now pushes it, instead of saying it was done.
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): Flows that are already deleted no longer show in the Flow deletion section of the Pull Request comments.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#activate-user-access-policies): new action to activate User Access Policies after a deployment, which leaves them in Design and turns their automation off, with an option to Apply To All.
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): on GitHub, running the command again after GitHub refused the push of the workflow on `main` now pushes it, instead of saying it was done.
 - Reports: when a CSV or Excel report is open in Excel, the new one is written next to it as `report-2.xlsx` with a warning, instead of not being generated.
 
 ## [8.19.0] 2026-10-19
@@ -29,6 +30,7 @@
 - [hardis:org:data:import](https://sfdx-hardis.cloudity.com/hardis/org/data/import/) and [hardis:org:data:delete](https://sfdx-hardis.cloudity.com/hardis/org/data/delete/): in a production org without `sfdmuCanModify`, the command asks to confirm the modification of the org and authorizes SFDMU to modify it, instead of failing with "Entered instance URL '' does not match" ([vscode-sfdx-hardis#499](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/499)). As in SFDMU, a Developer Edition org is not a production org: deleting its data no longer requires `"runnableInProduction": true`. hardis:org:data:delete now also reads the `SFDMU_CAN_MODIFY` environment variable, as hardis:org:data:import already did
 - [hardis:scratch:pool:refresh](https://sfdx-hardis.cloudity.com/hardis/scratch/pool/refresh/): fills the pool from a Windows computer again.
 - Ticketing: the deployment comments of JIRA, Azure Boards, ServiceNow and Aha! tickets now say the same thing, and the sfdx-hardis link of the JIRA one works again.
+- [hardis:doc:data-dictionary](https://sfdx-hardis.cloudity.com/hardis/doc/data-dictionary/): documents Data Cloud Data Model Objects and Data Lake Objects, with their keys and a Data Cloud Relationships sheet.
 
 ## [8.18.1] 2026-10-15
 

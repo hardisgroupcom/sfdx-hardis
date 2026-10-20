@@ -1,10 +1,10 @@
 /**
  * Where the run happens. Nothing is hardcoded: every path is derived from this
  * file's own location, which is
- * <sfdx-hardis>/.claude/skills/training-e2e/scripts/, and every one of them can
+ * <sfdx-hardis>/.claude/skills/e2e/scenarios/training/scripts/, and every one of them can
  * be overridden with an environment variable.
  *
- *   HARDIS  the sfdx-hardis working copy (four levels up from here)
+ *   HARDIS  the sfdx-hardis working copy (six levels up from here)
  *   COURSE  the course source, never worked in as a learner
  *   RUN     the learner's clone: this is where the labs happen
  *   MONRUN  the monitoring repository Lab 3.8 creates
@@ -23,7 +23,7 @@ import { fileURLToPath } from "url";
 const slash = (p) => p.replace(/\\/g, "/");
 
 export const HERE = slash(path.dirname(fileURLToPath(import.meta.url)));
-export const HARDIS = slash(process.env.SFDX_HARDIS_DIR || path.resolve(HERE, "..", "..", "..", ".."));
+export const HARDIS = slash(process.env.SFDX_HARDIS_DIR || path.resolve(HERE, "..", "..", "..", "..", "..", ".."));
 const SIBLING = (name) => slash(path.resolve(HARDIS, "..", name));
 
 export const COURSE = slash(process.env.COURSE || SIBLING("sfdx-hardis-training"));

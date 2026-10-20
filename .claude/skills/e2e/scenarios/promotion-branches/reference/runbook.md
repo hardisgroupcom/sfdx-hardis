@@ -5,7 +5,7 @@ branches feature (`enablePromotionBranches`, `sf hardis:project:promotion:create
 Salesforce org, and how to read the result. Roughly 45 minutes end to end.
 
 Paths below are written relative to this skill directory:
-`.claude/skills/promotion-branches-e2e/`.
+`.claude/skills/e2e/scenarios/promotion-branches/`.
 
 ___
 
@@ -33,7 +33,7 @@ copy (git-ignored). `reference/env.example` lists every variable, what it is for
    `sf org login web --alias <E2E_ORG>` (and the Dev Hub when it is another org).
 3. `yarn install` in the sfdx-hardis working copy; clone vscode-sfdx-hardis next to it, on the
    matching branch, then `yarn install && yarn compile` there.
-4. `bash .claude/skills/promotion-branches-e2e/scripts/preflight.sh` (`--provider <p>` for one
+4. `bash .claude/skills/e2e/scenarios/promotion-branches/scripts/preflight.sh` (`--provider <p>` for one
    provider). It is read-only, prints OK / MISSING / WARN per item, and the command that fixes each
    MISSING. Run it until nothing is MISSING.
 
@@ -61,7 +61,7 @@ For the commands of this runbook typed by hand, load the same settings in the sh
 
 ```bash
 export PROVIDER=github                       # or gitlab, azure, bitbucket
-source .claude/skills/promotion-branches-e2e/scripts/env-lib.sh && e2e_defaults "promo-e2e-$PROVIDER"
+source .claude/skills/e2e/scenarios/promotion-branches/scripts/env-lib.sh && e2e_defaults "promo-e2e-$PROVIDER"
 export REPO="youruser/sfdx-hardis-promo-e2e-<n>"   # GitHub: private test repository, always a NEW one
 mkdir -p "$LOGS"
 ```
@@ -76,7 +76,7 @@ GitHub Actions is not needed: the git provider resolves the Pull Request from th
 running the CLI locally with the right variables reproduces a real job exactly.
 
 ```bash
-source .claude/skills/promotion-branches-e2e/scripts/e2e-lib.sh
+source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib.sh
 ```
 
 It defines:
@@ -122,7 +122,7 @@ Four major branches, all deployed to the same org.
 `scripts/build-repo.sh` writes all of it:
 
 ```bash
-WORK="$WORK" API=67.0 bash .claude/skills/promotion-branches-e2e/scripts/build-repo.sh
+WORK="$WORK" API=67.0 bash .claude/skills/e2e/scenarios/promotion-branches/scripts/build-repo.sh
 ```
 
 It refuses to run on an existing `$WORK`, on purpose: a rerun on a previous tree is exactly the
@@ -410,7 +410,7 @@ repository and compares them with the provider:
 
 ```bash
 PROVIDER=github REPO="$REPO" WORK="$(cygpath -m "$WORK")" DEV="$DEV" EXT="$EXT" \
-  node .claude/skills/promotion-branches-e2e/scripts/check-pr-modal.cjs --json "$(cygpath -m "$LOGS")/pr-modal.json"
+  node .claude/skills/e2e/scenarios/promotion-branches/scripts/check-pr-modal.cjs --json "$(cygpath -m "$LOGS")/pr-modal.json"
 # GitLab: PROVIDER=gitlab GL_HOST GL_TOKEN PROJECT_ID instead of REPO
 # Azure DevOps: PROVIDER=azure AZ_ORG AZ_PROJECT AZ_REPO_ID AZ_TOKEN instead of REPO
 # Bitbucket: PROVIDER=bitbucket BB_WORKSPACE BB_REPO BB_EMAIL BB_TOKEN instead of REPO
@@ -467,7 +467,7 @@ provider agnostic shape the auditor reads:
 
 ```bash
 dump_pr_comments "$LOGS/comments.json"
-node .claude/skills/promotion-branches-e2e/scripts/audit-pr-comments.cjs \
+node .claude/skills/e2e/scenarios/promotion-branches/scripts/audit-pr-comments.cjs \
   "$LOGS/comments.json" "$LOGS/comments-expect.json"
 ```
 
@@ -502,7 +502,7 @@ compares its DOM with its source:
 
 ```bash
 dump_pr_comments "$LOGS/comments.json"
-node .claude/skills/promotion-branches-e2e/scripts/check-comments-visual.cjs \
+node .claude/skills/e2e/scenarios/promotion-branches/scripts/check-comments-visual.cjs \
   "$(cygpath -m "$LOGS")/comments.json" "$(cygpath -m "$LOGS")/visual"
 # GitHub: REPO in the environment; GitLab: GL_HOST, GL_TOKEN and PROJECT_PATH
 # --per-type 2 for two comments of each type, --only validation for one family
@@ -656,8 +656,8 @@ variables the CLI reads outside CI), `bp_open` and `bp_merge` (a Pull Request in
 export PROVIDER=github                                    # or gitlab, azure, bitbucket: picks the library (BP_PROVIDER_LIB)
 # plus the repository variables of that library; ORG, DEVHUB, DEVORG, DEVORG2, WORK, LOGS, DEV and
 # API come from .env and env-lib.sh (WORK: <temp>/promo-e2e-bp-<provider>)
-bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # stories, scratch orgs, developer branch
-bash .claude/skills/promotion-branches-e2e/scripts/backpromote-steps.sh   # B0 to B16, C1 to C4, summary
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/backpromote-setup.sh   # stories, scratch orgs, developer branch
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/backpromote-steps.sh   # B0 to B16, C1 to C4, summary
 ```
 
 Pull Request numbers differ from one provider to the other: the expectation files use `{{S1}}`,
@@ -767,10 +767,10 @@ Sections 3, 4 and 4bis are scripted in `scripts/promotion-run.sh`, section 6 in
 export PROVIDER=github REPO=<owner/name>   # GitLab: PROJECT_ID PROJECT_PATH GL_HOST GL_TOKEN (8),
                                            # Azure DevOps: AZ_REPO_NAME (8bis), Bitbucket: BB_REPO (8ter)
 # ORG, WORK, LOGS, EXPECT, DEV, API and EXT come from .env and env-lib.sh
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh       # results-section4.txt
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6   # results-section6.txt
-bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh   # results-section6quater.txt
-bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh    # results-section6sexies.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/promotion-run.sh       # results-section4.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6   # results-section6.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/deployment-actions-run.sh   # results-section6quater.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/identical-actions-run.sh    # results-section6sexies.txt
 ```
 
 The functions the sections call (`p_check`, `p_deploy`, `p_promote`, `p_release_notes`, `p_open`,
@@ -791,7 +791,7 @@ start, end). The backpromote calls also get `SFDX_HARDIS_PROGRESS_FILE=$LOGS/pro
 unless the caller set one. Then:
 
 ```bash
-node .claude/skills/promotion-branches-e2e/scripts/timing-report.cjs "$(cygpath -m "$LOGS")" --title GitHub --json "$(cygpath -m "$LOGS")/timing.json"
+node .claude/skills/e2e/scenarios/promotion-branches/scripts/timing-report.cjs "$(cygpath -m "$LOGS")" --title GitHub --json "$(cygpath -m "$LOGS")/timing.json"
 ```
 
 prints the median and worst time per kind of call, per backpromote step, and the slowest calls.
@@ -825,7 +825,7 @@ run it), on the same repository. It adds two stories, then asserts every job log
 ```bash
 export PROVIDER=github REPO=<owner/name>               # the repository variables of the provider, see 6ter
 export DEV_ORG=<scratch org username>                   # optional: group D
-bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh   # results-section6quater.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/deployment-actions-run.sh   # results-section6quater.txt
 ```
 
 | Group | Checks                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -881,7 +881,7 @@ the report table: a simulated job proves the CLI, not the CI file.
 The start is the same on the four providers, nothing else to export when `.env` is filled:
 
 ```bash
-PROVIDER=<github|gitlab|azure|bitbucket> nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh \
+PROVIDER=<github|gitlab|azure|bitbucket> nohup bash .claude/skills/e2e/scenarios/promotion-branches/scripts/ci-workflows-run.sh \
   >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-$PROVIDER.out" 2>&1 & disown
 ```
 
@@ -897,7 +897,7 @@ A new provider adds `ci-provider-<provider>.sh` (the interface is in the header 
 export PROVIDER=github
 export REPO=<owner/name>                   # optional: default <GH_E2E_OWNER or the gh login>/sfdx-hardis-promo-e2e-ci-<n>
 export SFDX_HARDIS_BRANCH=<branch>         # pushed to hardisgroupcom/sfdx-hardis; default: current
-bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh   # results-section6quinquies.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/ci-workflows-run.sh   # results-section6quinquies.txt
 ```
 
 To prove a published release (a beta for instance) rather than a branch, run the jobs in its image
@@ -968,7 +968,7 @@ export SFDX_HARDIS_BRANCH=<branch>             # default: current; or - with SFD
 # optional: GL_TOKEN (default: glab config get token --host <host>), GITLAB_E2E_PROJECT,
 # GITLAB_E2E_CI_TOKEN=project|user, GITLAB_RUNNER_TAG (default ubuntu),
 # CI_WAIT_APPEAR_SECONDS (600), CI_WAIT_JOB_SECONDS (3600)
-nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-gitlab.out" 2>&1 & disown
+nohup bash .claude/skills/e2e/scenarios/promotion-branches/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-gitlab.out" 2>&1 & disown
 ```
 
 What `ci-provider-gitlab.sh` does, in order:
@@ -1047,7 +1047,7 @@ export PROVIDER=azure
 # optional: AZ_REPO_NAME (default sfdx-hardis-promo-e2e-ci-az-<n>), AZURE_E2E_CI_TOKEN=system|pat,
 # CI_WAIT_APPEAR_SECONDS (900), CI_WAIT_QUEUE_SECONDS (10800), CI_WAIT_JOB_SECONDS (3600),
 # CI_WAIT_REQUEUE_SECONDS (300)
-nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-azure.out" 2>&1 & disown
+nohup bash .claude/skills/e2e/scenarios/promotion-branches/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-azure.out" 2>&1 & disown
 ```
 
 The PAT needs Code (Read, write & manage), Pull Request Threads (Read & write) and Build (Read &
@@ -1156,7 +1156,7 @@ export PROVIDER=bitbucket
 # optional: BB_REPO (default sfdx-hardis-promo-e2e-ci-bb-<n>), BB_CI_SIMULATE_ONLY=1,
 # BB_CI_PAUSE_SECONDS (90), CI_WAIT_APPEAR_SECONDS (600), CI_WAIT_REQUEUE_SECONDS (240),
 # CI_WAIT_QUEUE_SECONDS (1800), CI_WAIT_JOB_SECONDS (3600)
-nohup bash .claude/skills/promotion-branches-e2e/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-bitbucket.out" 2>&1 & disown
+nohup bash .claude/skills/e2e/scenarios/promotion-branches/scripts/ci-workflows-run.sh >"${TMPDIR:-${TEMP:-/tmp}}/promo-e2e-ci-bitbucket.out" 2>&1 & disown
 ```
 
 What `ci-provider-bitbucket.sh` does, in order:
@@ -1237,7 +1237,7 @@ The shared step is the same command in every story that carries it:
 ```bash
 export PROVIDER=github ORG REPO WORK LOGS DEV API      # plus GL_* and PROJECT_* on GitLab
 export DEV_ORG=<scratch org username>                   # optional: group I7
-bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh   # results-section6sexies.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/identical-actions-run.sh   # results-section6sexies.txt
 ```
 
 | Group | Checks                                                                                                                                                                                                                                                                                                                                                                                                                                  |
@@ -1284,7 +1284,7 @@ project, `$WORK-oi-dev` for the developer who takes an org from the pool), on a 
 ```bash
 export PROVIDER=github ORG REPO WORK LOGS DEV API      # plus the variables of the other providers
 export DEVHUB=<Dev Hub alias or username>              # default ORG: 2 free ACTIVE scratch orgs needed
-bash .claude/skills/promotion-branches-e2e/scripts/org-init-run.sh   # results-section6septies.txt
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/org-init-run.sh   # results-section6septies.txt
 ```
 
 The project of the section adds to the base one: the permission set `PromoE2EOrgInit`, a batch
@@ -1539,7 +1539,7 @@ at the top right of the branch window is on. Open the pipeline in VS Code to see
 extension's own helpers over the real Pull Requests of the test repository:
 
 ```bash
-node .claude/skills/promotion-branches-e2e/scripts/check-diagram.cjs \
+node .claude/skills/e2e/scenarios/promotion-branches/scripts/check-diagram.cjs \
   "$REPO" integration,uat,preprod,main
 ```
 
@@ -1558,14 +1558,14 @@ The extension must be compiled first (`cd $EXT && yarn compile`), on the branch 
 On Azure DevOps, `check-diagram-azure.cjs` does the same from the Azure DevOps API:
 
 ```bash
-AZ_ORG="$AZ_ORG" AZ_PROJECT="$AZ_PROJECT" AZ_TOKEN="$AZ_TOKEN"   node .claude/skills/promotion-branches-e2e/scripts/check-diagram-azure.cjs   "$AZ_REPO_NAME" integration,uat,preprod,main
+AZ_ORG="$AZ_ORG" AZ_PROJECT="$AZ_PROJECT" AZ_TOKEN="$AZ_TOKEN"   node .claude/skills/e2e/scenarios/promotion-branches/scripts/check-diagram-azure.cjs   "$AZ_REPO_NAME" integration,uat,preprod,main
 ```
 
 On GitLab, `check-diagram-gitlab.cjs` does the same from the GitLab API:
 
 ```bash
 GL_HOST="$GL_HOST" GL_TOKEN="$GL_TOKEN" \
-  node .claude/skills/promotion-branches-e2e/scripts/check-diagram-gitlab.cjs \
+  node .claude/skills/e2e/scenarios/promotion-branches/scripts/check-diagram-gitlab.cjs \
   "$PROJECT_ID" integration,uat,preprod,main
 ```
 
@@ -1591,7 +1591,7 @@ jobs as before.
 ```bash
 export ORG REPO WORK LOGS DEV
 CLI="$E2E_ROOT"   # the sfdx-hardis working copy, set by env-lib.sh
-AB=.claude/skills/promotion-branches-e2e/scripts
+AB=.claude/skills/e2e/scenarios/promotion-branches/scripts
 
 # one open feature Pull Request and one open major-to-major Pull Request are needed (fresh merge refs)
 (cd "$CLI" && git checkout feat/promotion-branches) && "$AB/ab-run.sh" branch off 15 uat 16 preprod uat
@@ -1639,7 +1639,7 @@ export PROJECT_PATH="you/sfdx-hardis-promo-e2e-gl-1"
 export GL_HOST="https://gitlab.example.com"
 export GL_TOKEN="..."                                     # personal access token, api scope
 export PROVIDER=gitlab   # ORG, WORK, LOGS, EXPECT, DEV and EXT: .env and env-lib.sh (<temp>/promo-e2e-gitlab)
-source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-gitlab.sh
+source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib-gitlab.sh
 ```
 
 Set the project to merge commits and never squash, otherwise the `-x` trailers are lost:
@@ -1691,7 +1691,7 @@ export AZ_REPO_NAME="sfdx-hardis-promo-e2e-az-7"   # -az-1 to -az-6 exist (2026-
 # .env (E2E_ENV_FILE to point elsewhere). PAT: Code read/write, Pull Request threads read/write.
 # AZ_REPO_ID: leave it unset, it is read by name once the repository exists.
 export PROVIDER=azure    # ORG, WORK, LOGS, EXPECT, DEV, EXT, API: .env and env-lib.sh (<temp>/promo-e2e-azure)
-source .claude/skills/promotion-branches-e2e/scripts/env-lib.sh && e2e_defaults "promo-e2e-$PROVIDER"
+source .claude/skills/e2e/scenarios/promotion-branches/scripts/env-lib.sh && e2e_defaults "promo-e2e-$PROVIDER"
 ```
 
 Create the repository with the REST API, before sourcing the library (it reads the GUID by name and
@@ -1700,7 +1700,7 @@ stops when there is none). The token comes from `.env` here too:
 ```bash
 curl -sS -u ":$AZURE_PERSONAL_ACCESS_TOKEN" -H "Content-Type: application/json" -d '{"name":"'"$AZ_REPO_NAME"'"}' \
   "https://dev.azure.com/$AZ_ORG/$AZ_PROJECT/_apis/git/repositories?api-version=7.1" -o /dev/null -w "%{http_code}\n"
-source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-azure.sh
+source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib-azure.sh
 ```
 
 Push with the token in the remote URL: `git remote add origin "$(az_remote_url)"` (that is
@@ -1710,11 +1710,11 @@ sections with `PROVIDER=azure` (section 6ter), or follow sections 3 to 7 by hand
 
 ```bash
 export PROVIDER=azure
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
-bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh
-bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh
-bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # on its own repository, see 6bis
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/promotion-run.sh
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/deployment-actions-run.sh
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/identical-actions-run.sh
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/backpromote-setup.sh   # on its own repository, see 6bis
 ```
 
 Traps that only bite on Azure DevOps:
@@ -1776,7 +1776,7 @@ export BB_REPO="sfdx-hardis-promo-e2e-bb-1"
 # else from .env (E2E_ENV_FILE to point elsewhere).
 # For a workspace or repository Access Token instead: BB_TOKEN=<it> and BB_EMAIL="" (Bearer auth).
 export PROVIDER=bitbucket   # ORG, WORK, LOGS, EXPECT, DEV, EXT, API: .env and env-lib.sh (<temp>/promo-e2e-bitbucket)
-source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-bitbucket.sh
+source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib-bitbucket.sh
 ```
 
 Create the repository with the REST API (a project key is required in a workspace that has one), then
@@ -1792,11 +1792,11 @@ by hand with `bb_check` / `bb_deploy` / `bb_promote` / `bb_release_notes`:
 
 ```bash
 export PROVIDER=bitbucket
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-run.sh
-bash .claude/skills/promotion-branches-e2e/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
-bash .claude/skills/promotion-branches-e2e/scripts/deployment-actions-run.sh
-bash .claude/skills/promotion-branches-e2e/scripts/identical-actions-run.sh
-bash .claude/skills/promotion-branches-e2e/scripts/backpromote-setup.sh   # on its own repository, see 6bis
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/promotion-run.sh
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/promotion-edge.sh g1 g2 g3 g4 g5 g6
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/deployment-actions-run.sh
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/identical-actions-run.sh
+bash .claude/skills/e2e/scenarios/promotion-branches/scripts/backpromote-setup.sh   # on its own repository, see 6bis
 ```
 
 Traps already met on Bitbucket:
@@ -1875,7 +1875,7 @@ calls. None of them creates a repository, a branch, a Pull Request or a comment,
 token.
 
 ```bash
-cd .claude/skills/promotion-branches-e2e/scripts
+cd .claude/skills/e2e/scenarios/promotion-branches/scripts
 for f in *.sh; do bash -n "$f" || echo "FAIL $f"; done
 for f in *.cjs; do node --check "$f" || echo "FAIL $f"; done
 shellcheck -x -S warning *.sh

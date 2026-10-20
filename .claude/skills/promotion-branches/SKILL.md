@@ -20,7 +20,7 @@ The feature is in **Beta** and must be labelled as such in docs and UIs, the way
 
 User documentation: `docs/salesforce-devops-promotion-branches.md`
 (<https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/>).
-End to end test runbook: the `promotion-branches-e2e` skill.
+End to end test runbook: the `promotion-branches` scenario of the `e2e` skill.
 
 ## Mental model
 
@@ -61,7 +61,7 @@ Break one of these and the feature is wrong, whatever the tests say.
 1. **With `enablePromotionBranches: false`, deployment behaviour is byte for byte what it was.** A
    `promotion/...` branch is an ordinary feature branch. The only allowed difference is one
    informational log line. This is proven by the A/B regression check in the
-   `promotion-branches-e2e` skill.
+   `promotion-branches` scenario of the `e2e` skill.
 2. **A promotion never runs actions against the wrong org.** A `promotion/uat/preprod/...` branch
    whose Pull Request targets `main` is retargeted by hand: its declaration is ignored
    (`isPromotionPullRequestForItsTarget`), scope is the Pull Request alone, with a warning.

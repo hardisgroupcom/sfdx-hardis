@@ -3,7 +3,7 @@
 # file, do not execute it.
 #
 #   export ORG BB_WORKSPACE BB_REPO BB_EMAIL BB_TOKEN WORK LOGS DEV
-#   source .claude/skills/promotion-branches-e2e/scripts/e2e-lib-bitbucket.sh
+#   source .claude/skills/e2e/scenarios/promotion-branches/scripts/e2e-lib-bitbucket.sh
 #
 # sfdx-hardis picks Bitbucket when BITBUCKET_WORKSPACE or CI_SFDX_HARDIS_BITBUCKET_TOKEN is set,
 # and reads the repository and the Pull Request from BITBUCKET_REPO_SLUG / BITBUCKET_PR_ID, so

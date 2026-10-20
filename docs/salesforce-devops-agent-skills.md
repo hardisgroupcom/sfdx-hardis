@@ -434,7 +434,7 @@ Deployment actions are pre- or post-deployment steps stored in YAML config files
 | `branch`  | `config/branches/.sfdx-hardis.<branch>.yml` |
 | `pr`      | `scripts/actions/.sfdx-hardis.<prId>.yml`   |
 
-Eight built-in action types are available, plus the [custom functions](salesforce-devops-work-on-user-story-custom-functions.md) of the project:
+Nine built-in action types are available, plus the [custom functions](salesforce-devops-work-on-user-story-custom-functions.md) of the project:
 
 | Type                      | Required parameters                           |
 |---------------------------|-----------------------------------------------|
@@ -446,6 +446,7 @@ Eight built-in action types are available, plus the [custom functions](salesforc
 | `schedule-batch`          | `--class-name`, `--cron-expression`           |
 | `run-batch`               | `--class-name`                                |
 | `remove-packagexml-items` | `--packagexml-items`                          |
+| `user-access-policy`      | `--policies`                                  |
 | Id of a custom function   | `--function-input name=value`, once per input |
 
 An agent works with these commands in three ways:
@@ -582,11 +583,14 @@ Plus the type-specific flags of the table above.
 | `--batch-size`                   | `200`                     | For `run-batch`: batch size, 1 to 2000                                                                                                    |
 | `--wait-timeout`                 | `60`                      | For `run-batch` in `wait` mode: minutes to wait for the job                                                                               |
 | `--success-even-if-batch-errors` | `false`                   | For `run-batch` in `wait` mode: keep the action successful when the job completes with batches in error                                   |
+| `--activate`                     | `true`                    | For `user-access-policy`: activate the policies. `--no-activate` to only apply them                                                       |
+| `--apply-to-all`                 | `false`                   | For `user-access-policy`: also run Apply To All for each policy, from the Setup page in a headless Chrome                                 |
 
 Things to know:
 
 - Without `--include-target-branches` or `--exclude-target-branches`, the action runs on every target branch. The virtual name `dev-sandboxes` matches any target that is not a major branch: a developer sandbox reached by a backpromote, or a local deployment from a feature branch.
 - A `run-batch` action only runs in the `process-deployment-only` context, never during a deployment check.
+- A `user-access-policy` action is `post-deploy` only and runs in the `process-deployment-only` context. `--run-only-once-by-org` defaults to `false` for it, because each deployment of a policy turns it off again.
 - A `manual` action declared `pre-deploy` is listed by the deployment check whatever its context, since it has to be done before the merge.
 - For `schedule-batch` and `run-batch`, write a global class of a managed package with its namespace: `ns.ClassName`.
 
@@ -862,12 +866,13 @@ sf hardis:project:action:list --agent --with-status --pr-ids <id1,id2|draft> --j
 ```bash
 sf hardis:project:action:create --agent \
   --scope <project|branch|pr> --when <pre-deploy|post-deploy> \
-  --type <command|apex|data|publish-community|manual|schedule-batch|run-batch|remove-packagexml-items|custom function id> \
+  --type <command|apex|data|publish-community|manual|schedule-batch|run-batch|remove-packagexml-items|user-access-policy|custom function id> \
   --label "<label>" \
   [--command "<cmd>"] [--apex-script <path>] [--sfdmu-project <name>] \
   [--community-name <name>] [--instructions "<text>"] \
   [--class-name <ClassName>] [--cron-expression "<expr>"] [--job-name <name>] \
   [--run-mode wait|no-wait] [--batch-size <n>] [--wait-timeout <minutes>] [--success-even-if-batch-errors] \
+  [--policies "<Policy1,Policy2>"] [--no-activate] [--apply-to-all] \
   [--packagexml-items "<Type:Member1,Member2;Type2:Member3>"] \
   [--function-input <name>=<value>] \
   [--pr-id <id>] [--context all|check-deployment-only|process-deployment-only] \

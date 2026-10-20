@@ -18,7 +18,7 @@ function git(args, cwd) {
   }
 }
 
-const root = process.env.E2E_ROOT || git(['rev-parse', '--show-toplevel'], __dirname) || path.resolve(__dirname, '../../../..');
+const root = process.env.E2E_ROOT || git(['rev-parse', '--show-toplevel'], __dirname) || path.resolve(__dirname, '../../../../../..');
 let mainRoot = process.env.E2E_MAIN_ROOT || '';
 if (!mainRoot) {
   const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'], root);

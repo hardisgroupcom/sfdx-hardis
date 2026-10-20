@@ -1,16 +1,12 @@
 #!/usr/bin/env node
 /**
- * The variant of ../panel.mjs for the Training menu: it runs `node`, not `sf`.
+ * A headless stand-in for the VS Code sfdx-hardis panel, for walking the training
+ * labs without clicking.
  *
- *   node panel-node.mjs --cwd <repo> --answers '<json rules>' -- scripts/training.mjs simulate
+ *   node panel.mjs --cwd <repo> --answers '<json rules>' -- hardis:work:new
  *
- * The Command Runner of the extension runs `node scripts/training.mjs <verb>` with the address
- * of its WebSocket server in SFDX_HARDIS_WEBSOCKET, and the questions of Simulate my teammates,
- * Create my lab records or Publish my pipeline configuration arrive in the panel. This does the
- * same headless. Give the script with its path: `-- simulate` alone fails on "Cannot find module".
- *
- * It starts the WebSocket server the extension would start, runs the command
- * with that variable set, and answers every prompt from the rules:
+ * It starts the WebSocket server the extension would start, runs the sf command
+ * with --websocket pointing at it, and answers every prompt from the rules:
  *   [{ "q": "regex on the question", "choice": "regex on a choice title" }, ...]
  *   [{ "q": "...", "value": <raw value> }]   for text prompts or exact values
  *   [{ "q": "...", "value": "__INITIAL__" }] accepts what the panel pre-fills
@@ -33,7 +29,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const HARDIS = process.env.SFDX_HARDIS_DIR || path.resolve(HERE, "..", "..", "..", "..", "..");
+const HARDIS = process.env.SFDX_HARDIS_DIR || path.resolve(HERE, "..", "..", "..", "..", "..", "..");
 const require = createRequire(path.join(HARDIS, "package.json").replace(/\\/g, "/"));
 const { WebSocketServer } = require("ws");
 
@@ -150,12 +146,12 @@ wss.on("connection", (ws) => {
   });
 });
 
-// Variant: runs `node scripts/training.mjs <verb> ...` the way the extension's Command Runner does,
-// with the address of the WebSocket server in SFDX_HARDIS_WEBSOCKET.
-const child = spawn(process.execPath, command, {
+const args = [...command, "--websocket", `localhost:${port}`];
+const child = spawn(isWin ? `sf ${args.map((a) => (/[\s"&|<>^]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a)).join(" ")}` : "sf", isWin ? [] : args, {
   cwd: opts.cwd || process.cwd(),
+  shell: isWin,
   stdio: ["ignore", "inherit", "inherit"],
-  env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1", SFDX_HARDIS_WEBSOCKET: `localhost:${port}` }
+  env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" }
 });
 child.on("exit", (code) => {
   const unused = rules.filter((r) => !r.used && !r.optional);

@@ -2,7 +2,7 @@
 # Replacement rules end to end test: a scratch org, a throwaway private GitHub repository running the
 # sfdx-hardis CI workflows built from the branch under test, and every rule pattern proven in the org.
 #
-#   bash .claude/skills/replacement-rules-e2e/scripts/rr-e2e.sh            # the whole run
+#   bash .claude/skills/e2e/scenarios/replacement-rules/scripts/rr-e2e.sh            # the whole run
 #   STEPS="assert-org local" bash rr-e2e.sh                                # some steps again
 #
 # Settings (environment, then the .env of the sfdx-hardis working copy):
@@ -17,7 +17,7 @@
 set -uo pipefail
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PROMO_SCRIPTS="$SKILL_DIR/../promotion-branches-e2e/scripts"
+PROMO_SCRIPTS="$SKILL_DIR/../promotion-branches/scripts"
 # shellcheck source=/dev/null
 source "$PROMO_SCRIPTS/env-lib.sh"
 e2e_load_env DEVHUB E2E_ORG SFDX_HARDIS_BRANCH GH_E2E_OWNER

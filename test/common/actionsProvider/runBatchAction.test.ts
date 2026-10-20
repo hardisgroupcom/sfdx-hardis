@@ -1,11 +1,11 @@
 import { expect } from 'chai';
 import {
+  RunBatchAction,
   applyRunBatchFlags,
   buildRunBatchApex,
   decideExistingBatchJob,
   evaluateBatchJob,
   extractBatchJobId,
-  hasRunBatchFlags,
   isBatchableApexBody,
   listRunBatchParameterErrors,
   normalizeRunBatchParameters,
@@ -108,14 +108,21 @@ describe('applyRunBatchFlags', () => {
   });
 });
 
-describe('hasRunBatchFlags', () => {
-  it('is true as soon as one run-batch flag is passed, even a negated one', () => {
-    expect(hasRunBatchFlags({ 'batch-size': 50 })).to.equal(true);
-    expect(hasRunBatchFlags({ 'success-even-if-batch-errors': false })).to.equal(true);
+describe('RunBatchAction.getFlagNames', () => {
+  it('owns the run-batch flags, not the ones shared with other types', () => {
+    const flagNames = new RunBatchAction().getFlagNames();
+    expect(flagNames).to.include.members(['batch-size', 'success-even-if-batch-errors']);
+    expect(flagNames).to.not.include('class-name');
   });
+});
 
-  it('is false for the flags shared with other types', () => {
-    expect(hasRunBatchFlags({ 'class-name': 'CrewCapacityBatch', label: 'Recalculate' })).to.equal(false);
+describe('RunBatchAction.collectParameters', () => {
+  it('reads the class name and the run-batch flags when headless', async () => {
+    expect(await new RunBatchAction().collectParameters({ 'class-name': 'CrewCapacityBatch', 'batch-size': 50 }, true, {})).to.deep.equal({
+      className: 'CrewCapacityBatch',
+      runMode: 'wait',
+      batchSize: 50,
+    });
   });
 });
 
