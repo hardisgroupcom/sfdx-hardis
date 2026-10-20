@@ -308,4 +308,11 @@ describe('selectSnapshotOrgInitStepIds', () => {
     expect(selectSnapshotOrgInitStepIds(late, 'source')).to.include('sources');
     expect(selectSnapshotOrgInitStepIds(late, 'child')).to.not.include('sources');
   });
+
+  it('installs the packages in the source too when they are kept for after a pool fetch, as its sources need them', () => {
+    const late = {
+      orgInitSteps: config.orgInitSteps.map((step) => (['packages', 'sources'].includes(step.id) ? { ...step, runAtPoolFill: false } : step)),
+    };
+    expect(selectSnapshotOrgInitStepIds(late, 'source')).to.include.members(['packages', 'sources']);
+  });
 });

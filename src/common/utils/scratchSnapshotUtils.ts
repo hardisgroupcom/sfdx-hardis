@@ -103,13 +103,13 @@ export function pickScratchSnapshot(
 }
 
 // The org init steps of a snapshot route, as a pool: the source runs what a pool fill runs, always with the
-// deployment of the sources; a child installs the packages before its delta (only those it lacks are installed),
-// then runs the rest, plus the permission set assignments
+// packages and the deployment of the sources; a child installs the packages before its delta (only those it lacks
+// are installed), then runs the rest, plus the permission set assignments
 export function selectSnapshotOrgInitStepIds(config: any, role: 'source' | 'child-packages' | 'child'): string[] {
   const steps = selectOrgInitSteps(getOrgInitSteps(config).steps, { orgType: 'scratch', phase: 'all' });
   const selected =
     role === 'source'
-      ? steps.filter((step) => step.runAtPoolFill !== false || step.type === 'deploy-sources')
+      ? steps.filter((step) => step.runAtPoolFill !== false || ['deploy-sources', 'install-packages'].includes(step.type))
       : role === 'child-packages'
         ? steps.filter((step) => step.type === 'install-packages')
         : steps.filter(
