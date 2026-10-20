@@ -39,6 +39,7 @@ import { applyPromotionInheritedBehaviors, listAllPullRequestsForCurrentScope } 
 import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCommandUtils.js';
 import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
+import { AER_DEPLOYMENT_NOTIFICATION_MESSAGE, ApexTestRunner, AerTestRequest, getAerSkipOrgValidation, getApexTestRunner, planApexTests } from '../../../../common/utils/aerUtils.js';
 import { t } from '../../../../common/utils/i18n.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 
@@ -170,6 +171,36 @@ deploymentApexTestClasses:
   - MyTestClass1
   - MyTestClass2
 \`\`\`
+
+### Apex tests with aer (optional)
+
+[aer](https://aertest.com) runs Apex tests locally, without an org. With \`apexTestRunner\`, the validation job runs the Apex tests with aer before the pre-deployment actions and the org deployment:
+
+- \`org\` (default): the org runs the Apex tests, as without this setting.
+- \`aer\`: aer runs the Apex tests and the org deployment runs with \`NoTestRun\`, in the validation job and in the deployment job. The validation job still checks in the org that the metadata deploys. Salesforce quick deploys only validations that ran Apex tests, so the deployment job does not try Quick Deploy: it deploys the metadata again with \`NoTestRun\`. Refused when the target org is a production org.
+- \`aer+org\`: aer runs the Apex tests first, then the org runs them at the configured test level.
+
+aer runs the tests the org would run: the classes of \`RunSpecifiedTests\` (including the ones selected with \`enableDeploymentApexTestClasses\`), otherwise every test of the repository. When the test level is \`NoTestRun\`, for example because of Smart Deployment Tests, aer runs no test either.
+
+The job stops before the org deployment when an aer test fails, when aer cannot run the tests (a parse or type error, for example), or when the aer code coverage is lower than \`apexTestsMinCoverageOrgWide\` / \`apexTestsMinCoverage\` (75% by default, not blocking with \`testCoverageNotBlocking\`). aer code coverage is computed on the Apex classes of the repository, not on the whole org. The result is posted in the Pull Request comment.
+
+With \`apexTestRunner: aer\`, set \`aerSkipOrgValidation: true\` to send no check-only deployment to the org: the validation job runs aer and the deployment actions, then posts the Pull Request comment, which says the metadata was not validated in the org. aer reports the bad or missing metadata of the repository. The setting is ignored when aer runs no test, for example with \`NoTestRun\`. The \`AER_SKIP_ORG_VALIDATION\` variable (\`true\` or \`false\`) overrides it.
+
+aer options can be set in a \`.aerrc\` file at the root of the repository.
+
+Requirements in the CI job:
+
+- The [@octoberswimmer/aer-sf-plugin](https://www.npmjs.com/package/@octoberswimmer/aer-sf-plugin) Salesforce CLI plugin, version 0.0.10 or later. It is installed automatically when missing, and it downloads aer from GitHub when aer is not installed.
+- The \`AER_LICENSE_KEY\` variable, holding your aer license key.
+
+Example configuration in \`config/branches/.sfdx-hardis.integration.yml\`:
+
+\`\`\`yaml
+apexTestRunner: aer
+aerSkipOrgValidation: true
+\`\`\`
+
+The \`APEX_TEST_RUNNER\` variable overrides \`apexTestRunner\`.
 
 ### Dynamic deployment items / Overwrite management
 
@@ -570,7 +601,11 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     extraCommands?: any[];
     deferSuccessPullRequestComment?: boolean;
     replacementRules?: { targetBranch: string | null } | false;
+    aerTests?: AerTestRequest | null;
+    apexTestRunner?: ApexTestRunner;
+    aerSkipOrgValidation?: boolean;
   };
+  protected apexTestRunner: ApexTestRunner = 'org';
   protected packageXmlFile: string;
   protected delta = false;
   protected debugMode = false;
@@ -672,6 +707,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
+    // Decided after the delta, because Smart Deployment Tests may have turned the test level into NoTestRun
+    await this.applyApexTestRunner(targetUsername);
+
     // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
     this.flowDeletion = new FlowDeletionHandler({
       commandThis: this,
@@ -735,9 +773,16 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
       if (this.smartDeployOptions.deferSuccessPullRequestComment === true) {
         await GitProvider.managePostPullRequestComment(this.checkOnly);
       }
-      await handlePostDeploymentNotifications(this.targetOrg, targetUsername, quickDeploy, this.delta, this.debugMode, "", deploymentMetrics, {
-        flowsNotDeleted: this.flowDeletion.flowsNotDeleted,
-      });
+      await handlePostDeploymentNotifications(
+        this.targetOrg,
+        targetUsername,
+        quickDeploy,
+        this.delta,
+        this.debugMode,
+        this.apexTestRunner === 'aer' ? AER_DEPLOYMENT_NOTIFICATION_MESSAGE : "",
+        deploymentMetrics,
+        { flowsNotDeleted: this.flowDeletion.flowsNotDeleted }
+      );
     }
     // Return result
     return { orgId: this.targetOrg.getOrgId(), outputString: messages.join('\n') };
@@ -901,6 +946,36 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
         uxLog("action", this, c.cyan('[DeltaDeployment] ' + t('deltaDeploymentFinalDestructiveChanges', { deltaContentDelete: c.yellow(deltaContentDelete) })));
       }
     }
+  }
+
+  // apexTestRunner aer or aer+org: aer runs the Apex tests in the validation job, before the org
+  // deployment. With aer alone, the org deployment runs no test, which a production org refuses.
+  private async applyApexTestRunner(targetUsername: string) {
+    this.apexTestRunner = getApexTestRunner(this.configInfo);
+    this.smartDeployOptions.apexTestRunner = this.apexTestRunner;
+    if (this.apexTestRunner === 'org') {
+      return;
+    }
+    uxLog("action", this, c.cyan('[ApexTestRunner] ' + t('apexTestRunnerSelected', { runner: c.bold(this.apexTestRunner) })));
+    const plan = planApexTests({
+      runner: this.apexTestRunner,
+      checkOnly: this.checkOnly,
+      isProduction: this.apexTestRunner === 'aer' && (await isProductionOrg(targetUsername, { conn: this.smartDeployOptions.conn })),
+      testLevel: this.testLevel,
+      testClasses: this.testClasses,
+      skipOrgValidation: getAerSkipOrgValidation(this.configInfo),
+    });
+    this.smartDeployOptions.aerTests = plan.aerTests;
+    this.smartDeployOptions.aerSkipOrgValidation = plan.skipOrgValidation;
+    if (this.checkOnly && !plan.aerTests) {
+      uxLog("log", this, c.grey('[ApexTestRunner] ' + t('aerTestsSkippedNoTestRun')));
+    }
+    if (plan.orgTestLevel !== this.testLevel) {
+      uxLog("log", this, c.grey('[ApexTestRunner] ' + t('apexTestRunnerAerOrgNoTestRun')));
+    }
+    this.testLevel = plan.orgTestLevel;
+    this.testClasses = plan.orgTestClasses;
+    this.smartDeployOptions.testClasses = plan.orgTestClasses;
   }
 
   private async initPackageXmlAndDestructiveChanges(packageXml: any, targetUsername: any) {

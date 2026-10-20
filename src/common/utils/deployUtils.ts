@@ -41,6 +41,7 @@ import { executePrePostCommands, resetActionOutputsRegistry } from './prePostCom
 import { resetExecutedDeploymentActions } from './deploymentActionsRegistry.js';
 import { finalizeDeploymentComponentsReport, recordDeployResult, recordNoOverwriteFiltering, resetDeploymentComponentsReport } from './deploymentComponentsReport.js';
 import { t } from './i18n.js';
+import { AER_DEPLOYMENT_NOTIFICATION_MESSAGE, aerPreventsQuickDeploy, applyAerTestRunResult, runAerTests, type AerTestRequest, type ApexTestRunner } from './aerUtils.js';
 import { autoFixDeployErrors } from './deployErrorAutoFix.js';
 import { countDeployComponentChanges, isComponentChangeDetailComplete, logDeployResultSummary, summarizeDeployErrorMessage, writeDeployResultReportFile } from './deployResultSummary.js';
 
@@ -265,6 +266,17 @@ function setNoMetadataDeploymentSuccess(check: boolean, reason?: string): void {
   setPullRequestData(prData);
 }
 
+// aerSkipOrgValidation: aer passed and the metadata was not sent to the org
+function setAerSkippedOrgValidationSuccess(): void {
+  setPullRequestData({
+    messageKey: "deployment",
+    title: "✅ Deployment check success - Not validated in the org",
+    deployStatus: "valid",
+    status: "valid",
+    metadataOutcome: "not-validated",
+  });
+}
+
 /**
  * Tell the Pull Request comment what Salesforce accepted, as soon as it accepted it: the post-deployment
  * actions and the code coverage check that follow can still fail the job and post the comment, which
@@ -406,6 +418,11 @@ export async function smartDeploy(
     // Target of the replacement rules: a major branch, null for a dev sandbox or scratch org
     // (the default), false to skip them
     replacementRules?: { targetBranch: string | null } | false;
+    // Tests aer runs before the org deployment, in validation jobs only (apexTestRunner aer or aer+org)
+    aerTests?: AerTestRequest | null;
+    apexTestRunner?: ApexTestRunner;
+    // aerSkipOrgValidation: the validation job stops after aer and the deployment actions
+    aerSkipOrgValidation?: boolean;
   }
 ): Promise<any> {
   elapseStart('all deployments');
@@ -483,6 +500,25 @@ export async function smartDeploy(
     await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
     return { messages, quickDeploy, deployXmlCount, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
+  // aer runs before the pre-deployment actions and the org deployment: when its tests fail, the job
+  // stops before anything is changed in the org
+  if (check && options.aerTests) {
+    const branchConfig = await getConfig('branch');
+    const aerResult = await runAerTests(options.aerTests, { debugMode, commandThis });
+    await applyAerTestRunResult(aerResult, options.aerTests, {
+      check,
+      replacesOrgTests: options.apexTestRunner === 'aer',
+      coverage: {
+        minCoverage: getApexTestsMinCoverage(branchConfig, 'code coverage'),
+        coverageNotBlocking: branchConfig?.testCoverageNotBlocking === true,
+      },
+      commandThis,
+    });
+  }
+  const quickDeployPreventedByAer = aerPreventsQuickDeploy(check, options.apexTestRunner);
+  if (quickDeployPreventedByAer) {
+    uxLog("log", commandThis, c.grey('[aer] ' + t('apexTestRunnerAerNoQuickDeploy')));
+  }
   // Run deployment pre-commands
   // Expose the package.xml files of the deployment plan so pre-deploy actions can update them
   // (ex: remove-packagexml-items actions filter their content before the metadata deploy step)
@@ -491,6 +527,13 @@ export async function smartDeploy(
     await executePrePostCommands('commandsPreDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
   } finally {
     delete globalThis.pendingDeploymentPackageXmlFiles;
+  }
+  if (check && options.aerSkipOrgValidation === true) {
+    uxLog("action", commandThis, c.cyan('[aer] ' + t('aerSkipOrgValidationNoOrgDeployment')));
+    setAerSkippedOrgValidationSuccess();
+    await executePrePostCommands('commandsPostDeploy', { success: true, checkOnly: check, extraCommands: options.extraCommands });
+    await postDeploymentPullRequestComment(check, { defer: options.deferSuccessPullRequestComment === true });
+    return { messages, quickDeploy, deployXmlCount: 0, deploymentMetrics: buildEmptyDeploymentMetrics({ quickDeploy, delta: options.delta === true, startTime: deployStartTime }) };
   }
   // Replacement rules: the files of the deployment are changed in place for the target org, and
   // always restored. Quick deploy reuses the validated package, which got the same changes.
@@ -568,7 +611,7 @@ export async function smartDeploy(
         await warnOnDuplicateFolderMetadataApiNames(deployment.packageXmlFile, commandThis);
         const branchConfig = await getConfig('branch');
         // Try QuickDeploy
-        if (check === false && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
+        if (check === false && !quickDeployPreventedByAer && (process.env?.SFDX_HARDIS_QUICK_DEPLOY || '') !== 'false') {
           const deploymentCheckId = await GitProvider.getDeploymentCheckId();
           if (deploymentCheckId) {
             const quickDeployCommand =
@@ -796,8 +839,12 @@ export async function smartDeploy(
           // Handle notif message when there is no apex
           const prDataCodeCoverage: Partial<PullRequestData> = {
             ...buildDeploymentSuccessPrData(getPullRequestData(), { check: check, quickDeploy: quickDeploy }),
-            testsNotRunReason: testlevel === 'NoTestRun' ? 'smart-tests' : branchConfig?.skipCodeCoverage === true ? 'coverage-skipped' : 'no-apex',
+            testsNotRunReason: testlevel === 'NoTestRun' && options.apexTestRunner === 'aer'
+              ? 'aer'
+              : testlevel === 'NoTestRun' ? 'smart-tests' : branchConfig?.skipCodeCoverage === true ? 'coverage-skipped' : 'no-apex',
             codeCoverageMarkdownBody:
+              testlevel === 'NoTestRun' && options.apexTestRunner === 'aer'
+                ? (check ? '🧪 Apex tests ran with aer instead of in the org' : AER_DEPLOYMENT_NOTIFICATION_MESSAGE) :
               testlevel === 'NoTestRun'
                 ? '⚠️ Apex Tests has not been run thanks to useSmartDeploymentTests' :
                 branchConfig?.skipCodeCoverage === true
@@ -1898,24 +1945,7 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
     !options.testlevel || options.testlevel !== 'RunSpecifiedTests' ? 'code coverage (org wide)' : 'code coverage';
 
   const config = await getConfig('branch');
-
-  // Parse and validate minimum coverage setting, defaults to 75%
-  const minCoverageConf =
-    process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
-    process.env.APEX_TESTS_MIN_COVERAGE ||
-    config.apexTestsMinCoverageOrgWide ||
-    config.apexTestsMinCoverage ||
-    '75.00';
-  const minCoverage = parseFloat(minCoverageConf);
-  if (isNaN(minCoverage)) {
-    killBoringExitHandlers();
-    throw new SfError(`[sfdx-hardis] Invalid minimum coverage configuration: ${minCoverageConf}`);
-  }
-
-  if (minCoverage < 75.0) {
-    killBoringExitHandlers();
-    throw new SfError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% 😊`);
-  }
+  const minCoverage = getApexTestsMinCoverage(config, codeCoverageText);
 
   if (orgCoverage < minCoverage) {
     if (config?.testCoverageNotBlocking === true) {
@@ -1939,6 +1969,31 @@ export async function checkDeploymentOrgCoverage(orgCoverage: number, options: a
       )
     );
   }
+}
+
+/**
+ * Minimum Apex code coverage of a deployment, 75% by default, read from APEX_TESTS_MIN_COVERAGE_ORG_WIDE,
+ * APEX_TESTS_MIN_COVERAGE, apexTestsMinCoverageOrgWide or apexTestsMinCoverage. Salesforce refuses a
+ * production deployment under 75%, so a lower value is an error.
+ */
+export function getApexTestsMinCoverage(config: any, codeCoverageText: string): number {
+  const minCoverageConf =
+    process.env.APEX_TESTS_MIN_COVERAGE_ORG_WIDE ||
+    process.env.APEX_TESTS_MIN_COVERAGE ||
+    config?.apexTestsMinCoverageOrgWide ||
+    config?.apexTestsMinCoverage ||
+    '75.00';
+  const minCoverage = parseFloat(minCoverageConf);
+  if (isNaN(minCoverage)) {
+    killBoringExitHandlers();
+    throw new SfError(`[sfdx-hardis] Invalid minimum coverage configuration: ${minCoverageConf}`);
+  }
+
+  if (minCoverage < 75.0) {
+    killBoringExitHandlers();
+    throw new SfError(`[sfdx-hardis] Good try, hacker, but minimum ${codeCoverageText} can't be less than 75% 😊`);
+  }
+  return minCoverage;
 }
 
 async function checkDeploymentErrors(e, options, commandThis = null) {

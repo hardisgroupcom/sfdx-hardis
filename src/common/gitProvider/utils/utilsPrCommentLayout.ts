@@ -240,6 +240,16 @@ function describeFailure(prData: Partial<PullRequestData>, failedActions: Phased
   if ((prData.errorCount || 0) > 0) {
     return `${prData.errorCount} deployment ${prData.errorCount === 1 ? 'error' : 'errors'}`;
   }
+  const aer = prData.aerTests;
+  if (aer?.outcome === 'couldNotRun') {
+    return 'aer could not run the Apex tests';
+  }
+  if (aer?.outcome === 'testsFailed') {
+    return `${aer.failing} Apex test ${aer.failing === 1 ? 'failure' : 'failures'} in aer`;
+  }
+  if (aer?.coverage?.status === 'invalid') {
+    return `aer code coverage ${aer.coverage.value}% is under the ${aer.coverage.target}% target`;
+  }
   if ((prData.failedTestsCount || 0) > 0) {
     return `${prData.failedTestsCount} Apex test ${prData.failedTestsCount === 1 ? 'failure' : 'failures'}`;
   }
@@ -260,6 +270,10 @@ function buildCheckTable(prData: Partial<PullRequestData>, commands: PhasedComma
   const tests = describeApexTests(prData, options);
   if (tests) {
     rows.push(['Apex tests', tests]);
+  }
+  const aerTests = describeAerTests(prData);
+  if (aerTests) {
+    rows.push(['Apex tests (aer)', aerTests]);
   }
   const actions = describeActions(commands, options);
   if (actions) {
@@ -284,6 +298,9 @@ function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLa
   }
   if (isNothingToDeploy(prData)) {
     return '✅ Nothing to deploy';
+  }
+  if (prData.metadataOutcome === 'not-validated') {
+    return '⚪ Not validated in the org: aerSkipOrgValidation is set';
   }
   const metrics = prData.deploymentMetrics;
   const status = prData.status || prData.deployStatus;
@@ -311,6 +328,13 @@ function describeMetadata(prData: Partial<PullRequestData>, options: PrCommentLa
 }
 
 function describeApexTests(prData: Partial<PullRequestData>, options: PrCommentLayoutOptions): string {
+  // apexTestRunner aer: the org deployment runs no test, aer runs them in the validation job
+  if (prData.aerTests?.replacesOrgTests || prData.testsNotRunReason === 'aer') {
+    return options.checkOnly ? '⚪ Not run in the org: aer runs them' : '✅ Run with aer during the validation';
+  }
+  if (prData.aerTests && isAerFailure(prData)) {
+    return '⚪ Not run: the aer tests failed first';
+  }
   const failures = prData.failedTestsCount || 0;
   if (isCoverageRefusal(prData)) {
     return `❌ Coverage too low for ${prData.coverageWarningsCount === 1 ? '1 class' : `${prData.coverageWarningsCount} classes`}: see below`;
@@ -350,6 +374,39 @@ function describeApexTests(prData: Partial<PullRequestData>, options: PrCommentL
     return '⚪ Not run: the deployment failed first';
   }
   return '';
+}
+
+// Apex tests run with aer before the org deployment (apexTestRunner aer or aer+org). Its coverage is
+// computed on the Apex classes of the repository, not on the whole org.
+function describeAerTests(prData: Partial<PullRequestData>): string {
+  const aer = prData.aerTests;
+  if (!aer) {
+    return '';
+  }
+  if (aer.outcome === 'couldNotRun') {
+    return '❌ aer could not run the tests: see below';
+  }
+  if (aer.outcome === 'testsFailed') {
+    return `❌ ${aer.failing} test ${aer.failing === 1 ? 'failure' : 'failures'} out of ${aer.testsRan}`;
+  }
+  const passed = `${aer.testsRan} ${aer.testsRan === 1 ? 'test' : 'tests'} passed`;
+  if (!aer.coverage) {
+    return `✅ ${passed}`;
+  }
+  const { value, target, status } = aer.coverage;
+  if (status === 'invalid') {
+    return `❌ ${passed}, coverage of the repository ${value}%, under the ${target}% target`;
+  }
+  if (status === 'invalid_ignored') {
+    return `⚠️ ${passed}, coverage of the repository ${value}%, under the ${target}% target (not blocking)`;
+  }
+  return `✅ ${passed}, coverage of the repository ${value}% (target ${target}%)`;
+}
+
+// aer stopped the validation before the org deployment
+function isAerFailure(prData: Partial<PullRequestData>): boolean {
+  const aer = prData.aerTests;
+  return !!aer && (aer.outcome !== 'passed' || aer.coverage?.status === 'invalid');
 }
 
 function describeActions(commands: PhasedCommand[], options: PrCommentLayoutOptions): string {

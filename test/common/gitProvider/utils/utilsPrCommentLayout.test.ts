@@ -374,6 +374,118 @@ describe('Pull Request comment layout', () => {
   });
 });
 
+describe('Pull Request comment layout - Apex tests run with aer', () => {
+  const metrics = { deployed: 3, created: 0, updated: 1, deleted: 0, unchanged: 2 };
+
+  it('shows the aer row next to the org row when both run the tests (aer+org)', () => {
+    const body = render(
+      {
+        status: 'valid',
+        deployStatus: 'valid',
+        deploymentMetrics: metrics,
+        coverage: { value: 82, target: 75, status: 'valid' },
+        aerTests: { outcome: 'passed', testsRan: 12, failing: 0, replacesOrgTests: false, coverage: { value: 91.5, target: 75, status: 'valid' } },
+      },
+      true
+    );
+    expect(body).to.contain('| Apex tests | ✅ Coverage 82% (target 75%) |');
+    expect(body).to.contain('| Apex tests (aer) | ✅ 12 tests passed, coverage of the repository 91.5% (target 75%) |');
+  });
+
+  it('says the org runs no test when aer replaces it (aer)', () => {
+    const body = render(
+      {
+        status: 'valid',
+        deployStatus: 'valid',
+        deploymentMetrics: metrics,
+        testsNotRunReason: 'aer',
+        aerTests: { outcome: 'passed', testsRan: 1, failing: 0, replacesOrgTests: true },
+      },
+      true
+    );
+    expect(body).to.contain('| Apex tests | ⚪ Not run in the org: aer runs them |');
+    expect(body).to.contain('| Apex tests (aer) | ✅ 1 test passed |');
+  });
+
+  it('says the metadata was not validated in the org with aerSkipOrgValidation, and lets the merge go', () => {
+    const body = render(
+      {
+        status: 'valid',
+        deployStatus: 'valid',
+        title: '✅ Deployment check success - Not validated in the org',
+        metadataOutcome: 'not-validated',
+        aerTests: { outcome: 'passed', testsRan: 12, failing: 0, replacesOrgTests: true, coverage: { value: 91.5, target: 75, status: 'valid' } },
+      },
+      true
+    );
+    expect(body.startsWith('### ❌')).to.be.false;
+    expect(body).to.contain('| Metadata | ⚪ Not validated in the org: aerSkipOrgValidation is set |');
+    expect(body).to.contain('| Apex tests | ⚪ Not run in the org: aer runs them |');
+    expect(body).to.contain('| Apex tests (aer) | ✅ 12 tests passed, coverage of the repository 91.5% (target 75%) |');
+    expect(body).not.to.contain('Quick Deploy');
+  });
+
+  it('names the aer test failures in the verdict, the checks and the errors', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        deployStatus: 'invalid',
+        failedTestsCount: 2,
+        aerTests: { outcome: 'testsFailed', testsRan: 12, failing: 2, replacesOrgTests: false },
+        deployErrorsMarkdownBody: '## Apex test failures in aer\n\n💥 <b>FooTest.fails</b><br/>AssertException\n\n',
+      },
+      true
+    );
+    expect(body.startsWith('### ❌ Cannot merge into `integration`: 2 Apex test failures in aer')).to.be.true;
+    expect(body).to.contain('| Apex tests | ⚪ Not run: the aer tests failed first |');
+    expect(body).to.contain('| Apex tests (aer) | ❌ 2 test failures out of 12 |');
+    expect(body).to.contain('#### 💥 Apex test failures in aer');
+  });
+
+  it('says aer could not run the tests, with its error', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        deployStatus: 'invalid',
+        aerTests: { outcome: 'couldNotRun', testsRan: 0, failing: 0, replacesOrgTests: true },
+        deployErrorsMarkdownBody: '## aer could not run the Apex tests\n\nFix the source.\n\n```\nBroken.cls:2:31 mismatched input\n```',
+      },
+      true
+    );
+    expect(body.startsWith('### ❌ Cannot merge into `integration`: aer could not run the Apex tests')).to.be.true;
+    expect(body).to.contain('| Apex tests (aer) | ❌ aer could not run the tests: see below |');
+    expect(body).to.contain('Broken.cls:2:31 mismatched input');
+  });
+
+  it('stops on an aer coverage under the target', () => {
+    const body = render(
+      {
+        status: 'invalid',
+        deployStatus: 'invalid',
+        aerTests: { outcome: 'passed', testsRan: 3, failing: 0, replacesOrgTests: false, coverage: { value: 60, target: 75, status: 'invalid' } },
+      },
+      true
+    );
+    expect(body.startsWith('### ❌ Cannot merge into `integration`: aer code coverage 60% is under the 75% target')).to.be.true;
+    expect(body).to.contain('| Apex tests (aer) | ❌ 3 tests passed, coverage of the repository 60%, under the 75% target |');
+  });
+
+  it('says the tests ran with aer during the validation in the deployment comment', () => {
+    const body = render(
+      {
+        status: 'valid',
+        deployStatus: 'valid',
+        deploymentMetrics: metrics,
+        metadataOutcome: 'deployed',
+        testsNotRunReason: 'aer',
+      },
+      false
+    );
+    expect(body).to.contain('| Apex tests | ✅ Run with aer during the validation |');
+    expect(body).to.not.contain('Apex tests (aer)');
+  });
+});
+
 describe('Deployment Actions checkbox lines', () => {
   it('reads the label of old and new checkbox lines the same way', () => {
     const body = [
