@@ -241,6 +241,9 @@ describe('orgInitUtils', () => {
       // Each step result comes from its command: "fail" fails, anything else succeeds
       ActionsProvider.buildActionInstance = (async () => ({
         customUsernameToUse: null,
+        // The step validation reads these, as on the base class: any phase, no definition error
+        getAllowedWhen: () => null,
+        getDefinitionErrors: async () => null,
         run: async (cmd: PrePostCommand) => {
           ranIds.push(cmd.id);
           expect(cmd.orgInitContext?.orgType).to.equal('scratch');
