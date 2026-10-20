@@ -47,22 +47,6 @@ export async function resolveScratchSnapshot(devHubConn: any): Promise<{ snapsho
   return { snapshot };
 }
 
-// A snapshot child keeps the features and settings of the snapshot commit: a change to them needs an empty org
-export function scratchDefChangedSince(sha: string, cwd = process.cwd()): boolean {
-  const scratchDefFile = 'config/project-scratch-def.json';
-  const paths = [scratchDefFile];
-  try {
-    const settingsPath = JSON.parse(fs.readFileSync(path.join(cwd, scratchDefFile), 'utf-8')).settingsPath;
-    if (typeof settingsPath === 'string' && settingsPath) {
-      paths.push(settingsPath);
-    }
-  } catch {
-    // No readable definition: the diff of its path alone still decides
-  }
-  // Exit code 0: no change. 1: changed. Anything else is treated as changed, as an empty org is always correct
-  return spawnSync('git', ['diff', '--quiet', sha, 'HEAD', '--', ...paths], { cwd }).status !== 0;
-}
-
 // useScratchOrgSnapshot and scratchOrgSnapshotKeep are read from the branch's own config file:
 // a Pull Request job loads the config of its source branch, not of its target branch
 export async function getScratchSnapshotBranchConfig(branch: string): Promise<{ enabled: boolean; keep: number }> {
@@ -100,6 +84,22 @@ export function pickScratchSnapshot(
     }
   }
   return null;
+}
+
+// A snapshot child keeps the features and settings of the snapshot commit: a change to them needs an empty org
+export function scratchDefChangedSince(sha: string, cwd = process.cwd()): boolean {
+  const scratchDefFile = 'config/project-scratch-def.json';
+  const paths = [scratchDefFile];
+  try {
+    const settingsPath = JSON.parse(fs.readFileSync(path.join(cwd, scratchDefFile), 'utf-8')).settingsPath;
+    if (typeof settingsPath === 'string' && settingsPath) {
+      paths.push(settingsPath);
+    }
+  } catch {
+    // No readable definition: the diff of its path alone still decides
+  }
+  // Exit code 0: no change. 1: changed. Anything else is treated as changed, as an empty org is always correct
+  return spawnSync('git', ['diff', '--quiet', sha, 'HEAD', '--', ...paths], { cwd }).status !== 0;
 }
 
 // The org init steps of a snapshot route, as a pool: the source runs what a pool fill runs, always with the

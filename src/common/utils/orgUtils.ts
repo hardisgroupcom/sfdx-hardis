@@ -579,20 +579,6 @@ export function buildSnapshotScratchDef(projectScratchDef: any, snapshot: string
   return { scratchDef, droppedKeys };
 }
 
-// The manifest deployed to a scratch org in deploy mode, or null when its sources are pushed (the default)
-export function getScratchDeployManifest(configInfo: any): string | null {
-  if (!((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true')) {
-    return null;
-  }
-  // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
-  // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
-  return (
-    process.env.PACKAGE_XML_TO_DEPLOY ||
-    configInfo.packageXmlToDeploy ||
-    (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml')
-  );
-}
-
 export async function initOrgMetadatas(
   configInfo: any,
   orgUsername: string,
@@ -658,6 +644,20 @@ export async function initOrgMetadatas(
       });
     }
   }
+}
+
+// The manifest deployed to a scratch org in deploy mode, or null when its sources are pushed (the default)
+export function getScratchDeployManifest(configInfo: any): string | null {
+  if (!((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true')) {
+    return null;
+  }
+  // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
+  // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
+  return (
+    process.env.PACKAGE_XML_TO_DEPLOY ||
+    configInfo.packageXmlToDeploy ||
+    (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml')
+  );
 }
 
 // Assign permission sets to user. Returns the failures ("name: message"), an existing assignment is not one.
