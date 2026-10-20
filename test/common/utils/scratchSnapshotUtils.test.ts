@@ -102,6 +102,11 @@ describe('isSnapshotSignupRetryable', () => {
     expect(isSnapshotSignupRetryable({ status: 1, errorMessage: 'Socket timeout occurred while listening for results' })).to.equal(false);
   });
 
+  it('does not retry a failure after the org was created, as the settings deployment, which sf gives exit code 68', () => {
+    const settingsFailure = { ...failure('SfError', 'Failed to deploy the scratch org settings.'), error: { code: 68 } };
+    expect(isSnapshotSignupRetryable(settingsFailure)).to.equal(false);
+  });
+
   it('does not retry when no scratch org is left', () => {
     expect(isSnapshotSignupRetryable(failure('LIMIT_EXCEEDED', 'The signup request failed because this organization has reached its daily scratch org signup limit'))).to.equal(false);
   });

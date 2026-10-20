@@ -188,8 +188,12 @@ export function getSnapshotDescription(branch: string, sha: string): string {
 }
 
 // A failed snapshot signup is retried without the snapshot, except when the retry would fail the same way or sign up
-// a second org: a timeout (the first org may still be created) or a scratch org limit
+// a second org: a timeout (the first org may still be created), a scratch org limit, or exit code 68, which
+// sf org create scratch gives to any failure once the org exists (settings deployment, alias, My Domain)
 export function isSnapshotSignupRetryable(createResult: any): boolean {
+  if (createResult?.error?.code === 68) {
+    return false;
+  }
   const message = String(createResult?.errorMessage || createResult?.message || '');
   return !/ScratchOrgInfoTimeoutError|MyDomainResolverTimeoutError|Socket timeout occurred|LIMIT_EXCEEDED/.test(message);
 }
