@@ -666,6 +666,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 - [Mathieu Rodrigues](https://github.com/MathieuRodriguesCloudity), for the SFDMU configuration for CPQ projects
 - [Hasnioui-Ysf](https://github.com/Hasnioui-Ysf), for the work on Permission Sets management
 - [Olivier Mulot](https://www.linkedin.com/in/olivier-m-aa6111124/), for the qualification and testing of the [sfdx-hardis DevOps trainings](https://sfdx-hardis-training.cloudity.com/)
+- [fkramer690](https://github.com/fkramer690), for the step template of the [sfdx-hardis training](https://sfdx-hardis-training.cloudity.com/) labs
 
 > Translations have been performed by GitHub Copilot with Claude Sonnet 4.6, then reviewed and arranged by real humans !
 
