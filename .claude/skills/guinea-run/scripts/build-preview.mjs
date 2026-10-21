@@ -52,7 +52,7 @@ for (const name of ["game.js", "core/models.js"]) {
   const file = path.join(out, "theme/javascripts/guinea-run", name);
   fs.writeFileSync(file, fs.readFileSync(file, "utf8").replaceAll(".glb", ".wasm"));
 }
-for (const name of ["cloudity-text-logo-white.svg", "guinea-pig.webp", "mariia.svg"]) {
+for (const name of ["cloudity-text-logo-white.svg", "guinea-pig.webp", "mariia.svg", "romain.svg"]) {
   copy(path.join(theme, "images", name), "theme/images/" + name);
 }
 copyTree(path.join(theme, "images", "bosses"), "theme/images/bosses");

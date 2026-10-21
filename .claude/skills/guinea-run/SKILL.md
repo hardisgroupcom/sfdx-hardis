@@ -31,7 +31,7 @@ All paths in the sibling `../sfdx-hardis-training`.
 | The guinea pig | `guinea-pig.js` (loads `models/guinea-pig.glb`; a code-built fallback shows until it loads or if it cannot) |
 | 3D models | `models/*.glb`, built by `scripts/blender/*.py` (`guinea-pig.py`, `salesforce-items.py`, `vegetables.py`, `kenney-packs.py`); credits in `models/CREDITS.txt` |
 | Three.js | jsDelivr, pinned by `THREE_VERSION` in `game.js`; the add-ons in `vendor/`, refreshed by `node scripts/build/vendor-three.mjs` |
-| Pictures | `site-theme/images/guinea-pig.webp` (cards, launcher), `guinea-pig-small.webp` (footer), `mariia.svg`, `bosses/boss-1..9.svg`, `bosses/final-boss.svg` |
+| Pictures | `site-theme/images/guinea-pig.webp` (cards, launcher), `guinea-pig-small.webp` (footer), `mariia.svg`, `romain.svg`, `bosses/boss-1..20.svg`, `bosses/final-boss.svg` |
 | The check | `scripts/verify/check-easter-egg.mjs`, also run by `.github/workflows/pages.yml` |
 
 The world contract is the comment above `makeContext` in `game.js`: a world
@@ -84,8 +84,7 @@ These are the author's decisions. A change that breaks one is a regression.
   English and in French. The check fails otherwise.
 - **Performance:** instanced meshes, no allocation per frame, WebGPU with a
   WebGL2 fallback, quality tiers.
-- **Real people** (Mariia, Romain Panda, Victor Squeeker in the chats; the
-  world 9 bosses) appear only with their consent, which the author confirmed
+- **Real people** (Mariia and Romain Panda in the chats; the world 9 bosses) appear only with their consent, which the author confirmed
   for the current set. Never guess or write a name the author did not give.
 
 ## Speed
@@ -147,8 +146,9 @@ python .claude/skills/guinea-run/scripts/portrait-webp.py portrait.png \
 
 ## Cartoon portraits
 
-The chat avatar of Mariia (`mariia.svg`, set by `.gr-avatar--mariia`) and the
-world 9 bosses are hand-written SVGs: `viewBox="0 0 100 100"`, a circle clip of
+The chat avatars of Mariia and Romain (`mariia.svg`, `romain.svg`, set by
+`.gr-avatar--<name>` for a CAST entry with `face: true` in `hud.js`) and the 20
+world 9 bosses (one face per admin of a wave, at most 20) are hand-written SVGs: `viewBox="0 0 100 100"`, a circle clip of
 radius 50, a light background distinct per person, flat fills, no text or
 logos, under 8 KB, readable at 40 px. Every `id` is prefixed with the file name
 (`boss3-hair`), so two inlined portraits never share a gradient. Likeness is the

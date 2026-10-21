@@ -27,8 +27,8 @@ holds together from world 0 to world 9.
 - **Mariia Pyvovarchuk**, a teammate: merges first, asks for reviews, owns
   US-018, US-052, US-059, US-062. Her chat bubbles show her cartoon portrait.
 - **Romain Panda**, a teammate: owns US-056 and US-058, and the .forceignore
-  mistake.
-- World 9: nine admins who change production by hand ("But it's faster!"), and
+  mistake. His chat bubbles show his cartoon portrait.
+- World 9: twenty admins who change production by hand ("But it's faster!"), and
   the **Sales Manager**, the final boss with a "System Administrator" badge: "I
   am the boss, the sales manager! I must be admin, I do what I want, even
   updating Flows directly in production on weekends!" Beaten, he says "OK...
