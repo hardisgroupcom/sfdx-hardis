@@ -1,0 +1,232 @@
+<title>Guinea Run</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@400;700&display=swap">
+<style>
+  /* Layout: one sunny card in the middle, the game takes the whole screen once started */
+  :root {
+    --sky-top: #1689f0;
+    --sky-low: #bdeaff;
+    --glow: #ffe3b8;
+    --card: #ffffff;
+    --ink: #032d60;
+    --muted: #4a5b73;
+    --accent: #ffb400;
+    --accent-edge: #c77d00;
+    --chip: #eef4ff;
+    --display: "Baloo 2", "Trebuchet MS", system-ui, sans-serif;
+    --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --sky-top: #062a52;
+      --sky-low: #0b4a86;
+      --glow: #3a2a5c;
+      --card: #10213a;
+      --ink: #e8f1ff;
+      --muted: #a9bbd4;
+      --chip: #1a3254;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --sky-top: #062a52;
+    --sky-low: #0b4a86;
+    --glow: #3a2a5c;
+    --card: #10213a;
+    --ink: #e8f1ff;
+    --muted: #a9bbd4;
+    --chip: #1a3254;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding-block: 24px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: linear-gradient(180deg, var(--sky-top), var(--sky-low) 70%, var(--glow));
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  .card {
+    display: grid;
+    gap: 16px;
+    width: min(460px, 100%);
+    padding: 28px 24px 24px;
+    border-radius: 24px;
+    background: var(--card);
+    box-shadow: 0 6px 0 rgba(3, 45, 96, 0.18), 0 18px 40px rgba(3, 45, 96, 0.25);
+    text-align: center;
+  }
+  .pig { width: 128px; height: auto; margin: -70px auto 0; filter: drop-shadow(0 6px 6px rgba(0, 0, 0, 0.25)); }
+  h1 { margin: 0; font-family: var(--display); font-size: clamp(36px, 9vw, 52px); font-weight: 800; line-height: 1; text-wrap: balance; }
+  p { margin: 0; color: var(--muted); line-height: 1.5; }
+  .langs { display: flex; gap: 8px; justify-content: center; }
+  .langs button {
+    min-width: 92px;
+    padding: 8px 14px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: var(--chip);
+    color: var(--ink);
+    font: 700 15px var(--body);
+    cursor: pointer;
+  }
+  .langs button[aria-pressed="true"] { border-color: var(--ink); }
+  .play {
+    padding: 14px 24px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 5px 0 var(--accent-edge);
+    color: #032d60;
+    font: 800 24px var(--display);
+    cursor: pointer;
+  }
+  .play:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--accent-edge); }
+  .try {
+    padding: 10px 18px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: 700 16px var(--body);
+    cursor: pointer;
+  }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .keys { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
+  .note { font-size: 13px; }
+  .error { color: #ea001e; font-weight: 700; }
+  @media (prefers-reduced-motion: reduce) { .play:active { transform: none; } }
+</style>
+
+<main class="card" id="launcher">
+  <img class="pig" src="theme/images/guinea-pig.webp" alt="" width="360" height="188">
+  <h1>Guinea Run</h1>
+  <p id="pitch">You are the change of US-014. Cross the pipeline, from a laptop with nothing installed to production.</p>
+  <div class="langs" role="group" aria-label="Language">
+    <button type="button" id="lang-en" data-lang="en" aria-pressed="true">English</button>
+    <button type="button" id="lang-fr" data-lang="fr" aria-pressed="false">Français</button>
+  </div>
+  <button type="button" class="play" id="play">Play</button>
+  <button type="button" class="try" id="try" hidden>Try it now</button>
+  <ul class="keys" id="keys">
+    <li>Arrows, WASD or ZQSD to move, Up or Space to jump, Enter to choose</li>
+    <li>On a phone: swipe, tap, or the buttons at the bottom</li>
+  </ul>
+  <p class="note" id="note">Work in progress preview. Your progress stays in this browser. Lab links point to the course site.</p>
+  <p class="error" id="error" hidden></p>
+</main>
+
+<script type="module">
+  const TEXT = {
+    en: {
+      pitch: "You are the change of US-014. Cross the pipeline, from a laptop with nothing installed to production.",
+      play: "Play",
+      tryWorld: "Try world {{n}} now (work in progress)",
+      keys: ["Arrows, WASD or ZQSD to move, Up or Space to jump, Enter to choose", "On a phone: swipe, tap, or the buttons at the bottom"],
+      note: "Work in progress preview. Your progress stays in this browser. Lab links point to the course site.",
+      error: "The game could not start: "
+    },
+    fr: {
+      pitch: "Vous êtes le changement de US-014. Traversez le pipeline, d'un poste où rien n'est installé jusqu'en production.",
+      play: "Jouer",
+      tryWorld: "Essayer le monde {{n}} (en cours de travail)",
+      keys: ["Flèches, WASD ou ZQSD pour bouger, Haut ou Espace pour sauter, Entrée pour choisir", "Sur un téléphone : glissez, touchez, ou les boutons en bas"],
+      note: "Aperçu en cours de travail. Votre progression reste dans ce navigateur. Les liens vers les labs mènent au site du cours.",
+      error: "Le jeu n'a pas pu démarrer : "
+    }
+  };
+  const COURSE = "https://sfdx-hardis-training.cloudity.com/";
+  // The world in progress, for a "Try world N now" button; null hides it
+  const TRY_WORLD = null;
+  const tryButton = document.getElementById("try");
+  const base = new URL("theme/javascripts/guinea-run/", location.href).href;
+  const launcher = document.getElementById("launcher");
+  const errorBox = document.getElementById("error");
+  let lang = "en";
+  try {
+    lang = localStorage.getItem("guinea-run-preview-lang") === "fr" ? "fr" : (navigator.language || "").startsWith("fr") ? "fr" : "en";
+  } catch {
+    lang = (navigator.language || "").startsWith("fr") ? "fr" : "en";
+  }
+
+  function render() {
+    const t = TEXT[lang];
+    document.documentElement.lang = lang;
+    document.getElementById("pitch").textContent = t.pitch;
+    document.getElementById("play").textContent = t.play;
+    tryButton.textContent = t.tryWorld.replace("{{n}}", TRY_WORLD);
+    document.getElementById("note").textContent = t.note;
+    const keys = document.getElementById("keys");
+    keys.replaceChildren(...t.keys.map((line) => Object.assign(document.createElement("li"), { textContent: line })));
+    for (const button of document.querySelectorAll(".langs button")) {
+      button.setAttribute("aria-pressed", String(button.dataset.lang === lang));
+    }
+  }
+
+  for (const button of document.querySelectorAll(".langs button")) {
+    button.addEventListener("click", () => {
+      lang = button.dataset.lang;
+      try {
+        localStorage.setItem("guinea-run-preview-lang", lang);
+      } catch {
+        // Only a convenience
+      }
+      render();
+    });
+  }
+
+  // Lab links in the game go to the real course, not to this preview
+  document.addEventListener(
+    "click",
+    (event) => {
+      const link = event.target.closest && event.target.closest("a[href]");
+      if (link && link.href.startsWith(location.origin) && /\/(en|fr)\//.test(link.href)) {
+        event.preventDefault();
+        const path = new URL(link.href).pathname.replace(/^.*?\/(en|fr)\//, "$1/");
+        window.open(COURSE + path, "_blank", "noopener");
+      }
+    },
+    true
+  );
+
+  document.getElementById("play").addEventListener("click", () => launch(""));
+  // A world still being built opens straight away, saving nothing
+  tryButton.hidden = TRY_WORLD === null;
+  tryButton.addEventListener("click", () => launch("?guinea-unlock=all&guinea-world=" + TRY_WORLD));
+
+  async function launch(query) {
+    errorBox.hidden = true;
+    try {
+      history.replaceState(null, "", location.pathname + query + location.hash);
+    } catch {
+      // The game then opens on the map
+    }
+    try {
+      const game = await import(base + "game.js");
+      launcher.hidden = true;
+      game.start({
+        lang,
+        trigger: "preview",
+        base,
+        track: () => {},
+        onExit: () => {
+          launcher.hidden = false;
+          document.getElementById("play").focus();
+        }
+      });
+    } catch (error) {
+      launcher.hidden = false;
+      errorBox.textContent = TEXT[lang].error + (error && error.message ? error.message : String(error));
+      errorBox.hidden = false;
+    }
+  }
+
+  render();
+</script>
