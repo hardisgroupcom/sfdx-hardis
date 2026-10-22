@@ -129,15 +129,15 @@ A general board (the best score of each world, added up) and one board per
 world, with the GitHub handle, avatar and badge of each player. Decided with
 the author on 2026-10-22: GitHub only, no server.
 
-| What                                                     | Where (in `../sfdx-hardis-training`)                                                              |
-|----------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| Rankings, loading the board, the issue link              | `site-theme/javascripts/guinea-run/core/hof.js` (also imported by the scripts and the site page) |
-| Signing a result and a submission                        | `core/tally.js`                                                                                   |
-| The card in the game                                     | `hud.js` `hallOfFame()`, `game.js` `showHallOfFame()`                                            |
-| The issue form, the workflow                             | `.github/ISSUE_TEMPLATE/guinea-run-score.yml`, `.github/workflows/hall-of-fame.yml`              |
-| Checking and merging a submission, tests                 | `scripts/guinea-run/verify-submission.mjs`, `hall-of-fame.mjs`, `*.test.mjs`                     |
-| The board                                                | `hall-of-fame/hall-of-fame.json` (written by the workflow and by `claim.yml` for badges)         |
-| The site page                                            | `hallOfFamePage` in `scripts/lib/pages.mjs`, `hallOfFamePages()` in `scripts/build/site.mjs`     |
+| What                                        | Where (in `../sfdx-hardis-training`)                                                             |
+|---------------------------------------------|--------------------------------------------------------------------------------------------------|
+| Rankings, loading the board, the issue link | `site-theme/javascripts/guinea-run/core/hof.js` (also imported by the scripts and the site page) |
+| Signing a result and a submission           | `core/tally.js`                                                                                  |
+| The card in the game                        | `hud.js` `hallOfFame()`, `game.js` `showHallOfFame()`                                            |
+| The issue form, the workflow                | `.github/ISSUE_TEMPLATE/guinea-run-score.yml`, `.github/workflows/hall-of-fame.yml`              |
+| Checking and merging a submission, tests    | `scripts/guinea-run/verify-submission.mjs`, `hall-of-fame.mjs`, `*.test.mjs`                     |
+| The board                                   | `hall-of-fame/hall-of-fame.json` (written by the workflow and by `claim.yml` for badges)         |
+| The site page                               | `hallOfFamePage` in `scripts/lib/pages.mjs`, `hallOfFamePages()` in `scripts/build/site.mjs`     |
 
 - **How a score gets in**: a won world keeps a signed result of its best run.
   "Send my scores" on the Hall of Fame card opens a prefilled GitHub issue; the
