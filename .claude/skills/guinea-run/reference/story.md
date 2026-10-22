@@ -28,12 +28,25 @@ holds together from world 0 to world 9.
   US-018, US-052, US-059, US-062. Her chat bubbles show her cartoon portrait.
 - **Romain Panda**, a teammate: owns US-056 and US-058, and the .forceignore
   mistake. His chat bubbles show his cartoon portrait.
-- World 9: twenty admins who change production by hand ("But it's faster!"), and
+- World 9: twenty-one admins who change production by hand ("But it's faster!"), and
   the **Sales Manager**, the final boss with a "System Administrator" badge: "I
   am the boss, the sales manager! I must be admin, I do what I want, even
   updating Flows directly in production on weekends!" Beaten, he says "OK...
   I'll open a Pull Request." Their faces are cartoon portraits of real people,
   with their consent.
+
+- The other bosses are admins too (one of the twenty-one faces, a different one
+  at each play), each with the shortcut the world teaches against: world 0
+  "Why install anything?", world 1 the monster Flow, world 2 "git add .",
+  world 3 "I'll do it by hand after", world 5 Accept Current Change
+  everywhere and git push --force, world 7 the testers of the uat org (the
+  second one goes on sick leave). Worlds 4 and 6 have a dev instead (the
+  same faces, "Dev" on his chest, core/dev.js): world 4 pads his test class
+  with i++ to fake the 80% ("OK, OK... I'll write real tests, with real
+  assertions."), world 6 "works on my sandbox" and deploys from it with sf
+  project deploy start ("OK... next time I commit it, and the pipeline
+  deploys it."). The world 8 boss is the **Data Cloud**, a
+  giant rabbit that never heard of the new field and throws its errors.
 
 What they say stays generic: no course data, no lab numbers.
 
@@ -44,36 +57,37 @@ What they say stays generic: no course data, no lab numbers.
 - Its four metadata (world 1 creates them, world 2 stages them, world 3 checks
   them, world 5 conflicts on two):
 
-  | Type | Name |
-  |---|---|
-  | CustomField | `Account.Customer_Tier__c` (label Customer Tier, Picklist: Bronze, Silver, Gold) |
-  | Layout | `Account-Account Layout` |
-  | PermissionSet | `Sales_Rep` (read access) |
+  | Type          | Name                                                                                             |
+  |---------------|--------------------------------------------------------------------------------------------------|
+  | CustomField   | `Account.Customer_Tier__c` (label Customer Tier, Picklist: Bronze, Silver, Gold)                 |
+  | Layout        | `Account-Account Layout`                                                                         |
+  | PermissionSet | `Sales_Rep` (read access)                                                                        |
   | PermissionSet | `Sales_Manager` (read and edit; the admin has it, so it is the one that makes the field visible) |
 
 - The ending record: **Acme Corp** shows **Customer Tier: Gold**.
+- In world 5's last merge, the player's side adds `Account.Tier_Score__c`.
 - The record page is the Lightning page `Account_Record_Page`.
 
 ## The other stories
 
-| Story | Owner | What | Where it matters |
-|---|---|---|---|
-| US-016 Compute the customer tier from contacts | the player | `AccountTierService` (Apex) | world 4: Contacts queried in a loop, the boss at 101 accounts |
-| US-018 Show the region on accounts | Mariia | `Account.Region__c` | world 5: grants it on `Sales_Manager` and adds it to `Account_Record_Page` at the same place |
-| US-052 Delivery date on opportunities | Mariia | `Opportunity.Delivery_Date__c` | world 4 review: her layout lost `Opportunity.Next_Step__c` |
-| US-056 Case escalation email | Romain Panda | Case escalation | his .forceignore wildcard `Tier_*` also hides `Account.Tier_Updated__c` |
-| US-058 Contact birthday reminders | Romain Panda | Contact reminders | world 7: not approved |
-| US-059 Birthday reminder email template | Mariia | built on top of US-058 | world 7: the cherry-pick that conflicts because preprod never got US-058 |
-| US-062 Key accounts group | Mariia | three deployment actions | world 6 |
+| Story                                          | Owner        | What                                                                                 | Where it matters                                                                             |
+|------------------------------------------------|--------------|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| US-016 Compute the customer tier from contacts | the player   | `AccountTierService` (Apex)                                                          | world 4: Contacts queried in a loop, the boss at 101 accounts                                |
+| US-018 Show the region on accounts             | Mariia       | `Account.Region__c`                                                                  | world 5: grants it on `Sales_Manager` and adds it to `Account_Record_Page` at the same place |
+| US-052 Delivery date on opportunities          | Mariia       | `Opportunity.Delivery_Date__c`                                                       | world 4 review: her layout lost `Opportunity.Next_Step__c`                                   |
+| US-056 Case escalation email                   | Romain Panda | Case escalation                                                                      | his .forceignore wildcard `Tier_*` also hides `Account.Tier_Updated__c`                      |
+| US-058 Contact birthday reminders              | Romain Panda | Contact reminders                                                                    | world 7: not approved                                                                        |
+| US-059 Birthday reminder email template        | Mariia       | built on top of US-058                                                               | world 7: the cherry-pick that conflicts because preprod never got US-058                     |
+| US-062 Key accounts group                      | Mariia       | three deployment actions; `Account.Key_Account__c`, `Account.Key_Account_Manager__c` | world 6; world 5's dev merges against it;   world 7: its tester validates it in the uat org  |
 
 ## The deployment actions (core/story.js, worlds 3, 6, 7, 8)
 
-| id | type | label | when |
-|---|---|---|---|
-| deliverability | manual | Set Email Deliverability to All Email | pre |
-| backfill | apex | Backfill Customer Tier on existing accounts | post, 1 |
-| refdata | data | Load the customer tier reference data | post, 2 |
-| schedule | schedule-batch | Schedule the nightly customer tier recalculation | post, 3 |
+| id             | type           | label                                            | when    |
+|----------------|----------------|--------------------------------------------------|---------|
+| deliverability | manual         | Set Email Deliverability to All Email            | pre     |
+| backfill       | apex           | Backfill Customer Tier on existing accounts      | post, 1 |
+| refdata        | data           | Load the customer tier reference data            | post, 2 |
+| schedule       | schedule-batch | Schedule the nightly customer tier recalculation | post, 3 |
 
 ## Background noise (world 2, Recent Changes)
 
