@@ -232,7 +232,13 @@ pipeline. Decided with the author on 2026-10-22.
 - **The look**: a dot-matrix display (`dmd.js`), printed inserts with bezels
   painted under them (`art.js`, `shapePoints` shared with the lit inserts,
   which add their light over the print), plastic ramps up to their crest then
-  wire rails, ramp flags, toys, dome lights, an arcade cabinet.
+  wire rails, ramp flags, toys, dome lights, an arcade cabinet. It must not
+  look like a toy: a dim room reflected in stainless guides and chrome posts,
+  black rubbers, printed sling plastics, warm lamps over a glossy playfield,
+  no glass (it hazes the view). **The integration and uat ramps have open
+  mouths**: no wall, rail or painted frame round them, the plastic starts flat
+  on the playfield (the author asked twice). Only the production ramp keeps
+  its rails and its gate.
 - **Physics**: a fixed step of 1/720 s, capsules and circles only, a grid for
   the static shapes; nothing is allocated while it plays. Any layout change
   goes through `pinball.test.mjs`: the random play test finds a ball wedged
