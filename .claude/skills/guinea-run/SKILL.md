@@ -205,10 +205,27 @@ pipeline. Decided with the author on 2026-10-22.
   on top with the Data Cloud rabbit and the Sales Manager; top lanes for the
   skill shot (a middle pull of the plunger, a full pull loops the orbit);
   Rollback kickback, Sandbox refresh ball save, tilt on the third close nudge.
+- **Arcade proportions**, asked by the author: a ball about a nineteenth of
+  the playfield's width (`BALL_RADIUS` 0.27), flippers about three balls long
+  with their pivots close to the middle, a playfield a little over twice as
+  long as wide. The layout is built at its design size, then stretched by
+  `sy()` (everything above the banks moves up), which opens a middle band:
+  the Backups lane (left wall, three targets that restart the ball save), the
+  Code quality side bumpers (right wall), the Hotfix up-kicker and its wire
+  loop. The pop bumpers sit under the three top lanes.
+- **Classic behaviours**: rollovers count both ways, a tilt kills flippers,
+  bumpers and slingshots, Shoot again lights for a waiting extra ball, replay
+  scores and the match at game over give one more ball, the scoop kicks onto
+  a flipper.
 - **Ten missions, one per world**, each showing that world's `wN_rule`; all ten
-  open Release day (four balls), then the next level (steeper table, shorter
-  ball save, points x1.5, x2...). A missed mission stays to do. Easy, Normal
-  and Hard do not apply.
+  open Release day (four balls), then the next level (shorter ball save,
+  points x1.5, x2...). **The table keeps one speed for the whole game**: the
+  author's decision. A missed mission stays to do. Easy, Normal and Hard do
+  not apply.
+- **The look**: a dot-matrix display (`dmd.js`), printed inserts with bezels
+  painted under them (`art.js`, `shapePoints` shared with the lit inserts,
+  which add their light over the print), plastic ramps up to their crest then
+  wire rails, ramp flags, toys, dome lights, an arcade cabinet.
 - **Physics**: a fixed step of 1/720 s, capsules and circles only, a grid for
   the static shapes; nothing is allocated while it plays. Any layout change
   goes through `pinball.test.mjs`: the random play test finds a ball wedged
