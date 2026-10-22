@@ -1,6 +1,6 @@
 ---
 name: guinea-run
-description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
+description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
 ---
 
 # Guinea Run
@@ -35,11 +35,15 @@ All paths in the sibling `../sfdx-hardis-training`.
 | The admins' faces                                        | `core/faces.js`: `pickAdmins(world, random, count)` and `adminFaceUrl(n)`                                                                                                                                                                                      |
 | Reading time                                             | `readingMs(text, kind)` and `lineKeeper()` in `hud.js`                                                                                                                                                                                                         |
 | The check                                                | `scripts/verify/check-easter-egg.mjs`, also run by `.github/workflows/pages.yml`                                                                                                                                                                               |
+| The Hall of Fame                                         | see [The Hall of Fame](#the-hall-of-fame) below                                                                                                                                                                                                                |
 
 The world contract is the comment above `makeContext` in `game.js`: a world
 gets `ctx` (THREE, engine, scene, camera, pig, fx, models, t, lang, sound,
 random, hud, params...) and calls `ctx.collect`, `ctx.loseAttempt`,
-`ctx.foundNote` while it plays, then `ctx.finish()` or `ctx.fail(tip)`.
+`ctx.foundNote` while it plays, then `ctx.finish()` or `ctx.fail(tip)`. A boss
+calls `ctx.bossStarted()` when the fight itself starts (after its opening
+lines, whose length depends on the language) and `ctx.bossBeaten()` when it is
+down: with a `par` in `WORLDS`, a fast fight earns a speed bonus.
 
 ## The worlds
 
@@ -118,6 +122,55 @@ These are the author's decisions. A change that breaks one is a regression.
   WebGL2 fallback, quality tiers.
 - **Real people** (Mariia and Romain Panda in the chats; the world 9 bosses) appear only with their consent, which the author confirmed
   for the current set. Never guess or write a name the author did not give.
+
+## The Hall of Fame
+
+A general board (the best score of each world, added up) and one board per
+world, with the GitHub handle, avatar and badge of each player. Decided with
+the author on 2026-10-22: GitHub only, no server.
+
+| What                                                     | Where (in `../sfdx-hardis-training`)                                                              |
+|----------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| Rankings, loading the board, the issue link              | `site-theme/javascripts/guinea-run/core/hof.js` (also imported by the scripts and the site page) |
+| Signing a result and a submission                        | `core/tally.js`                                                                                   |
+| The card in the game                                     | `hud.js` `hallOfFame()`, `game.js` `showHallOfFame()`                                            |
+| The issue form, the workflow                             | `.github/ISSUE_TEMPLATE/guinea-run-score.yml`, `.github/workflows/hall-of-fame.yml`              |
+| Checking and merging a submission, tests                 | `scripts/guinea-run/verify-submission.mjs`, `hall-of-fame.mjs`, `*.test.mjs`                     |
+| The board                                                | `hall-of-fame/hall-of-fame.json` (written by the workflow and by `claim.yml` for badges)         |
+| The site page                                            | `hallOfFamePage` in `scripts/lib/pages.mjs`, `hallOfFamePages()` in `scripts/build/site.mjs`     |
+
+- **How a score gets in**: a won world keeps a signed result of its best run.
+  "Send my scores" on the Hall of Fame card opens a prefilled GitHub issue; the
+  workflow checks the signatures, that the handle is the issue author, the hour,
+  and the limits, then merges (each world keeps the higher score), commits to
+  `main`, asks for the site build, comments the ranks and closes the issue.
+- **Secrets**: `GUINEA_RUN_KEYS` (the signing keys by id) and
+  `GUINEA_RUN_LIMITS` (score caps, minimum boss times, rate limit). The limits
+  are secret on purpose: never write them in the repository or a comment.
+- **The key** is rotated with a script kept on the author's machine only (not
+  committed, see `.gitignore`). Never describe where the game keeps its key in
+  a public file, this one included. A `key-check` job fails when the game and
+  the secret disagree.
+- **A test link never signs**: `guinea-test`, `guinea-seed`, `guinea-at` and
+  `guinea-unlock` runs are kept out of submissions.
+- **Moderation**: `node scripts/guinea-run/hall-of-fame.mjs remove <handle>` or
+  `ban <handle>`, then commit.
+- **End bonuses** (`succeedWorld` in `game.js`, one line each on the end card):
+  +250 for no mistake, 50 less per attempt lost, never below 0; +200 for
+  Victor's note; up to +300 for a boss beaten at its par time. Decided with the
+  author on 2026-10-22.
+- **Modes** (`MODES` in `core/story.js`, picked on the map, remembered):
+  Easy (the course pace), Normal (1.5 times faster, points x1.5), Hard (twice
+  as fast, points x2). The shell runs a world's time faster; a world exporting
+  `OWN_SPEED` (the musical runs, whose physics count in beats) takes
+  `ctx.speed` as the tempo of its song instead. Everything speeds up, texts
+  included: the author's choice. The boss clock counts game time, so a par is
+  the same in every mode. A signed result carries its mode, and the world
+  boards tag it.
+- **Par times** (`par` in `WORLDS`) are 1.3 times the median boss time of the
+  world's autoplay. A change to a boss changes its par: measure it again.
+- The `guinea-run-score` label must exist in the repository, or submissions
+  get no answer.
 
 ## Speed
 
