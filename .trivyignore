@@ -449,3 +449,8 @@ CVE-2026-97058
 CVE-2026-97031
 CVE-2026-78667
 CVE-2026-78669
+
+# https://avd.aquasec.com/nvd/cve-2026-111943
+# Go stdlib v1.27.1 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.26.10 / 1.27.3. crypto/x509 man-in-the-middle through untrusted intermediate certificates, when the system trust store was not updated.
+# Same situation as the pebble entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. Exploiting it needs the binary to verify a TLS certificate chain; pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so it never opens a TLS connection. Added 2026-10-22.
+CVE-2026-111943
