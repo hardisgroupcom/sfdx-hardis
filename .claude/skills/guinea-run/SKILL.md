@@ -179,18 +179,18 @@ A 3D pinball table, hidden until every world has a star, made for the best
 players to last an hour. The guinea pig, rolled into a ball, plays the
 pipeline. Decided with the author on 2026-10-22.
 
-| What                                           | Where (in `site-theme/javascripts/guinea-run/`)                                   |
-|------------------------------------------------|-----------------------------------------------------------------------------------|
-| Its entry, outside `WORLDS`                    | `core/story.js` `BONUS`                                                           |
-| Ball physics (no Three.js, tested in Node)     | `worlds/pinball/physics.js`                                                       |
-| The table as data: walls, ramps, lights        | `worlds/pinball/layout.js`                                                        |
-| Points, balls, locks, levels; the ten missions | `worlds/pinball/rules.js`, `missions.js`                                          |
-| The look, the rolled guinea pig, the camera    | `worlds/pinball/view.js`, `ball.js`                                               |
-| The module, its texts, the bot of the check    | `worlds/pinball/index.js`, `autoplay.js`                                          |
-| The saved game, signed                         | `core/checkpoint.js`                                                              |
-| Held keys and screen halves                    | `core/input.js` (`hold`, `onHold`)                                                |
+| What                                           | Where (in `site-theme/javascripts/guinea-run/`)                                                  |
+|------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| Its entry, outside `WORLDS`                    | `core/story.js` `BONUS`                                                                          |
+| Ball physics (no Three.js, tested in Node)     | `worlds/pinball/physics.js`                                                                      |
+| The table as data: walls, ramps, lights        | `worlds/pinball/layout.js`                                                                       |
+| Points, balls, locks, levels; the ten missions | `worlds/pinball/rules.js`, `missions.js`                                                         |
+| The look, the rolled guinea pig, the camera    | `worlds/pinball/view.js`, `ball.js`                                                              |
+| The module, its texts, the bot of the check    | `worlds/pinball/index.js`, `autoplay.js`                                                         |
+| The saved game, signed                         | `core/checkpoint.js`                                                                             |
+| Held keys and screen halves                    | `core/input.js` (`hold`, `onHold`)                                                               |
 | Cards: map, teaser, intro, end                 | `hud.js` `bonusCard`, `teaser`, `bonusIntro`, `bonusResult`; `game.js` `startBonus`, `bonusOver` |
-| Tests                                          | `scripts/guinea-run/pinball.test.mjs`                                             |
+| Tests                                          | `scripts/guinea-run/pinball.test.mjs`                                                            |
 
 - **It is not a world of `WORLDS`**: the world count, the credits, the map
   numbering and the Hall of Fame total must not move. It is loaded like a
