@@ -213,6 +213,13 @@ pipeline. Decided with the author on 2026-10-22.
   the Backups lane (left wall, three targets that restart the ball save), the
   Code quality side bumpers (right wall), the Hotfix up-kicker and its wire
   loop. The pop bumpers sit under the three top lanes.
+- **Surprises**, asked by the author to make it entertaining and teach a
+  little: the sf hardis terminal (a saucer that types a real command on the
+  display and applies its effect; check a command still exists before
+  adding it to `COMMANDS` in `rules.js`), an admin in production now and then
+  (hit him, or the promotion is lost until it is retrofitted at the scoop),
+  the monster Flow (a spinning disc, `physics.disc`, refactored into Apex
+  after three passes), Validate then Quick deploy (score x2).
 - **Classic behaviours**: rollovers count both ways, a tilt kills flippers,
   bumpers and slingshots, Shoot again lights for a waiting extra ball, replay
   scores and the match at game over give one more ball, the scoop kicks onto
