@@ -1,6 +1,6 @@
 ---
 name: guinea-run
-description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
+description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), Pipeline Pinball (the bonus pinball table opened by finishing every world), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the pinball", "the bonus level", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
 ---
 
 # Guinea Run
@@ -36,6 +36,7 @@ All paths in the sibling `../sfdx-hardis-training`.
 | Reading time                                             | `readingMs(text, kind)` and `lineKeeper()` in `hud.js`                                                                                                                                                                                                         |
 | The check                                                | `scripts/verify/check-easter-egg.mjs`, also run by `.github/workflows/pages.yml`                                                                                                                                                                               |
 | The Hall of Fame                                         | see [The Hall of Fame](#the-hall-of-fame) below                                                                                                                                                                                                                |
+| The bonus table                                          | see [Pipeline Pinball](#pipeline-pinball-the-bonus-table) below                                                                                                                                                                                                |
 
 The world contract is the comment above `makeContext` in `game.js`: a world
 gets `ctx` (THREE, engine, scene, camera, pig, fx, models, t, lang, sound,
@@ -171,6 +172,61 @@ the author on 2026-10-22: GitHub only, no server.
   world's autoplay. A change to a boss changes its par: measure it again.
 - The `guinea-run-score` label must exist in the repository, or submissions
   get no answer.
+
+## Pipeline Pinball, the bonus table
+
+A 3D pinball table, hidden until every world has a star, made for the best
+players to last an hour. The guinea pig, rolled into a ball, plays the
+pipeline. Decided with the author on 2026-10-22.
+
+| What                                           | Where (in `site-theme/javascripts/guinea-run/`)                                   |
+|------------------------------------------------|-----------------------------------------------------------------------------------|
+| Its entry, outside `WORLDS`                    | `core/story.js` `BONUS`                                                           |
+| Ball physics (no Three.js, tested in Node)     | `worlds/pinball/physics.js`                                                       |
+| The table as data: walls, ramps, lights        | `worlds/pinball/layout.js`                                                        |
+| Points, balls, locks, levels; the ten missions | `worlds/pinball/rules.js`, `missions.js`                                          |
+| The look, the rolled guinea pig, the camera    | `worlds/pinball/view.js`, `ball.js`                                               |
+| The module, its texts, the bot of the check    | `worlds/pinball/index.js`, `autoplay.js`                                          |
+| The saved game, signed                         | `core/checkpoint.js`                                                              |
+| Held keys and screen halves                    | `core/input.js` (`hold`, `onHold`)                                                |
+| Cards: map, teaser, intro, end                 | `hud.js` `bonusCard`, `teaser`, `bonusIntro`, `bonusResult`; `game.js` `startBonus`, `bonusOver` |
+| Tests                                          | `scripts/guinea-run/pinball.test.mjs`                                             |
+
+- **It is not a world of `WORLDS`**: the world count, the credits, the map
+  numbering and the Hall of Fame total must not move. It is loaded like a
+  world (`KIND = "bonus"`, `PADS = "flippers"`) and opened with
+  `guinea-world=pinball`.
+- **The table** (portrait, table units, ball radius 0.4): ramps integration
+  (left), uat (right), production (centre, closed until integration, uat and
+  the left orbit, preprod, are shot in that order); the Pull Request scoop
+  starts a mission, picked with the flippers while the ball waits; Recent
+  Changes drop targets light the lock, three locks start Deploy to all orgs
+  (three balls, jackpots, a super jackpot at production); the Production floor
+  on top with the Data Cloud rabbit and the Sales Manager; top lanes for the
+  skill shot (a middle pull of the plunger, a full pull loops the orbit);
+  Rollback kickback, Sandbox refresh ball save, tilt on the third close nudge.
+- **Ten missions, one per world**, each showing that world's `wN_rule`; all ten
+  open Release day (four balls), then the next level (steeper table, shorter
+  ball save, points x1.5, x2...). A missed mission stays to do. Easy, Normal
+  and Hard do not apply.
+- **Physics**: a fixed step of 1/720 s, capsules and circles only, a grid for
+  the static shapes; nothing is allocated while it plays. Any layout change
+  goes through `pinball.test.mjs`: the random play test finds a ball wedged
+  between two shapes (gaps under the ball's diameter) or leaving the table. A
+  slow ball resting exactly on top of a round shape stays there in a
+  deterministic simulation: keep round shapes off the centre line.
+- **Saved game**: every 5 s of play, on pause and when the page hides, signed;
+  a saved game changed by hand is dropped. A resume serves the ball again from
+  the plunger.
+- **Hall of Fame**: the best game is signed (its own text prefix) and travels
+  in the same submission as the worlds, on its own board (`rankPinball`), never
+  in the total. The workflow also checks a cap and a ceiling of points per
+  minute of play (limits in the secret, fallbacks in `parseLimits`).
+- **Look at it** with the harness: `harness.mjs pinball <outDir>`, then the
+  steps `{"click":"[data-action=bonus-new]"}` and
+  `{"eval":"window.__guineaRun.pinball.autoplay(true)"}`;
+  `window.__guineaRun.pinball.jump(n)` reaches 1 multiball, 2 a mission
+  (`guinea-seed` picks which), 3 the Production floor, 4 Release day, 5 level 3.
 
 ## Speed
 
