@@ -145,6 +145,17 @@ the author on 2026-10-22: GitHub only, no server.
   workflow checks the signatures, that the handle is the issue author, the hour,
   and the limits, then merges (each world keeps the higher score), commits to
   `main`, asks for the site build, comments the ranks and closes the issue.
+- **The invitation to send** (asked by the author on 2026-10-23): a score
+  that would enter the top 5 of its world, of the total (pinball excluded) or of
+  the Pinball board gets a box on the end card (`topInvites()` in `hof.js`,
+  `inviteFor()` in `game.js`, `invite()` in `hud.js`), with a link straight to
+  the issue once the handle is known. A tie with the fifth does not count (the
+  first one keeps the place); fewer than five others, any score counts. Never a
+  score already on the board or already sent (`progress.sent`), never after a
+  failed world. The map marks the Hall of Fame button while one waits, and the
+  pinball display flashes TOP 5 once per game past the fifth
+  (`pinballTarget()`). The board is read only when there is something new to
+  send. In a check, `window.__guineaRun.board(board)` stands in for GitHub.
 - **Secrets**: `GUINEA_RUN_KEYS` (the signing keys by id) and
   `GUINEA_RUN_LIMITS` (score caps, minimum boss times, rate limit). The limits
   are secret on purpose: never write them in the repository or a comment.
