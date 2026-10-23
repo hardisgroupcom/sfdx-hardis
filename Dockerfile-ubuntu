@@ -57,11 +57,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # the PR #64004 follow-up to the CVE-2026-48931 http.Agent fix. Without that follow-up
     # (i.e. Node 24.17.0) the Salesforce CLI / jsforce hangs with an "unsettled top-level await"
     # error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
-    # The build fails below 24.22.1 (October 2026 security release), whose bundled root store no
-    # longer trusts emSign ECC Root CA - G3 (compromised eMudhra intermediates), C1 and C3.
+    # The build fails below 24.22.1 (October 2026 security release, see distrust-ca-roots.sh below).
     curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
     apt-get install -y nodejs && \
-    node -e "const [a,b,c]=process.versions.node.split('.').map(Number);if(a===24&&(b<22||(b===22&&c<1))){console.error('Node.js '+process.version+' is older than 24.22.1');process.exit(1)}" && \
+    dpkg --compare-versions "$(node -p process.versions.node)" ge 24.22.1 || \
+        { echo "Node.js $(node --version) is older than 24.22.1" >&2; exit 1; } && \
     # Chrome installation 
     wget -q -O google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get install -y ./google-chrome-stable_current_amd64.deb && \
@@ -76,6 +76,14 @@ ENV PATH="/node_modules/.bin:${PATH}"
 # Set Java environment for code scanner (PMD)
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Node.js 24.22.1 stops trusting the emSign roots of the compromised eMudhra CA (October 2026).
+# Remove the same roots from the system and Java trust stores, and point Python tools that use
+# certifi (requests...) at the system bundle.
+COPY ref/docker/distrust-ca-roots.sh /tmp/distrust-ca-roots.sh
+RUN sh /tmp/distrust-ca-roots.sh && rm -f /tmp/distrust-ca-roots.sh
+ENV SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
+ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 
 # Chromium path for puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"

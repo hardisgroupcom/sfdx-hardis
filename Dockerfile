@@ -7,10 +7,10 @@
 # The follow-up fix (PR #64004) landed one patch later, in Node 24.18.0, which Alpine's repo
 # does not serve yet. So we copy a fixed Node 24 build from the official node image
 # while keeping the official python base so pip/Zensical keeps working (no PEP-668 issues).
-# Pinned to 24.22.1 (October 2026 security release): its bundled root store no longer trusts
-# emSign ECC Root CA - G3 (compromised eMudhra intermediates), C1 and C3, and it fixes 10 CVEs.
-# The alpine3.23 variant matches the python base, so the copied binary links against the same musl.
-ARG NODE_IMAGE=node:24.22.1-alpine3.23
+# The alpine3.23 variant matches the python base, so the copied binary links against the same musl,
+# and the tag still follows the latest Node 24 patch. The build fails below 24.22.1 (October 2026
+# security release, see distrust-ca-roots.sh below).
+ARG NODE_IMAGE=node:24-alpine3.23
 FROM ${NODE_IMAGE} AS node
 
 FROM python:3.12.12-alpine3.23
@@ -49,11 +49,6 @@ RUN apk add --update --no-cache \
 # Start docker daemon in case mermaid-cli image is used
 RUN rc-update add docker boot && (rc-service docker start || true)
 
-# pip vendors its own certifi bundle, which still trusts the compromised emSign ECC Root CA - G3
-# (eMudhra intermediate CA key compromise, October 2026). Point it at the Alpine system bundle,
-# kept up to date by apk upgrade above, which is used by Zensical installs of hardis:doc commands.
-ENV PIP_CERT="/etc/ssl/certs/ca-certificates.crt"
-
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
@@ -66,6 +61,17 @@ ENV PATH="/node_modules/.bin:${PATH}"
 # Set Java environment for code scanner (PMD)
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Node.js 24.22.1 stops trusting the emSign roots of the compromised eMudhra CA (October 2026).
+# Fail on an older Node.js, and remove the same roots from the system and Java trust stores.
+# Python tools that use certifi (requests...) are pointed at the system bundle; pip already uses it.
+COPY ref/docker/distrust-ca-roots.sh /tmp/distrust-ca-roots.sh
+RUN [ "$(apk version -t "$(node -p process.versions.node)" 24.22.1)" != "<" ] || \
+        { echo "Node.js $(node --version) is older than 24.22.1" >&2; exit 1; } && \
+    sh /tmp/distrust-ca-roots.sh && \
+    rm -f /tmp/distrust-ca-roots.sh
+ENV SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
+ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest

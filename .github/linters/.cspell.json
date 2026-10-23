@@ -1792,6 +1792,13 @@
     "MANYTOONE",
     "NTOONE",
     "MANYTOMANY",
-    "DEACTIVATEDBYUSER"
+    "DEACTIVATEDBYUSER",
+    "cacerts",
+    "certifi",
+    "changeit",
+    "dpkg",
+    "keytool",
+    "Mudhra",
+    "storepass"
   ]
 }
