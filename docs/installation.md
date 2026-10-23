@@ -184,3 +184,19 @@ _See [Dockerfile](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Docker
   - Docker Hub (mirror): [**hardisgroupcom/sfdx-hardis-ubuntu-with-agents:latest**](https://hub.docker.com/r/hardisgroupcom/sfdx-hardis-ubuntu-with-agents)
 
 _See [Dockerfile-ubuntu](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/Dockerfile-ubuntu)_
+
+---
+
+#### Trusted certificate authorities
+
+git, curl, Java and Python tools in the images trust the root certificates of the system bundle `/etc/ssl/certs/ca-certificates.crt`, and Node.js uses its own. None of them trusts the emSign roots of the eMudhra authority (compromised in October 2026): they are turned off in `/etc/ca-certificates.conf`, so they stay out even if your own image upgrades the `ca-certificates` package.
+
+If your pipelines go through a corporate proxy that inspects TLS, add its CA to the system bundle in an image built from ours, instead of adding it to the `certifi` bundle of Python (`REQUESTS_CA_BUNDLE` points `requests` at the system bundle):
+
+```dockerfile
+FROM ghcr.io/hardisgroupcom/sfdx-hardis:latest
+COPY my-proxy-ca.crt /usr/local/share/ca-certificates/my-proxy-ca.crt
+RUN update-ca-certificates
+# Node.js uses its own root store: give it the CA too
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/my-proxy-ca.crt
+```
