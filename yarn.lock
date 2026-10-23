@@ -1423,15 +1423,15 @@
     "@anthropic-ai/sdk" "^0.122.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/core@1.2.17":
-  version "1.2.17"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.2.17.tgz#f889484a5eb8a32b493748a6f68ce26c70218445"
-  integrity sha512-aLQLSed6oLCMLtJHrINhnFmsu79G2UiDlRslbOx+TSN9NmU+WuDv1OtVxrLpYglhXNy53elSduMVk3XBPG9ulw==
+"@langchain/core@1.2.18":
+  version "1.2.18"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.2.18.tgz#e302249406b917905f065fad286757d2bc32baf4"
+  integrity sha512-ccwixbasSfP0ZGEUsN0/qdA1PK3GBzA1fwSi7PlQpvnT78/chR5FAKcodsvSk8imUNP/SWWeWnBG2VDrR1JLJQ==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     "@standard-schema/spec" "^1.1.0"
     js-tiktoken "^1.0.12"
-    langsmith ">=0.5.0 <1.0.0"
+    langsmith ">=0.11.0 <1.0.0"
     mustache "^4.2.0"
     p-queue "^6.6.2"
     zod "^3.25.76 || ^4"
@@ -6229,7 +6229,7 @@ kind-of@^6.0.3:
   resolved "https://registry.yarnpkg.com/kind-of/-/kind-of-6.0.3.tgz#07c05034a6c349fa06e24fa35aa76db4580ce4dd"
   integrity sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==
 
-langsmith@0.7.1, "langsmith@>=0.5.0 <1.0.0":
+langsmith@0.7.1, "langsmith@>=0.11.0 <1.0.0":
   version "0.7.1"
   resolved "https://registry.yarnpkg.com/langsmith/-/langsmith-0.7.1.tgz#d721ad2e5211f9a5373e8a84eb4fed36b5621971"
   integrity sha512-Wjk90UjNoY5cBHMlNAC/eZx5clI8jnjBOBW8uJu8+MWBtx0QesNjsUiLtjI+I3UnrpxFFpDqGXcnhBjH654Mqg==
@@ -9516,12 +9516,7 @@ zip-stream@^4.1.0:
     compress-commons "^4.1.2"
     readable-stream "^3.6.0"
 
-"zod@^3.25.76 || ^4", zod@^4.1.12, zod@^4.4.3:
-  version "4.4.3"
-  resolved "https://registry.yarnpkg.com/zod/-/zod-4.4.3.tgz#b680f172885d18bbebf21a834ea25e55a1bbf356"
-  integrity sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==
-
-zod@^4.6.5:
+"zod@^3.25.76 || ^4", zod@^4.1.12, zod@^4.4.3, zod@^4.6.5:
   version "4.6.7"
   resolved "https://registry.yarnpkg.com/zod/-/zod-4.6.7.tgz#e806cf64a7f4e37635ce9f2f52c04c3766f75e5b"
   integrity sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==
