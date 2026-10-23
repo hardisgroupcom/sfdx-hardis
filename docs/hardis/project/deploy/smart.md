@@ -122,6 +122,36 @@ deploymentApexTestClasses:
   - MyTestClass2
 ```
 
+### Apex tests with aer (optional)
+
+[aer](https://aertest.com) runs Apex tests locally, without an org. With `apexTestRunner`, the validation job runs the Apex tests with aer before the pre-deployment actions and the org deployment:
+
+- `org` (default): the org runs the Apex tests, as without this setting.
+- `aer`: aer runs the Apex tests and the org deployment runs with `NoTestRun`, in the validation job and in the deployment job. The validation job still checks in the org that the metadata deploys. Salesforce quick deploys only validations that ran Apex tests, so the deployment job does not try Quick Deploy: it deploys the metadata again with `NoTestRun`. Refused when the target org is a production org.
+- `aer+org`: aer runs the Apex tests first, then the org runs them at the configured test level.
+
+aer runs the tests the org would run: the classes of `RunSpecifiedTests` (including the ones selected with `enableDeploymentApexTestClasses`), otherwise every test of the repository. When the test level is `NoTestRun`, for example because of Smart Deployment Tests, aer runs no test either.
+
+The job stops before the org deployment when an aer test fails, when aer cannot run the tests (a parse or type error, for example), or when the aer code coverage is lower than `apexTestsMinCoverageOrgWide` / `apexTestsMinCoverage` (75% by default, not blocking with `testCoverageNotBlocking`). aer code coverage is computed on the Apex classes of the repository, not on the whole org. The result is posted in the Pull Request comment.
+
+With `apexTestRunner: aer`, set `aerSkipOrgValidation: true` to send no check-only deployment to the org: the validation job runs aer and the deployment actions, then posts the Pull Request comment, which says the metadata was not validated in the org. aer reports the bad or missing metadata of the repository. The setting is ignored when aer runs no test, for example with `NoTestRun`. The `AER_SKIP_ORG_VALIDATION` variable (`true` or `false`) overrides it.
+
+aer options can be set in a `.aerrc` file at the root of the repository.
+
+Requirements in the CI job:
+
+- The [@octoberswimmer/aer-sf-plugin](https://www.npmjs.com/package/@octoberswimmer/aer-sf-plugin) Salesforce CLI plugin, version 0.0.10 or later. It is installed automatically when missing, and it downloads aer from GitHub when aer is not installed.
+- The `AER_LICENSE_KEY` variable, holding your aer license key.
+
+Example configuration in `config/branches/.sfdx-hardis.integration.yml`:
+
+```yaml
+apexTestRunner: aer
+aerSkipOrgValidation: true
+```
+
+The `APEX_TEST_RUNNER` variable overrides `apexTestRunner`.
+
 ### Dynamic deployment items / Overwrite management
 
 If necessary,you can define the following files:

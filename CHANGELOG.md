@@ -6,6 +6,7 @@
 - [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#activate-user-access-policies): new action to activate User Access Policies after a deployment, which leaves them in Design and turns their automation off, with an option to Apply To All.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): on GitHub, running the command again after GitHub refused the push of the workflow on `main` now pushes it, instead of saying it was done.
 - Reports: when a CSV or Excel report is open in Excel, the new one is written next to it as `report-2.xlsx` with a warning, instead of not being generated.
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#apex-tests-with-aer-optional) can run the Apex tests of a validation job locally with [aer](https://aertest.com), instead of or before the org.
 
 ## [8.19.0] 2026-10-19
 

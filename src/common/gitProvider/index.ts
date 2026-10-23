@@ -1113,8 +1113,9 @@ export declare type PullRequestData = {
   // deployment actions file...)
   blockingIssueMarkdownBody?: string;
   // What Salesforce did with the metadata of a deployment job: 'deployed' as soon as it accepted it,
-  // even when a post-deployment action or the code coverage check fails afterwards
-  metadataOutcome?: 'deployed' | 'nothing-to-deploy';
+  // even when a post-deployment action or the code coverage check fails afterwards. 'not-validated':
+  // a validation job with aerSkipOrgValidation, which sent nothing to the org
+  metadataOutcome?: 'deployed' | 'nothing-to-deploy' | 'not-validated';
   // Delta deployment (only what the Pull Requests changed) or full deployment of manifest/package.xml
   deploymentMode?: 'delta' | 'full';
   // Components that changed or failed, counted per metadata type (collapsible table)
@@ -1144,8 +1145,17 @@ export declare type PullRequestData = {
   deploymentMetrics?: PrCommentDeploymentMetrics;
   coverage?: { value: number; target: number; status: string };
   testClasses?: string[];
-  // Why no Apex test ran, when none did
-  testsNotRunReason?: 'smart-tests' | 'coverage-skipped' | 'no-apex';
+  // Why no Apex test ran in the org, when none did ('aer': aer ran them instead, apexTestRunner aer)
+  testsNotRunReason?: 'smart-tests' | 'coverage-skipped' | 'no-apex' | 'aer';
+  // Apex tests run with aer before the org deployment of a validation (apexTestRunner aer or aer+org).
+  // replacesOrgTests: the org deployment runs no test (apexTestRunner aer).
+  aerTests?: {
+    outcome: 'passed' | 'testsFailed' | 'couldNotRun';
+    testsRan: number;
+    failing: number;
+    replacesOrgTests: boolean;
+    coverage?: { value: number; target: number; status: 'valid' | 'invalid' | 'invalid_ignored' };
+  };
   preDeployActions?: PrCommentActionsRun;
   postDeployActions?: PrCommentActionsRun;
   tickets?: Ticket[];

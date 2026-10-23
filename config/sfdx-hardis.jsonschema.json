@@ -4452,6 +4452,43 @@
       "title": "Test level for deployments",
       "type": "string"
     },
+    "apexTestRunner": {
+      "$id": "#/properties/apexTestRunner",
+      "default": "org",
+      "description": "Who runs the Apex tests of the validation job.\n- org: the org runs them (default).\n- aer: aer (https://aertest.com) runs them locally before the org deployment, and the org deployment runs with NoTestRun. Refused when the target org is a production org.\n- aer+org: aer runs them first, then the org runs them at the configured test level.\nRequires the @octoberswimmer/aer-sf-plugin Salesforce CLI plugin (installed automatically) and the AER_LICENSE_KEY variable. Overridden by the APEX_TEST_RUNNER variable.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#apex-tests-with-aer-optional",
+      "enum": [
+        "org",
+        "aer",
+        "aer+org"
+      ],
+      "enumNames": [
+        "Org (the org runs the Apex tests)",
+        "aer (aer runs the Apex tests, the org runs none)",
+        "aer then org (aer runs the Apex tests, then the org runs them too)"
+      ],
+      "examples": [
+        "aer",
+        "aer+org"
+      ],
+      "title": "Apex test runner",
+      "type": "string"
+    },
+    "aerSkipOrgValidation": {
+      "$id": "#/properties/aerSkipOrgValidation",
+      "default": false,
+      "description": "With apexTestRunner aer, the validation job runs the Apex tests with aer and sends no check-only deployment to the org: aer reports the bad or missing metadata of the repository. Ignored when aer runs no test (NoTestRun). The AER_SKIP_ORG_VALIDATION variable overrides it.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#apex-tests-with-aer-optional",
+      "title": "Skip the org validation when aer runs the tests",
+      "type": "boolean",
+      "visible-conditions": [
+        {
+          "property": "apexTestRunner",
+          "operator": "equals",
+          "value": "aer"
+        }
+      ]
+    },
     "serviceNowAddDeploymentTag": {
       "$id": "#/properties/serviceNowAddDeploymentTag",
       "default": false,
