@@ -57,8 +57,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # the PR #64004 follow-up to the CVE-2026-48931 http.Agent fix. Without that follow-up
     # (i.e. Node 24.17.0) the Salesforce CLI / jsforce hangs with an "unsettled top-level await"
     # error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
+    # The build fails below 24.22.1 (October 2026 security release), whose bundled root store no
+    # longer trusts emSign ECC Root CA - G3 (compromised eMudhra intermediates), C1 and C3.
     curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
     apt-get install -y nodejs && \
+    node -e "const [a,b,c]=process.versions.node.split('.').map(Number);if(a===24&&(b<22||(b===22&&c<1))){console.error('Node.js '+process.version+' is older than 24.22.1');process.exit(1)}" && \
     # Chrome installation 
     wget -q -O google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get install -y ./google-chrome-stable_current_amd64.deb && \

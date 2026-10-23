@@ -5,10 +5,12 @@
 # CVE-2026-48931 http.Agent security fix and hangs the Salesforce CLI / jsforce with an
 # "unsettled top-level await" error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
 # The follow-up fix (PR #64004) landed one patch later, in Node 24.18.0, which Alpine's repo
-# does not serve yet. So we copy a fixed Node 24 build from the official node:24-alpine image
-# (currently 24.18.0), while keeping the official python base so pip/Zensical keeps working
-# (no PEP-668 issues).
-ARG NODE_IMAGE=node:24-alpine
+# does not serve yet. So we copy a fixed Node 24 build from the official node image
+# while keeping the official python base so pip/Zensical keeps working (no PEP-668 issues).
+# Pinned to 24.22.1 (October 2026 security release): its bundled root store no longer trusts
+# emSign ECC Root CA - G3 (compromised eMudhra intermediates), C1 and C3, and it fixes 10 CVEs.
+# The alpine3.23 variant matches the python base, so the copied binary links against the same musl.
+ARG NODE_IMAGE=node:24.22.1-alpine3.23
 FROM ${NODE_IMAGE} AS node
 
 FROM python:3.12.12-alpine3.23
