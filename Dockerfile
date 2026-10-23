@@ -49,6 +49,11 @@ RUN apk add --update --no-cache \
 # Start docker daemon in case mermaid-cli image is used
 RUN rc-update add docker boot && (rc-service docker start || true)
 
+# pip vendors its own certifi bundle, which still trusts the compromised emSign ECC Root CA - G3
+# (eMudhra intermediate CA key compromise, October 2026). Point it at the Alpine system bundle,
+# kept up to date by apk upgrade above, which is used by Zensical installs of hardis:doc commands.
+ENV PIP_CERT="/etc/ssl/certs/ca-certificates.crt"
+
 # Do not use puppeteer embedded chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD="true"
 ENV CHROMIUM_PATH="/usr/bin/chromium-browser"
