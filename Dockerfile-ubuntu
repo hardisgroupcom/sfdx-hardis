@@ -8,6 +8,8 @@ ENV SF_DATA_DIR=/usr/local/lib
 
 # Node.js major version installed from NodeSource (see note in the install step below)
 ARG NODE_MAJOR=24
+# Lowest Node.js version accepted, for the Node 24 line: change it with NODE_MAJOR
+ARG NODE_MIN_VERSION=24.22.1
 
 # Update package list and install required packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -57,11 +59,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # the PR #64004 follow-up to the CVE-2026-48931 http.Agent fix. Without that follow-up
     # (i.e. Node 24.17.0) the Salesforce CLI / jsforce hangs with an "unsettled top-level await"
     # error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
-    # The build fails below 24.22.1 (October 2026 security release, see distrust-ca-roots.sh below).
+    # The build fails below NODE_MIN_VERSION (October 2026 security release, see distrust-ca-roots.sh below).
     curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - && \
     apt-get install -y nodejs && \
-    dpkg --compare-versions "$(node -p process.versions.node)" ge 24.22.1 || \
-        { echo "Node.js $(node --version) is older than 24.22.1" >&2; exit 1; } && \
+    { dpkg --compare-versions "$(node -p process.versions.node)" ge "${NODE_MIN_VERSION}" || \
+        { echo "Node.js $(node --version) is older than ${NODE_MIN_VERSION}" >&2; exit 1; }; } && \
     # Chrome installation 
     wget -q -O google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt-get install -y ./google-chrome-stable_current_amd64.deb && \
@@ -78,11 +80,10 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Node.js 24.22.1 stops trusting the emSign roots of the compromised eMudhra CA (October 2026).
-# Remove the same roots from the system and Java trust stores, and point Python tools that use
+# Turn the same roots off in the system and Java trust stores, and point Python tools that use
 # certifi (requests...) at the system bundle.
-COPY ref/docker/distrust-ca-roots.sh /tmp/distrust-ca-roots.sh
-RUN sh /tmp/distrust-ca-roots.sh && rm -f /tmp/distrust-ca-roots.sh
-ENV SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
+RUN --mount=type=bind,source=ref/docker/distrust-ca-roots.sh,target=/tmp/distrust-ca-roots.sh \
+    sh /tmp/distrust-ca-roots.sh
 ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 
 # Chromium path for puppeteer

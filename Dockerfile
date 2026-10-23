@@ -63,14 +63,14 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Node.js 24.22.1 stops trusting the emSign roots of the compromised eMudhra CA (October 2026).
-# Fail on an older Node.js, and remove the same roots from the system and Java trust stores.
+# Fail on an older Node.js, and turn the same roots off in the system and Java trust stores.
 # Python tools that use certifi (requests...) are pointed at the system bundle; pip already uses it.
-COPY ref/docker/distrust-ca-roots.sh /tmp/distrust-ca-roots.sh
-RUN [ "$(apk version -t "$(node -p process.versions.node)" 24.22.1)" != "<" ] || \
-        { echo "Node.js $(node --version) is older than 24.22.1" >&2; exit 1; } && \
-    sh /tmp/distrust-ca-roots.sh && \
-    rm -f /tmp/distrust-ca-roots.sh
-ENV SSL_CERT_FILE="/etc/ssl/certs/ca-certificates.crt"
+# NODE_MIN_VERSION is for the Node 24 line: change it with NODE_IMAGE.
+ARG NODE_MIN_VERSION=24.22.1
+RUN --mount=type=bind,source=ref/docker/distrust-ca-roots.sh,target=/tmp/distrust-ca-roots.sh \
+    { [ "$(apk version -t "$(node -p process.versions.node)" "${NODE_MIN_VERSION}")" != "<" ] || \
+        { echo "Node.js $(node --version) is older than ${NODE_MIN_VERSION}" >&2; exit 1; }; } && \
+    sh /tmp/distrust-ca-roots.sh
 ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 
 ARG SFDX_CLI_VERSION=latest
