@@ -1,6 +1,6 @@
 ---
 name: guinea-run
-description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
+description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), Pipeline Pinball (the bonus pinball table opened by finishing every world), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the pinball", "the bonus level", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
 ---
 
 # Guinea Run
@@ -36,6 +36,7 @@ All paths in the sibling `../sfdx-hardis-training`.
 | Reading time                                             | `readingMs(text, kind)` and `lineKeeper()` in `hud.js`                                                                                                                                                                                                         |
 | The check                                                | `scripts/verify/check-easter-egg.mjs`, also run by `.github/workflows/pages.yml`                                                                                                                                                                               |
 | The Hall of Fame                                         | see [The Hall of Fame](#the-hall-of-fame) below                                                                                                                                                                                                                |
+| The bonus table                                          | see [Pipeline Pinball](#pipeline-pinball-the-bonus-table) below                                                                                                                                                                                                |
 
 The world contract is the comment above `makeContext` in `game.js`: a world
 gets `ctx` (THREE, engine, scene, camera, pig, fx, models, t, lang, sound,
@@ -144,6 +145,17 @@ the author on 2026-10-22: GitHub only, no server.
   workflow checks the signatures, that the handle is the issue author, the hour,
   and the limits, then merges (each world keeps the higher score), commits to
   `main`, asks for the site build, comments the ranks and closes the issue.
+- **The invitation to send** (asked by the author on 2026-10-23): a score
+  that would enter the top 5 of its world, of the total (pinball excluded) or of
+  the Pinball board gets a box on the end card (`topInvites()` in `hof.js`,
+  `inviteFor()` in `game.js`, `invite()` in `hud.js`), with a link straight to
+  the issue once the handle is known. A tie with the fifth does not count (the
+  first one keeps the place); fewer than five others, any score counts. Never a
+  score already on the board or already sent (`progress.sent`), never after a
+  failed world. The map marks the Hall of Fame button while one waits, and the
+  pinball display flashes TOP 5 once per game past the fifth
+  (`pinballTarget()`). The board is read only when there is something new to
+  send. In a check, `window.__guineaRun.board(board)` stands in for GitHub.
 - **Secrets**: `GUINEA_RUN_KEYS` (the signing keys by id) and
   `GUINEA_RUN_LIMITS` (score caps, minimum boss times, rate limit). The limits
   are secret on purpose: never write them in the repository or a comment.
@@ -171,6 +183,123 @@ the author on 2026-10-22: GitHub only, no server.
   world's autoplay. A change to a boss changes its par: measure it again.
 - The `guinea-run-score` label must exist in the repository, or submissions
   get no answer.
+
+## Pipeline Pinball, the bonus table
+
+A 3D pinball table, hidden until every world has a star, made for the best
+players to last an hour. The guinea pig, rolled into a ball, plays the
+pipeline. Decided with the author on 2026-10-22.
+
+| What                                           | Where (in `site-theme/javascripts/guinea-run/`)                                                  |
+|------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| Its entry, outside `WORLDS`                    | `core/story.js` `BONUS`                                                                          |
+| Ball physics (no Three.js, tested in Node)     | `worlds/pinball/physics.js`                                                                      |
+| The table as data: walls, ramps, lights        | `worlds/pinball/layout.js`                                                                       |
+| Points, balls, locks, levels; the ten missions | `worlds/pinball/rules.js`, `missions.js`                                                         |
+| The look, the rolled guinea pig, the camera    | `worlds/pinball/view.js`, `ball.js`                                                              |
+| The module, its texts, the bot of the check    | `worlds/pinball/index.js`, `autoplay.js`                                                         |
+| The saved game, signed                         | `core/checkpoint.js`                                                                             |
+| Held keys and screen halves                    | `core/input.js` (`hold`, `onHold`)                                                               |
+| Cards: map, teaser, intro, end                 | `hud.js` `bonusCard`, `teaser`, `bonusIntro`, `bonusResult`; `game.js` `startBonus`, `bonusOver` |
+| Tests                                          | `scripts/guinea-run/pinball.test.mjs`                                                            |
+
+- **It is not a world of `WORLDS`**: the world count, the credits, the map
+  numbering and the Hall of Fame total must not move. It is loaded like a
+  world (`KIND = "bonus"`, `PADS = "flippers"`) and opened with
+  `guinea-world=pinball`.
+- **The table** (portrait, table units): ramps integration
+  (left), uat (right), production (centre, closed until integration, uat and
+  the left orbit, preprod, are shot in that order); the Pull Request scoop
+  starts a mission, picked with the flippers while the ball waits; Recent
+  Changes drop targets light the lock, three locks start Deploy to all orgs
+  (three balls, jackpots, a super jackpot at production); the Production floor
+  on top with the Data Cloud rabbit and the Sales Manager; top lanes for the
+  skill shot (a middle pull of the plunger, a full pull loops the orbit);
+  Rollback kickback, Sandbox refresh ball save, tilt on the third close nudge.
+- **Arcade proportions**, asked by the author, measured on real tables (1
+  table unit is 5 cm, the ball 27 mm across, `BALL_RADIUS` 0.27): flippers
+  1.65 long (3 in with rubber), pivots 4.1 apart (7 in), 31 degrees down at
+  rest and 21 up, the tips under two balls apart; ramp mouths 1.2 wide (2.25
+  to 2.5 in); a playfield a little over twice as long as wide. The layout is
+  built at its design size, then stretched by `sy()` (everything above the
+  banks moves up), which opens a middle band; shapes made after the stretch
+  are in final coordinates. The pop bumpers sit under the three top lanes.
+- **A fan layout**: from left to right the left orbit (preprod, the
+  spinner), the integration ramp, the scoop, the production ramp, the uat
+  ramp, the right orbit, each with a clear lane from the flippers. Toys stand
+  between the shots or above them, never in front: Validate between the
+  production and uat shots, the monster Flow by the terminal, Backups and
+  Code quality on the side walls under the orbit mouths. The orbits open
+  level with the ramp mouths, where a shot from the far flipper meets the
+  side wall. **Check every layout change with
+  `scripts/pinball-shots.mjs`**: it flips a cradled ball from every point of
+  each flipper and counts what each one makes. Every main shot must be made
+  by several flips of at least one flipper; ramps and orbits a few in eighty
+  each.
+- **Physics as measured on real tables** (VPX source and the nFozzy tables):
+  a rolling ball on a 6.5 degree slope (`GRAVITY` 16, 0.79 m/s2); flippers
+  that speed up through their stroke (about 30 ms up, 70 ms back down on
+  their spring); bounces that soften as the impact gets harder (`falloff`);
+  slingshots that kick hardest in the middle of their band
+  (`kickProfile`); small hops off rubbers and targets (`hop`); saucers in the
+  open playfield that a fast ball rattles over (`maxSpeed`); a missed ramp
+  that rolls back towards the middle, not the drain. Shots leave the flippers
+  at 3 to 5 m/s, most of the play is under 1.5 m/s. Measure a change in the
+  browser with `scripts/pinball-video.mjs` (frames and ball positions while
+  the bot plays) and `scripts/pinball-video.py` (a GIF, a contact sheet, the
+  speeds in m/s).
+- **Surprises**, asked by the author to make it entertaining and teach a
+  little: the sf hardis terminal (a saucer that types a real command on the
+  display and applies its effect; check a command still exists before
+  adding it to `COMMANDS` in `rules.js`), an admin in production now and then
+  (hit him, or the promotion is lost until it is retrofitted at the scoop),
+  the monster Flow (a spinning disc, `physics.disc`, refactored into Apex
+  after three passes), Validate then Quick deploy (score x2).
+- **Classic behaviours**: rollovers count both ways, a tilt kills flippers,
+  bumpers and slingshots, Shoot again lights for a waiting extra ball, replay
+  scores and the match at game over give one more ball, the scoop kicks onto
+  a flipper.
+- **Modern rules**, from the best recent tables: each round of Deploy to all
+  orgs jackpots is worth a step more and changes colour (blue, green, yellow,
+  orange, red), the super jackpot pays the round back; orbits one after the
+  other are loops worth more each time (the sixth lights the extra ball);
+  integration, uat, preprod and production in a few seconds each is the
+  Pipeline combo; back from production, a Hotfix hurry-up loses value every
+  second; a soft plunge into the terminal is the secret skill shot; Release
+  day ends on a Code freeze that counts flips, not seconds.
+- **Ten missions, one per world**, each showing that world's `wN_rule`; all ten
+  open Release day (four balls), then the next level (shorter ball save,
+  points x1.5, x2...). **The table keeps one speed for the whole game**: the
+  author's decision. A missed mission stays to do. Easy, Normal and Hard do
+  not apply.
+- **The look**: a dot-matrix display (`dmd.js`), printed inserts with bezels
+  painted under them (`art.js`, `shapePoints` shared with the lit inserts,
+  which add their light over the print), plastic ramps up to their crest then
+  wire rails, ramp flags, toys, dome lights, an arcade cabinet. It must not
+  look like a toy: a dim room reflected in stainless guides and chrome posts,
+  black rubbers, printed sling plastics, warm lamps over a glossy playfield,
+  no glass (it hazes the view). **The integration and uat ramps have open
+  mouths**: no wall, rail or painted frame round them, the plastic starts flat
+  on the playfield (the author asked twice). Only the production ramp keeps
+  its rails and its gate.
+- **Physics**: a fixed step of 1/720 s, capsules and circles only, a grid for
+  the static shapes; nothing is allocated while it plays. Any layout change
+  goes through `pinball.test.mjs`: the random play test finds a ball wedged
+  between two shapes (gaps under the ball's diameter) or leaving the table. A
+  slow ball resting exactly on top of a round shape stays there in a
+  deterministic simulation: keep round shapes off the centre line.
+- **Saved game**: every 5 s of play, on pause and when the page hides, signed;
+  a saved game changed by hand is dropped. A resume serves the ball again from
+  the plunger.
+- **Hall of Fame**: the best game is signed (its own text prefix) and travels
+  in the same submission as the worlds, on its own board (`rankPinball`), never
+  in the total. The workflow also checks a cap and a ceiling of points per
+  minute of play (limits in the secret, fallbacks in `parseLimits`).
+- **Look at it** with the harness: `harness.mjs pinball <outDir>`, then the
+  steps `{"click":"[data-action=bonus-new]"}` and
+  `{"eval":"window.__guineaRun.pinball.autoplay(true)"}`;
+  `window.__guineaRun.pinball.jump(n)` reaches 1 multiball, 2 a mission
+  (`guinea-seed` picks which), 3 the Production floor, 4 Release day, 5 level 3.
 
 ## Speed
 
