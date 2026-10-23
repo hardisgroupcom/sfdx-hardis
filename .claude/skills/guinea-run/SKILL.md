@@ -196,7 +196,7 @@ pipeline. Decided with the author on 2026-10-22.
   numbering and the Hall of Fame total must not move. It is loaded like a
   world (`KIND = "bonus"`, `PADS = "flippers"`) and opened with
   `guinea-world=pinball`.
-- **The table** (portrait, table units, ball radius 0.4): ramps integration
+- **The table** (portrait, table units): ramps integration
   (left), uat (right), production (centre, closed until integration, uat and
   the left orbit, preprod, are shot in that order); the Pull Request scoop
   starts a mission, picked with the flippers while the ball waits; Recent
@@ -205,14 +205,38 @@ pipeline. Decided with the author on 2026-10-22.
   on top with the Data Cloud rabbit and the Sales Manager; top lanes for the
   skill shot (a middle pull of the plunger, a full pull loops the orbit);
   Rollback kickback, Sandbox refresh ball save, tilt on the third close nudge.
-- **Arcade proportions**, asked by the author: a ball about a nineteenth of
-  the playfield's width (`BALL_RADIUS` 0.27), flippers about three balls long
-  with their pivots close to the middle, a playfield a little over twice as
-  long as wide. The layout is built at its design size, then stretched by
-  `sy()` (everything above the banks moves up), which opens a middle band:
-  the Backups lane (left wall, three targets that restart the ball save), the
-  Code quality side bumpers (right wall), the Hotfix up-kicker and its wire
-  loop. The pop bumpers sit under the three top lanes.
+- **Arcade proportions**, asked by the author, measured on real tables (1
+  table unit is 5 cm, the ball 27 mm across, `BALL_RADIUS` 0.27): flippers
+  1.65 long (3 in with rubber), pivots 4.1 apart (7 in), 31 degrees down at
+  rest and 21 up, the tips under two balls apart; ramp mouths 1.2 wide (2.25
+  to 2.5 in); a playfield a little over twice as long as wide. The layout is
+  built at its design size, then stretched by `sy()` (everything above the
+  banks moves up), which opens a middle band; shapes made after the stretch
+  are in final coordinates. The pop bumpers sit under the three top lanes.
+- **A fan layout**: from left to right the left orbit (preprod, the
+  spinner), the integration ramp, the scoop, the production ramp, the uat
+  ramp, the right orbit, each with a clear lane from the flippers. Toys stand
+  between the shots or above them, never in front: Validate between the
+  production and uat shots, the monster Flow by the terminal, Backups and
+  Code quality on the side walls under the orbit mouths. The orbits open
+  level with the ramp mouths, where a shot from the far flipper meets the
+  side wall. **Check every layout change with
+  `scripts/pinball-shots.mjs`**: it flips a cradled ball from every point of
+  each flipper and counts what each one makes. Every main shot must be made
+  by several flips of at least one flipper; ramps and orbits a few in eighty
+  each.
+- **Physics as measured on real tables** (VPX source and the nFozzy tables):
+  a rolling ball on a 6.5 degree slope (`GRAVITY` 16, 0.79 m/s2); flippers
+  that speed up through their stroke (about 30 ms up, 70 ms back down on
+  their spring); bounces that soften as the impact gets harder (`falloff`);
+  slingshots that kick hardest in the middle of their band
+  (`kickProfile`); small hops off rubbers and targets (`hop`); saucers in the
+  open playfield that a fast ball rattles over (`maxSpeed`); a missed ramp
+  that rolls back towards the middle, not the drain. Shots leave the flippers
+  at 3 to 5 m/s, most of the play is under 1.5 m/s. Measure a change in the
+  browser with `scripts/pinball-video.mjs` (frames and ball positions while
+  the bot plays) and `scripts/pinball-video.py` (a GIF, a contact sheet, the
+  speeds in m/s).
 - **Surprises**, asked by the author to make it entertaining and teach a
   little: the sf hardis terminal (a saucer that types a real command on the
   display and applies its effect; check a command still exists before
@@ -224,6 +248,14 @@ pipeline. Decided with the author on 2026-10-22.
   bumpers and slingshots, Shoot again lights for a waiting extra ball, replay
   scores and the match at game over give one more ball, the scoop kicks onto
   a flipper.
+- **Modern rules**, from the best recent tables: each round of Deploy to all
+  orgs jackpots is worth a step more and changes colour (blue, green, yellow,
+  orange, red), the super jackpot pays the round back; orbits one after the
+  other are loops worth more each time (the sixth lights the extra ball);
+  integration, uat, preprod and production in a few seconds each is the
+  Pipeline combo; back from production, a Hotfix hurry-up loses value every
+  second; a soft plunge into the terminal is the secret skill shot; Release
+  day ends on a Code freeze that counts flips, not seconds.
 - **Ten missions, one per world**, each showing that world's `wN_rule`; all ten
   open Release day (four balls), then the next level (shorter ball save,
   points x1.5, x2...). **The table keeps one speed for the whole game**: the
