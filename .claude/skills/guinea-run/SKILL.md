@@ -156,6 +156,12 @@ the author on 2026-10-22: GitHub only, no server.
   pinball display flashes TOP 5 once per game past the fifth
   (`pinballTarget()`). The board is read only when there is something new to
   send. In a check, `window.__guineaRun.board(board)` stands in for GitHub.
+- **The pause after a send**: the workflow refuses a send too soon after the
+  last accepted one (`rate-limited`). So for `SEND_PAUSE_MS` after a send
+  (`progress.sentAt`, `sendWait()` in `hof.js`) the game shows no invitation
+  and no map mark, and the Hall of Fame card says when to send again
+  (`hofWait`). Before this, half of the submissions were refused that way. A
+  rate-limited issue gets its own answer, which names no limit.
 - **Secrets**: `GUINEA_RUN_KEYS` (the signing keys by id) and
   `GUINEA_RUN_LIMITS` (score caps, minimum boss times, rate limit). The limits
   are secret on purpose: never write them in the repository or a comment.
