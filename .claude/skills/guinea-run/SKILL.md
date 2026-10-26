@@ -1,6 +1,6 @@
 ---
 name: guinea-run
-description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), Pipeline Pinball (the bonus pinball table opened by finishing every world), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the pinball", "the bonus level", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
+description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), Pipeline Pinball (the bonus pinball table opened by finishing every world), offline play (the service worker, the home screen app, the save kept across open games), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the pinball", "the bonus level", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
 ---
 
 # Guinea Run
@@ -22,6 +22,7 @@ All paths in the sibling `../sfdx-hardis-training`.
 
 | What                                                     | Where                                                                                                                                                                                                                                                          |
 |----------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Offline play and the home screen app                     | see [Offline](#offline) below                                                                                                                                                                                                                                  |
 | The way in (Konami code, footer taps, lazy import)       | `site-theme/javascripts/easter-egg.js`, the footer button in `site-overrides/partials/footer.html`, its style in `site-theme/stylesheets/extra.css`                                                                                                            |
 | The shell: map, cards, HUD, input, renderer              | `site-theme/javascripts/guinea-run/game.js`, `hud.js`, `guinea-run.css`, `core/engine.js`, `core/input.js`, `core/quality.js`                                                                                                                                  |
 | The worlds list (module, style, glyph, lab links, badge) | `core/story.js` `WORLDS`, and `DEPLOYMENT_ACTIONS` shared by worlds 3, 6, 7, 8                                                                                                                                                                                 |
@@ -301,6 +302,51 @@ pipeline. Decided with the author on 2026-10-22.
   `window.__guineaRun.pinball.jump(n)` reaches 1 multiball, 2 a mission
   (`guinea-seed` picks which), 3 the Production floor, 4 Release day, 5 level 3.
 
+## Offline
+
+Decided with the author on 2026-10-26: once `play.html` has been opened
+online, the game plays offline, in a browser, in the VS Code panel and from a
+phone's home screen. The course pages, and so the Konami code, stay online
+only.
+
+| What                                                       | Where (in `site-theme/javascripts/guinea-run/`)          |
+|------------------------------------------------------------|----------------------------------------------------------|
+| The service worker                                         | `sw.js`                                                  |
+| Its registration, the off switch, the install prompt       | `play.html` (`keepOffline`, `beforeinstallprompt`)       |
+| The file list and the version written into the built sw.js | `guineaRunOfflineFiles()` in `scripts/build/site.mjs`    |
+| The home screen app                                        | `manifest.webmanifest`, `icons/`                         |
+| The offer on the end card of a won world (phones)          | `installHint()` in `game.js`, `installBox()` in `hud.js` |
+| The check                                                  | step 7 of `scripts/verify/check-easter-egg.mjs`          |
+
+- **What is saved**: everything under the game folder (but `.txt`), the
+  pictures the game shows, its two fonts, the three badge banners and Three.js
+  (the entry and what it imports by a relative path). A new file the game
+  loads from elsewhere goes into the list in `site.mjs`, or it is only saved
+  once fetched online. The Hall of Fame board, GitHub and analytics stay on the
+  network.
+- **All or nothing**: a file that fails drops the install, tried again at the
+  next visit, so a copy is never half a game.
+- **Next visit**: a new version (any saved file changed, or `THREE_VERSION`)
+  is saved in the background and takes over only once every game page is
+  closed: a game in progress never mixes two versions. No `skipWaiting`, no
+  `clients.claim`.
+- **Off on a local copy** (`127.0.0.1`, `localhost`): the fast loop copies
+  files into `site/theme/` and must see them at once. `guinea-offline=1` turns
+  it on there (the check does); `guinea-offline=0` removes the worker and its
+  copies anywhere, the way out if a saved version ever goes bad.
+- **The home screen app** opens `play.html?from=app` (the phone's language,
+  no course to go back to: the close button shows the map again). On a phone,
+  the end card of a won world offers it once a visit: from a course page a
+  link to the game page, on the game page the browser's install button where
+  there is one (Android), the Safari steps on an iPhone, the menu entry
+  elsewhere. Never in a frame or in the app. Safari does not apply its 7-day
+  storage deletion to a home screen app.
+- **The save** (`core/progress.js`) merges with what is stored before each
+  write (`mergeProgress`): a game open in two tabs or two VS Code windows keeps
+  the best of both. `reset()` writes without merging. The first world won of a
+  visit calls `navigator.storage.persist()`. Tests:
+  `scripts/guinea-run/progress.test.mjs`.
+
 ## Speed
 
 - Three.js's `WebGPURenderer` draws with WebGPU where the browser has it and
@@ -394,12 +440,15 @@ and iterate until someone who knows the person would recognise them.
    `site_dir` outside it) with a copy of `course-site.yml` ending in
    `site_dir: site-check`, run `python -m zensical build -f <that copy>`, look,
    delete both. Never rebuild `site/` while something copies files into it.
-5. **The check, alone:** `node scripts/verify/check-easter-egg.mjs` (several
+5. **The service worker is off on a local copy** unless `guinea-offline=1`:
+   the fast loop is not served old copies. In a browser where it was turned
+   on, `guinea-offline=0` removes it.
+6. **The check, alone:** `node scripts/verify/check-easter-egg.mjs` (several
    minutes, needs the network for Three.js). Nothing else may drive a browser at
    the same time: under load, timing probes fail on a different world each run.
    Rerun alone before chasing such a failure. A new world goes into
    `WORLD_PROBES` with a probe proving its controls react.
-6. **Ship:** one line for the game in the training `CHANGELOG.md`, under the
+7. **Ship:** one line for the game in the training `CHANGELOG.md`, under the
    `## YYYY-MM-DD` heading of the day. Conventional commits
    (`feat(guinea-run): ...`), no AI attribution, one training PR at a time.
 
