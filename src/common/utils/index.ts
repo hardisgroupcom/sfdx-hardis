@@ -361,8 +361,13 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
 
 // Build a stable slug from an org instance URL (used to name branch/auth configs from an org domain)
 export function buildOrgSlugFromInstanceUrl(instanceUrl: string): string {
+  // Only the host counts: an instance URL can end with a slash (or carry a path),
+  // and a slash at the end of a git branch name makes git refuse it.
+  // Not new URL(): it lowercases the host, which would rename existing branches.
   return (instanceUrl || '')
-    .replace('https://', '')
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .split(/[/?#]/)[0]
     .replace('.my.salesforce.com', '')
     .replace(/\./gm, '_')
     .replace(/--/gm, '__')
