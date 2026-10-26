@@ -15,7 +15,7 @@ It is free and open source, like sfdx-hardis.
 
 ### What you need
 
-- A computer you are allowed to install software on. Not allowed to? The course also runs in [Agentforce Vibes](https://www.salesforce.com/agentforce/developers/vibe-coding/ide/), which is VS Code in a browser tab, and in [Cursor](https://cursor.com/).
+- A computer you are allowed to install software on. Not allowed to? The course also runs in [Agentforce Vibes](https://www.salesforce.com/agentforce/developers/vibe-coding/ide/), which is VS Code in a browser tab, and in [Cursor](https://cursor.com/). Follow it in VS Code, Agentforce Vibes or Cursor, and keep the same one from start to finish.
 - A free [GitHub](https://github.com/) account.
 - One free [Salesforce Developer Edition org](https://developer.salesforce.com/signup) to start with, and one more at Level 3.
 - Nothing else: no paid service, no license, no credit card.
