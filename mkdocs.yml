@@ -477,6 +477,7 @@ nav:
           - pool view: hardis/scratch/pool/view.md
           - pull: hardis/scratch/pull.md
           - push: hardis/scratch/push.md
+          - snapshot refresh: hardis/scratch/snapshot/refresh.md
       - hardis:source:
           - deploy: hardis/source/deploy.md
           - push: hardis/source/push.md

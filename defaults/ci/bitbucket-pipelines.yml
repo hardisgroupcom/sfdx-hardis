@@ -96,6 +96,8 @@ pipelines:
                   fi
                 - export
                   CURRENT_BRANCH_NAME=${BITBUCKET_BRANCH:-$BITBUCKET_PR_SOURCE_BRANCH}
+                # Target branch, to find its scratch org snapshot (useScratchOrgSnapshot)
+                - export FORCE_TARGET_BRANCH=$BITBUCKET_PR_DESTINATION_BRANCH
                 - export FORCE_COLOR=1
                 - |
                   if [ "${CURRENT_BRANCH_NAME#auto-fix/}" != "$CURRENT_BRANCH_NAME" ]; then
@@ -168,5 +170,26 @@ pipelines:
             #   fi
             - sf hardis:auth:login
             - sf hardis:project:deploy:smart
+          artifacts:
+            - hardis-report/**
+      # Refresh the scratch org snapshot of the branch when its branch config sets useScratchOrgSnapshot: true,
+      # so that the scratch orgs of Pull Requests to that branch are created from it.
+      # Runs only when the repository variable USE_SCRATCH_ORGS is "true"
+      # More info at https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/
+      - step:
+          name: Refresh scratch org snapshot
+          max-time: 120
+          clone:
+            depth: full
+          script:
+            - |
+              if [ "$USE_SCRATCH_ORGS" != "true" ]; then
+                echo "[sfdx-hardis] USE_SCRATCH_ORGS is not true: no scratch org snapshot"
+                exit 0
+              fi
+            - export CI_COMMIT_REF_NAME=$BITBUCKET_BRANCH
+            - export FORCE_COLOR=1
+            - sf hardis:auth:login --devhub
+            - sf hardis:scratch:snapshot:refresh
           artifacts:
             - hardis-report/**
