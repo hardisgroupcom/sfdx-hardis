@@ -132,7 +132,8 @@ The command's technical implementation involves:
     // Create folder & export.json
     await fs.ensureDir(sfdmuProjectFolder);
     const exportJsonFile = path.join(sfdmuProjectFolder, 'export.json');
-    await fs.writeFile(exportJsonFile, JSON.stringify(this.sfdmuConfig, null, 2));
+    // The final newline keeps MegaLinter from pushing a fix commit on the Pull Request
+    await fs.writeFile(exportJsonFile, JSON.stringify(this.sfdmuConfig, null, 2) + '\n');
     uxLog("action", this, c.cyan(t('generatedSfdmuConfigFile') + exportJsonFile));
 
     for (const additionalFile of this.additionalFiles) {
