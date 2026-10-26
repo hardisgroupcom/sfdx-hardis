@@ -111,6 +111,60 @@ House style for the lab body, in order: `The situation`, `Before you start`, `St
 into a collapsed block on the site, because it is the one section nobody reads in order. Write it as
 a plain section; do not indent it by hand.
 
+### The step template
+
+Every numbered step (`### N. title`) reads the same way, so a learner can scan it, do it, and read
+the reasons only when they need them. It came from a learner (training discussion #142), and
+`scripts/lib/lab-template.mjs` in the training repository holds its words per locale and the build
+side.
+
+```markdown
+### 2. Take in the five stories, in order, and promote them the usual way
+
+Goal: all five stories in `uat`, deployed to `helios-uat`.
+Refresher: [Lab 3.2](3-2-review-a-contributor-pull-request.md), [Lab 3.5](3-5-promote-to-uat-and-write-release-notes.md)
+
+#### Do
+
+1. One action per task. The screenshot of a task sits under it, indented 3 spaces
+
+!!! warning "Careful"
+    Only what fails or is hard to undo.
+
+#### Why this order
+
+The reasons. Open, never folded.
+
+<details markdown="1"><summary>Under the hood: ...</summary> ... </details>
+
+#### You should now see
+
+- What the learner can observe when the step worked
+```
+
+- **Never rename a step heading.** `Lab N.M step K` links, the product documentation and the
+  Trailmix steps point at its anchor
+- `Goal:` is the first line of every step, a result rather than an instruction. `Refresher:` is
+  optional and lists the earlier labs the step builds on
+- `#### Do`, `#### Why` and `#### You should now see` may carry a title (`#### Do: select the
+  stories`, `#### Why seven`). The build turns them into blocks. **You should now see is required
+  and closes the step**
+- **The only box is Careful** (`!!! warning`). No note, tip, info or danger: what they said is a
+  task, a reason or a risk
+- **Bold is what a screen shows**: a button, a menu entry, a question a command asks, an answer to
+  pick. The site paints it as a chip. Emphasis and rules are not bold, and a bold run never ends
+  with a full stop. Pill references `**(2)**` stay bold
+- **Every code fence has a title**: `Type this`, `Output`, `Config`, `Edit this file`, and
+  `What the button ran` inside Under the hood only (French: `À taper`, `Résultat`, `Configuration`,
+  `À modifier dans le fichier`, `Ce que le bouton a lancé`)
+- A list to work through one by one gets a `[ ]` column, and Before you start and What you should
+  see use `- [ ]`: the site turns both into ticks saved in the learner's browser, with a Done box on
+  each step
+- French: `#### À faire`, `#### Pourquoi`, `#### Vous devriez voir`, `Objectif :`, `Rappel :`
+
+`node scripts/verify/check-lab-template.mjs` fails on a lab that leaves the template, in every
+locale, and runs in the translations workflow.
+
 Three rules the labs are written under, and they are not negotiable:
 
 1. **Clicks, not code.** Every action is a button in the extension. A panel exists for almost
@@ -654,6 +708,7 @@ node scripts/build/annotate.mjs            # every annotated image matches its s
 node scripts/verify/check-pills.mjs        # the pills an image carries are the ones its step cites
 node scripts/i18n/check-translations.mjs   # which translations the English source has moved past
 node scripts/i18n/check-structure.mjs      # which translations lost an image or a block. Reports, never fails
+node scripts/verify/check-lab-template.mjs # every step on the step template, every locale. Fails
 node scripts/verify/check-links.mjs        # every link resolves
 node scripts/build/site.mjs && python -m zensical build -f course-site.yml
 node scripts/verify/check-site.mjs         # every page resolves every asset

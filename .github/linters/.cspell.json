@@ -589,6 +589,7 @@
     "Fiorendi",
     "Fira",
     "Firstname",
+    "fkramer",
     "Flexi",
     "flexipage",
     "flexipages",
@@ -1791,6 +1792,13 @@
     "MANYTOONE",
     "NTOONE",
     "MANYTOMANY",
-    "DEACTIVATEDBYUSER"
+    "DEACTIVATEDBYUSER",
+    "cacerts",
+    "certifi",
+    "changeit",
+    "dpkg",
+    "keytool",
+    "Mudhra",
+    "storepass"
   ]
 }

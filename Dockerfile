@@ -5,10 +5,12 @@
 # CVE-2026-48931 http.Agent security fix and hangs the Salesforce CLI / jsforce with an
 # "unsettled top-level await" error (see https://github.com/hardisgroupcom/sfdx-hardis/issues/1972).
 # The follow-up fix (PR #64004) landed one patch later, in Node 24.18.0, which Alpine's repo
-# does not serve yet. So we copy a fixed Node 24 build from the official node:24-alpine image
-# (currently 24.18.0), while keeping the official python base so pip/Zensical keeps working
-# (no PEP-668 issues).
-ARG NODE_IMAGE=node:24-alpine
+# does not serve yet. So we copy a fixed Node 24 build from the official node image
+# while keeping the official python base so pip/Zensical keeps working (no PEP-668 issues).
+# The alpine3.23 variant matches the python base, so the copied binary links against the same musl,
+# and the tag still follows the latest Node 24 patch. The build fails below 24.22.1 (October 2026
+# security release, see distrust-ca-roots.sh below).
+ARG NODE_IMAGE=node:24-alpine3.23
 FROM ${NODE_IMAGE} AS node
 
 FROM python:3.12.12-alpine3.23
@@ -59,6 +61,17 @@ ENV PATH="/node_modules/.bin:${PATH}"
 # Set Java environment for code scanner (PMD)
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Node.js 24.22.1 stops trusting the emSign roots of the compromised eMudhra CA (October 2026).
+# Fail on an older Node.js, and turn the same roots off in the system and Java trust stores.
+# Python tools that use certifi (requests...) are pointed at the system bundle; pip already uses it.
+# NODE_MIN_VERSION is for the Node 24 line: change it with NODE_IMAGE.
+ARG NODE_MIN_VERSION=24.22.1
+RUN --mount=type=bind,source=ref/docker/distrust-ca-roots.sh,target=/tmp/distrust-ca-roots.sh \
+    { [ "$(apk version -t "$(node -p process.versions.node)" "${NODE_MIN_VERSION}")" != "<" ] || \
+        { echo "Node.js $(node --version) is older than ${NODE_MIN_VERSION}" >&2; exit 1; }; } && \
+    sh /tmp/distrust-ca-roots.sh
+ENV REQUESTS_CA_BUNDLE="/etc/ssl/certs/ca-certificates.crt"
 
 ARG SFDX_CLI_VERSION=latest
 ARG SFDX_HARDIS_VERSION=latest
