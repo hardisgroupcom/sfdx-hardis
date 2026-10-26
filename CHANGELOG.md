@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [hardis:org:configure:data](https://sfdx-hardis.cloudity.com/hardis/org/configure/data/): the `export.json` it creates ends with a newline, so MegaLinter no longer pushes a fix commit on the Pull Request.
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): an org whose instance URL ends with a slash no longer stops the command with "is not a valid branch name" ([sfdx-hardis-training#248](https://github.com/hardisgroupcom/sfdx-hardis-training/issues/248)).
 - Upgrade **fast-uri** to 3.1.9, which fixes four URI parsing and normalization flaws (CVE-2026-110180, CVE-2026-110306, CVE-2026-110095, CVE-2026-110725).
 
