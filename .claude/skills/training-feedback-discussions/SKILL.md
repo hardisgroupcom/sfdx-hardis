@@ -39,8 +39,9 @@ It reports threads, not verdicts. Sort them by reading them:
 
 - **To process**: a remark or a question nobody answered
 - **Already answered elsewhere**: a maintainer answered several top-level comments in one reply
-  under another comment of the same discussion. Read the whole discussion before calling a comment
-  unanswered
+  under another comment of the same discussion. The list flags it ("a maintainer wrote elsewhere
+  in this discussion afterwards", `answeredElsewhere` in `--json`): open each link it gives. Read
+  the whole discussion before calling a comment unanswered, flag or not
 - **Closed by the learner**: "thanks", "fixed now", "ignore the above". Nothing to answer, though
   a learner who misread a step is still telling you the step can be misread
 - **Not about the course**: a product request in the General category. Report it, do not process

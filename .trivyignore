@@ -431,7 +431,7 @@ CVE-2026-84961
 CVE-2026-93748
 
 # https://avd.aquasec.com/nvd/cve-2026-93687
-# braces: stack exhaustion when it expands an attacker-supplied deeply nested pattern (HIGH), same advisory as GHSA-vfj7-8cjw-p6xm in osv-scanner.toml. No fixed release exists (3.0.3, the latest, is affected).
+# braces: stack exhaustion when it expands an attacker-supplied deeply nested pattern (HIGH), GHSA-vfj7-8cjw-p6xm, withdrawn by GitHub on 2026-10-23 so its osv-scanner.toml ignore was removed. No fixed release exists (3.0.3, the latest, is affected).
 # In the images, braces 3.0.3 sits in the global node_modules and in the npm-shrinkwrapped @salesforce/cli, as a dependency of micromatch-based file globbing. It only expands glob patterns written in the project or in the tools themselves, never a pattern received from the network. Remove once a fixed version ships. Added 2026-10-03.
 CVE-2026-93687
 
@@ -454,3 +454,14 @@ CVE-2026-78669
 # Go stdlib v1.27.1 compiled into the pebble binary of the Ubuntu base image (usr/bin/pebble), fixed in Go 1.26.10 / 1.27.3. crypto/x509 man-in-the-middle through untrusted intermediate certificates, when the system trust store was not updated.
 # Same situation as the pebble entries above: the Go runtime is statically linked into a binary Canonical ships in ubuntu:latest, so nothing in this repo can upgrade it. It goes away when the base image is rebuilt with a patched Go. Exploiting it needs the binary to verify a TLS certificate chain; pebble is Canonical's service manager, never invoked by sfdx-hardis (one-shot CI/CD CLI), so it never opens a TLS connection. Added 2026-10-22.
 CVE-2026-111943
+
+# https://avd.aquasec.com/nvd/cve-2026-109869 (GHSA-xjj6-f33q-929c)
+# undici: fetch() crashes the Node process when a malicious server answers with more than five content codings and closes the connection before the body (DoS, HIGH). Fixed in 6.29.1, 7.30.1 and 8.12.2.
+# sfdx-hardis own tree is patched: yarn.lock resolves undici to 8.12.2. The copies left in both images (6.28.0, 7.30.0, 8.11.2) sit in the npm bundled with the Node runtime and inside the npm-shrinkwrapped @salesforce/cli (its own undici, its bundled npm and @jsforce/jsforce-node).
+# It needs a hostile HTTP server: these copies only talk to Salesforce and to the npm registry, and the worst case is a crashed one-shot CI job. Remove once @salesforce/cli and npm ship the fixed versions. Added 2026-10-26.
+CVE-2026-109869
+
+# https://avd.aquasec.com/nvd/cve-2023-54404 (GHSA-mrhx-c7xc-m3w5)
+# zod: validating a huge array, set or map against a schema without a size bound collects one issue per failing element until the process runs out of memory (DoS, HIGH). OSV lists every version up to 4.6.7 as affected: 4.6.6 only checks explicit size bounds first.
+# zod 4.4.3 is pinned by sfdx-git-delta (latest 6.45.1), installed as an sf plugin in both images. sfdx-git-delta validates its own command configuration with it, never input received from the network. Remove once sfdx-git-delta ships a fixed zod. Added 2026-10-26.
+CVE-2023-54404

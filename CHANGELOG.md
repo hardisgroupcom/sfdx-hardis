@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Upgrade **fast-uri** to 3.1.9, which fixes four URI parsing and normalization flaws (CVE-2026-110180, CVE-2026-110306, CVE-2026-110095, CVE-2026-110725).
+
 ## [8.20.0] 2026-10-24
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#flow-deletion-in-destructive-changes): Flows that are already deleted no longer show in the Flow deletion section of the Pull Request comments.

@@ -33,7 +33,7 @@ const QUERY = `query($owner:String!,$repo:String!,$after:String){
         number title url updatedAt category{name}
         comments(first:50){nodes{
           id url createdAt body author{login}
-          replies(first:30){nodes{createdAt body author{login}}}
+          replies(first:30){nodes{url createdAt body author{login}}}
         }}
       }
     }
@@ -52,6 +52,13 @@ for (const discussion of discussions) {
     if (isMaintainer(last)) {
       continue;
     }
+    // A maintainer often answers several comments of one learner in a single
+    // reply under another comment: such a thread looks unanswered and is not
+    const answeredElsewhere = discussion.comments.nodes
+      .filter((other) => other !== comment)
+      .flatMap((other) => [other, ...other.replies.nodes])
+      .filter((message) => isMaintainer(message) && message.createdAt > last.createdAt)
+      .map((message) => message.url);
     waiting.push({
       number: discussion.number,
       // giscus names a discussion after the path of the page: en/level-2-.../2-3-.../
@@ -60,6 +67,7 @@ for (const discussion of discussions) {
       commentId: comment.id,
       lastActivity: last.createdAt,
       maintainerAlreadyInThread: thread.some(isMaintainer),
+      answeredElsewhere,
       messages: thread.map((message) => ({
         author: message.author ? message.author.login : "ghost",
         date: message.createdAt,
@@ -108,6 +116,10 @@ function print(threads) {
     console.log(thread.url);
     if (thread.maintainerAlreadyInThread) {
       console.log("(a maintainer already answered in this thread, and the learner wrote again)");
+    }
+    if (thread.answeredElsewhere.length > 0) {
+      console.log(`(a maintainer wrote elsewhere in this discussion afterwards: read it before answering, it may answer this one)`);
+      thread.answeredElsewhere.forEach((url) => console.log(`  ${url}`));
     }
     for (const message of thread.messages) {
       console.log(`\n**${message.author}**, ${message.date.slice(0, 10)}:`);
