@@ -262,3 +262,13 @@ The files are then deployed exactly as git holds them, and the Pull Request comm
 - Files are changed in place during the deployment and always put back, also when the deployment fails or the job is interrupted. A run killed before restoring them (power loss) is repaired by the next run in the same folder.
 - A plain scratch org push (source tracking, without manifest) does not apply the rules: tracking would record the changed files, and the restored files would then look modified at every push.
 - Native `replacements` of `sfdx-project.json` keep working: sf CLI applies them when building the deployment.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
+
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+
+<!-- training-links:end -->

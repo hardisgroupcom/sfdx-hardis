@@ -2236,6 +2236,13 @@ export function listMetadataTypes() {
         xmlName: 'GenAiPromptTemplateActv',
       },
       {
+        directoryName: 'GenOpPlanEligibilityConfig',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'genOpPlanEligibilityConfig',
+        xmlName: 'GenOpPlanEligibilityConfig',
+      },
+      {
         directoryName: 'giftEntryGridTemplates',
         inFolder: false,
         metaFile: false,
