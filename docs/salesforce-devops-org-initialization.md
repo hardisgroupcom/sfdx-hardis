@@ -139,3 +139,13 @@ The pool job pushes the sources from its own runner, and stores the commit and t
 
 1. If your branch is on another commit, sfdx-hardis deploys what changed between the two (with deletions), so the org matches your branch. When that commit is not in your local history, it fetches the branch of the pool job first (the branch your User Story started from), and deploys every source again if the commit is still missing.
 2. It resets the source tracking (`sf project reset tracking`), so a pull only lists the changes made after you took the org.
+
+<!-- training-links:start -->
+
+## Learn by doing
+
+The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloudity.com) course does this, click by click, on an org of your own:
+
+- [Lab 3.1 - Configure the CI/CD pipeline up to production](https://sfdx-hardis-training.cloudity.com/en/level-3-release-manager/3-1-configure-the-pipeline-up-to-production/)
+
+<!-- training-links:end -->
