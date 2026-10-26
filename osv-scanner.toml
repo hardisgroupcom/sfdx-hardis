@@ -13,14 +13,6 @@ reason = "minimatch 9.0.3 is pinned by @typescript-eslint/typescript-estree via 
 id = "GHSA-23c5-xmqv-rm74"
 reason = "minimatch 9.0.3 is pinned by @typescript-eslint/typescript-estree via Salesforce dev tooling (dev/lint only)."
 
-[[IgnoredVulns]]
-id = "GHSA-5c6j-r48x-rmvq"
-reason = "serialize-javascript 6.0.2 is brought by mocha from @salesforce/dev-scripts (test tooling only)."
-
-[[IgnoredVulns]]
-id = "GHSA-qj8w-gfj5-8c6v"
-reason = "serialize-javascript 6.0.2 is brought by mocha from @salesforce/dev-scripts (test tooling only)."
-
 # https://github.com/advisories/GHSA-5p2g-fcmc-qvqq (CVE-2025-71329)
 # https://github.com/advisories/GHSA-w3rx-r6r6-pgpr (CVE-2025-71330)
 # image-size: the JXL/HEIF box parser and the ICNS entry parser never advance the read offset when a
@@ -56,13 +48,3 @@ reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no pat
 [[IgnoredVulns]]
 id = "CVE-2026-85063"
 reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."
-
-[[IgnoredVulns]]
-id = "GHSA-vfj7-8cjw-p6xm"
-ignoreUntil = 2026-12-31
-reason = "Added 2026-10-03: no fixed braces release exists (3.0.3, the latest, is affected). Stack exhaustion when braces expands an attacker-supplied deeply nested pattern. braces is only brought by dev tooling (oclif > find-yarn-workspace-root > micromatch, @salesforce/dev-scripts > mocha > chokidar), never by the published plugin, and only expands our own patterns."
-
-[[IgnoredVulns]]
-id = "GHSA-hp3w-g68c-fv3c"
-ignoreUntil = 2026-12-31
-reason = "Added 2026-10-06: no fixed sprintf-js release exists. 1.0.3 only comes in through argparse 1.x, required by js-yaml 3 (gray-matter in the installed plugin and images, @istanbuljs/load-nyc-config in dev tooling). argparse only formats its own fixed help and error strings, and js-yaml 3 loads argparse in its command line binary only, so no untrusted format string ever reaches sprintf-js."
