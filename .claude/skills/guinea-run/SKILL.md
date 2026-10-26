@@ -33,7 +33,7 @@ All paths in the sibling `../sfdx-hardis-training`.
 | 3D models                                                | `models/*.glb`, built by `scripts/blender/*.py` (`guinea-pig.py`, `salesforce-items.py`, `vegetables.py`, `kenney-packs.py`, `data-cloud.py` for the world 8 rabbit); credits in `models/CREDITS.txt`                                                          |
 | Three.js                                                 | jsDelivr, pinned by `THREE_VERSION` in `game.js`; the add-ons in `vendor/`, refreshed by `node scripts/build/vendor-three.mjs`                                                                                                                                 |
 | Pictures                                                 | `site-theme/images/guinea-pig.webp` (cards, launcher), `guinea-pig-small.webp` (footer), `mariia.svg`, `romain.svg`, `bosses/boss-1..21.svg`, `bosses/final-boss.svg`                                                                                          |
-| The admins' faces                                        | `core/faces.js`: `pickAdmins(world, random, count)` and `adminFaceUrl(n)`                                                                                                                                                                                      |
+| The admins' faces                                        | `core/faces.js`: `pickAdmins(world, random, count)` and `adminFaceUrl(n)`. In 3D, draw the portrait into a canvas first (`core/dev.js`, `faceMaterial` in the pinball `view.js`): an SVG handed straight to a texture draws nothing in WebGPU                   |
 | Reading time                                             | `readingMs(text, kind)` and `lineKeeper()` in `hud.js`                                                                                                                                                                                                         |
 | The check                                                | `scripts/verify/check-easter-egg.mjs`, also run by `.github/workflows/pages.yml`                                                                                                                                                                               |
 | The Hall of Fame                                         | see [The Hall of Fame](#the-hall-of-fame) below                                                                                                                                                                                                                |
@@ -216,7 +216,8 @@ pipeline. Decided with the author on 2026-10-22.
   (three balls, jackpots, a super jackpot at production); the Production floor
   on top with the Data Cloud rabbit and the Sales Manager; top lanes for the
   skill shot (a middle pull of the plunger, a full pull loops the orbit);
-  Rollback kickback, Sandbox refresh ball save, tilt on the third close nudge.
+  Rollback kickback in both outlanes, Sandbox refresh ball save, tilt on the
+  third close nudge.
 - **Arcade proportions**, asked by the author, measured on real tables (1
   table unit is 5 cm, the ball 27 mm across, `BALL_RADIUS` 0.27): flippers
   1.65 long (3 in with rubber), pivots 4.1 apart (7 in), 31 degrees down at
@@ -253,9 +254,13 @@ pipeline. Decided with the author on 2026-10-22.
   little: the sf hardis terminal (a saucer that types a real command on the
   display and applies its effect; check a command still exists before
   adding it to `COMMANDS` in `rules.js`), an admin in production now and then
-  (hit him, or the promotion is lost until it is retrofitted at the scoop),
-  the monster Flow (a spinning disc, `physics.disc`, refactored into Apex
-  after three passes), Validate then Quick deploy (score x2).
+  (hit him, or the promotion is lost until it is retrofitted at the scoop; his
+  face turns to the camera and he says his line in a chat bubble with his
+  portrait), the monster Flow (a spinning disc, `physics.disc`, refactored
+  into Apex after three passes, its author's face on a post over it), Validate
+  then Quick deploy (score x2). A face fades while a ball rolls behind it
+  (`fadeFace` in `view.js`); text boxes fade over a ball (`uncover` in
+  `index.js`).
 - **Classic behaviours**: rollovers count both ways, a tilt kills flippers,
   bumpers and slingshots, Shoot again lights for a waiting extra ball, replay
   scores and the match at game over give one more ball, the scoop kicks onto
@@ -273,7 +278,9 @@ pipeline. Decided with the author on 2026-10-22.
   points x1.5, x2...). **The table keeps one speed for the whole game**: the
   author's decision. A missed mission stays to do. Easy, Normal and Hard do
   not apply.
-- **The look**: a dot-matrix display (`dmd.js`), printed inserts with bezels
+- **The look**: a dot-matrix display (`dmd.js`, its own 5 by 7 dot font,
+  bold where a line fits, the score twice as large, a long line scrolls; never
+  a browser font drawn small, it breaks into unreadable dots), printed inserts with bezels
   painted under them (`art.js`, `shapePoints` shared with the lit inserts,
   which add their light over the print), plastic ramps up to their crest then
   wire rails, ramp flags, toys, dome lights, an arcade cabinet. It must not
@@ -284,7 +291,19 @@ pipeline. Decided with the author on 2026-10-22.
   on the playfield (the author asked twice). Only the production ramp keeps
   its rails and its gate.
 - **Physics**: a fixed step of 1/720 s, capsules and circles only, a grid for
-  the static shapes; nothing is allocated while it plays. Any layout change
+  the static shapes; nothing is allocated while it plays. **A hole holds one
+  ball**: another ball bounces off the one held there (a held or a waiting
+  ball stands still like a post), so the rules' single timer per hole never
+  loses a ball in multiball.
+- **Rollback**: the bank closes each outlane over its top, so no kick speed or
+  angle gets the ball out (measured: at best 13% of kicks). The kick sends the
+  ball on a hidden path (`kickPaths` in `layout.js`, not in `parts.paths`, so
+  no wire is drawn) up the outlane, over the inlane post, onto the inlane.
+  Each side is spent on its own; Checks green and the monitoring command light
+  both.
+- **Out of sight, it waits**: while the view frames the Production floor, a
+  ball below the screen is frozen (`physics.freezeOutOfSight(view.sight)`)
+  until the view shows it again, so no ball drains unseen on a phone. Any layout change
   goes through `pinball.test.mjs`: the random play test finds a ball wedged
   between two shapes (gaps under the ball's diameter) or leaving the table. A
   slow ball resting exactly on top of a round shape stays there in a
