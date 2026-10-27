@@ -52,9 +52,8 @@ Go to target org, in Setup -> Deployment Settings -> Activate option "Allow depl
 
 ```shell
 The running user of agent {1} (botUser in its AiAgentDefinition) exists in the target org, but cannot run agents
-- Assign the permission set group AgentforceServiceAgentUserPsg (Agentforce Service Agent User) to this user in the target org
-- The user must have the profile Einstein Agent User
-- Each org needs its own user: write it with a replacement rule (botUser, default_agent_user), for example from a CI/CD variable. See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/#the-running-user-of-a-service-agent
+- Assign it the permission sets AgentforceServiceAgentBase, AgentforceServiceAgentUser and EinsteinGPTPromptTemplateUser, with the profile Einstein Agent User
+- Or let sfdx-hardis create a user with sf org create agent-user: keep the built-in replacement rule builtin-agent-running-user on, and remove the replacement rule of your own that writes botUser. See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/#the-running-user-of-a-service-agent
 
 ```
 

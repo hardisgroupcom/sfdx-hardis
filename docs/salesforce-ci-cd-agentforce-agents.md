@@ -52,7 +52,7 @@ Then [publish your User Story](salesforce-devops-publish-user-story.md) as usual
 - **The first deployment of an agent needs its whole `AiAgentDefinition`.** With [delta deployments](salesforce-devops-config-delta-deployment.md), a Pull Request that only changes a version holds only the `AiAgentDefinitionVersion`. When the target org does not have the agent yet, sfdx-hardis adds its `AiAgentDefinition` to the deployment.
 - **A version the target org already has is left out.** A committed version never changes, and Salesforce refuses the whole deployment when it holds the active version (*Can't edit an active bot version*). sfdx-hardis handles every `AiAgentDefinitionVersion` like a component of [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md), without you listing them: only the new versions are sent.
 - **Agent versions come from the project only.** A warning lists the versions the target org has and the project does not: they were committed in that org, against the [rule](#deliver-a-new-version-of-an-agent).
-- **The running user must exist in the target org.** Otherwise a warning says the activation will fail: see [the running user of a service agent](#the-running-user-of-a-service-agent).
+- **The running user of a service agent is a user of the target org.** sfdx-hardis creates it at the first deployment: see [the running user of a service agent](#the-running-user-of-a-service-agent).
 
 Agent metadata types do not trigger Apex tests with [Smart Deployment Tests](hardis/project/deploy/smart.md#smart-deployments-tests).
 
@@ -71,9 +71,27 @@ Each org of the pipeline then gets the new version, which is activated, and Sale
 
 ### The running user of a service agent
 
-A service agent (`agentType` `EinsteinServiceAgent`) runs as a user of its org, written in `AiAgentDefinition/botUser`. The retrieved file holds the username of the sandbox you retrieved from, and the other orgs have no such user. The deployment passes, but Salesforce refuses to activate the agent: *This Agent Type should have a user assigned*.
+A service agent (`agentType` `EinsteinServiceAgent`) runs as a user of its org: `botUser` in `AiAgentDefinition`, and `default_agent_user` in the Agent Script of its authoring bundles. The retrieved files hold the username of the sandbox you retrieved from, and a user record is data: it is not deployed, and the other orgs have no such user.
 
-Write the user of each org with one [replacement rule](salesforce-devops-config-replacement-rules.md), once, in `config/.sfdx-hardis.yml`. It reads the username from a [CI/CD variable](salesforce-devops-config-replacement-rules.md#secrets), and fixes both places the username is written: `botUser` in the agent definition and `default_agent_user` in the authoring bundles.
+sfdx-hardis handles it for you with the built-in replacement rule `builtin-agent-running-user`, on by default:
+
+1. At the first deployment of the agent to an org, it creates the user with the Salesforce CLI command `sf org create agent-user`: profile **Einstein Agent User**, permission sets `AgentforceServiceAgentBase`, `AgentforceServiceAgentUser` and `EinsteinGPTPromptTemplateUser`, after checking that the org has the licenses. Its username is `<agent>.<unique id>@<org id>.ext`.
+2. At the next deployments, it finds this user again by its username.
+3. It writes the username in the deployed files, and puts the files of git back after the deployment.
+
+A deployment check never creates the user: it says that the deployment will. A username of git that the target org has (the org you retrieved from, or a sandbox copy of its users) is kept.
+
+To turn it off, for example to create the users yourself in production, add to `config/branches/.sfdx-hardis.main.yml` (or to `config/.sfdx-hardis.yml` for every org):
+
+```yaml
+replacementRules:
+  - id: builtin-agent-running-user
+    enabled: false
+```
+
+#### Choose the users yourself
+
+A rule of your own that writes the user wins over the built-in one. It can read the username from a [CI/CD variable](salesforce-devops-config-replacement-rules.md#secrets), for both places the username is written:
 
 ```yaml
 replacementRules:
@@ -89,11 +107,16 @@ replacementRules:
 
 Then create one variable per org in the CI/CD settings: `AGENT_RUNNING_USER_INTEGRATION`, `AGENT_RUNNING_USER_UAT`, `AGENT_RUNNING_USER_PREPROD`, `AGENT_RUNNING_USER_MAIN`. On GitHub Actions, also add them to the `env` of the deployment check and deployment workflows. A missing variable skips the rule for that org, and the Pull Request comment says so.
 
+With several agents, you can replace only the part after `@`, so one variable per org covers all of them: name the agent users of each org with one domain (for example `service.agent@acme.com.uat` and `sales.agent@acme.com.uat`, created with `sf org create agent-user --base-username`), and use this `find` with a variable such as `AGENT_USER_DOMAIN_UAT=acme.com.uat`:
+
+```yaml
+    find: '(?<=<botUser>[^<@]+@)[^<]+(?=</botUser>)|(?<=default_agent_user: "[^"@]+@)[^"]+(?=")'
+    secret: AGENT_USER_DOMAIN
+```
+
 To keep the usernames in git instead, replace `secret` with `values`, one username per branch, as in [values per org](salesforce-devops-config-replacement-rules.md#values-per-org).
 
-Each user must exist in its org, with the **Einstein Agent User** profile and the **Agentforce Service Agent User** permission set group (`AgentforceServiceAgentUserPsg`). Without the group, the deployment fails with *User doesn't have access to agent*. Sandboxes copy the users of production with a suffix (`.uat`), so create the user in production before the next refresh.
-
-Without such a rule, sfdx-hardis warns:
+When the built-in rule is off and no rule of yours writes the user, sfdx-hardis warns:
 
 - at retrieve time, when the agent has a `botUser`
 - in the deployment check job, when the target org has no user with this username

@@ -344,8 +344,10 @@ describe('agentUtils botUser', () => {
     ]);
   });
 
-  it('warns when the target org does not have the running user', async () => {
+  it('warns when the target org does not have the running user and the built-in rule is off', async () => {
     await writeAgent('Service_Agent', 'agent.user@example.com');
+    await fs.ensureDir('config');
+    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), 'replacementRules:\n  - id: builtin-agent-running-user\n    enabled: false\n');
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
@@ -353,8 +355,19 @@ describe('agentUtils botUser', () => {
     expect(command.logs.join('\n')).to.contain('agent.user@example.com');
   });
 
+  it('does not warn when the built-in rule writes the running user', async () => {
+    await writeAgent('Service_Agent', 'agent.user@example.com');
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
+    const command = fakeCommand();
+    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
+    expect(command.logs).to.deep.equal([]);
+  });
+
   it('does not warn when the target org has the running user', async () => {
     await writeAgent('Service_Agent', 'agent.user@example.com');
+    await fs.ensureDir('config');
+    await fs.writeFile(path.join('config', '.sfdx-hardis.yml'), 'replacementRules:\n  - id: builtin-agent-running-user\n    enabled: false\n');
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();

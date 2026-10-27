@@ -9,7 +9,7 @@ import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
 import { t } from './i18n.js';
 import { CONSTANTS } from '../../config/index.js';
 import { resolveDeployApiVersion } from '../replacementRules/engine/ruleEngine.js';
-import { readAllBranchReplacementRules, readProjectReplacementRules } from '../replacementRules/config/ruleConfig.js';
+import { findSkipReplacementRulesFile, readAllBranchReplacementRules, readProjectReplacementRules } from '../replacementRules/config/ruleConfig.js';
 import { readIssueRules } from '../replacementRules/config/issueRulesStore.js';
 
 // First API version where agents are AiAgentDefinition and AiAgentDefinitionVersion
@@ -17,6 +17,7 @@ export const AGENT_DEFINITION_MIN_API_VERSION = 68.0;
 export const AGENT_DEFINITION_TYPE = 'AiAgentDefinition';
 export const AGENT_DEFINITION_VERSION_TYPE = 'AiAgentDefinitionVersion';
 export const AGENT_AUTHORING_BUNDLE_TYPE = 'AiAuthoringBundle';
+export const AGENT_RUNNING_USER_RULE_ID = 'builtin-agent-running-user';
 export const AGENT_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/`;
 
 // Custom objects and fields (__c), Data 360 objects (__dlm, __dll) and external objects (__x)
@@ -322,14 +323,22 @@ export async function readAgentBotUsers(agentNames: string[], projectRoot: strin
   return botUsers;
 }
 
-/** A rule that writes the botUser of each org, in any place rules are stored. */
+/**
+ * True when a replacement rule writes the running user of each org: the built-in rule
+ * builtin-agent-running-user (on unless turned off in some place, or every rule is skipped),
+ * or a rule of the project that writes botUser or default_agent_user.
+ */
 export async function hasBotUserReplacementRule(): Promise<boolean> {
   const rules: any[] = [...(await readProjectReplacementRules())];
   for (const branch of await readAllBranchReplacementRules()) {
     rules.push(...branch.rules);
   }
   rules.push(...((await readIssueRules({ useCache: true })).rules || []));
-  return rules.some((rule) => rule?.enabled !== false && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`));
+  if (rules.some((rule) => rule?.enabled !== false && !rule?.builtIn && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`))) {
+    return true;
+  }
+  const builtInTurnedOff = rules.some((rule) => rule?.id === AGENT_RUNNING_USER_RULE_ID && rule?.enabled === false);
+  return !builtInTurnedOff && (await findSkipReplacementRulesFile(null)) === null;
 }
 
 // sourceApiVersion or the package.xml version below 68.0 lowers the deployment API version: Salesforce then refuses the agent types

@@ -22,6 +22,11 @@ export interface ReplacementRulePrepareOptions {
   conn?: any;
   targetUsername?: string | null;
   commandThis?: any;
+  // Package.xml files of the deployment. None: every file of the package directories
+  packageXmlFiles?: string[];
+  // false: a preview, nothing is written. checkOnly: a deployment check. A rule changes the org in neither case
+  write?: boolean;
+  checkOnly?: boolean;
 }
 
 export abstract class ReplacementRuleRoot {

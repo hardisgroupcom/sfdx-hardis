@@ -102,7 +102,7 @@ When the deployment contains \`AiAgentDefinition\` or \`AiAgentDefinitionVersion
 - An agent deployed as a version only (a delta often holds just the new version) gets its whole \`AiAgentDefinition\` added when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without it.
 - A version the target org already has is left out of the deployment, like a component of package-no-overwrite.xml: a committed version never changes, and Salesforce refuses to edit the active one.
 - A warning lists the agent versions the target org has and the project does not: they were committed in that org, and agent versions must be committed in a developer sandbox only.
-- When the running user of a service agent (\`AiAgentDefinition/botUser\`) does not exist in the target org and no replacement rule writes it, a warning says the activation will fail.
+- The running user of a service agent (\`botUser\`, \`default_agent_user\`) is a user of the target org: the built-in replacement rule \`builtin-agent-running-user\` creates it with \`sf org create agent-user\` at the first deployment, and writes it in the deployed files.
 - After a successful deployment, the highest \`AiAgentDefinitionVersion\` of each agent of the package.xml is activated, unless \`agentAutoActivate\` is false. A version that is already active is left as it is.
 
 See [Agentforce agents in CI/CD](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/).
