@@ -57,6 +57,15 @@ A deployment always leaves the User Access Policies it contains in Design status
 
 A user-access-policy action is `post-deploy` only, and only runs in the `process-deployment-only` context. It runs at every deployment by default (`runOnlyOnceByOrg: false`), because each new deployment of a policy turns it off again.
 
+### Activate an Agentforce agent
+
+An `agent-activate` action, run after the deployment, activates a version of an agent with `sf agent activate`.
+
+- `agentName`: API name of the agent.
+- `agentVersion`: the version number, or `latest` (default) for the highest version of the agent in the target org.
+
+A version already active is left as is. An agent-activate action is `post-deploy` only, and only runs in the `process-deployment-only` context. It runs at every deployment by default (`runOnlyOnceByOrg: false`), so a new version brought by a later deployment gets activated too.
+
 A manual action declared `pre-deploy` is always stored with the `all` context: it has to be done before the merge, so the deployment check lists it too.
 
 ### Agent Mode
@@ -70,7 +79,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - `--scope`, `--when`, `--type`, `--label`
-- Type-specific flags: `--command` for command, `--apex-script` for apex, `--sfdmu-project` for data, `--community-name` for publish-community, `--instructions` for manual, `--class-name` and `--cron-expression` for schedule-batch, `--class-name` for run-batch (`--run-mode` defaults to `wait`), `--packagexml-items` for remove-packagexml-items, `--policies` for user-access-policy (`--activate` defaults to `true`, `--apply-to-all` to `false`)
+- Type-specific flags: `--command` for command, `--apex-script` for apex, `--sfdmu-project` for data, `--community-name` for publish-community, `--instructions` for manual, `--class-name` and `--cron-expression` for schedule-batch, `--class-name` for run-batch (`--run-mode` defaults to `wait`), `--packagexml-items` for remove-packagexml-items, `--policies` for user-access-policy (`--activate` defaults to `true`, `--apply-to-all` to `false`), `--agent-name` for agent-activate (`--agent-version` defaults to `latest`)
 
 In agent mode, `--context` defaults to `process-deployment-only`. `--run-only-once-by-org` defaults to `true` (use `--no-run-only-once-by-org` to disable); other optional boolean flags default to `false`.
 
@@ -92,6 +101,8 @@ Use `--include-target-branches` or `--exclude-target-branches` (comma-separated,
 |:-----------------------------|:-------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:---------------------------------------------------------:|
 | activate                     | boolean | For user-access-policy type: activate the policies after the deployment (default: true)                                                                                                                                  |         |          |                                                           |
 | agent                        | boolean | Run in non-interactive mode for agents and automation                                                                                                                                                                    |         |          |                                                           |
+| agent-name                   | option  | API name of the Agentforce agent to activate (for agent-activate type)                                                                                                                                                   |         |          |                                                           |
+| agent-version                | option  | For agent-activate type: version number to activate, or latest for the highest version in the target org (default: latest)                                                                                               |         |          |                                                           |
 | allow-failure                | boolean | Allow action to fail without blocking deployment                                                                                                                                                                         |         |          |                                                           |
 | apex-script                  | option  | Path to Apex script file (for apex type)                                                                                                                                                                                 |         |          |                                                           |
 | apply-to-all                 | boolean | For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser (default: false)                                                                                     |         |          |                                                           |
@@ -120,7 +131,7 @@ Use `--include-target-branches` or `--exclude-target-branches` (comma-separated,
 | scope                        | option  | Configuration scope: project, branch, or pr                                                                                                                                                                              |         |          |                 project<br/>branch<br/>pr                 |
 | sfdmu-project                | option  | SFDMU workspace name (for data type)                                                                                                                                                                                     |         |          |                                                           |
 | success-even-if-batch-errors | boolean | For run-batch type in wait mode: keep the action successful when the batch completes with errors                                                                                                                         |         |          |                                                           |
-| type                         | option  | Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy) or the id of a project custom function                          |         |          |                                                           |
+| type                         | option  | Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, agent-activate) or the id of a project custom function          |         |          |                                                           |
 | wait-timeout                 | option  | Minutes to wait for the batch of a run-batch action in wait mode (optional, defaults to 60)                                                                                                                              |         |          |                                                           |
 | websocket                    | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                                                                                                |         |          |                                                           |
 | when                         | option  | When to run the action: pre-deploy or post-deploy                                                                                                                                                                        |         |          |                pre-deploy<br/>post-deploy                 |
@@ -149,6 +160,10 @@ $ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-dep
 
 ```shell
 $ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all
+```
+
+```shell
+$ sf hardis:project:action:create --agent --scope project --when post-deploy --type agent-activate --label "Activate the service agent" --agent-name My_Service_Agent --agent-version latest
 ```
 
 ```shell

@@ -507,6 +507,37 @@ commandsPostDeploy:
 
 </details>
 
+#### Activate an Agentforce agent
+
+A deployed [Agentforce agent](salesforce-ci-cd-agentforce-agents.md) version is not active. This action activates it right after the deployment, so users talk to the version you just delivered.
+
+<details markdown="1"><summary>Technical: agent-activate action (YAML)</summary>
+
+The action finds the version in the target org, then runs `sf agent activate`, and reads the status again to check it. A version already active is left as it is. With `latest`, the highest version of the agent in the target org is activated.
+
+The action runs after the deployment only, and only in the `process-deployment-only` context: a deployment check deploys nothing. It runs at every deployment by default (`runOnlyOnceByOrg: false`), so a new version brought by a later deployment is activated too.
+
+The target org must be on API 68.0 or above.
+
+| Custom parameter          | Required? | Description                                                            | Example            |
+|---------------------------|:---------:|------------------------------------------------------------------------|--------------------|
+| `parameters.agentName`    | Yes       | API name of the agent.                                                 | `My_Service_Agent` |
+| `parameters.agentVersion` | No        | Version number, or `latest` for the highest one. Defaults to `latest`. | `3`                |
+
+```yaml
+commandsPostDeploy:
+  - id: 7d1f3c2a-5e4b-4c8a-9f61-2b3e4d5a6c7e
+    label: Activate the service agent
+    type: agent-activate
+    parameters:
+      agentName: My_Service_Agent
+      agentVersion: latest
+    context: process-deployment-only
+    runOnlyOnceByOrg: false
+```
+
+</details>
+
 #### Remove items from package.xml
 
 Excludes some metadata from the deployment without touching your repository: the listed items are removed from the calculated package.xml just before deploying. Useful for org-specific components that exist in git but must not reach a given org.

@@ -89,6 +89,15 @@ A deployment always leaves the User Access Policies it contains in Design status
 
 A user-access-policy action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), because each new deployment of a policy turns it off again.
 
+### Activate an Agentforce agent
+
+An \`agent-activate\` action, run after the deployment, activates a version of an agent with \`sf agent activate\`.
+
+- \`agentName\`: API name of the agent.
+- \`agentVersion\`: the version number, or \`latest\` (default) for the highest version of the agent in the target org.
+
+A version already active is left as is. An agent-activate action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), so a new version brought by a later deployment gets activated too.
+
 A manual action declared \`pre-deploy\` is always stored with the \`all\` context: it has to be done before the merge, so the deployment check lists it too.
 
 ### Agent Mode
@@ -102,7 +111,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`)
+- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`), \`--agent-name\` for agent-activate (\`--agent-version\` defaults to \`latest\`)
 
 In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
@@ -125,6 +134,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all',
+    '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type agent-activate --label "Activate the service agent" --agent-name My_Service_Agent --agent-version latest',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
   ];
 
@@ -138,7 +148,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy) or the id of a project custom function',
+      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, agent-activate) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'Human-readable label for the action',
@@ -199,6 +209,12 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     'apply-to-all': Flags.boolean({
       allowNo: true,
       description: 'For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser (default: false)',
+    }),
+    'agent-name': Flags.string({
+      description: 'API name of the Agentforce agent to activate (for agent-activate type)',
+    }),
+    'agent-version': Flags.string({
+      description: 'For agent-activate type: version number to activate, or latest for the highest version in the target org (default: latest)',
     }),
     'function-input': Flags.string({
       multiple: true,

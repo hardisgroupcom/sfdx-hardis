@@ -40,6 +40,7 @@ import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCom
 import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { applyAgentDeploymentGuard } from '../../../../common/utils/agentUtils.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -92,6 +93,15 @@ This will activate delta deployments only between minor and major branches (majo
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
+### Agentforce agents
+
+When the deployment contains \`AiAgentDefinition\` or \`AiAgentDefinitionVersion\`:
+
+- The target org must be on API 68.0 or above, else the deployment stops before anything is sent, with a link to the way to keep the previous types on API 67.0.
+- An agent deployed as a version only (a delta often holds just the new version) gets its whole \`AiAgentDefinition\` added when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without it.
+
+See [Agentforce agents in CI/CD](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/).
+
 ### Smart Deployments Tests
 
 Not all metadata updates can break test classes, use Smart Deployment Tests to skip running test classes if ALL the following conditions are met:
@@ -108,6 +118,9 @@ Activate Smart Deployment tests with:
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
 - ActionLinkGroupTemplate
+- AiAgentDefinition
+- AiAgentDefinitionVersion
+- AiAuthoringBundle
 - AnalyticSnapshot
 - AppMenu
 - Audience
@@ -671,6 +684,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
+
+    // Agents: the target org must be on API 68.0, and the first deployment of an agent needs its whole AiAgentDefinition
+    this.packageXmlFile = await applyAgentDeploymentGuard(this.packageXmlFile, this.targetOrg.getConnection(), this);
 
     // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
     this.flowDeletion = new FlowDeletionHandler({

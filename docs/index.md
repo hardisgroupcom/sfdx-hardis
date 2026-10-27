@@ -725,23 +725,23 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 
 ### hardis:doc
 
-| Command                                                                     | Title                                                                                                             |
-|:----------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------|
-| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)             | **Generates an Excel (.xlsx) data dictionary for one or more Salesforce objects, read live from the target org.** |
-| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                     | DORA Metrics Report                                                                                               |
-| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) | Generate project documentation                                                                                    |
-| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       | **Retrieves and displays the usage of custom fields within a Salesforce org, based on metadata dependencies.**    |
-| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 | Flow to Markdown                                                                                                  |
-| [**hardis:doc:metadata-deps**](hardis/doc/metadata-deps.md)                 | Find metadata dependencies                                                                                        |
-| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   | MkDocs to Cloudflare                                                                                              |
-| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)   | MkDocs to Confluence                                                                                              |
-| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   | MkDocs to Salesforce                                                                                              |
-| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)       | **Analyzes how populated fields are for a specific Salesforce object.**                                           |
-| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)           | Override AI Prompt Templates                                                                                      |
-| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     | PackageXml to Markdown                                                                                            |
-| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             | Generate SF Cli Plugin Documentation                                                                              |
-| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           | SFDX Project to Markdown                                                                                          |
-| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 | Release Notes                                                                                                     |
+| Command                                                                     | Title                                                                                                                                                                                       |
+|:----------------------------------------------------------------------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [**hardis:doc:data-dictionary**](hardis/doc/data-dictionary.md)             | **Generates an Excel (.xlsx) data dictionary for one or more Salesforce objects, read live from the target org, including Data Cloud (Data 360) Data Model Objects and Data Lake Objects.** |
+| [**hardis:doc:dora-report**](hardis/doc/dora-report.md)                     | DORA Metrics Report                                                                                                                                                                         |
+| [**hardis:doc:extract:permsetgroups**](hardis/doc/extract/permsetgroups.md) | Generate project documentation                                                                                                                                                              |
+| [**hardis:doc:fieldusage**](hardis/doc/fieldusage.md)                       | **Retrieves and displays the usage of custom fields within a Salesforce org, based on metadata dependencies.**                                                                              |
+| [**hardis:doc:flow2markdown**](hardis/doc/flow2markdown.md)                 | Flow to Markdown                                                                                                                                                                            |
+| [**hardis:doc:metadata-deps**](hardis/doc/metadata-deps.md)                 | Find metadata dependencies                                                                                                                                                                  |
+| [**hardis:doc:mkdocs-to-cf**](hardis/doc/mkdocs-to-cf.md)                   | MkDocs to Cloudflare                                                                                                                                                                        |
+| [**hardis:doc:mkdocs-to-confluence**](hardis/doc/mkdocs-to-confluence.md)   | MkDocs to Confluence                                                                                                                                                                        |
+| [**hardis:doc:mkdocs-to-salesforce**](hardis/doc/mkdocs-to-salesforce.md)   | MkDocs to Salesforce                                                                                                                                                                        |
+| [**hardis:doc:object-field-usage**](hardis/doc/object-field-usage.md)       | **Analyzes how populated fields are for a specific Salesforce object.**                                                                                                                     |
+| [**hardis:doc:override-prompts**](hardis/doc/override-prompts.md)           | Override AI Prompt Templates                                                                                                                                                                |
+| [**hardis:doc:packagexml2markdown**](hardis/doc/packagexml2markdown.md)     | PackageXml to Markdown                                                                                                                                                                      |
+| [**hardis:doc:plugin:generate**](hardis/doc/plugin/generate.md)             | Generate SF Cli Plugin Documentation                                                                                                                                                        |
+| [**hardis:doc:project2markdown**](hardis/doc/project2markdown.md)           | SFDX Project to Markdown                                                                                                                                                                    |
+| [**hardis:doc:release-notes**](hardis/doc/release-notes.md)                 | Release Notes                                                                                                                                                                               |
 
 ### hardis:doctor
 
@@ -836,6 +836,7 @@ sfdx-hardis is primarily led by Nicolas Vuillamy & [Cloudity](https://www.cloudi
 | [**hardis:org:purge:profile**](hardis/org/purge/profile.md)                                         | Remove PS attributes from Profile                                                                                        |
 | [**hardis:org:refresh:after-refresh**](hardis/org/refresh/after-refresh.md)                         | Restore Connected Apps after org refresh                                                                                 |
 | [**hardis:org:refresh:before-refresh**](hardis/org/refresh/before-refresh.md)                       | > **This command must always be run by a human. It is intentionally interactive and must not be called by an AI agent.** |
+| [**hardis:org:retrieve:agent**](hardis/org/retrieve/agent.md)                                       | Retrieve an Agentforce agent                                                                                             |
 | [**hardis:org:retrieve:packageconfig**](hardis/org/retrieve/packageconfig.md)                       | Retrieve package configuration from an org                                                                               |
 | [**hardis:org:retrieve:sources:analytics**](hardis/org/retrieve/sources/analytics.md)               | Retrieve CRM Analytics configuration from an org                                                                         |
 | [**hardis:org:retrieve:sources:dx**](hardis/org/retrieve/sources/dx.md)                             | Retrieve sfdx sources from org                                                                                           |

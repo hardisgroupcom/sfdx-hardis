@@ -21,6 +21,7 @@ export type BuiltInActionType =
   | 'run-batch'
   | 'remove-packagexml-items'
   | 'user-access-policy'
+  | 'agent-activate'
   // Org initialization steps only (orgInitSteps), never deployment actions
   | 'install-packages'
   | 'deploy-sources'
@@ -59,6 +60,8 @@ export interface PrePostCommand {
     successEvenIfBatchErrors?: boolean; // for 'run-batch' actions in wait mode (optional, defaults to false)
     permissionSets?: string[]; // for 'assign-permission-sets' org initialization steps
     packageXmlItems?: string[] | string; // for 'remove-packagexml-items' actions (each item: "TypeName:Member1,Member2"; a single string is accepted for a single entry)
+    agentName?: string;      // for 'agent-activate' actions
+    agentVersion?: string;   // for 'agent-activate' actions (optional, a version number or latest, defaults to latest)
     [key: string]: any;
   };
   command: string;
@@ -177,6 +180,10 @@ export abstract class ActionsProvider {
     else if (type === 'user-access-policy') {
       const UserAccessPolicyAction = await import('./userAccessPolicyAction.js');
       actionInstance = new UserAccessPolicyAction.UserAccessPolicyAction();
+    }
+    else if (type === 'agent-activate') {
+      const AgentActivateAction = await import('./agentActivateAction.js');
+      actionInstance = new AgentActivateAction.AgentActivateAction();
     }
     else if (type === 'install-packages') {
       const InstallPackagesAction = await import('./installPackagesAction.js');

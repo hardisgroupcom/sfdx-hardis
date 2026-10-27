@@ -2,6 +2,11 @@
 
 ## [beta] (main)
 
+- New [hardis:org:retrieve:agent](https://sfdx-hardis.cloudity.com/hardis/org/retrieve/agent/): Retrieve an Agentforce agent with its dependencies into your project, and list the objects and fields it needs that the project lacks. See [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/):
+  - [Agentforce agents](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/#agentforce-agents) deploy to a new org with their whole definition, and the deployment stops early when the target org is below API 68.0.
+- [Deployment actions](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/):
+  - New action to [activate an Agentforce agent](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#activate-an-agentforce-agent) version after a deployment.
 - [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/) and [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): System Administrator is now selected by default as the profile of the External Client App, in every org language.
 - Doc: the [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) page shows an example and a screenshot of the rule editor for each rule type (`xml-value`, `xml-remove`, `text`), and its Rules and Values per org screenshots are zoomed out so every column can be read.
 - Doc: the [Aha! integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/) page explains how to pass the Aha! variables to pipelines created before 8.14.0.

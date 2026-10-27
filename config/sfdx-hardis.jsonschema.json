@@ -1238,6 +1238,7 @@
               "publish-community",
               "manual",
               "user-access-policy",
+              "agent-activate",
               "notifySlack"
             ],
             "anyOf": [
@@ -1250,7 +1251,8 @@
                   "run-batch",
                   "publish-community",
                   "manual",
-                  "user-access-policy"
+                  "user-access-policy",
+                  "agent-activate"
                 ],
                 "enumNames": [
                   "Command",
@@ -1260,7 +1262,8 @@
                   "Run Batch",
                   "Publish Community",
                   "Manual Action",
-                  "User Access Policy"
+                  "User Access Policy",
+                  "Activate Agentforce Agent"
                 ]
               },
               {
@@ -1394,6 +1397,26 @@
                 "title": "Apply to all users",
                 "type": "boolean",
                 "default": false
+              },
+              "agentName": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/agentName",
+                "description": "For 'agent-activate' actions: API name of the Agentforce agent to activate after the deployment",
+                "title": "Agent API name",
+                "type": "string",
+                "examples": [
+                  "My_Service_Agent"
+                ]
+              },
+              "agentVersion": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/agentVersion",
+                "description": "For 'agent-activate' actions: version number of the agent to activate, or latest for the highest version in the target org",
+                "title": "Agent version",
+                "type": "string",
+                "default": "latest",
+                "examples": [
+                  "latest",
+                  "3"
+                ]
               }
             },
             "additionalProperties": true
