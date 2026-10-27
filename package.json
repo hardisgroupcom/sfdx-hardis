@@ -39,6 +39,7 @@
     "js-yaml": "4.3.2",
     "marked": "14.1.4",
     "papaparse": "5.7.0",
+    "picomatch": "4.0.4",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "25.14.0",
     "sanitize-html": "^2.18.1",
@@ -335,6 +336,9 @@
     },
     "check:deps": {
       "command": "node ./scripts/check-dependencies.mjs",
+      "dependencies": [
+        "compile"
+      ],
       "files": [
         "package.json",
         "yarn.lock",
