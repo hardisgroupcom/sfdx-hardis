@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.20.1] 2026-10-27
+
 - [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) (Beta): backpromotes, org initializations and deployments no longer fail or skip the rules with "Cannot find package 'picomatch'" ([#2403](https://github.com/hardisgroupcom/sfdx-hardis/issues/2403)).
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): an org whose instance URL ends with a slash no longer stops the command with "is not a valid branch name" ([sfdx-hardis-training#248](https://github.com/hardisgroupcom/sfdx-hardis-training/issues/248)).
 - [hardis:org:configure:data](https://sfdx-hardis.cloudity.com/hardis/org/configure/data/): the `export.json` it creates ends with a newline, so MegaLinter no longer pushes a fix commit on the Pull Request.
