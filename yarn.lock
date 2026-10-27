@@ -1173,13 +1173,13 @@
     "@inquirer/type" "^3.0.10"
     yoctocolors-cjs "^2.1.3"
 
-"@inquirer/select@5.2.6":
-  version "5.2.6"
-  resolved "https://registry.yarnpkg.com/@inquirer/select/-/select-5.2.6.tgz#50b9adda69a9f49676fd64d267f6b332db98d6a2"
-  integrity sha512-jFu7CFghlr0vpi/326a4wz6BGkJH9X3H/iIu+ahyV2Ja52ktqQE3fC9BYP47JKeSPQYGUv5xquE2Vp9PbepZ3g==
+"@inquirer/select@5.2.7":
+  version "5.2.7"
+  resolved "https://registry.yarnpkg.com/@inquirer/select/-/select-5.2.7.tgz#840ef6248548e0afb21634781607ca27d5b7f493"
+  integrity sha512-pRDWO4dTqSAvFQdO8yclKMtXNDm9K9HmvWB5UZmT3clw2OlOBNXveHzhyFmO/0d0yJMqlPcNITus1Jtpm6t8VQ==
   dependencies:
     "@inquirer/ansi" "^2.0.9"
-    "@inquirer/core" "^12.0.4"
+    "@inquirer/core" "^12.0.5"
     "@inquirer/figures" "^2.0.9"
     "@inquirer/type" "4.2.0"
 
