@@ -9,7 +9,7 @@
     "@gitbeaker/rest": "43.8.0",
     "@inquirer/checkbox": "5.2.7",
     "@inquirer/input": "5.1.8",
-    "@inquirer/number": "4.2.4",
+    "@inquirer/number": "4.2.5",
     "@inquirer/select": "5.2.7",
     "@langchain/anthropic": "1.5.12",
     "@langchain/core": "1.2.18",
