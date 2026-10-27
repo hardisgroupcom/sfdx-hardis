@@ -8,7 +8,7 @@
     "@cparra/apexdocs": "3.24.2",
     "@gitbeaker/rest": "43.8.0",
     "@inquirer/checkbox": "5.2.7",
-    "@inquirer/input": "5.1.7",
+    "@inquirer/input": "5.1.8",
     "@inquirer/number": "4.2.4",
     "@inquirer/select": "5.2.7",
     "@langchain/anthropic": "1.5.12",
