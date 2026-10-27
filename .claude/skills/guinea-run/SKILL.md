@@ -365,6 +365,24 @@ only.
   the best of both. `reset()` writes without merging. The first world won of a
   visit calls `navigator.storage.persist()`. Tests:
   `scripts/guinea-run/progress.test.mjs`.
+- **The save VS Code shares** (decided with the author on 2026-10-27): in
+  the VS Code panel the frame's storage differs from one project to another,
+  so the extension keeps one file for all of them,
+  `~/.sfdx-hardis/guinea-run-save.json`. Only
+  `play.html?from=vscode&save=host` uses it, never a test link.
+  `core/host-save.js` asks the panel for it (`loadSave`) before
+  `game.start`, merges it into the frame's storage (progress through
+  `mergeProgress`, the shared handle and mode win; the pinball checkpoint,
+  the mute switch and the last admins from the file when it has them), then
+  sends a signed copy (`storeSave`) 400 ms after each write: the four
+  storage modules call `savedLocally()` from `core/save-signal.js`. It is
+  signed like the Hall of Fame (its own text prefix); the extension stores
+  it as it is. A save edited by hand is refused: the four keys are cleared,
+  the file deleted (`clearSave`), the "Nice try!" card shows and the player
+  starts from zero, handle included (the author's choice). A save signed with
+  another key is ignored, never wiped. The extension side is
+  `guineaRunPanel.ts` and `guineaRunUtils.ts` in `../vscode-sfdx-hardis`.
+  Tests: `scripts/guinea-run/host-save.test.mjs`, step 8 of the check.
 
 ## Speed
 
