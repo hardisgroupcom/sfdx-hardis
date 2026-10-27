@@ -10,7 +10,7 @@
     "@inquirer/checkbox": "5.2.6",
     "@inquirer/input": "5.1.7",
     "@inquirer/number": "4.2.4",
-    "@inquirer/select": "5.2.6",
+    "@inquirer/select": "5.2.7",
     "@langchain/anthropic": "1.5.12",
     "@langchain/core": "1.2.18",
     "@langchain/google-genai": "2.3.2",
