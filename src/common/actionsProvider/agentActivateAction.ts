@@ -2,7 +2,7 @@ import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand, buildActionOutput } from './actionsProvider.js';
 import { execSfdxJson, uxLog } from '../utils/index.js';
-import { AgentVersionInfo, listOrgAgentVersions, resolveAgentVersion } from '../utils/agentUtils.js';
+import { AGENT_DOC_URL, AgentVersionInfo, listOrgAgentVersions, resolveAgentVersion } from '../utils/agentUtils.js';
 import { t } from '../utils/i18n.js';
 
 // A deployment check deploys nothing, so there is no agent version to activate after it
@@ -112,8 +112,11 @@ export class AgentActivateAction extends ActionsProvider {
       ' --json';
     const activateRes = await execSfdxJson(activateCommand, this, { fail: false, output: true });
     if (activateRes?.status !== 0) {
+      const activateOutput = buildActionOutput(activateRes);
+      // Salesforce refuses a service agent whose botUser is not a user of the org
+      const hint = /should have a user assigned/i.test(activateOutput) ? `\n${t('agentActivationNeedsBotUser', { agentName: target.agentName, docUrl: AGENT_DOC_URL })}` : '';
       return this.fail(
-        t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: buildActionOutput(activateRes) }),
+        t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: activateOutput }) + hint,
         outputLines
       );
     }

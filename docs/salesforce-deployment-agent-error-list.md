@@ -42,6 +42,23 @@ Go to target org, in Setup -> Deployment Settings -> Activate option "Allow depl
 ```
 
 ---
+## [Agent running user has no access to the agent](sf-deployment-assistant/Agent-running-user-has-no-access-to-the-agent.md)
+
+**Detection**
+
+- RegExp: `Error (.*) User doesn't have access to agent`
+
+**Resolution**
+
+```shell
+The running user of agent {1} (botUser in its AiAgentDefinition) exists in the target org, but cannot run agents
+- Assign the permission set group AgentforceServiceAgentUserPsg (Agentforce Service Agent User) to this user in the target org
+- The user must have the profile Einstein Agent User
+- Each org needs its own user: write it with a replacement rule (botUser, default_agent_user), for example from a CI/CD variable. See https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/#the-running-user-of-a-service-agent
+
+```
+
+---
 ## [Can not change field type to a formula field](sf-deployment-assistant/Can-not-change-field-type-to-a-formula-field.md)
 
 **Detection**

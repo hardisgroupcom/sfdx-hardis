@@ -48,7 +48,12 @@ If you want to force the delta deployment into major orgs (ex: preprod to prod),
 When the deployment contains `AiAgentDefinition` or `AiAgentDefinitionVersion`:
 
 - The target org must be on API 68.0 or above, else the deployment stops before anything is sent, with a link to the way to keep the previous types on API 67.0.
+- When the deployment API version (the lowest of the org, `sourceApiVersion` of `sfdx-project.json` and the package.xml version) is below 68.0, a warning asks to set `sourceApiVersion` and the package.xml version to 68.0: Salesforce refuses the agent types below it.
 - An agent deployed as a version only (a delta often holds just the new version) gets its whole `AiAgentDefinition` added when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without it.
+- A version the target org already has is left out of the deployment, like a component of package-no-overwrite.xml: a committed version never changes, and Salesforce refuses to edit the active one.
+- A warning lists the agent versions the target org has and the project does not: they were committed in that org, and agent versions must be committed in a developer sandbox only.
+- When the running user of a service agent (`AiAgentDefinition/botUser`) does not exist in the target org and no replacement rule writes it, a warning says the activation will fail.
+- After a successful deployment, the highest `AiAgentDefinitionVersion` of each agent of the package.xml is activated, unless `agentAutoActivate` is false. A version that is already active is left as it is.
 
 See [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
 

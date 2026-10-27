@@ -8,11 +8,15 @@ import { soqlQuery } from './apiUtils.js';
 import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
 import { t } from './i18n.js';
 import { CONSTANTS } from '../../config/index.js';
+import { resolveDeployApiVersion } from '../replacementRules/engine/ruleEngine.js';
+import { readAllBranchReplacementRules, readProjectReplacementRules } from '../replacementRules/config/ruleConfig.js';
+import { readIssueRules } from '../replacementRules/config/issueRulesStore.js';
 
 // First API version where agents are AiAgentDefinition and AiAgentDefinitionVersion
 export const AGENT_DEFINITION_MIN_API_VERSION = 68.0;
 export const AGENT_DEFINITION_TYPE = 'AiAgentDefinition';
 export const AGENT_DEFINITION_VERSION_TYPE = 'AiAgentDefinitionVersion';
+export const AGENT_AUTHORING_BUNDLE_TYPE = 'AiAuthoringBundle';
 export const AGENT_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/`;
 
 // Custom objects and fields (__c), Data 360 objects (__dlm, __dll) and external objects (__x)
@@ -64,6 +68,13 @@ export async function listOrgAgentVersions(conn: Connection): Promise<AgentVersi
     }
   }
   return versions.sort((a, b) => a.agentName.localeCompare(b.agentName) || a.version - b.version);
+}
+
+/** Authoring bundles of the org: the agents of Agentforce Builder, committed or still drafts. */
+export async function listOrgAuthoringBundleNames(conn: Connection): Promise<string[]> {
+  const listed: any = await conn.metadata.list([{ type: AGENT_AUTHORING_BUNDLE_TYPE }], String(AGENT_DEFINITION_MIN_API_VERSION.toFixed(1)));
+  const listedItems: any[] = Array.isArray(listed) ? listed : listed ? [listed] : [];
+  return listedItems.map((item) => String(item?.fullName || '')).filter(Boolean).sort();
 }
 
 // "latest" or empty: the highest version. A number: that version, or null when the org does not have it.
@@ -199,22 +210,184 @@ export async function applyAgentDeploymentGuard(packageXmlFile: string, conn: Co
       })
     );
   }
-  if (versionOnly.length === 0) {
-    return packageXmlFile;
-  }
-  const orgAgents = await listOrgAgentDefinitionNames(conn);
+  await warnWhenDeployApiVersionTooLow(packageXmlFile, conn, [...definitions, ...versionOnly], commandThis);
+  await warnWhenBotUserMissingInTargetOrg([...definitions, ...versionOnly], conn, commandThis);
+
+  // An agent version is deployed only when the target org does not have it, like the components of
+  // package-no-overwrite.xml: a committed version never changes, and Salesforce refuses the whole
+  // deployment when it holds the active one ("Can't edit an active bot version").
+  const content = await parsePackageXmlFile(packageXmlFile);
+  const deployedVersions: string[] = (content[AGENT_DEFINITION_VERSION_TYPE] || []).map(String).filter((member: string) => member !== '*');
+  const orgVersions = await listOrgAgentVersions(conn);
+  await warnWhenVersionsCommittedOutsideProject([...definitions, ...versionOnly], orgVersions, commandThis);
+  const versionsInOrg = new Set(orgVersions.map((version) => formatAgentVersionFullName(version.agentName, version.version).toLowerCase()));
+  const versionsToSkip = deployedVersions.filter((member) => versionsInOrg.has(member.toLowerCase()));
+
+  const orgAgents = versionOnly.length > 0 ? await listOrgAgentDefinitionNames(conn) : new Set<string>();
   const agentsToAdd = versionOnly.filter((name) => !orgAgents.has(name.toLowerCase()));
-  if (agentsToAdd.length === 0) {
+  if (versionsToSkip.length === 0 && agentsToAdd.length === 0) {
     return packageXmlFile;
   }
-  const guardedPackageXmlFile = path.join(await createTempDir(), 'package-with-agent-definitions.xml');
-  await fs.copy(packageXmlFile, guardedPackageXmlFile);
-  await mergeIntoPackageXml(guardedPackageXmlFile, { [AGENT_DEFINITION_TYPE]: agentsToAdd });
-  for (const agentName of agentsToAdd) {
-    uxLog('action', commandThis, c.cyan(t('agentDefinitionAddedToDeployment', { agentName: c.bold(agentName) })));
+
+  // Changes go to a copy, so the project file is never changed
+  if (versionsToSkip.length > 0) {
+    const keptVersions = content[AGENT_DEFINITION_VERSION_TYPE].filter((member: string) => !versionsToSkip.includes(member));
+    if (keptVersions.length > 0) {
+      content[AGENT_DEFINITION_VERSION_TYPE] = keptVersions;
+    } else {
+      delete content[AGENT_DEFINITION_VERSION_TYPE];
+    }
+    for (const member of versionsToSkip) {
+      uxLog('action', commandThis, c.cyan(t('agentExistingVersionSkipped', { version: c.bold(member) })));
+    }
+  }
+  if (agentsToAdd.length > 0) {
+    content[AGENT_DEFINITION_TYPE] = [...new Set([...(content[AGENT_DEFINITION_TYPE] || []), ...agentsToAdd])].sort();
+    for (const agentName of agentsToAdd) {
+      uxLog('action', commandThis, c.cyan(t('agentDefinitionAddedToDeployment', { agentName: c.bold(agentName) })));
+    }
+  }
+  const guardedPackageXmlFile = path.join(await createTempDir(), 'package-agents-guarded.xml');
+  await writePackageXmlFile(guardedPackageXmlFile, content);
+  // writePackageXmlFile writes the default API version: keep the one of the project file
+  const originalVersion = /<version>\s*([\d.]+)\s*<\/version>/.exec(await fs.readFile(packageXmlFile, 'utf8'))?.[1];
+  if (originalVersion) {
+    const guardedContent = await fs.readFile(guardedPackageXmlFile, 'utf8');
+    await fs.writeFile(guardedPackageXmlFile, guardedContent.replace(/<version>\s*[\d.]+\s*<\/version>/, `<version>${originalVersion}</version>`));
   }
   return guardedPackageXmlFile;
 }
+
+/**
+ * Post-deployment actions that activate the agent versions a package.xml deploys: the highest version
+ * of each agent, or the latest one of the target org when the package.xml holds a wildcard.
+ */
+export async function buildAgentAutoActivateCommands(packageXmlFile: string): Promise<any[]> {
+  if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
+    return [];
+  }
+  const content = await parsePackageXmlFile(packageXmlFile);
+  const members: string[] = (content[AGENT_DEFINITION_VERSION_TYPE] || []).map(String);
+  const highestVersions = new Map<string, number>();
+  for (const member of members) {
+    const parsed = parseAgentVersionFullName(member);
+    if (parsed && parsed.version > (highestVersions.get(parsed.agentName) ?? 0)) {
+      highestVersions.set(parsed.agentName, parsed.version);
+    }
+  }
+  const toActivate = [...highestVersions.entries()].map(([agentName, version]) => ({ agentName, agentVersion: String(version) }));
+  if (members.includes('*')) {
+    for (const agentName of (content[AGENT_DEFINITION_TYPE] || []).map(String)) {
+      if (agentName !== '*' && !highestVersions.has(agentName)) {
+        toActivate.push({ agentName, agentVersion: 'latest' });
+      }
+    }
+  }
+  return toActivate
+    .sort((a, b) => a.agentName.localeCompare(b.agentName))
+    .map((parameters) => ({
+      id: `AGENT_ACTIVATE_${parameters.agentName}`,
+      label: t('agentAutoActivateLabel', { agentName: parameters.agentName, version: parameters.agentVersion }),
+      type: 'agent-activate',
+      parameters,
+      context: 'process-deployment-only',
+      preOrPost: 'commandsPostDeploy',
+    }));
+}
+
+/**
+ * Running user (botUser) of each agent definition file of the project. A service agent runs as a user
+ * of its org: the username of the org it was retrieved from does not exist in the other orgs.
+ */
+export async function readAgentBotUsers(agentNames: string[], projectRoot: string = process.cwd()): Promise<Array<{ agentName: string; botUser: string; file: string }>> {
+  const wanted = new Set(agentNames.filter((name) => name && name !== '*').map((name) => name.toLowerCase()));
+  if (wanted.size === 0) {
+    return [];
+  }
+  const files = await glob('**/aiAgents/*.aiAgentDefinition-meta.xml', {
+    cwd: projectRoot,
+    ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'],
+  });
+  const botUsers: Array<{ agentName: string; botUser: string; file: string }> = [];
+  for (const file of files.sort()) {
+    const agentName = path.basename(file).replace(/\.aiAgentDefinition-meta\.xml$/, '');
+    if (!wanted.has(agentName.toLowerCase())) {
+      continue;
+    }
+    const match = /<botUser>\s*([^<]+?)\s*<\/botUser>/.exec(await fs.readFile(path.join(projectRoot, file), 'utf8'));
+    if (match) {
+      botUsers.push({ agentName, botUser: match[1], file: file.replace(/\\/g, '/') });
+    }
+  }
+  return botUsers;
+}
+
+/** A rule that writes the botUser of each org, in any place rules are stored. */
+export async function hasBotUserReplacementRule(): Promise<boolean> {
+  const rules: any[] = [...(await readProjectReplacementRules())];
+  for (const branch of await readAllBranchReplacementRules()) {
+    rules.push(...branch.rules);
+  }
+  rules.push(...((await readIssueRules({ useCache: true })).rules || []));
+  return rules.some((rule) => rule?.enabled !== false && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`));
+}
+
+// sourceApiVersion or the package.xml version below 68.0 lowers the deployment API version: Salesforce then refuses the agent types
+async function warnWhenDeployApiVersionTooLow(packageXmlFile: string, conn: Connection, agents: string[], commandThis: any): Promise<void> {
+  const deployApiVersion = await resolveDeployApiVersion({ conn, packageXmlFiles: [packageXmlFile] });
+  if (deployApiVersion && !isApiVersionAtLeast(deployApiVersion)) {
+    uxLog(
+      'warning',
+      commandThis,
+      c.yellow(t('agentDeployApiVersionTooLow', { agents: agents.join(', '), apiVersion: deployApiVersion.toFixed(1), docUrl: AGENT_DOC_URL }))
+    );
+  }
+}
+
+// Agent versions are committed in a developer sandbox only. A version the target org has and the project
+// does not was committed in that org: its number will be taken again by the next version of the sandbox.
+async function warnWhenVersionsCommittedOutsideProject(agentNames: string[], orgVersions: AgentVersionInfo[], commandThis: any): Promise<void> {
+  const wanted = new Set(agentNames.filter((name) => name && name !== '*').map((name) => name.toLowerCase()));
+  if (wanted.size === 0) {
+    return;
+  }
+  const localFiles = await glob('**/aiAgentDefinitionVersions/*/*.aiAgentDefinitionVersion-meta.xml', {
+    cwd: process.cwd(),
+    ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'],
+  });
+  const localVersions = new Set(localFiles.map((file) => path.basename(path.dirname(file)).toLowerCase()));
+  const outside = new Map<string, number[]>();
+  for (const version of orgVersions) {
+    const fullName = formatAgentVersionFullName(version.agentName, version.version).toLowerCase();
+    if (wanted.has(version.agentName.toLowerCase()) && !localVersions.has(fullName)) {
+      outside.set(version.agentName, [...(outside.get(version.agentName) || []), version.version]);
+    }
+  }
+  for (const [agentName, versions] of outside) {
+    uxLog('warning', commandThis, c.yellow(t('agentVersionsCommittedOutsideProject', { agentName, versions: versions.sort((a, b) => a - b).join(', '), docUrl: AGENT_DOC_URL })));
+  }
+}
+
+// The agent deploys, but Salesforce refuses to activate it while its botUser is not a user of the org
+async function warnWhenBotUserMissingInTargetOrg(agentNames: string[], conn: Connection, commandThis: any): Promise<void> {
+  const botUsers = await readAgentBotUsers(agentNames);
+  if (botUsers.length === 0 || (await hasBotUserReplacementRule())) {
+    return;
+  }
+  const usernames = [...new Set(botUsers.map((item) => item.botUser))];
+  let existing: Set<string>;
+  try {
+    const result = await soqlQuery(`SELECT Username FROM User WHERE Username IN (${usernames.map((username) => `'${username.replace(/'/g, "\\'")}'`).join(',')})`, conn);
+    existing = new Set((result.records || []).map((record: any) => String(record.Username).toLowerCase()));
+  } catch (e: any) {
+    uxLog('log', commandThis, c.grey(`Unable to check the users of the agents: ${e?.message || e}`));
+    return;
+  }
+  for (const item of botUsers.filter((botUser) => !existing.has(botUser.botUser.toLowerCase()))) {
+    uxLog('warning', commandThis, c.yellow(t('agentBotUserMissingInTargetOrg', { agentName: item.agentName, botUser: item.botUser, file: item.file, docUrl: AGENT_DOC_URL })));
+  }
+}
+
 
 // Status of each version, keyed by lowercase "Agent#n". Empty when the org does not answer the query.
 async function readAgentVersionStatuses(conn: Connection): Promise<Map<string, string>> {

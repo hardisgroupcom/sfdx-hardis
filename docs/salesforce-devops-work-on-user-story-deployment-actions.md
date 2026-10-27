@@ -511,6 +511,8 @@ commandsPostDeploy:
 
 A deployed [Agentforce agent](salesforce-ci-cd-agentforce-agents.md) version is not active. This action activates it right after the deployment, so users talk to the version you just delivered.
 
+You rarely need it: sfdx-hardis already activates the agent versions a deployment contains (`agentAutoActivate`, on by default). Use the action to activate another version than the deployed one, or with `agentAutoActivate: false`.
+
 <details markdown="1"><summary>Technical: agent-activate action (YAML)</summary>
 
 The action finds the version in the target org, then runs `sf agent activate`, and reads the status again to check it. A version already active is left as it is. With `latest`, the highest version of the agent in the target org is activated.

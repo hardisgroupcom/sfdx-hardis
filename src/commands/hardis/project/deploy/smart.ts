@@ -40,7 +40,7 @@ import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCom
 import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { applyAgentDeploymentGuard } from '../../../../common/utils/agentUtils.js';
+import { applyAgentDeploymentGuard, buildAgentAutoActivateCommands } from '../../../../common/utils/agentUtils.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -98,7 +98,12 @@ If you want to force the delta deployment into major orgs (ex: preprod to prod),
 When the deployment contains \`AiAgentDefinition\` or \`AiAgentDefinitionVersion\`:
 
 - The target org must be on API 68.0 or above, else the deployment stops before anything is sent, with a link to the way to keep the previous types on API 67.0.
+- When the deployment API version (the lowest of the org, \`sourceApiVersion\` of \`sfdx-project.json\` and the package.xml version) is below 68.0, a warning asks to set \`sourceApiVersion\` and the package.xml version to 68.0: Salesforce refuses the agent types below it.
 - An agent deployed as a version only (a delta often holds just the new version) gets its whole \`AiAgentDefinition\` added when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without it.
+- A version the target org already has is left out of the deployment, like a component of package-no-overwrite.xml: a committed version never changes, and Salesforce refuses to edit the active one.
+- A warning lists the agent versions the target org has and the project does not: they were committed in that org, and agent versions must be committed in a developer sandbox only.
+- When the running user of a service agent (\`AiAgentDefinition/botUser\`) does not exist in the target org and no replacement rule writes it, a warning says the activation will fail.
+- After a successful deployment, the highest \`AiAgentDefinitionVersion\` of each agent of the package.xml is activated, unless \`agentAutoActivate\` is false. A version that is already active is left as it is.
 
 See [Agentforce agents in CI/CD](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/).
 
@@ -685,7 +690,9 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
-    // Agents: the target org must be on API 68.0, and the first deployment of an agent needs its whole AiAgentDefinition
+    // Agents: the target org must be on API 68.0, the first deployment of an agent needs its whole AiAgentDefinition,
+    // and the versions the target org already has are left out
+    const packageXmlBeforeAgentGuard = this.packageXmlFile;
     this.packageXmlFile = await applyAgentDeploymentGuard(this.packageXmlFile, this.targetOrg.getConnection(), this);
 
     // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
@@ -700,6 +707,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Set smart deploy options
     await this.setAdditionalOptions(targetUsername);
+    await this.addAgentAutoActivation(packageXmlBeforeAgentGuard);
 
     // Pre-destructive Flows must be gone before the constructive metadata is deployed
     if (!this.checkOnly) {
@@ -801,6 +809,22 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('smartDeployDestructiveChangesNoPostFile')));
         }
       }
+    }
+  }
+
+  // A deployed agent version is inactive: activate it after the deployment, unless agentAutoActivate is false.
+  // Read from the package.xml before the agent guard, so a version already in the org but not active yet still is.
+  private async addAgentAutoActivation(packageXmlFile: string) {
+    if (this.configInfo.agentAutoActivate === false) {
+      return;
+    }
+    const activateCommands = await buildAgentAutoActivateCommands(packageXmlFile);
+    if (activateCommands.length === 0) {
+      return;
+    }
+    this.smartDeployOptions.extraCommands = [...(this.smartDeployOptions.extraCommands || []), ...activateCommands];
+    for (const cmd of activateCommands) {
+      uxLog("action", this, c.cyan('[SmartDeploy] ' + t('agentAutoActivateAdded', { agentName: cmd.parameters.agentName, version: cmd.parameters.agentVersion })));
     }
   }
 

@@ -15,11 +15,15 @@ import {
   buildAgentPackageXmlContent,
   findMissingAgentReferences,
   formatAgentVersionFullName,
+  hasBotUserReplacementRule,
   isApiVersionAtLeast,
+  listOrgAuthoringBundleNames,
   listOrgAgentVersions,
   mergeIntoPackageXml,
+  readAgentBotUsers,
   resolveAgentVersion,
 } from '../../../../common/utils/agentUtils.js';
+import { resolveDeployApiVersion } from '../../../../common/replacementRules/engine/ruleEngine.js';
 import { t } from '../../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -40,11 +44,12 @@ Key functionalities:
 - **Agent and version selection:** Lists the agents of the org and their versions with their status, and proposes the latest version.
 - **Retrieval with dependencies:** Retrieves the selected version and what it uses in the local project.
 - **package.xml update:** Adds every retrieved component to \`manifest/package.xml\`, always with the whole \`AiAgentDefinition\`: the first deployment of an agent to an org needs it.
+- **Running user warning:** A service agent runs as a user of its org (\`botUser\`). The command warns when the retrieved agent has one: add a replacement rule that writes the user of each org.
 - **Missing dependencies report:** Lists the custom objects, custom fields and Data 360 objects that the agent names and that the project does not hold. The CLI does not retrieve them: retrieve them yourself when the target org does not have them.
 
-Then commit the files as usual (for example with [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)). To activate the agent after its deployment, add an \`agent-activate\` deployment action.
+Then commit the files as usual (for example with [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)). After the deployment, sfdx-hardis activates the deployed version (\`agentAutoActivate\`, on by default).
 
-The org must be on API 68.0 or above. To keep the previous types (\`Bot\`, \`BotVersion\`, \`AiAuthoringBundle\`) while an org of your pipeline is still on API 67.0, see [Agentforce agents in CI/CD](${AGENT_DOC_URL}).
+The org and the \`sourceApiVersion\` of \`sfdx-project.json\` must be on API 68.0 or above: below, Salesforce returns no agent file. To keep the previous types (\`Bot\`, \`BotVersion\`, \`AiAuthoringBundle\`) while an org of your pipeline is still on API 67.0, see [Agentforce agents in CI/CD](${AGENT_DOC_URL}).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
@@ -125,11 +130,21 @@ In agent mode:
     if (!isApiVersionAtLeast(orgApiVersion)) {
       throw new SfError(t('agentRetrieveRequiresApi68', { org: username, apiVersion: orgApiVersion, docUrl: AGENT_DOC_URL }));
     }
+    // sfdx-project.json sourceApiVersion below 68.0 makes the retrieve return nothing
+    const retrieveApiVersion = await resolveDeployApiVersion({ conn });
+    if (retrieveApiVersion && !isApiVersionAtLeast(retrieveApiVersion)) {
+      throw new SfError(t('agentRetrieveSourceApiVersionTooLow', { apiVersion: retrieveApiVersion.toFixed(1), docUrl: AGENT_DOC_URL }));
+    }
 
     // 2. Select the agent and its version
     uxLog('action', this, c.cyan(t('listingAgentsOfOrg', { org: c.green(username) })));
     const versions = await listOrgAgentVersions(conn);
     if (versions.length === 0) {
+      // An agent built in Agentforce Builder is only an authoring bundle until a version is committed
+      const drafts = await listOrgAuthoringBundleNames(conn);
+      if (drafts.length > 0) {
+        throw new SfError(t('agentDraftNotCommitted', { org: username, drafts: drafts.join(', ') }));
+      }
       throw new SfError(t('noAgentFoundInOrg', { org: username }));
     }
     const agentName = await this.selectAgentName(flags.name, versions, headless);
@@ -150,6 +165,10 @@ In agent mode:
       ' --json';
     const retrieveRes = await execSfdxJson(retrieveCommand, this, { fail: true, output: false, debug: this.debugMode });
     const retrievedFiles: any[] = retrieveRes?.result?.files || [];
+    const failedFiles = retrievedFiles.filter((file) => file?.state === 'Failed');
+    if (failedFiles.length > 0) {
+      throw new SfError(t('agentRetrieveFailed', { agentName: selected.agentName, errors: failedFiles.map((file) => file.error || file.fullName).join('\n') }));
+    }
     const retrievedComponents = buildAgentPackageXmlContent(retrievedFiles, selected.agentName);
     const componentRows = Object.keys(retrievedComponents).flatMap((type) => retrievedComponents[type].map((member) => ({ Type: type, Member: member })));
     await uxLogTableWithReport(this, componentRows, ['Type', 'Member'], { fileNamePrefix: 'agent-retrieved-components', fileTitle: 'Retrieved agent components' });
@@ -172,6 +191,13 @@ In agent mode:
       uxLog('warning', this, c.yellow(t('agentMissingDependenciesHint')));
     }
 
+    // 6. A service agent runs as a user of the org it was retrieved from
+    const botUsers = await readAgentBotUsers([selected.agentName]);
+    const botUserRuleExists = botUsers.length > 0 && (await hasBotUserReplacementRule());
+    for (const item of botUserRuleExists ? [] : botUsers) {
+      uxLog('warning', this, c.yellow(t('agentBotUserIsOrgSpecific', { agentName: item.agentName, botUser: item.botUser, file: item.file, docUrl: AGENT_DOC_URL })));
+    }
+
     uxLog('success', this, c.green(t('agentRetrieved', { agentName: c.bold(selected.agentName), version: selected.version })));
     return {
       agentName: selected.agentName,
@@ -179,6 +205,7 @@ In agent mode:
       retrievedComponents: componentRows.map((row) => ({ type: row.Type, name: row.Member })),
       addedToPackageXml: added.map((item) => ({ type: item.type, name: item.member })),
       missingDependencies: missingReferences.map((reference) => ({ ...reference })),
+      botUsers: botUsers.map((item) => ({ ...item })),
     };
   }
 

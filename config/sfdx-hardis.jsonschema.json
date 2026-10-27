@@ -477,6 +477,14 @@
       "title": "Flow deletion retry delay (ms)",
       "type": "integer"
     },
+    "agentAutoActivate": {
+      "$id": "#/properties/agentAutoActivate",
+      "default": true,
+      "description": "After a deployment, activate the Agentforce agent versions (AiAgentDefinitionVersion) it deployed: the highest version of each agent of the package.xml. Set to false to activate agents yourself, for example with agent-activate deployment actions.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/#3-activate-the-agent",
+      "title": "Activate deployed Agentforce agents",
+      "type": "boolean"
+    },
     "ahaHost": {
       "$id": "#/properties/ahaHost",
       "description": "Host of your Aha! account. Example: mycompany.aha.io",

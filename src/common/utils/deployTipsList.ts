@@ -28,6 +28,16 @@ function listAllTips() {
 `,
     },
     {
+      name: "agent-user-no-access",
+      label: "Agent running user has no access to the agent",
+      expressionRegex: [/Error (.*) User doesn't have access to agent/gm],
+      tip: `The running user of agent {1} (botUser in its AiAgentDefinition) exists in the target org, but cannot run agents
+- Assign the permission set group AgentforceServiceAgentUserPsg (Agentforce Service Agent User) to this user in the target org
+- The user must have the profile Einstein Agent User
+- Each org needs its own user: write it with a replacement rule (botUser, default_agent_user), for example from a CI/CD variable. See ${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/#the-running-user-of-a-service-agent
+`,
+    },
+    {
       name: "can-not-change-to-formula-field",
       label: "Can not change field type to a formula field",
       expressionRegex: [/Error (.*) Cannot update a field from a Formula to something else/gm],

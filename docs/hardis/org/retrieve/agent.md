@@ -15,11 +15,12 @@ Key functionalities:
 - **Agent and version selection:** Lists the agents of the org and their versions with their status, and proposes the latest version.
 - **Retrieval with dependencies:** Retrieves the selected version and what it uses in the local project.
 - **package.xml update:** Adds every retrieved component to `manifest/package.xml`, always with the whole `AiAgentDefinition`: the first deployment of an agent to an org needs it.
+- **Running user warning:** A service agent runs as a user of its org (`botUser`). The command warns when the retrieved agent has one: add a replacement rule that writes the user of each org.
 - **Missing dependencies report:** Lists the custom objects, custom fields and Data 360 objects that the agent names and that the project does not hold. The CLI does not retrieve them: retrieve them yourself when the target org does not have them.
 
-Then commit the files as usual (for example with [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)). To activate the agent after its deployment, add an `agent-activate` deployment action.
+Then commit the files as usual (for example with [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)). After the deployment, sfdx-hardis activates the deployed version (`agentAutoActivate`, on by default).
 
-The org must be on API 68.0 or above. To keep the previous types (`Bot`, `BotVersion`, `AiAuthoringBundle`) while an org of your pipeline is still on API 67.0, see [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
+The org and the `sourceApiVersion` of `sfdx-project.json` must be on API 68.0 or above: below, Salesforce returns no agent file. To keep the previous types (`Bot`, `BotVersion`, `AiAuthoringBundle`) while an org of your pipeline is still on API 67.0, see [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
 
 <details markdown="1">
 <summary>Technical explanations</summary>
