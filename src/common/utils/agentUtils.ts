@@ -353,6 +353,27 @@ async function warnWhenDeployApiVersionTooLow(packageXmlFile: string, conn: Conn
   }
 }
 
+// The agent deploys, but Salesforce refuses to activate it while its botUser is not a user of the org
+async function warnWhenBotUserMissingInTargetOrg(agentNames: string[], conn: Connection, commandThis: any): Promise<void> {
+  const botUsers = await readAgentBotUsers(agentNames);
+  if (botUsers.length === 0 || (await hasBotUserReplacementRule())) {
+    return;
+  }
+  const usernames = [...new Set(botUsers.map((item) => item.botUser))];
+  let existing: Set<string>;
+  try {
+    const result = await soqlQuery(`SELECT Username FROM User WHERE Username IN (${usernames.map((username) => `'${username.replace(/'/g, "\\'")}'`).join(',')})`, conn);
+    existing = new Set((result.records || []).map((record: any) => String(record.Username).toLowerCase()));
+  } catch (e: any) {
+    uxLog('log', commandThis, c.grey(`Unable to check the users of the agents: ${e?.message || e}`));
+    return;
+  }
+  for (const item of botUsers.filter((botUser) => !existing.has(botUser.botUser.toLowerCase()))) {
+    uxLog('warning', commandThis, c.yellow(t('agentBotUserMissingInTargetOrg', { agentName: item.agentName, botUser: item.botUser, file: item.file, docUrl: AGENT_DOC_URL })));
+  }
+}
+
+
 // Agent versions are committed in a developer sandbox only. A version the target org has and the project
 // does not was committed in that org: its number will be taken again by the next version of the sandbox.
 async function warnWhenVersionsCommittedOutsideProject(agentNames: string[], orgVersions: AgentVersionInfo[], commandThis: any): Promise<void> {
@@ -376,27 +397,6 @@ async function warnWhenVersionsCommittedOutsideProject(agentNames: string[], org
     uxLog('warning', commandThis, c.yellow(t('agentVersionsCommittedOutsideProject', { agentName, versions: versions.sort((a, b) => a - b).join(', '), docUrl: AGENT_DOC_URL })));
   }
 }
-
-// The agent deploys, but Salesforce refuses to activate it while its botUser is not a user of the org
-async function warnWhenBotUserMissingInTargetOrg(agentNames: string[], conn: Connection, commandThis: any): Promise<void> {
-  const botUsers = await readAgentBotUsers(agentNames);
-  if (botUsers.length === 0 || (await hasBotUserReplacementRule())) {
-    return;
-  }
-  const usernames = [...new Set(botUsers.map((item) => item.botUser))];
-  let existing: Set<string>;
-  try {
-    const result = await soqlQuery(`SELECT Username FROM User WHERE Username IN (${usernames.map((username) => `'${username.replace(/'/g, "\\'")}'`).join(',')})`, conn);
-    existing = new Set((result.records || []).map((record: any) => String(record.Username).toLowerCase()));
-  } catch (e: any) {
-    uxLog('log', commandThis, c.grey(`Unable to check the users of the agents: ${e?.message || e}`));
-    return;
-  }
-  for (const item of botUsers.filter((botUser) => !existing.has(botUser.botUser.toLowerCase()))) {
-    uxLog('warning', commandThis, c.yellow(t('agentBotUserMissingInTargetOrg', { agentName: item.agentName, botUser: item.botUser, file: item.file, docUrl: AGENT_DOC_URL })));
-  }
-}
-
 
 // Status of each version, keyed by lowercase "Agent#n". Empty when the org does not answer the query.
 async function readAgentVersionStatuses(conn: Connection): Promise<Map<string, string>> {

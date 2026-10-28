@@ -66,6 +66,8 @@ The project keeps every version you retrieved: `aiAgentDefinitionVersions/My_Age
 
 Each org of the pipeline then gets the new version, which is activated, and Salesforce deactivates the previous one. The older versions stay in the project and in the orgs. To go back to one of them, activate it with an [agent-activate deployment action](#3-activate-the-agent).
 
+Keep the folders of the older versions and of their authoring bundles in the project. Deleting an authoring bundle from an org deletes the whole agent with all its versions, so a Pull Request that deletes one may generate a destructive change that removes the agent from the orgs. The warning about versions committed outside the project also reads them.
+
 !!! warning "Rule: commit agent versions in a developer sandbox only"
     Version numbers are given by the org where the version is committed. A version committed in Agentforce Builder of another org (integration, uat, production) takes a number that the next version of the developer sandbox takes again, and that version is then never deployed there: the org already has a version with this number. The deployment check and deployment jobs warn when the target org has versions of an agent that the project does not have.
 
@@ -119,7 +121,7 @@ To keep the usernames in git instead, replace `secret` with `values`, one userna
 When the built-in rule is off and no rule of yours writes the user, sfdx-hardis warns:
 
 - at retrieve time, when the agent has a `botUser`
-- in the deployment check job, when the target org has no user with this username
+- in the deployment check and deployment jobs, when the target org has no user with this username
 
 When activation fails for this reason, the error of the action points to this section.
 
@@ -129,7 +131,7 @@ A deployed version is not active. sfdx-hardis activates it for you: after a succ
 
 - The deployment check job lists the activation in the Pull Request comment, with the other post-deployment actions.
 - A version that is already active is left as it is.
-- When the deployed version is not found in the target org, or Salesforce refuses to activate it, the action fails and the Pull Request comment says so. The metadata is deployed anyway.
+- When the deployed version is not found in the target org, or Salesforce refuses to activate it, the action fails, and so does the deployment job: the metadata is in the org, and the Pull Request comment shows the error of the action.
 
 To activate agents yourself, set `agentAutoActivate: false` in `config/.sfdx-hardis.yml` (or in the config of one branch only, to keep production for a manual activation).
 
