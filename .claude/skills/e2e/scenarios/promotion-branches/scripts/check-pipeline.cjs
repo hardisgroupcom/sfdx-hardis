@@ -237,6 +237,26 @@ const same = (a, b) => a.length === b.length && a.every((n, i) => n === b[i]);
       .sort((a, b) => a - b);
     const counter = diagram.counters[sanitize(org.name) + "Branch"];
     observed.counters[org.name] = counter ? counter.count : 0;
+    // detectManualCherryPicks: the pill of each visible row, dumped only (manual-cherry-picks scenario)
+    const flags = {};
+    for (const pr of visiblePullRequests(window)) {
+      const flag = pr.manualCherryPick
+        ? `cherry-picked into ${pr.manualCherryPick.targetBranch}${pr.manualCherryPick.releasePullRequest ? " via !" + pr.manualCherryPick.releasePullRequest : ""}`
+        : pr.partiallyCherryPicked
+          ? `partially in ${pr.partiallyCherryPicked.targetBranch}`
+          : pr.probablyCherryPicked
+            ? `probably in ${pr.probablyCherryPicked.targetBranch}`
+            : pr.carriesManualCherryPicks
+              ? "carrier"
+              : "";
+      if (flag) {
+        flags[Number(pr.number)] = flag;
+      }
+    }
+    if (Object.keys(flags).length > 0) {
+      observed.flags = observed.flags || {};
+      observed.flags[org.name] = flags;
+    }
   }
   for (const link of data.links || []) {
     const edge = diagram.edges.find(
