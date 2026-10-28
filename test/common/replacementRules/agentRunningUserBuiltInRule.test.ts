@@ -10,7 +10,7 @@ import {
 import { findBuiltInReplacementRule } from '../../../src/common/replacementRules/builtIn/builtInReplacementRules.js';
 
 const SOURCE_USER = 'my_agent@00dsource.ext';
-const ORG_ID = '00DTARGET0000001';
+const ORG_ID = '00D000000000042';
 
 function buildRule(enabled = true): AgentRunningUserBuiltInRule {
   const builtIn = findBuiltInReplacementRule('builtin-agent-running-user')!;
@@ -57,7 +57,7 @@ describe('AgentRunningUserBuiltInRule', () => {
   });
 
   it('builds a base username of the target org without LIKE wildcards', () => {
-    expect(buildAgentUserBaseUsername('My_Agent', ORG_ID)).to.equal('my-agent@00dtarget0000001.ext');
+    expect(buildAgentUserBaseUsername('My_Agent', ORG_ID)).to.equal('my-agent@00d000000000042.ext');
   });
 
   it('lists the agents of the deployment with the usernames of their files', async () => {
@@ -77,14 +77,14 @@ describe('AgentRunningUserBuiltInRule', () => {
 
   it('uses the agent user created at a previous deployment, in the definition and the bundles', async () => {
     const rule = buildRule();
-    const conn = fakeConnection({ users: [], agentUsers: ['my-agent.a1b2c3d4e5f6@00dtarget0000001.ext'] });
+    const conn = fakeConnection({ users: [], agentUsers: ['my-agent.a1b2c3d4e5f6@00d000000000042.ext'] });
     await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn, write: true, checkOnly: false });
-    expect(conn.queries.some((soql: string) => soql.includes("LIKE 'my-agent.%@00dtarget0000001.ext'"))).to.equal(true);
+    expect(conn.queries.some((soql: string) => soql.includes("LIKE 'my-agent.%@00d000000000042.ext'"))).to.equal(true);
     const xml = rule.applyToText(`<AiAgentDefinition><botUser>${SOURCE_USER}</botUser></AiAgentDefinition>`);
     expect(xml.status).to.equal('changed');
-    expect(xml.content).to.contain('<botUser>my-agent.a1b2c3d4e5f6@00dtarget0000001.ext</botUser>');
+    expect(xml.content).to.contain('<botUser>my-agent.a1b2c3d4e5f6@00d000000000042.ext</botUser>');
     const script = rule.applyToText(`    default_agent_user: "${SOURCE_USER}"`);
-    expect(script.content).to.equal('    default_agent_user: "my-agent.a1b2c3d4e5f6@00dtarget0000001.ext"');
+    expect(script.content).to.equal('    default_agent_user: "my-agent.a1b2c3d4e5f6@00d000000000042.ext"');
   });
 
   it('keeps the username of git when the target org has this user', async () => {
@@ -117,7 +117,7 @@ describe('AgentRunningUserBuiltInRule', () => {
 
   it('does nothing when turned off', async () => {
     const rule = buildRule(false);
-    const conn = fakeConnection({ agentUsers: ['my-agent.a1b2c3d4e5f6@00dtarget0000001.ext'] });
+    const conn = fakeConnection({ agentUsers: ['my-agent.a1b2c3d4e5f6@00d000000000042.ext'] });
     await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn, write: true });
     expect(conn.queries).to.deep.equal([]);
     expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`).status).to.equal('unchanged');

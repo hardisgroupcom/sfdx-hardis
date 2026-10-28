@@ -117,12 +117,18 @@ export async function listAgentsWithRunningUser(packageXmlFiles?: string[], proj
 
 /** True when a rule of the project (config, a branch file or the issue) writes botUser or default_agent_user. */
 export async function hasOwnRunningUserRule(): Promise<boolean> {
+  const rules = await readRulesOfEveryPlace();
+  return rules.some((rule) => rule?.enabled !== false && !rule?.builtIn && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`));
+}
+
+/** Rules of the project config, of every branch file and of the issue, before they are merged. */
+export async function readRulesOfEveryPlace(): Promise<any[]> {
   const rules: any[] = [...(await readProjectReplacementRules())];
   for (const branch of await readAllBranchReplacementRules()) {
     rules.push(...branch.rules);
   }
   rules.push(...((await readIssueRules({ useCache: true })).rules || []));
-  return rules.some((rule) => rule?.enabled !== false && !rule?.builtIn && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`));
+  return rules;
 }
 
 /** Base username given to "sf org create agent-user", which adds a unique id before the @ */

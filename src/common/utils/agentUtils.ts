@@ -9,9 +9,8 @@ import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
 import { t } from './i18n.js';
 import { CONSTANTS } from '../../config/index.js';
 import { resolveDeployApiVersion } from '../replacementRules/engine/ruleEngine.js';
-import { findSkipReplacementRulesFile, readAllBranchReplacementRules, readProjectReplacementRules } from '../replacementRules/config/ruleConfig.js';
-import { readIssueRules } from '../replacementRules/config/issueRulesStore.js';
-import { hasOwnRunningUserRule } from '../replacementRules/agentRunningUserBuiltInRule.js';
+import { findSkipReplacementRulesFile } from '../replacementRules/config/ruleConfig.js';
+import { hasOwnRunningUserRule, readRulesOfEveryPlace } from '../replacementRules/agentRunningUserBuiltInRule.js';
 
 // First API version where agents are AiAgentDefinition and AiAgentDefinitionVersion
 export const AGENT_DEFINITION_MIN_API_VERSION = 68.0;
@@ -390,11 +389,7 @@ export async function hasBotUserReplacementRule(): Promise<boolean> {
   if (await hasOwnRunningUserRule()) {
     return true;
   }
-  const rules: any[] = [...(await readProjectReplacementRules())];
-  for (const branch of await readAllBranchReplacementRules()) {
-    rules.push(...branch.rules);
-  }
-  rules.push(...((await readIssueRules({ useCache: true })).rules || []));
+  const rules = await readRulesOfEveryPlace();
   const builtInTurnedOff = rules.some((rule) => rule?.id === AGENT_RUNNING_USER_RULE_ID && rule?.enabled === false);
   return !builtInTurnedOff && (await findSkipReplacementRulesFile(null)) === null;
 }
