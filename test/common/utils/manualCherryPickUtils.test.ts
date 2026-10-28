@@ -66,7 +66,7 @@ describe('manualCherryPickUtils', () => {
     });
 
     it('reads the commits a squashed Pull Request held: their own SHA and their trailers', () => {
-      const release = pullRequest(414, 'release/uat-DI2EIRISCRMOA-1467');
+      const release = pullRequest(414, 'release/uat-PROJ-1467');
       const evidence = buildTargetSideEvidence([], [{
         pullRequest: release,
         commits: [
@@ -78,7 +78,7 @@ describe('manualCherryPickUtils', () => {
       expect(evidence.bySourceSha.get(sha('a'))).to.deep.include({ signal: 'pull-request-commits', targetCommit: sha('p') });
       expect(evidence.bySourceSha.get(sha('a'))?.pullRequest).to.deep.equal({
         idStr: '!414',
-        sourceBranch: 'release/uat-DI2EIRISCRMOA-1467',
+        sourceBranch: 'release/uat-PROJ-1467',
         webUrl: 'https://gitlab.example.com/mr/414',
         number: 414,
         commits: [],
@@ -118,17 +118,17 @@ describe('manualCherryPickUtils', () => {
       expect(match.status).to.equal('cherry-picked');
     });
 
-    it('reports a candidate only part of whose commits travelled as partial, never as moved', () => {
+    it('reports a candidate only part of whose commits traveled as partial, never as moved', () => {
       const evidence = buildTargetSideEvidence([{ sha: sha('t'), message: `(cherry picked from commit ${sha('1')})` }], []);
       const match = matchCandidate(sha('c'), [{ sha: sha('1'), subject: 'a' }, { sha: sha('2'), subject: 'b' }], evidence, noSubjects);
       expect(match).to.deep.include({ status: 'partial', foundCommits: [sha('1')], totalCommits: 2 });
     });
 
     it('reports a unique title match as probable only', () => {
-      const evidence = buildTargetSideEvidence([{ sha: sha('t'), message: 'DI2EIRISCRMOA-12 / Feature / Thing\n\nbody' }], []);
-      const subjects = new Map([['DI2EIRISCRMOA-12 / Feature / Thing', 1]]);
-      const match = matchCandidate(sha('c'), [{ sha: sha('1'), subject: 'DI2EIRISCRMOA-12 / Feature / Thing' }], evidence, subjects);
-      expect(match).to.deep.equal({ status: 'probable', targetCommit: sha('t'), subject: 'DI2EIRISCRMOA-12 / Feature / Thing' });
+      const evidence = buildTargetSideEvidence([{ sha: sha('t'), message: 'PROJ-12 / Feature / Thing\n\nbody' }], []);
+      const subjects = new Map([['PROJ-12 / Feature / Thing', 1]]);
+      const match = matchCandidate(sha('c'), [{ sha: sha('1'), subject: 'PROJ-12 / Feature / Thing' }], evidence, subjects);
+      expect(match).to.deep.equal({ status: 'probable', targetCommit: sha('t'), subject: 'PROJ-12 / Feature / Thing' });
     });
 
     it('does not guess from a title two candidates share', () => {
