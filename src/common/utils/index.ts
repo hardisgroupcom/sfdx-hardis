@@ -600,13 +600,17 @@ async function runGitWithCredentialsRetry(
 }
 
 const GIT_REF_LOCK_ERROR = /cannot lock ref|Unable to create '[^']*\.lock'|unable to update local ref/i;
+// The same words for a conflict no wait can solve: a ref named like a folder of other refs
+// (origin/feature and origin/feature/x), which only a prune or a rename fixes
+const GIT_REF_CONFLICT_ERROR = /exists; cannot create|cannot process '[^']*' and '[^']*' at the same time/i;
 
 export async function retryWhileRefLocked<T>(run: () => Promise<T>, attempts = 4, delayMs = 1500): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
       return await run();
     } catch (error: any) {
-      if (attempt >= attempts || !GIT_REF_LOCK_ERROR.test(String(error?.message || error))) {
+      const message = String(error?.message || error);
+      if (attempt >= attempts || !GIT_REF_LOCK_ERROR.test(message) || GIT_REF_CONFLICT_ERROR.test(message)) {
         throw error;
       }
       await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));

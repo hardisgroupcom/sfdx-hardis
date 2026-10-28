@@ -9,7 +9,7 @@ import fs from '../utils/fsUtils.js';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
 import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
-import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
+import { CommentThreadStatus, GitCommitRef, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus, PullRequestTimeRangeType } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
 import { SfError } from "@salesforce/core";
@@ -583,6 +583,7 @@ ${this.getPipelineVariablesConfig()}
     pullRequestStatus?: "open" | "merged" | "abandoned",
     targetBranch?: string,
     minDate?: Date,
+    minDateOn?: 'created' | 'merged',
     withoutComments?: boolean
   } = {}): Promise<CommonPullRequestInfo[] | null> {
     // Get Azure Git API
@@ -619,6 +620,11 @@ ${this.getPipelineVariablesConfig()}
     }
     if (filters.minDate) {
       queryConstraint.minTime = filters.minDate
+      // minTime applies to the creation date unless told otherwise: a completed Pull Request is
+      // closed when it is merged
+      if (filters.minDateOn === 'merged') {
+        queryConstraint.queryTimeRangeType = PullRequestTimeRangeType.Closed
+      }
     }
     // Process request
     uxLog("action", this, c.cyan(t('callingAzureApiToListPullRequests')));
@@ -778,25 +784,66 @@ ${this.getPipelineVariablesConfig()}
     }
     try {
       const azureGitApi = await this.azureApi.getGitApi();
-      // Azure DevOps keeps the commits of a squashed Pull Request. The listing shortens long
-      // messages (commentTruncated), which only cuts the body: a cherry-pick trailer would then be
-      // lost, so those commits are read again in full
-      const commits = await azureGitApi.getPullRequestCommits(process.env.BUILD_REPOSITORY_ID, pullRequestId, process.env.SYSTEM_TEAMPROJECT);
-      const result: PullRequestCommitInfo[] = [];
-      for (const commit of commits || []) {
+      const repositoryId = process.env.BUILD_REPOSITORY_ID;
+      const project = process.env.SYSTEM_TEAMPROJECT;
+      // Azure DevOps keeps the commits of a squashed Pull Request, served by pages
+      const commits = await this.listAllPullRequestCommitRefs(azureGitApi, repositoryId, pullRequestId, project);
+      // The listing shortens long messages (commentTruncated), which only cuts the body: a
+      // cherry-pick trailer would then be lost, so those commits are read again in full
+      const results = await mapInAdaptiveBatches(commits, async (commit) => {
         let message = commit.comment || '';
         let parentShas = commit.parents || [];
         if (commit.commentTruncated && commit.commitId) {
-          const full = await azureGitApi.getCommit(commit.commitId, process.env.BUILD_REPOSITORY_ID, process.env.SYSTEM_TEAMPROJECT);
+          const full = await azureGitApi.getCommit(commit.commitId, repositoryId, project);
           message = full?.comment || message;
           parentShas = full?.parents || parentShas;
         }
-        result.push({ sha: commit.commitId || '', message, parentShas });
-      }
-      return result.filter((commit) => commit.sha);
+        return { sha: commit.commitId || '', message, parentShas };
+        // A few at a time: the Pull Requests themselves are already read in parallel
+      }, { sizes: [8, 4, 1] });
+      return results.filter((commit): commit is PullRequestCommitInfo => !!commit && !!commit.sha);
     } catch (err) {
       uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPullRequestCommitsNotListed', { number: pullRequestId, message: String(err) })));
       return null;
+    }
+  }
+
+  /**
+   * Every commit of a Pull Request. getPullRequestCommits of azure-devops-node-api only returns
+   * the first page (about 100 commits) and exposes neither $top nor the continuation token, so
+   * the same REST resource is called with them. Falls back to the first page if that call fails.
+   */
+  private async listAllPullRequestCommitRefs(azureGitApi: any, repositoryId: string, pullRequestId: number, project: string | undefined): Promise<GitCommitRef[]> {
+    const pages: GitCommitRef[] = [];
+    try {
+      let continuationToken: string | undefined = undefined;
+      for (let page = 0; page < AzureDevopsProvider.PULL_REQUEST_COMMITS_MAX_PAGES; page++) {
+        const queryParameters: Record<string, any> = { '$top': AzureDevopsProvider.PULL_REQUEST_COMMITS_PAGE_SIZE };
+        if (continuationToken) {
+          queryParameters.continuationToken = continuationToken;
+        }
+        const versioning = await azureGitApi.vsoClient.getVersioningData(
+          "7.1",
+          "git",
+          AzureDevopsProvider.PULL_REQUEST_COMMITS_LOCATION_ID,
+          { project, repositoryId, pullRequestId },
+          queryParameters,
+        );
+        const response = await azureGitApi.rest.get(versioning.requestUrl, azureGitApi.createRequestOptions('application/json', versioning.apiVersion));
+        const raw = response?.result;
+        const items: GitCommitRef[] = Array.isArray(raw) ? raw : Array.isArray(raw?.value) ? raw.value : [];
+        pages.push(...items);
+        const headers = response?.headers || {};
+        continuationToken = headers['x-ms-continuationtoken'] || headers['X-MS-ContinuationToken'] || undefined;
+        if (!continuationToken || items.length === 0) {
+          return pages;
+        }
+      }
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPullRequestCommitsTruncated', { number: pullRequestId, count: pages.length })));
+      return pages;
+    } catch (err) {
+      uxLog("other", this, `[Azure Integration] Paged listing of the commits of Pull Request ${pullRequestId} failed, first page only: ${String(err)}`);
+      return (await azureGitApi.getPullRequestCommits(repositoryId, pullRequestId, project)) || [];
     }
   }
 
@@ -1734,6 +1781,10 @@ ${getBannerMarkdownAndLink()}
   private static readonly BUILDS_PAGE_SIZE = 1000;
 
   private static readonly PULL_REQUESTS_PAGE_SIZE = 100;
+  // Pull Request commits: the REST resource of getPullRequestCommits, read page by page
+  private static readonly PULL_REQUEST_COMMITS_LOCATION_ID = "52823034-34a8-4576-922c-8d8b77e9e4c4";
+  private static readonly PULL_REQUEST_COMMITS_PAGE_SIZE = 500;
+  private static readonly PULL_REQUEST_COMMITS_MAX_PAGES = 20;
 
   // Build API getBuilds: the completed builds of this repository finished since minDate, oldest
   // first. azure-devops-node-api does not return the continuation token of the REST API (it comes

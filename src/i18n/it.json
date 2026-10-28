@@ -2144,6 +2144,7 @@
   "gitProviderPrCreationRetry": "Nuovo tentativo tra {{seconds}}s ({{attempt}}/{{attempts}}): il git provider potrebbe non aver ancora indicizzato il branch appena pushato",
   "gitProviderPrOtherRepository": "La Pull Request {{id}} appartiene a un altro repository dell'organizzazione e viene ignorata",
   "gitProviderPullRequestCommitsNotListed": "Impossibile elencare i commit della Pull Request {{number}}: {{message}}",
+  "gitProviderPullRequestCommitsTruncated": "Pull Request {{number}}: sono stati letti solo i primi {{count}} commit, le User Story incluse con cherry-pick negli altri non vengono rilevate",
   "gitProviderRepositoryNoToken": "Nessun token del provider git trovato per leggere {{repository}}. Imposta {{tokenVariable}}.",
   "gitProviderRepositoryNotFound": "Repository {{repository}} non trovato nel progetto {{project}}",
   "gitProviderRepositoryTokenWrongProvider": "Il token del provider git di questo repository è per {{currentProvider}}, mentre {{repository}} si trova su {{targetProvider}}. Imposta {{tokenVariable}}.",

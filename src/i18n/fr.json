@@ -2144,6 +2144,7 @@
   "gitProviderPrCreationRetry": "Nouvelle tentative dans {{seconds}}s ({{attempt}}/{{attempts}}) : le fournisseur git n'a peut-être pas encore indexé la branche qui vient d'être poussée",
   "gitProviderPrOtherRepository": "La Pull Request {{id}} appartient à un autre dépôt de l'organisation et est ignorée",
   "gitProviderPullRequestCommitsNotListed": "Impossible de lister les commits de la Pull Request {{number}} : {{message}}",
+  "gitProviderPullRequestCommitsTruncated": "Pull Request {{number}} : seuls ses {{count}} premiers commits ont pu être lus, les User Stories cherry-pickées dans les autres ne sont pas détectées",
   "gitProviderRepositoryNoToken": "Aucun token de fournisseur git trouvé pour lire {{repository}}. Définissez {{tokenVariable}}.",
   "gitProviderRepositoryNotFound": "Repository {{repository}} introuvable dans le projet {{project}}",
   "gitProviderRepositoryTokenWrongProvider": "Le token du fournisseur git de ce repository est celui de {{currentProvider}}, alors que {{repository}} est sur {{targetProvider}}. Définissez {{tokenVariable}}.",

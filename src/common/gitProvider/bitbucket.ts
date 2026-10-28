@@ -644,7 +644,7 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   public async listPullRequests(
-    filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date } = {},
+    filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date; minDateOn?: 'created' | 'merged' } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     const workspace = this.workspace;
     const repoSlug = this.repoSlug;
@@ -698,11 +698,13 @@ export class BitbucketProvider extends GitProviderRoot {
         prs = prs.filter((pr: any) => (pr?.state || "") === state);
       }
 
-      // Filter by minDate
+      // Filter by minDate, on creation or on merge. Bitbucket gives no merge date: updated_on is
+      // the closest one, never older than the merge
       if (filters.minDate) {
+        const dateField = filters.minDateOn === "merged" ? "updated_on" : "created_on";
         prs = prs.filter((pr: any) => {
-          const createdOn = pr.created_on ? new Date(pr.created_on) : null;
-          return createdOn && createdOn >= filters.minDate!;
+          const date = pr[dateField] ? new Date(pr[dateField]) : null;
+          return date && date >= filters.minDate!;
         });
       }
 

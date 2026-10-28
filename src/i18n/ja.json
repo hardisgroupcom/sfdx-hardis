@@ -2142,6 +2142,7 @@
   "gitProviderPrCreationRetry": "{{seconds}} 秒後に再試行します（{{attempt}}/{{attempts}}）: git プロバイダーが push されたばかりのブランチをまだ認識していない可能性があります",
   "gitProviderPrOtherRepository": "Pull Request {{id}} は組織内の別のリポジトリに属しているため無視されます",
   "gitProviderPullRequestCommitsNotListed": "Pull Request {{number}} の commit を一覧表示できません: {{message}}",
+  "gitProviderPullRequestCommitsTruncated": "Pull Request {{number}}: 最初の {{count}} 件の commit しか読み取れませんでした。残りの commit で cherry-pick されたユーザーストーリーは検出されません",
   "gitProviderRepositoryNoToken": "{{repository}}を読み取るためのGitプロバイダーのトークンが見つかりません。{{tokenVariable}}を設定してください。",
   "gitProviderRepositoryNotFound": "プロジェクト{{project}}にリポジトリ{{repository}}が見つかりません",
   "gitProviderRepositoryTokenWrongProvider": "このリポジトリのGitプロバイダーのトークンは{{currentProvider}}用ですが、{{repository}}は{{targetProvider}}にあります。{{tokenVariable}}を設定してください。",

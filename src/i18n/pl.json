@@ -2144,6 +2144,7 @@
   "gitProviderPrCreationRetry": "Kolejna próba za {{seconds}}s ({{attempt}}/{{attempts}}): dostawca git mógł jeszcze nie zaindeksować właśnie wypchniętego brancha",
   "gitProviderPrOtherRepository": "Pull Request {{id}} należy do innego repozytorium organizacji i zostaje zignorowany",
   "gitProviderPullRequestCommitsNotListed": "Nie można wyświetlić listy commitów Pull Requesta {{number}}: {{message}}",
+  "gitProviderPullRequestCommitsTruncated": "Pull Request {{number}}: odczytano tylko pierwsze {{count}} commitów, User Stories przeniesione przez cherry-pick w pozostałych nie zostaną wykryte",
   "gitProviderRepositoryNoToken": "Nie znaleziono tokenu dostawcy git do odczytu {{repository}}. Należy ustawić {{tokenVariable}}.",
   "gitProviderRepositoryNotFound": "Nie znaleziono repozytorium {{repository}} w projekcie {{project}}",
   "gitProviderRepositoryTokenWrongProvider": "Token dostawcy git tego repozytorium jest dla {{currentProvider}}, a {{repository}} znajduje się w {{targetProvider}}. Należy ustawić {{tokenVariable}}.",

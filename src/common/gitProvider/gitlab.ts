@@ -604,7 +604,8 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async listPullRequests(
-    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    // minDateOn is accepted and needs nothing: updatedAfter is never older than the merge
+    filters: { status?: string; targetBranch?: string; minDate?: Date; minDateOn?: 'created' | 'merged' } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     if (!this.gitlabApi) {
       return null;

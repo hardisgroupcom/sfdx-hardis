@@ -5,10 +5,14 @@ import { GitProvider } from '../../../src/common/gitProvider/index.js';
 import type { CommonPullRequestInfo } from '../../../src/common/gitProvider/index.js';
 import {
   applyManualCherryPickMatches,
+  buildParentsIndex,
   buildTargetSideEvidence,
   computeIntroducedCommits,
+  describePullRequestCommits,
   extractCherryPickSources,
   matchCandidate,
+  splitPullRequestsByMergeKind,
+  targetSideLowerBound,
   type ManualCherryPickMatch,
 } from '../../../src/common/utils/manualCherryPickUtils.js';
 import { isManualCherryPickDetectionEnabled } from '../../../src/common/utils/promotionBranchUtils.js';
@@ -82,6 +86,9 @@ describe('manualCherryPickUtils', () => {
         webUrl: 'https://gitlab.example.com/mr/414',
         number: 414,
         commits: [],
+        // The merge commit and the -x pick are not work of its own
+        heldSourceBranchCommits: false,
+        ownCommits: 0,
       });
     });
 
@@ -97,6 +104,82 @@ describe('manualCherryPickUtils', () => {
         [{ pullRequest: pullRequest(9, 'release/x'), commits: [{ sha: sha('p'), message: `story\n\n(cherry picked from commit ${sha('a')})`, parentShas: [] }] }],
       );
       expect(evidence.bySourceSha.get(sha('a'))?.signal).to.equal('cherry-pick-trailer');
+    });
+
+    it('reads the trailers of the target branch older than the merge base, after everything else', () => {
+      // Picked into UAT, then UAT was back-merged into INT: the pick is before the merge base now
+      const older = [{ sha: sha('o'), message: `story\n\n(cherry picked from commit ${sha('a')})` }];
+      const alone = buildTargetSideEvidence([], [], { olderTargetCommits: older });
+      expect(alone.bySourceSha.get(sha('a'))).to.deep.equal({ signal: 'cherry-pick-trailer', targetCommit: sha('o') });
+      // Only a trailer: its title never makes a probable match
+      expect(alone.bySubject.size).to.equal(0);
+
+      // A Pull Request naming the same commit keeps being its carrier, as before
+      const both = buildTargetSideEvidence(
+        [],
+        [{ pullRequest: pullRequest(9, 'release/x'), commits: [{ sha: sha('p'), message: `story\n\n(cherry picked from commit ${sha('a')})`, parentShas: [] }] }],
+        { olderTargetCommits: older },
+      );
+      expect(both.bySourceSha.get(sha('a'))?.signal).to.equal('pull-request-commits');
+    });
+
+    it('tells a Pull Request branched from the source branch with work of its own from a release branch of picks', () => {
+      const sourceWindowShas = new Set([sha('c'), sha('d')]);
+      // A hotfix branch started from INT: two commits of INT, one fix of its own
+      expect(describePullRequestCommits([
+        { sha: sha('c'), message: 'Merge story', parentShas: [sha('1'), sha('2')] },
+        { sha: sha('d'), message: 'story', parentShas: [sha('1')] },
+        { sha: sha('h'), message: 'hotfix', parentShas: [sha('d')] },
+      ], sourceWindowShas)).to.deep.equal({ heldSourceBranchCommits: true, ownCommits: 1 });
+      // A release branch of -x picks, with a merge of UAT to solve a conflict
+      expect(describePullRequestCommits([
+        { sha: sha('p'), message: `story\n\n(cherry picked from commit ${sha('d')})`, parentShas: [sha('1')] },
+        { sha: sha('q'), message: "Merge branch 'UAT'", parentShas: [sha('p'), sha('2')] },
+      ], sourceWindowShas)).to.deep.equal({ heldSourceBranchCommits: false, ownCommits: 0 });
+    });
+  });
+
+  describe('targetSideLowerBound', () => {
+    const day = 24 * 60 * 60 * 1000;
+
+    it('goes back to the oldest commit a candidate brings, a day before', () => {
+      const minDate = new Date('2026-10-20T00:00:00Z');
+      const introduced = new Map([[sha('c'), [{ sha: sha('f'), subject: 'f', date: '2026-10-10T00:00:00Z' }]]]);
+      expect(targetSideLowerBound(minDate, introduced)?.toISOString()).to.equal(new Date(Date.parse('2026-10-10T00:00:00Z') - day).toISOString());
+    });
+
+    it('never goes back more than 30 days before the oldest candidate, and needs a candidate date', () => {
+      const minDate = new Date('2026-10-20T00:00:00Z');
+      const introduced = new Map([[sha('c'), [{ sha: sha('f'), subject: 'f', date: '2025-01-01T00:00:00Z' }]]]);
+      expect(targetSideLowerBound(minDate, introduced)?.getTime()).to.equal(minDate.getTime() - 31 * day);
+      expect(targetSideLowerBound(null, introduced)).to.be.null;
+    });
+  });
+
+  describe('splitPullRequestsByMergeKind', () => {
+    const index = buildParentsIndex([
+      { sha: sha('m'), message: 'Merge', parents: [sha('1'), sha('2')] },
+      { sha: sha('s'), message: 'Squashed', parents: [sha('1')] },
+      { sha: sha('g'), message: 'Merge with squash', parents: [sha('1'), sha('s')] },
+    ]);
+
+    it('reads a merge commit from the local history, a squash from the provider', () => {
+      const merged = { ...pullRequest(1, 'release/a'), mergeCommitSha: sha('m') };
+      const squashed = { ...pullRequest(2, 'release/b'), mergeCommitSha: sha('s') };
+      // GitLab squash with a merge commit: two parents, the squash commit is the second one
+      const gitlabSquash = { ...pullRequest(3, 'release/c'), mergeCommitSha: sha('g'), squashCommitSha: sha('s') };
+      const unknown = { ...pullRequest(4, 'release/d'), mergeCommitSha: sha('u') };
+      const noCommit = pullRequest(5, 'release/e');
+      const { local, provider } = splitPullRequestsByMergeKind([merged, squashed, gitlabSquash, unknown, noCommit], index);
+      expect(local.map((entry) => entry.pullRequest.idNumber)).to.deep.equal([1]);
+      expect(provider.map((entry) => entry.idNumber)).to.deep.equal([2, 3, 4, 5]);
+    });
+
+    it('finds an abbreviated merge commit (Bitbucket) and gives its full SHA', () => {
+      const bitbucket = { ...pullRequest(6, 'release/f'), mergeCommitSha: sha('m').substring(0, 12) };
+      const { local } = splitPullRequestsByMergeKind([bitbucket], index);
+      expect(local).to.have.length(1);
+      expect(local[0].mergeCommit).to.equal(sha('m'));
     });
   });
 
@@ -158,7 +241,7 @@ describe('manualCherryPickUtils', () => {
       const partial = candidate(sha('b'), [2]);
       const probable = candidate(sha('c'), [3]);
       const matches = new Map<string, ManualCherryPickMatch>([
-        [sha('a'), { status: 'cherry-picked', evidence: { signal: 'pull-request-commits', targetCommit: sha('p'), pullRequest: { idStr: '!414', sourceBranch: 'release/uat-1467', webUrl: 'u', number: 414, commits: [sha('s')] } } }],
+        [sha('a'), { status: 'cherry-picked', evidence: { signal: 'pull-request-commits', targetCommit: sha('p'), pullRequest: { idStr: '!414', sourceBranch: 'release/uat-1467', webUrl: 'u', number: 414, commits: [sha('s')], heldSourceBranchCommits: false, ownCommits: 0 } } }],
         [sha('b'), { status: 'partial', foundCommits: [sha('1')], totalCommits: 2, evidence: { signal: 'cherry-pick-trailer', targetCommit: sha('t') } }],
         [sha('c'), { status: 'probable', targetCommit: sha('u'), subject: 'Thing' }],
       ]);
@@ -169,7 +252,11 @@ describe('manualCherryPickUtils', () => {
         branch: 'release/uat-1467',
         url: 'u',
         merged: true,
-        manualCherryPick: { signal: 'pull-request-commits', targetCommit: sha('p'), carrier: { pullRequest: 414, commits: [sha('s')] } },
+        manualCherryPick: {
+          signal: 'pull-request-commits',
+          targetCommit: sha('p'),
+          carrier: { pullRequest: 414, commits: [sha('s')], heldSourceBranchCommits: false, ownCommits: 0 },
+        },
       });
       expect(partial.alreadyPromotedBy).to.be.undefined;
       expect(toCandidateSummary(partial).partiallyCherryPicked).to.deep.equal({ foundCommits: [sha('1')], totalCommits: 2, branch: 'UAT', targetCommit: sha('t') });
@@ -207,6 +294,11 @@ describe('manualCherryPickUtils', () => {
       expect(result.get('g1')).to.deep.equal([{ sha: 'g1', subject: 'g1' }]);
       expect(result.get('zz')).to.deep.equal([]);
     });
+
+    it('keeps the committer date when the window gives it', () => {
+      const dated = [{ sha: 'g1', parents: ['b'], subject: 'g1', date: '2026-10-01T10:00:00+02:00' }];
+      expect(computeIntroducedCommits(dated, ['g1']).get('g1')).to.deep.equal([{ sha: 'g1', subject: 'g1', date: '2026-10-01T10:00:00+02:00' }]);
+    });
   });
 
   describe('retryWhileRefLocked', () => {
@@ -232,6 +324,21 @@ describe('manualCherryPickUtils', () => {
       }
       expect(thrown?.message).to.equal('Authentication failed');
       expect(otherCalls).to.equal(1);
+    });
+
+    it('does not wait on a ref named like a folder of other refs: no retry fixes it', async () => {
+      let calls = 0;
+      let thrown: any = null;
+      try {
+        await retryWhileRefLocked(async () => {
+          calls++;
+          throw new Error("error: cannot lock ref 'refs/remotes/origin/feature': 'refs/remotes/origin/feature/x' exists; cannot create 'refs/remotes/origin/feature'");
+        }, 4, 1);
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).to.not.be.null;
+      expect(calls).to.equal(1);
     });
   });
 

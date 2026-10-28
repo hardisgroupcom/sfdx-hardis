@@ -53,7 +53,7 @@ With \`--json\`, the result holds \`candidates\` (Pull Request numbers, title, a
 - A promotion merged into the source branch is expanded into the User Stories its \`promotionPullRequests\` block declares, recursively, so a story promoted twice in a row keeps its number.
 - A candidate can be a merge commit carrying several Pull Requests: they are listed together, because cherry-picking it carries all of them.
 - Already-promoted detection reads the promotion Pull Requests of the target branch, bounded by the date of the oldest candidate.
-- Manual cherry-pick detection (\`detectManualCherryPicks\`, off by default) reads the \`git cherry-pick -x\` trailers of the target branch since the merge base, and the commits the git provider still lists for each Pull Request merged into the target branch since the oldest candidate (a squash merge removes them from the history, not from the provider): their trailers and their own SHAs name the candidates. A promotion that declares a story always wins over this detection.
+- Manual cherry-pick detection (\`detectManualCherryPicks\`, off by default) reads the \`git cherry-pick -x\` trailers of the target branch (since the merge base, and before it as far as the oldest commit the candidates bring, so a back-merge does not hide a pick), and the commits each Pull Request merged into the target branch since the oldest candidate held (by merge date). A squash merge removes them from the history, not from the provider, which is asked for them; a Pull Request merged with a merge commit is read from the local history. Their trailers and their own SHAs name the candidates. A promotion that declares a story always wins over this detection.
 </details>
 
 ### Agent Mode

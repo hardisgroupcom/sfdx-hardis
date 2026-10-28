@@ -862,7 +862,12 @@ export function toCandidateSummary(candidate: PromotionCandidate): PromotionCand
       summary.alreadyPromotedBy.manualCherryPick = {
         signal: manual.signal,
         targetCommit: manual.targetCommit,
-        carrier: { pullRequest: manual.carrier.pullRequest, commits: [...manual.carrier.commits] },
+        carrier: {
+          pullRequest: manual.carrier.pullRequest,
+          commits: [...manual.carrier.commits],
+          ...(manual.carrier.heldSourceBranchCommits !== undefined ? { heldSourceBranchCommits: manual.carrier.heldSourceBranchCommits } : {}),
+          ...(manual.carrier.ownCommits !== undefined ? { ownCommits: manual.carrier.ownCommits } : {}),
+        },
       };
     }
   }

@@ -2194,6 +2194,7 @@
   "gitlabUnableToFindMrInfo": "Unable to find related Merge Request Info",
   "gitlabUpdatingMrNote": "Updating Merge Request Note on Gitlab...",
   "gitProviderCiRunsRepositoryUnknown": "Unable to list CI jobs: the repository is not known ({{variables}})",
+  "gitProviderPullRequestCommitsTruncated": "Pull Request {{number}}: only its first {{count}} commits could be read, stories cherry-picked in the others are not detected",
   "gitProviderRepositoryNotFound": "Repository {{repository}} not found in project {{project}}",
   "gitProviderRepositoryNoToken": "No git provider token found to read {{repository}}. Set {{tokenVariable}}.",
   "gitProviderRepositoryTokenWrongProvider": "The git provider token of this repository is for {{currentProvider}}, and {{repository}} is on {{targetProvider}}. Set {{tokenVariable}}.",

@@ -2144,6 +2144,7 @@
   "gitProviderPrCreationRetry": "Nieuwe poging over {{seconds}}s ({{attempt}}/{{attempts}}): de git provider heeft de zojuist gepushte branch mogelijk nog niet geïndexeerd",
   "gitProviderPrOtherRepository": "Pull Request {{id}} hoort bij een andere repository van de organisatie en wordt genegeerd",
   "gitProviderPullRequestCommitsNotListed": "Kan de commits van Pull Request {{number}} niet weergeven: {{message}}",
+  "gitProviderPullRequestCommitsTruncated": "Pull Request {{number}}: alleen de eerste {{count}} commits konden worden gelezen, User Stories die in de andere zijn gecherry-pickt worden niet gedetecteerd",
   "gitProviderRepositoryNoToken": "Geen git-provider-token gevonden om {{repository}} te lezen. Stel {{tokenVariable}} in.",
   "gitProviderRepositoryNotFound": "Repository {{repository}} niet gevonden in project {{project}}",
   "gitProviderRepositoryTokenWrongProvider": "Het git-provider-token van deze repository is voor {{currentProvider}}, terwijl {{repository}} op {{targetProvider}} staat. Stel {{tokenVariable}} in.",

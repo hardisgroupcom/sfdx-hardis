@@ -140,6 +140,9 @@ export abstract class GitProviderRoot {
     status?: string,
     targetBranch?: string,
     minDate?: Date,
+    // What minDate applies to: the creation date (default), or the merge date of a merged Pull
+    // Request (a long-lived release Pull Request opened before the period, merged during it)
+    minDateOn?: 'created' | 'merged',
     // Only what the listing gives: no comment, no completed description. Much faster on a provider
     // that needs a call per Pull Request for them
     withoutComments?: boolean

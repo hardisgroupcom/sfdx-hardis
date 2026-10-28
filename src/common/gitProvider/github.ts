@@ -226,6 +226,50 @@ export class GithubProvider extends GitProviderRoot {
     return this.api.patch<any>(`${this.repoPath()}/issues/comments/${commentId}`, { body });
   }
 
+  private static readonly PULL_REQUEST_COMMITS_LIST_LIMIT = 250;
+  private static readonly COMPARE_COMMITS_PAGE_SIZE = 100;
+  private static readonly COMPARE_COMMITS_MAX_PAGES = 50;
+
+  /**
+   * Every commit of a Pull Request with more than 250 of them: the compare API pages its commits,
+   * from the base the Pull Request was compared to up to its head. Null when it cannot answer.
+   */
+  private async listPullRequestCommitsByCompare(prNumber: number): Promise<any[] | null> {
+    try {
+      const pullRequest = (await this.api!.get<any>(`${this.repoPath()}/pulls/${prNumber}`)).data;
+      const base = pullRequest?.base?.sha;
+      const head = pullRequest?.head?.sha;
+      if (!base || !head) {
+        return null;
+      }
+      const commits: any[] = [];
+      for (let page = 1; page <= GithubProvider.COMPARE_COMMITS_MAX_PAGES; page++) {
+        const response = await this.api!.get<any>(
+          `${this.repoPath()}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}`,
+          { params: { per_page: GithubProvider.COMPARE_COMMITS_PAGE_SIZE, page } },
+        );
+        const pageCommits: any[] = Array.isArray(response.data?.commits) ? response.data.commits : [];
+        commits.push(...pageCommits);
+        const total = Number(response.data?.total_commits || 0);
+        if (pageCommits.length < GithubProvider.COMPARE_COMMITS_PAGE_SIZE || (total > 0 && commits.length >= total)) {
+          return commits;
+        }
+      }
+      return commits;
+    } catch (err) {
+      uxLog("other", this, `[GitHub Integration] Compare listing of Pull Request ${prNumber} failed: ${String(err)}`);
+      return null;
+    }
+  }
+
+  private toPullRequestCommitInfo(commit: any): PullRequestCommitInfo {
+    return {
+      sha: commit.sha,
+      message: commit.commit?.message || '',
+      parentShas: (commit.parents || []).map((parent: any) => parent.sha).filter((sha: string) => sha),
+    };
+  }
+
   // GET /repos/{owner}/{repo}/compare/{base}...{head}
   private async compareCommits(base: string, head: string): Promise<any> {
     const response = await this.api.get<any>(
@@ -590,7 +634,7 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async listPullRequests(
-    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    filters: { status?: string; targetBranch?: string; minDate?: Date; minDateOn?: 'created' | 'merged' } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     if (!this.api || !this.repoOwner || !this.repoName) {
       return null;
@@ -618,8 +662,9 @@ ${getBannerMarkdownAndLink()}
         for (const pr of prs) {
           // Filter merged-only when requested
           if (filters.status === "merged" && !pr.merged_at) continue;
-          // Filter by minDate on creation
-          if (filters.minDate && new Date(pr.created_at) < filters.minDate) continue;
+          // Filter by minDate on creation, or on merge (closed_at for a closed one never merged)
+          const minDateField = filters.minDateOn === "merged" ? (pr.merged_at || pr.closed_at || pr.updated_at) : pr.created_at;
+          if (filters.minDate && new Date(minDateField) < filters.minDate) continue;
 
           allPrs.push(this.completePullRequestInfo(pr));
         }
@@ -749,13 +794,16 @@ ${getBannerMarkdownAndLink()}
       return null;
     }
     try {
-      // GitHub keeps the commits of a squashed Pull Request (up to 250 of them)
+      // GitHub keeps the commits of a squashed Pull Request, but this listing stops at 250
       const commits = await this.api.paginate<any>(`${this.repoPath()}/pulls/${prNumber}/commits`);
-      return (commits || []).map((commit: any) => ({
-        sha: commit.sha,
-        message: commit.commit?.message || '',
-        parentShas: (commit.parents || []).map((parent: any) => parent.sha).filter((sha: string) => sha),
-      }));
+      if ((commits || []).length >= GithubProvider.PULL_REQUEST_COMMITS_LIST_LIMIT) {
+        const complete = await this.listPullRequestCommitsByCompare(prNumber);
+        if (complete && complete.length > commits.length) {
+          return complete.map((commit: any) => this.toPullRequestCommitInfo(commit));
+        }
+        uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderPullRequestCommitsTruncated', { number: prNumber, count: commits.length })));
+      }
+      return (commits || []).map((commit: any) => this.toPullRequestCommitInfo(commit));
     } catch (err) {
       uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderPullRequestCommitsNotListed', { number: prNumber, message: String(err) })));
       return null;
