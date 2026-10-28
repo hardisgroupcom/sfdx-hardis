@@ -14,19 +14,19 @@ environment, and the extension's own `PipelineDataProvider` runs headless
 `scripts/build-repo.sh` creates a private project in the namespace of the token and builds, through
 merge requests merged by the API (merge commit, or squash), one story per pattern:
 
-| Story | How it reaches uat                                                                       | Expected with the setting on   |
-|-------|------------------------------------------------------------------------------------------|--------------------------------|
-| S1    | picked `-x` into release/1, squash-merged into uat (R1)                                  | moved (provider listing)       |
-| S2    | picked `-x` into release/2, merged with a merge commit (R2)                              | moved (trailer of uat)         |
-| S3    | picked `-x` straight onto uat, then uat is back-merged into integration                  | moved (trailer before the merge base) |
-| S4    | picked without `-x` straight onto uat                                                    | probable (same title)          |
-| S5    | two commits, the first one picked `-x` onto uat                                          | partial 1/2                    |
-| S6    | dragged by hotfix/h branched from integration with a fix of its own, squashed into uat (HF) | moved, HF stays listed      |
-| S7    | a real promotion branch (`promotion:create`)                                             | promoted, not a manual pick    |
-| S8    | nothing                                                                                  | candidate                      |
-| S9    | picked into release/9, a merge request opened before S9 was merged, squashed (R9)        | moved                          |
-| R1    | its squash commit picked `-x` onto preprod (step uat -> preprod)                         | moved, S1 follows it to preprod |
-| S10   | merged into uat directly                                                                 | candidate of uat -> preprod    |
+| Story | How it reaches uat                                                                          | Expected with the setting on          |
+|-------|---------------------------------------------------------------------------------------------|---------------------------------------|
+| S1    | picked `-x` into release/1, squash-merged into uat (R1)                                     | moved (provider listing)              |
+| S2    | picked `-x` into release/2, merged with a merge commit (R2)                                 | moved (trailer of uat)                |
+| S3    | picked `-x` straight onto uat, then uat is back-merged into integration                     | moved (trailer before the merge base) |
+| S4    | picked without `-x` straight onto uat                                                       | probable (same title)                 |
+| S5    | two commits, the first one picked `-x` onto uat                                             | partial 1/2                           |
+| S6    | dragged by hotfix/h branched from integration with a fix of its own, squashed into uat (HF) | moved, HF stays listed                |
+| S7    | a real promotion branch (`promotion:create`)                                                | promoted, not a manual pick           |
+| S8    | nothing                                                                                     | candidate                             |
+| S9    | picked into release/9, a merge request opened before S9 was merged, squashed (R9)           | moved                                 |
+| R1    | its squash commit picked `-x` onto preprod (step uat -> preprod)                            | moved, S1 follows it to preprod       |
+| S10   | merged into uat directly                                                                    | candidate of uat -> preprod           |
 
 Phase B merges uat into preprod with a merge commit: every story waiting in uat must then be listed
 in preprod, none in no window.

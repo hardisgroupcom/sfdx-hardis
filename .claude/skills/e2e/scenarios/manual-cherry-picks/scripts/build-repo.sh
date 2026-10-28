@@ -32,7 +32,10 @@ set -euo pipefail
 : "${NAME:?}"
 CLI="${CLI:-node /c/git/sfdx-hardis/bin/run.js}"
 
-[ -e "$WORK" ] && { echo "ERROR: $WORK exists" >&2; exit 1; }
+[ -e "$WORK" ] && {
+  echo "ERROR: $WORK exists" >&2
+  exit 1
+}
 
 api() {
   local method="$1" path="$2"
@@ -128,7 +131,10 @@ mr_merge() {
   done
   local state
   state=$(api GET "projects/$PROJECT_ID/merge_requests/$iid" | json "d['state']")
-  [ "$state" = "merged" ] || { echo "ERROR: !$iid is $state" >&2; exit 1; }
+  [ "$state" = "merged" ] || {
+    echo "ERROR: !$iid is $state" >&2
+    exit 1
+  }
   git fetch -q origin
 }
 
@@ -233,7 +239,10 @@ $CLI hardis:project:promotion:create --agent --source-branch integration --targe
 }
 # The path goes as an argument: a Windows path inside the Python source breaks on its backslashes
 PROMO=$(python -c "import json,re,sys; d=json.load(open(sys.argv[1])); u=(d.get('result') or {}).get('pullRequestUrl') or ''; m=re.search(r'/(\d+)/?$', u); print(m.group(1) if m else '')" "$WORK/../promotion-create.json")
-[ -n "$PROMO" ] || { echo "ERROR: no promotion number in promotion-create.json" >&2; exit 1; }
+[ -n "$PROMO" ] || {
+  echo "ERROR: no promotion number in promotion-create.json" >&2
+  exit 1
+}
 mr_merge "$PROMO" false
 save PROMO_MR "$PROMO"
 log "S7 promoted through !$PROMO"
