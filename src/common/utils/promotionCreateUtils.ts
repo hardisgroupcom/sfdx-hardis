@@ -7,6 +7,7 @@ import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { BackpromotePrGroup, listMergedPrsWithCommits } from './backpromoteUtils.js';
+import { detectManualCherryPicks, ManualCherryPickSignal } from './manualCherryPickUtils.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
@@ -21,6 +22,7 @@ import {
   extractPromotionBranchNames,
   formatPromotionSteps,
   getPromotionBranchConfig,
+  isManualCherryPickDetectionEnabled,
   isPromotionStepAllowed,
   PROMOTION_BRANCH_NAME_EXAMPLE,
   PromotionBranchConfig,
@@ -179,6 +181,12 @@ export interface PromotionCandidate {
   // Set when only PART of the Pull Requests of this commit were already promoted: the commit still
   // has to travel, but the overlap has to be said out loud
   partiallyPromoted?: { numbers: number[]; by: AlreadyPromotedBy };
+  // detectManualCherryPicks: only some of the commits of this candidate were cherry-picked by hand
+  // into the target branch. It stays a candidate: moving it would hide what did not travel
+  partiallyCherryPicked?: { foundCommits: string[]; totalCommits: number; targetBranch: string; targetCommit: string };
+  // detectManualCherryPicks: nothing names this candidate, but one commit of the target side has the
+  // same subject. Reported only, the candidate stays selectable
+  probablyCherryPicked?: { targetCommit: string; subject: string; targetBranch: string };
 }
 
 export interface AlreadyPromotedBy {
@@ -186,6 +194,9 @@ export interface AlreadyPromotedBy {
   sourceBranch: string;
   webUrl: string;
   merged: boolean;
+  // Set when no promotion carried the story: it reached the target branch through a cherry-pick
+  // made by hand (detectManualCherryPicks)
+  manualCherryPick?: { signal: ManualCherryPickSignal; targetCommit: string };
 }
 
 export interface PromotionStory {
@@ -420,10 +431,16 @@ export async function listPromotionCandidates(
   // the provider calls. The merge base is not usable for that: any back-merge from the target
   // branch moves it forward and would hide older promotions.
   const minDate = oldestCandidateDate(candidates);
-  return markAlreadyPromotedCandidates(
+  const marked = markAlreadyPromotedCandidates(
     candidates,
     await listAlreadyPromotedPullRequests(sourceBranch, targetBranch, minDate, commandThis, supersededPromotions),
   );
+  // Off by default: reading the target side costs provider calls a project that only promotes
+  // through promotion branches does not need
+  if (isManualCherryPickDetectionEnabled(await getConfig('branch'))) {
+    await detectManualCherryPicks(marked, { sourceBranch, targetBranch, mergeBase, minDate, gitProvider: gitProviderForExpansion }, commandThis);
+  }
+  return marked;
 }
 
 /**
@@ -779,6 +796,23 @@ export function logPartiallyPromotedCandidates(candidates: PromotionCandidate[],
       branch: candidate.partiallyPromoted!.by.sourceBranch,
     })));
   }
+  for (const candidate of candidates.filter((entry) => entry.partiallyCherryPicked)) {
+    const partial = candidate.partiallyCherryPicked!;
+    uxLog('warning', commandThis, c.yellow(t('manualCherryPickPartial', {
+      label: candidate.label,
+      found: partial.foundCommits.length,
+      total: partial.totalCommits,
+      target: partial.targetBranch,
+    })));
+  }
+  for (const candidate of candidates.filter((entry) => entry.probablyCherryPicked)) {
+    const probable = candidate.probablyCherryPicked!;
+    uxLog('warning', commandThis, c.yellow(t('manualCherryPickProbable', {
+      label: candidate.label,
+      target: probable.targetBranch,
+      commit: probable.targetCommit.substring(0, 8),
+    })));
+  }
 }
 
 export interface PromotionCandidateSummary {
@@ -790,8 +824,16 @@ export interface PromotionCandidateSummary {
   sourceBranch: string;
   commit: string;
   date: string;
-  alreadyPromotedBy?: { pullRequest: string; branch: string; url: string; merged: boolean };
+  alreadyPromotedBy?: {
+    pullRequest: string;
+    branch: string;
+    url: string;
+    merged: boolean;
+    manualCherryPick?: { signal: ManualCherryPickSignal; targetCommit: string };
+  };
   partiallyPromoted?: { pullRequests: number[]; branch: string };
+  partiallyCherryPicked?: { foundCommits: string[]; totalCommits: number; branch: string; targetCommit: string };
+  probablyCherryPicked?: { targetCommit: string; subject: string; branch: string };
 }
 
 /**
@@ -815,11 +857,29 @@ export function toCandidateSummary(candidate: PromotionCandidate): PromotionCand
       url: candidate.alreadyPromotedBy.webUrl,
       merged: candidate.alreadyPromotedBy.merged,
     };
+    if (candidate.alreadyPromotedBy.manualCherryPick) {
+      summary.alreadyPromotedBy.manualCherryPick = { ...candidate.alreadyPromotedBy.manualCherryPick };
+    }
   }
   if (candidate.partiallyPromoted) {
     summary.partiallyPromoted = {
       pullRequests: candidate.partiallyPromoted.numbers,
       branch: candidate.partiallyPromoted.by.sourceBranch,
+    };
+  }
+  if (candidate.partiallyCherryPicked) {
+    summary.partiallyCherryPicked = {
+      foundCommits: candidate.partiallyCherryPicked.foundCommits,
+      totalCommits: candidate.partiallyCherryPicked.totalCommits,
+      branch: candidate.partiallyCherryPicked.targetBranch,
+      targetCommit: candidate.partiallyCherryPicked.targetCommit,
+    };
+  }
+  if (candidate.probablyCherryPicked) {
+    summary.probablyCherryPicked = {
+      targetCommit: candidate.probablyCherryPicked.targetCommit,
+      subject: candidate.probablyCherryPicked.subject,
+      branch: candidate.probablyCherryPicked.targetBranch,
     };
   }
   return summary;

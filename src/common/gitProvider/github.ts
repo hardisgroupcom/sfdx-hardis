@@ -1,7 +1,7 @@
 import c from "chalk";
 import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, encodePrUrlPathBranch, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult } from "./gitProviderRoot.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
-import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { GITHUB_DEFAULT_API_URL, GITHUB_DEFAULT_GRAPHQL_URL, GITHUB_DEFAULT_SERVER_URL, GithubApiClient, getGithubActionsContext } from "./utils/githubApiClient.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
@@ -740,6 +740,24 @@ ${getBannerMarkdownAndLink()}
       return data ? this.completePullRequestInfo(data) : null;
     } catch (err) {
       uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderPrByIdNotFound', { id: prNumber, message: String(err) })));
+      return null;
+    }
+  }
+
+  public async listPullRequestCommits(prNumber: number): Promise<PullRequestCommitInfo[] | null> {
+    if (!this.api || !this.repoOwner || !this.repoName) {
+      return null;
+    }
+    try {
+      // GitHub keeps the commits of a squashed Pull Request (up to 250 of them)
+      const commits = await this.api.paginate<any>(`${this.repoPath()}/pulls/${prNumber}/commits`);
+      return (commits || []).map((commit: any) => ({
+        sha: commit.sha,
+        message: commit.commit?.message || '',
+        parentShas: (commit.parents || []).map((parent: any) => parent.sha).filter((sha: string) => sha),
+      }));
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[GitHub Integration] ' + t('gitProviderPullRequestCommitsNotListed', { number: prNumber, message: String(err) })));
       return null;
     }
   }

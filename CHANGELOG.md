@@ -2,6 +2,7 @@
 
 ## [beta] (main)
 
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#stories-cherry-picked-by-hand-before-promotion-branches-beta) (Beta): new `detectManualCherryPicks` setting, so the User Stories already cherry-picked by hand into the next branch, even through a squashed release branch, are no longer offered for promotion.
 - Upgrade **picomatch** to 4.0.7.
 
 ## [8.20.1] 2026-10-27

@@ -8,7 +8,7 @@ import c from "chalk";
 import fs from '../utils/fsUtils.js';
 import { getCurrentGitBranch, getGitRepoUrl, git, isGitRepo, uxLog } from "../utils/index.js";
 import * as path from "path";
-import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { CommentThreadStatus, GitPullRequest, GitPullRequestCommentThread, GitPullRequestSearchCriteria, PullRequestAsyncStatus, PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces.js";
 import { getBannerMarkdownAndLink, getEnvVar } from "../../config/index.js";
 import { getPrCommentKind, getPrCommentKindFromMessageKey } from "./utils/prCommentNav.js";
@@ -770,6 +770,34 @@ ${this.getPipelineVariablesConfig()}
       }
     }
     return latest;
+  }
+
+  public async listPullRequestCommits(pullRequestId: number): Promise<PullRequestCommitInfo[] | null> {
+    if (!this.azureApi || !process.env.BUILD_REPOSITORY_ID) {
+      return null;
+    }
+    try {
+      const azureGitApi = await this.azureApi.getGitApi();
+      // Azure DevOps keeps the commits of a squashed Pull Request. The listing shortens long
+      // messages (commentTruncated), which only cuts the body: a cherry-pick trailer would then be
+      // lost, so those commits are read again in full
+      const commits = await azureGitApi.getPullRequestCommits(process.env.BUILD_REPOSITORY_ID, pullRequestId, process.env.SYSTEM_TEAMPROJECT);
+      const result: PullRequestCommitInfo[] = [];
+      for (const commit of commits || []) {
+        let message = commit.comment || '';
+        let parentShas = commit.parents || [];
+        if (commit.commentTruncated && commit.commitId) {
+          const full = await azureGitApi.getCommit(commit.commitId, process.env.BUILD_REPOSITORY_ID, process.env.SYSTEM_TEAMPROJECT);
+          message = full?.comment || message;
+          parentShas = full?.parents || parentShas;
+        }
+        result.push({ sha: commit.commitId || '', message, parentShas });
+      }
+      return result.filter((commit) => commit.sha);
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Azure Integration] ' + t('gitProviderPullRequestCommitsNotListed', { number: pullRequestId, message: String(err) })));
+      return null;
+    }
   }
 
   public async getPullRequestById(pullRequestId: number): Promise<CommonPullRequestInfo | null> {

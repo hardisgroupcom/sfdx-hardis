@@ -1,7 +1,7 @@
 import { redactSecretsDeep } from '../utils/secretMaskingUtils.js';
 import { SfError } from "@salesforce/core";
 import c from "chalk";
-import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { uxLog } from "../utils/index.js";
 import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utils/utilsMarkdown.js";
 import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
@@ -178,6 +178,18 @@ export abstract class GitProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async getPullRequestById(_prNumber: number): Promise<CommonPullRequestInfo | null> {
     uxLog("other", this, `Method getPullRequestById is not implemented yet on ${this.getLabel()}`);
+    return null;
+  }
+
+  /**
+   * The commits a Pull Request held, by its provider-native number. A squash merge leaves only one
+   * commit in the target branch, while the provider keeps the original ones: this is how a story
+   * cherry-picked into a squashed release branch can still be traced. Returns null when the provider
+   * cannot answer.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async listPullRequestCommits(_prNumber: number): Promise<PullRequestCommitInfo[] | null> {
+    uxLog("other", this, `Method listPullRequestCommits is not implemented yet on ${this.getLabel()}`);
     return null;
   }
 

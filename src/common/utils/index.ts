@@ -587,11 +587,30 @@ async function runGitWithCredentialsRetry(
   }
   const hasOptions = options.output !== undefined || options.displayCommand !== undefined;
   // The three methods have overloads that do not unify: called through any, with their args array
-  const run = async () => ((hasOptions ? git(options) : git()) as any)[operation](args);
+  const runOnce = async () => ((hasOptions ? git(options) : git()) as any)[operation](args);
+  // Two sfdx-hardis processes fetching the same branch at once (the DevOps Pipeline runs one
+  // promotion listing per step in parallel) collide on the ref lock of the branch they share.
+  // The other fetch is about to finish: waiting a moment and fetching again is all it takes.
+  const run = operation === 'fetch' ? () => retryWhileRefLocked(runOnce) : runOnce;
   try {
     return await run();
   } catch (error) {
     return retryGitAfterAuthError(operation, retryMessageKey, error, run);
+  }
+}
+
+const GIT_REF_LOCK_ERROR = /cannot lock ref|Unable to create '[^']*\.lock'|unable to update local ref/i;
+
+export async function retryWhileRefLocked<T>(run: () => Promise<T>, attempts = 4, delayMs = 1500): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await run();
+    } catch (error: any) {
+      if (attempt >= attempts || !GIT_REF_LOCK_ERROR.test(String(error?.message || error))) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayMs * attempt));
+    }
   }
 }
 

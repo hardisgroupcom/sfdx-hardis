@@ -1105,6 +1105,15 @@ export declare type CommonPullRequestInfo = {
   providerInfo: any
 }
 
+// One commit of a Pull Request as the provider lists it: what the Pull Request held before it was
+// merged, which a squash merge removes from the target branch history
+export declare type PullRequestCommitInfo = {
+  sha: string;
+  message: string;
+  // Empty when the provider does not return the parents
+  parentShas: string[];
+}
+
 export declare type PullRequestData = {
   messageKey: string;
   title: string;

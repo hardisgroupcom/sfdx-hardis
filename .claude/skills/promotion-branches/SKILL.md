@@ -254,6 +254,19 @@ Break one of these and the feature is wrong, whatever the tests say.
     `hardis:doc:release-notes` subtracts the same stories (`dropAlreadyPromotedPullRequests`),
     while `deploy:smart` keeps them in scope on purpose (no-op redeploy, actions skipped).
 
+31. **A story cherry-picked by hand is found from the target side, and only when asked.**
+    `detectManualCherryPicks` (default `false`, inert unless `enablePromotionBranches` is on, read
+    through `isManualCherryPickDetectionEnabled`) makes `listPromotionCandidates` call
+    `detectManualCherryPicks` (`manualCherryPickUtils.ts`) after the promotion descriptions were
+    read: a promotion declaring a story always wins. Evidence comes from the `-x` trailers of
+    `<mergeBase>..origin/<target>`, then from `GitProvider.listPullRequestCommits` on every
+    non-promotion Pull Request merged into the target since the oldest candidate (a squash merge
+    removes the commits from the history, not from the provider): their trailers and their own SHAs.
+    A candidate moves (`alreadyPromotedBy.manualCherryPick`) only when its merge commit, or every
+    non-merge commit it introduced, is named. Some of them only is `partiallyCherryPicked`; a title
+    matching exactly one commit on each side is `probablyCherryPicked`. Both stay candidates. With
+    the setting off, not one extra git command or provider call is made.
+
 ## sfdx-hardis (CLI)
 
 | File                                                                                                                                                                       | Role                                                                                                                                                                                                                                                                     |
@@ -319,6 +332,7 @@ not leak in.
 | `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, User Stories not promoted away), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                  |
 | `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the vehicles toggle, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                     |
 | `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` and `allowedPromotionSteps` sit in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                    |
+| `src/utils/pipeline/manualCherryPickUtils.ts`        | `detectManualCherryPicks`: one `promotion:list-candidates --json` per allowed step, in parallel, only when the setting is on; cached per user by step and tip SHAs. Placement in `applyManualCherryPicks` (`promotionBranchUtils.ts`). |
 | `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                  |
 
 ## Filtering: what moves the Pull Requests
