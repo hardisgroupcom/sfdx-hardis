@@ -72,17 +72,20 @@ export async function promptProfiles(
   let selectedProfiles: any[] = [];
   // Profiles returned by active connection
   if (profiles.length > 0) {
+    const choices = profiles.map((profile: any) => {
+      return {
+        title: profile.Name,
+        value: options.returnField === 'record' ? profile : options.returnField === 'Id' ? profile.Id : profile.Name,
+      };
+    });
+    const initial = getInitialProfileSelection(choices, options.initialSelection, options.multiselect === true);
     const profilesSelection = await prompts({
       type: options.multiselect ? 'multiselect' : 'select',
       message: options.message || t('pleaseSelectProfile'),
       description: t('descChooseProfiles'),
       name: 'value',
-      choices: profiles.map((profile: any) => {
-        return {
-          title: profile.Name,
-          value: options.returnField === 'record' ? profile : options.returnField === 'Id' ? profile.Id : profile.Name,
-        };
-      }),
+      choices: choices,
+      initial: initial,
     });
     // Verify that all profiles are not selected if allowSelectAll === false
     if (options.allowSelectAll === false && profilesSelection.value.length === profiles.length) {
@@ -148,6 +151,22 @@ export async function promptProfiles(
   }
 
   return selectedProfiles;
+}
+
+// The choices of promptProfiles to pre-select, from profile names. Profile labels follow the
+// language of the org user, and their case differs between languages (Administrateur système,
+// not Administrateur Système): names are matched case-insensitively
+export function getInitialProfileSelection(
+  choices: Array<{ title: string; value: any }>,
+  initialSelection: string[] = [],
+  multiselect = false
+): any {
+  const initialNames = (initialSelection || []).map((name) => name.toLowerCase());
+  const values = choices.filter((choice) => initialNames.includes(String(choice.title).toLowerCase())).map((choice) => choice.value);
+  if (values.length === 0) {
+    return undefined;
+  }
+  return multiselect ? values : values[0];
 }
 
 export async function promptOrg(

@@ -15,6 +15,7 @@ description: With sfdx-hardis, enrich pull requests with Aha! feature info and p
 - [In VS Code](#in-vs-code)
 - [Read a single feature](#read-a-single-feature)
 - [GitLab configuration](#gitlab-configuration)
+- [Pipelines created before 8.14.0](#pipelines-created-before-8140)
 - [Technical notes](#technical-notes)
 
 ## Aha! integration
@@ -147,6 +148,19 @@ See merge request %{reference}
 
 %{all_commits}
 ```
+
+## Pipelines created before 8.14.0
+
+The pipeline files that sfdx-hardis generates pass the Aha! variables to the jobs since version 8.14.0. If your project was set up before, the secrets exist but the jobs never see them, and no comment or tag reaches Aha!.
+
+Add the variables to the environment of the sfdx-hardis jobs. With GitHub Actions, in the `env:` section of the deployment step of `.github/workflows/check-deploy.yml` and `.github/workflows/process-deploy.yml`:
+
+```yaml
+          AHA_HOST: ${{ secrets.AHA_HOST }}
+          AHA_API_KEY: ${{ secrets.AHA_API_KEY }}
+```
+
+With Azure Pipelines, add `AHA_HOST: $(AHA_HOST)` and `AHA_API_KEY: $(AHA_API_KEY)` to the `env:` of the same steps in `azure-pipelines-checks.yml` and `azure-pipelines-deployment.yml`. With Jenkins, add the `AHA_HOST` and `AHA_API_KEY` credentials to your `Jenkinsfile`, as the [current template](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/defaults/ci/Jenkinsfile) does. GitLab CI and Bitbucket Pipelines pass every project variable to the jobs, so nothing changes there.
 
 ## Technical notes
 
