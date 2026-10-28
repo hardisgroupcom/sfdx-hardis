@@ -13,7 +13,7 @@
     "@inquirer/select": "5.2.7",
     "@langchain/anthropic": "1.5.12",
     "@langchain/core": "1.2.18",
-    "@langchain/google-genai": "2.3.2",
+    "@langchain/google-genai": "2.3.3",
     "@langchain/ollama": "1.3.0",
     "@langchain/openai": "1.6.2",
     "@oclif/core": "4.14.0",
