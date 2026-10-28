@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+- Upgrade **picomatch** to 4.0.7.
+
 ## [8.20.1] 2026-10-27
 
 - [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) (Beta): backpromotes, org initializations and deployments no longer fail or skip the rules with "Cannot find package 'picomatch'" ([#2403](https://github.com/hardisgroupcom/sfdx-hardis/issues/2403)).

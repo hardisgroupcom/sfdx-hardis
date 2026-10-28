@@ -48,3 +48,13 @@ reason = "image-size 1.2.1 is a transitive dependency of pptxgenjs 4.0.1; no pat
 [[IgnoredVulns]]
 id = "CVE-2026-85063"
 reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsforce-node, which declares csv-parse ^5.5.2 and uses it to parse Bulk API results returned by the user's own org, not untrusted input. The fix is two majors past the declared range (5.x -> 7.x) with changed parser and record semantics, so it belongs upstream in jsforce-node."
+
+# https://github.com/advisories/GHSA-gcqx-w48m-w2h4 (CVE-2026-93753)
+# deepmerge 4.3.1: mergeObject() does not filter __proto__ keys, so a crafted source object can poison
+# the prototype of the merged result. No fixed release exists: 4.3.1 is the latest version.
+# It reaches us only through bitbucket 2.12.0 (latest), which uses it to merge its endpoint defaults
+# with the request options sfdx-hardis builds itself, restricted to plain objects (is-plain-object).
+# API responses never go through it. Remove once deepmerge ships a fix. Added 2026-10-28.
+[[IgnoredVulns]]
+id = "GHSA-gcqx-w48m-w2h4"
+reason = "deepmerge 4.3.1 (latest, no fix) is transitive through bitbucket 2.12.0, which only merges its endpoint defaults with request options built by sfdx-hardis, never API responses."
