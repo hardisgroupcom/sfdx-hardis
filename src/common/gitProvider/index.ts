@@ -1094,6 +1094,9 @@ export declare type CommonPullRequestInfo = {
   createdDate?: string;
   mergedDate?: string;
   mergeCommitSha?: string;
+  // The commit a squash merge left in the target branch, when the provider tells it apart from
+  // mergeCommitSha (GitLab)
+  squashCommitSha?: string;
   // A draft Pull Request (not ready for review), as the git provider flags it
   isDraft?: boolean;
   customBehaviors: {

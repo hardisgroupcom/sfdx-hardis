@@ -80,7 +80,15 @@ describe('manualCherryPickUtils', () => {
         idStr: '!414',
         sourceBranch: 'release/uat-DI2EIRISCRMOA-1467',
         webUrl: 'https://gitlab.example.com/mr/414',
+        number: 414,
+        commits: [],
       });
+    });
+
+    it('names the carrier by its number and its merge or squash commit, for the next step to follow', () => {
+      const release = { ...pullRequest(270, 'INT'), mergeCommitSha: sha('m'), squashCommitSha: sha('q') };
+      const evidence = buildTargetSideEvidence([], [{ pullRequest: release, commits: [{ sha: sha('x'), message: 'story', parentShas: [] }] }]);
+      expect(evidence.bySourceSha.get(sha('x'))?.pullRequest).to.deep.include({ number: 270, commits: [sha('m'), sha('q')] });
     });
 
     it('keeps the target branch history first when both sides name the same commit', () => {
@@ -150,7 +158,7 @@ describe('manualCherryPickUtils', () => {
       const partial = candidate(sha('b'), [2]);
       const probable = candidate(sha('c'), [3]);
       const matches = new Map<string, ManualCherryPickMatch>([
-        [sha('a'), { status: 'cherry-picked', evidence: { signal: 'pull-request-commits', targetCommit: sha('p'), pullRequest: { idStr: '!414', sourceBranch: 'release/uat-1467', webUrl: 'u' } } }],
+        [sha('a'), { status: 'cherry-picked', evidence: { signal: 'pull-request-commits', targetCommit: sha('p'), pullRequest: { idStr: '!414', sourceBranch: 'release/uat-1467', webUrl: 'u', number: 414, commits: [sha('s')] } } }],
         [sha('b'), { status: 'partial', foundCommits: [sha('1')], totalCommits: 2, evidence: { signal: 'cherry-pick-trailer', targetCommit: sha('t') } }],
         [sha('c'), { status: 'probable', targetCommit: sha('u'), subject: 'Thing' }],
       ]);
@@ -161,7 +169,7 @@ describe('manualCherryPickUtils', () => {
         branch: 'release/uat-1467',
         url: 'u',
         merged: true,
-        manualCherryPick: { signal: 'pull-request-commits', targetCommit: sha('p') },
+        manualCherryPick: { signal: 'pull-request-commits', targetCommit: sha('p'), carrier: { pullRequest: 414, commits: [sha('s')] } },
       });
       expect(partial.alreadyPromotedBy).to.be.undefined;
       expect(toCandidateSummary(partial).partiallyCherryPicked).to.deep.equal({ foundCommits: [sha('1')], totalCommits: 2, branch: 'UAT', targetCommit: sha('t') });
@@ -173,6 +181,8 @@ describe('manualCherryPickUtils', () => {
       const picked = candidate(sha('a'));
       applyManualCherryPickMatches([picked], new Map([[sha('a'), { status: 'cherry-picked', evidence: { signal: 'cherry-pick-trailer', targetCommit: sha('t') } } as ManualCherryPickMatch]]), 'UAT');
       expect(picked.alreadyPromotedBy).to.deep.include({ idStr: sha('t').substring(0, 8), sourceBranch: 'UAT', merged: true });
+      // The next step recognizes it by the commit that carries the trailer
+      expect(picked.alreadyPromotedBy?.manualCherryPick?.carrier).to.deep.equal({ pullRequest: null, commits: [sha('t')] });
     });
   });
 

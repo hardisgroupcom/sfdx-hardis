@@ -28,12 +28,31 @@ import type { PromotionCandidate } from './promotionCreateUtils.js';
 
 export type ManualCherryPickSignal = 'cherry-pick-trailer' | 'pull-request-commits';
 
+/**
+ * What brought a story into the target branch, as the next promotion step sees it: a squashed
+ * release Pull Request is one row of the target branch (its number, or only its commit when it is
+ * a merge between major branches, whose number is dropped as a vehicle). The DevOps Pipeline
+ * follows it from step to step, so a story goes as far as its carrier went.
+ */
+export interface ManualCherryPickCarrier {
+  // Provider-native number of the Pull Request merged into the target branch, null for a trailer
+  pullRequest: number | null;
+  // Its merge or squash commit in the target branch, or the commit carrying the trailer
+  commits: string[];
+}
+
 export interface ManualCherryPickEvidence {
   signal: ManualCherryPickSignal;
   // The commit of the target side that carries the change
   targetCommit: string;
   // The Pull Request merged into the target branch that held it, for the pull-request-commits signal
-  pullRequest?: { idStr: string; sourceBranch: string; webUrl: string };
+  pullRequest?: { idStr: string; sourceBranch: string; webUrl: string; number: number; commits: string[] };
+}
+
+export function carrierOf(evidence: ManualCherryPickEvidence): ManualCherryPickCarrier {
+  return evidence.pullRequest
+    ? { pullRequest: evidence.pullRequest.number || null, commits: evidence.pullRequest.commits }
+    : { pullRequest: null, commits: [evidence.targetCommit] };
 }
 
 export interface TargetSideCommit {
@@ -113,6 +132,8 @@ export function buildTargetSideEvidence(
       idStr: pullRequest.idStr || String(pullRequest.idNumber || ''),
       sourceBranch: pullRequest.sourceBranch || '',
       webUrl: pullRequest.webUrl || '',
+      number: pullRequest.idNumber || 0,
+      commits: [...new Set([pullRequest.mergeCommitSha, pullRequest.squashCommitSha].filter((sha): sha is string => !!sha))],
     };
     for (const commit of commits) {
       const evidence: ManualCherryPickEvidence = { signal: 'pull-request-commits', targetCommit: commit.sha, pullRequest: reference };
@@ -194,7 +215,7 @@ export function applyManualCherryPickMatches(
         sourceBranch: match.evidence.pullRequest?.sourceBranch || targetBranch,
         webUrl: match.evidence.pullRequest?.webUrl || '',
         merged: true,
-        manualCherryPick: { signal: match.evidence.signal, targetCommit: match.evidence.targetCommit },
+        manualCherryPick: { signal: match.evidence.signal, targetCommit: match.evidence.targetCommit, carrier: carrierOf(match.evidence) },
       };
     } else if (match.status === 'partial') {
       candidate.partiallyCherryPicked = {

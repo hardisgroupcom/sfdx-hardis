@@ -7,7 +7,7 @@ import { prompts } from './prompts.js';
 import { t } from './i18n.js';
 import { listMajorOrgs } from './orgConfigUtils.js';
 import { BackpromotePrGroup, listMergedPrsWithCommits } from './backpromoteUtils.js';
-import { detectManualCherryPicks, ManualCherryPickSignal } from './manualCherryPickUtils.js';
+import { detectManualCherryPicks, ManualCherryPickCarrier, ManualCherryPickSignal } from './manualCherryPickUtils.js';
 import { CommonPullRequestInfo, GitProvider } from '../gitProvider/index.js';
 import { TicketProvider } from '../ticketProvider/index.js';
 import { which } from './whichUtils.js';
@@ -196,7 +196,7 @@ export interface AlreadyPromotedBy {
   merged: boolean;
   // Set when no promotion carried the story: it reached the target branch through a cherry-pick
   // made by hand (detectManualCherryPicks)
-  manualCherryPick?: { signal: ManualCherryPickSignal; targetCommit: string };
+  manualCherryPick?: { signal: ManualCherryPickSignal; targetCommit: string; carrier: ManualCherryPickCarrier };
 }
 
 export interface PromotionStory {
@@ -829,7 +829,7 @@ export interface PromotionCandidateSummary {
     branch: string;
     url: string;
     merged: boolean;
-    manualCherryPick?: { signal: ManualCherryPickSignal; targetCommit: string };
+    manualCherryPick?: { signal: ManualCherryPickSignal; targetCommit: string; carrier: ManualCherryPickCarrier };
   };
   partiallyPromoted?: { pullRequests: number[]; branch: string };
   partiallyCherryPicked?: { foundCommits: string[]; totalCommits: number; branch: string; targetCommit: string };
@@ -858,7 +858,12 @@ export function toCandidateSummary(candidate: PromotionCandidate): PromotionCand
       merged: candidate.alreadyPromotedBy.merged,
     };
     if (candidate.alreadyPromotedBy.manualCherryPick) {
-      summary.alreadyPromotedBy.manualCherryPick = { ...candidate.alreadyPromotedBy.manualCherryPick };
+      const manual = candidate.alreadyPromotedBy.manualCherryPick;
+      summary.alreadyPromotedBy.manualCherryPick = {
+        signal: manual.signal,
+        targetCommit: manual.targetCommit,
+        carrier: { pullRequest: manual.carrier.pullRequest, commits: [...manual.carrier.commits] },
+      };
     }
   }
   if (candidate.partiallyPromoted) {

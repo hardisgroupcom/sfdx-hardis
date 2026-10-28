@@ -265,7 +265,10 @@ Break one of these and the feature is wrong, whatever the tests say.
     A candidate moves (`alreadyPromotedBy.manualCherryPick`) only when its merge commit, or every
     non-merge commit it introduced, is named. Some of them only is `partiallyCherryPicked`; a title
     matching exactly one commit on each side is `probablyCherryPicked`. Both stay candidates. With
-    the setting off, not one extra git command or provider call is made.
+    the setting off, not one extra git command or provider call is made. Each match names its
+    `carrier` (the Pull Request merged into the target, number and merge/squash commit): the
+    extension follows it through the next step's result (`resolveManualCherryPickChain`), so a
+    story lands where its carrier ended up, and a carrier is a vehicle (`carriesManualCherryPicks`).
 
 ## sfdx-hardis (CLI)
 
