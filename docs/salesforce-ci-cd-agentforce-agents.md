@@ -107,7 +107,18 @@ replacementRules:
     required: true
 ```
 
-Then create one variable per org in the CI/CD settings: `AGENT_RUNNING_USER_INTEGRATION`, `AGENT_RUNNING_USER_UAT`, `AGENT_RUNNING_USER_PREPROD`, `AGENT_RUNNING_USER_MAIN`. On GitHub Actions, also add them to the `env` of the deployment check and deployment workflows. A missing variable skips the rule for that org, and the Pull Request comment says so.
+Then create one variable per major branch of your pipeline in the CI/CD settings: `AGENT_RUNNING_USER_<BRANCH>`, with the name of the branch in upper case (a `/` becomes `__`, any other character that is not a letter or a digit becomes `_`). Each org needs its own user, because a username is unique across all Salesforce orgs. For example, with the branches `integration`, `uat`, `preprod` and `main`:
+
+| Variable                         | Value                                    |
+|----------------------------------|------------------------------------------|
+| `AGENT_RUNNING_USER_INTEGRATION` | the agent user of the integration org    |
+| `AGENT_RUNNING_USER_UAT`         | the agent user of the uat org            |
+| `AGENT_RUNNING_USER_PREPROD`     | the agent user of the preprod org        |
+| `AGENT_RUNNING_USER_MAIN`        | the agent user of the production org     |
+
+Do not create the variable without a branch suffix (`AGENT_RUNNING_USER`): it is the fallback of every branch that has no variable of its own, and one username can only exist in one org. On GitHub Actions, also add the variables to the `env` of the deployment check and deployment workflows. A missing variable skips the rule for that org, and the Pull Request comment says so.
+
+While a rule of yours writes the user, the built-in rule creates no user, in any org.
 
 With several agents, you can replace only the part after `@`, so one variable per org covers all of them: name the agent users of each org with one domain (for example `service.agent@acme.com.uat` and `sales.agent@acme.com.uat`, created with `sf org create agent-user --base-username`), and use this `find` with a variable such as `AGENT_USER_DOMAIN_UAT=acme.com.uat`:
 
@@ -161,7 +172,17 @@ To do so, pin the API version of the project to 67.0:
 
 sfdx-hardis deploys `manifest/package.xml` without forcing an API version, so the pinned version is used.
 
-Once every org of the pipeline is on API 68.0, retrieve your agents again with `hardis:org:retrieve:agent`, remove the previous types from `manifest/package.xml`, and set the API version to 68.0. Move all agents in the same Pull Request: an org cannot receive the same agent in both formats.
+## Move agents from the format before API 68.0
+
+From API 68.0, Salesforce refuses the previous format of an agent: `GenAiPlannerBundle`, and the `Bot` and `BotVersion` of an agent (a classic Einstein Bot is still a `Bot`). A deployment that holds one agent in the previous format fails as a whole, even when the other agents are in the new format: a deployment runs with one API version.
+
+The agents themselves need no change: an org on API 68.0 holds each agent once, and gives it as `AiAgentDefinition` to an API 68.0 retrieve. For each agent of the previous format:
+
+1. Set the API version of the project to 68.0 ([before you start](#before-you-start-api-680-in-the-project)).
+2. Run [hardis:org:retrieve:agent](hardis/org/retrieve/agent.md) for the agent, in your developer sandbox. It adds the new format to `manifest/package.xml`, removes the `GenAiPlannerBundle`, `Bot` and `BotVersion` entries of the agent, and lists the old folders: `bots/<agent>` and `genAiPlannerBundles/<agent>_v<n>`.
+3. Delete these folders and commit. Do not add them to `destructiveChanges.xml`: the agent still exists in the orgs.
+
+Until every agent is moved, the deployment check and deployment jobs stop before anything is sent, and list the entries of the previous format with these steps.
 
 !!! warning
     The [monitoring backup](salesforce-monitoring-metadata-backup.md) raises the API version of its own repository to the version of the org. A pin to 67.0 does not hold in a monitoring repository.

@@ -6,12 +6,14 @@ import {
   applyAgentDeploymentGuard,
   buildAgentAutoActivateCommands,
   buildAgentPackageXmlContent,
+  findLegacyAgentEntries,
   findMissingAgentReferences,
   getAgentNamesFromPackageXml,
   isApiVersionAtLeast,
   listOrgAuthoringBundleNames,
   mergeIntoPackageXml,
   readAgentBotUsers,
+  removeLegacyAgentEntries,
   parseAgentVersionFullName,
   resolveAgentVersion,
 } from '../../../src/common/utils/agentUtils.js';
@@ -434,6 +436,96 @@ describe('agentUtils botUser', () => {
     const command = fakeCommand();
     await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
     expect(command.logs).to.deep.equal([]);
+  });
+});
+
+describe('agentUtils agents in the format before API 68.0', () => {
+  let tmpDir: string;
+  let previousCwd: string;
+  let previousEnvVersion: string | undefined;
+
+  async function writeBot(botName: string, agent: boolean): Promise<void> {
+    const dir = path.join(tmpDir, 'force-app', 'main', 'default', 'bots', botName);
+    await fs.ensureDir(dir);
+    await fs.writeFile(
+      path.join(dir, `${botName}.bot-meta.xml`),
+      agent ? '<Bot><agentType>EinsteinServiceAgent</agentType><type>ExternalCopilot</type></Bot>' : '<Bot><type>Bot</type></Bot>'
+    );
+  }
+
+  beforeEach(async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-legacy-'));
+    previousCwd = process.cwd();
+    previousEnvVersion = process.env.SF_ORG_API_VERSION;
+    process.chdir(tmpDir);
+    await writeBot('Old_Agent', true);
+    await writeBot('Classic_Bot', false);
+    await fs.ensureDir(path.join(tmpDir, 'force-app', 'main', 'default', 'genAiPlannerBundles', 'Old_Agent_v2'));
+  });
+
+  afterEach(async () => {
+    process.chdir(previousCwd);
+    if (previousEnvVersion === undefined) {
+      delete process.env.SF_ORG_API_VERSION;
+    } else {
+      process.env.SF_ORG_API_VERSION = previousEnvVersion;
+    }
+    await fs.remove(tmpDir);
+  });
+
+  it('finds the planner bundles, and the bots of agents but not the classic bots', async () => {
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(
+      file,
+      packageXml({ Bot: ['Old_Agent', 'Classic_Bot'], BotVersion: ['Old_Agent.v2', 'Classic_Bot.v1'], GenAiPlannerBundle: ['Old_Agent_v2'], AiAgentDefinition: ['New_Agent'] })
+    );
+    expect((await findLegacyAgentEntries(file, tmpDir)).map((entry) => `${entry.type}:${entry.member}:${entry.agentName}`)).to.deep.equal([
+      'GenAiPlannerBundle:Old_Agent_v2:Old_Agent',
+      'Bot:Old_Agent:Old_Agent',
+      'BotVersion:Old_Agent.v2:Old_Agent',
+    ]);
+  });
+
+  it('stops a deployment at API 68.0 that holds an agent in the old format next to a new one', async () => {
+    process.env.SF_ORG_API_VERSION = '68.0';
+    await fs.writeFile('sfdx-project.json', JSON.stringify({ sourceApiVersion: '68.0' }));
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ GenAiPlannerBundle: ['Old_Agent_v2'], AiAgentDefinition: ['New_Agent'], AiAgentDefinitionVersion: ['New_Agent#1'] }));
+    let error: any = null;
+    try {
+      await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgVersions: [] }), null);
+    } catch (e) {
+      error = e;
+    }
+    expect(error?.message || '').to.contain('GenAiPlannerBundle:Old_Agent_v2');
+  });
+
+  it('lets a deployment at API 67.0 hold the old format', async () => {
+    process.env.SF_ORG_API_VERSION = '67.0';
+    await fs.writeFile('sfdx-project.json', JSON.stringify({ sourceApiVersion: '67.0' }));
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ GenAiPlannerBundle: ['Old_Agent_v2'], Bot: ['Old_Agent'] }, '67.0'));
+    expect(await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '67.0' }), null)).to.equal(file);
+  });
+
+  it('removes the old entries of an agent, keeps the package.xml version and lists the old folders', async () => {
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ Bot: ['Old_Agent', 'Classic_Bot'], GenAiPlannerBundle: ['Old_Agent_v2'], AiAgentDefinition: ['Old_Agent'] }, '68.0'));
+    const entries = await findLegacyAgentEntries(file, tmpDir);
+    const folders = await removeLegacyAgentEntries(file, entries, tmpDir);
+    const content = await parsePackageXmlFile(file);
+    expect(content.Bot).to.deep.equal(['Classic_Bot']);
+    expect(content.GenAiPlannerBundle).to.equal(undefined);
+    expect(content.AiAgentDefinition).to.deep.equal(['Old_Agent']);
+    expect(await fs.readFile(file, 'utf8')).to.contain('<version>68.0</version>');
+    expect(folders).to.deep.equal(['force-app/main/default/bots/Old_Agent', 'force-app/main/default/genAiPlannerBundles/Old_Agent_v2']);
+  });
+
+  it('keeps the package.xml version when components are merged', async () => {
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ ApexClass: ['MyClass'] }, '66.0'));
+    await mergeIntoPackageXml(file, { AiAgentDefinition: ['New_Agent'] });
+    expect(await fs.readFile(file, 'utf8')).to.contain('<version>66.0</version>');
   });
 });
 

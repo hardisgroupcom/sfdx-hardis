@@ -11,6 +11,7 @@ import { CONSTANTS } from '../../config/index.js';
 import { resolveDeployApiVersion } from '../replacementRules/engine/ruleEngine.js';
 import { findSkipReplacementRulesFile, readAllBranchReplacementRules, readProjectReplacementRules } from '../replacementRules/config/ruleConfig.js';
 import { readIssueRules } from '../replacementRules/config/issueRulesStore.js';
+import { hasOwnRunningUserRule } from '../replacementRules/agentRunningUserBuiltInRule.js';
 
 // First API version where agents are AiAgentDefinition and AiAgentDefinitionVersion
 export const AGENT_DEFINITION_MIN_API_VERSION = 68.0;
@@ -18,6 +19,7 @@ export const AGENT_DEFINITION_TYPE = 'AiAgentDefinition';
 export const AGENT_DEFINITION_VERSION_TYPE = 'AiAgentDefinitionVersion';
 export const AGENT_AUTHORING_BUNDLE_TYPE = 'AiAuthoringBundle';
 export const AGENT_RUNNING_USER_RULE_ID = 'builtin-agent-running-user';
+const LEGACY_PLANNER_TYPE = 'GenAiPlannerBundle';
 export const AGENT_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/`;
 
 // Custom objects and fields (__c), Data 360 objects (__dlm, __dll) and external objects (__x)
@@ -29,6 +31,14 @@ export interface AgentVersionInfo {
   version: number;
   // Active, Inactive... Empty when the org did not tell
   status: string;
+}
+
+/** An entry of a package.xml that holds an agent in the format before API 68.0. */
+export interface LegacyAgentEntry {
+  type: string;
+  member: string;
+  // "*" for a wildcard
+  agentName: string;
 }
 
 /** A component of the project the retrieved agent refers to, and that the project does not hold. */
@@ -138,7 +148,7 @@ export async function mergeIntoPackageXml(packageXmlFile: string, contentToAdd: 
       sorted[type] = current[type];
     }
     await fs.ensureDir(path.dirname(packageXmlFile));
-    await writePackageXmlFile(packageXmlFile, sorted);
+    await writePackageXmlKeepingVersion(packageXmlFile, sorted, packageXmlFile);
   }
   return added;
 }
@@ -196,6 +206,7 @@ export async function applyAgentDeploymentGuard(packageXmlFile: string, conn: Co
   if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
     return packageXmlFile;
   }
+  await assertNoLegacyAgentAtApi68(packageXmlFile, conn);
   const { definitions, versionOnly } = await getAgentNamesFromPackageXml(packageXmlFile);
   if (definitions.length === 0 && versionOnly.length === 0) {
     return packageXmlFile;
@@ -249,14 +260,61 @@ export async function applyAgentDeploymentGuard(packageXmlFile: string, conn: Co
     }
   }
   const guardedPackageXmlFile = path.join(await createTempDir(), 'package-agents-guarded.xml');
-  await writePackageXmlFile(guardedPackageXmlFile, content);
-  // writePackageXmlFile writes the default API version: keep the one of the project file
-  const originalVersion = /<version>\s*([\d.]+)\s*<\/version>/.exec(await fs.readFile(packageXmlFile, 'utf8'))?.[1];
-  if (originalVersion) {
-    const guardedContent = await fs.readFile(guardedPackageXmlFile, 'utf8');
-    await fs.writeFile(guardedPackageXmlFile, guardedContent.replace(/<version>\s*[\d.]+\s*<\/version>/, `<version>${originalVersion}</version>`));
-  }
+  await writePackageXmlKeepingVersion(guardedPackageXmlFile, content, packageXmlFile);
   return guardedPackageXmlFile;
+}
+
+/**
+ * Entries of a package.xml that hold agents in the format before API 68.0: GenAiPlannerBundle, and the
+ * Bot and BotVersion of an agent. A classic Einstein Bot (no agentType, no Copilot type) is not one.
+ * Salesforce refuses them from API 68.0, where the same agents are AiAgentDefinition.
+ */
+export async function findLegacyAgentEntries(packageXmlFile: string, projectRoot: string = process.cwd()): Promise<LegacyAgentEntry[]> {
+  if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
+    return [];
+  }
+  const content = await parsePackageXmlFile(packageXmlFile);
+  const entries: LegacyAgentEntry[] = [];
+  for (const member of (content[LEGACY_PLANNER_TYPE] || []).map(String)) {
+    entries.push({ type: LEGACY_PLANNER_TYPE, member, agentName: member === '*' ? '*' : member.replace(/_v\d+$/, '') });
+  }
+  const botMembers: string[] = (content['Bot'] || []).map(String);
+  const botVersionMembers: string[] = (content['BotVersion'] || []).map(String);
+  if (botMembers.length === 0 && botVersionMembers.length === 0) {
+    return entries;
+  }
+  const agentBots = await listLocalAgentBots(projectRoot);
+  for (const member of botMembers) {
+    const names = member === '*' ? [...agentBots] : agentBots.has(member) ? [member] : [];
+    names.forEach((name) => entries.push({ type: 'Bot', member, agentName: name }));
+  }
+  for (const member of botVersionMembers) {
+    const botName = member.split('.')[0];
+    if (member === '*' || agentBots.has(botName)) {
+      entries.push({ type: 'BotVersion', member, agentName: member === '*' ? '*' : botName });
+    }
+  }
+  return entries;
+}
+
+/** Removes the entries from the package.xml file. Returns the folders of the project that still hold them. */
+export async function removeLegacyAgentEntries(packageXmlFile: string, entries: LegacyAgentEntry[], projectRoot: string = process.cwd()): Promise<string[]> {
+  const content = await parsePackageXmlFile(packageXmlFile);
+  for (const entry of entries) {
+    const kept = (content[entry.type] || []).filter((member: string) => member !== entry.member);
+    if (kept.length > 0) {
+      content[entry.type] = kept;
+    } else {
+      delete content[entry.type];
+    }
+  }
+  await writePackageXmlKeepingVersion(packageXmlFile, content, packageXmlFile);
+  const agentNames = [...new Set(entries.map((entry) => entry.agentName).filter((name) => name !== '*'))];
+  const folders = await glob(
+    agentNames.flatMap((agentName) => [`**/bots/${agentName}`, `**/genAiPlannerBundles/${agentName}_v*`]),
+    { cwd: projectRoot, ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'] }
+  );
+  return folders.map((folder) => folder.replace(/\\/g, '/')).sort();
 }
 
 /**
@@ -329,14 +387,14 @@ export async function readAgentBotUsers(agentNames: string[], projectRoot: strin
  * or a rule of the project that writes botUser or default_agent_user.
  */
 export async function hasBotUserReplacementRule(): Promise<boolean> {
+  if (await hasOwnRunningUserRule()) {
+    return true;
+  }
   const rules: any[] = [...(await readProjectReplacementRules())];
   for (const branch of await readAllBranchReplacementRules()) {
     rules.push(...branch.rules);
   }
   rules.push(...((await readIssueRules({ useCache: true })).rules || []));
-  if (rules.some((rule) => rule?.enabled !== false && !rule?.builtIn && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`))) {
-    return true;
-  }
   const builtInTurnedOff = rules.some((rule) => rule?.id === AGENT_RUNNING_USER_RULE_ID && rule?.enabled === false);
   return !builtInTurnedOff && (await findSkipReplacementRulesFile(null)) === null;
 }
@@ -395,6 +453,48 @@ async function warnWhenVersionsCommittedOutsideProject(agentNames: string[], org
   }
   for (const [agentName, versions] of outside) {
     uxLog('warning', commandThis, c.yellow(t('agentVersionsCommittedOutsideProject', { agentName, versions: versions.sort((a, b) => a - b).join(', '), docUrl: AGENT_DOC_URL })));
+  }
+}
+
+// The format before API 68.0 fails the whole deployment from API 68.0: stop before anything is sent
+async function assertNoLegacyAgentAtApi68(packageXmlFile: string, conn: Connection): Promise<void> {
+  const legacy = await findLegacyAgentEntries(packageXmlFile);
+  if (legacy.length === 0) {
+    return;
+  }
+  const deployApiVersion = await resolveDeployApiVersion({ conn, packageXmlFiles: [packageXmlFile] });
+  if (deployApiVersion && isApiVersionAtLeast(deployApiVersion)) {
+    throw new SfError(
+      t('agentLegacyTypesAtApi68', {
+        apiVersion: deployApiVersion.toFixed(1),
+        entries: legacy.map((entry) => `${entry.type}:${entry.member}`).join(', '),
+        agents: [...new Set(legacy.map((entry) => entry.agentName))].join(', '),
+        docUrl: AGENT_DOC_URL,
+      })
+    );
+  }
+}
+
+// Bots of the project that are agents, not classic Einstein Bots
+async function listLocalAgentBots(projectRoot: string): Promise<Set<string>> {
+  const files = await glob('**/bots/*/*.bot-meta.xml', { cwd: projectRoot, ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'] });
+  const agentBots = new Set<string>();
+  for (const file of files) {
+    const content = await fs.readFile(path.join(projectRoot, file), 'utf8');
+    if (/<agentType>|<type>\s*\w*Copilot\s*<\/type>/.test(content)) {
+      agentBots.add(path.basename(file).replace(/\.bot-meta\.xml$/, ''));
+    }
+  }
+  return agentBots;
+}
+
+// writePackageXmlFile writes the default API version: keep the one of the source file
+async function writePackageXmlKeepingVersion(targetFile: string, content: Record<string, string[]>, versionSourceFile: string): Promise<void> {
+  const originalVersion = fs.existsSync(versionSourceFile) ? /<version>\s*([\d.]+)\s*<\/version>/.exec(await fs.readFile(versionSourceFile, 'utf8'))?.[1] : undefined;
+  await writePackageXmlFile(targetFile, content);
+  if (originalVersion) {
+    const written = await fs.readFile(targetFile, 'utf8');
+    await fs.writeFile(targetFile, written.replace(/<version>\s*[\d.]+\s*<\/version>/, `<version>${originalVersion}</version>`));
   }
 }
 

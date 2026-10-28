@@ -13,6 +13,7 @@ import {
   AGENT_DOC_URL,
   AgentVersionInfo,
   buildAgentPackageXmlContent,
+  findLegacyAgentEntries,
   findMissingAgentReferences,
   formatAgentVersionFullName,
   hasBotUserReplacementRule,
@@ -21,6 +22,7 @@ import {
   listOrgAgentVersions,
   mergeIntoPackageXml,
   readAgentBotUsers,
+  removeLegacyAgentEntries,
   resolveAgentVersion,
 } from '../../../../common/utils/agentUtils.js';
 import { resolveDeployApiVersion } from '../../../../common/replacementRules/engine/ruleEngine.js';
@@ -44,6 +46,7 @@ Key functionalities:
 - **Agent and version selection:** Lists the agents of the org and their versions with their status, and proposes the latest version.
 - **Retrieval with dependencies:** Retrieves the selected version and what it uses in the local project.
 - **package.xml update:** Adds every retrieved component to \`manifest/package.xml\`, always with the whole \`AiAgentDefinition\`: the first deployment of an agent to an org needs it.
+- **Migration from the format before API 68.0:** When \`manifest/package.xml\` still holds the agent as \`GenAiPlannerBundle\`, \`Bot\` or \`BotVersion\`, these entries are removed, and the command lists the old folders to delete.
 - **Running user warning:** A service agent runs as a user of its org (\`botUser\`). The command warns when the retrieved agent has one: add a replacement rule that writes the user of each org.
 - **Missing dependencies report:** Lists the custom objects, custom fields and Data 360 objects that the agent names and that the project does not hold. The CLI does not retrieve them: retrieve them yourself when the target org does not have them.
 
@@ -177,6 +180,17 @@ In agent mode:
     const added = await mergeIntoPackageXml(packageXmlFile, retrievedComponents);
     uxLog('action', this, c.cyan(t('agentComponentsAddedToPackageXml', { count: added.length, packageXml: path.relative(process.cwd(), packageXmlFile) })));
 
+    // The same agent in the format before API 68.0 (GenAiPlannerBundle, Bot, BotVersion) is replaced
+    const legacyEntries = (await findLegacyAgentEntries(packageXmlFile)).filter((entry) => entry.agentName.toLowerCase() === selected.agentName.toLowerCase());
+    let legacyFolders: string[] = [];
+    if (legacyEntries.length > 0) {
+      legacyFolders = await removeLegacyAgentEntries(packageXmlFile, legacyEntries);
+      uxLog('action', this, c.cyan(t('agentLegacyEntriesRemoved', { agentName: selected.agentName, entries: legacyEntries.map((entry) => `${entry.type}:${entry.member}`).join(', ') })));
+      if (legacyFolders.length > 0) {
+        uxLog('warning', this, c.yellow(t('agentLegacyFoldersToDelete', { folders: legacyFolders.join('\n') })));
+      }
+    }
+
     // 5. List what the agent uses and the CLI does not retrieve
     const agentFiles = retrievedFiles.map((file) => file?.filePath).filter((filePath) => !!filePath);
     const missingReferences = await findMissingAgentReferences(agentFiles);
@@ -206,6 +220,8 @@ In agent mode:
       addedToPackageXml: added.map((item) => ({ type: item.type, name: item.member })),
       missingDependencies: missingReferences.map((reference) => ({ ...reference })),
       botUsers: botUsers.map((item) => ({ ...item })),
+      legacyEntriesRemoved: legacyEntries.map((entry) => ({ type: entry.type, name: entry.member })),
+      legacyFoldersToDelete: legacyFolders,
     };
   }
 

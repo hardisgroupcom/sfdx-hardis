@@ -102,6 +102,19 @@ describe('AgentRunningUserBuiltInRule', () => {
     }
   });
 
+  it('creates no user when a rule of the project writes the running user', async () => {
+    await fs.ensureDir('config');
+    await fs.writeFile(
+      path.join('config', '.sfdx-hardis.yml'),
+      "replacementRules:\n  - id: agent-user\n    type: text\n    files: '**/aiAgents/*.aiAgentDefinition-meta.xml'\n    find: '(?<=<botUser>)[^<]+(?=</botUser>)'\n    regex: true\n    secret: AGENT_RUNNING_USER\n"
+    );
+    const rule = buildRule();
+    const conn = fakeConnection({ users: [], agentUsers: [] });
+    await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn, write: true, checkOnly: false });
+    expect(conn.queries).to.deep.equal([]);
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`).status).to.equal('unchanged');
+  });
+
   it('does nothing when turned off', async () => {
     const rule = buildRule(false);
     const conn = fakeConnection({ agentUsers: ['my-agent.a1b2c3d4e5f6@00dtarget0000001.ext'] });

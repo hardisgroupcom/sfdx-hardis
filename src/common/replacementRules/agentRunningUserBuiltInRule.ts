@@ -14,6 +14,8 @@ import { execSfdxJson, uxLog } from '../utils/index.js';
 import { soqlQuery } from '../utils/apiUtils.js';
 import { t } from '../utils/i18n.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
+import { readIssueRules } from './config/issueRulesStore.js';
+import { readAllBranchReplacementRules, readProjectReplacementRules } from './config/ruleConfig.js';
 import { ReplacementRulePrepareOptions, ReplacementRuleRoot, ReplacementTextOutcome } from './replacementRuleRoot.js';
 
 const BOT_USER_REGEX = /(<botUser>\s*)([^<]+?)(\s*<\/botUser>)/g;
@@ -32,6 +34,11 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
     }
     const agents = await listAgentsWithRunningUser(options.packageXmlFiles);
     if (agents.length === 0) {
+      return;
+    }
+    // A rule of the project writes the user: no user is created for nothing
+    if (await hasOwnRunningUserRule()) {
+      uxLog('log', options.commandThis, c.grey(t('agentRunningUserOwnRule')));
       return;
     }
     const conn = await resolveConnection(options);
@@ -106,6 +113,16 @@ export async function listAgentsWithRunningUser(packageXmlFiles?: string[], proj
     }
   }
   return [...byAgent.values()].map((entry) => ({ agentName: entry.agentName, usernames: [...entry.usernames] }));
+}
+
+/** True when a rule of the project (config, a branch file or the issue) writes botUser or default_agent_user. */
+export async function hasOwnRunningUserRule(): Promise<boolean> {
+  const rules: any[] = [...(await readProjectReplacementRules())];
+  for (const branch of await readAllBranchReplacementRules()) {
+    rules.push(...branch.rules);
+  }
+  rules.push(...((await readIssueRules({ useCache: true })).rules || []));
+  return rules.some((rule) => rule?.enabled !== false && !rule?.builtIn && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`));
 }
 
 /** Base username given to "sf org create agent-user", which adds a unique id before the @ */

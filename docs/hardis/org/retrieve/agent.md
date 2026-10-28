@@ -15,6 +15,7 @@ Key functionalities:
 - **Agent and version selection:** Lists the agents of the org and their versions with their status, and proposes the latest version.
 - **Retrieval with dependencies:** Retrieves the selected version and what it uses in the local project.
 - **package.xml update:** Adds every retrieved component to `manifest/package.xml`, always with the whole `AiAgentDefinition`: the first deployment of an agent to an org needs it.
+- **Migration from the format before API 68.0:** When `manifest/package.xml` still holds the agent as `GenAiPlannerBundle`, `Bot` or `BotVersion`, these entries are removed, and the command lists the old folders to delete.
 - **Running user warning:** A service agent runs as a user of its org (`botUser`). The command warns when the retrieved agent has one: add a replacement rule that writes the user of each org.
 - **Missing dependencies report:** Lists the custom objects, custom fields and Data 360 objects that the agent names and that the project does not hold. The CLI does not retrieve them: retrieve them yourself when the target org does not have them.
 
