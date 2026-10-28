@@ -160,6 +160,10 @@ commandsPostDeploy:
     runOnlyOnceByOrg: false
 ```
 
+## Good to know
+
+- The agent graph of a version (`aiAgentDefinitionVersions/<agent>#<n>/agentGraph/*_graph.json`) is base64 text, despite its `.json` extension. The [MegaLinter configuration of sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/blob/main/config/sfdx-hardis.mega-linter-config.yml) excludes it from the JSON linters (`JSON_FILTER_REGEX_EXCLUDE: (agentGraph/)`). If your `.mega-linter.yml` does not extend it, add this line.
+
 ## Keep the previous agent types with API 67.0
 
 Both the source org and the target org must be on API 68.0 to use the new types. During a release window, while your sandboxes are on Winter '27 and production is still on Summer '26, keep the previous types: `Bot`, `BotVersion`, `GenAiPlannerBundle` and `AiAuthoringBundle`.

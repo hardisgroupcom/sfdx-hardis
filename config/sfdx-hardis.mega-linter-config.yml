@@ -23,6 +23,8 @@ SALESFORCE_CODE_ANALYZER_FLOW_DISABLE_ERRORS: true
 FLAVOR_SUGGESTIONS: false
 SHOW_ELAPSED_TIME: true
 FILTER_REGEX_EXCLUDE: (\.vscode|staticresources/)
+# Agent graphs of Agentforce agents (agentGraph/*_graph.json) are base64 text, not JSON
+JSON_FILTER_REGEX_EXCLUDE: (agentGraph/)
 SALESFORCE_PRE_COMMANDS:
   - command: echo "Downloading missing Code Analyzer configuration files (existing local files are kept)... If it fails, you need to manually add code-analyzer.yml and pmd-ruleset.yml at the root of your repository."
     continue_if_failed: false
