@@ -465,3 +465,19 @@ CVE-2026-109869
 # zod: validating a huge array, set or map against a schema without a size bound collects one issue per failing element until the process runs out of memory (DoS, HIGH). OSV lists every version up to 4.6.7 as affected: 4.6.6 only checks explicit size bounds first.
 # zod 4.4.3 is pinned by sfdx-git-delta (latest 6.45.1), installed as an sf plugin in both images. sfdx-git-delta validates its own command configuration with it, never input received from the network. Remove once sfdx-git-delta ships a fixed zod. Added 2026-10-26.
 CVE-2023-54404
+
+# https://avd.aquasec.com/nvd/cve-2026-109383 + cve-2026-109829 + cve-2026-87018
+# undici, three findings from the same October 2026 batch, fixed in 6.29.1, 7.30.1 and 8.12.2:
+#   CVE-2026-109383 the Agent drops a caller-supplied tls.checkServerIdentity callback (HIGH)
+#   CVE-2026-109829 cache poisoning when an originless Agent composes the redirect and cache interceptors with a shared store (HIGH, 7.x and 8.x only)
+#   CVE-2026-87018 process crash when a TLS 1.2 server renegotiates with a certificate for another host (DoS, HIGH)
+# sfdx-hardis own tree is patched: yarn.lock resolves undici to 8.12.2. The copies left in both images (6.28.0 or 6.29.0, 7.30.0, 8.11.2) sit in the npm bundled with the Node runtime and inside the npm-shrinkwrapped @salesforce/cli (its own undici, its bundled npm and @jsforce/jsforce-node). The latest npm (11.x and 12.2.1) still bundles undici 6.29.0, and @salesforce/cli latest still pins the affected versions, so there is nothing to upgrade to yet.
+# None of these copies passes a checkServerIdentity callback or uses the cache interceptor (checked in @salesforce/cli 2.155.8 and npm 11), so Node's default hostname and chain checks still apply and no response cache exists. The renegotiation crash needs a hostile TLS server with a CA-trusted certificate and only ends a one-shot CI job. Remove once @salesforce/cli and npm ship the fixed versions. Added 2026-10-28.
+CVE-2026-109383
+CVE-2026-109829
+CVE-2026-87018
+
+# https://avd.aquasec.com/nvd/cve-2026-93753 (GHSA-gcqx-w48m-w2h4)
+# deepmerge 4.3.1: mergeObject() does not filter __proto__ keys, so a crafted source object can poison the prototype of the merged result (LOW). No fixed release exists: 4.3.1 is the latest version.
+# It only comes in through bitbucket 2.12.0 (latest), which uses it to merge its endpoint defaults with the request options that sfdx-hardis builds itself, restricted to plain objects. API responses never go through it. Remove once deepmerge ships a fix. Added 2026-10-28.
+CVE-2026-93753
