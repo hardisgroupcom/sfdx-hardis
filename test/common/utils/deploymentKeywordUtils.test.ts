@@ -1,3 +1,4 @@
+// cspell:ignore xnodelta nodeltas
 import { expect } from 'chai';
 import {
   commitContainsDeploymentKeyword,
