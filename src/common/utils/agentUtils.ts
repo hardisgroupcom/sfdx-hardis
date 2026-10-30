@@ -575,6 +575,10 @@ async function assertNoActiveVersionOverwritten(packageXmlFile: string, orgVersi
   if (deployedActive.length === 0) {
     return;
   }
+  // package-no-overwrite.xml removes listed members only: it cannot take a version out of a wildcard
+  if (members.includes('*')) {
+    throw new SfError(t('agentActiveVersionInWildcardDeployment', { versions: deployedActive.map((item) => item.member).join(', '), docUrl: AGENT_DOC_URL }));
+  }
   const noOverwriteFile = await resolvePackageNoOverwriteFile();
   const protectedItems = noOverwriteFile ? filterItemsMatchingNoOverwrite(deployedActive, await parsePackageXmlFile(noOverwriteFile)) : [];
   const unprotected = deployedActive.filter((item) => !protectedItems.includes(item));

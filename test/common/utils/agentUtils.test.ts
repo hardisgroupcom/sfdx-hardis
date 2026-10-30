@@ -211,6 +211,17 @@ describe('agentUtils.checkAgentDeployment', () => {
     const conn = fakeConnection({ apiVersion: '68.0', orgVersions: [{ fullName: 'My_Agent#2', status: 'Active' }] });
     await checkAgentDeployment(file, conn, null);
   });
+
+  it('stops when a wildcard deploys the active version, even when package-no-overwrite.xml lists the type', async () => {
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['*'], AiAgentDefinitionVersion: ['*'] }));
+    await fs.ensureDir(path.join(tmpDir, 'force-app', 'aiAgentDefinitionVersions', 'My_Agent#2'));
+    await fs.writeFile(path.join(tmpDir, 'force-app', 'aiAgentDefinitionVersions', 'My_Agent#2', 'My_Agent#2.aiAgentDefinitionVersion-meta.xml'), '<x/>');
+    await ensureAgentVersionsInPackageNoOverwrite(path.join(tmpDir, 'manifest', 'package-no-overwrite.xml'));
+    const conn = fakeConnection({ apiVersion: '68.0', orgVersions: [{ fullName: 'My_Agent#2', status: 'Active' }] });
+    const error = await checkError(file, conn);
+    expect(String(error?.message)).to.contain('My_Agent#2').and.contain('package.xml');
+  });
 });
 
 describe('agentUtils sources of the deployment actions', () => {

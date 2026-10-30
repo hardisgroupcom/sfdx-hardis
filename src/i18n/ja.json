@@ -2,6 +2,7 @@
   "aDetailedDescriptionForExportConfig": "このエクスポート設定の内容を説明する詳細な説明",
   "agentActivateActionWritten": "エージェント {{agentName}} はデプロイ後にバージョン {{version}} で有効化されます: アクションを {{file}} に書き込みました。",
   "agentActiveVersionInDeployment": "デプロイには、対象の org で有効なエージェントバージョン ({{versions}}) が含まれています: Salesforce は有効なエージェントバージョンの編集を拒否します。AiAgentDefinitionVersion を package-no-overwrite.xml に追加してください (例: hardis:work:save のクリーニング autoAddAgentsDeploymentActions を使用): {{docUrl}}",
+  "agentActiveVersionInWildcardDeployment": "デプロイの package.xml で AiAgentDefinitionVersion が * になっており、対象の org に有効なエージェントバージョン ({{versions}}) があります: package-no-overwrite.xml はワイルドカードからバージョンを除外できず、Salesforce は有効なエージェントバージョンの編集を拒否します。hardis:org:retrieve:agent が書き込む形式で、package.xml にバージョンを名前で列挙してください: {{docUrl}}",
   "agentDefinitionMissingInTargetOrg": "対象の org にはエージェント {{agents}} がなく、デプロイにはその AiAgentDefinitionVersion のみが含まれています: Salesforce は AiAgentDefinition のないエージェントの初回デプロイを拒否します。AiAgentDefinition もデプロイしてください (例: commit メッセージに \"nodelta\" を含める): {{docUrl}}",
   "agentsDeploymentActionsNoAgentChanged": "Agentforce エージェントのバージョンに変更はありません: 追加するエージェントのデプロイアクションはありません。",
   "agentVersionsAddedToPackageNoOverwrite": "AiAgentDefinitionVersion を {{file}} に追加しました: 対象の org に既にあるエージェントバージョンはデプロイから除外されます。",
