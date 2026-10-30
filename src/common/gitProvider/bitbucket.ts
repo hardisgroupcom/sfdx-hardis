@@ -2,7 +2,7 @@ import { CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef,
 import c from 'chalk';
 import fs from '../utils/fsUtils.js';
 import * as path from "path";
-import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from './index.js';
 import { getCurrentGitBranch, git, uxLog } from '../utils/index.js';
 import bbPkg, { Schema } from 'bitbucket';
 import { getBannerMarkdownAndLink } from '../../config/index.js';
@@ -644,7 +644,7 @@ export class BitbucketProvider extends GitProviderRoot {
   }
 
   public async listPullRequests(
-    filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date } = {},
+    filters: { status?: string; pullRequestStatus?: "open" | "merged" | "abandoned"; targetBranch?: string; minDate?: Date; minDateOn?: 'created' | 'merged' } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     const workspace = this.workspace;
     const repoSlug = this.repoSlug;
@@ -698,11 +698,13 @@ export class BitbucketProvider extends GitProviderRoot {
         prs = prs.filter((pr: any) => (pr?.state || "") === state);
       }
 
-      // Filter by minDate
+      // Filter by minDate, on creation or on merge. Bitbucket gives no merge date: updated_on is
+      // the closest one, never older than the merge
       if (filters.minDate) {
+        const dateField = filters.minDateOn === "merged" ? "updated_on" : "created_on";
         prs = prs.filter((pr: any) => {
-          const createdOn = pr.created_on ? new Date(pr.created_on) : null;
-          return createdOn && createdOn >= filters.minDate!;
+          const date = pr[dateField] ? new Date(pr[dateField]) : null;
+          return date && date >= filters.minDate!;
         });
       }
 
@@ -766,6 +768,28 @@ export class BitbucketProvider extends GitProviderRoot {
       return pullRequest?.data?.destination ? this.completePullRequestInfo(pullRequest.data) : null;
     } catch (err) {
       uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('gitProviderPrByIdNotFound', { id: pullRequestId, message: String(err) })));
+      return null;
+    }
+  }
+
+  public async listPullRequestCommits(pullRequestId: number): Promise<PullRequestCommitInfo[] | null> {
+    const workspace = process.env.BITBUCKET_WORKSPACE || null;
+    const repoSlug = process.env.BITBUCKET_REPO_SLUG || null;
+    if (!this.bitbucket || !workspace || !repoSlug) {
+      return null;
+    }
+    try {
+      const commits = await this.fetchAllPages(
+        (params) => this.bitbucket.pullrequests.listCommits(params),
+        { pull_request_id: pullRequestId, repo_slug: repoSlug, workspace, pagelen: 100 },
+      );
+      return commits.map((commit: any) => ({
+        sha: commit.hash,
+        message: commit.message || commit.summary?.raw || '',
+        parentShas: (commit.parents || []).map((parent: any) => parent.hash).filter((hash: string) => hash),
+      }));
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Bitbucket Integration] ' + t('gitProviderPullRequestCommitsNotListed', { number: pullRequestId, message: String(err) })));
       return null;
     }
   }

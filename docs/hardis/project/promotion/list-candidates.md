@@ -18,6 +18,7 @@ The command:
 - requires the [git provider connection](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-integrations-home/) (GitHub, GitLab, Bitbucket or Azure DevOps) and refuses to run without it, like `hardis:project:promotion:create`: the candidates are read from the provider, so the numbers listed are the ones `create` accepts;
 - lists the Pull Requests merged into the source branch since its merge base with the target branch, leaving out the merges between major branches and the promotion branches themselves (they carry other people's work, they are not User Stories);
 - marks the ones another promotion branch already carries to the same target branch. They are left out of the candidates unless `--include-already-promoted` is passed, and always reported in the `alreadyPromoted` result;
+- with `detectManualCherryPicks: true`, also marks the ones that reached the target branch through a cherry-pick made by hand (`alreadyPromotedBy.manualCherryPick`). A story only part of whose commits were found stays a candidate (`partiallyCherryPicked`), and so does a story only matched by its commit title (`probablyCherryPicked`);
 - names the promotion Pull Request already open between the two branches, if any. It is left untouched: `hardis:project:promotion:create` is what closes it, once its replacement exists.
 
 With `--json`, the result holds `candidates` (Pull Request numbers, title, author, source branch, commit, date), `alreadyPromoted`, and `openPromotions`.
@@ -30,6 +31,7 @@ With `--json`, the result holds `candidates` (Pull Request numbers, title, autho
 - A promotion merged into the source branch is expanded into the User Stories its `promotionPullRequests` block declares, recursively, so a story promoted twice in a row keeps its number.
 - A candidate can be a merge commit carrying several Pull Requests: they are listed together, because cherry-picking it carries all of them.
 - Already-promoted detection reads the promotion Pull Requests of the target branch, bounded by the date of the oldest candidate.
+- Manual cherry-pick detection (`detectManualCherryPicks`, off by default) reads the `git cherry-pick -x` trailers of the target branch (since the merge base, and before it as far as the oldest commit the candidates bring, so a back-merge does not hide a pick), and the commits each Pull Request merged into the target branch since the oldest candidate held (by merge date). A squash merge removes them from the history, not from the provider, which is asked for them; a Pull Request merged with a merge commit is read from the local history. Their trailers and their own SHAs name the candidates. A promotion that declares a story always wins over this detection.
 </details>
 
 ### Agent Mode

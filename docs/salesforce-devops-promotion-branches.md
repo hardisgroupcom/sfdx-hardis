@@ -146,6 +146,22 @@ Both keys are read from the **project** configuration. `hardis:project:promotion
 
 </details>
 
+### Stories cherry-picked by hand before promotion branches (Beta)
+
+A project that moved stories between major branches with hand-made cherry-picks before adopting promotion branches has a history sfdx-hardis cannot read from the promotion Pull Requests: those stories are already in the next branch, yet they are still offered as candidates, and the DevOps Pipeline still lists them in the branch they left.
+
+Turn on **Detect manual cherry-picks** (`detectManualCherryPicks: true`, next to `enablePromotionBranches`) and sfdx-hardis also looks at the target branch itself:
+
+- the `git cherry-pick -x` trailers of its commits, `(cherry picked from commit <sha>)`, including the ones a later merge of the target branch back into the source branch made common to both;
+- the commits the git provider still lists for each Pull Request merged into it. A release branch gathering several cherry-picks, merged with a squash, leaves a single commit in the history, but GitLab, GitHub, Azure DevOps and Bitbucket keep the commits it held, trailers included. A Pull Request merged with a merge commit is read from the git history instead: it holds the same commits.
+
+A story found that way is treated like a promoted one: `hardis:project:promotion:create` no longer offers it, and the DevOps Pipeline lists it in the branch where it is waiting: the one it reached, or a branch further down when that branch was merged on since. Two cases stay where they are, flagged instead of moved, so nothing that did not travel is hidden:
+
+- **partially cherry-picked**: only some of the commits of the story were found;
+- **probably cherry-picked**: nothing names the story, but one commit of the target side has exactly the same title. Titles are reused ("--V2", the same fix twice), so a title alone never moves a story.
+
+The setting is off by default and only works with `enablePromotionBranches`: it costs one git provider call per Pull Request squash-merged into the target branch since the oldest candidate, counted on the merge date. Once every story moves through promotion branches, it has nothing left to find, and you can turn it off again.
+
 ### Naming
 
 A promotion branch is named after the step it serves and the minute it was assembled, so the name alone says where the stories come from and where they go:

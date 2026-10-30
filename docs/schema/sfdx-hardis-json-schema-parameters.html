@@ -11490,6 +11490,53 @@ While the list is missing, sf hardis:project:promotion:create stops and asks for
         </div>
     </div>
 </div>
+<div class="accordion" id="accordiondetectManualCherryPicks">
+    <div class="card">
+        <div class="card-header" id="headingdetectManualCherryPicks">
+            <h2 class="mb-0">
+                <button class="btn btn-link property-name-button" type="button" data-toggle="collapse" data-target="#detectManualCherryPicks"
+                        aria-expanded="" aria-controls="detectManualCherryPicks" onclick="setAnchor('#detectManualCherryPicks')"><span class="property-name">detectManualCherryPicks</span></button>
+            </h2>
+        </div>
+
+        <div id="detectManualCherryPicks"
+             class="collapse property-definition-div" aria-labelledby="headingdetectManualCherryPicks"
+             data-parent="#accordiondetectManualCherryPicks">
+            <div class="card-body pl-5">
+
+    <div class="breadcrumbs">root
+        <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-arrow-right-short" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+            <path
+                fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"
+            />
+        </svg>
+    <a href="#detectManualCherryPicks" onclick="anchorLink('detectManualCherryPicks')">detectManualCherryPicks</a></div><h4>Detect manual cherry-picks (Beta)</h4><span class="badge badge-dark value-type">Type: boolean</span> <span class="badge badge-success default-value">Default: false</span><br/>
+<div class="description collapse" id="collapseDescription_detectManualCherryPicks">
+            <p>(Beta) Requires enablePromotionBranches. Also recognize the User Stories that reached the next major branch through cherry-picks made by hand instead of a promotion branch: from the <code>git cherry-pick -x</code> trailers of the target branch, and from the commits the git provider still lists for a Pull Request squash-merged into it (ex: a release branch of cherry-picks). Those stories are no longer offered by hardis:project:promotion:create and are shown in the branch they reached in the DevOps Pipeline. A story only part of whose commits were found stays where it is, flagged; a story only matched by its commit title is flagged as probably cherry-picked and stays too. Off by default: it costs one git provider call per Pull Request squash-merged into the target branch.</p>
+
+        </div>
+        <div>
+            <a class="collapse-description-link collapsed" data-toggle="collapse" href="#collapseDescription_detectManualCherryPicks"
+               aria-expanded="false" aria-controls="collapseDescriptiondetectManualCherryPicks"
+            ></a>
+        </div>
+        
+
+        
+        
+
+        <br/>
+<div class="badge badge-secondary">Examples:</div>
+<br/><div id="detectManualCherryPicks_ex1" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">true</span>
+</pre></div>
+</div><div id="detectManualCherryPicks_ex2" class="jumbotron examples"><div class="highlight"><pre><span></span><span class="kc">false</span>
+</pre></div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="accordion" id="accordionpromotionConflictMarkersIgnoredFiles">
     <div class="card">
         <div class="card-header" id="headingpromotionConflictMarkersIgnoredFiles">

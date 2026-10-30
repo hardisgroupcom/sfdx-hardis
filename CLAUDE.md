@@ -38,7 +38,7 @@ Every step also covers the VS Code extension: see [VS Code Extension](#vs-code-e
 
 ## End to End Tests
 
-- `e2e` skill: the end to end tests against real orgs, real CI jobs built from the branch under test and throwaway repositories, one scenario per feature in `.claude/skills/e2e/scenarios/`: `promotion-branches` (and backpromote, four git providers), `replacement-rules`, `deployment-actions` (every action type, `runOnlyOnceByOrg`), `promotion-rules-actions` (the three promoted together, rules and actions checked in the org at each level), `training` (the course walked as a learner). Run the matching scenario whenever a feature changes in a way unit tests cannot cover.
+- `e2e` skill: the end to end tests against real orgs, real CI jobs built from the branch under test and throwaway repositories, one scenario per feature in `.claude/skills/e2e/scenarios/`: `promotion-branches` (and backpromote, four git providers), `replacement-rules`, `deployment-actions` (every action type, `runOnlyOnceByOrg`), `promotion-rules-actions` (the three promoted together, rules and actions checked in the org at each level), `manual-cherry-picks` (`detectManualCherryPicks` on a GitLab project of every pattern, setting off compared with `main`), `training` (the course walked as a learner). Run the matching scenario whenever a feature changes in a way unit tests cannot cover.
 
 ## Promotion Branches Skills
 

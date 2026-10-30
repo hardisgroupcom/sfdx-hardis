@@ -2545,6 +2545,18 @@
       "title": "Enable promotion branches (Beta)",
       "type": "boolean"
     },
+    "detectManualCherryPicks": {
+      "$id": "#/properties/detectManualCherryPicks",
+      "description": "(Beta) Requires enablePromotionBranches. Also recognize the User Stories that reached the next major branch through cherry-picks made by hand instead of a promotion branch: from the `git cherry-pick -x` trailers of the target branch, and from the commits the git provider still lists for a Pull Request squash-merged into it (ex: a release branch of cherry-picks). Those stories are no longer offered by hardis:project:promotion:create and are shown in the branch they reached in the DevOps Pipeline. A story only part of whose commits were found stays where it is, flagged; a story only matched by its commit title is flagged as probably cherry-picked and stays too. Off by default: it costs one git provider call per Pull Request squash-merged into the target branch.",
+      "default": false,
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/",
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Detect manual cherry-picks (Beta)",
+      "type": "boolean"
+    },
     "promotionConflictMarkersIgnoredFiles": {
       "$id": "#/properties/promotionConflictMarkersIgnoredFiles",
       "description": "Beta feature. The deployment check of a promotion Pull Request fails while any tracked file of the branch still holds git conflict markers (lines starting with <<<<<<< or >>>>>>>).\nList here, as git glob patterns relative to the repository root, the files that hold such lines on purpose (ex: documentation about merge conflicts, merge driver fixtures), so they do not block every promotion.\n'*' does not cross a '/', use '**' for any depth.",

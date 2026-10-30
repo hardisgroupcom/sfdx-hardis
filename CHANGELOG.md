@@ -6,6 +6,7 @@
 - [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/) and [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): System Administrator is now selected by default as the profile of the External Client App, in every org language.
 - Doc: the [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) page shows an example and a screenshot of the rule editor for each rule type (`xml-value`, `xml-remove`, `text`), and its Rules and Values per org screenshots are zoomed out so every column can be read.
 - Doc: the [Aha! integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/) page explains how to pass the Aha! variables to pipelines created before 8.14.0.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#stories-cherry-picked-by-hand-before-promotion-branches-beta) (Beta): new `detectManualCherryPicks` setting, so the User Stories already cherry-picked by hand into the next branch, even through a squashed release branch, are no longer offered for promotion.
 - Upgrade **picomatch** to 4.0.7.
 
 ## [8.20.1] 2026-10-27
