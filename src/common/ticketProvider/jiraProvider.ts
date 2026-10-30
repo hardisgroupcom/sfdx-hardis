@@ -906,7 +906,7 @@ export class JiraProvider extends TicketProviderRoot {
           [transition.to.name, transition.to.untranslatedName].some((name) => name != null && String(name).toLowerCase() === wanted))
     );
     if (!match) {
-      throw new SfError(t("ticketTransitionNotAvailable", { status, ticketId: issueKey }));
+      throw new SfError(t("ticketTransitionNotAvailable", { status, ticketId: issueKey }), TICKET_ERROR.transitionInvalid);
     }
     await this.runTicketOperation({ operation: "transition", ticketId: issueKey }, (client) =>
       client.issues.doTransition({ issueIdOrKey: issueKey, transition: { id: String(match.id) } })
@@ -919,7 +919,7 @@ export class JiraProvider extends TicketProviderRoot {
     const field = options.field || "";
     // Checked by the command before the comment; repeated here because the provider is public
     if (!JiraProvider.POINTS_FIELD_RE.test(field)) {
-      throw new SfError(t("ticketPointsFieldRequired"));
+      throw new SfError(t("ticketPointsFieldRequired"), TICKET_ERROR.pointsInvalid);
     }
     const issue: any = await this.runTicketOperation({ operation: "points", ticketId: issueKey }, (client) =>
       retryReadOn5xx(() => client.issues.getIssue({ issueIdOrKey: issueKey, fields: [field] }))

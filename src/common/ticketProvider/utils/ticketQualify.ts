@@ -248,7 +248,7 @@ export function parseStoryPoints(value: string | undefined | null): number | nul
     return null;
   }
   if (!/^\d+(\.\d+)?$/.test(String(value).trim())) {
-    throw new SfError(t("ticketPointsInvalid", { value }));
+    throw new SfError(t("ticketPointsInvalid", { value }), TICKET_ERROR.pointsInvalid);
   }
   return Number(value);
 }

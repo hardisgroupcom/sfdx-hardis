@@ -73,9 +73,13 @@ Options meant for an agent that reviews a backlog. Each ticket goes through the 
 4. **Status** (\`--transition\`): the target status, by name, untranslated name or id, never the name of the transition.
 5. **Story points** (\`--points\`): a filled value is kept unless \`--overwrite-points\`. JIRA needs \`--points-field customfield_NNNNN\`; Azure Boards finds the field on the work item type (StoryPoints, then Effort, then Size), or takes \`--points-field\`. A type without the field is \`skipped\`, not an error.
 
-\`--strict-markdown\` keeps only headings, bullet and numbered lists, paragraphs, bold and inline code: links, images, HTML, code blocks, tables and mentions are posted as literal text, so text quoted from a ticket cannot inject anything. Without it, the full markdown is converted as usual.
+\`--strict-markdown\` keeps only headings, bullet and numbered lists, paragraphs, bold and inline code: links, images, HTML, code blocks, tables and mentions are posted as literal text, so text quoted from a ticket cannot inject anything. Without it, the full markdown is converted as usual. On Azure Boards the headings keep their markdown level (\`#\` gives \`<h1>\`), with an empty line before each one but the first.
 
-A failed status or points step does not undo the comment. Each result carries \`label\`, \`transition\` and \`points\`: \`{status: done | skipped | failed | not-requested, value, field, reason, error}\`. On ServiceNow and Aha! these steps fail with \`TicketProviderNotSupported\`.
+A failed status or points step does not undo the comment. Each result carries \`label\`, \`transition\` and \`points\`: \`{status: done | skipped | failed | not-requested, value, field, reason, error: {name, message}}\`. A failed step names its error: \`TicketTransitionInvalid\` (status unknown for the type of the ticket, or move refused by the workflow), \`TicketPointsInvalid\` (no \`--points-field\` on JIRA, or value refused). On ServiceNow and Aha! these steps fail with \`TicketProviderNotSupported\`.
+
+**Checking the result:** [hardis:ticket:get](${'https://sfdx-hardis.cloudity.com/hardis/ticket/get/'}) returns the comments as flattened plain text, without their HTML or Atlassian formatting: it tells what was posted, not how it renders. Check the rendering (headings, lists, mention, visibility) in the ticketing system itself.
+
+**JIRA Cloud or Server:** JIRA Cloud is recognized by its host (\`atlassian.net\` or \`.jira.com\`). A Cloud site reached through a custom domain is taken for Server / Data Center, and gets wiki markup instead of an Atlassian document.
 
 ### Provider detection
 
@@ -298,7 +302,7 @@ The same applies in CI.
         providerLabel = resolved.providerClass.providerLabel;
         // JIRA writes points only into a named custom field: refused before the comment, not after
         if (steps.points !== null && resolved.providerClass.providerKey === 'jira' && !JIRA_POINTS_FIELD_RE.test(steps.pointsField || '')) {
-          throw new SfError(t('ticketPointsFieldRequired'));
+          throw new SfError(t('ticketPointsFieldRequired'), TICKET_ERROR.pointsInvalid);
         }
       }
       if (needsRead && provider) {

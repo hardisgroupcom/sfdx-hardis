@@ -604,7 +604,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     const type = workItem.fields["System.WorkItemType"];
     const match = (await this.statesOf(project, type)).find((state) => state.toLowerCase() === status.trim().toLowerCase());
     if (!match) {
-      throw new SfError(t("ticketStateNotAvailable", { status, type }));
+      throw new SfError(t("ticketStateNotAvailable", { status, type }), TICKET_ERROR.transitionInvalid);
     }
     await this.patchWorkItem(workItem, "/fields/System.State", match, "transition");
     return match;

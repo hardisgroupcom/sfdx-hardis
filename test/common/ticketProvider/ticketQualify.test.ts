@@ -13,6 +13,7 @@ import {
   isTicketMarked,
   parseAllowedProjects,
   parseCommentVisibility,
+  parseStoryPoints,
   retryReadOn5xx,
   scopeJql,
   scopeWiql,
@@ -976,4 +977,54 @@ describe('ticket post-comment / get / label / whoami / meta commands', () => {
       TicketProvider.getTicketDetails = originalGet;
     }
   });
+});
+
+describe('stable names of the status and points failures', () => {
+  it('[contract] JIRA: a status no transition leads to, or a move the server refuses, is TicketTransitionInvalid', withEnv(JIRA_ENV, async () => {
+    const transitions = [{ id: '11', name: 'Start', to: { id: '3', name: 'In Progress' } }];
+    const unknown = stubbedJira({ issues: { getTransitions: async () => ({ transitions }) } });
+    expect((await rejectionOf(unknown.transitionTicket('ACME-1', 'Done'))).name).to.equal(TICKET_ERROR.transitionInvalid);
+    const refused = stubbedJira({
+      issues: {
+        getTransitions: async () => ({ transitions }),
+        doTransition: async () => {
+          throw httpError(400, { errorMessages: ['Resolution is required'] });
+        },
+      },
+    });
+    const error = await rejectionOf(refused.transitionTicket('ACME-1', 'In Progress'));
+    expect(error.name).to.equal(TICKET_ERROR.transitionInvalid);
+    expect(error.message).to.contain('Resolution is required');
+  }));
+
+  it('[contract] JIRA: no custom field, or a value the server refuses, is TicketPointsInvalid', withEnv(JIRA_ENV, async () => {
+    const provider = stubbedJira({
+      issues: {
+        getIssue: async () => ({ fields: { customfield_10016: null } }),
+        editIssue: async () => {
+          throw httpError(400, { errors: { customfield_10016: 'Number value expected' } });
+        },
+      },
+    });
+    expect((await rejectionOf(provider.setTicketPoints('ACME-1', 3, { field: 'Story Points' }))).name).to.equal(TICKET_ERROR.pointsInvalid);
+    expect((await rejectionOf(provider.setTicketPoints('ACME-1', 3, { field: 'customfield_10016' }))).name).to.equal(TICKET_ERROR.pointsInvalid);
+    expect(() => parseStoryPoints('L')).to.throw().with.property('name', TICKET_ERROR.pointsInvalid);
+  }));
+
+  it('[contract] Azure Boards: a state the type does not have, or a patch refused, is TicketTransitionInvalid / TicketPointsInvalid', withEnv(AZURE_ENV, async () => {
+    const refusedPatch = () => {
+      const error: any = new Error('VS402625: rule failed');
+      error.statusCode = 400;
+      throw error;
+    };
+    const provider = stubbedAzure({
+      getWorkItem: async () => workItem(5),
+      getWorkItemTypeStates: async () => [{ name: 'New' }, { name: 'Ready' }],
+      getWorkItemTypeFieldsWithReferences: async () => [{ referenceName: 'Microsoft.VSTS.Scheduling.StoryPoints' }],
+      updateWorkItem: async () => refusedPatch(),
+    });
+    expect((await rejectionOf(provider.transitionTicket('5', 'Done'))).name).to.equal(TICKET_ERROR.transitionInvalid);
+    expect((await rejectionOf(provider.transitionTicket('5', 'Ready'))).name).to.equal(TICKET_ERROR.transitionInvalid);
+    expect((await rejectionOf(provider.setTicketPoints('5', 3))).name).to.equal(TICKET_ERROR.pointsInvalid);
+  }));
 });

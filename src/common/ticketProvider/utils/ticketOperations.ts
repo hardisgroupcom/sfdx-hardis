@@ -17,6 +17,10 @@ export const TICKET_ERROR = {
   outOfScope: "TicketOutOfScope",
   /** --skip-if-marked: the ticket already carries the marker label or a prefixed comment of this account */
   alreadyMarked: "TicketAlreadyMarked",
+  /** The status does not exist for the type of the ticket, or the ticketing system refused the move */
+  transitionInvalid: "TicketTransitionInvalid",
+  /** Story points refused: not a number, no field named on JIRA, or a value the ticketing system rejected */
+  pointsInvalid: "TicketPointsInvalid",
 } as const;
 
 export type TicketOperation = "list" | "comment" | "label" | "whoami" | "meta" | "transition" | "points";
@@ -124,6 +128,13 @@ export function toTicketError(error: any, context: TicketErrorContext): Error {
   }
   if (status === 400 && context.operation === "list") {
     return new SfError(t("ticketQueryInvalid", { message }), TICKET_ERROR.queryInvalid, undefined, cause);
+  }
+  // A move or a value the server refuses (workflow condition, validator, wrong field type, revision changed)
+  if ((status === 400 || status === 409) && context.operation === "transition") {
+    return new SfError(t("ticketTransitionRefused", { ticketId: context.ticketId || "", message }), TICKET_ERROR.transitionInvalid, undefined, cause);
+  }
+  if ((status === 400 || status === 409) && context.operation === "points") {
+    return new SfError(t("ticketPointsRefused", { ticketId: context.ticketId || "", message }), TICKET_ERROR.pointsInvalid, undefined, cause);
   }
   // A 403 is a missing permission on a ticket that exists: it stays an ordinary error
   if (status === 404 && context.ticketId) {
