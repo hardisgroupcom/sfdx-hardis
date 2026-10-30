@@ -38,7 +38,9 @@ under their name.
   (section 2b), the reply texts are all there is to validate
 - A go-ahead from an earlier session, or for other discussions, does not count
 - Preparing is always allowed: reading, checking, editing the labs on a branch, opening the Pull
-  Request, drafting replies in the conversation
+  Request, writing the batch file and drafting replies (section 4)
+- What gets posted is what the batch file says when the user gives the go-ahead, not what was
+  shown earlier in the conversation
 - When in doubt, do not post. Ask
 
 ## 1. Find what waits for an answer
@@ -223,21 +225,62 @@ is reported to the user, and test records are deleted.
 
 ## 4. Draft the replies
 
-One reply per comment thread and per issue, shown to the user in the conversation, not posted.
+One reply per comment thread and per issue, written to the batch file and shown to the user in the
+conversation, not posted.
 
-**Show the source before each reply.** The user cannot judge a reply without what it answers. For
-each thread, in this order:
+### The batch file
 
-1. A heading with the thread (`sfdx-hardis-training#196`, the lab), the link to the comment, the
-   author and the date
-2. **The comment the reply answers, in full**, as a quote: the learner's own words, not a summary,
-   with their a) b) c) markers. Links stay links; an image is shown as its link. When the thread
-   has earlier messages the reply depends on (a maintainer answer, the learner's previous comment),
-   quote them too, shortened if long, and say who wrote each one
-3. The decision of the table for that thread, in one line (`fix` / `clarify` / `none`, and why)
-4. The draft reply
+The batch is written to `hardis-report/training-feedback/feedback-<YYYY-MM-DD>.md` in this
+repository (`hardis-report/` is git-ignored). **That file is what gets posted, not the
+conversation.** The user may edit it by hand or have another prompt edit it: a reply rewritten
+there, a `Post:` flag changed, a thread removed. Before posting, read the file again and post what
+it says, never a reply kept in memory. When a later run of the same day finds new threads, add
+them to the same file; never overwrite a thread whose `Post:` is `done`.
 
-Never give the replies alone, and never replace the source by a summary of it.
+The file starts with a short header (the date, the training Pull Request, how to use the flags),
+then one section per thread, in this exact shape, because `post-replies.mjs` reads it:
+
+````markdown
+## 4. sfdx-hardis-training#185, Lab 3.6
+<!-- feedback-meta {"kind":"discussion","repo":"hardisgroupcom/sfdx-hardis-training","discussionId":"D_kw...","replyToId":"DC_kw...","url":"https://github.com/..."} -->
+
+- **Author:** arkonautom, 2026-10-30, [comment](https://github.com/...)
+- **Post:** wait
+
+### Source
+
+> a) the learner's words, in full
+
+### Decision
+
+`fix` in training#351 for a), `none` for b): their old fork's action files.
+
+### Reply
+
+<!-- reply-start -->
+The reply, as it will be posted.
+<!-- reply-end -->
+````
+
+- `feedback-meta` is one line of JSON. For a discussion: `discussionId`, and `replyToId` = the
+  `commentId` of the thread from `list-unanswered.mjs --json`. Leave `replyToId` out only for an
+  "opening post" nobody commented on. For an issue: `{"kind":"issue","repo":"...","number":335,"url":"..."}`
+- `Post:` is `wait` when written. The user sets `yes` to post, `no` to never post (a tip between
+  learners, a thread closed by the learner). The script writes `done` and a `Posted:` line
+- A reply that waits for a decision of the user holds it as `**[your choice: ...]**`; the script
+  refuses to post a reply that still has one
+- **Source**: the comment the reply answers, **in full**, as a quote: the learner's own words, not
+  a summary, with their a) b) c) markers. Links stay links; an image is shown as its link. When the
+  thread has earlier messages the reply depends on (a maintainer answer, the learner's previous
+  comment), quote them too, shortened if long, and say who wrote each one
+- **Decision**: the row of the table for that thread, in one line (`fix` / `clarify` / `none`, and
+  why), and the open question for the user when there is one
+
+In the conversation, give the path of the file, then the same sections (heading, source, decision,
+reply), so the user can validate there or in the file. Never give the replies alone, and never
+replace the source by a summary of it.
+
+### How to write a reply
 
 - **Answer the person, in the first sentence**: they were right, or here is what happened
 - **Say what changed and where they will see it**: the step, in plain words, then the Pull Request
@@ -260,26 +303,27 @@ Never give the replies alone, and never replace the source by a summary of it.
 
 ## 5. Post, only once the user says so
 
-After the user validated the Pull Request and the reply texts:
+After the user validated the Pull Request and the replies, post **from the batch file**, as it is
+now on disk:
 
 ```bash
-# the id of the top-level comment is in the --json output of list-unanswered.mjs (commentId)
-gh api graphql -f query='mutation($d:ID!,$r:ID!,$b:String!){addDiscussionComment(input:{discussionId:$d,replyToId:$r,body:$b}){comment{url}}}' \
-  -f d=<discussion node id> -f r=<comment node id> -F b=@reply.md
+node .claude/skills/training-feedback-discussions/post-replies.mjs hardis-report/training-feedback/feedback-2026-10-30.md          # dry run
+node .claude/skills/training-feedback-discussions/post-replies.mjs hardis-report/training-feedback/feedback-2026-10-30.md --apply  # post
 ```
 
-- Reply **under the comment it answers** (`replyToId`), never as a new top-level comment, so the
-  next run of the list sees the thread as answered
-- The discussion node id is `discussionId` in the `--json` output. A discussion listed as an
-  "opening post" has no comment to reply under: post a top-level comment (leave `replyToId` out)
-- Post from a file written with the Write tool. A heredoc mangles backticks on Windows
-- Re-read each posted reply (`gh api` returns its URL) and give the URLs to the user
+- Only the threads with `Post: yes` are posted, with the text between the reply markers. Run the
+  dry run first and show its output to the user when the file was edited since they last saw it
+- "Post them" from the user means: set `Post: yes` on the threads they named (all the `wait` ones
+  when they say all), then run the script. Never turn a `no` into `yes` on your own
+- The script replies **under the comment it answers** (`replyToId`), so the next run of the list
+  sees the thread as answered, and writes `Post: done` with the URL in the file, so a second run
+  never posts twice
+- Give the posted URLs to the user
 - Do not close a discussion and do not mark an answer: the learner may come back
 
-For an issue, comment from a file, and close only the issues the user named:
+Close only the issues the user named:
 
 ```bash
-gh issue comment <number> -R hardisgroupcom/sfdx-hardis-training --body-file reply.md
 gh issue close <number> -R hardisgroupcom/sfdx-hardis-training --reason completed   # only when the user said so
 ```
 
