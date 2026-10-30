@@ -305,7 +305,7 @@ Notes:
 
 If some words are found **in the Pull Request description**, special behaviors will be applied.
 
-NO_DELTA, PURGE_FLOW_VERSIONS and DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT match in any case, with their words joined by `_`, `-`, a space or nothing (`NO_DELTA`, `no_delta`, `No-Delta`, `no delta` and `nodelta` all work). They are ignored inside HTML comments (`<!-- -->`) and code blocks, so a Pull Request template can list them without applying them.
+Keywords match in any case. NO_DELTA also accepts its words joined by `-`, a space or nothing (`no_delta`, `No-Delta`, `no delta` and `nodelta` all work). PURGE_FLOW_VERSIONS and DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT start destructive steps, so they keep their underscores (`purge_flow_versions` works, `purge flow versions` does not). A keyword inside a path or a branch name does not count, nor one inside an HTML comment (`<!-- -->`) or a fenced code block: a Pull Request template can list them without applying them, and the job log warns when a keyword is found only there.
 
 | Word                                 | Behavior                                                                                                                                                                                                                                                                             |
 |:-------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

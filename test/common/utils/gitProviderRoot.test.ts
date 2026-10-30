@@ -115,7 +115,7 @@ describe('GitProviderRoot Pull Request description keywords', () => {
 
   it('detects the keywords in any case and spelling', () => {
     expect(provider.customBehaviorsOf('Please deploy in full: no_delta')).to.deep.equal({ noDeltaDeployment: true });
-    expect(provider.customBehaviorsOf('purge flow versions\nDestructive-Changes-After-Deployment')).to.deep.equal({
+    expect(provider.customBehaviorsOf('purge_flow_versions\nDestructive_Changes_After_Deployment')).to.deep.equal({
       purgeFlowVersions: true,
       destructiveChangesAfterDeployment: true,
     });
@@ -123,5 +123,9 @@ describe('GitProviderRoot Pull Request description keywords', () => {
 
   it('ignores the keywords of a Pull Request template comment', () => {
     expect(provider.customBehaviorsOf('<!-- Keywords: NO_DELTA, PURGE_FLOW_VERSIONS -->\nMy change')).to.deep.equal({});
+  });
+
+  it('does not purge on a sentence or a Flow file path', () => {
+    expect(provider.customBehaviorsOf('We do not purge flow versions.\n- `force-app/main/default/flows/Purge_Flow_Versions.flow-meta.xml`')).to.deep.equal({});
   });
 });

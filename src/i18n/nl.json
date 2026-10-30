@@ -1107,6 +1107,7 @@
   "deploymentComponentsReportError": "Kan het rapport met implementatiecomponenten niet schrijven: {{message}}",
   "deploymentComponentsReportWritten": "Rapport met implementatiecomponenten: {{count}} componenten vermeld in {{file}}",
   "deploymentFailed": "Implementatie mislukt:\n{{deployRes}}",
+  "deploymentKeywordIgnoredInComment": "{{keyword}} staat alleen in een HTML-commentaar of een codeblok van de Pull Request-beschrijving en wordt daarom genegeerd. Schrijf het erbuiten om het toe te passen.",
   "deploymentOfConnectedAppCompletedSuccessfully": "Implementatie van {{connectedApps}} Connected App(s) succesvol voltooid",
   "deploymentPlanGenerationIsDisabledInProject": "Het genereren van een deployment plan is uitgeschakeld in de projectconfiguratie. Schakel het in met enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml",
   "deploymentRepositoryPrompt": "Wat is het adres van de CI/CD-repository die naar deze org deployt? (optioneel)",

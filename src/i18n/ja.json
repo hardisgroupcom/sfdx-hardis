@@ -1105,6 +1105,7 @@
   "deploymentComponentsReportError": "デプロイコンポーネントのレポートを書き込めませんでした: {{message}}",
   "deploymentComponentsReportWritten": "デプロイコンポーネントのレポート: {{count}} 件のコンポーネントを {{file}} に記載しました",
   "deploymentFailed": "デプロイに失敗しました:\n{{deployRes}}",
+  "deploymentKeywordIgnoredInComment": "{{keyword}} は Pull Request の説明の HTML コメントまたはコードブロック内にのみ記述されているため、無視されます。適用するには、その外側に記述してください。",
   "deploymentOfConnectedAppCompletedSuccessfully": "{{connectedApps}} 個の接続アプリケーションのデプロイが正常に完了しました",
   "deploymentPlanGenerationIsDisabledInProject": "プロジェクト設定でデプロイ計画の生成が無効になっています。.sfdx-hardis.yml で enableDeprecatedDeploymentPlan: true を設定して有効にしてください",
   "deploymentRepositoryPrompt": "この組織にデプロイする CI/CD リポジトリのアドレスは何ですか? (任意)",

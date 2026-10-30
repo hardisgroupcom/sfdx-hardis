@@ -1,74 +1,69 @@
 /**
  * Keywords that change a deployment when written in a Pull Request description or in the latest
- * commit (NO_DELTA, nosmart, PURGE_FLOW_VERSIONS, DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT).
- * They match in any case, with their words joined by "_", "-", a space or nothing:
- * NO_DELTA, no_delta, No-Delta, no delta and nodelta are the same keyword.
+ * commit. They all match in any case.
+ * - NO_DELTA and nosmart also accept their words joined by "-", a space or nothing: NO_DELTA,
+ *   no_delta, No-Delta, no delta and nodelta are the same keyword.
+ * - PURGE_FLOW_VERSIONS and DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT start destructive steps, so they
+ *   keep their underscores: a sentence like "we do not purge flow versions" must not trigger them.
+ * A keyword inside a path or a branch name (fix/no-delta-detection, flows/Purge_Flow_Versions.flow-meta.xml)
+ * does not count, neither does one inside an HTML comment or a fenced code block.
  */
 export type DeploymentKeyword = 'noDelta' | 'noSmart' | 'purgeFlowVersions' | 'destructiveChangesAfterDeployment';
 
-const DEPLOYMENT_KEYWORD_WORDS: Record<DeploymentKeyword, string[]> = {
-  noDelta: ['no', 'delta'],
-  noSmart: ['no', 'smart'],
-  purgeFlowVersions: ['purge', 'flow', 'versions'],
-  destructiveChangesAfterDeployment: ['destructive', 'changes', 'after', 'deployment'],
+export const DEPLOYMENT_KEYWORD_LABELS: Record<DeploymentKeyword, string> = {
+  noDelta: 'NO_DELTA',
+  noSmart: 'nosmart',
+  purgeFlowVersions: 'PURGE_FLOW_VERSIONS',
+  destructiveChangesAfterDeployment: 'DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT',
 };
 
-const KEYWORD_REGEXES: Record<DeploymentKeyword, RegExp> = Object.fromEntries(
-  Object.entries(DEPLOYMENT_KEYWORD_WORDS).map(([keyword, words]) => [keyword, buildKeywordRegex(words)])
-) as Record<DeploymentKeyword, RegExp>;
+const LOOSE_JOINER = '[ \\t_-]?';
+const UNDERSCORE_JOINER = '_';
+
+const KEYWORD_REGEXES: Record<DeploymentKeyword, RegExp> = {
+  noDelta: buildKeywordRegex(['no', 'delta'], LOOSE_JOINER),
+  noSmart: buildKeywordRegex(['no', 'smart'], LOOSE_JOINER),
+  purgeFlowVersions: buildKeywordRegex(['purge', 'flow', 'versions'], UNDERSCORE_JOINER),
+  destructiveChangesAfterDeployment: buildKeywordRegex(['destructive', 'changes', 'after', 'deployment'], UNDERSCORE_JOINER),
+};
 
 /**
- * True when the text contains the keyword, in any case, not inside a longer word.
- * "_" is not part of a word here, so NO_DELTA_UAT and NO_DELTA=true still match.
- */
-export function containsDeploymentKeyword(text: string | null | undefined, keyword: DeploymentKeyword): boolean {
-  return KEYWORD_REGEXES[keyword].test(text || '');
-}
-
-/**
- * True when the subject (message) or the body of a commit contains the keyword.
+ * True when the subject (message) or the body of a commit contains the keyword, outside HTML
+ * comments and fenced code blocks: some git providers copy the Pull Request description, template
+ * included, into the merge commit.
  */
 export function commitContainsDeploymentKeyword(
   commit: { message?: string; body?: string } | null | undefined,
   keyword: DeploymentKeyword
 ): boolean {
-  return containsDeploymentKeyword(commit?.message, keyword) || containsDeploymentKeyword(commit?.body, keyword);
+  return (
+    containsDeploymentKeyword(stripMarkdownCommentsAndFences(commit?.message || ''), keyword) ||
+    containsDeploymentKeyword(stripMarkdownCommentsAndFences(commit?.body || ''), keyword)
+  );
 }
 
 /**
- * True when a Pull Request description contains the keyword outside HTML comments, fenced code
- * blocks and indented code lines, so a PR template listing the keywords does not apply them.
- */
-export function descriptionContainsDeploymentKeyword(
-  description: string | null | undefined,
-  keyword: DeploymentKeyword
-): boolean {
-  const meaningfulText = stripMarkdownCommentsAndFences(description || '')
-    .split(/\r?\n/)
-    .filter((rawLine) => !isIndentedCodeLine(rawLine))
-    .join('\n');
-  return containsDeploymentKeyword(meaningfulText, keyword);
-}
-
-/**
- * Removes HTML comments and fenced code blocks from markdown. An unclosed comment or fence hides
- * everything after it.
+ * Removes HTML comments and fenced code blocks (``` or ~~~, 3 or more, closed by a fence at least as
+ * long) from markdown. An unclosed comment or fence hides everything after it.
  */
 export function stripMarkdownCommentsAndFences(text: string): string {
   return (text || '')
     .replace(/<!--[\s\S]*?(?:-->|$)/g, '')
-    .replace(/```[\s\S]*?(?:```|$)/g, '')
-    .replace(/~~~[\s\S]*?(?:~~~|$)/g, '');
+    .replace(/(^|\n)[ \t]*(`{3,}|~{3,})[\s\S]*?(?:\n[ \t]*\2[`~]*[ \t]*(?=\n|$)|$)/g, '$1');
 }
 
-function buildKeywordRegex(words: string[]): RegExp {
-  return new RegExp(`(?<![a-z0-9])${words.join('[ \\t_-]?')}(?![a-z0-9])`, 'i');
+/**
+ * True when the text contains the keyword, in any case, outside a longer word, a path or a branch
+ * name. "_" after the keyword is allowed, so NO_DELTA_UAT still matches.
+ */
+export function containsDeploymentKeyword(text: string | null | undefined, keyword: DeploymentKeyword): boolean {
+  return KEYWORD_REGEXES[keyword].test(text || '');
 }
 
-// A line indented by a tab or 4 spaces is code, unless it is an item of a nested list
-function isIndentedCodeLine(rawLine: string): boolean {
-  if (!/^(?:\t| {4})/.test(rawLine)) {
-    return false;
-  }
-  return !/^(?:[-*+]|\d+[.)])\s/.test(rawLine.trim());
+function buildKeywordRegex(words: string[], joiner: string): RegExp {
+  // Before: not a letter, a digit or "/", nor "-", "." or "_" glued to a word (feature-no-delta, X_NO_DELTA)
+  const before = '(?<![a-z0-9/]|[a-z0-9][-._])';
+  // After: not a letter or a digit, nor "-", "." or "/" followed by more of a name (no-delta-fix, Versions.flow)
+  const after = '(?![a-z0-9]|[-./][a-z0-9])';
+  return new RegExp(`${before}${words.join(joiner)}${after}`, 'i');
 }

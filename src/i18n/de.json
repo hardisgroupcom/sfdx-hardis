@@ -1106,6 +1106,7 @@
   "deploymentComponentsReportError": "Der Bericht über die Deployment-Komponenten konnte nicht geschrieben werden: {{message}}",
   "deploymentComponentsReportWritten": "Bericht über die Deployment-Komponenten: {{count}} Komponenten in {{file}} aufgelistet",
   "deploymentFailed": "Deployment fehlgeschlagen:\n{{deployRes}}",
+  "deploymentKeywordIgnoredInComment": "{{keyword}} steht nur in einem HTML-Kommentar oder einem Codeblock der Pull-Request-Beschreibung und wird daher ignoriert. Schreiben Sie es außerhalb, damit es angewendet wird.",
   "deploymentOfConnectedAppCompletedSuccessfully": "Deployment von {{connectedApps}} Connected App(s) erfolgreich abgeschlossen",
   "deploymentPlanGenerationIsDisabledInProject": "Die Generierung des Deployment-Plans ist in der Projektkonfiguration deaktiviert. Aktivieren Sie ihn mit enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml",
   "deploymentRepositoryPrompt": "Wie lautet die Adresse des CI/CD-Repositorys, das in diese Org deployt? (optional)",

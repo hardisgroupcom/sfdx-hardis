@@ -49,7 +49,7 @@ Examples:
 - **hotfixes/fix-stuff to preprod** will be **DELTA** DEPLOYMENT
 - **preprod to production** will be **FULL** DEPLOYMENT
 
-> 💡 If you want to **force the use of full deployment for a Pull Request** on a delta project, add "**NO_DELTA**" in your latest commit title or text, or in your Pull Request description. Any case and spelling works (`no_delta`, `no-delta`, `no delta`, `nodelta`), except inside HTML comments and code blocks of the Pull Request description.
+> 💡 If you want to **force the use of full deployment for a Pull Request** on a delta project, add "**NO_DELTA**" in your latest commit title or text, or in your Pull Request description. Any case and spelling works (`no_delta`, `no-delta`, `no delta`, `nodelta`), except inside HTML comments, fenced code blocks, paths and branch names.
 
 ##### Reading the job logs
 

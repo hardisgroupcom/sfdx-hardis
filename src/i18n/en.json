@@ -1111,6 +1111,7 @@
   "deploymentComponentsReportError": "Unable to write the deployment components report: {{message}}",
   "deploymentComponentsReportWritten": "Deployment components report: {{count}} components listed in {{file}}",
   "deploymentFailed": "Deployment failed:\n{{deployRes}}",
+  "deploymentKeywordIgnoredInComment": "{{keyword}} is written only inside an HTML comment or a code block of the Pull Request description, so it is ignored. Write it outside to apply it.",
   "deploymentOfConnectedAppCompletedSuccessfully": "Deployment of {{connectedApps}} Connected App(s) completed successfully",
   "deploymentPlanGenerationIsDisabledInProject": "Deployment plan generation is disabled in project configuration. Enable it with enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml",
   "deploymentRepositoryPrompt": "What is the address of the CI/CD repository that deploys to this org? (optional)",

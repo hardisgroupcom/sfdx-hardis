@@ -7,7 +7,7 @@ import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utils/util
 import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { enforceCommentLengthLimit } from "./utils/utilsPrCommentSizeGuard.js";
-import { descriptionContainsDeploymentKeyword, stripMarkdownCommentsAndFences } from "../utils/deploymentKeywordUtils.js";
+import { containsDeploymentKeyword, DEPLOYMENT_KEYWORD_LABELS, DeploymentKeyword, stripMarkdownCommentsAndFences } from "../utils/deploymentKeywordUtils.js";
 
 // Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
 // a PR is always updated when it is merged, so its update date cannot be older than the commits
@@ -339,19 +339,30 @@ export abstract class GitProviderRoot {
 
   protected completeWithCustomBehaviors(pullRequestInfo: CommonPullRequestInfo): CommonPullRequestInfo {
     const desc = pullRequestInfo.description || "";
-    if (descriptionContainsDeploymentKeyword(desc, 'noDelta')
+    // Cleaned once: keywords inside HTML comments and code blocks (Pull Request templates, examples) are ignored
+    const cleanDesc = stripMarkdownCommentsAndFences(desc);
+    const descHasKeyword = (keyword: DeploymentKeyword): boolean => {
+      if (containsDeploymentKeyword(cleanDesc, keyword)) {
+        return true;
+      }
+      if (containsDeploymentKeyword(desc, keyword)) {
+        uxLog("warning", this, c.yellow('[GitProvider] ' + t('deploymentKeywordIgnoredInComment', { keyword: DEPLOYMENT_KEYWORD_LABELS[keyword] })));
+      }
+      return false;
+    };
+    if (descHasKeyword('noDelta')
       || getEnvVar("NO_DELTA") === "true"
       || getEnvVar("NO_DELTA_" + pullRequestInfo.targetBranch) === "true"
     ) {
       pullRequestInfo.customBehaviors.noDeltaDeployment = true;
     }
-    if (descriptionContainsDeploymentKeyword(desc, 'purgeFlowVersions')
+    if (descHasKeyword('purgeFlowVersions')
       || getEnvVar("PURGE_FLOW_VERSIONS") === "true"
       || getEnvVar("PURGE_FLOW_VERSIONS_" + pullRequestInfo.targetBranch) === "true"
     ) {
       pullRequestInfo.customBehaviors.purgeFlowVersions = true;
     }
-    if (descriptionContainsDeploymentKeyword(desc, 'destructiveChangesAfterDeployment')
+    if (descHasKeyword('destructiveChangesAfterDeployment')
       || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT") === "true"
       || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT_" + pullRequestInfo.targetBranch) === "true"
     ) {

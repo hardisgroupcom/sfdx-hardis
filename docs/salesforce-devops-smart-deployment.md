@@ -601,7 +601,7 @@ See also the [full environment variables reference](all-env-variables.md).
 | `nodelta` / `NO_DELTA` (in commit)     | Disable delta for this specific deployment                                                                                                                           |
 | `nosmart` / `NO_SMART` (in commit)     | Disable Smart Deployment Tests for this deployment                                                                                                                   |
 
-Keywords match in any case, with their words joined by `_`, `-`, a space or nothing: `NO_DELTA`, `no_delta`, `No-Delta`, `no delta` and `nodelta` are the same keyword. In the Pull Request description, they are ignored inside HTML comments and code blocks, so a Pull Request template can list them without applying them. `FLOW_DELETE_INTERVIEWS` keeps its stricter rule: on its own line, in uppercase.
+Keywords match in any case. `NO_DELTA` and `nosmart` also accept their words joined by `-`, a space or nothing: `NO_DELTA`, `no_delta`, `No-Delta`, `no delta` and `nodelta` are the same keyword. `PURGE_FLOW_VERSIONS` and `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT` keep their underscores, so a sentence like "we do not purge flow versions" does not trigger them. A keyword inside a path or a branch name (`fix/no-delta-detection`) does not count, nor one inside an HTML comment or a fenced code block, in the Pull Request description or in the commit: a Pull Request template can list them without applying them. `FLOW_DELETE_INTERVIEWS` keeps its stricter rule: on its own line, in uppercase.
 
 ---
 

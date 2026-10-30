@@ -1107,6 +1107,7 @@
   "deploymentComponentsReportError": "Impossibile scrivere il report dei componenti della distribuzione: {{message}}",
   "deploymentComponentsReportWritten": "Report dei componenti della distribuzione: {{count}} componenti elencati in {{file}}",
   "deploymentFailed": "Distribuzione non riuscita:\n{{deployRes}}",
+  "deploymentKeywordIgnoredInComment": "{{keyword}} è scritto solo all'interno di un commento HTML o di un blocco di codice della descrizione della Pull Request, quindi viene ignorato. Scrivilo all'esterno per applicarlo.",
   "deploymentOfConnectedAppCompletedSuccessfully": "Distribuzione di {{connectedApps}} Connected App completata con successo",
   "deploymentPlanGenerationIsDisabledInProject": "La generazione del deployment plan è disabilitata nella configurazione del progetto. Abilitala con enableDeprecatedDeploymentPlan: true in .sfdx-hardis.yml",
   "deploymentRepositoryPrompt": "Qual è l'indirizzo del repository CI/CD che distribuisce in questa org? (facoltativo)",

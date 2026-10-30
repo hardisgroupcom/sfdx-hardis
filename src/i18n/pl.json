@@ -1107,6 +1107,7 @@
   "deploymentComponentsReportError": "Nie można zapisać raportu komponentów wdrożenia: {{message}}",
   "deploymentComponentsReportWritten": "Raport komponentów wdrożenia: {{count}} komponentów wymienionych w {{file}}",
   "deploymentFailed": "Wdrożenie nie powiodło się:\n{{deployRes}}",
+  "deploymentKeywordIgnoredInComment": "{{keyword}} jest zapisane wyłącznie w komentarzu HTML lub bloku kodu w opisie Pull Request, więc jest ignorowane. Należy zapisać je poza nimi, aby zostało zastosowane.",
   "deploymentOfConnectedAppCompletedSuccessfully": "Wdrożenie {{connectedApps}} Connected App(s) zakończone pomyślnie",
   "deploymentPlanGenerationIsDisabledInProject": "Generowanie planu wdrożenia jest wyłączone w konfiguracji projektu. Włącz je za pomocą enableDeprecatedDeploymentPlan: true w .sfdx-hardis.yml",
   "deploymentRepositoryPrompt": "Jaki jest adres repozytorium CI/CD, które wdraża do tej org? (opcjonalnie)",

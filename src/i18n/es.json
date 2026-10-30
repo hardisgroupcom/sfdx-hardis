@@ -1107,6 +1107,7 @@
   "deploymentComponentsReportError": "No se pudo escribir el informe de componentes del despliegue: {{message}}",
   "deploymentComponentsReportWritten": "Informe de componentes del despliegue: {{count}} componentes listados en {{file}}",
   "deploymentFailed": "Despliegue fallido:\n{{deployRes}}",
+  "deploymentKeywordIgnoredInComment": "{{keyword}} está escrito solo dentro de un comentario HTML o un bloque de código de la descripción de la Pull Request, por lo que se ignora. Escríbelo fuera para que se aplique.",
   "deploymentOfConnectedAppCompletedSuccessfully": "Despliegue de {{connectedApps}} Connected App(s) completado correctamente",
   "deploymentPlanGenerationIsDisabledInProject": "La generación del plan de despliegue está desactivada en la configuración del proyecto. Actívela con enableDeprecatedDeploymentPlan: true en .sfdx-hardis.yml",
   "deploymentRepositoryPrompt": "¿Cuál es la dirección del repositorio de CI/CD que despliega en esta org? (opcional)",
