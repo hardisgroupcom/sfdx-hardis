@@ -3,7 +3,7 @@ import { expect } from 'chai';
 // gitProviderRoot.js first would hit the GitProviderRoot class before its initialization (TDZ).
 import '../../../src/common/gitProvider/index.js';
 import { GitProviderRoot, hasAffirmativeFlowInterviewDeletionDirective } from '../../../src/common/gitProvider/gitProviderRoot.js';
-import type { PullRequestMessageRequest } from '../../../src/common/gitProvider/index.js';
+import type { CommonPullRequestInfo, PullRequestMessageRequest } from '../../../src/common/gitProvider/index.js';
 
 class TestGitProvider extends GitProviderRoot {
   public getLabel(): string {
@@ -11,6 +11,10 @@ class TestGitProvider extends GitProviderRoot {
   }
   public header(prMessage: PullRequestMessageRequest): string {
     return this.buildPrCommentBodyHeader(prMessage);
+  }
+  public customBehaviorsOf(description: string): CommonPullRequestInfo['customBehaviors'] {
+    const prInfo = { description, targetBranch: 'uat', customBehaviors: {} } as unknown as CommonPullRequestInfo;
+    return this.completeWithCustomBehaviors(prInfo).customBehaviors;
   }
 }
 
@@ -103,5 +107,21 @@ describe('GitProviderRoot Flow Interview deletion directive', () => {
     expect(
       hasAffirmativeFlowInterviewDeletionDirective('```\nsome example\n```\nFLOW_DELETE_INTERVIEWS')
     ).to.be.true;
+  });
+});
+
+describe('GitProviderRoot Pull Request description keywords', () => {
+  const provider = new TestGitProvider();
+
+  it('detects the keywords in any case and spelling', () => {
+    expect(provider.customBehaviorsOf('Please deploy in full: no_delta')).to.deep.equal({ noDeltaDeployment: true });
+    expect(provider.customBehaviorsOf('purge flow versions\nDestructive-Changes-After-Deployment')).to.deep.equal({
+      purgeFlowVersions: true,
+      destructiveChangesAfterDeployment: true,
+    });
+  });
+
+  it('ignores the keywords of a Pull Request template comment', () => {
+    expect(provider.customBehaviorsOf('<!-- Keywords: NO_DELTA, PURGE_FLOW_VERSIONS -->\nMy change')).to.deep.equal({});
   });
 });

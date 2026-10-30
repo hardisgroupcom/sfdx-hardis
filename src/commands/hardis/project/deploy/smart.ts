@@ -27,6 +27,7 @@ import {
   uxLogTable,
 } from '../../../../common/utils/index.js';
 import { CONSTANTS, getConfig, getEnvVar } from '../../../../config/index.js';
+import { commitContainsDeploymentKeyword } from '../../../../common/utils/deploymentKeywordUtils.js';
 import { smartDeploy, removePackageXmlContent, createEmptyPackageXml } from '../../../../common/utils/deployUtils.js';
 import { extendPackageFileWithDependencies, appendPackageModifications } from '../../../../common/utils/deltaUtils.js';
 import { isProductionOrg, promptOrgUsernameDefault, setConnectionVariables } from '../../../../common/utils/orgUtils.js';
@@ -153,7 +154,7 @@ Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-s
 - Translations
 - WebLink
 
-Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
+Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit (any case: \`NOSMART\`, \`no_smart\`, \`no-smart\` and \`no smart\` also work).
 
 ### Custom Apex Test Classes (optional)
 
@@ -352,11 +353,13 @@ Notes:
 
 ### Pull Requests Custom Behaviors
 
-If some words are found **in the Pull Request description**, special behaviors will be applied
+If some words are found **in the Pull Request description**, special behaviors will be applied.
+
+NO_DELTA, PURGE_FLOW_VERSIONS and DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT match in any case, with their words joined by \`_\`, \`-\`, a space or nothing (\`NO_DELTA\`, \`no_delta\`, \`No-Delta\`, \`no delta\` and \`nodelta\` all work). They are ignored inside HTML comments (\`<!-- -->\`) and code blocks, so a Pull Request template can list them without applying them.
 
 | Word | Behavior |
 | :--- | :--- |
-| NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request |
+| NO_DELTA | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request. Also works in the latest commit message. |
 | PURGE_FLOW_VERSIONS | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !** |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package |
 | FLOW_DELETE_INTERVIEWS | Authorizes deleting the Flow Interviews that block the deletion of a Flow listed in destructive changes. The directive must be on its own line (or in a checked Markdown checkbox).<br/>**Caution: deleting Flow Interviews is irreversible and destroys in-flight process state !** |
@@ -1077,7 +1080,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     }
     const latestCommit = await getLatestGitCommit();
     if (latestCommit && this.isNoDelta(latestCommit)) {
-      uxLog("warning", this, c.yellow(c.bold((`[DeltaDeployment] Latest commit contains string "nodelta" so disable delta for this time 😊`))));
+      uxLog("warning", this, c.yellow(c.bold('[DeltaDeployment] ' + t('deltaDisabledByLatestCommitKeyword'))));
       return false;
     }
     if (process.env?.ALWAYS_ENABLE_DELTA_DEPLOYMENT === 'true' || this.configInfo?.enableDeltaDeploymentBetweenMajorBranches === true) {
@@ -1156,15 +1159,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   }
 
   isNoDelta(latestCommit) {
-    return latestCommit?.body?.trim().includes('nodelta') || latestCommit?.message?.trim().includes('nodelta') ||
-      latestCommit?.body?.trim().includes('no delta') || latestCommit?.message?.trim().includes('no delta')
+    return commitContainsDeploymentKeyword(latestCommit, 'noDelta');
   }
 
   async isSmartDeploymentTestsAllowed() {
     if (process.env?.USE_SMART_DEPLOYMENT_TESTS === 'true' || this.configInfo?.useSmartDeploymentTests === true) {
       const latestCommit = await getLatestGitCommit();
       if (latestCommit && this.isNoSmartDeploymentTests(latestCommit)) {
-        uxLog("warning", this, c.yellow(c.bold((`[SmartDeploymentTests] Latest commit contains string "nosmart" so disable smartDeploymentTests for this time 😊`))));
+        uxLog("warning", this, c.yellow(c.bold('[SmartDeploymentTests] ' + t('smartDeploymentTestsDisabledByLatestCommitKeyword'))));
         return false;
       }
       return true;
@@ -1173,7 +1175,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
   }
 
   isNoSmartDeploymentTests(latestCommit) {
-    return latestCommit?.body?.trim().includes('nosmart') || latestCommit?.message?.trim().includes('nosmart') ||
-      latestCommit?.body?.trim().includes('no smart') || latestCommit?.message?.trim().includes('no smart')
+    return commitContainsDeploymentKeyword(latestCommit, 'noSmart');
   }
 }

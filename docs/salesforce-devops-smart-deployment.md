@@ -276,7 +276,7 @@ flowchart TD
     PR_NO_DELTA -->|Yes| BLOCKED[Delta disabled]
     PR_NO_DELTA -->|No| ENV_DISABLE{DISABLE_DELTA_DEPLOYMENT=true?}
     ENV_DISABLE -->|Yes| BLOCKED
-    ENV_DISABLE -->|No| COMMIT_CHECK{Latest commit contains 'nodelta'?}
+    ENV_DISABLE -->|No| COMMIT_CHECK{Latest commit contains NO_DELTA / nodelta?}
     COMMIT_CHECK -->|Yes| BLOCKED
     COMMIT_CHECK -->|No| FORCE_ENABLE{ALWAYS_ENABLE_DELTA or<br/>enableDeltaDeploymentBetweenMajorBranches?}
     FORCE_ENABLE -->|Yes| ALLOWED_WARN[Delta enabled with warning]
@@ -598,8 +598,10 @@ See also the [full environment variables reference](all-env-variables.md).
 | `NO_DELTA`                             | Force full deployment for this PR                                                                                                                                    |
 | `PURGE_FLOW_VERSIONS`                  | Purge inactive/obsolete Flow versions after deployment (runs [`sf hardis:org:purge:flow`](hardis/org/purge/flow.md))                                                 |
 | `DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT` | Run [destructiveChanges.xml](https://developer.salesforce.com/docs/atlas.en-us.api_meta.meta/api_meta/meta_deploy_deleting_files.htm) in a separate post-deploy step |
-| `nodelta` (in commit message)          | Disable delta for this specific deployment                                                                                                                           |
-| `nosmart` (in commit message)          | Disable Smart Deployment Tests for this deployment                                                                                                                   |
+| `nodelta` / `NO_DELTA` (in commit)     | Disable delta for this specific deployment                                                                                                                           |
+| `nosmart` / `NO_SMART` (in commit)     | Disable Smart Deployment Tests for this deployment                                                                                                                   |
+
+Keywords match in any case, with their words joined by `_`, `-`, a space or nothing: `NO_DELTA`, `no_delta`, `No-Delta`, `no delta` and `nodelta` are the same keyword. In the Pull Request description, they are ignored inside HTML comments and code blocks, so a Pull Request template can list them without applying them. `FLOW_DELETE_INTERVIEWS` keeps its stricter rule: on its own line, in uppercase.
 
 ---
 
