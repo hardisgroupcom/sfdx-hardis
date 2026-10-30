@@ -225,6 +225,20 @@ is reported to the user, and test records are deleted.
 
 One reply per comment thread and per issue, shown to the user in the conversation, not posted.
 
+**Show the source before each reply.** The user cannot judge a reply without what it answers. For
+each thread, in this order:
+
+1. A heading with the thread (`sfdx-hardis-training#196`, the lab), the link to the comment, the
+   author and the date
+2. **The comment the reply answers, in full**, as a quote: the learner's own words, not a summary,
+   with their a) b) c) markers. Links stay links; an image is shown as its link. When the thread
+   has earlier messages the reply depends on (a maintainer answer, the learner's previous comment),
+   quote them too, shortened if long, and say who wrote each one
+3. The decision of the table for that thread, in one line (`fix` / `clarify` / `none`, and why)
+4. The draft reply
+
+Never give the replies alone, and never replace the source by a summary of it.
+
 - **Answer the person, in the first sentence**: they were right, or here is what happened
 - **Say what changed and where they will see it**: the step, in plain words, then the Pull Request
   number, and "on the site once it is merged". A fix that reaches their fork through **Update my
