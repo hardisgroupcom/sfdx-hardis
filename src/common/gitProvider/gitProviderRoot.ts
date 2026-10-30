@@ -7,6 +7,7 @@ import { extractImagesFromMarkdown, replaceImagesInMarkdown } from "./utils/util
 import { CONSTANTS, getEnvVar, getPrCommentBannerMarkdown } from "../../config/index.js";
 import { t } from '../utils/i18n.js';
 import { enforceCommentLengthLimit } from "./utils/utilsPrCommentSizeGuard.js";
+import { containsDeploymentKeyword, DEPLOYMENT_KEYWORD_LABELS, DeploymentKeyword, stripMarkdownCommentsAndFences } from "../utils/deploymentKeywordUtils.js";
 
 // Oldest commit date of a window, minus one day of margin, used to bound merged PR listings:
 // a PR is always updated when it is merged, so its update date cannot be older than the commits
@@ -27,10 +28,7 @@ export function getOldestCommitDateWithMargin(commits: any[], getCommitDate: (co
 // Non-semantic Markdown regions do not count either: a documentation example in a fenced or
 // indented code block, or a directive hidden in a PR-template HTML comment, is not an opt-in.
 export function hasAffirmativeFlowInterviewDeletionDirective(description: string): boolean {
-  const withoutNonSemanticRegions = (description || "")
-    .replace(/<!--[\s\S]*?(?:-->|$)/g, "")
-    .replace(/```[\s\S]*?(?:```|$)/g, "")
-    .replace(/~~~[\s\S]*?(?:~~~|$)/g, "");
+  const withoutNonSemanticRegions = stripMarkdownCommentsAndFences(description || "");
   return withoutNonSemanticRegions.split(/\r?\n/).some((rawLine) => {
     if (/^(?:\t| {4})/.test(rawLine)) {
       return false; // indented code block
@@ -356,19 +354,30 @@ export abstract class GitProviderRoot {
 
   protected completeWithCustomBehaviors(pullRequestInfo: CommonPullRequestInfo): CommonPullRequestInfo {
     const desc = pullRequestInfo.description || "";
-    if (desc.includes("NO_DELTA")
+    // Cleaned once: keywords inside HTML comments and code blocks (Pull Request templates, examples) are ignored
+    const cleanDesc = stripMarkdownCommentsAndFences(desc);
+    const descHasKeyword = (keyword: DeploymentKeyword): boolean => {
+      if (containsDeploymentKeyword(cleanDesc, keyword)) {
+        return true;
+      }
+      if (containsDeploymentKeyword(desc, keyword)) {
+        uxLog("warning", this, c.yellow('[GitProvider] ' + t('deploymentKeywordIgnoredInComment', { keyword: DEPLOYMENT_KEYWORD_LABELS[keyword] })));
+      }
+      return false;
+    };
+    if (descHasKeyword('noDelta')
       || getEnvVar("NO_DELTA") === "true"
       || getEnvVar("NO_DELTA_" + pullRequestInfo.targetBranch) === "true"
     ) {
       pullRequestInfo.customBehaviors.noDeltaDeployment = true;
     }
-    if (desc.includes("PURGE_FLOW_VERSIONS")
+    if (descHasKeyword('purgeFlowVersions')
       || getEnvVar("PURGE_FLOW_VERSIONS") === "true"
       || getEnvVar("PURGE_FLOW_VERSIONS_" + pullRequestInfo.targetBranch) === "true"
     ) {
       pullRequestInfo.customBehaviors.purgeFlowVersions = true;
     }
-    if (desc.includes("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT")
+    if (descHasKeyword('destructiveChangesAfterDeployment')
       || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT") === "true"
       || getEnvVar("DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT_" + pullRequestInfo.targetBranch) === "true"
     ) {
