@@ -1428,10 +1428,10 @@
     "@anthropic-ai/sdk" "^0.129.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/core@1.2.20":
-  version "1.2.20"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.2.20.tgz#396689f48f58f7189ac9206339553551761d34eb"
-  integrity sha512-0Nzh4/2On0MWFWbWRK7tDdMmSmD2Z/gt9+XoEQMPrV74Fpdf8r6grqEZNW6BkeqwY+KwKn+aFhatm4sK/yLldQ==
+"@langchain/core@1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.3.0.tgz#16d62c7eb90f95aa6abc06b668a4e933a4e23fa8"
+  integrity sha512-ZiS8USsHdO8ZVFh0m8Rs6v2BvqBEvfFicG66zxdF4rGgXSJjk0d0sLnnFZCx3RXPUvP8ybTJgPlNfkJGs1J7BA==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     "@standard-schema/spec" "^1.1.0"
