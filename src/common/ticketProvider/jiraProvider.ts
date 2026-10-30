@@ -31,6 +31,27 @@ import {
   newTicketDetails,
   normalizeText,
 } from "./utils/ticketDetails.js";
+import {
+  TICKET_ERROR,
+  TicketErrorContext,
+  TicketSearchOptions,
+  TicketSearchResult,
+  TicketSummary,
+  toIsoDateTime,
+  toTicketError,
+} from "./utils/ticketOperations.js";
+import {
+  TicketIdentity,
+  TicketPointsOptions,
+  TicketProjectMeta,
+  TicketProjectSummary,
+  TicketStepResult,
+  isProjectAllowed,
+  retryReadOn5xx,
+  scopeJql,
+  withAdfMention,
+  withWikiMention,
+} from "./utils/ticketQualify.js";
 
 // One way of authenticating to JIRA. The client is built lazily, so that a refused credential can
 // be replaced by the next one without paying for the ones that are never used.
@@ -67,6 +88,22 @@ export class JiraProvider extends TicketProviderRoot {
   private nextAuths: JiraAuth[] = [];
   // Set as soon as a call answers: the current credential is the right one, stop switching
   private authValidated = false;
+
+  // Jira Cloud caps a search page at 100 issues when fields are requested
+  private static readonly SEARCH_PAGE_SIZE = 100;
+  private static readonly SEARCH_FIELDS = ["summary", "issuetype", "status", "priority", "assignee", "created", "updated", "labels", "project"];
+  private static readonly KEY_PROJECT_RE = /^([A-Z][A-Z0-9_]+)-\d+$/;
+  private static readonly POINTS_FIELD_RE = /^customfield_\d+$/;
+
+  /** Cloud users carry accountId; Server / Data Center users carry name (or key) instead */
+  public static identityOf(user: any): string | null {
+    return user?.accountId ?? user?.name ?? user?.key ?? null;
+  }
+
+  /** Project key of an issue key (ACME-12 -> ACME) */
+  public static projectOfKey(key: string): string {
+    return JiraProvider.KEY_PROJECT_RE.exec((key || "").toUpperCase())?.[1] || "";
+  }
   // Raw header form of the credential currently in use, for the binary attachment downloads that
   // jira.js does not expose. Null when the active credential cannot be replayed as a header.
   private activeAuthHeaders: Record<string, string> | null = null;
@@ -578,7 +615,10 @@ export class JiraProvider extends TicketProviderRoot {
     details.status = fields.status?.name || "";
     details.priority = fields.priority?.name || "";
     details.assignee = fields.assignee?.displayName || "";
+    details.assigneeId = JiraProvider.identityOf(fields.assignee);
     details.reporter = fields.reporter?.displayName || "";
+    details.reporterId = JiraProvider.identityOf(fields.reporter);
+    details.project = fields.project?.key || JiraProvider.projectOfKey(details.id);
     details.created = fields.created || "";
     details.updated = fields.updated || "";
     details.resolved = fields.resolutiondate || "";
@@ -594,10 +634,11 @@ export class JiraProvider extends TicketProviderRoot {
       rendered.description ? htmlToPlainText(rendered.description) : normalizeText(this.getPlainTextFromDescription(fields.description))
     );
 
-    const { comments, truncated } = await this.fetchAllComments(details.id);
+    const { comments, truncated } = options.skipComments ? { comments: [], truncated: false } : await this.fetchAllComments(details.id);
     details.commentsTruncated = truncated;
     details.comments = comments.map((comment: any) => ({
       author: comment?.author?.displayName || "",
+      authorId: JiraProvider.identityOf(comment?.author),
       date: comment?.created || "",
       body: capText(comment?.renderedBody ? htmlToPlainText(comment.renderedBody) : normalizeText(this.getPlainTextFromDescription(comment?.body))),
     }));
@@ -662,6 +703,242 @@ export class JiraProvider extends TicketProviderRoot {
     ]);
     return details;
   }
+
+  /**
+   * Runs one call of the ticket list / label / whoami / meta commands and of the post-comment steps: fails with a named error when no
+   * credential is usable, and converts the HTTP failures into the named errors of the contract.
+   */
+  private async runTicketOperation<T>(
+    context: Omit<TicketErrorContext, "providerLabel">,
+    call: (client: Version2Client) => Promise<T>
+  ): Promise<T> {
+    if (!(await this.getJiraClient())) {
+      throw new SfError(t('ticketProviderNoCredential', { provider: JiraProvider.providerLabel }), TICKET_ERROR.providerNotConfigured);
+    }
+    try {
+      return await this.runJiraCall(call);
+    } catch (e) {
+      throw toTicketError(e, { providerLabel: JiraProvider.providerLabel, ...context });
+    }
+  }
+
+  private toTicketSummary(issue: any): TicketSummary {
+    const fields = issue?.fields || {};
+    const key = issue?.key || "";
+    return {
+      id: key,
+      url: `${this.jiraHost}/browse/${key}`,
+      subject: fields.summary || "",
+      type: fields.issuetype?.name || "",
+      status: fields.status?.name || "",
+      priority: fields.priority?.name || "",
+      assignee: fields.assignee?.displayName || null,
+      created: toIsoDateTime(fields.created || ""),
+      updated: toIsoDateTime(fields.updated || ""),
+      labels: fields.labels || [],
+      assigneeId: JiraProvider.identityOf(fields.assignee),
+      project: fields.project?.key || JiraProvider.projectOfKey(key),
+      areaPath: null,
+    };
+  }
+
+  /**
+   * JQL search on /search/jql, the endpoint that replaced the removed /rest/api/3/search. The page
+   * cursor is relayed as is: it is opaque by contract, and the JQL is the caller's, never rebuilt.
+   * Never fetches more than options.maxResults issues.
+   */
+  public async searchTickets(query: string, options: TicketSearchOptions): Promise<TicketSearchResult> {
+    // Programming error only: the CLI flag already enforces a minimum of 1
+    if (!Number.isInteger(options.maxResults) || options.maxResults < 1) {
+      throw new SfError(`maxResults must be a positive integer, got ${options.maxResults}`);
+    }
+    if (!(await this.getJiraClient())) {
+      throw new SfError(t('ticketProviderNoCredential', { provider: JiraProvider.providerLabel }), TICKET_ERROR.providerNotConfigured);
+    }
+    const allowedProjects = options.allowedProjects || null;
+    // Bounded before the call: a query cannot read outside the allowed projects, and the results are filtered again
+    const jql = allowedProjects ? scopeJql(allowedProjects, query) : query;
+    const result = this.isJiraCloud() ? await this.searchCloud(jql, options) : await this.searchServer(jql, options);
+    result.tickets = result.tickets.filter((ticket) => isProjectAllowed(ticket.project, allowedProjects));
+    if (result.tickets.length === 0) {
+      result.warning = t("ticketListNoResult", { scope: (allowedProjects || []).join(", ") || "-" });
+    }
+    return result;
+  }
+
+  /**
+   * Jira Server / Data Center has no /search/jql: the offset-based /search, with the offset carried
+   * in the page token as a number in a string.
+   */
+  private async searchServer(jql: string, options: TicketSearchOptions): Promise<TicketSearchResult> {
+    const startAt = Number(options.pageToken || 0) || 0;
+    const page: any = await this.runTicketOperation({ operation: "list" }, (client) =>
+      retryReadOn5xx(() =>
+        client.issueSearch.searchForIssuesUsingJqlPost({
+          jql,
+          startAt,
+          maxResults: Math.min(options.maxResults, JiraProvider.SEARCH_PAGE_SIZE),
+          fields: JiraProvider.SEARCH_FIELDS,
+        })
+      )
+    );
+    const issues: any[] = page?.issues || [];
+    const tickets = issues.filter((issue) => issue?.key).map((issue) => this.toTicketSummary(issue));
+    const next = startAt + issues.length;
+    const nextPageToken = issues.length > 0 && next < Number(page?.total ?? 0) ? String(next) : null;
+    return { tickets, nextPageToken, truncated: nextPageToken !== null };
+  }
+
+  private async searchCloud(query: string, options: TicketSearchOptions): Promise<TicketSearchResult> {
+    const tickets: TicketSummary[] = [];
+    let pageToken: string | null = options.pageToken || null;
+    for (;;) {
+      const remaining = options.maxResults - tickets.length;
+      const page: any = await this.runTicketOperation({ operation: "list" }, (client) =>
+        client.issueSearch.searchForIssuesUsingJqlEnhancedSearchPost({
+          jql: query,
+          nextPageToken: pageToken || undefined,
+          maxResults: Math.min(remaining, JiraProvider.SEARCH_PAGE_SIZE),
+          fields: JiraProvider.SEARCH_FIELDS,
+        })
+      );
+      const issues: any[] = page?.issues || [];
+      // An empty page ends the search: relaying its cursor would make a caller loop on empty pages
+      if (issues.length === 0) {
+        pageToken = null;
+        break;
+      }
+      tickets.push(...issues.filter((issue) => issue?.key).map((issue) => this.toTicketSummary(issue)));
+      pageToken = page?.nextPageToken || null;
+      if (!pageToken || tickets.length >= options.maxResults) {
+        break;
+      }
+    }
+    return { tickets, nextPageToken: pageToken, truncated: pageToken !== null };
+  }
+
+  /** JIRA keys are upper case: acme-123 and ACME-123 are the same ticket */
+  public normalizeTicketId(ticketId: string): string {
+    return (ticketId || "").trim().toUpperCase();
+  }
+
+  /** One call per file, so that the file the server refuses is the one named in the error */
+  /** Adds the label to the ones already on the ticket (update.add, never a replacement of the list) */
+  public async addTicketLabel(ticketId: string, label: string): Promise<void> {
+    const issueKey = this.normalizeTicketId(ticketId);
+    await this.runTicketOperation({ operation: "label", ticketId: issueKey }, (client) =>
+      client.issues.editIssue({ issueIdOrKey: issueKey, update: { labels: [{ add: label }] } })
+    );
+  }
+
+  /**
+   * Free-text comment, independent from the deployment comment. ADF on Jira Cloud (REST v3), text as
+   * is on Server / Data Center (REST v2), the same split as the deployment comments. No duplicate
+   * guard: the caller makes the run idempotent with the label it adds.
+   */
+
+  public async whoAmI(): Promise<TicketIdentity> {
+    const me: any = await this.runTicketOperation({ operation: "whoami" }, (client) =>
+      retryReadOn5xx(() => client.myself.getCurrentUser())
+    );
+    return { id: JiraProvider.identityOf(me), displayName: me?.displayName ?? null, email: me?.emailAddress ?? null };
+  }
+
+  public async listProjects(): Promise<TicketProjectSummary[]> {
+    const projects: TicketProjectSummary[] = [];
+    if (!this.isJiraCloud()) {
+      // Server / Data Center: /project answers every visible project at once
+      const all: any[] = await this.runTicketOperation({ operation: "meta" }, (client) =>
+        // jira.js dropped getAllProjects (removed from Cloud), but /rest/api/2/project still exists on Server / DC
+        retryReadOn5xx(() => client.sendRequest<any[]>({ url: "/rest/api/2/project", method: "GET" }, undefined as never))
+      );
+      return (all || []).map((project: any) => ({ key: project?.key || "", name: project?.name || "" }));
+    }
+    for (let startAt = 0; ; ) {
+      const page: any = await this.runTicketOperation({ operation: "meta" }, (client) =>
+        retryReadOn5xx(() => client.projects.searchProjects({ startAt, maxResults: 50 }))
+      );
+      const values: any[] = page?.values || [];
+      projects.push(...values.map((project: any) => ({ key: project?.key || "", name: project?.name || "" })));
+      startAt += values.length;
+      if (values.length === 0 || page?.isLast !== false || projects.length >= 1000) {
+        break;
+      }
+    }
+    return projects;
+  }
+
+  public async getProjectMeta(project: string): Promise<TicketProjectMeta> {
+    const types: any[] = await this.runTicketOperation({ operation: "meta" }, (client) =>
+      retryReadOn5xx(() => client.projects.getAllStatuses({ projectIdOrKey: project }))
+    );
+    const statuses = new Map<string, string>();
+    const statusesByType: Record<string, string[]> = {};
+    for (const type of types || []) {
+      const names: string[] = [];
+      for (const status of type?.statuses || []) {
+        if (!statuses.has(String(status.id))) {
+          statuses.set(String(status.id), status.name);
+        }
+        names.push(status.name);
+      }
+      statusesByType[type?.name || ""] = names;
+    }
+    return {
+      project,
+      issueTypes: (types || []).map((type: any) => ({ id: String(type.id), name: type.name })),
+      statuses: [...statuses].map(([id, name]) => ({ id, name })),
+      statusesByType,
+    };
+  }
+
+  /** Matched on the target status only (name, untranslated name or id), never on the transition's own name */
+  public async transitionTicket(ticketId: string, status: string): Promise<string> {
+    const issueKey = this.normalizeTicketId(ticketId);
+    const data: any = await this.runTicketOperation({ operation: "transition", ticketId: issueKey }, (client) =>
+      retryReadOn5xx(() => client.issues.getTransitions({ issueIdOrKey: issueKey }))
+    );
+    const wanted = status.trim().toLowerCase();
+    const match = (data?.transitions || []).find(
+      (transition: any) =>
+        transition?.to &&
+        (String(transition.to.id) === status.trim() ||
+          [transition.to.name, transition.to.untranslatedName].some((name) => name != null && String(name).toLowerCase() === wanted))
+    );
+    if (!match) {
+      throw new SfError(t("ticketTransitionNotAvailable", { status, ticketId: issueKey }));
+    }
+    await this.runTicketOperation({ operation: "transition", ticketId: issueKey }, (client) =>
+      client.issues.doTransition({ issueIdOrKey: issueKey, transition: { id: String(match.id) } })
+    );
+    return match.to?.name ?? status;
+  }
+
+  public async setTicketPoints(ticketId: string, points: number, options: TicketPointsOptions = {}): Promise<TicketStepResult> {
+    const issueKey = this.normalizeTicketId(ticketId);
+    const field = options.field || "";
+    // Checked by the command before the comment; repeated here because the provider is public
+    if (!JiraProvider.POINTS_FIELD_RE.test(field)) {
+      throw new SfError(t("ticketPointsFieldRequired"));
+    }
+    const issue: any = await this.runTicketOperation({ operation: "points", ticketId: issueKey }, (client) =>
+      retryReadOn5xx(() => client.issues.getIssue({ issueIdOrKey: issueKey, fields: [field] }))
+    );
+    const fields = issue?.fields || {};
+    // A type whose screen lacks the field does not return it at all
+    if (!(field in fields)) {
+      return { status: "skipped", value: null, field, reason: "field-not-on-issue" };
+    }
+    const current = fields[field];
+    if (current !== undefined && current !== null && current !== "" && !options.overwrite) {
+      return { status: "skipped", value: current, field, reason: "already-set" };
+    }
+    await this.runTicketOperation({ operation: "points", ticketId: issueKey }, (client) =>
+      client.issues.editIssue({ issueIdOrKey: issueKey, fields: { [field]: points } })
+    );
+    return { status: "done", value: points, field };
+  }
+
 
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     const activeClient = await this.getJiraClient();
@@ -730,12 +1007,18 @@ export class JiraProvider extends TicketProviderRoot {
   public async postComment(ticketId: string, markdown: string, options: PostCommentOptions = {}): Promise<PostCommentResult> {
     const issueKey = (ticketId || "").trim().toUpperCase();
     const fullMarkdown = markdown + markdownMarkerFooter(options.marker);
-    const body: any = this.isJiraCloud() ? markdownToAdf(fullMarkdown) : markdownToJiraWiki(fullMarkdown);
+    // The mention comes from the assignee read on the ticket by the caller, never from the text
+    const body: any = this.isJiraCloud()
+      ? withAdfMention(markdownToAdf(fullMarkdown), options.mention)
+      : withWikiMention(markdownToJiraWiki(fullMarkdown), options.mention);
+    const visibility = options.visibility ? { visibility: { type: options.visibility.type, value: options.visibility.value } } : {};
     const existing = options.marker ? await this.findMarkedComment(issueKey, options.marker) : null;
     // jira.js reads the text from `comment`, except the v3 update which reads `body`: both are given
     const result: any = existing
-      ? await this.runJiraCall((client) => client.issueComments.updateComment({ issueIdOrKey: issueKey, id: String(existing.id), comment: body, body } as any))
-      : await this.runJiraCall((client) => client.issueComments.addComment({ issueIdOrKey: issueKey, comment: body } as any));
+      ? await this.runJiraCall((client) =>
+          client.issueComments.updateComment({ issueIdOrKey: issueKey, id: String(existing.id), comment: body, body, ...visibility } as any)
+        )
+      : await this.runJiraCall((client) => client.issueComments.addComment({ issueIdOrKey: issueKey, comment: body, ...visibility } as any));
     if (JiraProvider.containsHtmlLoginPage(result) || !result?.id) {
       throw new SfError("Probably config/access error since response is HTML");
     }

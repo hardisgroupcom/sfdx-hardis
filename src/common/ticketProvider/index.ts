@@ -13,6 +13,7 @@ import { ServiceNowProvider } from "./serviceNowProvider.js";
 import { AhaProvider } from "./ahaProvider.js";
 import { TicketDetails, TicketDetailsOptions } from "./utils/ticketDetails.js";
 import { PostCommentOptions, PostCommentResult, assertValidMarker } from "./utils/ticketComment.js";
+import { TICKET_ERROR } from "./utils/ticketOperations.js";
 
 export type TicketProviderKey = "jira" | "azure" | "servicenow" | "aha" | "generic";
 
@@ -168,6 +169,51 @@ export abstract class TicketProvider {
     const { provider, providerClass } = await this.resolveProviderForTicket(trimmedId, options.providerKey, "supportsTicketDetails");
     uxLog("action", this, c.cyan('[TicketProvider] ' + t('ticketDetailsFetching', { ticketId: trimmedId, provider: providerClass.providerLabel })));
     return provider.getTicketDetails(trimmedId, options);
+  }
+
+  /**
+   * The connector of a ticket operation, with a stable error name on every failure.
+   *
+   * With a `ticketId`, the connector is found as `getTicketDetails` finds it. Without one (ticket
+   * list, whoami, meta), `providerKey` names it, or else the only configured connector is taken.
+   */
+  public static async resolveProvider(
+    options: { ticketId?: string; providerKey?: TicketProviderKey } = {}
+  ): Promise<{ provider: TicketProviderRoot; providerClass: TicketProviderClass }> {
+    const trimmedId = (options.ticketId || "").trim();
+    if (trimmedId) {
+      try {
+        return await this.resolveProviderForTicket(trimmedId, options.providerKey, "supportsTicketDetails");
+      } catch (e) {
+        const message = (e as Error).message;
+        // resolveProviderForTicket only fails on an unknown shape or on a missing configuration
+        const name = message === t('ticketDetailsUnknownIdShape', { ticketId: trimmedId }) ? TICKET_ERROR.notFound : TICKET_ERROR.providerNotConfigured;
+        throw new SfError(message, name);
+      }
+    }
+    const config = await getConfig("project");
+    const candidates = allTicketProviders.filter(
+      (provider) => provider.supportsTicketDetails && (!options.providerKey || provider.providerKey === options.providerKey)
+    );
+    for (const provider of candidates) {
+      if (provider.autoDetectFromGitRemote) {
+        await provider.autoDetectFromGitRemote();
+      }
+    }
+    const available = candidates.filter((provider) => provider.isAvailable(config));
+    if (available.length === 0) {
+      throw new SfError(
+        t('ticketListProviderNotConfigured', { providers: candidates.map((provider) => provider.providerLabel).join(", ") }),
+        TICKET_ERROR.providerNotConfigured
+      );
+    }
+    if (available.length > 1) {
+      throw new SfError(
+        t('ticketListAmbiguousProvider', { providers: available.map((provider) => provider.providerKey).join(", ") }),
+        TICKET_ERROR.providerNotConfigured
+      );
+    }
+    return { provider: new available[0](config), providerClass: available[0] };
   }
 
   /**

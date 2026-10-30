@@ -9,7 +9,20 @@ import { isCI, uxLog } from '../../../common/utils/index.js';
 import { prompts } from '../../../common/utils/prompts.js';
 import { TicketProvider, TicketProviderKey, ticketDetailsProviderKeys } from '../../../common/ticketProvider/index.js';
 import { TicketDetails, renderTicketDetailsMarkdown } from '../../../common/ticketProvider/utils/ticketDetails.js';
+import { TICKET_ERROR } from '../../../common/ticketProvider/utils/ticketOperations.js';
+import { assertProjectAllowed, isTicketMarked, parseAllowedProjects } from '../../../common/ticketProvider/utils/ticketQualify.js';
 import { t } from '../../../common/utils/i18n.js';
+
+interface FetchOptions {
+  providerKey: TicketProviderKey | undefined;
+  downloadAttachments: boolean;
+  attachmentsDir: string | undefined;
+  maxAttachmentBytes: number;
+  allowedProjects: string[] | null;
+  marker: string | null;
+  markerLabel: string | null;
+  skipComments: boolean;
+}
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
@@ -32,6 +45,14 @@ It returns:
 - **Subtasks and linked items**, with their status.
 - **Attachments**, downloaded next to the report so images can be looked at and documents opened.
 - **Possible manual actions:** the lines of the ticket mentioning an operation that deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load...). Each one that survives the design phase should become an [sfdx-hardis deployment action](${'https://sfdx-hardis.cloudity.com/hardis/project/action/create/'}), so it is replayed in every org rather than done by hand once.
+
+### Several tickets, identifiers, scope and marker
+
+- \`--id a,b,c\` reads several tickets in one run (one start of the CLI for the whole batch). The JSON then holds \`tickets\`: one entry per identifier, in the order asked, either \`{id, status: "ok", ticket}\` or \`{id, status: "failed", error: {name, message}}\`. A failure never stops the others; the command fails only when no ticket could be read. With a single identifier the output stays \`ticket\`. \`--output-file\` needs a single identifier.
+- \`project\`, \`assigneeId\`, \`reporterId\` and \`comments[].authorId\` carry the account ids, the same ones \`ticket whoami\` returns (JIRA Cloud \`accountId\`, JIRA Server / Data Center user name, Azure Boards identity id). On Azure Boards \`project\` is the team project of the work item itself, which may differ from the project of the repository.
+- \`--allowed-projects a,b\` fails with \`TicketOutOfScope\` when the ticket belongs to another project (per ticket in a batch).
+- \`--marker "<prefix>"\` and \`--marker-label <label>\` fill \`markedByMe\`: true when the ticket carries the label, or when the authenticated account already posted a comment starting with the prefix (emoji and whitespace ignored). Comments of other accounts never count. Without these flags \`markedByMe\` is null.
+- \`--skip-comments\` does not return the comments (faster on long tickets). With \`--marker\` they are still read for the check.
 
 ### Provider detection
 
@@ -81,6 +102,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
     '$ sf hardis:ticket:get --id AB-4567 --provider azure --attachments-dir ./ticket-attachments',
     '$ sf hardis:ticket:get --id PROD-12 --provider aha --agent --json',
     '$ sf hardis:ticket:get --id ACME-4567 --skip-attachments --agent --json',
+    '$ sf hardis:ticket:get --id ACME-1,ACME-2,ACME-3 --allowed-projects ACME --marker "Automatic qualification" --marker-label ia-qualified --skip-attachments --agent --json',
   ];
 
   public static flags: any = {
@@ -90,7 +112,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
     }),
     id: Flags.string({
       char: 'i',
-      description: 'Ticket identifier: JIRA key or Aha! feature (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345)',
+      description: 'Ticket identifier: JIRA key or Aha! feature (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345). Separate several identifiers with commas',
     }),
     provider: Flags.string({
       char: 'p',
@@ -103,6 +125,19 @@ sf hardis ticket get --id ACME-4567 --agent --json
     }),
     'attachments-dir': Flags.string({
       description: 'Folder the attachments are downloaded into. Defaults to a temporary folder, or to <output-file folder>/attachments when --output-file is set',
+    }),
+    'allowed-projects': Flags.string({
+      description: 'Comma-separated projects the ticket must belong to (TicketOutOfScope otherwise)',
+    }),
+    marker: Flags.string({
+      description: 'Comment prefix: markedByMe is true when the authenticated account already posted a comment starting with it',
+    }),
+    'marker-label': Flags.string({
+      description: 'Label (Azure Boards tag): markedByMe is true when the ticket carries it',
+    }),
+    'skip-comments': Flags.boolean({
+      default: false,
+      description: 'Do not return the comments (faster on long tickets)',
     }),
     'skip-attachments': Flags.boolean({
       default: false,
@@ -133,20 +168,48 @@ sf hardis ticket get --id ACME-4567 --agent --json
   public async run(): Promise<AnyJson> {
     const { flags } = await this.parse(TicketGet);
     const agentMode = flags.agent === true;
-    const ticketId = await this.resolveTicketId(flags.id, agentMode);
+    const ticketIds = (await this.resolveTicketId(flags.id, agentMode))
+      .split(',')
+      .map((id) => id.trim())
+      .filter(Boolean);
     const outputFile = flags['output-file'] || null;
+    if (ticketIds.length > 1 && outputFile) {
+      throw new SfError(t('ticketGetOutputFileSingleId'));
+    }
     const attachmentsDir = flags['attachments-dir'] || (outputFile ? path.join(path.dirname(outputFile), 'attachments') : undefined);
-
-    const details = await TicketProvider.getTicketDetails(ticketId, {
+    const fetchOptions: FetchOptions = {
       providerKey: flags.provider as TicketProviderKey | undefined,
       downloadAttachments: flags['skip-attachments'] !== true,
       attachmentsDir,
       maxAttachmentBytes: flags['max-attachment-size'] * 1024 * 1024,
-    });
+      allowedProjects: parseAllowedProjects(flags['allowed-projects']),
+      marker: flags.marker || null,
+      markerLabel: flags['marker-label'] || null,
+      skipComments: flags['skip-comments'] === true,
+    };
 
-    if (!details) {
-      throw new SfError(t('ticketGetNotFound', { ticketId }));
+    // Several identifiers: one start of the CLI for the whole batch, and a failure never stops the others
+    if (ticketIds.length > 1) {
+      const tickets: AnyJson[] = [];
+      for (const id of ticketIds) {
+        try {
+          const ticket = await this.fetchTicket(id, fetchOptions);
+          this.logSummary(ticket);
+          tickets.push({ id, status: 'ok', ticket: ticket as unknown as AnyJson });
+        } catch (e) {
+          uxLog('warning', this, c.yellow(`[TicketGet] ${id}: ${(e as Error).message}`));
+          tickets.push({ id, status: 'failed', error: { name: (e as Error).name || 'Error', message: (e as Error).message } });
+        }
+      }
+      const fetched = tickets.filter((ticket: any) => ticket.status === 'ok').length;
+      if (fetched === 0) {
+        process.exitCode = 1;
+      }
+      return { outputString: t('ticketGetBatchSummary', { fetched, total: ticketIds.length }), tickets };
     }
+
+    const ticketId = ticketIds[0] || '';
+    const details = await this.fetchTicket(ticketId, fetchOptions);
 
     let writtenFile: string | null = null;
     if (outputFile) {
@@ -164,6 +227,47 @@ sf hardis ticket get --id ACME-4567 --agent --json
       ticket: details as unknown as AnyJson,
       outputFile: writtenFile,
     };
+  }
+
+  /** One ticket, with the scope check and the marker; every failure carries a stable name when it has one */
+  private async fetchTicket(ticketId: string, options: FetchOptions): Promise<TicketDetails> {
+    const details = await TicketProvider.getTicketDetails(ticketId, {
+      providerKey: options.providerKey,
+      downloadAttachments: options.downloadAttachments,
+      attachmentsDir: options.attachmentsDir,
+      maxAttachmentBytes: options.maxAttachmentBytes,
+      // The prefix check needs the comments even when they are not returned
+      skipComments: options.skipComments && !options.marker,
+    });
+    if (!details) {
+      throw new SfError(t('ticketGetNotFound', { ticketId }), TICKET_ERROR.notFound);
+    }
+    assertProjectAllowed(details.id, details.project, options.allowedProjects);
+    if (options.marker || options.markerLabel) {
+      const myId = options.marker ? await this.myAccountId(ticketId, options.providerKey) : null;
+      details.markedByMe = isTicketMarked({
+        labels: details.labels,
+        comments: details.comments.map((comment) => ({ authorId: comment.authorId ?? null, body: comment.body })),
+        myId,
+        prefix: options.marker,
+        label: options.markerLabel,
+      });
+    }
+    if (options.skipComments) {
+      details.comments = [];
+    }
+    return details;
+  }
+
+  // The authenticated account does not change during a run: one call per ticketing system
+  private accountIds = new Map<string, string | null>();
+
+  private async myAccountId(ticketId: string, providerKey: TicketProviderKey | undefined): Promise<string | null> {
+    const { provider, providerClass } = await TicketProvider.resolveProvider({ ticketId, providerKey });
+    if (!this.accountIds.has(providerClass.providerKey)) {
+      this.accountIds.set(providerClass.providerKey, (await provider.whoAmI()).id);
+    }
+    return this.accountIds.get(providerClass.providerKey) ?? null;
   }
 
   private async resolveTicketId(flagValue: string | undefined, agentMode: boolean): Promise<string> {

@@ -27,6 +27,29 @@ import {
   htmlToPlainText,
   newTicketDetails,
 } from "./utils/ticketDetails.js";
+import {
+  TICKET_ERROR,
+  TicketErrorContext,
+  TicketOperation,
+  TicketSearchOptions,
+  TicketSearchResult,
+  TicketSummary,
+  httpStatusOf,
+  toTicketError,
+} from "./utils/ticketOperations.js";
+import {
+  TicketIdentity,
+  TicketPointsOptions,
+  TicketProjectMeta,
+  TicketProjectSummary,
+  TicketStepResult,
+  isProjectAllowed,
+  retryReadOn5xx,
+  scopeWiql,
+  splitTags,
+  withHtmlHeadingSpacers,
+  withHtmlMention,
+} from "./utils/ticketQualify.js";
 /* jscpd:ignore-end */
 
 export class AzureBoardsProvider extends TicketProviderRoot {
@@ -283,6 +306,11 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return identity.displayName || identity.uniqueName || "";
   }
 
+  /** Identity id (a GUID): what a mention and the marker check compare. Null for the "Name <mail>" string form */
+  private static identityId(identity: any): string | null {
+    return identity && typeof identity === "object" ? identity.id ?? null : null;
+  }
+
   public async getTicketDetails(ticketId: string, options: TicketDetailsOptions = {}): Promise<TicketDetails | null> {
     if (!this.isActive) {
       uxLog("warning", this, c.yellow('[AzureBoardsProvider] ' + t('azureBoardsProviderNotConfigured')));
@@ -294,7 +322,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     }
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     // Relations carry both the linked work items and the attached files
-    const workItem: any = await azureWorkItemApi.getWorkItem(workItemId, undefined, undefined, WorkItemExpand.All);
+    const workItem: any = await retryReadOn5xx(() => azureWorkItemApi.getWorkItem(workItemId, undefined, undefined, WorkItemExpand.All));
     if (!workItem?.fields) {
       return null;
     }
@@ -306,7 +334,11 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     details.status = fields["System.State"] || "";
     details.priority = String(fields["Microsoft.VSTS.Common.Priority"] ?? "");
     details.assignee = AzureBoardsProvider.identityName(fields["System.AssignedTo"]);
+    details.assigneeId = AzureBoardsProvider.identityId(fields["System.AssignedTo"]);
     details.reporter = AzureBoardsProvider.identityName(fields["System.CreatedBy"]);
+    details.reporterId = AzureBoardsProvider.identityId(fields["System.CreatedBy"]);
+    // The work item's own project: the one of the repository often only holds the code
+    details.project = fields["System.TeamProject"] || this.teamProject || "";
     details.created = fields["System.CreatedDate"] || "";
     details.updated = fields["System.ChangedDate"] || "";
     details.storyPoints = String(fields["Microsoft.VSTS.Scheduling.StoryPoints"] ?? "");
@@ -316,12 +348,15 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     details.acceptanceCriteria = capText(htmlToPlainText(fields["Microsoft.VSTS.Common.AcceptanceCriteria"]));
     details.extra.areaPath = fields["System.AreaPath"] || "";
     details.extra.reason = fields["System.Reason"] || "";
-    details.extra.project = this.teamProject || "";
+    details.extra.project = details.project;
 
     try {
-      const commentList: any = await azureWorkItemApi.getComments(this.teamProject || "", workItemId);
+      const commentList: any = options.skipComments
+        ? { comments: [] }
+        : await retryReadOn5xx(() => azureWorkItemApi.getComments(details.project, workItemId, AzureBoardsProvider.COMMENTS_TOP));
       details.comments = (commentList?.comments || []).map((comment: any) => ({
         author: AzureBoardsProvider.identityName(comment?.createdBy),
+        authorId: AzureBoardsProvider.identityId(comment?.createdBy),
         date: comment?.createdDate ? String(comment.createdDate) : "",
         body: capText(htmlToPlainText(comment?.text)),
       }));
@@ -388,6 +423,216 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     return { Authorization: "Basic " + Buffer.from(`:${this.token || ""}`).toString("base64") };
   }
 
+  // ---------------------------------------------------------------------------------------------
+  // Operations of the ticket list / label / whoami / meta commands and of the post-comment steps
+  // ---------------------------------------------------------------------------------------------
+
+  private static readonly COMMENTS_TOP = 200;
+  private static readonly SEARCH_FIELDS = [
+    "System.Id", "System.Title", "System.State", "System.WorkItemType", "System.Tags", "System.CreatedDate",
+    "System.ChangedDate", "System.TeamProject", "System.AreaPath", "System.AssignedTo", "Microsoft.VSTS.Common.Priority",
+  ];
+  // Agile / CMMI use StoryPoints, Scrum uses Effort, Basic uses Size... in that order
+  private static readonly POINT_FIELDS = ["Microsoft.VSTS.Scheduling.StoryPoints", "Microsoft.VSTS.Scheduling.Effort", "Microsoft.VSTS.Scheduling.Size"];
+
+  /**
+   * Runs one call: fails with a named error when no credential is configured, converts HTTP failures
+   * into the named errors of the contract, and never lets an HTML sign-in page reach a message.
+   */
+  private async runOperation<T>(context: Omit<TicketErrorContext, "providerLabel">, call: () => Promise<T>): Promise<T> {
+    if (!this.isActive) {
+      throw new SfError(t("ticketProviderNoCredential", { provider: AzureBoardsProvider.providerLabel }), TICKET_ERROR.providerNotConfigured);
+    }
+    try {
+      return await call();
+    } catch (e: any) {
+      // A refused credential gets a sign-in page (HTTP 203 or a redirect), not a 401
+      if (/<\s*(!doctype|html)/i.test(String(e?.message || "")) || httpStatusOf(e) === 203) {
+        throw new SfError(
+          t("ticketProviderCredentialsRefused", { provider: AzureBoardsProvider.providerLabel, message: "sign-in page" }),
+          TICKET_ERROR.providerNotConfigured
+        );
+      }
+      throw toTicketError(e, { providerLabel: AzureBoardsProvider.providerLabel, ...context });
+    }
+  }
+
+  private async witApi() {
+    return this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
+  }
+
+  public normalizeTicketId(ticketId: string): string {
+    const workItemId = AzureBoardsProvider.workItemIdOf(ticketId);
+    return workItemId === null ? (ticketId || "").trim() : `AB-${workItemId}`;
+  }
+
+  /** The work item id, or a named error: a JIRA key or a typo must not reach the API as NaN */
+  private requireWorkItemId(ticketId: string): number {
+    const workItemId = AzureBoardsProvider.workItemIdOf(ticketId);
+    if (workItemId === null) {
+      throw new SfError(t("ticketDetailsUnknownIdShape", { ticketId }), TICKET_ERROR.notFound);
+    }
+    return workItemId;
+  }
+
+  private async getWorkItemFields(workItemId: number, operation: TicketOperation): Promise<any> {
+    const api = await this.witApi();
+    const workItem: any = await this.runOperation({ operation, ticketId: String(workItemId) }, () =>
+      retryReadOn5xx(() => api.getWorkItem(workItemId))
+    );
+    if (!workItem?.fields) {
+      throw new SfError(t("ticketNotFound", { ticketId: String(workItemId) }), TICKET_ERROR.notFound);
+    }
+    return workItem;
+  }
+
+  /** Patch guarded by the revision read just before: a concurrent edit fails instead of being overwritten */
+  private async patchWorkItem(workItem: any, path: string, value: any, operation: TicketOperation): Promise<void> {
+    const api = await this.witApi();
+    const patch: JsonPatchDocument = [
+      { op: "test", path: "/rev", value: workItem.rev },
+      { op: "add", path, value },
+    ];
+    await this.runOperation({ operation, ticketId: String(workItem.id) }, () => api.updateWorkItem({}, patch, Number(workItem.id)));
+  }
+
+  private toTicketSummary(workItem: any): TicketSummary {
+    const fields = workItem?.fields || {};
+    const project = fields["System.TeamProject"] || "";
+    return {
+      id: `AB-${workItem.id}`,
+      url: `${this.serverUrl}/${encodeURIComponent(project)}/_workitems/edit/${workItem.id}`,
+      subject: fields["System.Title"] || "",
+      type: fields["System.WorkItemType"] || "",
+      status: fields["System.State"] || "",
+      priority: String(fields["Microsoft.VSTS.Common.Priority"] ?? ""),
+      assignee: AzureBoardsProvider.identityName(fields["System.AssignedTo"]) || null,
+      created: fields["System.CreatedDate"] ? new Date(fields["System.CreatedDate"]).toISOString() : "",
+      updated: fields["System.ChangedDate"] ? new Date(fields["System.ChangedDate"]).toISOString() : "",
+      labels: splitTags(fields["System.Tags"]),
+      assigneeId: AzureBoardsProvider.identityId(fields["System.AssignedTo"]),
+      project,
+      areaPath: fields["System.AreaPath"] || null,
+    };
+  }
+
+  /**
+   * The query is a WIQL condition, wrapped in a statement bounded to the allowed projects (or, without
+   * --allowed-projects, to the configured team project). WIQL has no cursor: one page of maxResults.
+   */
+  public async searchTickets(query: string, options: TicketSearchOptions): Promise<TicketSearchResult> {
+    const projects = options.allowedProjects || [this.teamProject || ""];
+    const wiql = scopeWiql(projects, query);
+    const api = await this.witApi();
+    const queryResult: any = await this.runOperation({ operation: "list" }, () =>
+      retryReadOn5xx(() => api.queryByWiql({ query: wiql }, { project: projects[0] } as any, undefined, options.maxResults))
+    );
+    const ids: number[] = (queryResult?.workItems || []).map((item: any) => item.id).slice(0, options.maxResults);
+    let tickets: TicketSummary[] = [];
+    if (ids.length > 0) {
+      const items: any[] = await this.runOperation({ operation: "list" }, () =>
+        retryReadOn5xx(() => api.getWorkItemsBatch({ ids, fields: AzureBoardsProvider.SEARCH_FIELDS } as any))
+      );
+      const byId = new Map((items || []).map((item: any) => [item.id, item]));
+      tickets = ids
+        .map((id) => byId.get(id))
+        .filter(Boolean)
+        .map((item) => this.toTicketSummary(item))
+        .filter((ticket) => isProjectAllowed(ticket.project, projects));
+    }
+    const warning = tickets.length === 0 ? t("ticketListNoResult", { scope: projects.join(", ") }) : null;
+    return { tickets, nextPageToken: null, truncated: false, warning };
+  }
+
+  /** Adds one tag, keeps the others; Azure tags are case-insensitive */
+  public async addTicketLabel(ticketId: string, label: string): Promise<void> {
+    const workItem = await this.getWorkItemFields(this.requireWorkItemId(ticketId), "label");
+    const tags = splitTags(workItem.fields["System.Tags"]);
+    if (tags.some((tag) => tag.toLowerCase() === label.toLowerCase())) {
+      return;
+    }
+    await this.patchWorkItem(workItem, "/fields/System.Tags", [...tags, label].join("; "), "label");
+  }
+
+  public async whoAmI(): Promise<TicketIdentity> {
+    const connection: any = await this.runOperation({ operation: "whoami" }, () => retryReadOn5xx(() => this.azureApi.connect()));
+    const user = connection?.authenticatedUser || {};
+    return {
+      id: user.id ?? null,
+      displayName: user.providerDisplayName ?? user.customDisplayName ?? null,
+      email: user.properties?.Account?.$value ?? null,
+    };
+  }
+
+  public async listProjects(): Promise<TicketProjectSummary[]> {
+    const coreApi = await this.azureApi.getCoreApi(this.serverUrl || "");
+    const projects: any[] = await this.runOperation({ operation: "meta" }, () => retryReadOn5xx(() => coreApi.getProjects(undefined, 200)));
+    return (projects || []).map((project: any) => ({ key: project?.name || "", name: project?.name || "" }));
+  }
+
+  private async statesOf(project: string, type: string): Promise<string[]> {
+    const api = await this.witApi();
+    const states: any[] = await this.runOperation({ operation: "meta" }, () =>
+      retryReadOn5xx(() => api.getWorkItemTypeStates(project, type))
+    );
+    return (states || []).map((state: any) => state.name);
+  }
+
+  public async getProjectMeta(project: string): Promise<TicketProjectMeta> {
+    const api = await this.witApi();
+    const allTypes: any[] = await this.runOperation({ operation: "meta" }, () => retryReadOn5xx(() => api.getWorkItemTypes(project)));
+    const types = (allTypes || []).filter((type: any) => !type.isDisabled);
+    const statusesByType: Record<string, string[]> = {};
+    const statuses = new Set<string>();
+    for (const type of types) {
+      const names = (type.states || []).map((state: any) => state.name);
+      statusesByType[type.name] = names.length ? names : await this.statesOf(project, type.name);
+      statusesByType[type.name].forEach((name) => statuses.add(name));
+    }
+    return {
+      project,
+      issueTypes: types.map((type: any) => ({ id: type.name, name: type.name })),
+      statuses: [...statuses].map((name) => ({ id: name, name })),
+      statusesByType,
+    };
+  }
+
+  /** The states of the work item's type, matched without case */
+  public async transitionTicket(ticketId: string, status: string): Promise<string> {
+    const workItem = await this.getWorkItemFields(this.requireWorkItemId(ticketId), "transition");
+    const project = workItem.fields["System.TeamProject"];
+    const type = workItem.fields["System.WorkItemType"];
+    const match = (await this.statesOf(project, type)).find((state) => state.toLowerCase() === status.trim().toLowerCase());
+    if (!match) {
+      throw new SfError(t("ticketStateNotAvailable", { status, type }));
+    }
+    await this.patchWorkItem(workItem, "/fields/System.State", match, "transition");
+    return match;
+  }
+
+  public async setTicketPoints(ticketId: string, points: number, options: TicketPointsOptions = {}): Promise<TicketStepResult> {
+    const workItem = await this.getWorkItemFields(this.requireWorkItemId(ticketId), "points");
+    const project = workItem.fields["System.TeamProject"];
+    const type = workItem.fields["System.WorkItemType"];
+    const api = await this.witApi();
+    const typeFields: any[] = await this.runOperation({ operation: "points", ticketId: String(workItem.id) }, () =>
+      retryReadOn5xx(() => api.getWorkItemTypeFieldsWithReferences(project, type))
+    );
+    const available = new Set((typeFields || []).map((field: any) => field.referenceName));
+    const wanted = options.field ? [options.field] : AzureBoardsProvider.POINT_FIELDS;
+    const field = wanted.find((candidate) => available.has(candidate));
+    if (!field) {
+      return { status: "skipped", value: null, field: null, reason: "type-has-no-points-field" };
+    }
+    const current = workItem.fields[field];
+    if (current !== undefined && current !== null && current !== "" && !options.overwrite) {
+      return { status: "skipped", value: current, field, reason: "already-set" };
+    }
+    await this.patchWorkItem(workItem, `/fields/${field}`, points, "points");
+    return { status: "done", value: points, field };
+  }
+
+
   public async postDeploymentComments(tickets: Ticket[], org: string, pullRequestInfo: CommonPullRequestInfo | null): Promise<Ticket[]> {
     uxLog("action", this, c.cyan('[AzureBoardsProvider] ' + t('azureBoardsProviderPostingComments', { count: tickets.length })));
     const commentMarkdown = await buildDeploymentCommentMarkdown(org, pullRequestInfo);
@@ -452,9 +697,16 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (!workItemId) {
       throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId }));
     }
-    const html = (await convertMarkdownToHtml(markdown)) + htmlMarker(options.marker);
-    const project = this.teamProject || "";
+    if (options.visibility) {
+      throw new SfError(t('ticketVisibilityJiraOnly'));
+    }
+    // The mention comes from the assignee read on the work item by the caller, never from the text
+    const converted = await convertMarkdownToHtml(markdown);
+    const html = withHtmlMention(options.strictMarkdown ? withHtmlHeadingSpacers(converted) : converted, options.mention) + htmlMarker(options.marker);
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
+    // The work item's own project: commenting through the project of the repository fails when they differ
+    const workItemProject: any = await retryReadOn5xx(() => azureWorkItemApi.getWorkItem(workItemId, ["System.TeamProject"]));
+    const project = workItemProject?.fields?.["System.TeamProject"] || this.teamProject || "";
     const existing = options.marker ? await this.findMarkedComment(azureWorkItemApi, project, workItemId, options.marker) : null;
     const comment = existing
       ? await azureWorkItemApi.updateComment({ text: html }, project, workItemId, Number(existing.id))

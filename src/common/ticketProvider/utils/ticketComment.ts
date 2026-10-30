@@ -9,6 +9,7 @@ import { CONSTANTS } from '../../../config/index.js';
 import { getCurrentGitBranch } from '../../utils/index.js';
 import { GitProvider, CommonPullRequestInfo } from '../../gitProvider/index.js';
 import { t } from '../../utils/i18n.js';
+import type { TicketAssignee, TicketCommentVisibility, TicketStepResult } from './ticketQualify.js';
 
 export interface PostCommentOptions {
   /**
@@ -18,15 +19,28 @@ export interface PostCommentOptions {
   marker?: string;
   /** ServiceNow journal field written to (`work_notes`, `comments`...) */
   serviceNowField?: string;
+  /** Real mention of this assignee, inserted right after the first block (JIRA, Azure Boards) */
+  mention?: TicketAssignee | null;
+  /** JIRA only: comment restricted to a project role or a group */
+  visibility?: TicketCommentVisibility | null;
+  /** The markdown went through toStrictMarkdown: Azure Boards adds the spacing its comment view drops */
+  strictMarkdown?: boolean;
 }
 
 export interface PostCommentResult {
   ticketId: string;
   provider: string;
-  action: 'created' | 'updated' | 'failed';
+  /** skipped: --skip-if-marked found the ticket marked. refused: outside --allowed-projects */
+  action: 'created' | 'updated' | 'skipped' | 'refused' | 'failed';
   commentId?: string;
   url?: string;
   error?: string;
+  /** Stable name of the error (TicketAlreadyMarked, TicketOutOfScope, TicketNotFound...), when it has one */
+  errorName?: string;
+  /** Steps run after the comment by ticket post-comment; absent when the provider posted only */
+  label?: TicketStepResult;
+  transition?: TicketStepResult;
+  points?: TicketStepResult;
 }
 
 const MARKER_RE = /^[A-Za-z0-9_.:-]{1,80}$/;

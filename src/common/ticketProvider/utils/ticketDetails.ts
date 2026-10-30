@@ -47,6 +47,8 @@ export interface TicketAttachment {
 
 export interface TicketCommentDetail {
   author: string;
+  /** Account id of the author, compared with ticket whoami for the marker check. Absent when the provider does not expose it */
+  authorId?: string | null;
   date: string;
   body: string;
 }
@@ -69,7 +71,14 @@ export interface TicketDetails {
   status: string;
   priority: string;
   assignee: string;
+  /** Account id of the assignee: the only source a mention is built from */
+  assigneeId: string | null;
   reporter: string;
+  reporterId: string | null;
+  /** JIRA project key, or Azure Boards team project of the work item */
+  project: string;
+  /** Set by ticket get --marker / --marker-label: label or prefixed comment of the authenticated account. Null when not asked */
+  markedByMe: boolean | null;
   created: string;
   updated: string;
   resolved: string;
@@ -100,6 +109,8 @@ export interface TicketDetailsOptions {
   /** Directory the attachments are saved into (created if missing) */
   attachmentsDir?: string;
   maxAttachmentBytes?: number;
+  /** true: comments are not fetched (faster on long tickets) */
+  skipComments?: boolean;
 }
 
 export function newTicketDetails(provider: TicketDetailsProvider, id: string): TicketDetails {
@@ -112,7 +123,11 @@ export function newTicketDetails(provider: TicketDetailsProvider, id: string): T
     status: '',
     priority: '',
     assignee: '',
+    assigneeId: null,
     reporter: '',
+    reporterId: null,
+    project: '',
+    markedByMe: null,
     created: '',
     updated: '',
     resolved: '',

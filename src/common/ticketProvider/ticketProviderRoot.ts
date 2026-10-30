@@ -13,6 +13,14 @@ import {
   downloadTicketAttachment,
 } from "./utils/ticketDetails.js";
 import { PostCommentOptions, PostCommentResult } from "./utils/ticketComment.js";
+import { TicketSearchOptions, TicketSearchResult, ticketProviderNotSupported } from "./utils/ticketOperations.js";
+import type {
+  TicketIdentity,
+  TicketPointsOptions,
+  TicketProjectMeta,
+  TicketProjectSummary,
+  TicketStepResult,
+} from "./utils/ticketQualify.js";
 import { t } from '../utils/i18n.js';
 
 // Issues met while collecting ticket details (ex: expired JIRA token), so the Pull Request
@@ -93,6 +101,54 @@ export abstract class TicketProviderRoot {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async postComment(_ticketId: string, _markdown: string, _options: PostCommentOptions = {}): Promise<PostCommentResult> {
     throw new SfError(t('ticketCommentNotSupported', { provider: this.getLabel() }));
+  }
+
+  /**
+   * The operations of the ticket list / label / whoami / meta commands and of the qualification
+   * steps of ticket post-comment. A provider that cannot do one of them fails with
+   * TicketProviderNotSupported: an empty result would turn an incapacity into "nothing to do".
+   */
+  /** The key as the ticketing system writes it, used in the results and the logs of the ticket commands */
+  public normalizeTicketId(ticketId: string): string {
+    return (ticketId || "").trim();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async searchTickets(_query: string, _options: TicketSearchOptions): Promise<TicketSearchResult> {
+    throw ticketProviderNotSupported(this.getLabel(), "list");
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async addTicketLabel(_ticketId: string, _label: string): Promise<void> {
+    throw ticketProviderNotSupported(this.getLabel(), "label");
+  }
+
+  /** Account the configured credential authenticates as */
+  public async whoAmI(): Promise<TicketIdentity> {
+    throw ticketProviderNotSupported(this.getLabel(), "whoami");
+  }
+
+  /** Projects the credential can see */
+  public async listProjects(): Promise<TicketProjectSummary[]> {
+    throw ticketProviderNotSupported(this.getLabel(), "meta");
+  }
+
+  /** Issue types, statuses and statuses per type of one project */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async getProjectMeta(_project: string): Promise<TicketProjectMeta> {
+    throw ticketProviderNotSupported(this.getLabel(), "meta");
+  }
+
+  /** Moves the ticket to the status named (translated name, original name or id); returns the status reached */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async transitionTicket(_ticketId: string, _status: string): Promise<string> {
+    throw ticketProviderNotSupported(this.getLabel(), "transition");
+  }
+
+  /** Writes the story points; never replaces a filled value unless options.overwrite */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async setTicketPoints(_ticketId: string, _points: number, _options: TicketPointsOptions = {}): Promise<TicketStepResult> {
+    throw ticketProviderNotSupported(this.getLabel(), "points");
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
