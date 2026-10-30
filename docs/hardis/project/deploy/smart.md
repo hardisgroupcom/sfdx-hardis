@@ -50,11 +50,11 @@ When the deployment contains `AiAgentDefinition` or `AiAgentDefinitionVersion`:
 - The target org must be on API 68.0 or above, else the deployment stops before anything is sent, with a link to the way to keep the previous types on API 67.0.
 - A deployment at API 68.0 or above that holds agents in the format before API 68.0 (`GenAiPlannerBundle`, `Bot` and `BotVersion` of an agent) stops before anything is sent: Salesforce refuses the whole deployment. Run `hardis:org:retrieve:agent` for these agents to move them.
 - When the deployment API version (the lowest of the org, `sourceApiVersion` of `sfdx-project.json` and the package.xml version) is below 68.0, a warning asks to set `sourceApiVersion` and the package.xml version to 68.0: Salesforce refuses the agent types below it.
-- An agent deployed as a version only (a delta often holds just the new version) gets its whole `AiAgentDefinition` added when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without it.
-- A version the target org already has is left out of the deployment, like a component of package-no-overwrite.xml: a committed version never changes, and Salesforce refuses to edit the active one.
+- An agent deployed as a version only (a delta often holds just the new version) stops the deployment when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without its `AiAgentDefinition`.
+- A version that is active in the target org stops the deployment, unless package-no-overwrite.xml protects it: Salesforce refuses to edit the active version. The cleaning `autoAddAgentsDeploymentActions` of [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/) adds `AiAgentDefinitionVersion` to package-no-overwrite.xml, so only the new versions are sent.
 - A warning lists the agent versions the target org has and the project does not: they were committed in that org, and agent versions must be committed in a developer sandbox only.
 - The running user of a service agent (`botUser`, `default_agent_user`) is a user of the target org: the built-in replacement rule `builtin-agent-running-user` creates it with `sf org create agent-user` at the first deployment, and writes it in the deployed files.
-- After a successful deployment, the highest `AiAgentDefinitionVersion` of each agent of the package.xml is activated, unless `agentAutoActivate` is false. A version that is already active is left as it is.
+- The package.xml is never changed for agents during the job. Agent versions are activated by `agent-activate` deployment actions, that the cleaning `autoAddAgentsDeploymentActions` writes in the Pull Request deployment actions.
 
 See [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
 

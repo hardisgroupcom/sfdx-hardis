@@ -426,6 +426,7 @@ nav:
           - audit callincallout: hardis/project/audit/callincallout.md
           - audit duplicatefiles: hardis/project/audit/duplicatefiles.md
           - audit remotesites: hardis/project/audit/remotesites.md
+          - clean agents-deployment-actions: hardis/project/clean/agents-deployment-actions.md
           - clean emptyitems: hardis/project/clean/emptyitems.md
           - clean filter-xml-content: hardis/project/clean/filter-xml-content.md
           - clean flowpositions: hardis/project/clean/flowpositions.md

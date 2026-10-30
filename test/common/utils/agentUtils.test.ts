@@ -1,15 +1,18 @@
 import { expect } from 'chai';
+import { execSync } from 'child_process';
 import * as os from 'os';
 import * as path from 'path';
 import fs from '../../../src/common/utils/fsUtils.js';
 import {
-  applyAgentDeploymentGuard,
-  buildAgentAutoActivateCommands,
   buildAgentPackageXmlContent,
+  checkAgentDeployment,
+  ensureAgentVersionsInPackageNoOverwrite,
   findLegacyAgentEntries,
   findMissingAgentReferences,
   getAgentNamesFromPackageXml,
   isApiVersionAtLeast,
+  listAgentsChangedSince,
+  listLocalAgentLatestVersions,
   listOrgAuthoringBundleNames,
   mergeIntoPackageXml,
   readAgentBotUsers,
@@ -143,68 +146,53 @@ describe('agentUtils package.xml', () => {
   });
 });
 
-describe('agentUtils.applyAgentDeploymentGuard', () => {
+describe('agentUtils.checkAgentDeployment', () => {
   let tmpDir: string;
+  let previousCwd: string;
 
   beforeEach(async () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-guard-'));
+    previousCwd = process.cwd();
+    process.chdir(tmpDir);
+    // The package-no-overwrite.xml lookup reads the branch config
+    execSync('git init -q', { cwd: tmpDir });
   });
 
   afterEach(async () => {
+    process.chdir(previousCwd);
     await fs.remove(tmpDir);
   });
 
   it('does nothing when the package holds no agent', async () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ ApexClass: ['A'] }));
-    expect(await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '60.0' }), null)).to.equal(file);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '60.0' }), null);
   });
 
   it('stops when the target org is below API 68.0', async () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinitionVersion: ['My_Agent#2'] }));
-    let error: any = null;
-    try {
-      await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '67.0' }), null);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).to.not.equal(null);
+    expect(await checkError(file, fakeConnection({ apiVersion: '67.0' }))).to.not.equal(null);
   });
 
-  it('adds the definition of a new agent to a copy, and leaves the project file alone', async () => {
+  it('stops when a new agent is deployed without its definition, and never changes the package.xml', async () => {
     const file = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(file, packageXml({ AiAgentDefinitionVersion: ['New_Agent#1', 'Known_Agent#5'] }));
-    const guarded = await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgAgents: ['Known_Agent'] }), null);
-    expect(guarded).to.not.equal(file);
-    expect((await parsePackageXmlFile(guarded)).AiAgentDefinition).to.deep.equal(['New_Agent']);
-    expect((await parsePackageXmlFile(file)).AiAgentDefinition).to.equal(undefined);
+    const content = packageXml({ AiAgentDefinitionVersion: ['New_Agent#1', 'Known_Agent#5'] });
+    await fs.writeFile(file, content);
+    const error = await checkError(file, fakeConnection({ apiVersion: '68.0', orgAgents: ['Known_Agent'] }));
+    expect(String(error?.message)).to.contain('New_Agent').and.not.contain('Known_Agent');
+    expect(await fs.readFile(file, 'utf8')).to.equal(content);
   });
 
-  it('keeps the package when every agent already exists in the target org', async () => {
+  it('accepts a version only when the target org already has the agent', async () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinitionVersion: ['Known_Agent#5'] }));
-    expect(await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgAgents: ['known_agent'] }), null)).to.equal(file);
-  });
-});
-
-describe('agentUtils.applyAgentDeploymentGuard versions already in the org', () => {
-  let tmpDir: string;
-
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-versions-'));
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgAgents: ['known_agent'] }), null);
   });
 
-  afterEach(async () => {
-    await fs.remove(tmpDir);
-  });
-
-  it('leaves out the versions the target org has, active or not, in a copy that keeps the package.xml version', async () => {
+  it('stops when the deployment holds the active version and package-no-overwrite.xml does not protect it', async () => {
     const file = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(
-      file,
-      packageXml({ AiAgentDefinition: ['My_Agent'], AiAgentDefinitionVersion: ['My_Agent#1', 'My_Agent#2', 'My_Agent#3'], AiAuthoringBundle: ['My_Agent_3'] })
-    );
+    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent'], AiAgentDefinitionVersion: ['My_Agent#1', 'My_Agent#2'] }));
     const conn = fakeConnection({
       apiVersion: '68.0',
       orgVersions: [
@@ -212,36 +200,90 @@ describe('agentUtils.applyAgentDeploymentGuard versions already in the org', () 
         { fullName: 'My_Agent#2', status: 'Active' },
       ],
     });
-    const command = fakeCommand();
-    const guarded = await applyAgentDeploymentGuard(file, conn, command);
-    expect(guarded).to.not.equal(file);
-    const guardedContent = await parsePackageXmlFile(guarded);
-    expect(guardedContent.AiAgentDefinitionVersion).to.deep.equal(['My_Agent#3']);
-    expect(guardedContent.AiAuthoringBundle).to.deep.equal(['My_Agent_3']);
-    expect(await fs.readFile(guarded, 'utf8')).to.contain('<version>68.0</version>');
-    expect((await parsePackageXmlFile(file)).AiAgentDefinitionVersion).to.have.length(3);
-    expect(command.logs.join('\n')).to.contain('My_Agent#1').and.contain('My_Agent#2');
+    const error = await checkError(file, conn);
+    expect(String(error?.message)).to.contain('My_Agent#2').and.not.contain('My_Agent#1,');
   });
 
-  it('removes the version type when the org has every deployed version', async () => {
+  it('accepts the active version when package-no-overwrite.xml protects it', async () => {
     const file = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent'], AiAgentDefinitionVersion: ['My_Agent#1'] }));
-    const conn = fakeConnection({ apiVersion: '68.0', orgVersions: [{ fullName: 'My_Agent#1', status: 'Active' }] });
-    const guarded = await applyAgentDeploymentGuard(file, conn, null);
-    const guardedContent = await parsePackageXmlFile(guarded);
-    expect(guardedContent.AiAgentDefinitionVersion).to.equal(undefined);
-    expect(guardedContent.AiAgentDefinition).to.deep.equal(['My_Agent']);
-  });
-
-  it('adds the definition of a new agent and keeps its new version', async () => {
-    const file = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(file, packageXml({ AiAgentDefinitionVersion: ['New_Agent#1'] }));
-    const guarded = await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgAgents: [], orgVersions: [] }), null);
-    const guardedContent = await parsePackageXmlFile(guarded);
-    expect(guardedContent.AiAgentDefinition).to.deep.equal(['New_Agent']);
-    expect(guardedContent.AiAgentDefinitionVersion).to.deep.equal(['New_Agent#1']);
+    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent'], AiAgentDefinitionVersion: ['My_Agent#2'] }));
+    await ensureAgentVersionsInPackageNoOverwrite(path.join(tmpDir, 'manifest', 'package-no-overwrite.xml'));
+    const conn = fakeConnection({ apiVersion: '68.0', orgVersions: [{ fullName: 'My_Agent#2', status: 'Active' }] });
+    await checkAgentDeployment(file, conn, null);
   });
 });
+
+describe('agentUtils sources of the deployment actions', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-sources-'));
+  });
+
+  afterEach(async () => {
+    await fs.remove(tmpDir);
+  });
+
+  async function writeVersion(fullName: string): Promise<void> {
+    const folder = path.join(tmpDir, 'force-app', 'main', 'default', 'aiAgentDefinitionVersions', fullName);
+    await fs.ensureDir(folder);
+    await fs.writeFile(path.join(folder, `${fullName}.aiAgentDefinitionVersion-meta.xml`), '<AiAgentDefinitionVersion/>');
+  }
+
+  it('lists the highest version of each agent of the project, or of the requested agents', async () => {
+    await writeVersion('B_Agent#1');
+    await writeVersion('B_Agent#10');
+    await writeVersion('A_Agent#2');
+    expect(await listLocalAgentLatestVersions(null, tmpDir)).to.deep.equal([
+      { agentName: 'A_Agent', version: 2 },
+      { agentName: 'B_Agent', version: 10 },
+    ]);
+    expect(await listLocalAgentLatestVersions(['b_agent'], tmpDir)).to.deep.equal([{ agentName: 'B_Agent', version: 10 }]);
+  });
+
+  it('lists the agents with a version changed since a commit, committed or not tracked yet', async () => {
+    const previousCwd = process.cwd();
+    process.chdir(tmpDir);
+    try {
+      execSync('git init -q && git config user.email test@example.com && git config user.name test', { cwd: tmpDir });
+      await writeVersion('Old_Agent#1');
+      execSync('git add -A && git commit -q -m init', { cwd: tmpDir });
+      await writeVersion('Committed_Agent#1');
+      execSync('git add -A && git commit -q -m story', { cwd: tmpDir });
+      await writeVersion('New_Agent#3');
+      expect(await listAgentsChangedSince('HEAD~1')).to.deep.equal(['Committed_Agent', 'New_Agent']);
+    } finally {
+      process.chdir(previousCwd);
+    }
+  });
+
+  it('adds AiAgentDefinitionVersion to package-no-overwrite.xml once, and keeps what it holds', async () => {
+    const file = path.join(tmpDir, 'manifest', 'package-no-overwrite.xml');
+    await fs.ensureDir(path.dirname(file));
+    await fs.writeFile(file, packageXml({ Certificate: ['*'] }, '62.0'));
+    expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
+    expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(false);
+    const content = await parsePackageXmlFile(file);
+    expect(content.AiAgentDefinitionVersion).to.deep.equal(['*']);
+    expect(content.Certificate).to.deep.equal(['*']);
+    expect(await fs.readFile(file, 'utf8')).to.contain('<version>62.0</version>');
+  });
+
+  it('creates package-no-overwrite.xml when the project has none', async () => {
+    const file = path.join(tmpDir, 'manifest', 'package-no-overwrite.xml');
+    expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
+    expect((await parsePackageXmlFile(file)).AiAgentDefinitionVersion).to.deep.equal(['*']);
+  });
+});
+
+async function checkError(file: string, conn: any): Promise<any> {
+  try {
+    await checkAgentDeployment(file, conn, null);
+  } catch (e) {
+    return e;
+  }
+  return null;
+}
 
 describe('agentUtils deployment API version warning', () => {
   let tmpDir: string;
@@ -272,7 +314,7 @@ describe('agentUtils deployment API version warning', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent'], AiAgentDefinitionVersion: ['My_Agent#2'] }));
     const command = fakeCommand();
-    expect(await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0' }), command)).to.equal(file);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0' }), command);
     expect(command.logs.join('\n')).to.contain('API 64.0');
   });
 
@@ -281,7 +323,7 @@ describe('agentUtils deployment API version warning', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent'] }, '66.0'));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0' }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0' }), command);
     expect(command.logs.join('\n')).to.contain('66.0');
   });
 
@@ -290,7 +332,7 @@ describe('agentUtils deployment API version warning', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent'] }));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0' }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0' }), command);
     expect(command.logs).to.deep.equal([]);
   });
 
@@ -299,7 +341,7 @@ describe('agentUtils deployment API version warning', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ ApexClass: ['MyClass'] }, '64.0'));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '64.0' }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '64.0' }), command);
     expect(command.logs).to.deep.equal([]);
   });
 });
@@ -353,7 +395,7 @@ describe('agentUtils botUser', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
     expect(command.logs.join('\n')).to.contain('agent.user@example.com');
   });
 
@@ -362,7 +404,7 @@ describe('agentUtils botUser', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
     expect(command.logs).to.deep.equal([]);
   });
 
@@ -373,7 +415,7 @@ describe('agentUtils botUser', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgUsers: ['Agent.User@example.com'] }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgUsers: ['Agent.User@example.com'] }), command);
     expect(command.logs).to.deep.equal([]);
   });
 
@@ -387,7 +429,7 @@ describe('agentUtils botUser', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
     expect(command.logs).to.deep.equal([]);
   });
 
@@ -407,7 +449,7 @@ describe('agentUtils botUser', () => {
       ],
     });
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, conn, command);
+    await checkAgentDeployment(file, conn, command);
     const logs = command.logs.join('\n');
     expect(logs).to.contain('(2, 3)');
     expect(logs).to.not.contain('Other_Agent');
@@ -420,7 +462,7 @@ describe('agentUtils botUser', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgVersions: [{ fullName: 'Service_Agent#1', status: 'Active' }] }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgVersions: [{ fullName: 'Service_Agent#1', status: 'Active' }] }), command);
     expect(command.logs).to.deep.equal([]);
   });
 
@@ -434,7 +476,7 @@ describe('agentUtils botUser', () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
-    await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
     expect(command.logs).to.deep.equal([]);
   });
 });
@@ -493,7 +535,7 @@ describe('agentUtils agents in the format before API 68.0', () => {
     await fs.writeFile(file, packageXml({ GenAiPlannerBundle: ['Old_Agent_v2'], AiAgentDefinition: ['New_Agent'], AiAgentDefinitionVersion: ['New_Agent#1'] }));
     let error: any = null;
     try {
-      await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '68.0', orgVersions: [] }), null);
+      await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgVersions: [] }), null);
     } catch (e) {
       error = e;
     }
@@ -505,7 +547,7 @@ describe('agentUtils agents in the format before API 68.0', () => {
     await fs.writeFile('sfdx-project.json', JSON.stringify({ sourceApiVersion: '67.0' }));
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ GenAiPlannerBundle: ['Old_Agent_v2'], Bot: ['Old_Agent'] }, '67.0'));
-    expect(await applyAgentDeploymentGuard(file, fakeConnection({ apiVersion: '67.0' }), null)).to.equal(file);
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '67.0' }), null);
   });
 
   it('removes the old entries of an agent, keeps the package.xml version and lists the old folders', async () => {
@@ -526,42 +568,6 @@ describe('agentUtils agents in the format before API 68.0', () => {
     await fs.writeFile(file, packageXml({ ApexClass: ['MyClass'] }, '66.0'));
     await mergeIntoPackageXml(file, { AiAgentDefinition: ['New_Agent'] });
     expect(await fs.readFile(file, 'utf8')).to.contain('<version>66.0</version>');
-  });
-});
-
-describe('agentUtils.buildAgentAutoActivateCommands', () => {
-  let tmpDir: string;
-
-  beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-activate-'));
-  });
-
-  afterEach(async () => {
-    await fs.remove(tmpDir);
-  });
-
-  it('activates the highest deployed version of each agent', async () => {
-    const file = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['B_Agent', 'A_Agent'], AiAgentDefinitionVersion: ['B_Agent#1', 'B_Agent#3', 'A_Agent#2'] }));
-    const commands = await buildAgentAutoActivateCommands(file);
-    expect(commands.map((cmd) => [cmd.id, cmd.type, cmd.parameters.agentName, cmd.parameters.agentVersion, cmd.context, cmd.preOrPost])).to.deep.equal([
-      ['AGENT_ACTIVATE_A_Agent', 'agent-activate', 'A_Agent', '2', 'process-deployment-only', 'commandsPostDeploy'],
-      ['AGENT_ACTIVATE_B_Agent', 'agent-activate', 'B_Agent', '3', 'process-deployment-only', 'commandsPostDeploy'],
-    ]);
-  });
-
-  it('activates the latest version of the agents of a wildcard', async () => {
-    const file = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent', '*'], AiAgentDefinitionVersion: ['*'] }));
-    const commands = await buildAgentAutoActivateCommands(file);
-    expect(commands.map((cmd) => `${cmd.parameters.agentName}:${cmd.parameters.agentVersion}`)).to.deep.equal(['My_Agent:latest']);
-  });
-
-  it('activates nothing when only the agent definition or an authoring bundle is deployed', async () => {
-    const file = path.join(tmpDir, 'package.xml');
-    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['My_Agent'], AiAuthoringBundle: ['My_Agent_1'] }));
-    expect(await buildAgentAutoActivateCommands(file)).to.deep.equal([]);
-    expect(await buildAgentAutoActivateCommands(path.join(tmpDir, 'missing.xml'))).to.deep.equal([]);
   });
 });
 

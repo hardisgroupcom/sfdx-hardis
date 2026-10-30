@@ -49,8 +49,8 @@ Then [publish your User Story](salesforce-devops-publish-user-story.md) as usual
 
 - **The target org must be on API 68.0 or above.** Otherwise the deployment stops before anything is sent.
 - **The project must be on API 68.0.** When `sourceApiVersion` or the package.xml version is lower, the check and deployment jobs log a warning that asks to raise them.
-- **The first deployment of an agent needs its whole `AiAgentDefinition`.** With [delta deployments](salesforce-devops-config-delta-deployment.md), a Pull Request that only changes a version holds only the `AiAgentDefinitionVersion`. When the target org does not have the agent yet, sfdx-hardis adds its `AiAgentDefinition` to the deployment.
-- **A version the target org already has is left out.** A committed version never changes, and Salesforce refuses the whole deployment when it holds the active version (*Can't edit an active bot version*). sfdx-hardis handles every `AiAgentDefinitionVersion` like a component of [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md), without you listing them: only the new versions are sent.
+- **The first deployment of an agent needs its whole `AiAgentDefinition`.** With [delta deployments](salesforce-devops-config-delta-deployment.md), a Pull Request that only changes a version holds only the `AiAgentDefinitionVersion`. When the target org does not have the agent yet, the deployment stops before anything is sent: deploy the definition too, for example with `nodelta` in the commit message.
+- **A version the target org already has is left out.** A committed version never changes, and Salesforce refuses the whole deployment when it holds the active version (*Can't edit an active bot version*). Add `AiAgentDefinitionVersion` with member `*` to [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md): only the new versions are sent. The [cleaning](#automate-it-at-each-user-story) adds it for you. Without it, a deployment that holds an active version stops before anything is sent.
 - **Agent versions come from the project only.** A warning lists the versions the target org has and the project does not: they were committed in that org, against the [rule](#deliver-a-new-version-of-an-agent).
 - **The running user of a service agent is a user of the target org.** sfdx-hardis creates it at the first deployment: see [the running user of a service agent](#the-running-user-of-a-service-agent).
 
@@ -62,7 +62,7 @@ The project keeps every version you retrieved: `aiAgentDefinitionVersions/My_Age
 
 1. In your developer sandbox, change the agent in Agentforce Builder and click **Commit Version**.
 2. Run [hardis:org:retrieve:agent](hardis/org/retrieve/agent.md) again: it proposes the new version and adds it to `manifest/package.xml`, next to the previous ones.
-3. Commit and open your Pull Request as usual.
+3. Commit and open your Pull Request as usual. With the [cleaning](#automate-it-at-each-user-story), the activation of the new version is added to the deployment actions of the Pull Request.
 
 Each org of the pipeline then gets the new version, which is activated, and Salesforce deactivates the previous one. The older versions stay in the project and in the orgs. To go back to one of them, activate it with an [agent-activate deployment action](#3-activate-the-agent).
 
@@ -138,15 +138,34 @@ When activation fails for this reason, the error of the action points to this se
 
 ## 3. Activate the agent
 
-A deployed version is not active. sfdx-hardis activates it for you: after a successful deployment, it activates the highest `AiAgentDefinitionVersion` of each agent the package.xml deployed. Nothing to configure.
+A deployed version is not active. An `agent-activate` [deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#activate-an-agentforce-agent) of the Pull Request activates it after the deployment. The action is stored in the sources, so the Pull Request shows it and reviewers can change it.
 
 - The deployment check job lists the activation in the Pull Request comment, with the other post-deployment actions.
 - A version that is already active is left as it is.
-- When the deployed version is not found in the target org, or Salesforce refuses to activate it, the action fails, and so does the deployment job: the metadata is in the org, and the Pull Request comment shows the error of the action.
+- When the version is not found in the target org, or Salesforce refuses to activate it, the action fails, and so does the deployment job: the metadata is in the org, and the Pull Request comment shows the error of the action.
 
-To activate agents yourself, set `agentAutoActivate: false` in `config/.sfdx-hardis.yml` (or in the config of one branch only, to keep production for a manual activation).
+sfdx-hardis never adds actions or changes the package.xml during the deployment job: what the deployment needs is recorded before, in the sources.
 
-Then, to activate a chosen version, add an `agent-activate` [deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#activate-an-agentforce-agent):
+### Automate it at each User Story
+
+Add the cleaning `autoAddAgentsDeploymentActions` to `autoCleanTypes` in `config/.sfdx-hardis.yml`:
+
+```yaml
+autoCleanTypes:
+  - autoAddAgentsDeploymentActions
+```
+
+Each time you save a User Story with [hardis:work:save](hardis/work/save.md), [hardis:project:clean:agents-deployment-actions](hardis/project/clean/agents-deployment-actions.md):
+
+- writes, for each agent with a version changed in the User Story, an `agent-activate` action in the deployment actions of the Pull Request (`scripts/actions/.sfdx-hardis.<id>.yml`, or the draft file when the Pull Request does not exist yet). The action activates the latest version of the agent (`agentVersion: latest`), and its label names the version of the project when the User Story was saved. When several Pull Requests are deployed together, their actions for the same agent are the same action and run once, so the order of the Pull Requests does not matter.
+- adds `AiAgentDefinitionVersion` to `manifest/package-no-overwrite.xml` and to every file of `packageNoOverwritePath` in the project and branch configs, once.
+
+!!! note "Deployment time"
+    Like for any item of package-no-overwrite.xml, a deployment that holds an agent version lists the content of the target org first, to know which versions it already has. It can take a few minutes on a large org.
+
+To leave production for a manual activation, add `excludeTargetBranches` to the action, or delete it from the Pull Request.
+
+Without the cleaning, add the action yourself:
 
 ```yaml
 commandsPostDeploy:

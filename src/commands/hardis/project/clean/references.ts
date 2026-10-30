@@ -18,6 +18,7 @@ import { getConfig, setConfig } from '../../../../config/index.js';
 import { PACKAGE_ROOT_DIR } from '../../../../settings.js';
 import { FilterXmlContent } from './filter-xml-content.js';
 import LintAccess from '../../lint/access.js';
+import CleanAgentsDeploymentActions from './agents-deployment-actions.js';
 import CleanEmptyItems from './emptyitems.js';
 import CleanFlowPositions from './flowpositions.js';
 import CleanListViews from './listviews.js';
@@ -31,6 +32,7 @@ import { t } from '../../../../common/utils/i18n.js';
 // allCleaningTypes below, which carries the label and the command class of each: a test checks both lists
 // stay in sync, as several cleaning types used to be missing here and were not selectable at all
 const CLEANING_TYPES = [
+  'autoAddAgentsDeploymentActions',
   'caseentitlement',
   'checkPermissions',
   'dashboards',
@@ -160,6 +162,12 @@ The command's technical implementation involves several steps:
   protected debugMode = false;
   protected cleaningTypes: any[] = [];
   protected allCleaningTypes: CleaningType[] = [
+    {
+      value: 'autoAddAgentsDeploymentActions',
+      title: t('cleaningTypeAutoAddAgentsDeploymentActions'),
+      commandClass: CleanAgentsDeploymentActions,
+      scopedByDeltaFrom: true,
+    },
     {
       value: 'checkPermissions',
       title: t('cleaningTypeCheckPermissions'),

@@ -19,7 +19,7 @@ Key functionalities:
 - **Running user warning:** A service agent runs as a user of its org (`botUser`). The command warns when the retrieved agent has one: add a replacement rule that writes the user of each org.
 - **Missing dependencies report:** Lists the custom objects, custom fields and Data 360 objects that the agent names and that the project does not hold. The CLI does not retrieve them: retrieve them yourself when the target org does not have them.
 
-Then commit the files as usual (for example with [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)). After the deployment, sfdx-hardis activates the deployed version (`agentAutoActivate`, on by default).
+Then commit the files as usual (for example with [hardis:work:save](https://sfdx-hardis.cloudity.com/hardis/work/save/)). With the cleaning `autoAddAgentsDeploymentActions` in `autoCleanTypes`, hardis:work:save adds the activation of the new version to the deployment actions of the Pull Request.
 
 The org and the `sourceApiVersion` of `sfdx-project.json` must be on API 68.0 or above: below, Salesforce returns no agent file. To keep the previous types (`Bot`, `BotVersion`, `AiAuthoringBundle`) while an org of your pipeline is still on API 67.0, see [Agentforce agents in CI/CD](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-agentforce-agents/).
 

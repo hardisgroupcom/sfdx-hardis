@@ -40,7 +40,7 @@ import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCom
 import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
-import { applyAgentDeploymentGuard, buildAgentAutoActivateCommands } from '../../../../common/utils/agentUtils.js';
+import { checkAgentDeployment } from '../../../../common/utils/agentUtils.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -100,11 +100,11 @@ When the deployment contains \`AiAgentDefinition\` or \`AiAgentDefinitionVersion
 - The target org must be on API 68.0 or above, else the deployment stops before anything is sent, with a link to the way to keep the previous types on API 67.0.
 - A deployment at API 68.0 or above that holds agents in the format before API 68.0 (\`GenAiPlannerBundle\`, \`Bot\` and \`BotVersion\` of an agent) stops before anything is sent: Salesforce refuses the whole deployment. Run \`hardis:org:retrieve:agent\` for these agents to move them.
 - When the deployment API version (the lowest of the org, \`sourceApiVersion\` of \`sfdx-project.json\` and the package.xml version) is below 68.0, a warning asks to set \`sourceApiVersion\` and the package.xml version to 68.0: Salesforce refuses the agent types below it.
-- An agent deployed as a version only (a delta often holds just the new version) gets its whole \`AiAgentDefinition\` added when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without it.
-- A version the target org already has is left out of the deployment, like a component of package-no-overwrite.xml: a committed version never changes, and Salesforce refuses to edit the active one.
+- An agent deployed as a version only (a delta often holds just the new version) stops the deployment when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without its \`AiAgentDefinition\`.
+- A version that is active in the target org stops the deployment, unless package-no-overwrite.xml protects it: Salesforce refuses to edit the active version. The cleaning \`autoAddAgentsDeploymentActions\` of [hardis:work:save](${CONSTANTS.DOC_URL_ROOT}/hardis/work/save/) adds \`AiAgentDefinitionVersion\` to package-no-overwrite.xml, so only the new versions are sent.
 - A warning lists the agent versions the target org has and the project does not: they were committed in that org, and agent versions must be committed in a developer sandbox only.
 - The running user of a service agent (\`botUser\`, \`default_agent_user\`) is a user of the target org: the built-in replacement rule \`builtin-agent-running-user\` creates it with \`sf org create agent-user\` at the first deployment, and writes it in the deployed files.
-- After a successful deployment, the highest \`AiAgentDefinitionVersion\` of each agent of the package.xml is activated, unless \`agentAutoActivate\` is false. A version that is already active is left as it is.
+- The package.xml is never changed for agents during the job. Agent versions are activated by \`agent-activate\` deployment actions, that the cleaning \`autoAddAgentsDeploymentActions\` writes in the Pull Request deployment actions.
 
 See [Agentforce agents in CI/CD](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/).
 
@@ -691,10 +691,8 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
-    // Agents: the target org must be on API 68.0, the first deployment of an agent needs its whole AiAgentDefinition,
-    // and the versions the target org already has are left out
-    const packageXmlBeforeAgentGuard = this.packageXmlFile;
-    this.packageXmlFile = await applyAgentDeploymentGuard(this.packageXmlFile, this.targetOrg.getConnection(), this);
+    // Agents: stop before anything is sent when Salesforce would refuse the deployment because of an agent
+    await checkAgentDeployment(this.packageXmlFile, this.targetOrg.getConnection(), this);
 
     // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
     this.flowDeletion = new FlowDeletionHandler({
@@ -708,7 +706,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
 
     // Set smart deploy options
     await this.setAdditionalOptions(targetUsername);
-    await this.addAgentAutoActivation(packageXmlBeforeAgentGuard);
 
     // Pre-destructive Flows must be gone before the constructive metadata is deployed
     if (!this.checkOnly) {
@@ -810,22 +807,6 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
           uxLog("warning", this, c.yellow('[SmartDeploy] ' + t('smartDeployDestructiveChangesNoPostFile')));
         }
       }
-    }
-  }
-
-  // A deployed agent version is inactive: activate it after the deployment, unless agentAutoActivate is false.
-  // Read from the package.xml before the agent guard, so a version already in the org but not active yet still is.
-  private async addAgentAutoActivation(packageXmlFile: string) {
-    if (this.configInfo.agentAutoActivate === false) {
-      return;
-    }
-    const activateCommands = await buildAgentAutoActivateCommands(packageXmlFile);
-    if (activateCommands.length === 0) {
-      return;
-    }
-    this.smartDeployOptions.extraCommands = [...(this.smartDeployOptions.extraCommands || []), ...activateCommands];
-    for (const cmd of activateCommands) {
-      uxLog("action", this, c.cyan('[SmartDeploy] ' + t('agentAutoActivateAdded', { agentName: cmd.parameters.agentName, version: cmd.parameters.agentVersion })));
     }
   }
 

@@ -1,11 +1,14 @@
 import { Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
 import { glob } from 'glob';
+import * as yaml from 'js-yaml';
 import * as path from 'path';
 import fs from './fsUtils.js';
-import { createTempDir, uxLog } from './index.js';
+import { git, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
-import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
+import { filterItemsMatchingNoOverwrite, parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
+import { resolvePackageNoOverwriteFile } from './deployUtils.js';
+import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { t } from './i18n.js';
 import { CONSTANTS } from '../../config/index.js';
 import { resolveDeployApiVersion } from '../replacementRules/engine/ruleEngine.js';
@@ -197,18 +200,18 @@ export async function getAgentNamesFromPackageXml(packageXmlFile: string): Promi
 }
 
 /**
- * Before a deployment: fails when the target org cannot receive the agent metadata types, and adds the
- * AiAgentDefinition of every agent deployed as a version only that the target org does not hold yet.
- * Returns the package.xml to deploy: a copy when something was added, so the project file is never changed.
+ * Before a deployment: stops it when Salesforce would refuse it because of an agent, and warns about what
+ * would break the agents after it. Never changes the package.xml: what the deployment needs is recorded
+ * in the sources by hardis:work:save (cleaning autoAddAgentsDeploymentActions) before the Pull Request job.
  */
-export async function applyAgentDeploymentGuard(packageXmlFile: string, conn: Connection, commandThis: any): Promise<string> {
+export async function checkAgentDeployment(packageXmlFile: string, conn: Connection, commandThis: any): Promise<void> {
   if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
-    return packageXmlFile;
+    return;
   }
   await assertNoLegacyAgentAtApi68(packageXmlFile, conn);
   const { definitions, versionOnly } = await getAgentNamesFromPackageXml(packageXmlFile);
   if (definitions.length === 0 && versionOnly.length === 0) {
-    return packageXmlFile;
+    return;
   }
   const orgApiVersion = conn.getApiVersion();
   if (!isApiVersionAtLeast(orgApiVersion)) {
@@ -223,44 +226,114 @@ export async function applyAgentDeploymentGuard(packageXmlFile: string, conn: Co
   }
   await warnWhenDeployApiVersionTooLow(packageXmlFile, conn, [...definitions, ...versionOnly], commandThis);
   await warnWhenBotUserMissingInTargetOrg([...definitions, ...versionOnly], conn, commandThis);
-
-  // An agent version is deployed only when the target org does not have it, like the components of
-  // package-no-overwrite.xml: a committed version never changes, and Salesforce refuses the whole
-  // deployment when it holds the active one ("Can't edit an active bot version").
-  const content = await parsePackageXmlFile(packageXmlFile);
-  const deployedVersions: string[] = (content[AGENT_DEFINITION_VERSION_TYPE] || []).map(String).filter((member: string) => member !== '*');
   const orgVersions = await listOrgAgentVersions(conn);
   await warnWhenVersionsCommittedOutsideProject([...definitions, ...versionOnly], orgVersions, commandThis);
-  const versionsInOrg = new Set(orgVersions.map((version) => formatAgentVersionFullName(version.agentName, version.version).toLowerCase()));
-  const versionsToSkip = deployedVersions.filter((member) => versionsInOrg.has(member.toLowerCase()));
+  await assertAgentDefinitionsInTargetOrg(versionOnly, conn);
+  await assertNoActiveVersionOverwritten(packageXmlFile, orgVersions);
+}
 
-  const orgAgents = versionOnly.length > 0 ? await listOrgAgentDefinitionNames(conn) : new Set<string>();
-  const agentsToAdd = versionOnly.filter((name) => !orgAgents.has(name.toLowerCase()));
-  if (versionsToSkip.length === 0 && agentsToAdd.length === 0) {
-    return packageXmlFile;
+/**
+ * Highest version of each agent of the project, from the folders of its AiAgentDefinitionVersion files.
+ * Restricted to the agents of agentNames when given.
+ */
+export async function listLocalAgentLatestVersions(agentNames: string[] | null = null, projectRoot: string = process.cwd()): Promise<Array<{ agentName: string; version: number }>> {
+  const wanted = agentNames ? new Set(agentNames.map((name) => name.toLowerCase())) : null;
+  const highest = new Map<string, { agentName: string; version: number }>();
+  for (const fullName of await listLocalAgentVersionFullNames(projectRoot)) {
+    const parsed = parseAgentVersionFullName(fullName);
+    const key = parsed?.agentName.toLowerCase() || '';
+    if (parsed && (!wanted || wanted.has(key)) && parsed.version > (highest.get(key)?.version ?? 0)) {
+      highest.set(key, parsed);
+    }
   }
+  return [...highest.values()].sort((a, b) => a.agentName.localeCompare(b.agentName));
+}
 
-  // Changes go to a copy, so the project file is never changed
-  if (versionsToSkip.length > 0) {
-    const keptVersions = content[AGENT_DEFINITION_VERSION_TYPE].filter((member: string) => !versionsToSkip.includes(member));
-    if (keptVersions.length > 0) {
-      content[AGENT_DEFINITION_VERSION_TYPE] = keptVersions;
-    } else {
-      delete content[AGENT_DEFINITION_VERSION_TYPE];
-    }
-    for (const member of versionsToSkip) {
-      uxLog('action', commandThis, c.cyan(t('agentExistingVersionSkipped', { version: c.bold(member) })));
-    }
-  }
-  if (agentsToAdd.length > 0) {
-    content[AGENT_DEFINITION_TYPE] = [...new Set([...(content[AGENT_DEFINITION_TYPE] || []), ...agentsToAdd])].sort();
-    for (const agentName of agentsToAdd) {
-      uxLog('action', commandThis, c.cyan(t('agentDefinitionAddedToDeployment', { agentName: c.bold(agentName) })));
+/** Agents with an AiAgentDefinitionVersion file changed since the commit: committed, staged, unstaged or new. */
+export async function listAgentsChangedSince(fromCommit: string): Promise<string[]> {
+  const changedFiles = [
+    ...(await git({ output: false, displayCommand: false }).diff(['--name-only', fromCommit])).split('\n'),
+    ...(await git({ output: false, displayCommand: false }).status()).not_added,
+  ];
+  const agentNames = new Set<string>();
+  for (const file of changedFiles) {
+    const match = /aiAgentDefinitionVersions\/([^/]+)\//.exec(file.replace(/\\/g, '/'));
+    const parsed = match ? parseAgentVersionFullName(match[1]) : null;
+    if (parsed) {
+      agentNames.add(parsed.agentName);
     }
   }
-  const guardedPackageXmlFile = path.join(await createTempDir(), 'package-agents-guarded.xml');
-  await writePackageXmlKeepingVersion(guardedPackageXmlFile, content, packageXmlFile);
-  return guardedPackageXmlFile;
+  return [...agentNames].sort();
+}
+
+/**
+ * Adds AiAgentDefinitionVersion to package-no-overwrite.xml (created when missing): a version the target
+ * org already has is then left out of the deployment, as a committed version never changes and Salesforce
+ * refuses the whole deployment when it holds the active one. Returns true when the file was changed.
+ */
+export async function ensureAgentVersionsInPackageNoOverwrite(packageNoOverwriteFile: string): Promise<boolean> {
+  const content: Record<string, string[]> = fs.existsSync(packageNoOverwriteFile) ? await parsePackageXmlFile(packageNoOverwriteFile) : {};
+  if ((content[AGENT_DEFINITION_VERSION_TYPE] || []).includes('*')) {
+    return false;
+  }
+  content[AGENT_DEFINITION_VERSION_TYPE] = ['*'];
+  await fs.ensureDir(path.dirname(packageNoOverwriteFile));
+  await writePackageXmlKeepingVersion(packageNoOverwriteFile, content, packageNoOverwriteFile);
+  return true;
+}
+
+/**
+ * Sets the agent-activate action of an agent in a list of deployment actions: updates the one already there,
+ * or adds one. The version is "latest": the actions of several Pull Requests deployed together are then the
+ * same action, run once, whatever order they come in. The label is English, as it is committed in the sources.
+ */
+export function upsertAgentActivateAction(actions: PrePostCommand[], agentName: string, savedVersion: number, newId: () => string): PrePostCommand {
+  const label = `Activate agent ${agentName}, latest version (${formatAgentVersionFullName(agentName, savedVersion)} when saved)`;
+  const existing = actions.find((action) => action.type === 'agent-activate' && String(action.parameters?.agentName || '').toLowerCase() === agentName.toLowerCase());
+  if (existing) {
+    existing.label = label;
+    existing.parameters = { ...existing.parameters, agentName, agentVersion: 'latest' };
+    return existing;
+  }
+  const action: PrePostCommand = {
+    id: newId(),
+    label,
+    type: 'agent-activate',
+    command: '',
+    context: 'process-deployment-only',
+    parameters: { agentName, agentVersion: 'latest' },
+    allowFailure: false,
+    runOnlyOnceByOrg: false,
+  };
+  actions.push(action);
+  return action;
+}
+
+/**
+ * Every package-no-overwrite.xml file a deployment of the project can use: the default one, the one of
+ * packageNoOverwritePath in the project config, and the one of each branch config. The default file is
+ * returned even when it does not exist yet, when no other file is used.
+ */
+export async function listPackageNoOverwriteFiles(projectRoot: string = process.cwd()): Promise<string[]> {
+  const files = new Set<string>();
+  const defaultFile = path.join('manifest', 'package-no-overwrite.xml');
+  const legacyFile = path.join('manifest', 'packageDeployOnce.xml');
+  const configFiles = [path.join('config', '.sfdx-hardis.yml'), ...(await glob('config/branches/.sfdx-hardis.*.yml', { cwd: projectRoot, dot: true }))];
+  let usesDefault = false;
+  for (const configFile of configFiles) {
+    const configPath = path.join(projectRoot, configFile);
+    const config: any = fs.existsSync(configPath) ? yaml.load(await fs.readFile(configPath, 'utf8')) : null;
+    if (config?.packageNoOverwritePath) {
+      files.add(path.normalize(config.packageNoOverwritePath));
+    } else if (configFile === configFiles[0]) {
+      usesDefault = true;
+    }
+  }
+  if (usesDefault || files.size === 0) {
+    const useLegacy = !fs.existsSync(path.join(projectRoot, defaultFile)) && fs.existsSync(path.join(projectRoot, legacyFile));
+    files.add(useLegacy ? legacyFile : defaultFile);
+  }
+  return [...files].sort();
 }
 
 /**
@@ -314,43 +387,6 @@ export async function removeLegacyAgentEntries(packageXmlFile: string, entries: 
     { cwd: projectRoot, ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'] }
   );
   return folders.map((folder) => folder.replace(/\\/g, '/')).sort();
-}
-
-/**
- * Post-deployment actions that activate the agent versions a package.xml deploys: the highest version
- * of each agent, or the latest one of the target org when the package.xml holds a wildcard.
- */
-export async function buildAgentAutoActivateCommands(packageXmlFile: string): Promise<any[]> {
-  if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
-    return [];
-  }
-  const content = await parsePackageXmlFile(packageXmlFile);
-  const members: string[] = (content[AGENT_DEFINITION_VERSION_TYPE] || []).map(String);
-  const highestVersions = new Map<string, number>();
-  for (const member of members) {
-    const parsed = parseAgentVersionFullName(member);
-    if (parsed && parsed.version > (highestVersions.get(parsed.agentName) ?? 0)) {
-      highestVersions.set(parsed.agentName, parsed.version);
-    }
-  }
-  const toActivate = [...highestVersions.entries()].map(([agentName, version]) => ({ agentName, agentVersion: String(version) }));
-  if (members.includes('*')) {
-    for (const agentName of (content[AGENT_DEFINITION_TYPE] || []).map(String)) {
-      if (agentName !== '*' && !highestVersions.has(agentName)) {
-        toActivate.push({ agentName, agentVersion: 'latest' });
-      }
-    }
-  }
-  return toActivate
-    .sort((a, b) => a.agentName.localeCompare(b.agentName))
-    .map((parameters) => ({
-      id: `AGENT_ACTIVATE_${parameters.agentName}`,
-      label: t('agentAutoActivateLabel', { agentName: parameters.agentName, version: parameters.agentVersion }),
-      type: 'agent-activate',
-      parameters,
-      context: 'process-deployment-only',
-      preOrPost: 'commandsPostDeploy',
-    }));
 }
 
 /**
@@ -434,11 +470,7 @@ async function warnWhenVersionsCommittedOutsideProject(agentNames: string[], org
   if (wanted.size === 0) {
     return;
   }
-  const localFiles = await glob('**/aiAgentDefinitionVersions/*/*.aiAgentDefinitionVersion-meta.xml', {
-    cwd: process.cwd(),
-    ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'],
-  });
-  const localVersions = new Set(localFiles.map((file) => path.basename(path.dirname(file)).toLowerCase()));
+  const localVersions = new Set((await listLocalAgentVersionFullNames(process.cwd())).map((fullName) => fullName.toLowerCase()));
   const outside = new Map<string, number[]>();
   for (const version of orgVersions) {
     const fullName = formatAgentVersionFullName(version.agentName, version.version).toLowerCase();
@@ -468,6 +500,48 @@ async function assertNoLegacyAgentAtApi68(packageXmlFile: string, conn: Connecti
       })
     );
   }
+}
+
+// Salesforce refuses the first deployment of an agent without its AiAgentDefinition. A delta that holds only a
+// version does not have it: the definition must be deployed from the sources, not added during the job
+async function assertAgentDefinitionsInTargetOrg(versionOnly: string[], conn: Connection): Promise<void> {
+  if (versionOnly.length === 0) {
+    return;
+  }
+  const orgAgents = await listOrgAgentDefinitionNames(conn);
+  const missing = versionOnly.filter((name) => !orgAgents.has(name.toLowerCase()));
+  if (missing.length > 0) {
+    throw new SfError(t('agentDefinitionMissingInTargetOrg', { agents: missing.join(', '), docUrl: AGENT_DOC_URL }));
+  }
+}
+
+// Salesforce refuses the whole deployment when it holds the active version of an agent ("Can't edit an active
+// bot version"). package-no-overwrite.xml leaves out the versions the target org already has
+async function assertNoActiveVersionOverwritten(packageXmlFile: string, orgVersions: AgentVersionInfo[]): Promise<void> {
+  const content = await parsePackageXmlFile(packageXmlFile);
+  const activeInOrg = new Set(
+    orgVersions.filter((version) => version.status.toLowerCase() === 'active').map((version) => formatAgentVersionFullName(version.agentName, version.version).toLowerCase())
+  );
+  const items = (content[AGENT_DEFINITION_VERSION_TYPE] || []).map(String).map((member: string) => ({ type: AGENT_DEFINITION_VERSION_TYPE, member }));
+  const deployedActive = items.filter((item) => activeInOrg.has(item.member.toLowerCase()));
+  if (deployedActive.length === 0) {
+    return;
+  }
+  const noOverwriteFile = await resolvePackageNoOverwriteFile();
+  const protectedItems = noOverwriteFile ? filterItemsMatchingNoOverwrite(deployedActive, await parsePackageXmlFile(noOverwriteFile)) : [];
+  const unprotected = deployedActive.filter((item) => !protectedItems.includes(item));
+  if (unprotected.length > 0) {
+    throw new SfError(t('agentActiveVersionInDeployment', { versions: unprotected.map((item) => item.member).join(', '), docUrl: AGENT_DOC_URL }));
+  }
+}
+
+// "Agent#n" of every AiAgentDefinitionVersion folder of the project
+async function listLocalAgentVersionFullNames(projectRoot: string): Promise<string[]> {
+  const localFiles = await glob('**/aiAgentDefinitionVersions/*/*.aiAgentDefinitionVersion-meta.xml', {
+    cwd: projectRoot,
+    ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'],
+  });
+  return localFiles.map((file) => path.basename(path.dirname(file)));
 }
 
 // Bots of the project that are agents, not classic Einstein Bots

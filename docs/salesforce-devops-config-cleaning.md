@@ -39,6 +39,14 @@ autoCleanTypes:
 ```
 ___
 
+### Agentforce agents deployment actions
+
+Property: **autoAddAgentsDeploymentActions**
+
+For each [Agentforce agent](salesforce-ci-cd-agentforce-agents.md) with a version changed in the User Story, writes an `agent-activate` action of its latest version in the deployment actions of the Pull Request, and adds `AiAgentDefinitionVersion` to every package-no-overwrite.xml of the project, so the versions the target org already has are not deployed again. See [hardis:project:clean:agents-deployment-actions](hardis/project/clean/agents-deployment-actions.md).
+
+___
+
 ### Dashboards
 
 Property: **dashboards**
