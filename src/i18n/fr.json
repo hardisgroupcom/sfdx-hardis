@@ -684,6 +684,7 @@
   "ciCdConfiguration": "Configuration CI/CD",
   "cleanedFileFrom": "Fichier {{recordTypeFile}} nettoyé depuis {{obj}}.{{fld}}",
   "cleanedManifestPackageXml": "Nettoyage de manifest/package.xml : tous les types ont été supprimés, seule la version d'API a été conservée",
+  "cleaningCommitsFilesModifiedBefore": "Ces fichiers étaient déjà modifiés avant le nettoyage, et le nettoyage les a aussi changés : ils sont commités avec les fichiers nettoyés, vos modifications précédentes comprises : {{files}}",
   "cleaningComplete": "Nettoyage terminé",
   "cleaningPositionsOfSelectedFlowsOnly": "Nettoyage des positions de {{number}} Flux sélectionné(s)",
   "cleaningProjectUsingPatternsDefinedInCleanxmlpatterns": "Nettoyage du projet avec les modèles définis dans cleanXmlPatterns...",

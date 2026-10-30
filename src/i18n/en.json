@@ -684,6 +684,7 @@
   "ciCdConfiguration": "CI/CD configuration",
   "cleanedFileFrom": "Cleaned file {{recordTypeFile}} from {{obj}}.{{fld}}",
   "cleanedManifestPackageXml": "Cleaned manifest/package.xml: removed all types, kept only API version",
+  "cleaningCommitsFilesModifiedBefore": "These files were already modified before the cleaning, and the cleaning changed them too: they are committed with the cleaned files, your earlier changes in them included: {{files}}",
   "cleaningComplete": "Cleaning complete",
   "cleaningPositionsOfSelectedFlowsOnly": "Cleaning positions of {{number}} selected Flow(s)",
   "cleaningProjectUsingPatternsDefinedInCleanxmlpatterns": "Cleaning project using patterns defined in cleanXmlPatterns...",

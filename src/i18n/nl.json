@@ -684,6 +684,7 @@
   "ciCdConfiguration": "CI/CD-configuratie",
   "cleanedFileFrom": "Bestand {{recordTypeFile}} opgeschoond van {{obj}}.{{fld}}",
   "cleanedManifestPackageXml": "manifest/package.xml opgeschoond: alle types verwijderd, alleen de API-versie behouden",
+  "cleaningCommitsFilesModifiedBefore": "Deze bestanden waren al gewijzigd voor het opschonen, en het opschonen heeft ze ook gewijzigd: ze worden met de opgeschoonde bestanden gecommit, inclusief je eerdere wijzigingen erin: {{files}}",
   "cleaningComplete": "Opschonen voltooid",
   "cleaningPositionsOfSelectedFlowsOnly": "Posities opschonen van {{number}} geselecteerde Flows",
   "cleaningProjectUsingPatternsDefinedInCleanxmlpatterns": "Project opschonen met patronen gedefinieerd in cleanXmlPatterns...",

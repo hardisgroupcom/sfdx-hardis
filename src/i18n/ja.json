@@ -684,6 +684,7 @@
   "ciCdConfiguration": "CI/CD 設定",
   "cleanedFileFrom": "ファイル {{recordTypeFile}} から {{obj}}.{{fld}} をクリーニングしました",
   "cleanedManifestPackageXml": "manifest/package.xmlをクリーニングしました：すべてのタイプを削除し、APIバージョンのみを保持しました",
+  "cleaningCommitsFilesModifiedBefore": "これらのファイルはクリーニング前にすでに変更されており、クリーニングでも変更されました。以前の変更を含めて、クリーニングされたファイルと一緒に commit されます: {{files}}",
   "cleaningComplete": "クリーニングが完了しました",
   "cleaningPositionsOfSelectedFlowsOnly": "選択された {{number}} 件のフローの位置情報をクリーニングしています",
   "cleaningProjectUsingPatternsDefinedInCleanxmlpatterns": "cleanXmlPatterns に定義されたパターンを使用してプロジェクトをクリーニングしています...",

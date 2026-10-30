@@ -680,6 +680,7 @@
   "ciCdConfiguration": "Configuração de CI/CD",
   "cleanedFileFrom": "Arquivo {{recordTypeFile}} limpo de {{obj}}.{{fld}}",
   "cleanedManifestPackageXml": "manifest/package.xml limpo: todos os tipos foram removidos, apenas a versão da API foi mantida",
+  "cleaningCommitsFilesModifiedBefore": "Estes arquivos já estavam modificados antes da limpeza, e a limpeza também os alterou: eles entram no commit dos arquivos limpos, com as alterações que já tinham: {{files}}",
   "cleaningComplete": "Limpeza concluída",
   "cleaningPositionsOfSelectedFlowsOnly": "Limpando as posições de {{number}} Fluxos selecionados",
   "cleaningProjectUsingPatternsDefinedInCleanxmlpatterns": "Limpando o projeto usando padrões definidos em cleanXmlPatterns...",
