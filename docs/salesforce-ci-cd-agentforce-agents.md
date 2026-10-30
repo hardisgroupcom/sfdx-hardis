@@ -117,7 +117,7 @@ Then create one variable per major branch of your pipeline in the CI/CD settings
 
 Do not create the variable without a branch suffix (`AGENT_RUNNING_USER`): it is the fallback of every branch that has no variable of its own, and one username can only exist in one org. On GitHub Actions, also add the variables to the `env` of the deployment check and deployment workflows. A missing variable skips the rule for that org, and the Pull Request comment says so.
 
-While a rule of yours writes the user, the built-in rule creates no user, in any org.
+While a rule of yours writes the user, the built-in rule steps aside, in every org.
 
 With several agents, you can replace only the part after `@`, so one variable per org covers all of them: name the agent users of each org with one domain (for example `service.agent@acme.com.uat` and `sales.agent@acme.com.uat`, created with `sf org create agent-user --base-username`), and use this `find` with a variable such as `AGENT_USER_DOMAIN_UAT=acme.com.uat`:
 
