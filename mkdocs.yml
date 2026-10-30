@@ -483,9 +483,13 @@ nav:
           - retrieve: hardis/source/retrieve.md
       - hardis:ticket:
           - get: hardis/ticket/get.md
+          - label: hardis/ticket/label.md
+          - list: hardis/ticket/list.md
+          - meta: hardis/ticket/meta.md
           - post-comment: hardis/ticket/post-comment.md
           - test-cases init: hardis/ticket/test-cases/init.md
           - test-cases upsert: hardis/ticket/test-cases/upsert.md
+          - whoami: hardis/ticket/whoami.md
       - hardis:work:
           - new: hardis/work/new.md
           - refresh: hardis/work/refresh.md

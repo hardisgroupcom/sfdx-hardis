@@ -1,8 +1,8 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
+
 # hardis:ticket:get
 
 ## Description
-
 
 ## Command Behavior
 
@@ -19,15 +19,23 @@ It returns:
 - **Attachments**, downloaded next to the report so images can be looked at and documents opened.
 - **Possible manual actions:** the lines of the ticket mentioning an operation that deployable metadata will not carry (permission set assignment, org setting, scheduled job, data load...). Each one that survives the design phase should become an [sfdx-hardis deployment action](https://sfdx-hardis.cloudity.com/hardis/project/action/create/), so it is replayed in every org rather than done by hand once.
 
+### Several tickets, identifiers, scope and marker
+
+- `--id a,b,c` reads several tickets in one run (one start of the CLI for the whole batch). The JSON then holds `tickets`: one entry per identifier, in the order asked, either `{id, status: "ok", ticket}` or `{id, status: "failed", error: {name, message}}`. A failure never stops the others; the command fails only when no ticket could be read. With a single identifier the output stays `ticket`. `--output-file` needs a single identifier.
+- `project`, `assigneeId`, `reporterId` and `comments[].authorId` carry the account ids, the same ones `ticket whoami` returns (JIRA Cloud `accountId`, JIRA Server / Data Center user name, Azure Boards identity id). On Azure Boards `project` is the team project of the work item itself, which may differ from the project of the repository.
+- `--allowed-projects a,b` fails with `TicketOutOfScope` when the ticket belongs to another project (per ticket in a batch).
+- `--marker "<prefix>"` and `--marker-label <label>` fill `markedByMe`: true when the ticket carries the label, or when the authenticated account already posted a comment starting with the prefix (emoji and whitespace ignored). Comments of other accounts never count. Without these flags `markedByMe` is null.
+- `--skip-comments` does not return the comments (faster on long tickets). With `--marker` they are still read for the check.
+
 ### Provider detection
 
 The ticketing system is deduced from the shape of the identifier, so `--provider` is only needed to disambiguate:
 
-| Identifier                                   | Provider                                        | Example           |
-|----------------------------------------------|-------------------------------------------------|-------------------|
-| `PROJECT-123`                                | JIRA, or Aha! when `ticketingProvider` is `AHA` | `--id ACME-4567`  |
-| `1234` or `AB-1234`                          | Azure Boards                                    | `--id AB-4567`    |
-| `INC0012345`, `CHG...`, `RITM...`, `DMND...` | ServiceNow                                      | `--id INC0012345` |
+| Identifier | Provider | Example |
+|------------|----------|---------|
+| `PROJECT-123` | JIRA, or Aha! when `ticketingProvider` is `AHA` | `--id ACME-4567` |
+| `1234` or `AB-1234` | Azure Boards | `--id AB-4567` |
+| `INC0012345`, `CHG...`, `RITM...`, `DMND...` | ServiceNow | `--id INC0012345` |
 
 ### Configuration
 
@@ -59,23 +67,26 @@ Combine it with `--json` to get the machine-readable payload:
 sf hardis ticket get --id ACME-4567 --agent --json
 ```
 
-
 ## Parameters
 
-| Name                |  Type   | Description                                                                                                                                  | Default | Required |                Options                |
-|:--------------------|:-------:|:---------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------------------------------------:|
-| agent               | boolean | Run in non-interactive mode for agents and automation                                                                                        |         |          |                                       |
-| attachments-dir     | option  | Folder the attachments are downloaded into. Defaults to a temporary folder, or to <output-file folder>/attachments when --output-file is set |         |          |                                       |
-| debug<br/>-d        | boolean | Activate debug mode (more logs)                                                                                                              |         |          |                                       |
-| flags-dir           | option  | Import flag values from a directory.                                                                                                         |         |          |                                       |
-| id<br/>-i           | option  | Ticket identifier: JIRA key or Aha! feature (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345)           |         |          |                                       |
-| json                | boolean | Format output as json.                                                                                                                       |         |          |                                       |
-| max-attachment-size | option  | Maximum size in MB read from a single attachment. Bigger files are truncated                                                                 |   20    |          |                                       |
-| output-file<br/>-f  | option  | Write a markdown extract of the ticket at this path (parent folders are created)                                                             |         |          |                                       |
-| provider<br/>-p     | option  | Force the ticketing system instead of deducing it from the identifier                                                                        |         |          | jira<br/>azure<br/>servicenow<br/>aha |
-| skip-attachments    | boolean | List the attachments without downloading them                                                                                                |         |          |                                       |
-| skipauth            | boolean | Skip authentication check when a default username is required                                                                                |         |          |                                       |
-| websocket           | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                                    |         |          |                                       |
+|Name|Type|Description|Default|Required|Options|
+|:---|:--:|:----------|:-----:|:------:|:-----:|
+|agent|boolean|Run in non-interactive mode for agents and automation||||
+|allowed-projects|option|Comma-separated projects the ticket must belong to (TicketOutOfScope otherwise)||||
+|attachments-dir|option|Folder the attachments are downloaded into. Defaults to a temporary folder, or to <output-file folder>/attachments when --output-file is set||||
+|debug<br/>-d|boolean|Activate debug mode (more logs)||||
+|flags-dir|option|undefined||||
+|id<br/>-i|option|Ticket identifier: JIRA key or Aha! feature (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345). Separate several identifiers with commas||||
+|json|boolean|Format output as json.||||
+|marker|option|Comment prefix: markedByMe is true when the authenticated account already posted a comment starting with it||||
+|marker-label|option|Label (Azure Boards tag): markedByMe is true when the ticket carries it||||
+|max-attachment-size|option|Maximum size in MB read from a single attachment. Bigger files are truncated|20|||
+|output-file<br/>-f|option|Write a markdown extract of the ticket at this path (parent folders are created)||||
+|provider<br/>-p|option|Force the ticketing system instead of deducing it from the identifier|||jira<br/>azure<br/>servicenow<br/>aha|
+|skip-attachments|boolean|List the attachments without downloading them||||
+|skip-comments|boolean|Do not return the comments (faster on long tickets)||||
+|skipauth|boolean|Skip authentication check when a default username is required||||
+|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
 
 ## Examples
 
@@ -103,4 +114,7 @@ $ sf hardis:ticket:get --id PROD-12 --provider aha --agent --json
 $ sf hardis:ticket:get --id ACME-4567 --skip-attachments --agent --json
 ```
 
+```shell
+$ sf hardis:ticket:get --id ACME-1,ACME-2,ACME-3 --allowed-projects ACME --marker "Automatic qualification" --marker-label ia-qualified --skip-attachments --agent --json
+```
 

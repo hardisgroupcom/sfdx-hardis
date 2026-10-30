@@ -276,9 +276,13 @@
 | Command                                                                   | Title                                 |
 |:--------------------------------------------------------------------------|:--------------------------------------|
 | [**hardis:ticket:get**](hardis/ticket/get.md)                             | Get ticket                            |
+| [**hardis:ticket:label**](hardis/ticket/label.md)                         | Label a ticket                        |
+| [**hardis:ticket:list**](hardis/ticket/list.md)                           | List tickets                          |
+| [**hardis:ticket:meta**](hardis/ticket/meta.md)                           | Describe a ticketing project          |
 | [**hardis:ticket:post-comment**](hardis/ticket/post-comment.md)           | Post a comment on tickets             |
 | [**hardis:ticket:test-cases:init**](hardis/ticket/test-cases/init.md)     | Initialize the test cases of a ticket |
 | [**hardis:ticket:test-cases:upsert**](hardis/ticket/test-cases/upsert.md) | Upsert the test cases of a ticket     |
+| [**hardis:ticket:whoami**](hardis/ticket/whoami.md)                       | Show the ticketing account            |
 
 ## hardis:work
 
