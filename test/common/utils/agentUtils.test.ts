@@ -339,6 +339,18 @@ describe('agentUtils sources of the deployment actions', () => {
     expect((await parsePackageXmlFile(file)).AiAgentDefinitionVersion).to.deep.equal(['My_Agent#1', '*']);
   });
 
+  it('adds the wildcard to an AiAgentDefinitionVersion entry written on one line', async () => {
+    const file = path.join(tmpDir, 'package-no-overwrite.xml');
+    await fs.writeFile(
+      file,
+      '<?xml version="1.0" encoding="UTF-8"?>\n<Package xmlns="http://soap.sforce.com/2006/04/metadata">\n  <types><members>My_Agent#1</members><name>AiAgentDefinitionVersion</name></types>\n  <version>62.0</version>\n</Package>\n'
+    );
+    expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
+    const written = await fs.readFile(file, 'utf8');
+    expect(written.match(/<types>/g)).to.have.length(1);
+    expect((await parsePackageXmlFile(file)).AiAgentDefinitionVersion).to.deep.equal(['My_Agent#1', '*']);
+  });
+
   it('creates package-no-overwrite.xml when the project has none', async () => {
     const file = path.join(tmpDir, 'manifest', 'package-no-overwrite.xml');
     expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
@@ -466,6 +478,17 @@ describe('agentUtils botUser', () => {
     await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
     const command = fakeCommand();
     await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command);
+    expect(command.logs.join('\n')).to.contain('agent.user@example.com');
+  });
+
+  it('warns when the target branch skips the replacement rules', async () => {
+    await writeAgent('Service_Agent', 'agent.user@example.com');
+    await fs.ensureDir(path.join('config', 'branches'));
+    await fs.writeFile(path.join('config', 'branches', '.sfdx-hardis.uat.yml'), 'skipReplacementRules: true\n');
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ AiAgentDefinition: ['Service_Agent'] }));
+    const command = fakeCommand();
+    await checkAgentDeployment(file, fakeConnection({ apiVersion: '68.0', orgUsers: [] }), command, 'uat');
     expect(command.logs.join('\n')).to.contain('agent.user@example.com');
   });
 

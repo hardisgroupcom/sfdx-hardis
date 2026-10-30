@@ -222,11 +222,12 @@ async function findExistingUsers(conn: any, usernames: string[]): Promise<Set<st
 
 // The active agent user created by this rule for the agent at a previous deployment
 async function findAgentUser(conn: any, agentName: string, orgId: string): Promise<string | null> {
-  // The base username holds no "_" nor "%", the wildcards of LIKE
+  // The base username holds no "_" nor "%", the wildcards of LIKE. No filter on the profile: Salesforce
+  // returns the name of a standard profile in the language of the user who runs the query
   const [localPart, domain] = buildAgentUserBaseUsername(agentName, orgId).split('@');
   const pattern = `${localPart}.%@${domain}`;
   const result = await soqlQuery(
-    `SELECT Username FROM User WHERE Username LIKE ${soqlString(pattern)} AND IsActive = true AND Profile.Name = 'Einstein Agent User' ORDER BY CreatedDate ASC LIMIT 1`,
+    `SELECT Username FROM User WHERE Username LIKE ${soqlString(pattern)} AND IsActive = true ORDER BY CreatedDate ASC LIMIT 1`,
     conn
   );
   return result.records?.[0]?.Username || null;

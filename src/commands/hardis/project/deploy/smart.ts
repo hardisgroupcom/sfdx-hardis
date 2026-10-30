@@ -691,8 +691,14 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
+    // Replacement rules use the values of the org the deployment goes to: an explicit --target-branch
+    // (which also selects the org through CONFIG_BRANCH), else the target branch of the Pull Request in
+    // a check job, else the current branch in a deployment job
+    const replacementPrInfo = process.env.FORCE_TARGET_BRANCH ? null : await GitProvider.getPullRequestInfo({ useCache: true });
+    const replacementTargetBranch = process.env.FORCE_TARGET_BRANCH || replacementPrInfo?.targetBranch || currentGitBranch || null;
+
     // Agents: stop before anything is sent when Salesforce would refuse the deployment because of an agent
-    await checkAgentDeployment(this.packageXmlFile, this.targetOrg.getConnection(), this);
+    await checkAgentDeployment(this.packageXmlFile, this.targetOrg.getConnection(), this, replacementTargetBranch);
 
     // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
     this.flowDeletion = new FlowDeletionHandler({
@@ -717,13 +723,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     this.smartDeployOptions.deferSuccessPullRequestComment =
       !this.checkOnly && this.flowDeletion.hasPostDeployDeletions;
 
-    // Replacement rules use the values of the org the deployment goes to: an explicit --target-branch
-    // (which also selects the org through CONFIG_BRANCH), else the target branch of the Pull Request in
-    // a check job, else the current branch in a deployment job
-    const replacementPrInfo = process.env.FORCE_TARGET_BRANCH ? null : await GitProvider.getPullRequestInfo({ useCache: true });
-    this.smartDeployOptions.replacementRules = {
-      targetBranch: process.env.FORCE_TARGET_BRANCH || replacementPrInfo?.targetBranch || currentGitBranch || null,
-    };
+    this.smartDeployOptions.replacementRules = { targetBranch: replacementTargetBranch };
 
     // Process deployment (or deployment check)
     const { messages, quickDeploy, deployXmlCount, deploymentMetrics } = await smartDeploy(

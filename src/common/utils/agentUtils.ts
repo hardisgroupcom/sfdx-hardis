@@ -205,7 +205,7 @@ export async function getAgentNamesFromPackageXml(packageXmlFile: string): Promi
  * would break the agents after it. Never changes the package.xml: what the deployment needs is recorded
  * in the sources by hardis:work:save (cleaning autoAddAgentsDeploymentActions) before the Pull Request job.
  */
-export async function checkAgentDeployment(packageXmlFile: string, conn: Connection, commandThis: any): Promise<void> {
+export async function checkAgentDeployment(packageXmlFile: string, conn: Connection, commandThis: any, targetBranch: string | null = null): Promise<void> {
   if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
     return;
   }
@@ -226,7 +226,7 @@ export async function checkAgentDeployment(packageXmlFile: string, conn: Connect
     );
   }
   await warnWhenDeployApiVersionTooLow(packageXmlFile, conn, [...definitions, ...versionOnly], commandThis);
-  await warnWhenBotUserMissingInTargetOrg([...definitions, ...versionOnly], conn, commandThis);
+  await warnWhenBotUserMissingInTargetOrg([...definitions, ...versionOnly], conn, targetBranch, commandThis);
   const orgVersions = await listOrgAgentVersions(conn);
   await warnWhenVersionsCommittedOutsideProject([...definitions, ...versionOnly], orgVersions, commandThis);
   await assertAgentDefinitionsInTargetOrg(versionOnly, conn);
@@ -284,10 +284,11 @@ export async function ensureAgentVersionsInPackageNoOverwrite(packageNoOverwrite
   }
   // Edited as text: the file is written by hand, and its comments explain each entry
   const xml = await fs.readFile(packageNoOverwriteFile, 'utf8');
-  const nameTag = new RegExp(`^([ \\t]*)<name>\\s*${AGENT_DEFINITION_VERSION_TYPE}\\s*</name>`, 'm');
+  // The entry can sit on its own lines or on a single line
+  const nameTag = new RegExp(`(^[ \\t]*)?<name>\\s*${AGENT_DEFINITION_VERSION_TYPE}\\s*</name>`, 'm');
   let updated: string;
   if (nameTag.test(xml)) {
-    updated = xml.replace(nameTag, (line, indent) => `${indent}<members>*</members>\n${line}`);
+    updated = xml.replace(nameTag, (tag, indent) => (indent !== undefined ? `${indent}<members>*</members>\n${tag}` : `<members>*</members>${tag}`));
   } else {
     const insertAt = findSortedTypeInsertIndex(xml, AGENT_DEFINITION_VERSION_TYPE);
     // Same indentation as the types of the file
@@ -471,13 +472,13 @@ export async function readAgentBotUsers(agentNames: string[], projectRoot: strin
  * builtin-agent-running-user (on unless turned off in some place, or every rule is skipped),
  * or a rule of the project that writes botUser or default_agent_user.
  */
-export async function hasBotUserReplacementRule(): Promise<boolean> {
+export async function hasBotUserReplacementRule(targetBranch: string | null = null): Promise<boolean> {
   if (await hasOwnRunningUserRule()) {
     return true;
   }
   const rules = await readRulesOfEveryPlace();
   const builtInTurnedOff = rules.some((rule) => rule?.id === AGENT_RUNNING_USER_RULE_ID && rule?.enabled === false);
-  return !builtInTurnedOff && (await findSkipReplacementRulesFile(null)) === null;
+  return !builtInTurnedOff && (await findSkipReplacementRulesFile(targetBranch)) === null;
 }
 
 // sourceApiVersion or the package.xml version below 68.0 lowers the deployment API version: Salesforce then refuses the agent types
@@ -493,9 +494,9 @@ async function warnWhenDeployApiVersionTooLow(packageXmlFile: string, conn: Conn
 }
 
 // The agent deploys, but Salesforce refuses to activate it while its botUser is not a user of the org
-async function warnWhenBotUserMissingInTargetOrg(agentNames: string[], conn: Connection, commandThis: any): Promise<void> {
+async function warnWhenBotUserMissingInTargetOrg(agentNames: string[], conn: Connection, targetBranch: string | null, commandThis: any): Promise<void> {
   const botUsers = await readAgentBotUsers(agentNames);
-  if (botUsers.length === 0 || (await hasBotUserReplacementRule())) {
+  if (botUsers.length === 0 || (await hasBotUserReplacementRule(targetBranch))) {
     return;
   }
   const usernames = [...new Set(botUsers.map((item) => item.botUser))];
