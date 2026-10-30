@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@anthropic-ai/sdk@^0.122.0":
-  version "0.122.0"
-  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.122.0.tgz#9dd620dd0a98405b81e9b39f1b752d13d1c76ff8"
-  integrity sha512-GGPNftt0caaz9MDlmNQGHX8855Ojaduyy5pm9Sm1h7HalCn0cWNb5/bweadJF+4yzbal+QL6ztBa09WAAOzLmQ==
+"@anthropic-ai/sdk@^0.129.0":
+  version "0.129.0"
+  resolved "https://registry.yarnpkg.com/@anthropic-ai/sdk/-/sdk-0.129.0.tgz#6cdc34cd804dc0bf7cfb7cb0ff0c802670658150"
+  integrity sha512-MH7LB20kNpGLUpPTe2OG5XvL/KhX8HUO9XyBaFjgFk6TLS4Xjt0VPIuMKywe7POKKPslX+QxSlVok9e+8kG5Nw==
   dependencies:
     json-schema-to-ts "^3.1.1"
     standardwebhooks "^1.0.0"
@@ -1420,18 +1420,18 @@
   resolved "https://registry.yarnpkg.com/@kwsites/promise-deferred/-/promise-deferred-1.1.1.tgz#8ace5259254426ccef57f3175bc64ed7095ed919"
   integrity sha512-GaHYm+c0O9MjZRu0ongGBRbinu8gVAMd2UZjji6jVmqKtZluZnptXGWhz1E8j8D2HJ3f/yMxKAUC0b+57wncIw==
 
-"@langchain/anthropic@1.5.12":
-  version "1.5.12"
-  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.5.12.tgz#558576c00b665961011192b2a558d9f1eb216258"
-  integrity sha512-tVvI94zAtG6isYxBzL7hlbxfbqjmvx/BqBWAov7v+bABKYz3fZHFI2Io1UI5UzU+h/5SuC1qXUV+JxnaqylJJw==
+"@langchain/anthropic@1.5.13":
+  version "1.5.13"
+  resolved "https://registry.yarnpkg.com/@langchain/anthropic/-/anthropic-1.5.13.tgz#f6fc607dd741ea75380c3b1128467d82f0c9625c"
+  integrity sha512-9EO0a9m4zZHa+qtXROImmBF49/GWD7b4QVHKZqv4N40taTMRnpo+tUUZXcLbETbAvq6nUS67g5YCI6Cj9N4SHw==
   dependencies:
-    "@anthropic-ai/sdk" "^0.122.0"
+    "@anthropic-ai/sdk" "^0.129.0"
     zod "^3.25.76 || ^4"
 
-"@langchain/core@1.2.20":
-  version "1.2.20"
-  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.2.20.tgz#396689f48f58f7189ac9206339553551761d34eb"
-  integrity sha512-0Nzh4/2On0MWFWbWRK7tDdMmSmD2Z/gt9+XoEQMPrV74Fpdf8r6grqEZNW6BkeqwY+KwKn+aFhatm4sK/yLldQ==
+"@langchain/core@1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@langchain/core/-/core-1.3.0.tgz#16d62c7eb90f95aa6abc06b668a4e933a4e23fa8"
+  integrity sha512-ZiS8USsHdO8ZVFh0m8Rs6v2BvqBEvfFicG66zxdF4rGgXSJjk0d0sLnnFZCx3RXPUvP8ybTJgPlNfkJGs1J7BA==
   dependencies:
     "@cfworker/json-schema" "^4.0.2"
     "@standard-schema/spec" "^1.1.0"
@@ -1441,10 +1441,10 @@
     p-queue "^6.6.2"
     zod "^3.25.76 || ^4"
 
-"@langchain/google-genai@2.3.3":
-  version "2.3.3"
-  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-2.3.3.tgz#cdcfa8ce6a32ca50e871f284549f808c206ead02"
-  integrity sha512-zG8zGGEzaww+ytYGJxeu/gV5Af1kHToPI5imAtKwIy9lR5iXx5wBSu43Iv0b6tZB+CG+l96TzWQByerYYAUQgg==
+"@langchain/google-genai@2.3.4":
+  version "2.3.4"
+  resolved "https://registry.yarnpkg.com/@langchain/google-genai/-/google-genai-2.3.4.tgz#a257ea029c5749583607419376dde0322fc174f7"
+  integrity sha512-Hq7lEtiQd5KiPquGjwKwzGg/JgbqSQia7CINLjJKoQ4FtolRuxj/mYDql0XZIMTAZJD93eeOk9wo3klEgueMYQ==
   dependencies:
     "@google/generative-ai" "^0.24.1"
 
@@ -1455,13 +1455,13 @@
   dependencies:
     ollama "^0.6.3"
 
-"@langchain/openai@1.6.2":
-  version "1.6.2"
-  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.6.2.tgz#1a70df67e11680e9d38c2bb4214c753ce13a1ed9"
-  integrity sha512-KaXc3zjdM2/E24FdBlsk5NTT2Dyxh46vzCS2by78ehN6G5zdx+4OfVnPvyLl8r2tv2TqQCHpEhImVXgnAZaOvg==
+"@langchain/openai@1.6.3":
+  version "1.6.3"
+  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.6.3.tgz#9d845f6469aca17f16083c604a3e66ef33cd0de8"
+  integrity sha512-vioA4Si8bIAczcsmrfV8C8KZ3QozAz2yiuTZSgR57WsjuDsuF2dzZ4tx/jTEEtyOrFzfKXnSYi32QsNz8Mah9w==
   dependencies:
     js-tiktoken "^1.0.12"
-    openai "^7.10.0"
+    openai "^7.23.0"
     zod "^3.25.76 || ^4"
 
 "@nodable/entities@^3.0.1":
@@ -1558,54 +1558,54 @@
     lodash "^4.18.1"
     registry-auth-token "^5.1.1"
 
-"@openai/codex-darwin-arm64@npm:@openai/codex@0.163.0-darwin-arm64":
-  version "0.163.0-darwin-arm64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.163.0-darwin-arm64.tgz#dd8f8c797220d0370be0f9d4b6a9817afe2f7578"
-  integrity sha512-i7Dzk2a5aGmuGM9aNZgaUVTojZ/4bc5lRfosz++Y7X2BGhDkz+cySgbD+NYS1pOxfm0VEbLi9PZ3pAulI4kchw==
+"@openai/codex-darwin-arm64@npm:@openai/codex@0.164.0-darwin-arm64":
+  version "0.164.0-darwin-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.164.0-darwin-arm64.tgz#562b9360ceda915e70d57864ebe845e0406f5b70"
+  integrity sha512-pDizgOUAtq3/k3AbUFHbaU19WpYKCja+oFpNSTLKrDQj4lTUNSDuTPJip4uQVn2/1EipQdpQrGMOQBVuI1znAA==
 
-"@openai/codex-darwin-x64@npm:@openai/codex@0.163.0-darwin-x64":
-  version "0.163.0-darwin-x64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.163.0-darwin-x64.tgz#bf9340c20f936af455c5c68619557db9166a169c"
-  integrity sha512-Ioj7h+B1ME9ZU1PH1ATfvFV5DiototEpFFaSSbg3kfDifB9djhl5fcJ++g5mpcL/+uVbcnReei+RiSXEx8o+kw==
+"@openai/codex-darwin-x64@npm:@openai/codex@0.164.0-darwin-x64":
+  version "0.164.0-darwin-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.164.0-darwin-x64.tgz#fd49e9691bc6ffcb82b15bd1ccf8258e4a357f80"
+  integrity sha512-lIe+udnguPGzBezkgbkj2Eaz0YqOhNXT7jja136Fj0sXfI+UKNS2icmaK14GcoRAgeVEpDTtC1ftamWBPmD1zg==
 
-"@openai/codex-linux-arm64@npm:@openai/codex@0.163.0-linux-arm64":
-  version "0.163.0-linux-arm64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.163.0-linux-arm64.tgz#6c45f15cc3026f9646ecb0d30c5dc98f59b87825"
-  integrity sha512-IH2/R+4OarjGvsAf1ll3fdyLwrPgYLl3uzp6u9CyD9sj2Lw+ViDSe3QBZVHdcHJs0eIiZFg6Wprcuy4CRZaUGw==
+"@openai/codex-linux-arm64@npm:@openai/codex@0.164.0-linux-arm64":
+  version "0.164.0-linux-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.164.0-linux-arm64.tgz#35c0096459932e724e9feec75315e2ba2aa67f78"
+  integrity sha512-LL5iTQjyDL4YRX44EWqhIfEQ5uGnmgxkQBJSxjZSeJ8L1Og83pdlzUJW/PRJ76oaVwOVgh6HXwuPEiBNEHU4lg==
 
-"@openai/codex-linux-x64@npm:@openai/codex@0.163.0-linux-x64":
-  version "0.163.0-linux-x64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.163.0-linux-x64.tgz#59679837afdf5b337105de98ef19dfd93999e2d6"
-  integrity sha512-uwRaOsrYogLQhcxAM/GoeWrw0QIWEMRo7c9gM8sKAviVkZQHlu9kRLJ5PkufbV+ABGjyZgIwiFdJ0LCJ0N6e8w==
+"@openai/codex-linux-x64@npm:@openai/codex@0.164.0-linux-x64":
+  version "0.164.0-linux-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.164.0-linux-x64.tgz#d214ca9043434a4aa54cefb372af950f15654368"
+  integrity sha512-XLAoaWsGOT2khzl+P4FYDPTkzAr9W0VFXFaVkqlFdkM0soa1gH/4S0wSD57Ek3HHwkirAEGz2/Mwehseh+l5Mg==
 
-"@openai/codex-sdk@0.163.0":
-  version "0.163.0"
-  resolved "https://registry.yarnpkg.com/@openai/codex-sdk/-/codex-sdk-0.163.0.tgz#bf39328471ca175ba5e5c100c7128d8c22b57bc9"
-  integrity sha512-o10d8dqxFjhzoWp75MUrhaN8C6QrXPQqUJGwVnySj++ztAnrA322UuFRzHZvSa903lFgjjaimuf5rkqVsj0RHg==
+"@openai/codex-sdk@0.164.0":
+  version "0.164.0"
+  resolved "https://registry.yarnpkg.com/@openai/codex-sdk/-/codex-sdk-0.164.0.tgz#11e628a0dcd9b0d0bbe823c2b540c33c585a6c6b"
+  integrity sha512-FyhTWM4Xa8hXpWhkr9MOvROVhBqTeD+s/XCzVLzqSQXTSnGSNkdBWjv0IzZdOO29BX4LwtMjul6ogB8tOME5og==
   dependencies:
-    "@openai/codex" "0.163.0"
+    "@openai/codex" "0.164.0"
 
-"@openai/codex-win32-arm64@npm:@openai/codex@0.163.0-win32-arm64":
-  version "0.163.0-win32-arm64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.163.0-win32-arm64.tgz#c882764f2ec71e59167a506a8018bb5f18948304"
-  integrity sha512-QnLn3gR2dExcdTThE/HAo5BrUq0/C8zDGQ0UZL3hNzfqt9ZklT6jGTyt8JhDyNZX4uSB4HhcJtbcOWucZGC0VQ==
+"@openai/codex-win32-arm64@npm:@openai/codex@0.164.0-win32-arm64":
+  version "0.164.0-win32-arm64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.164.0-win32-arm64.tgz#1c7c30c559c7e9367f049279e6f390f362298696"
+  integrity sha512-Zkzt8HNmB/vOnlDo5D7IOlrt5rHaxYQB7iGbNP7bHcXZtrk6gaD7UriwaieGYJpcf8DqAT/0tqzY4xbs8ZwbmQ==
 
-"@openai/codex-win32-x64@npm:@openai/codex@0.163.0-win32-x64":
-  version "0.163.0-win32-x64"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.163.0-win32-x64.tgz#9c00d88c8f3aea54ec7129e9256fd4401726ec75"
-  integrity sha512-QQGQ/q9dCJ5C5jqhgFrwycpWG3szIyFNThMiKl6hYtu6N/eM3Qd7StesgnCFAfzVED8IkE3N3oH71szzcludqw==
+"@openai/codex-win32-x64@npm:@openai/codex@0.164.0-win32-x64":
+  version "0.164.0-win32-x64"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.164.0-win32-x64.tgz#02badb2d14813501bf1b94de44151670de3232cb"
+  integrity sha512-urWPhwh9YavuoAPIkmVYKBTtd5OtGVL4Ki0Fb28dhK/Mz6Pt4LSy+gbRrZFz5+RXrw9ubvXuXDCcd8beYcWhDg==
 
-"@openai/codex@0.163.0":
-  version "0.163.0"
-  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.163.0.tgz#31d62f44cde7c24ac700178c99d3a84530a141f6"
-  integrity sha512-HNd7vR9oTK6M2ikxFnvNDCdYUgAsyo9VVnd5KnEd2ON0GYI++7MiX9XNPUkhtdgGKFPsWS+CEppQ1UU63uVhUw==
+"@openai/codex@0.164.0":
+  version "0.164.0"
+  resolved "https://registry.yarnpkg.com/@openai/codex/-/codex-0.164.0.tgz#82693f5ef4b08b724dc1370f1622bc752e5d1bf4"
+  integrity sha512-TWj7UGyPRe3Pj/A3ddNAxs1te3a/W/xAd+J0LHrrFTmsSfahGMOLF/vn88D3QCIgAT3B1rm1y/Z3NYE0rx6cZQ==
   optionalDependencies:
-    "@openai/codex-darwin-arm64" "npm:@openai/codex@0.163.0-darwin-arm64"
-    "@openai/codex-darwin-x64" "npm:@openai/codex@0.163.0-darwin-x64"
-    "@openai/codex-linux-arm64" "npm:@openai/codex@0.163.0-linux-arm64"
-    "@openai/codex-linux-x64" "npm:@openai/codex@0.163.0-linux-x64"
-    "@openai/codex-win32-arm64" "npm:@openai/codex@0.163.0-win32-arm64"
-    "@openai/codex-win32-x64" "npm:@openai/codex@0.163.0-win32-x64"
+    "@openai/codex-darwin-arm64" "npm:@openai/codex@0.164.0-darwin-arm64"
+    "@openai/codex-darwin-x64" "npm:@openai/codex@0.164.0-darwin-x64"
+    "@openai/codex-linux-arm64" "npm:@openai/codex@0.164.0-linux-arm64"
+    "@openai/codex-linux-x64" "npm:@openai/codex@0.164.0-linux-x64"
+    "@openai/codex-win32-arm64" "npm:@openai/codex@0.164.0-win32-arm64"
+    "@openai/codex-win32-x64" "npm:@openai/codex@0.164.0-win32-x64"
 
 "@pinojs/redact@^0.4.0":
   version "0.4.0"
@@ -1638,12 +1638,12 @@
     "@pnpm/network.ca-file" "^1.0.1"
     config-chain "^1.1.11"
 
-"@puppeteer/browsers@3.2.5":
-  version "3.2.5"
-  resolved "https://registry.yarnpkg.com/@puppeteer/browsers/-/browsers-3.2.5.tgz#4216501d96daf99079a26c7e14a1d6baacaf043e"
-  integrity sha512-UoCo3Pynbm37aLEEoydSiG+t24ui7sLD40+07CKxzxNy4PpSowJMkvlLIiV67XjP1lMVynhQVnuwlTABqBH8LQ==
+"@puppeteer/browsers@3.2.6":
+  version "3.2.6"
+  resolved "https://registry.yarnpkg.com/@puppeteer/browsers/-/browsers-3.2.6.tgz#3dc78ed192da721126c46eadc9745efc217059a4"
+  integrity sha512-MJP29gVoHznmqmwhH1tlZqzfeQ3aylTpSSa6WKZXtkwYUH02i9imBmWGTyZrbnAou5paX78SE4jMAUqnEPf8ug==
   dependencies:
-    modern-tar "^0.8.5"
+    modern-tar "^0.8.6"
     yargs "^18.0.0"
 
 "@rtsao/scc@^1.1.0":
@@ -1651,10 +1651,10 @@
   resolved "https://registry.yarnpkg.com/@rtsao/scc/-/scc-1.1.0.tgz#927dd2fae9bc3361403ac2c7a00c32ddce9ad7e8"
   integrity sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==
 
-"@salesforce/cli-plugins-testkit@5.3.76":
-  version "5.3.76"
-  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.76.tgz#477b4ecef39ef3fcae15fdfb14538b04866fa4ad"
-  integrity sha512-k26GUR6mJZBSYM2zLE7c8zF5051zdQIkc+xf/089VDvpqh663TNatNAMJ+K+AJeTbDEBmRmRydCXuhRoRMnk/w==
+"@salesforce/cli-plugins-testkit@5.3.78":
+  version "5.3.78"
+  resolved "https://registry.yarnpkg.com/@salesforce/cli-plugins-testkit/-/cli-plugins-testkit-5.3.78.tgz#2052ec0e363ce21b9289c325594210431bf994c0"
+  integrity sha512-lNbiF7IV3l/H32r26q+/WdTR5vHvgDF8msIilIVGWyTiaw9CXVv8Y9Y00j4SuK5M2rlAhuOMeOXjosO9+fKRjQ==
   dependencies:
     "@salesforce/core" "^9.3.0"
     "@salesforce/kit" "^4.0.1"
@@ -3843,10 +3843,10 @@ devlop@^1.0.0:
   dependencies:
     dequal "^2.0.0"
 
-devtools-protocol@0.0.1696802:
-  version "0.0.1696802"
-  resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.1696802.tgz#1a66d62115e9b0114ea0b9079e6fc608778e7d62"
-  integrity sha512-FO5/SENfvc2K8wRnWQflKcwuoTH4dBkXCWTQ9ebIWtuX8JM5+ZvCotaEmkfh21pO7TvIKGTM3hG4xFiq9WTwmg==
+devtools-protocol@0.0.1704951:
+  version "0.0.1704951"
+  resolved "https://registry.yarnpkg.com/devtools-protocol/-/devtools-protocol-0.0.1704951.tgz#7b3498c215bbaf94b9a042a745bf84894274faf9"
+  integrity sha512-GQhQOs9u/Mvm1zMtJIH872JS4AskuZdUSsPNPk4ChahtWAUqgz6atEtIsMt+nO7MqF1Ic4HxII/k8Cu36JivNg==
 
 diff@*:
   version "9.0.0"
@@ -6862,7 +6862,7 @@ mocha@^10.7.0:
     yargs-parser "^20.2.9"
     yargs-unparser "^2.0.0"
 
-modern-tar@^0.8.5:
+modern-tar@^0.8.6:
   version "0.8.6"
   resolved "https://registry.yarnpkg.com/modern-tar/-/modern-tar-0.8.6.tgz#dc67de5954b4b679d55ba703d5263dbd328c1e4c"
   integrity sha512-LYSks0tNVqbtez/9OB0YFP6qLRSqkdAxJWOQpVaR67lNTbj2zNLyYpowkRMia5lXLCZKzxwoxkxH2MbbBR2aEg==
@@ -7173,10 +7173,10 @@ oniguruma-to-es@^2.2.0:
     regex "^5.1.1"
     regex-recursion "^5.1.1"
 
-openai@^7.10.0:
-  version "7.20.0"
-  resolved "https://registry.yarnpkg.com/openai/-/openai-7.20.0.tgz#2508815a7b0844dde94311a0de9771eecdc3738d"
-  integrity sha512-5x5ru4cKEvEqHqYZbdIbT57OE7KqmP9YYxZiUKuKng016grOHXqom1vmu34MTPPW30q+lcP9RhxAbaRse+Xlcw==
+openai@^7.23.0:
+  version "7.45.1"
+  resolved "https://registry.yarnpkg.com/openai/-/openai-7.45.1.tgz#2f4012e0227600ecc472d871a80dbe5f1bb064ec"
+  integrity sha512-mutrJXwhJIMZ24Lab2COFtNp44OcpZSnV4O2O7q38wAHUa2m2fQqUO5pj1XS3PqLfOTeODBUS9YoadqDnnGk5A==
 
 optionator@^0.9.3:
   version "0.9.4"
@@ -7665,14 +7665,14 @@ punycode@^2.1.0:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.1.tgz#027422e2faec0b25e1549c3e1bd8309b9133b6e5"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
 
-puppeteer-core@25.15.0:
-  version "25.15.0"
-  resolved "https://registry.yarnpkg.com/puppeteer-core/-/puppeteer-core-25.15.0.tgz#ed8f9d6a48db0eabae6d5118e057d457d1f82928"
-  integrity sha512-DEk7S2tlBDp4+iXdnHjFmMofoqVftlz1JO4eyE+oBSiQIfIVTYq8hWF1EsjmRvD49chxGX3oKQT5hX2dnIIDdg==
+puppeteer-core@25.16.0:
+  version "25.16.0"
+  resolved "https://registry.yarnpkg.com/puppeteer-core/-/puppeteer-core-25.16.0.tgz#1f5bd85206903e87af8674e8e7b6f7db89b6a7c0"
+  integrity sha512-VA5Pf54N8shfopNkZZXCdiiwfnnY8ZJYAMqFQRhlH5mGUhfwf53Ar770GPtdpTDLUqvQeYpIBtC9/G2Jij2IJw==
   dependencies:
-    "@puppeteer/browsers" "3.2.5"
+    "@puppeteer/browsers" "3.2.6"
     chromium-bidi "157.0.8090-0"
-    devtools-protocol "0.0.1696802"
+    devtools-protocol "0.0.1704951"
     typed-query-selector "^2.12.3"
     webdriver-bidi-protocol "1.0.1"
     ws "^8.22.0"
@@ -9024,10 +9024,10 @@ undici-types@~7.16.0:
   resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.16.0.tgz#ffccdff36aea4884cbfce9a750a0580224f58a46"
   integrity sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==
 
-undici@8.12.2, undici@^8.11.0, undici@^8.5.0:
-  version "8.12.2"
-  resolved "https://registry.yarnpkg.com/undici/-/undici-8.12.2.tgz#e869237430adcc5de6bca798c94edd7db9dac5ac"
-  integrity sha512-XtuDWVdqTLr3NAxm2ly9/hU6kUsJOgGh1RASzMBbsw6aWCOaQzHdW+QQDfdERjfJ2V5vL5pRPa4RetO9UfivDg==
+undici@8.12.3, undici@^8.11.0, undici@^8.5.0:
+  version "8.12.3"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-8.12.3.tgz#e76a91feee9c275ad0f43bfc0eb632b6124d3bb6"
+  integrity sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==
 
 unicorn-magic@^0.3.0:
   version "0.3.0"
