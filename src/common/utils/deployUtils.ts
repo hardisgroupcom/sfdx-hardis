@@ -496,7 +496,7 @@ export async function smartDeploy(
   // always restored. Quick deploy reuses the validated package, which got the same changes.
   const replacementSession = options.replacementRules === false
     ? null
-    : await startDeploymentReplacementRules(splitDeployments, commandThis, { ...options, checkOnly: check });
+    : await startDeploymentReplacementRules(splitDeployments, commandThis, options);
   // Replace quick actions with dummy content in case we have dependencies between Flows & QuickActions.
   // Done after the replacement rules: restoreQuickActions puts back the files the rules changed, then
   // the restore of the rules puts back the files of git, in the reverse order of the changes.
@@ -2070,7 +2070,7 @@ async function postDeploymentPullRequestComment(check: boolean, options: { defer
 async function startDeploymentReplacementRules(
   splitDeployments: any[],
   commandThis: any,
-  options: { targetUsername: string; conn: any; replacementRules?: { targetBranch: string | null } | false; checkOnly?: boolean }
+  options: { targetUsername: string; conn: any; replacementRules?: { targetBranch: string | null } | false }
 ): Promise<{ restore: () => number } | null> {
   try {
     const { applyReplacementRules } = await import('../replacementRules/engine/ruleEngine.js');
@@ -2081,7 +2081,6 @@ async function startDeploymentReplacementRules(
       targetUsername: options.targetUsername,
       packageXmlFiles: splitDeployments.filter((deployment) => deployment.packageXmlFile).map((deployment) => deployment.packageXmlFile),
       write: true,
-      checkOnly: options.checkOnly === true,
       commandThis,
     });
     setPullRequestData({ replacementRulesMarkdownBody: buildReplacementRulesMarkdown(session.report) });

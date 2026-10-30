@@ -52,7 +52,7 @@ Then [publish your User Story](salesforce-devops-publish-user-story.md) as usual
 - **The first deployment of an agent needs its whole `AiAgentDefinition`.** With [delta deployments](salesforce-devops-config-delta-deployment.md), a Pull Request that only changes a version holds only the `AiAgentDefinitionVersion`. When the target org does not have the agent yet, the deployment stops before anything is sent: deploy the definition too, for example with `nodelta` in the commit message.
 - **A version the target org already has is left out.** A committed version never changes, and Salesforce refuses the whole deployment when it holds the active version (*Can't edit an active bot version*). Add `AiAgentDefinitionVersion` with member `*` to [package-no-overwrite.xml](salesforce-ci-cd-config-overwrite.md): only the new versions are sent. The [cleaning](#automate-it-at-each-user-story) adds it for you. Without it, a deployment that holds an active version stops before anything is sent.
 - **Agent versions come from the project only.** A warning lists the versions the target org has and the project does not: they were committed in that org, against the [rule](#deliver-a-new-version-of-an-agent).
-- **The running user of a service agent is a user of the target org.** sfdx-hardis creates it at the first deployment: see [the running user of a service agent](#the-running-user-of-a-service-agent).
+- **The running user of a service agent is a user of the target org.** An `agent-running-user` deployment action creates it, and the deployment writes it in the agent files: see [the running user of a service agent](#the-running-user-of-a-service-agent).
 
 Agent metadata types do not trigger Apex tests with [Smart Deployment Tests](hardis/project/deploy/smart.md#smart-deployments-tests).
 
@@ -62,7 +62,7 @@ The project keeps every version you retrieved: `aiAgentDefinitionVersions/My_Age
 
 1. In your developer sandbox, change the agent in Agentforce Builder and click **Commit Version**.
 2. Run [hardis:org:retrieve:agent](hardis/org/retrieve/agent.md) again: it proposes the new version and adds it to `manifest/package.xml`, next to the previous ones.
-3. Commit and open your Pull Request as usual. With the [cleaning](#automate-it-at-each-user-story), the activation of the new version is added to the deployment actions of the Pull Request.
+3. Commit and open your Pull Request as usual. With the [cleaning](#automate-it-at-each-user-story), the activation of the new version, with its number, is added to the deployment actions of the Pull Request.
 
 Each org of the pipeline then gets the new version, which is activated, and Salesforce deactivates the previous one. The older versions stay in the project and in the orgs. To go back to one of them, activate it with an [agent-activate deployment action](#3-activate-the-agent).
 
@@ -75,13 +75,12 @@ Keep the folders of the older versions and of their authoring bundles in the pro
 
 A service agent (`agentType` `EinsteinServiceAgent`) runs as a user of its org: `botUser` in `AiAgentDefinition`, and `default_agent_user` in the Agent Script of its authoring bundles. The retrieved files hold the username of the sandbox you retrieved from, and a user record is data: it is not deployed, and the other orgs have no such user.
 
-sfdx-hardis handles it for you with the built-in replacement rule `builtin-agent-running-user`, on by default:
+sfdx-hardis handles it in two steps, both recorded in the Pull Request or the project:
 
-1. At the first deployment of the agent to an org, it creates the user with the Salesforce CLI command `sf org create agent-user`: profile **Einstein Agent User**, permission sets `AgentforceServiceAgentBase`, `AgentforceServiceAgentUser` and `EinsteinGPTPromptTemplateUser`, after checking that the org has the licenses. Its username is `<agent>.<unique id>@<org id>.ext`.
-2. At the next deployments, it finds this user again by its username.
-3. It writes the username in the deployed files, and puts the files of git back after the deployment.
+1. An `agent-running-user` [deployment action](salesforce-devops-work-on-user-story-deployment-actions.md#create-the-running-user-of-an-agentforce-agent), run before the deployment, creates the user when the org has none, with the Salesforce CLI command `sf org create agent-user`: profile **Einstein Agent User**, permission sets `AgentforceServiceAgentBase`, `AgentforceServiceAgentUser` and `EinsteinGPTPromptTemplateUser`, after checking that the org has the licenses. Its username is `<agent>.<unique id>@<org id>.ext`. The [cleaning](#automate-it-at-each-user-story) writes this action, in the `all` context: it runs in the deployment check too, so the check validates the agent with its real user.
+2. The built-in replacement rule `builtin-agent-running-user`, on by default, finds this user by its username, writes it in the deployed files, and puts the files of git back after the deployment. It never creates a user: when the org has none, it logs a warning that names the action to add.
 
-A deployment check never creates the user: it says that the deployment will. A username of git that the target org has (the org you retrieved from, or a sandbox copy of its users) is kept.
+A username of git that the target org has (the org you retrieved from, or a sandbox copy of its users) is kept.
 
 To turn it off, for example to create the users yourself in production, add to `config/branches/.sfdx-hardis.main.yml` (or to `config/.sfdx-hardis.yml` for every org):
 
@@ -157,11 +156,16 @@ autoCleanTypes:
 
 Each time you save a User Story with [hardis:work:save](hardis/work/save.md), [hardis:project:clean:agents-deployment-actions](hardis/project/clean/agents-deployment-actions.md):
 
-- writes, for each agent with a version changed in the User Story, an `agent-activate` action in the deployment actions of the Pull Request (`scripts/actions/.sfdx-hardis.<id>.yml`, or the draft file when the Pull Request does not exist yet). The action activates the latest version of the agent (`agentVersion: latest`), and its label names the version of the project when the User Story was saved. When several Pull Requests are deployed together, their actions for the same agent are the same action and run once, so the order of the Pull Requests does not matter.
+- writes, for each agent with a version changed in the User Story, an `agent-activate` action in the deployment actions of the Pull Request (`scripts/actions/.sfdx-hardis.<id>.yml`, or the draft file when the Pull Request does not exist yet). The action activates the version saved with the User Story (`agentVersion: 3`), so the Pull Request says which version each org gets. To activate the highest version of the target org instead, set `agentVersion: latest` in the action: the cleaning keeps it.
+- writes, for each of these agents that runs as a user, an `agent-running-user` action before the deployment: see [the running user of a service agent](#the-running-user-of-a-service-agent).
 - adds `AiAgentDefinitionVersion` to `manifest/package-no-overwrite.xml` and to every file of `packageNoOverwritePath` in the project and branch configs, once.
 
 !!! note "Deployment time"
     Like for any item of package-no-overwrite.xml, a deployment that holds an agent version lists the content of the target org first, to know which versions it already has. It can take a few minutes on a large org.
+
+Run by hand without `--delta-from`, the cleaning only handles the agent versions not committed yet.
+
+When several Pull Requests that change the same agent are deployed together, each one activates its own version, in the order the actions run: the last one wins. Deliver one version of an agent at a time, or set the action of the last Pull Request to `latest`.
 
 To leave production for a manual activation, add `excludeTargetBranches` to the action, or delete it from the Pull Request.
 
@@ -174,7 +178,7 @@ commandsPostDeploy:
     type: agent-activate
     parameters:
       agentName: My_Service_Agent
-      agentVersion: latest
+      agentVersion: "3"
     context: process-deployment-only
     runOnlyOnceByOrg: false
 ```

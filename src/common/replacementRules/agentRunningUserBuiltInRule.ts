@@ -1,9 +1,9 @@
 // Built-in rule builtin-agent-running-user: a service agent runs as a user of its org (botUser of the
 // AiAgentDefinition, default_agent_user of the Agent Script of its authoring bundles). The username of
 // the org the agent was retrieved from exists nowhere else, so each org gets a user of its own, created
-// with "sf org create agent-user" the first time the agent is deployed there, and found again by its
-// username at the next deployments: <agent>.<unique id>@<org id>.ext.
-// A deployment check or a preview never creates a user: the files keep the username of git.
+// with "sf org create agent-user" by the agent-running-user deployment action of the Pull Request, and
+// found again by its username at each deployment: <agent>.<unique id>@<org id>.ext.
+// The rule never creates a user: a change to the org is always recorded in the Pull Request.
 
 import c from 'chalk';
 import { glob } from 'glob';
@@ -14,6 +14,7 @@ import { execSfdxJson, uxLog } from '../utils/index.js';
 import { soqlQuery } from '../utils/apiUtils.js';
 import { t } from '../utils/i18n.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
+import { CONSTANTS } from '../../config/index.js';
 import { readIssueRules } from './config/issueRulesStore.js';
 import { readAllBranchReplacementRules, readProjectReplacementRules } from './config/ruleConfig.js';
 import { ReplacementRulePrepareOptions, ReplacementRuleRoot, ReplacementTextOutcome } from './replacementRuleRoot.js';
@@ -36,7 +37,7 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
     if (agents.length === 0) {
       return;
     }
-    // A rule of the project writes the user: no user is created for nothing
+    // A rule of the project writes the user
     if (await hasOwnRunningUserRule()) {
       uxLog('log', options.commandThis, c.grey(t('agentRunningUserOwnRule')));
       return;
@@ -46,27 +47,18 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
       uxLog('log', options.commandThis, c.grey(t('agentRunningUserOrgUnreachable')));
       return;
     }
-    const orgId = String(conn.getAuthInfoFields?.().orgId || (await conn.identity()).organization_id || '').toLowerCase();
-    const existingUsers = await findExistingUsers(conn, agents.flatMap((agent) => agent.usernames));
     for (const agent of agents) {
-      // A user of git that the org has (the org it was retrieved from, or a sandbox copy of it) stays
-      if (agent.usernames.every((username) => existingUsers.has(username.toLowerCase()))) {
+      const resolved = await resolveAgentRunningUser(conn, agent, false, options.commandThis);
+      if (resolved.status === 'missing') {
+        uxLog('warning', options.commandThis, c.yellow(t('agentRunningUserMissing', { agentName: agent.agentName, docUrl: `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/` })));
         continue;
       }
-      let targetUsername = await findAgentUser(conn, agent.agentName, orgId);
-      if (!targetUsername) {
-        if (options.write === false || options.checkOnly) {
-          uxLog('action', options.commandThis, c.cyan(t('agentRunningUserWillBeCreated', { agentName: agent.agentName })));
-          continue;
-        }
-        targetUsername = await createAgentUser(agent.agentName, orgId, options);
-        if (!targetUsername) {
-          continue;
-        }
+      if (resolved.status !== 'found') {
+        continue;
       }
-      uxLog('action', options.commandThis, c.cyan(t('agentRunningUserUsed', { agentName: agent.agentName, username: targetUsername })));
+      uxLog('action', options.commandThis, c.cyan(t('agentRunningUserUsed', { agentName: agent.agentName, username: resolved.username })));
       for (const username of agent.usernames) {
-        this.usernames.set(username.toLowerCase(), targetUsername);
+        this.usernames.set(username.toLowerCase(), resolved.username as string);
       }
     }
   }
@@ -135,6 +127,35 @@ export async function readRulesOfEveryPlace(): Promise<any[]> {
 export function buildAgentUserBaseUsername(agentName: string, orgId: string): string {
   const localPart = agentName.toLowerCase().replace(/[^a-z0-9.-]/g, '-');
   return `${localPart}@${orgId.toLowerCase()}.ext`;
+}
+
+/**
+ * Running user of an agent in the org of the connection:
+ * - git: every username of the files is a user of the org (the org it was retrieved from, or a sandbox copy of it);
+ * - found: the agent user created for the agent at a previous deployment;
+ * - created: none was there, and create is true (agent-running-user deployment action);
+ * - missing: none was there, and create is false (the replacement rule);
+ * - failed: the creation failed.
+ */
+export async function resolveAgentRunningUser(
+  conn: any,
+  agent: { agentName: string; usernames: string[] },
+  create: boolean,
+  commandThis: any
+): Promise<{ status: 'git' | 'found' | 'created' | 'missing' | 'failed'; username: string | null; message?: string }> {
+  const existingUsers = await findExistingUsers(conn, agent.usernames);
+  if (agent.usernames.length > 0 && agent.usernames.every((username) => existingUsers.has(username.toLowerCase()))) {
+    return { status: 'git', username: agent.usernames[0] };
+  }
+  const orgId = String(conn.getAuthInfoFields?.().orgId || (await conn.identity()).organization_id || '').toLowerCase();
+  const found = await findAgentUser(conn, agent.agentName, orgId);
+  if (found) {
+    return { status: 'found', username: found };
+  }
+  if (!create) {
+    return { status: 'missing', username: null };
+  }
+  return createAgentUser(agent.agentName, orgId, conn.getUsername(), commandThis);
 }
 
 // Agents of the package.xml files (AiAgentDefinition, or the agent of an AiAgentDefinitionVersion or an
@@ -210,8 +231,12 @@ async function findAgentUser(conn: any, agentName: string, orgId: string): Promi
   return result.records?.[0]?.Username || null;
 }
 
-async function createAgentUser(agentName: string, orgId: string, options: ReplacementRulePrepareOptions): Promise<string | null> {
-  const targetUsername = options.targetUsername || options.conn?.getUsername?.();
+async function createAgentUser(
+  agentName: string,
+  orgId: string,
+  targetUsername: string,
+  commandThis: any
+): Promise<{ status: 'created' | 'failed'; username: string | null; message?: string }> {
   const command =
     'sf org create agent-user' +
     ` --base-username ${buildAgentUserBaseUsername(agentName, orgId)}` +
@@ -219,14 +244,13 @@ async function createAgentUser(agentName: string, orgId: string, options: Replac
     ` --last-name ${agentName}` +
     ` --target-org ${targetUsername}` +
     ' --json';
-  uxLog('action', options.commandThis, c.cyan(t('agentRunningUserCreating', { agentName })));
-  const res = await execSfdxJson(command, options.commandThis, { fail: false, output: false });
+  uxLog('action', commandThis, c.cyan(t('agentRunningUserCreating', { agentName })));
+  const res = await execSfdxJson(command, commandThis, { fail: false, output: false });
   const username = res?.result?.username || res?.result?.user?.username || res?.result?.Username || null;
   if (res?.status !== 0 || !username) {
-    uxLog('warning', options.commandThis, c.yellow(t('agentRunningUserCreationFailed', { agentName, message: res?.message || JSON.stringify(res?.result || {}) })));
-    return null;
+    return { status: 'failed', username: null, message: res?.message || JSON.stringify(res?.result || {}) };
   }
-  return username;
+  return { status: 'created', username };
 }
 
 function soqlString(value: string): string {

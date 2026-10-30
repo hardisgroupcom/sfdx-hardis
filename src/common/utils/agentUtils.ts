@@ -290,7 +290,7 @@ export async function ensureAgentVersionsInPackageNoOverwrite(packageNoOverwrite
   } else {
     const block = [
       '  <types>',
-      '    <!-- A committed agent version never changes, and Salesforce refuses to deploy the active one: only new versions are deployed -->',
+      '    <!-- An agent version is deployed only when the target org does not have it yet: a committed version never changes, and Salesforce refuses to overwrite the active one -->',
       '    <members>*</members>',
       `    <name>${AGENT_DEFINITION_VERSION_TYPE}</name>`,
       '  </types>',
@@ -304,16 +304,18 @@ export async function ensureAgentVersionsInPackageNoOverwrite(packageNoOverwrite
 }
 
 /**
- * Sets the agent-activate action of an agent in a list of deployment actions: updates the one already there,
- * or adds one. The version is "latest": the actions of several Pull Requests deployed together are then the
- * same action, run once, whatever order they come in. The label is English, as it is committed in the sources.
+ * Adds to the actions an agent-activate action of the version saved with the User Story, or updates the
+ * one already there for the agent (same id). The version is written in the action, so the Pull Request
+ * says what is activated. An action set to latest by hand stays latest.
  */
 export function upsertAgentActivateAction(actions: PrePostCommand[], agentName: string, savedVersion: number, newId: () => string): PrePostCommand {
-  const label = `Activate agent ${agentName}, latest version (${formatAgentVersionFullName(agentName, savedVersion)} when saved)`;
   const existing = actions.find((action) => action.type === 'agent-activate' && String(action.parameters?.agentName || '').toLowerCase() === agentName.toLowerCase());
+  const keepLatest = String(existing?.parameters?.agentVersion || '').toLowerCase() === 'latest';
+  const agentVersion = keepLatest ? 'latest' : String(savedVersion);
+  const label = keepLatest ? `Activate agent ${agentName}, latest version` : `Activate agent ${agentName} version ${savedVersion}`;
   if (existing) {
     existing.label = label;
-    existing.parameters = { ...existing.parameters, agentName, agentVersion: 'latest' };
+    existing.parameters = { ...existing.parameters, agentName, agentVersion };
     return existing;
   }
   const action: PrePostCommand = {
@@ -322,7 +324,30 @@ export function upsertAgentActivateAction(actions: PrePostCommand[], agentName: 
     type: 'agent-activate',
     command: '',
     context: 'process-deployment-only',
-    parameters: { agentName, agentVersion: 'latest' },
+    parameters: { agentName, agentVersion },
+    allowFailure: false,
+    runOnlyOnceByOrg: false,
+  };
+  actions.push(action);
+  return action;
+}
+
+/**
+ * Adds to the pre-deployment actions an agent-running-user action for the agent, unless one is there.
+ * Context all: the deployment check then validates the agent with the user of the target org.
+ */
+export function upsertAgentRunningUserAction(actions: PrePostCommand[], agentName: string, newId: () => string): PrePostCommand {
+  const existing = actions.find((action) => action.type === 'agent-running-user' && String(action.parameters?.agentName || '').toLowerCase() === agentName.toLowerCase());
+  if (existing) {
+    return existing;
+  }
+  const action: PrePostCommand = {
+    id: newId(),
+    label: `Create the running user of agent ${agentName} when the org has none`,
+    type: 'agent-running-user',
+    command: '',
+    context: 'all',
+    parameters: { agentName },
     allowFailure: false,
     runOnlyOnceByOrg: false,
   };

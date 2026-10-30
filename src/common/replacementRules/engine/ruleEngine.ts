@@ -55,8 +55,6 @@ export interface ApplyReplacementRulesOptions {
   packageXmlFiles?: string[];
   // false: compute the results without writing anything
   write: boolean;
-  // A deployment check: the files are changed, the org never is
-  checkOnly?: boolean;
   // false: do not read the issue (list --skip-issue, unit tests)
   readIssue?: boolean;
   commandThis?: any;
@@ -184,15 +182,7 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
 
   uxLog('action', commandThis, c.cyan(t('replacementRulesApplying', { target: target.label })));
   for (const item of resolved) {
-    await item.handler.prepare({
-      target,
-      conn: options.conn,
-      targetUsername: options.targetUsername,
-      commandThis,
-      packageXmlFiles: options.packageXmlFiles,
-      write: options.write,
-      checkOnly: options.checkOnly === true,
-    });
+    await item.handler.prepare({ target, conn: options.conn, targetUsername: options.targetUsername, commandThis, packageXmlFiles: options.packageXmlFiles });
   }
   const files = await listCandidateFiles(options.packageXmlFiles, commandThis);
   for (const file of files) {

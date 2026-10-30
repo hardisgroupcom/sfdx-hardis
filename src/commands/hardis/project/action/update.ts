@@ -75,6 +75,7 @@ Required in agent mode:
 - A \`run-batch\` action is updated with \`--class-name\`, \`--run-mode\`, \`--batch-size\`, \`--wait-timeout\` and \`--success-even-if-batch-errors\`. It only runs in the \`process-deployment-only\` context.
 - A \`user-access-policy\` action is updated with \`--policies\`, \`--activate\` and \`--apply-to-all\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
 - An \`agent-activate\` action is updated with \`--agent-name\` and \`--agent-version\`. It is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
+- An \`agent-running-user\` action is updated with \`--agent-name\`. It is \`pre-deploy\` only. Changing an action to this type sets \`runOnlyOnceByOrg\` to false, unless \`--run-only-once-by-org\` is passed.
 - A \`manual\` action declared \`pre-deploy\` is always stored with the \`all\` context.
 </details>
 
@@ -116,7 +117,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       description: 'Pull request ID (for pr scope, defaults to draft)',
     }),
     type: Flags.string({
-      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, agent-activate) or the id of a project custom function',
+      description: 'New type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, agent-activate, agent-running-user) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'New label for the action',
@@ -174,7 +175,7 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       description: 'For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser',
     }),
     'agent-name': Flags.string({
-      description: 'New API name of the Agentforce agent to activate (for agent-activate type)',
+      description: 'New API name of the Agentforce agent (for agent-activate and agent-running-user types)',
     }),
     'agent-version': Flags.string({
       description: 'For agent-activate type: new version number to activate, or latest',

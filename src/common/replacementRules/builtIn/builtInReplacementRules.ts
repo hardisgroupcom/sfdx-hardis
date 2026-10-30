@@ -159,13 +159,13 @@ export const BUILT_IN_REPLACEMENT_RULES: BuiltInReplacementRule[] = [
   // Org specific values
   {
     id: 'builtin-agent-running-user',
-    description: 'Running user of the Agentforce service agents (botUser, and default_agent_user of the authoring bundles): a user of the target org, created with sf org create agent-user at the first deployment of the agent',
+    description: 'Running user of the Agentforce service agents (botUser, and default_agent_user of the authoring bundles): the user of the target org created by the agent-running-user deployment action',
     files: ['**/aiAgents/*.aiAgentDefinition-meta.xml', '**/aiAuthoringBundles/*/*.agent'],
     xmlPaths: ['AiAgentDefinition/botUser'],
     anyApiVersion: true,
     defaultEnabled: true,
     handler: 'agentRunningUser',
-    source: 'Users of the target org (Einstein Agent User profile), created with sf org create agent-user',
+    source: 'Users of the target org (Einstein Agent User profile), created by the agent-running-user deployment action with sf org create agent-user',
   },
   // Settings no longer accepted
   {

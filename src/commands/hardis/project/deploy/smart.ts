@@ -103,8 +103,8 @@ When the deployment contains \`AiAgentDefinition\` or \`AiAgentDefinitionVersion
 - An agent deployed as a version only (a delta often holds just the new version) stops the deployment when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without its \`AiAgentDefinition\`.
 - A version that is active in the target org stops the deployment, unless package-no-overwrite.xml protects it: Salesforce refuses to edit the active version. The cleaning \`autoAddAgentsDeploymentActions\` of [hardis:work:save](${CONSTANTS.DOC_URL_ROOT}/hardis/work/save/) adds \`AiAgentDefinitionVersion\` to package-no-overwrite.xml, so only the new versions are sent.
 - A warning lists the agent versions the target org has and the project does not: they were committed in that org, and agent versions must be committed in a developer sandbox only.
-- The running user of a service agent (\`botUser\`, \`default_agent_user\`) is a user of the target org: the built-in replacement rule \`builtin-agent-running-user\` creates it with \`sf org create agent-user\` at the first deployment, and writes it in the deployed files.
-- The package.xml is never changed for agents during the job. Agent versions are activated by \`agent-activate\` deployment actions, that the cleaning \`autoAddAgentsDeploymentActions\` writes in the Pull Request deployment actions.
+- The running user of a service agent (\`botUser\`, \`default_agent_user\`) is a user of the target org: the built-in replacement rule \`builtin-agent-running-user\` writes it in the deployed files. It never creates a user: an \`agent-running-user\` deployment action does.
+- The job never changes the package.xml or the org for agents by itself. Agent versions are activated by \`agent-activate\` actions and running users created by \`agent-running-user\` actions, that the cleaning \`autoAddAgentsDeploymentActions\` writes in the Pull Request deployment actions.
 
 See [Agentforce agents in CI/CD](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/).
 
