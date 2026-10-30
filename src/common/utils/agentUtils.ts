@@ -508,7 +508,6 @@ async function warnWhenBotUserMissingInTargetOrg(agentNames: string[], conn: Con
   }
 }
 
-
 // Agent versions are committed in a developer sandbox only. A version the target org has and the project
 // does not was committed in that org: its number will be taken again by the next version of the sandbox.
 async function warnWhenVersionsCommittedOutsideProject(agentNames: string[], orgVersions: AgentVersionInfo[], commandThis: any): Promise<void> {
@@ -568,7 +567,10 @@ async function assertNoActiveVersionOverwritten(packageXmlFile: string, orgVersi
   const activeInOrg = new Set(
     orgVersions.filter((version) => version.status.toLowerCase() === 'active').map((version) => formatAgentVersionFullName(version.agentName, version.version).toLowerCase())
   );
-  const items = (content[AGENT_DEFINITION_VERSION_TYPE] || []).map(String).map((member: string) => ({ type: AGENT_DEFINITION_VERSION_TYPE, member }));
+  const members: string[] = (content[AGENT_DEFINITION_VERSION_TYPE] || []).map(String);
+  // A wildcard deploys every version of the project, active ones included
+  const deployedMembers = members.includes('*') ? [...members.filter((member) => member !== '*'), ...(await listLocalAgentVersionFullNames(process.cwd()))] : members;
+  const items = [...new Set(deployedMembers)].map((member: string) => ({ type: AGENT_DEFINITION_VERSION_TYPE, member }));
   const deployedActive = items.filter((item) => activeInOrg.has(item.member.toLowerCase()));
   if (deployedActive.length === 0) {
     return;
@@ -625,7 +627,7 @@ async function readAgentVersionStatuses(conn: Connection): Promise<Map<string, s
       }
     }
   } catch (e: any) {
-    uxLog('log', this, c.grey(`Unable to read agent version statuses: ${e?.message || e}`));
+    uxLog('log', null, c.grey(`Unable to read agent version statuses: ${e?.message || e}`));
   }
   return statuses;
 }

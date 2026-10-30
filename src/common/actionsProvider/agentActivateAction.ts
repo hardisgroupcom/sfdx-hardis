@@ -99,7 +99,7 @@ export class AgentActivateAction extends ActionsProvider {
         outputLines
       );
     }
-    if (target.status === 'Active') {
+    if (target.status.toLowerCase() === 'active') {
       this.logSuccess(t('agentVersionAlreadyActive', { agentName: target.agentName, version: target.version }), outputLines);
       return { statusCode: 'success', output: outputLines.join('\n') };
     }
@@ -124,7 +124,7 @@ export class AgentActivateAction extends ActionsProvider {
     // 3. Read the status again: it is what proves the version now runs. An org that does not
     // tell the status is trusted on the command result.
     const updated = await this.readVersion(conn, target);
-    if (updated?.status && updated.status !== 'Active') {
+    if (updated?.status && updated.status.toLowerCase() !== 'active') {
       return this.fail(
         t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: `Status is ${updated.status}` }),
         outputLines

@@ -74,6 +74,12 @@ describe('AgentRunningUserBuiltInRule', () => {
       '<?xml version="1.0" encoding="UTF-8"?><Package xmlns="http://soap.sforce.com/2006/04/metadata"><types><members>MyClass</members><name>ApexClass</name></types><version>68.0</version></Package>'
     );
     expect(await listAgentsWithRunningUser([otherPackageXml], tmpDir)).to.deep.equal([]);
+    const wildcardPackageXml = path.join(tmpDir, 'wildcard.xml');
+    await fs.writeFile(
+      wildcardPackageXml,
+      '<?xml version="1.0" encoding="UTF-8"?><Package xmlns="http://soap.sforce.com/2006/04/metadata"><types><members>*</members><name>AiAgentDefinition</name></types><version>68.0</version></Package>'
+    );
+    expect(await listAgentsWithRunningUser([wildcardPackageXml], tmpDir)).to.deep.equal([{ agentName: 'My_Agent', usernames: [SOURCE_USER] }]);
   });
 
   it('uses the agent user created at a previous deployment, in the definition and the bundles', async () => {

@@ -180,8 +180,8 @@ async function listDeployedAgentNames(packageXmlFiles?: string[]): Promise<Set<s
       names.add(String(member).replace(/_\d+$/, '').toLowerCase());
     }
   }
-  names.delete('*');
-  return names;
+  // A wildcard deploys every agent of the project
+  return names.has('*') ? null : names;
 }
 
 // aiAgents/My_Agent.aiAgentDefinition-meta.xml and aiAuthoringBundles/My_Agent_2/My_Agent_2.agent -> My_Agent

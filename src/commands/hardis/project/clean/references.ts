@@ -105,7 +105,7 @@ The command's technical implementation involves several steps:
 
 - **Configuration Loading:** It reads the project's configuration to determine default cleaning types and user preferences.
 - **Cleaning Type Processing:** For each selected cleaning type, it either executes a dedicated sub-command (e.g., 
-- **Delta scope:** \`--delta-from\` is passed on to the cleanings that delete files (\`emptyItems\`): \`hardis:work:save\` sends the commit its git delta starts from, so a file that already exists there is never deleted (the next delta would turn that deletion into a destructive change).
+- **Delta scope:** \`--delta-from\` is passed on to the cleanings that depend on the git delta: \`hardis:work:save\` sends the commit its git delta starts from. \`emptyItems\` never deletes a file that already exists there (the next delta would turn that deletion into a destructive change), and \`autoAddAgentsDeploymentActions\` only handles the agents changed since that commit.
 - **XML Filtering:** For template-based cleanings, it constructs a temporary JSON configuration file based on predefined templates or user-provided 
 - **Package.xml Cleanup:** It iterates through 
 - **Object Property Removal:** The 
