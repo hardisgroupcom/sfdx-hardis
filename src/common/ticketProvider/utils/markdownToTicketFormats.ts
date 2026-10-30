@@ -203,6 +203,11 @@ function _wikiEscape(text: string): string {
     .replace(/-(?=-)/g, '\\-');
 }
 
+/** A `{code}` or `{noformat}` inside a block would end it early: its brace is escaped. */
+function _wikiCodeText(text: string): string {
+  return String(text ?? '').replace(/\{(code|noformat)/gi, '\\{$1');
+}
+
 function _wikiBlocks(tokens: Token[], listDepth: number, listPrefix = ''): string {
   const parts: string[] = [];
   for (const token of tokens as any[]) {
@@ -218,7 +223,7 @@ function _wikiBlocks(tokens: Token[], listDepth: number, listPrefix = ''): strin
         parts.push(`h${Math.min(Math.max(token.depth, 1), 6)}. ${_wikiInline(token.tokens)}\n\n`);
         break;
       case 'code':
-        parts.push(`${token.lang ? `{code:${token.lang}}` : '{noformat}'}\n${token.text}\n${token.lang ? '{code}' : '{noformat}'}\n\n`);
+        parts.push(`${token.lang ? `{code:${token.lang}}` : '{noformat}'}\n${_wikiCodeText(token.text)}\n${token.lang ? '{code}' : '{noformat}'}\n\n`);
         break;
       case 'blockquote':
         parts.push(`{quote}\n${_wikiBlocks(token.tokens, 0).trim()}\n{quote}\n\n`);
@@ -270,7 +275,8 @@ function _wikiInline(tokens: Token[] | undefined): string {
         case 'image':
           return `[${_wikiEscape(token.text || token.href)}|${token.href}]`;
         case 'codespan':
-          return `{{${_decodeEntities(token.text)}}}`;
+          // A brace inside would close the monospace span early and turn the rest into markup
+          return `{{${_decodeEntities(token.text).replace(/([{}])/g, '\\$1')}}}`;
         case 'br':
           return '\\\\\n';
         case 'text':
