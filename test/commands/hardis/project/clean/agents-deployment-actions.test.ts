@@ -161,8 +161,10 @@ describe('hardis:project:clean:agents-deployment-actions', () => {
     await fs.writeFile(path.join(tmpDir, 'config', '.sfdx-hardis.yml'), 'projectName: test\n');
     await fs.writeFile(path.join(tmpDir, 'config', 'branches', '.sfdx-hardis.main.yml'), 'packageNoOverwritePath: manifest/package-no-overwrite-main.xml\n');
     await fs.writeFile(path.join(tmpDir, 'config', 'branches', '.sfdx-hardis.uat.yml'), 'mergeTargets: [main]\n');
+    await fs.writeFile(path.join(tmpDir, 'config', 'branches', '.sfdx-hardis.preprod.yaml'), 'packageNoOverwritePath: manifest/package-no-overwrite-preprod.xml\n');
     expect(await listPackageNoOverwriteFiles(tmpDir)).to.deep.equal([
       path.join('manifest', 'package-no-overwrite-main.xml'),
+      path.join('manifest', 'package-no-overwrite-preprod.xml'),
       path.join('manifest', 'package-no-overwrite.xml'),
     ]);
   });

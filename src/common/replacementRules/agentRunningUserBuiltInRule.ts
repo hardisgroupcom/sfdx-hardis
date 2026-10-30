@@ -12,6 +12,7 @@ import { Org } from '@salesforce/core';
 import fs from '../utils/fsUtils.js';
 import { execSfdxJson, uxLog } from '../utils/index.js';
 import { soqlQuery } from '../utils/apiUtils.js';
+import { soqlString } from '../utils/metadataDepsUtils.js';
 import { t } from '../utils/i18n.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
 import { CONSTANTS } from '../../config/index.js';
@@ -251,8 +252,4 @@ async function createAgentUser(
     return { status: 'failed', username: null, message: res?.message || JSON.stringify(res?.result || {}) };
   }
   return { status: 'created', username };
-}
-
-function soqlString(value: string): string {
-  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }

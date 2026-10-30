@@ -6,6 +6,7 @@ import * as path from 'path';
 import fs from './fsUtils.js';
 import { git, uxLog } from './index.js';
 import { soqlQuery } from './apiUtils.js';
+import { soqlString } from './metadataDepsUtils.js';
 import { filterItemsMatchingNoOverwrite, parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
 import { resolvePackageNoOverwriteFile } from './deployUtils.js';
 import { PrePostCommand } from '../actionsProvider/actionsProvider.js';
@@ -364,7 +365,7 @@ export async function listPackageNoOverwriteFiles(projectRoot: string = process.
   const files = new Set<string>();
   const defaultFile = path.join('manifest', 'package-no-overwrite.xml');
   const legacyFile = path.join('manifest', 'packageDeployOnce.xml');
-  const configFiles = [path.join('config', '.sfdx-hardis.yml'), ...(await glob('config/branches/.sfdx-hardis.*.yml', { cwd: projectRoot, dot: true }))];
+  const configFiles = [path.join('config', '.sfdx-hardis.yml'), ...(await glob('config/branches/.sfdx-hardis.*.{yml,yaml}', { cwd: projectRoot, dot: true }))];
   let usesDefault = false;
   for (const configFile of configFiles) {
     const configPath = path.join(projectRoot, configFile);
@@ -497,7 +498,7 @@ async function warnWhenBotUserMissingInTargetOrg(agentNames: string[], conn: Con
   const usernames = [...new Set(botUsers.map((item) => item.botUser))];
   let existing: Set<string>;
   try {
-    const result = await soqlQuery(`SELECT Username FROM User WHERE Username IN (${usernames.map((username) => `'${username.replace(/'/g, "\\'")}'`).join(',')})`, conn);
+    const result = await soqlQuery(`SELECT Username FROM User WHERE Username IN (${usernames.map(soqlString).join(',')})`, conn);
     existing = new Set((result.records || []).map((record: any) => String(record.Username).toLowerCase()));
   } catch (e: any) {
     uxLog('log', commandThis, c.grey(`Unable to check the users of the agents: ${e?.message || e}`));
