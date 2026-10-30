@@ -272,13 +272,34 @@ export async function listAgentsChangedSince(fromCommit: string): Promise<string
  * refuses the whole deployment when it holds the active one. Returns true when the file was changed.
  */
 export async function ensureAgentVersionsInPackageNoOverwrite(packageNoOverwriteFile: string): Promise<boolean> {
-  const content: Record<string, string[]> = fs.existsSync(packageNoOverwriteFile) ? await parsePackageXmlFile(packageNoOverwriteFile) : {};
+  if (!fs.existsSync(packageNoOverwriteFile)) {
+    await fs.ensureDir(path.dirname(packageNoOverwriteFile));
+    await writePackageXmlFile(packageNoOverwriteFile, { [AGENT_DEFINITION_VERSION_TYPE]: ['*'] });
+    return true;
+  }
+  const content = await parsePackageXmlFile(packageNoOverwriteFile);
   if ((content[AGENT_DEFINITION_VERSION_TYPE] || []).includes('*')) {
     return false;
   }
-  content[AGENT_DEFINITION_VERSION_TYPE] = ['*'];
-  await fs.ensureDir(path.dirname(packageNoOverwriteFile));
-  await writePackageXmlKeepingVersion(packageNoOverwriteFile, content, packageNoOverwriteFile);
+  // Edited as text: the file is written by hand, and its comments explain each entry
+  const xml = await fs.readFile(packageNoOverwriteFile, 'utf8');
+  const nameTag = new RegExp(`^([ \\t]*)<name>\\s*${AGENT_DEFINITION_VERSION_TYPE}\\s*</name>`, 'm');
+  let updated: string;
+  if (nameTag.test(xml)) {
+    updated = xml.replace(nameTag, (line, indent) => `${indent}<members>*</members>\n${line}`);
+  } else {
+    const block = [
+      '  <types>',
+      '    <!-- A committed agent version never changes, and Salesforce refuses to deploy the active one: only new versions are deployed -->',
+      '    <members>*</members>',
+      `    <name>${AGENT_DEFINITION_VERSION_TYPE}</name>`,
+      '  </types>',
+      '',
+    ].join('\n');
+    const anchor = /^[ \t]*<version>/m.test(xml) ? /^[ \t]*<version>/m : /^[ \t]*<\/Package>/m;
+    updated = xml.replace(anchor, (line) => block + line);
+  }
+  await fs.writeFile(packageNoOverwriteFile, updated);
   return true;
 }
 

@@ -269,6 +269,35 @@ describe('agentUtils sources of the deployment actions', () => {
     expect(await fs.readFile(file, 'utf8')).to.contain('<version>62.0</version>');
   });
 
+  it('keeps the comments and the layout of package-no-overwrite.xml', async () => {
+    const file = path.join(tmpDir, 'package-no-overwrite.xml');
+    const original = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+      '  <!-- Certificates are a very sensitive data -->',
+      '  <types>',
+      '      <members>*</members>',
+      '      <name>Certificate</name>',
+      '  </types>',
+      '  <version>62.0</version>',
+      '</Package>',
+      '',
+    ].join('\n');
+    await fs.writeFile(file, original);
+    expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
+    const written = await fs.readFile(file, 'utf8');
+    expect(written.startsWith(original.split('  <version>')[0])).to.equal(true);
+    expect(written).to.contain('<!-- Certificates are a very sensitive data -->').and.contain('standalone="yes"').and.match(/<\/types>\n {2}<version>62.0<\/version>\n<\/Package>\n$/);
+    expect((await parsePackageXmlFile(file)).AiAgentDefinitionVersion).to.deep.equal(['*']);
+  });
+
+  it('adds the wildcard to an AiAgentDefinitionVersion entry that lists some versions', async () => {
+    const file = path.join(tmpDir, 'package-no-overwrite.xml');
+    await fs.writeFile(file, packageXml({ AiAgentDefinitionVersion: ['My_Agent#1'] }));
+    expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
+    expect((await parsePackageXmlFile(file)).AiAgentDefinitionVersion).to.deep.equal(['My_Agent#1', '*']);
+  });
+
   it('creates package-no-overwrite.xml when the project has none', async () => {
     const file = path.join(tmpDir, 'manifest', 'package-no-overwrite.xml');
     expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
