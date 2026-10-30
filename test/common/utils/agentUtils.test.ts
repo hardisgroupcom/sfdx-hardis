@@ -297,9 +297,39 @@ describe('agentUtils sources of the deployment actions', () => {
     await fs.writeFile(file, original);
     expect(await ensureAgentVersionsInPackageNoOverwrite(file)).to.equal(true);
     const written = await fs.readFile(file, 'utf8');
-    expect(written.startsWith(original.split('  <version>')[0])).to.equal(true);
-    expect(written).to.contain('<!-- Certificates are a very sensitive data -->').and.contain('standalone="yes"').and.match(/<\/types>\n {2}<version>62.0<\/version>\n<\/Package>\n$/);
+    // Sorted with the other types, above the comment of the type that follows
+    const [head, tail] = written.split('  <!-- Certificates are a very sensitive data -->\n');
+    expect(head).to.match(/<Package [^>]*>\n {2}<types>\n[\s\S]*<name>AiAgentDefinitionVersion<\/name>\n {2}<\/types>\n$/);
+    expect(tail).to.equal(original.split('  <!-- Certificates are a very sensitive data -->\n')[1]);
+    expect(written).to.contain('standalone="yes"');
     expect((await parsePackageXmlFile(file)).AiAgentDefinitionVersion).to.deep.equal(['*']);
+  });
+
+  it('adds AiAgentDefinitionVersion after the types that sort before it, and keeps the header comment on top', async () => {
+    const file = path.join(tmpDir, 'package-no-overwrite.xml');
+    const original = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+      '    <!-- The list every project starts with -->',
+      '    <types>',
+      '        <members>*</members>',
+      '        <name>AccountRelationshipShareRule</name>',
+      '    </types>',
+      '    <!-- Approval processes can contain usernames -->',
+      '    <types>',
+      '        <members>*</members>',
+      '        <name>ApprovalProcess</name>',
+      '    </types>',
+      '    <version>62.0</version>',
+      '</Package>',
+      '',
+    ].join('\n');
+    await fs.writeFile(file, original);
+    await ensureAgentVersionsInPackageNoOverwrite(file);
+    const written = await fs.readFile(file, 'utf8');
+    const names = [...written.matchAll(/<name>([^<]+)<\/name>/g)].map((match) => match[1]);
+    expect(names).to.deep.equal(['AccountRelationshipShareRule', 'AiAgentDefinitionVersion', 'ApprovalProcess']);
+    expect(written).to.contain('    </types>\n    <types>\n        <!-- An agent version').and.contain('    </types>\n    <!-- Approval processes can contain usernames -->\n    <types>');
   });
 
   it('adds the wildcard to an AiAgentDefinitionVersion entry that lists some versions', async () => {

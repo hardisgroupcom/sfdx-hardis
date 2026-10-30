@@ -289,16 +289,19 @@ export async function ensureAgentVersionsInPackageNoOverwrite(packageNoOverwrite
   if (nameTag.test(xml)) {
     updated = xml.replace(nameTag, (line, indent) => `${indent}<members>*</members>\n${line}`);
   } else {
+    const insertAt = findSortedTypeInsertIndex(xml, AGENT_DEFINITION_VERSION_TYPE);
+    // Same indentation as the types of the file
+    const indent = /^([ \t]*)<types>/m.exec(xml)?.[1] ?? '  ';
+    const innerIndent = /^([ \t]*)<name>/m.exec(xml)?.[1] ?? `${indent}  `;
     const block = [
-      '  <types>',
-      '    <!-- An agent version is deployed only when the target org does not have it yet: a committed version never changes, and Salesforce refuses to overwrite the active one -->',
-      '    <members>*</members>',
-      `    <name>${AGENT_DEFINITION_VERSION_TYPE}</name>`,
-      '  </types>',
+      `${indent}<types>`,
+      `${innerIndent}<!-- An agent version is deployed only when the target org does not have it yet: a committed version never changes, and Salesforce refuses to overwrite the active one -->`,
+      `${innerIndent}<members>*</members>`,
+      `${innerIndent}<name>${AGENT_DEFINITION_VERSION_TYPE}</name>`,
+      `${indent}</types>`,
       '',
     ].join('\n');
-    const anchor = /^[ \t]*<version>/m.test(xml) ? /^[ \t]*<version>/m : /^[ \t]*<\/Package>/m;
-    updated = xml.replace(anchor, (line) => block + line);
+    updated = xml.slice(0, insertAt) + block + xml.slice(insertAt);
   }
   await fs.writeFile(packageNoOverwriteFile, updated);
   return true;
@@ -586,6 +589,24 @@ async function assertNoActiveVersionOverwritten(packageXmlFile: string, orgVersi
   if (unprotected.length > 0) {
     throw new SfError(t('agentActiveVersionInDeployment', { versions: unprotected.map((item) => item.member).join(', '), docUrl: AGENT_DOC_URL }));
   }
+}
+
+// Start of the line where a new <types> of typeName keeps the types sorted by name, as in a package.xml
+// built by sfdx-hardis: before the first type that sorts after it, and above the comment that sits on that type
+function findSortedTypeInsertIndex(xml: string, typeName: string): number {
+  const typesBlock = /^[ \t]*<types>[\s\S]*?<name>\s*([^<\s]+)\s*<\/name>[\s\S]*?<\/types>/gm;
+  for (const match of xml.matchAll(typesBlock)) {
+    if (match[1] > typeName) {
+      const before = xml.slice(0, match.index);
+      const commentStart = before.lastIndexOf('<!--');
+      const lineStart = before.lastIndexOf('\n', commentStart) + 1;
+      const isOwnComment =
+        commentStart >= 0 && /^[ \t]*$/.test(before.slice(lineStart, commentStart)) && /^<!--[\s\S]*?-->[ \t]*\n$/.test(before.slice(commentStart));
+      return isOwnComment ? lineStart : match.index!;
+    }
+  }
+  const end = /^[ \t]*<version>/m.exec(xml) || /^[ \t]*<\/Package>/m.exec(xml);
+  return end ? end.index : xml.length;
 }
 
 // "Agent#n" of every AiAgentDefinitionVersion folder of the project
