@@ -1368,11 +1368,10 @@ Traps:
   developer orgs of 2026-10-10 (one day) expired on 10-12 and still took the GitHub and GitLab
   backpromotes of 10-14 until 04:35; at 06:05 the Azure one got `INVALID_CROSS_REFERENCE_KEY:
   invalid cross reference id` on its first deploy, and every SOQL after it, with `sf org display`
-  saying `Deleted`. Salesforce deletes lazily. Before a run, read `expirationDate` in
-  `sf org list --json` and treat a past date as a dead org: `sf org logout --target-org <alias>
-  --no-prompt` so that `backpromote-setup.sh` creates a new one (`sf org display` still exits 0
-  on a deleted org, so the setup alone does not notice), and write the new username where
-  `DEV_ORG` is read from. Count the `ActiveScratchOrgs` and `DailyScratchOrgs` limits first.
+  saying `Deleted`. Salesforce deletes lazily. `backpromote-setup.sh` now reads the status of
+  `sf org display --json` (which still exits 0 on a deleted org) and logs out an org that is not
+  Active or Connected, then creates a new one: before that fix, the setup of 2026-10-31 reset a dead
+  org and stopped on HTTP 420. Write the new username where `DEV_ORG` is read from. Count the `ActiveScratchOrgs` and `DailyScratchOrgs` limits first.
 - **The e2e Chrome profile logs out of Azure DevOps and Bitbucket on its own.** When it is, the
   visual check reports every comment "not found on the page" and the page reached is a sign-in URL
   (`login.microsoftonline.com`, `vssps.visualstudio.com/_signin`), or, on Bitbucket, the Pull
@@ -1522,6 +1521,27 @@ Traps:
   takes a share of the jobs at random. Read the job trace before blaming the branch: `ENOSPC`,
   `No space left on device`. Do not pause the runner (shared infrastructure); rerun the section
   later, or record the checks as not covered.
+- **The Azure hosted agent disk fills up at the link step.** On 2026-10-31 the disk was 95 % full
+  after `yarn install`, and `sf plugins link` ran `yarn install` again and failed. The link step
+  now cleans the yarn cache and runs `sf plugins link --no-install`. A link failure on another
+  provider with `ENOSPC` is the same trap.
+- **A push to Azure DevOps can fail once for no reason** (`Recv failure: Connection was reset`).
+  The story helper of section 6 used to go on without its branch, and three checks of g2 failed
+  later for a missing branch. `story()` now retries the push three times and logs each failure in
+  `story-push.err`. Read that file before calling a g2 failure a finding.
+- **GitHub Actions stops starting jobs when the account billing fails.** From about 03:50 UTC on
+  2026-10-31 every job of the account's private repositories failed in 3 seconds with no step:
+  "The job was not started because recent account payments have failed or your spending limit
+  needs to be increased". Section 6quinquies then records FAIL for jobs that never ran. Read the
+  annotation of one failed run before blaming the branch; public repositories are not affected.
+  Record the checks as not covered.
+- **A memory stop of Claude Code leaves the scripts running.** The background shell is gone, its
+  watcher too, but the bash script and its children go on and keep writing their output file.
+  Watch the output file (a marker line, or no change for 40 minutes), never a process list: a
+  `ps | grep` or a PowerShell `Get-CimInstance` filter on the command line matches the watcher
+  itself. A chain of two runs in one subshell stops after the first: the second one never starts.
+- **The visual check can take a picture before the banner images are loaded** (seen once on Azure
+  DevOps). Run it again for that comment type with `--only <type>` before calling it a finding.
 
 ## 7bis. Checking the "one place in the diagram" rule
 

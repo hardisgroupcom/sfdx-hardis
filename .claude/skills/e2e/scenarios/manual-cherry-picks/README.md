@@ -56,6 +56,12 @@ Then merge uat into preprod with a merge request (merge commit) and run the pipe
 
 ## Traps
 
+- The merge request of phase B must keep `uat`: pass `remove_source_branch=false` when creating it
+  (the project default deletes the source branch on merge). Without `uat`, every later
+  `list-candidates` fails with `couldn't find remote ref uat`.
+- A stale `oclif.manifest.json` in the working copy (gitignored) makes the linked `sf` warn
+  "Mismatched version" and may hide new commands: regenerate it with
+  `node node_modules/oclif/bin/run.js manifest` after a release.
 - GitLab answers 400 to a merge request opened right after the push of its branch: `mr_open` retries.
 - The state file lives next to the clone, never inside: a `git add -A` of a story would commit it.
 - A Windows path inside a `python -c` source breaks on its backslashes: pass paths as arguments.
