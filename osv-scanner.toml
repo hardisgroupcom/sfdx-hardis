@@ -58,3 +58,22 @@ reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsf
 [[IgnoredVulns]]
 id = "GHSA-gcqx-w48m-w2h4"
 reason = "deepmerge 4.3.1 (latest, no fix) is transitive through bitbucket 2.12.0, which only merges its endpoint defaults with request options built by sfdx-hardis, never API responses."
+
+# https://github.com/advisories/GHSA-g3hv-75wg-m249 (CVE-2026-118764)
+# minimatch < 11.0.1: a crafted glob pattern matched with optimizationLevel >= 2 makes the preprocessing
+# grow and burn CPU and memory. Availability only, fixed in 11.0.1 with no backport to 3.x / 5.x / 9.x / 10.x.
+# The copies come in through glob, eslint and other dependencies that declare the old majors. The patterns
+# sfdx-hardis matches come from its own code and from the project's own config files, never from an
+# attacker. Remove once the dependencies move to minimatch 11. Added 2026-10-31.
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+reason = "minimatch DoS needs an attacker-supplied pattern; sfdx-hardis matches only patterns from its own code and the project's own config. Fixed only in 11.x, two majors past the ranges its dependencies declare."
+
+# https://github.com/advisories/GHSA-3g3m-2fjr-6pw4 (CVE-2026-118773)
+# glob 9.0.0 to 14.0.1: an async walk aborted through the signal option keeps reading directories in the
+# background. sfdx-hardis never passes a signal to glob (its AbortSignal uses are all fetch calls).
+# The fix is glob 14, which moves to minimatch 11 and changes matching in edge cases across the 81
+# glob calls of sfdx-hardis: upgrade it in its own change. Added 2026-10-31.
+[[IgnoredVulns]]
+id = "GHSA-3g3m-2fjr-6pw4"
+reason = "glob walk not stopped on abort: sfdx-hardis never aborts a glob walk. The fix is glob 14, whose matching changes need their own upgrade."
