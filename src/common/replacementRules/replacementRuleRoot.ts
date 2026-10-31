@@ -22,6 +22,8 @@ export interface ReplacementRulePrepareOptions {
   conn?: any;
   targetUsername?: string | null;
   commandThis?: any;
+  // Package.xml files of the deployment. None: every file of the package directories
+  packageXmlFiles?: string[];
 }
 
 export abstract class ReplacementRuleRoot {

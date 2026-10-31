@@ -6,6 +6,7 @@ import c from 'chalk';
 import fs from '../../../common/utils/fsUtils.js';
 import { open } from '../../../common/utils/openUtils.js';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import {
   createTempDir,
   execCommand,
@@ -663,6 +664,8 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
     if (!this.noClean) {
       const gitStatusFilesBeforeClean = (await git().status()).files.map((file) => file.path);
       uxLog("other", this, JSON.stringify(gitStatusFilesBeforeClean, null, 2));
+      // A cleaning can write into a file that was already modified (the draft deployment actions for example)
+      const contentBeforeClean = await this.hashFiles(gitStatusFilesBeforeClean);
       // References cleaning: Flow cleanings are restricted to the Flows of the delta when it is known
       const cleanReferencesArgs = ['--type', 'all'];
       if (this.expertMode) {
@@ -695,9 +698,14 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
       // Manage git after cleaning
       const gitStatusAfterClean = await git().status();
       uxLog("other", this, JSON.stringify(gitStatusAfterClean, null, 2));
+      const contentAfterClean = await this.hashFiles(gitStatusFilesBeforeClean);
+      const modifiedBeforeAndCleaned = gitStatusFilesBeforeClean.filter((file) => contentBeforeClean.get(file) !== contentAfterClean.get(file));
       const cleanedFiles = gitStatusAfterClean.files
-        .filter((file) => !gitStatusFilesBeforeClean.includes(file.path))
+        .filter((file) => !gitStatusFilesBeforeClean.includes(file.path) || modifiedBeforeAndCleaned.includes(file.path))
         .map((file) => normalizeFileStatusPath(file.path, config));
+      if (modifiedBeforeAndCleaned.length > 0 && !this.noGit) {
+        uxLog("warning", this, c.yellow(t('cleaningCommitsFilesModifiedBefore', { files: modifiedBeforeAndCleaned.join(', ') })));
+      }
       if (cleanedFiles.length > 0) {
         if (!this.noGit) {
           try {
@@ -727,6 +735,20 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
         }
       }
     }
+  }
+
+  // Content hash of each file, null for a file that does not exist (deleted)
+  private async hashFiles(files: string[]): Promise<Map<string, string | null>> {
+    const hashes = new Map<string, string | null>();
+    for (const file of files) {
+      try {
+        const stat = await fs.stat(file);
+        hashes.set(file, stat.isFile() ? createHash('sha1').update(await fs.readFile(file)).digest('hex') : 'directory');
+      } catch {
+        hashes.set(file, null);
+      }
+    }
+    return hashes;
   }
 
   private async buildDeploymentPlan() {

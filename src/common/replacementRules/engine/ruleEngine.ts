@@ -182,7 +182,7 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
 
   uxLog('action', commandThis, c.cyan(t('replacementRulesApplying', { target: target.label })));
   for (const item of resolved) {
-    await item.handler.prepare({ target, conn: options.conn, targetUsername: options.targetUsername, commandThis });
+    await item.handler.prepare({ target, conn: options.conn, targetUsername: options.targetUsername, commandThis, packageXmlFiles: options.packageXmlFiles });
   }
   const files = await listCandidateFiles(options.packageXmlFiles, commandThis);
   for (const file of files) {
