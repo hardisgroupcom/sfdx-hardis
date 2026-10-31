@@ -41,6 +41,7 @@ import { isDeploymentActionsDisabled } from '../../../../common/utils/prePostCom
 import { assertNoPromotionConflictMarkers, assertPromotionBranchIsNotDeployed } from '../../../../common/utils/promotionCreateUtils.js';
 import { FlowDeletionHandler } from '../../../../common/utils/flowDeletionHandler.js';
 import { t } from '../../../../common/utils/i18n.js';
+import { checkAgentDeployment } from '../../../../common/utils/agentUtils.js';
 import { getTargetOrg, isFlagTyped, resolveTargetUsername } from '../../../../common/utils/targetOrgUtils.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -93,6 +94,21 @@ This will activate delta deployments only between minor and major branches (majo
 
 If you want to force the delta deployment into major orgs (ex: preprod to prod), this is not recommended but you can use env variable ALWAYS_ENABLE_DELTA_DEPLOYMENT=true
 
+### Agentforce agents
+
+When the deployment contains \`AiAgentDefinition\` or \`AiAgentDefinitionVersion\`:
+
+- The target org must be on API 68.0 or above, else the deployment stops before anything is sent, with a link to the way to keep the previous types on API 67.0.
+- A deployment at API 68.0 or above that holds agents in the format before API 68.0 (\`GenAiPlannerBundle\`, \`Bot\` and \`BotVersion\` of an agent) stops before anything is sent: Salesforce refuses the whole deployment. Run \`hardis:org:retrieve:agent\` for these agents to move them.
+- When the deployment API version (the lowest of the org, \`sourceApiVersion\` of \`sfdx-project.json\` and the package.xml version) is below 68.0, a warning asks to set \`sourceApiVersion\` and the package.xml version to 68.0: Salesforce refuses the agent types below it.
+- An agent deployed as a version only (a delta often holds just the new version) stops the deployment when the target org does not have the agent yet: Salesforce refuses the first deployment of an agent without its \`AiAgentDefinition\`.
+- A version that is active in the target org stops the deployment, unless package-no-overwrite.xml protects it: Salesforce refuses to edit the active version. The cleaning \`autoAddAgentsDeploymentActions\` of [hardis:work:save](${CONSTANTS.DOC_URL_ROOT}/hardis/work/save/) adds \`AiAgentDefinitionVersion\` to package-no-overwrite.xml, so only the new versions are sent.
+- A warning lists the agent versions the target org has and the project does not: they were committed in that org, and agent versions must be committed in a developer sandbox only.
+- The running user of a service agent (\`botUser\`, \`default_agent_user\`) is a user of the target org: the built-in replacement rule \`builtin-agent-running-user\` writes it in the deployed files. It never creates a user: an \`agent-running-user\` deployment action does.
+- The job never changes the package.xml or the org for agents by itself. Agent versions are activated by \`agent-activate\` actions and running users created by \`agent-running-user\` actions, that the cleaning \`autoAddAgentsDeploymentActions\` writes in the Pull Request deployment actions.
+
+See [Agentforce agents in CI/CD](${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/).
+
 ### Smart Deployments Tests
 
 Not all metadata updates can break test classes, use Smart Deployment Tests to skip running test classes if ALL the following conditions are met:
@@ -109,6 +125,9 @@ Activate Smart Deployment tests with:
 Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-separated list on env var NOT_IMPACTING_METADATA_TYPES)
 
 - ActionLinkGroupTemplate
+- AiAgentDefinition
+- AiAgentDefinitionVersion
+- AiAuthoringBundle
 - AnalyticSnapshot
 - AppMenu
 - Audience
@@ -675,6 +694,15 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     // Compute and apply delta if required
     await this.handleDeltaDeployment(deltaFromArgs, targetUsername, currentGitBranch);
 
+    // Replacement rules use the values of the org the deployment goes to: an explicit --target-branch
+    // (which also selects the org through CONFIG_BRANCH), else the target branch of the Pull Request in
+    // a check job, else the current branch in a deployment job
+    const replacementPrInfo = process.env.FORCE_TARGET_BRANCH ? null : await GitProvider.getPullRequestInfo({ useCache: true });
+    const replacementTargetBranch = process.env.FORCE_TARGET_BRANCH || replacementPrInfo?.targetBranch || currentGitBranch || null;
+
+    // Agents: stop before anything is sent when Salesforce would refuse the deployment because of an agent
+    await checkAgentDeployment(this.packageXmlFile, this.targetOrg.getConnection(), this, replacementTargetBranch);
+
     // Take Flow deletions out of the metadata deploy (they run as a Tooling API step outside it)
     this.flowDeletion = new FlowDeletionHandler({
       commandThis: this,
@@ -698,13 +726,7 @@ If testlevel=RunRepositoryTests, can contain a regular expression to keep only c
     this.smartDeployOptions.deferSuccessPullRequestComment =
       !this.checkOnly && this.flowDeletion.hasPostDeployDeletions;
 
-    // Replacement rules use the values of the org the deployment goes to: an explicit --target-branch
-    // (which also selects the org through CONFIG_BRANCH), else the target branch of the Pull Request in
-    // a check job, else the current branch in a deployment job
-    const replacementPrInfo = process.env.FORCE_TARGET_BRANCH ? null : await GitProvider.getPullRequestInfo({ useCache: true });
-    this.smartDeployOptions.replacementRules = {
-      targetBranch: process.env.FORCE_TARGET_BRANCH || replacementPrInfo?.targetBranch || currentGitBranch || null,
-    };
+    this.smartDeployOptions.replacementRules = { targetBranch: replacementTargetBranch };
 
     // Process deployment (or deployment check)
     const { messages, quickDeploy, deployXmlCount, deploymentMetrics } = await smartDeploy(

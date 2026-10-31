@@ -156,6 +156,17 @@ export const BUILT_IN_REPLACEMENT_RULES: BuiltInReplacementRule[] = [
     handler: 'unknownUserPermissions',
     source: 'PermissionSet describe of the target org (Permissions<Name> fields), else the list of userPermissionsByApiVersion.ts',
   },
+  // Org specific values
+  {
+    id: 'builtin-agent-running-user',
+    description: 'Running user of the Agentforce service agents (botUser, and default_agent_user of the authoring bundles): the user of the target org created by the agent-running-user deployment action',
+    files: ['**/aiAgents/*.aiAgentDefinition-meta.xml', '**/aiAuthoringBundles/*/*.agent'],
+    xmlPaths: ['AiAgentDefinition/botUser'],
+    anyApiVersion: true,
+    defaultEnabled: true,
+    handler: 'agentRunningUser',
+    source: 'Users of the target org (Einstein Agent User profile), created by the agent-running-user deployment action with sf org create agent-user',
+  },
   // Settings no longer accepted
   {
     id: 'builtin-aura-static-res-pref',

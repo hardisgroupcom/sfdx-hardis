@@ -2111,7 +2111,7 @@ async function publishDeploymentComponentsReport(check: boolean): Promise<void> 
 // The package-no-overwrite.xml file of the deployment (or its legacy name packageDeployOnce.xml), possibly
 // overridden for a branch with packageNoOverwritePath / PACKAGE_NO_OVERWRITE_PATH. Null when there is none
 // or when SKIP_PACKAGE_DEPLOY_ONCE=true.
-async function resolvePackageNoOverwriteFile(): Promise<string | null> {
+export async function resolvePackageNoOverwriteFile(): Promise<string | null> {
   if (process.env.SKIP_PACKAGE_DEPLOY_ONCE === 'true') {
     return null;
   }
