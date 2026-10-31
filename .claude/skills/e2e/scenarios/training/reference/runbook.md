@@ -212,6 +212,19 @@ Traps that cost earlier runs time:
   opening an **Erase** link hard-deletes at once (its token is the confirmation). Handover Item
   and Panel Batch answered "internal server error" to Erase and did not block the seed; Installation
   is the one that matters.
+- **Metadata that is not the course's can block the teardown** (2026-10-31). Something outside the
+  course had deployed a whole `Meter__c` / `Meter_Reading__c` project into `helios-dev` on
+  2026-10-16, after that day's walk. Its flow `Meter_Reading_After_Save` triggers on
+  `Meter_Reading__c` and never names Installation, yet Salesforce listed it as a dependency of
+  `Installation__c`, and the destructive deploy failed on *This custom object is used by another
+  feature ... Flow Version 301...*. The deploy rolls back whole: every field of the previous walk
+  (`Panels_Required__c`, `Crew_Notes__c`, the Level 2 ones) stays, and Lab 1.4 then cannot create
+  its field. Ask Salesforce instead of guessing: `SELECT MetadataComponentType,
+  MetadataComponentName FROM MetadataComponentDependency WHERE RefMetadataComponentId = '<durable id
+  of Installation__c>'` (tooling), and anything not in the `REMOVE` list of
+  `scripts/training/teardown.mjs` is the blocker. Save its definition first (`SELECT Metadata FROM
+  Flow WHERE Id = ...`), set `FlowDefinition` `activeVersionNumber` to 0, delete that `Flow`
+  version, and run the teardown again. Leave the rest of the foreign metadata alone.
 - **After Lab 3.1, a teardown also takes the CI login away** (2026-09-26). The teardown deletes
   the External Client App the JWT login uses, and **Reset this level** keeps the JWT pipeline
   configuration, so every check on `integration` then fails at *client identifier invalid*.
@@ -404,6 +417,13 @@ node scripts/review-lab.mjs 1.4
 It prints, for each image in reading order, the file to open, the pill numbers drawn on it, the pill
 numbers the surrounding text refers to, and that text. **Open every image** with the Read tool and
 compare it to what the product did in pass B.
+
+Since the labs moved to the step template (Goal, Do, Why, You should now see; course #211), many
+pills are cited in the **Why** or **You should now see** block under the picture, which
+`review-lab.mjs` does not count as part of the step: it prints `MISMATCH: shows N which the step
+never mentions` for them (seven pictures of Level 1 on 2026-10-31, `work-new-completed` among
+them). `scripts/verify/check-pills.mjs` in the course is the judge; read the blocks below the
+picture before calling a MISMATCH a finding.
 
 What has actually gone wrong here before, none of it caught by a number check:
 
@@ -634,6 +654,41 @@ Level 2 at browser fidelity, 2026-10-16 (helpers in `scripts/walk/`):
   three stages, not always the whole incoming file: compare the two before replacing a click
   with `git checkout --theirs`.
 
+Level 2 at fidelity 3 for every Setup step, 2026-10-31 (under 2 GB free, no Chrome):
+
+- **The Level 3 start branch is the end state of Level 2.** `git fetch upstream
+  training/start-level-3` and keep the commit under a private ref (`git update-ref
+  refs/e2e/l3start <sha>`): its flows, fields, objects and permission set blocks are what the
+  Setup steps of Labs 2.2 to 2.9 produce. Deploy them from a throwaway project
+  (`--ignore-conflicts`), then retrieve from the org as the lab says, so the commit still comes
+  from the org. Three differences to expect: the Lab 2.2 flow also changes the description of the
+  `Crew_Too_Small` decision (the flow diff comment reads 6 properties, the picture 5); the Lab 2.7
+  flow is the resolved one, so "your change alone" is that file minus `Crew_Over_Cap` and
+  `Bring_Crew_Back_To_Cap`; the start state has no `Handover_Item__c` tab, which Lab 2.9 asks
+  for: write it (`customObject` true, any `motif`).
+- **Field security as a learner sets it is a `FieldPermissions` row** on the permission set the
+  Profile owns (`SELECT Id FROM PermissionSet WHERE IsOwnedByProfile = true AND Profile.Name =
+  '...'`). The Auto retrieve of the Profile (`sf hardis:mdapi:read --active-only`) then carries the
+  grant, although `SourceMember` lists no Profile row for it.
+- **Foreign metadata in `helios-dev` reaches the whole Profile of Lab 2.6** (see L1-E1). A
+  `Helios Crew` retrieved whole names the layouts and tabs of `Energy_Contract__c`, `Meter__c` and
+  `Meter_Reading__c`, which no other org has: the Pull Request went red on *no CustomTab named
+  Energy_Contract__c*, the first of six blocks. Compare in one pass rather than one deployment
+  each: `sf org list metadata -m CustomTab` and `-m Layout` on `helios-integration`, against the
+  `<tab>` and `<layout>` lines of the file. Removing the blocks on the story branch is the lab's own
+  troubleshooting, and the check went green.
+- **The Apex Tests card reads Failed on `helios-dev`** because of a foreign test,
+  `MeterReadingAfterSaveFlow_Test`, which needs the flow version deleted to let the Level 1
+  teardown pass. The course's classes all pass; read the class rows, not the outcome.
+- **MegaLinter's robot commit takes the checks off the head of the Pull Request** (Lab 2.4,
+  `export.json` without its last line). A loop that waits for the head's checks then spins on an
+  empty list: fetch, pull the `chore(megalinter): apply linters fixes` commit as the lab says, and
+  push. In the capstone, an action committed and published before MegaLinter ends on the first
+  push leaves the two runs queued one behind the other: pending is not missing.
+- **A Git Bash heredoc eats the backslashes of a regular expression** (`\\s` reaches node as
+  `s`) and the replace silently matches nothing. Write a script that holds a regex with the Write
+  tool.
+
 ## 7. Level 3, eleven labs
 
 The release manager. This is the level where the course touches the orgs and the repository hardest.
@@ -835,6 +890,34 @@ Level 3 straight after Level 2, Labs 3.1 to 3.6, on 2026-10-16 (helpers in `scri
 - **Tickets travel with the commit, not with the branch.** A squashed feature whose single commit
   message has no `US-nnn` loses its ticket once GitHub deletes the branch: the promotion comment of
   Lab 3.5 counted 16 tickets without US-050 (fixed in Lab 3.1, which now commits as US-050).
+
+Level 3 straight after Level 2 at fidelity 2 and 3, 2026-10-31 (under 2 GB free, no Chrome):
+
+- **Developer Edition orgs have no layout for `ContactPointOttSvc` and
+  `SecurityDefenseActionEventStore`** although they have both objects; the scratch orgs have both
+  layouts. A whole `Helios Crew` from Lab 2.6 names them, and the seed of `helios-preprod` stopped on
+  the first. This answers the "Age" question above: a Developer Edition org does not get them. It is
+  row 3 of Lab 2.6's table, so the fix is a **Fix** story deleting the two `<layoutAssignments>`
+  blocks. Compare in one pass with `sf org list metadata -m Layout` on both Developer Edition orgs
+  against the `<layout>` lines of the Profile, and validate with the seed's own command plus
+  `--dry-run` before publishing.
+- **The seed runs on the branch you are on.** Seeding before Lab 3.1 step 4 means seeding from
+  `integration`; seeding from a story branch deploys that branch.
+- **The org list of `work:new` at Level 3 has no `helios-dev` line.** **Current org** is
+  `helios-prod` from Lab 3.1 on (Add or Reconnect a Major Org sets it as the default). The retrofit
+  stories of Labs 3.7 and 3.10 reach `helios-dev` with **Scratch org** then **Reuse scratch org
+  helios-dev**: `panel.mjs` rules `{"q":"Salesforce org do you want to work in","choice":"Scratch
+  org"}` and `{"q":"Select a scratch org for branch","choice":"Reuse scratch org helios-dev"}`.
+- **The Lab 3.7 retrofit merge of `origin/main` is a fast-forward** when everything in `integration`
+  was released: there is no merge commit to make, the branch simply moves to `main`.
+- **A private monitoring repository needs GitHub Actions minutes.** On 2026-10-31 GitHub refused to
+  start the first monitoring job: *recent account payments have failed or your spending limit needs
+  to be increased*, an account billing state, while the public fork ran normally. The checks of
+  Lab 3.8 can be run locally instead (`sf hardis:org:monitor:limits`,
+  `sf hardis:org:diagnose:unsecure-connected-apps`, with `--agent` and `-o helios-prod`); the backup
+  and the email stay not covered. `Check my work` for Lab 3.8 only reads `monitoringRepository`.
+- **Never start `prflow.sh` or `promo.sh` with `&` in a tool call**, and expect the first merge of
+  a promotion into `main` to be refused while Mega-Linter of the head still runs: the script retries.
 
 ### Lab 3.10: the five stories, the conflict, the retrofit
 
