@@ -18,22 +18,22 @@ ___
 
 ## Counts
 
-| Section                                                    | Checks                            | OK  | FAIL | Not covered                    |
-|------------------------------------------------------------|-----------------------------------|-----|------|--------------------------------|
-| 3, 4 and 4bis                                              | 42                                | 42  | 0    |                                |
-| 6: edge cases, g1 to g6                                    | 47                                | 47  | 0    |                                |
-| 6quater, developer org included                            | 21                                | 21  | 0    |                                |
-| 6sexies, I1 to I10                                         | 24                                | 24  | 0    |                                |
-| Visual fixtures (VE, VG)                                   | 2                                 | 2   | 0    |                                |
-| 6bis: backpromote B0 to B16, C1 to C4 (`gl-24`)            | 63                                | 63  | 0    |                                |
-| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-gl-7`)          | 22                                | 21  | 0    | W8 SKIP by design (GitHub only) |
-| 4ter: single Pull Request window (`gl-25`)                 | 49 Pull Requests                  | 49  | 0    |                                |
-| 5bis: comment audit (`gl-25`)                              | 1161 checks over 55 Pull Requests | all | 0    |                                |
-| 5bis: comment audit (`gl-24`, backpromote)                 | 88 checks over 11 Pull Requests   | all | 0    |                                |
-| 5quater: visual check (`gl-25`)                            | 11 types, 1 warning               | 11  | 0    |                                |
-| 5quater: visual check (`gl-24`, Backpromotes comment)      | 1 type                            | 1   | 0    |                                |
-| 7bis: single place in the diagram (`gl-25`)                | 1                                 | 1   | 0    |                                |
-| 7ter: flag-off A/B                                         | -                                 |     |      | not run (branch under test is `main`) |
+| Section                                               | Checks                            | OK  | FAIL | Not covered                           |
+|-------------------------------------------------------|-----------------------------------|-----|------|---------------------------------------|
+| 3, 4 and 4bis                                         | 42                                | 42  | 0    |                                       |
+| 6: edge cases, g1 to g6                               | 47                                | 47  | 0    |                                       |
+| 6quater, developer org included                       | 21                                | 21  | 0    |                                       |
+| 6sexies, I1 to I10                                    | 24                                | 24  | 0    |                                       |
+| Visual fixtures (VE, VG)                              | 2                                 | 2   | 0    |                                       |
+| 6bis: backpromote B0 to B16, C1 to C4 (`gl-24`)       | 63                                | 63  | 0    |                                       |
+| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-gl-7`)     | 22                                | 21  | 0    | W8 SKIP by design (GitHub only)       |
+| 4ter: single Pull Request window (`gl-25`)            | 49 Pull Requests                  | 49  | 0    |                                       |
+| 5bis: comment audit (`gl-25`)                         | 1161 checks over 55 Pull Requests | all | 0    |                                       |
+| 5bis: comment audit (`gl-24`, backpromote)            | 88 checks over 11 Pull Requests   | all | 0    |                                       |
+| 5quater: visual check (`gl-25`)                       | 11 types, 1 warning               | 11  | 0    |                                       |
+| 5quater: visual check (`gl-24`, Backpromotes comment) | 1 type                            | 1   | 0    |                                       |
+| 7bis: single place in the diagram (`gl-25`)           | 1                                 | 1   | 0    |                                       |
+| 7ter: flag-off A/B                                    | -                                 |     |      | not run (branch under test is `main`) |
 
 Real CI: 15 jobs, all in GitLab CI, none simulated (`ci-jobs.tsv`), queue times of 0 to 3 seconds.
 

@@ -22,22 +22,22 @@ no reset and are appended below when they run.
 
 ## Versions under test
 
-| Thing              | Version                                                                                                         |
-|--------------------|-----------------------------------------------------------------------------------------------------------------|
-| sfdx-hardis        | 8.21.0, linked (`sf plugins link`) to `C:\git\sfdx-hardis` on `e2e/night-run-2026-10-31` (`main` `da92636cb` plus `.claude` changes only) |
-| vscode-sfdx-hardis | `main` at `5ed4c6d4`, `yarn compile` done; the lab driver was not run (memory)                                  |
-| Course             | `main` at `bd2fb19`; fixes on `fix/e2e-2026-10-31` (`66e26948`)                                                 |
-| CI image           | `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest`, released image, no override. MegaLinter 10.1.0              |
+| Thing              | Version                                                                                                                                                                              |
+|--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sfdx-hardis        | 8.21.0, linked (`sf plugins link`) to `C:\git\sfdx-hardis` on `e2e/night-run-2026-10-31` (`main` `da92636cb` plus `.claude` changes only)                                            |
+| vscode-sfdx-hardis | `main` at `5ed4c6d4`, `yarn compile` done; the lab driver was not run (memory)                                                                                                       |
+| Course             | `main` at `bd2fb19`; fixes on `fix/e2e-2026-10-31` (`66e26948`)                                                                                                                      |
+| CI image           | `ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest`, released image, no override. MegaLinter 10.1.0                                                                                   |
 | Published site     | `main` at `bd2fb19`, the same text as the course clone. Pass A read the lab text with that equivalence, and fetched the published Lab 1.1 page to check how the indented tips render |
 
 ## Environment
 
-| Item          | State                                                                                                                                                                                 |
-|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Fork          | `nvuillam/sfdx-hardis-training`, **reset, not recreated** (`reset-fork.sh` closed #64 of the 2026-10-16 walk). First Pull Request of this walk: #85                                    |
+| Item          | State                                                                                                                                                                                                                                 |
+|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Fork          | `nvuillam/sfdx-hardis-training`, **reset, not recreated** (`reset-fork.sh` closed #64 of the 2026-10-16 walk). First Pull Request of this walk: #85                                                                                   |
 | Orgs          | `helios-prod` (Dev Hub, DailyScratchOrgs 6/6, API 14977/15000 at the start), `helios-preprod`, `helios-dev` torn down; `helios-integration` and `helios-uat` had expired and were recreated by `init` (2 of the 6 daily scratch orgs) |
-| Learner clone | `C:/git/training-run`, cloned by `reset-fork.sh` at `bd2fb19`                                                                                                                         |
-| Browser       | the e2e Chrome profile (`%LOCALAPPDATA%\sfdx-hardis-e2e-chrome`) started by this run on port 9222 (PID 23444), **not signed in to GitHub**, Salesforce through frontdoor URLs only; stopped at the end |
+| Learner clone | `C:/git/training-run`, cloned by `reset-fork.sh` at `bd2fb19`                                                                                                                                                                         |
+| Browser       | the e2e Chrome profile (`%LOCALAPPDATA%\sfdx-hardis-e2e-chrome`) started by this run on port 9222 (PID 23444), **not signed in to GitHub**, Salesforce through frontdoor URLs only; stopped at the end                                |
 
 Teardown, with what it cost:
 
@@ -56,15 +56,15 @@ than 3 GB beside the user's VS Code, so every VS Code step ran at fidelity 2.
 Fidelity: **1** lab driver, **2** headless panel (`panel.mjs`, `panel-node.mjs`), **3** direct
 `sf` / `git` / `gh`, **browser** the real Salesforce page over CDP.
 
-| Lab | Fidelity                                                                                                         | A  | B                    | C                                 | Findings            |
-|-----|------------------------------------------------------------------------------------------------------------------|----|----------------------|-----------------------------------|---------------------|
-| 1.1 | read only                                                                                                        | ok | not covered          | ok (8)                            | L1-O1               |
-| 1.2 | 2 (`init`, 20 min); steps 1 to 4 done before the run; step 7 not drivable; step 8 read at 3 from `config/branches` | ok | ok                   | 9, one stale (L1-S1)              | L1-P1, L1-O2, L1-O3 |
-| 1.3 | 2 (`work:new`, the lab driver's rules)                                                                           | ok | ok                   | ok (6)                            | L1-P2, L1-S3        |
-| 1.4 | browser (field wizard, both grants, three records); step 1 by frontdoor URL                                      | ok | ok                   | ok (4)                            | L1-O4               |
-| 1.5 | 3 (Recent Changes as `SourceMember`, retrieve, staging, commit), 2 (Save / Publish)                              | ok | ok                   | 10, three with stale rows (L1-S4), one count (L1-S2) | L1-P3     |
-| 1.6 | 3 (`gh pr create`, Files as `git:artifacts:download`, squash merge with `prflow.sh`)                             | ok | ok, comment word for word | ok (11)                      | **L1-F1**, L1-O5    |
-| 1.7 | 2 (`work:new`, Save / Publish), browser (field, grant, list view), 3 (retrieve, commit, Pull Request, merge)     | ok | ok                   | ok (1)                            |                     |
+| Lab | Fidelity                                                                                                           | A  | B                         | C                                                    | Findings            |
+|-----|--------------------------------------------------------------------------------------------------------------------|----|---------------------------|------------------------------------------------------|---------------------|
+| 1.1 | read only                                                                                                          | ok | not covered               | ok (8)                                               | L1-O1               |
+| 1.2 | 2 (`init`, 20 min); steps 1 to 4 done before the run; step 7 not drivable; step 8 read at 3 from `config/branches` | ok | ok                        | 9, one stale (L1-S1)                                 | L1-P1, L1-O2, L1-O3 |
+| 1.3 | 2 (`work:new`, the lab driver's rules)                                                                             | ok | ok                        | ok (6)                                               | L1-P2, L1-S3        |
+| 1.4 | browser (field wizard, both grants, three records); step 1 by frontdoor URL                                        | ok | ok                        | ok (4)                                               | L1-O4               |
+| 1.5 | 3 (Recent Changes as `SourceMember`, retrieve, staging, commit), 2 (Save / Publish)                                | ok | ok                        | 10, three with stale rows (L1-S4), one count (L1-S2) | L1-P3               |
+| 1.6 | 3 (`gh pr create`, Files as `git:artifacts:download`, squash merge with `prflow.sh`)                               | ok | ok, comment word for word | ok (11)                                              | **L1-F1**, L1-O5    |
+| 1.7 | 2 (`work:new`, Save / Publish), browser (field, grant, list view), 3 (retrieve, commit, Pull Request, merge)       | ok | ok                        | ok (1)                                               |                     |
 
 Every "ok" in column B ended with the lab's own check passing, run from `$RUN`; at the end
 `check --level 1 --lab all` printed 6 of 6.
@@ -175,10 +175,10 @@ harness.
 
 ## Pull Requests
 
-| Repository                                | Pull Request                                                               | State                       |
-|-------------------------------------------|----------------------------------------------------------------------------|-----------------------------|
-| `hardisgroupcom/sfdx-hardis-training`     | [#352](https://github.com/hardisgroupcom/sfdx-hardis-training/pull/352) L1-F1, L1-P1 to P3 | open, not merged            |
-| `nvuillam/sfdx-hardis-training` (fork)    | #85 US-014, #86 US-016                                                     | merged (squash), deployed   |
+| Repository                             | Pull Request                                                                               | State                     |
+|----------------------------------------|--------------------------------------------------------------------------------------------|---------------------------|
+| `hardisgroupcom/sfdx-hardis-training`  | [#352](https://github.com/hardisgroupcom/sfdx-hardis-training/pull/352) L1-F1, L1-P1 to P3 | open, not merged          |
+| `nvuillam/sfdx-hardis-training` (fork) | #85 US-014, #86 US-016                                                                     | merged (squash), deployed |
 
 No sfdx-hardis or extension Pull Request: no product defect found. The sfdx-hardis branch carries
 the runbook changes and this report, uncommitted.
@@ -239,17 +239,17 @@ Walked straight after Level 1 on the same fork and orgs, no **Reset this level**
 
 ### Lab by lab
 
-| Lab | Fidelity                                                                                                                                 | A  | B                                        | C                    | Findings          |
-|-----|------------------------------------------------------------------------------------------------------------------------------------------|----|------------------------------------------|----------------------|-------------------|
-| 2.1 | 2 (simulate), 3 (`backpromote --plan`, plan from #87, `--auto`, Back as a checkout)                                                      | ok | ok                                       | 3 of 8 opened, ok    | L2-P1             |
-| 2.2 | 2 (`work:new`, Save / Publish), 3 (field and flow as XML, admin read as `FieldPermissions`, record test by API, retrieve, `gh pr create`) | ok | ok                                       | 2 of 12 (web), ok    | L2-O1             |
-| 2.3 | 2, 3 (Required as XML, refused save by API, retrieve, `action:create --agent`)                                                           | ok | ok                                       | 1 of 5, ok           | L2-S1             |
-| 2.4 | 2 (`work:new`, Create my lab records, Data Workbench export), 3 (object, fields, tab, grants as XML, `action:create`, tick by API)       | ok | ok                                       | 1 of 9, ok           | L2-O2, L2-O3      |
-| 2.5 | 2 (`work:new`, Save / Publish), 3 (pastes, deploy, `hardis:org:test:apex --agent` for the card)                                          | ok | ok                                       | 0 of 2               | L2-E1             |
-| 2.6 | 2, 3 (grant as `FieldPermissions`, Auto retrieve as `mdapi:read --active-only`, blocks removed by script)                                | ok | ok after the lab's own "If it goes wrong" | 1 of 3, ok           | L2-E2             |
-| 2.7 | 2 (simulate, Save / Publish), 3 (flow as XML, merge by git, Accept Incoming as `merge-file --theirs`, "Accept both" written by hand)     | ok | ok                                       | 1 of 11, ok          |                   |
-| 2.8 | 2 (`resetselection`, Save / Publish), 3 (layout as XML, twenty rows from `SourceMember`, Profiles whole)                                 | ok | ok                                       | 1 of 4               | L2-S2             |
-| 2.9 | 2 (simulate, export, Save / Publish), 3 (object, tab, flow, grants as XML, ten records by bulk upsert, `action:create`)                  | ok | ok after an approval                     | none (no lab picture) | **L2-F1**         |
+| Lab | Fidelity                                                                                                                                  | A  | B                                         | C                     | Findings     |
+|-----|-------------------------------------------------------------------------------------------------------------------------------------------|----|-------------------------------------------|-----------------------|--------------|
+| 2.1 | 2 (simulate), 3 (`backpromote --plan`, plan from #87, `--auto`, Back as a checkout)                                                       | ok | ok                                        | 3 of 8 opened, ok     | L2-P1        |
+| 2.2 | 2 (`work:new`, Save / Publish), 3 (field and flow as XML, admin read as `FieldPermissions`, record test by API, retrieve, `gh pr create`) | ok | ok                                        | 2 of 12 (web), ok     | L2-O1        |
+| 2.3 | 2, 3 (Required as XML, refused save by API, retrieve, `action:create --agent`)                                                            | ok | ok                                        | 1 of 5, ok            | L2-S1        |
+| 2.4 | 2 (`work:new`, Create my lab records, Data Workbench export), 3 (object, fields, tab, grants as XML, `action:create`, tick by API)        | ok | ok                                        | 1 of 9, ok            | L2-O2, L2-O3 |
+| 2.5 | 2 (`work:new`, Save / Publish), 3 (pastes, deploy, `hardis:org:test:apex --agent` for the card)                                           | ok | ok                                        | 0 of 2                | L2-E1        |
+| 2.6 | 2, 3 (grant as `FieldPermissions`, Auto retrieve as `mdapi:read --active-only`, blocks removed by script)                                 | ok | ok after the lab's own "If it goes wrong" | 1 of 3, ok            | L2-E2        |
+| 2.7 | 2 (simulate, Save / Publish), 3 (flow as XML, merge by git, Accept Incoming as `merge-file --theirs`, "Accept both" written by hand)      | ok | ok                                        | 1 of 11, ok           |              |
+| 2.8 | 2 (`resetselection`, Save / Publish), 3 (layout as XML, twenty rows from `SourceMember`, Profiles whole)                                  | ok | ok                                        | 1 of 4                | L2-S2        |
+| 2.9 | 2 (simulate, export, Save / Publish), 3 (object, tab, flow, grants as XML, ten records by bulk upsert, `action:create`)                   | ok | ok after an approval                      | none (no lab picture) | **L2-F1**    |
 
 What the walk showed, against the lab text:
 
@@ -369,34 +369,34 @@ Walked straight after Level 2 on the same fork and orgs, no **Reset this level**
 
 ### Lab by lab
 
-| Lab  | Fidelity                                                                                                                                       | A  | B                                                  | C                   | Findings              |
-|------|------------------------------------------------------------------------------------------------------------------------------------------------|----|----------------------------------------------------|---------------------|-----------------------|
-| 3.1  | 2 (seed x3, `work:new` x2, `auth.mjs` x2, Save / Publish x2), 3 (branch and rules by `gh api`, secrets, Pipeline Settings as file edits, app policies read as metadata) | ok | ok after Lab 2.6's "If it goes wrong" (Fix story #100) | 2 of 22 opened, ok  | L3-E1, L3-O1, L3-O2   |
-| 3.2  | 2 (simulate x2), 3 (review comment by API, Files as `git:artifacts:download`, merge, layout read by tooling query)                              | ok | ok                                                 | 0 of 4              |                       |
-| 3.3  | 2 (simulate x4, Retry as `action:run`), 3 (log read, review, group by API, Mark as done as `action:set-status`, merges)                         | ok | ok                                                 | 0 of 9              |                       |
-| 3.4  | 2 (simulate), 3 (review, diffs)                                                                                                                | ok | ok                                                 | 0 of 2              |                       |
-| 3.5  | 3 (remote site by metadata deploy, no-overwrite entry as a file edit, `gh pr create`, tick by `tick.mjs`, tester check by API, description), 2 (publish, release notes) | ok | ok                                                 | 0 of 7              | **L3-F1**, L3-O3      |
-| 3.6  | 3 (`gh pr create`, ticks, merges, tester checks by API, DORA as `dora-report --data-only`), 2 (none), export as `dora-report --agent`            | ok | ok                                                 | 1 of 5, ok          | L3-O4                 |
-| 3.7  | 3 (refused save and fixed save by API, merges, `git merge`), 2 (simulate, `work:new`, Save / Publish)                                          | ok | ok after a fix of the org question                 | 1 of 12, ok         | **L3-F2**, L3-O5      |
-| 3.8  | 2 (`mon.mjs`, publish), 3 (repository, secret, routing as file edits, Run workflow by `gh`, checks run locally)                                 | ok | partly: the CI run never started                   | 0 of 4              | L3-E2, L3-O6          |
-| 3.9  | 3 (`project2markdown --with-history --agent`, paragraphs by script)                                                                            | ok | ok                                                 | 0 of 1              |                       |
-| 3.10 | 2 (simulate x5, `promotion:create` with the button's flags, `work:new`, Save / Publish), 3 (resolutions by file edit, description, merges)    | ok | ok, except the red marker check (not observed)     | 0 of 10             | L3-E3                 |
-| 3.11 | 2 (simulate, release notes), 3 (merges, descriptions, DORA)                                                                                    | ok | ok                                                 | 0 of 1              | L3-O4                 |
+| Lab  | Fidelity                                                                                                                                                                | A  | B                                                      | C                  | Findings            |
+|------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----|--------------------------------------------------------|--------------------|---------------------|
+| 3.1  | 2 (seed x3, `work:new` x2, `auth.mjs` x2, Save / Publish x2), 3 (branch and rules by `gh api`, secrets, Pipeline Settings as file edits, app policies read as metadata) | ok | ok after Lab 2.6's "If it goes wrong" (Fix story #100) | 2 of 22 opened, ok | L3-E1, L3-O1, L3-O2 |
+| 3.2  | 2 (simulate x2), 3 (review comment by API, Files as `git:artifacts:download`, merge, layout read by tooling query)                                                      | ok | ok                                                     | 0 of 4             |                     |
+| 3.3  | 2 (simulate x4, Retry as `action:run`), 3 (log read, review, group by API, Mark as done as `action:set-status`, merges)                                                 | ok | ok                                                     | 0 of 9             |                     |
+| 3.4  | 2 (simulate), 3 (review, diffs)                                                                                                                                         | ok | ok                                                     | 0 of 2             |                     |
+| 3.5  | 3 (remote site by metadata deploy, no-overwrite entry as a file edit, `gh pr create`, tick by `tick.mjs`, tester check by API, description), 2 (publish, release notes) | ok | ok                                                     | 0 of 7             | **L3-F1**, L3-O3    |
+| 3.6  | 3 (`gh pr create`, ticks, merges, tester checks by API, DORA as `dora-report --data-only`), 2 (none), export as `dora-report --agent`                                   | ok | ok                                                     | 1 of 5, ok         | L3-O4               |
+| 3.7  | 3 (refused save and fixed save by API, merges, `git merge`), 2 (simulate, `work:new`, Save / Publish)                                                                   | ok | ok after a fix of the org question                     | 1 of 12, ok        | **L3-F2**, L3-O5    |
+| 3.8  | 2 (`mon.mjs`, publish), 3 (repository, secret, routing as file edits, Run workflow by `gh`, checks run locally)                                                         | ok | partly: the CI run never started                       | 0 of 4             | L3-E2, L3-O6        |
+| 3.9  | 3 (`project2markdown --with-history --agent`, paragraphs by script)                                                                                                     | ok | ok                                                     | 0 of 1             |                     |
+| 3.10 | 2 (simulate x5, `promotion:create` with the button's flags, `work:new`, Save / Publish), 3 (resolutions by file edit, description, merges)                              | ok | ok, except the red marker check (not observed)         | 0 of 10            | L3-E3               |
+| 3.11 | 2 (simulate, release notes), 3 (merges, descriptions, DORA)                                                                                                             | ok | ok                                                     | 0 of 1             | L3-O4               |
 
 Fork Pull Requests, by lab:
 
-| Lab  | Pull Requests of the fork                                                                                      |
-|------|----------------------------------------------------------------------------------------------------------------|
-| 3.1  | #100 US-033 Fix (Profile layouts), #101 US-050 configuration                                                   |
-| 3.2  | #102 US-052                                                                                                    |
-| 3.3  | #103 US-056, #104 US-062, #105 US-062 fix                                                                      |
-| 3.4  | #106 US-020, left open on purpose                                                                              |
-| 3.5  | #107 no-overwrite configuration, #108 integration to uat                                                       |
-| 3.6  | #109 uat to preprod, #110 release                                                                              |
-| 3.7  | #111 US-045 hotfix, #112 hotfix to production, #113 retrofit US-045                                            |
-| 3.8  | #114 `monitoringRepository` configuration                                                                      |
+| Lab  | Pull Requests of the fork                                                                                                      |
+|------|--------------------------------------------------------------------------------------------------------------------------------|
+| 3.1  | #100 US-033 Fix (Profile layouts), #101 US-050 configuration                                                                   |
+| 3.2  | #102 US-052                                                                                                                    |
+| 3.3  | #103 US-056, #104 US-062, #105 US-062 fix                                                                                      |
+| 3.4  | #106 US-020, left open on purpose                                                                                              |
+| 3.5  | #107 no-overwrite configuration, #108 integration to uat                                                                       |
+| 3.6  | #109 uat to preprod, #110 release                                                                                              |
+| 3.7  | #111 US-045 hotfix, #112 hotfix to production, #113 retrofit US-045                                                            |
+| 3.8  | #114 `monitoringRepository` configuration                                                                                      |
 | 3.10 | #115 US-058, #116 US-057, #117 US-059, #118 US-060, #119 US-061, #120 integration to uat, #121 promotion branch, #122 retrofit |
-| 3.11 | #123 US-055, #124 integration to uat, #125 uat to preprod, #126 release                                        |
+| 3.11 | #123 US-055, #124 integration to uat, #125 uat to preprod, #126 release                                                        |
 
 What the walk showed, against the lab text:
 

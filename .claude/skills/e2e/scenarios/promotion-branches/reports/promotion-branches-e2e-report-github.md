@@ -19,23 +19,23 @@ ___
 
 ## Counts
 
-| Section                                                          | Checks                            | OK  | FAIL | Not covered                          |
-|------------------------------------------------------------------|-----------------------------------|-----|------|--------------------------------------|
-| 3, 4 and 4bis: stories, promotions, go-lives, retrofit, pipeline | 42                                | 42  | 0    |                                      |
-| 6: edge cases, groups g1 to g6                                   | 47                                | 47  | 0    |                                      |
-| 6quater: gate, recovery, set-status ahead, forecast, dev org     | 21                                | 21  | 0    |                                      |
-| 6sexies: identical actions, I1 to I10                            | 24                                | 24  | 0    |                                      |
-| Visual fixtures (VE, VG)                                         | 2                                 | 2   | 0    |                                      |
-| 6bis: backpromote B0 to B16, C1 to C4 (`-60`)                    | 63                                | 63  | 0    |                                      |
+| Section                                                          | Checks                            | OK  | FAIL | Not covered                                         |
+|------------------------------------------------------------------|-----------------------------------|-----|------|-----------------------------------------------------|
+| 3, 4 and 4bis: stories, promotions, go-lives, retrofit, pipeline | 42                                | 42  | 0    |                                                     |
+| 6: edge cases, groups g1 to g6                                   | 47                                | 47  | 0    |                                                     |
+| 6quater: gate, recovery, set-status ahead, forecast, dev org     | 21                                | 21  | 0    |                                                     |
+| 6sexies: identical actions, I1 to I10                            | 24                                | 24  | 0    |                                                     |
+| Visual fixtures (VE, VG)                                         | 2                                 | 2   | 0    |                                                     |
+| 6bis: backpromote B0 to B16, C1 to C4 (`-60`)                    | 63                                | 63  | 0    |                                                     |
 | 6quinquies: real CI, W0 to W9, X1, X2 (`ci-4`)                   | 22                                | 11  | 11   | the 11 FAIL are jobs GitHub never started (billing) |
-| 4ter: single Pull Request window (`-58`)                         | 49 Pull Requests                  | 49  | 0    |                                      |
-| 5bis: comment audit (`-58`)                                      | 1161 checks over 55 Pull Requests | all | 0    |                                      |
-| 5bis: comment audit (`-60`, backpromote)                         | 88 checks over 11 Pull Requests   | all | 0    |                                      |
-| 5quater: visual check (`-58`)                                    | 11 types, 1 warning               | 11  | 0    |                                      |
-| 5quater: visual check (`-60`, Backpromotes comment)              | 1 type                            | 1   | 0    |                                      |
-| 7bis: single place in the diagram (`-58`)                        | 1                                 | 1   | 0    |                                      |
-| 6septies: org initialization and scratch org pool (`-58`)        | 37                                | 37  | 0    | third run, see below                 |
-| 7ter: flag-off A/B against `origin/main`                         | -                                 |     |      | not run, see below                   |
+| 4ter: single Pull Request window (`-58`)                         | 49 Pull Requests                  | 49  | 0    |                                                     |
+| 5bis: comment audit (`-58`)                                      | 1161 checks over 55 Pull Requests | all | 0    |                                                     |
+| 5bis: comment audit (`-60`, backpromote)                         | 88 checks over 11 Pull Requests   | all | 0    |                                                     |
+| 5quater: visual check (`-58`)                                    | 11 types, 1 warning               | 11  | 0    |                                                     |
+| 5quater: visual check (`-60`, Backpromotes comment)              | 1 type                            | 1   | 0    |                                                     |
+| 7bis: single place in the diagram (`-58`)                        | 1                                 | 1   | 0    |                                                     |
+| 6septies: org initialization and scratch org pool (`-58`)        | 37                                | 37  | 0    | third run, see below                                |
+| 7ter: flag-off A/B against `origin/main`                         | -                                 |     |      | not run, see below                                  |
 
 6quater and 6sexies ran a second time with `DEV_ORG` set to the scratch org `promo-e2e-dev`
 (`DA_RUN=2`, `IA_RUN=2`, new stories on the same repository): group D and I7 pass, so do all the

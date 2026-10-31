@@ -23,22 +23,22 @@ ___
 
 ## Counts
 
-| Section                                                     | Checks                            | OK  | FAIL | Not covered                      |
-|-------------------------------------------------------------|-----------------------------------|-----|------|----------------------------------|
-| 3, 4 and 4bis (`az-14`, again on `az-16`)                   | 42                                | 42  | 0    |                                  |
-| 6: edge cases, g1 to g6 (`az-14` and `az-16`, see below)    | 47                                | 47  | 0    |                                  |
-| 6quater, developer org included                             | 21                                | 21  | 0    |                                  |
-| 6sexies, I1 to I10                                          | 24                                | 24  | 0    |                                  |
-| Visual fixtures (VE, VG)                                    | 2                                 | 2   | 0    |                                  |
-| 6bis: backpromote B0 to B16, C1 to C4 (`az-17`)             | 63                                | 63  | 0    |                                  |
-| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-az-9`)           | 22                                | 21  | 0    | W8 SKIP by design (GitHub only)  |
-| 4ter: single Pull Request window (`az-14`)                  | 47 Pull Requests                  | 47  | 0    |                                  |
-| 5bis: comment audit (`az-14`)                               | 1229 checks over 53 Pull Requests | all | 0    |                                  |
-| 5bis: comment audit (`az-17`, backpromote)                  | 88 checks                         | all | 0    |                                  |
-| 5quater: visual check (`az-14`)                             | 11 types                          | 11  | 0    | 1 flaky image load, OK on retry  |
-| 5quater: visual check (`az-17`, Backpromotes comment)       | 1 type                            |     |      | not taken: Chrome closed for memory |
-| 7bis: single place in the diagram (`az-14`)                 | 1                                 | 1   | 0    |                                  |
-| 7ter: flag-off A/B                                          | -                                 |     |      | not run (branch under test is `main`) |
+| Section                                                  | Checks                            | OK  | FAIL | Not covered                           |
+|----------------------------------------------------------|-----------------------------------|-----|------|---------------------------------------|
+| 3, 4 and 4bis (`az-14`, again on `az-16`)                | 42                                | 42  | 0    |                                       |
+| 6: edge cases, g1 to g6 (`az-14` and `az-16`, see below) | 47                                | 47  | 0    |                                       |
+| 6quater, developer org included                          | 21                                | 21  | 0    |                                       |
+| 6sexies, I1 to I10                                       | 24                                | 24  | 0    |                                       |
+| Visual fixtures (VE, VG)                                 | 2                                 | 2   | 0    |                                       |
+| 6bis: backpromote B0 to B16, C1 to C4 (`az-17`)          | 63                                | 63  | 0    |                                       |
+| 6quinquies: real CI, W0 to W9, X1, X2 (`ci-az-9`)        | 22                                | 21  | 0    | W8 SKIP by design (GitHub only)       |
+| 4ter: single Pull Request window (`az-14`)               | 47 Pull Requests                  | 47  | 0    |                                       |
+| 5bis: comment audit (`az-14`)                            | 1229 checks over 53 Pull Requests | all | 0    |                                       |
+| 5bis: comment audit (`az-17`, backpromote)               | 88 checks                         | all | 0    |                                       |
+| 5quater: visual check (`az-14`)                          | 11 types                          | 11  | 0    | 1 flaky image load, OK on retry       |
+| 5quater: visual check (`az-17`, Backpromotes comment)    | 1 type                            |     |      | not taken: Chrome closed for memory   |
+| 7bis: single place in the diagram (`az-14`)              | 1                                 | 1   | 0    |                                       |
+| 7ter: flag-off A/B                                       | -                                 |     |      | not run (branch under test is `main`) |
 
 Real CI: 15 builds in Azure Pipelines, none simulated (`ci-jobs.tsv`), about 5 minutes each (the link
 step is most of it). One policy build queued 299 seconds behind another (one free parallel job).
