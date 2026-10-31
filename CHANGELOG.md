@@ -15,6 +15,7 @@
   - New action to [create the running user of an Agentforce agent](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-deployment-actions/#create-the-running-user-of-an-agentforce-agent) with `sf org create agent-user` before a deployment, in an org that has none. It runs in the deployment checks too, so a check validates the agent with its real user.
 - MegaLinter configuration: the files of Agentforce agent versions and authoring bundles are no longer linted as JSON. Their agent graph (`agentGraph/*_graph.json`) is base64 text that failed the JSON linters, and fixes applied to their action schemas made every new retrieve show up as a change.
 - New deployment tip for [an agent running user without access to the agent](https://sfdx-hardis.cloudity.com/sf-deployment-assistant/Agent-running-user-has-no-access-to-the-agent/).
+- Upgrade **follow-redirects** to 1.16.2, which stops custom credential headers from being sent to another site on a redirect (CVE-2026-116689).
 
 ## [8.21.0] 2026-10-30
 

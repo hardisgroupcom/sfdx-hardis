@@ -58,3 +58,17 @@ reason = "csv-parse 5.6.0 is transitive through @salesforce/core -> @jsforce/jsf
 [[IgnoredVulns]]
 id = "GHSA-gcqx-w48m-w2h4"
 reason = "deepmerge 4.3.1 (latest, no fix) is transitive through bitbucket 2.12.0, which only merges its endpoint defaults with request options built by sfdx-hardis, never API responses."
+
+# https://github.com/advisories/GHSA-3g3m-2fjr-6pw4 (CVE-2026-118773)
+# glob 9.0.0 to 14.0.1 keeps walking after an AbortSignal fires. Fixed only in 14.0.2, a new major.
+# Remove once glob is upgraded to 14.0.2 or later. Added 2026-10-31.
+[[IgnoredVulns]]
+id = "GHSA-3g3m-2fjr-6pw4"
+reason = "sfdx-hardis never passes an AbortSignal to glob, so the abort path is never reached, and its patterns come from its own code and project config. glob 14 changes ignore and matching semantics and needs its own change."
+
+# https://github.com/advisories/GHSA-g3hv-75wg-m249 (CVE-2026-118764)
+# minimatch before 11.0.1: crafted `**/..` patterns blow up pattern compilation. No backport to 3.x, 5.x, 9.x or 10.x.
+# Remove once the dependents move to minimatch 11. Added 2026-10-31.
+[[IgnoredVulns]]
+id = "GHSA-g3hv-75wg-m249"
+reason = "minimatch is only transitive (glob and other tools) and only matches patterns written in sfdx-hardis code or project config, never attacker input. The worst case is a slow one-shot CI job."
