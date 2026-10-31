@@ -482,13 +482,10 @@ CVE-2026-87018
 # It only comes in through bitbucket 2.12.0 (latest), which uses it to merge its endpoint defaults with the request options that sfdx-hardis builds itself, restricted to plain objects. API responses never go through it. Remove once deepmerge ships a fix. Added 2026-10-28.
 CVE-2026-93753
 
-# https://avd.aquasec.com/nvd/cve-2026-118773 (GHSA-3g3m-2fjr-6pw4)
-# glob 9.0.0 to 14.0.1: after an AbortSignal fires, the walk keeps reading directories in the background (DoS, MEDIUM). Fixed only in glob 14.0.2, a new major.
-# sfdx-hardis never passes a signal to glob, so the abort path is never reached, and its patterns come from its own code and project config, not from untrusted input.
-# Moving to glob 14 changes ignore and matching semantics, so it needs its own change. Remove once glob is upgraded to 14.0.2 or later. Added 2026-10-31.
-CVE-2026-118773
-
 # https://avd.aquasec.com/nvd/cve-2026-118764 (GHSA-g3hv-75wg-m249)
-# minimatch before 11.0.1: a crafted `**/..` pattern makes pattern compilation use excessive CPU and memory (DoS). Fixed only in 11.0.1, no backport to the 3.x, 5.x, 9.x or 10.x lines.
-# sfdx-hardis does not use minimatch directly. It comes through glob and other tools that match patterns written in sfdx-hardis code or project config, never patterns from an attacker, and the worst case is a slow one-shot CI job. Remove once the dependents move to minimatch 11. Added 2026-10-31.
+# minimatch < 11.0.1: crafted pattern with optimizationLevel >= 2 burns CPU and memory (DoS only). The patterns sfdx-hardis matches come from its own code and the project's own config, never from an attacker. Fixed only in 11.x, two majors past what its dependencies declare. Remove once they move to minimatch 11. Added 2026-10-31.
 CVE-2026-118764
+
+# https://avd.aquasec.com/nvd/cve-2026-118773 (GHSA-3g3m-2fjr-6pw4)
+# glob 9.0.0 to 14.0.1: an aborted async walk keeps reading directories (DoS only). sfdx-hardis never passes a signal to glob. The fix is glob 14, whose matching changes need their own upgrade. Added 2026-10-31.
+CVE-2026-118773

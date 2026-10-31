@@ -56,7 +56,12 @@ export ORG="${PRA_ORG:-pra-e2e-$PROVIDER}"
 # A name of our own, unless a replay already knows it
 case "$PROVIDER" in
 github) [ -n "${REPO:-}" ] || REPO="${GH_E2E_OWNER:-$(gh api user --jq .login)}/sfdx-hardis-pra-e2e-$(date +%m%d%H%M)" && export REPO ;;
-gitlab) [ -n "${GITLAB_E2E_PROJECT:-}" ] || GITLAB_E2E_PROJECT="sfdx-hardis-pra-e2e-gl-$(date +%m%d%H%M)" && export GITLAB_E2E_PROJECT ;;
+gitlab)
+  # A replay reads PROJECT_PATH from ci-vars.sh: keep its name, or the report names a project that does not exist
+  [ -n "${GITLAB_E2E_PROJECT:-}" ] || [ -z "${PROJECT_PATH:-}" ] || GITLAB_E2E_PROJECT="${PROJECT_PATH##*/}"
+  [ -n "${GITLAB_E2E_PROJECT:-}" ] || GITLAB_E2E_PROJECT="sfdx-hardis-pra-e2e-gl-$(date +%m%d%H%M)"
+  export GITLAB_E2E_PROJECT
+  ;;
 *)
   echo "PROVIDER=$PROVIDER: this scenario runs on github and gitlab"
   exit 2

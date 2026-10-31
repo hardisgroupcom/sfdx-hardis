@@ -505,8 +505,11 @@ function linkCommands(sfdxHardisBranch, backTo, options = {}) {
       : clone,
     'cd /tmp/sfdx-hardis',
     'npx --yes yarn@1.22.22 install --frozen-lockfile --ignore-scripts --network-timeout 600000',
+    // The Azure hosted agent was 95% full at this point (2026-10-31): drop the yarn cache, and link
+    // without the second install `sf plugins link` runs by default, which then failed on a full disk
+    'npx --yes yarn@1.22.22 cache clean >/dev/null 2>&1 || true',
     `${options.tscPrefix || ''}npx tsc -p . --pretty`,
-    `${options.linkPrefix || ''}${LINK_MARKER}`,
+    `${options.linkPrefix || ''}${LINK_MARKER} --no-install`,
     'git log --oneline -1',
     ...(backTo ? [`cd "${backTo}"`] : []),
     'sf plugins',

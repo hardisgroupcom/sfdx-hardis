@@ -548,7 +548,8 @@ console.log((r.toRetrieve || []).length + ',' + (r.conflicts || []).length + ','
     record O11c FAIL "previews (to retrieve, conflicts, to deploy) = $PREVIEWS, expected 0,0,0"
   fi
   # A change made in the org afterwards: deployed from the other clone, which tracks nothing there
-  sed -i 's#<value>base</value>#<value>changed in the org</value>#' "$OI/force-app/main/default/labels/CustomLabels.labels-meta.xml"
+  # Whatever value the story branches left in the file: a change of the value is what the org must hold
+  sed -i 's#<value>[^<]*</value>#<value>changed in the org</value>#' "$OI/force-app/main/default/labels/CustomLabels.labels-meta.xml"
   (cd "$OI" && env -u NODE_OPTIONS sf project deploy start --metadata CustomLabels --target-org "$FETCHED" --ignore-conflicts --json) >"$OI_LOGS/org-change.json" 2>&1
   git -C "$OI" checkout -q -- force-app/main/default/labels/CustomLabels.labels-meta.xml
   (cd "$OI_DEV" && env -u NODE_OPTIONS sf project retrieve preview --target-org "$FETCHED" --json) >"$OI_LOGS/retrieve-preview-after.json" 2>/dev/null

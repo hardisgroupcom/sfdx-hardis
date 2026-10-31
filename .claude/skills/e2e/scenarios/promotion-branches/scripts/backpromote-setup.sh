@@ -52,8 +52,17 @@ git log --first-parent --oneline -4 integration
 ROOT=$(git rev-list --max-parents=0 origin/integration)
 
 bp_ensure_scratch() {
-  local org="$1"
-  if ! env -u NODE_OPTIONS sf org display --target-org "$org" >/dev/null 2>&1; then
+  local org="$1" status
+  # An expired scratch org still answers `sf org display`, with the status Deleted or Expired:
+  # log it out and create a new one, or the reset fails on HTTP 420
+  status=$(env -u NODE_OPTIONS sf org display --target-org "$org" --json 2>/dev/null |
+    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const r=JSON.parse(s.slice(s.indexOf("{"))).result||{};console.log(r.status||r.connectedStatus||"")}catch{console.log("")}})')
+  if [ -n "$status" ] && ! echo "$status" | grep -qiE '^(active|connected)$'; then
+    echo "$org is $status: logged out, a new one is created"
+    env -u NODE_OPTIONS sf org logout --target-org "$org" --no-prompt >/dev/null 2>&1
+    status=""
+  fi
+  if [ -z "$status" ]; then
     echo '{"orgName":"promo e2e dev","edition":"Developer"}' >"$LOGS/scratch-def.json"
     env -u NODE_OPTIONS sf org create scratch --definition-file "$LOGS/scratch-def.json" --target-dev-hub "$DEVHUB" \
       --alias "$org" --duration-days 1 --wait 30 || return 1
