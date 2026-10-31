@@ -122,7 +122,7 @@ Defaut list for **NOT_IMPACTING_METADATA_TYPES** (can be overridden with comma-s
 - Translations
 - WebLink
 
-Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit.
+Note: if you want to disable Smart test classes for a PR, add **nosmart** in the text of the latest commit (any case: `NOSMART`, `no_smart`, `no-smart` and `no smart` also work).
 
 ### Custom Apex Test Classes (optional)
 
@@ -321,11 +321,13 @@ Notes:
 
 ### Pull Requests Custom Behaviors
 
-If some words are found **in the Pull Request description**, special behaviors will be applied
+If some words are found **in the Pull Request description**, special behaviors will be applied.
+
+Keywords match in any case. NO_DELTA also accepts its words joined by `-`, a space or nothing (`no_delta`, `No-Delta`, `no delta` and `nodelta` all work). PURGE_FLOW_VERSIONS and DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT start destructive steps, so they keep their underscores (`purge_flow_versions` works, `purge flow versions` does not). A keyword inside a path or a branch name does not count, nor one inside an HTML comment (`<!-- -->`) or a fenced code block: a Pull Request template can list them without applying them, and the job log warns when a keyword is found only there.
 
 | Word                                 | Behavior                                                                                                                                                                                                                                                                             |
 |:-------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request                                                                                                                                                                       |
+| NO_DELTA                             | Even if delta deployments are activated, a deployment in mode **full** will be performed for this Pull Request. Also works in the latest commit message.                                                                                                                             |
 | PURGE_FLOW_VERSIONS                  | After deployment, inactive and obsolete Flow Versions will be deleted (equivalent to command sf hardis:org:purge:flow)<br/>**Caution: This will also purge active Flow Interviews !**                                                                                                |
 | DESTRUCTIVE_CHANGES_AFTER_DEPLOYMENT | If a file manifest/destructiveChanges.xml is found, it will be executed in a separate step, after the deployment of the main package                                                                                                                                                 |
 | FLOW_DELETE_INTERVIEWS               | Authorizes deleting the Flow Interviews that block the deletion of a Flow listed in destructive changes. The directive must be on its own line (or in a checked Markdown checkbox).<br/>**Caution: deleting Flow Interviews is irreversible and destroys in-flight process state !** |

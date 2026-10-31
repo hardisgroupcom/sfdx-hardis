@@ -254,6 +254,31 @@ Break one of these and the feature is wrong, whatever the tests say.
     `hardis:doc:release-notes` subtracts the same stories (`dropAlreadyPromotedPullRequests`),
     while `deploy:smart` keeps them in scope on purpose (no-op redeploy, actions skipped).
 
+31. **A story cherry-picked by hand is found from the target side, and only when asked.**
+    `detectManualCherryPicks` (default `false`, inert unless `enablePromotionBranches` is on, read
+    through `isManualCherryPickDetectionEnabled`) makes `listPromotionCandidates` call
+    `detectManualCherryPicks` (`manualCherryPickUtils.ts`) after the promotion descriptions were
+    read: a promotion declaring a story always wins. Evidence comes from the `-x` trailers of
+    `<mergeBase>..origin/<target>`, then from the commits of every non-promotion Pull Request merged
+    into the target since `targetSideLowerBound` (oldest candidate commit, 30 days at most before
+    the oldest candidate), listed with `minDateOn: 'merged'`: `GitProvider.listPullRequestCommits`
+    for a squash (the provider keeps the commits), the local `<merge>^2 --not <merge>^1` for a merge
+    commit (`splitPullRequestsByMergeKind`). Last, the `-x` trailers of the target history before the
+    merge base since that bound (a back-merge moves the merge base past a pick); they only fill what
+    nothing else named. Their trailers and their own SHAs name the candidates.
+    A candidate moves (`alreadyPromotedBy.manualCherryPick`) only when its merge commit, or every
+    non-merge commit it introduced, is named. Some of them only is `partiallyCherryPicked`; a title
+    matching exactly one commit on each side is `probablyCherryPicked`. Both stay candidates. With
+    the setting off, not one extra git command or provider call is made. Each match names its
+    `carrier` (the Pull Request merged into the target, number and merge/squash commit): the
+    extension follows it through the next step's result (`resolveManualCherryPickChain`), so a
+    story lands where its carrier ended up, and a carrier is a vehicle (`carriesManualCherryPicks`),
+    unless it held source branch commits AND commits of its own (`heldSourceBranchCommits` and
+    `ownCommits`: a hotfix branched from the source branch). The extension lists the story in the
+    furthest branch holding the commit (`listMovesStillInTargetWindow`, one git call per branch),
+    keys its cache on the provider windows too (`windowsFingerprint`), and ticks a listed copy
+    through its release Pull Request (`_promotionNumberOf` in pipeline.js).
+
 ## sfdx-hardis (CLI)
 
 | File                                                                                                                                                                       | Role                                                                                                                                                                                                                                                                     |
@@ -309,17 +334,18 @@ not leak in.
 
 ## vscode-sfdx-hardis (extension)
 
-| File                                                 | Role                                                                                                                                                                                          |
-|------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `src/utils/pipeline/promotionBranchUtils.ts`         | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`. |
-| `src/commands/showPipeline.ts`                       | Fetches the declared Pull Requests (in parallel), builds the windows.                                                                                                                         |
-| `src/utils/orgConfigUtils.ts`                        | `completeMajorOrgsWithPromotionBranches`: expands the windows, reads the merged promotions of each step from the provider (`listMergedPromotionsOfSteps`), annotates, enforces the invariant. |
-| `src/utils/gitProviders/*.ts`                        | `listMergedPullRequestsIntoBranch(target, updatedAfter)` on the four providers and the mock, sharing the per-branch fetch of the window listings.                                             |
-| `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                    |
-| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, User Stories not promoted away), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                  |
-| `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the vehicles toggle, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                     |
-| `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` and `allowedPromotionSteps` sit in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                    |
-| `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                  |
+| File                                                 | Role                                                                                                                                                                                                                                   |
+|------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `src/utils/pipeline/promotionBranchUtils.ts`         | Mirror of the CLI pure logic, plus the pipeline rules: `isVehiclePullRequest`, `userStoryPullRequests`, `visiblePullRequests`, `annotateAlreadyPromoted`, `enforceSinglePlacePerPullRequest`.                                          |
+| `src/commands/showPipeline.ts`                       | Fetches the declared Pull Requests (in parallel), builds the windows.                                                                                                                                                                  |
+| `src/utils/orgConfigUtils.ts`                        | `completeMajorOrgsWithPromotionBranches`: expands the windows, reads the merged promotions of each step from the provider (`listMergedPromotionsOfSteps`), annotates, enforces the invariant.                                          |
+| `src/utils/gitProviders/*.ts`                        | `listMergedPullRequestsIntoBranch(target, updatedAfter)` on the four providers and the mock, sharing the per-branch fetch of the window listings.                                                                                      |
+| `src/pipeline-data-provider.ts`                      | Feeds the mermaid builder.                                                                                                                                                                                                             |
+| `src/utils/pipeline/branchStrategyMermaidBuilder.ts` | Node counters (`data-count`, User Stories not promoted away), and the open promotion drawn on the major-to-major edge (`isPromotionOfStep`).                                                                                           |
+| `src/webviews/lwc-ui/modules/s/pipeline/pipeline.js` | Branch window modal: filtering, the vehicles toggle, the per-Pull-Request checkboxes and the **Create promotion** button.                                                                                                              |
+| `src/utils/pipeline/sfdxHardisConfigHelper.ts`       | `enablePromotionBranches` and `allowedPromotionSteps` sit in the **Danger Zone** of Pipeline Settings, scope `["global"]`.                                                                                                             |
+| `src/utils/pipeline/manualCherryPickUtils.ts`        | `detectManualCherryPicks`: one `promotion:list-candidates --json` per allowed step, in parallel, only when the setting is on; cached per user by step and tip SHAs. Placement in `applyManualCherryPicks` (`promotionBranchUtils.ts`). |
+| `src/hardis-commands-provider.ts`                    | Command palette entry for `hardis:project:promotion:create`.                                                                                                                                                                           |
 
 ## Filtering: what moves the Pull Requests
 
