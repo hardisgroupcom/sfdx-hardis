@@ -192,7 +192,9 @@ export abstract class TicketProvider {
       }
     }
     const config = await getConfig("project");
-    const candidates = allTicketProviders.filter(
+    // --provider names the connector; otherwise ticketingProvider of .sfdx-hardis.yml does, as for ticket ids
+    const pool = options.providerKey ? allTicketProviders : activeTicketProviders(config);
+    const candidates = pool.filter(
       (provider) => provider.supportsTicketDetails && (!options.providerKey || provider.providerKey === options.providerKey)
     );
     for (const provider of candidates) {

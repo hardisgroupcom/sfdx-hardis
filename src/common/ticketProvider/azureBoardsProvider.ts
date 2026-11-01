@@ -44,6 +44,7 @@ import {
   TicketPointsOptions,
   TicketProjectMeta,
   TicketProjectSummary,
+  TicketQualifyOptions,
   TicketStepResult,
   mentionLead,
   retryReadOn5xx,
@@ -518,29 +519,47 @@ export class AzureBoardsProvider extends TicketProviderRoot {
 
   /**
    * The neutral criteria become a WIQL statement here, every value quoted. Without projects in the
-   * criteria, the search is bounded to the configured team project. WIQL has no cursor: one page of
-   * maxResults.
+   * criteria, the search is bounded to the configured team project. WIQL has no cursor: the page
+   * token is the number of work items already returned, and one more id than needed tells whether
+   * more match. The fields are read by batches of 200, the most workitemsbatch accepts.
    */
   public async searchTickets(criteria: TicketSearchCriteria, options: TicketSearchOptions): Promise<TicketSearchResult> {
     const projects = criteria.projects?.length ? criteria.projects : [this.teamProject || ""];
     const wiql = AzureBoardsProvider.toWiql({ ...criteria, projects });
+    const offset = Math.max(0, Number(options.pageToken || 0) || 0);
+    const top = Math.min(offset + options.maxResults + 1, AzureBoardsProvider.WIQL_MAX_TOP);
     const api = await this.witApi();
     const queryResult: any = await this.runOperation({ operation: "list" }, () =>
-      retryReadOn5xx(() => api.queryByWiql({ query: wiql }, { project: projects[0] } as any, undefined, options.maxResults))
+      retryReadOn5xx(() => api.queryByWiql({ query: wiql }, { project: projects[0] } as any, undefined, top))
     );
-    const ids: number[] = (queryResult?.workItems || []).map((item: any) => item.id).slice(0, options.maxResults);
-    let tickets: TicketSummary[] = [];
-    if (ids.length > 0) {
+    const allIds: number[] = (queryResult?.workItems || []).map((item: any) => item.id);
+    const ids = allIds.slice(offset, offset + options.maxResults);
+    const byId = new Map<number, any>();
+    for (let index = 0; index < ids.length; index += AzureBoardsProvider.BATCH_SIZE) {
+      const chunk = ids.slice(index, index + AzureBoardsProvider.BATCH_SIZE);
       const items: any[] = await this.runOperation({ operation: "list" }, () =>
-        retryReadOn5xx(() => api.getWorkItemsBatch({ ids, fields: AzureBoardsProvider.SEARCH_FIELDS } as any))
+        retryReadOn5xx(() => api.getWorkItemsBatch({ ids: chunk, fields: AzureBoardsProvider.SEARCH_FIELDS } as any))
       );
-      const byId = new Map((items || []).map((item: any) => [item.id, item]));
-      tickets = ids
-        .map((id) => byId.get(id))
-        .filter(Boolean)
-        .map((item) => this.toTicketSummary(item));
+      for (const item of items || []) {
+        byId.set(item.id, item);
+      }
     }
-    return { tickets, nextPageToken: null, truncated: false };
+    const tickets: TicketSummary[] = ids.map((id) => byId.get(id)).filter(Boolean).map((item) => this.toTicketSummary(item));
+    const more = allIds.length > offset + ids.length;
+    const nextPageToken = more ? String(offset + ids.length) : null;
+    return { tickets, nextPageToken, truncated: nextPageToken !== null };
+  }
+
+  private static readonly BATCH_SIZE = 200;
+  // The largest $top WIQL accepts
+  private static readonly WIQL_MAX_TOP = 19999;
+
+  /** System.Tags is a list separated by ";": a label holding one would become several tags */
+  public validateQualifyOptions(options: TicketQualifyOptions): void {
+    super.validateQualifyOptions(options);
+    if (options.label && options.label.includes(";")) {
+      throw new SfError(t("ticketLabelRefused", { provider: AzureBoardsProvider.providerLabel, label: options.label, characters: ";" }));
+    }
   }
 
   /** Adds one tag, keeps the others; Azure tags are case-insensitive */

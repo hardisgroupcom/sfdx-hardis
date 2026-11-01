@@ -250,7 +250,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
     }
     assertProjectAllowed(details.id, details.project, options.allowedProjects);
     if (options.marker || options.markerLabel) {
-      const myId = options.marker ? await this.myAccountId(ticketId, options.providerKey) : null;
+      const myId = options.marker ? await this.myAccountId(details.provider, ticketId, options.providerKey) : null;
       details.markedByMe = isTicketMarked({
         labels: details.labels,
         comments: details.comments.map((comment) => ({ authorId: comment.authorId ?? null, body: comment.body })),
@@ -265,15 +265,16 @@ sf hardis ticket get --id ACME-4567 --agent --json
     return details;
   }
 
-  // The authenticated account does not change during a run: one call per ticketing system
+  // The authenticated account does not change during a run: the connector is resolved and asked once
+  // per ticketing system, keyed by the system the ticket was read from
   private accountIds = new Map<string, string | null>();
 
-  private async myAccountId(ticketId: string, providerKey: TicketProviderKey | undefined): Promise<string | null> {
-    const { provider, providerClass } = await TicketProvider.resolveProvider({ ticketId, providerKey });
-    if (!this.accountIds.has(providerClass.providerKey)) {
-      this.accountIds.set(providerClass.providerKey, (await provider.whoAmI()).id);
+  private async myAccountId(system: string, ticketId: string, providerKey: TicketProviderKey | undefined): Promise<string | null> {
+    if (!this.accountIds.has(system)) {
+      const { provider } = await TicketProvider.resolveProvider({ ticketId, providerKey });
+      this.accountIds.set(system, (await provider.whoAmI()).id);
     }
-    return this.accountIds.get(providerClass.providerKey) ?? null;
+    return this.accountIds.get(system) ?? null;
   }
 
   private async resolveTicketId(flagValue: string | undefined, agentMode: boolean): Promise<string> {

@@ -2,6 +2,7 @@ import { SfError } from "@salesforce/core";
 import { marked, Token } from "marked";
 import { t } from "../../utils/i18n.js";
 import { TICKET_ERROR, httpStatusOf } from "./ticketOperations.js";
+import { markdownToPlainText } from "./markdownToTicketFormats.js";
 
 /**
  * Pure helpers of the qualification options of the ticket commands: project scope, marker detection,
@@ -164,9 +165,13 @@ export function isTicketMarked(options: {
   if (!prefix || !options.myId) {
     return false;
   }
-  return options.comments.some(
-    (comment) => comment.authorId === options.myId && normalizeMarkerText(comment.body).startsWith(prefix)
-  );
+  // The providers return comments as plain text: a markdown prefix (**bold**, ## heading) is compared
+  // in that form too, and in its raw form for a system that keeps the markdown
+  const prefixes = [...new Set([prefix, normalizeMarkerText(markdownToPlainText(String(options.prefix)))])].filter(Boolean);
+  return options.comments.some((comment) => {
+    const body = normalizeMarkerText(comment.body);
+    return comment.authorId === options.myId && prefixes.some((candidate) => body.startsWith(candidate));
+  });
 }
 
 /** The prefix becomes the first line, never twice */

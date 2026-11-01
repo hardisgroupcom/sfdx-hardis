@@ -5,7 +5,7 @@ import { AnyJson } from '@salesforce/ts-types';
 import c from 'chalk';
 import { uxLog } from '../../../common/utils/index.js';
 import { TicketProvider, TicketProviderKey, ticketDetailsProviderKeys } from '../../../common/ticketProvider/index.js';
-import { assertProjectAllowed, parseAllowedProjects } from '../../../common/ticketProvider/utils/ticketQualify.js';
+import { assertProjectAllowed, isProjectAllowed, parseAllowedProjects } from '../../../common/ticketProvider/utils/ticketQualify.js';
 import { t } from '../../../common/utils/i18n.js';
 
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
@@ -23,7 +23,7 @@ export default class TicketMeta extends SfCommand<any> {
 
 - \`--project <P>\` returns \`issueTypes\`, \`statuses\` (each status once) and \`statusesByType\` (type name -> its status names). Statuses come with their id: on JIRA a query is safer with ids, since the names returned are translated.
 - \`--projects\` returns the projects the credentials can see (\`key\` and \`name\`; on Azure Boards both are the team project name). Use it when the project of the repository is not the one that holds the work items.
-- \`--allowed-projects a,b\` refuses a \`--project\` outside that list with \`TicketOutOfScope\`.
+- \`--allowed-projects a,b\` refuses a \`--project\` outside that list with \`TicketOutOfScope\`, and leaves the other projects out of \`--projects\`.
 
 ### Supported ticketing systems
 
@@ -119,7 +119,10 @@ sf hardis ticket meta --projects --provider azure --agent --json
       providerKey: flags.provider as TicketProviderKey | undefined,
     });
     if (!project) {
-      const projects = await provider.listProjects();
+      // --allowed-projects bounds the listing too: a project outside it is not even named
+      const projects = (await provider.listProjects()).filter(
+        (candidate) => isProjectAllowed(candidate.key, allowedProjects) || isProjectAllowed(candidate.name, allowedProjects)
+      );
       uxLog('action', this, c.cyan(t('ticketMetaProjectsDone', { count: projects.length })));
       return { provider: providerClass.providerKey, projects } as unknown as AnyJson;
     }

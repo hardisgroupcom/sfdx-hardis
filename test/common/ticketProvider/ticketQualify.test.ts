@@ -542,7 +542,7 @@ describe('AzureBoardsProvider qualification operations', () => {
     expect(queries[0].wiql).to.equal(
       "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] IN ('CRM') AND [System.State] IN ('New') ORDER BY [System.CreatedDate] ASC"
     );
-    expect(queries[0]).to.include({ project: 'CRM', top: 5 });
+    expect(queries[0]).to.include({ project: 'CRM', top: 6 });
     expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['AB-1', 'AB-2']);
     expect(result.tickets[0]).to.include({ assigneeId: GUID, project: 'CRM', areaPath: 'CRM\\Sales', assignee: 'Ann' });
   }));
@@ -869,6 +869,18 @@ describe('ticket post-comment / get / label / whoami / meta commands', () => {
     expect(result.results[0].action).to.equal('created');
     expect(result.results[0].transition).to.deep.equal({ status: 'failed', error: { name: 'Error', message: 'No transition' } });
     expect(result.results[0].points.status).to.equal('failed');
+    // The comment is saved, but the run did not do all it was asked: exit code 2, counted in stepsFailed
+    expect(result.stepsFailed).to.equal(1);
+    expect(process.exitCode).to.equal(2);
+    process.exitCode = undefined;
+  });
+
+  it('meta --projects: --allowed-projects leaves the other projects out of the listing', async () => {
+    const fake = fakeProvider();
+    fake.provider.listProjects = async () => [{ key: 'ACME', name: 'Acme' }, { key: 'OPS', name: 'Ops' }];
+    use(fake);
+    const result: any = await TicketMeta.run(['--projects', '--allowed-projects', 'acme', '--agent']);
+    expect(result.projects).to.deep.equal([{ key: 'ACME', name: 'Acme' }]);
   });
 
   it('[contract] post-comment: a label failure after the comment fails the ticket, saying the comment is saved', async () => {
@@ -1026,6 +1038,38 @@ describe('ticket post-comment / get / label / whoami / meta commands', () => {
     } finally {
       TicketProvider.getTicketDetails = originalGet;
     }
+  });
+});
+
+describe('Azure Boards search paging and labels (code review)', () => {
+  it('pages by offset, says when more match, and reads the fields by batches of 200', withEnv(AZURE_ENV, async () => {
+    const tops: number[] = [];
+    const batches: number[] = [];
+    const provider = stubbedAzure({
+      queryByWiql: async (_wiql: any, _team: any, _precision: any, top: number) => {
+        tops.push(top);
+        return { workItems: Array.from({ length: Math.min(top, 450) }, (_, index) => ({ id: index + 1 })) };
+      },
+      getWorkItemsBatch: async (request: any) => {
+        batches.push(request.ids.length);
+        return request.ids.map((id: number) => workItem(id));
+      },
+    });
+    const first = await provider.searchTickets({ projects: ['CRM'] }, { maxResults: 250 });
+    expect(tops[0]).to.equal(251);
+    expect(batches).to.deep.equal([200, 50]);
+    expect(first).to.include({ truncated: true, nextPageToken: '250' });
+    expect(first.tickets[0].id).to.equal('AB-1');
+    const second = await provider.searchTickets({ projects: ['CRM'] }, { maxResults: 250, pageToken: first.nextPageToken });
+    expect(second.tickets.map((ticket) => ticket.id)[0]).to.equal('AB-251');
+    expect(second.tickets).to.have.length(200);
+    expect(second).to.include({ truncated: false, nextPageToken: null });
+  }));
+
+  it('refuses a label holding ";", which System.Tags would split into several tags', () => {
+    const azure = Object.create(AzureBoardsProvider.prototype);
+    expect(() => azure.validateQualifyOptions({ label: 'ia;qualified' })).to.throw(';');
+    azure.validateQualifyOptions({ label: 'ia qualified' });
   });
 });
 

@@ -334,3 +334,33 @@ describe('AhaProvider ticket operations', () => {
     expect(calls[0].body.comment.body).to.match(/^<p>Prefix<\/p><p>For: <strong>&lt;Ann&gt;<\/strong><\/p>/);
   }));
 });
+
+describe('fixes of the code review', () => {
+  it('Aha!: a sort asked for on a search of several pages comes with a warning', withEnv(AHA_ENV, async () => {
+    fakeFetch([
+      [path('/products/DEMO/features'), () => ({ body: { features: [{ reference_num: 'DEMO-1' }, { reference_num: 'DEMO-2' }], pagination: { total_pages: 3 } } })],
+    ]);
+    const provider = new AhaProvider({});
+    const sorted = await provider.searchTickets({ projects: ['DEMO'], orderBy: 'updated', descending: true }, { maxResults: 1 });
+    expect(sorted.warning).to.contain('--order-by');
+    const plain = await provider.searchTickets({ projects: ['DEMO'], orderBy: 'created' }, { maxResults: 1 });
+    expect(plain.warning ?? null).to.equal(null);
+  }));
+
+  it('resolveProvider without an id leaves out a connector that must be declared (Aha!)', withEnv(
+    { ...AHA_ENV, JIRA_HOST: 'https://acme.atlassian.net', JIRA_EMAIL: 'bot@acme.com', JIRA_TOKEN: 'token', SERVICENOW_URL: '', SYSTEM_COLLECTIONURI: '', SYSTEM_TEAMPROJECT: '', CI_SFDX_HARDIS_AZURE_TOKEN: '', SYSTEM_ACCESSTOKEN: '', AZURE_DEVOPS_EXT_PAT: '' },
+    async () => {
+      const { TicketProvider } = await import('../../../src/common/ticketProvider/index.js');
+      expect((await TicketProvider.resolveProvider({})).providerClass.providerKey).to.equal('jira');
+      expect((await TicketProvider.resolveProvider({ providerKey: 'aha' })).providerClass.providerKey).to.equal('aha');
+    }
+  ));
+
+  it('marker: a markdown prefix matches the plain text the providers return', async () => {
+    const { isTicketMarked } = await import('../../../src/common/ticketProvider/utils/ticketQualify.js');
+    const comments = [{ authorId: 'me', body: 'Automatic qualification\n\nGrid: M' }];
+    expect(isTicketMarked({ labels: [], comments, myId: 'me', prefix: '**Automatic qualification**' })).to.equal(true);
+    expect(isTicketMarked({ labels: [], comments, myId: 'me', prefix: '## Automatic qualification' })).to.equal(true);
+    expect(isTicketMarked({ labels: [], comments, myId: 'me', prefix: '**Other**' })).to.equal(false);
+  });
+});

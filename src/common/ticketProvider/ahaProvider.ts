@@ -472,7 +472,10 @@ export class AhaProvider extends TicketProviderRoot {
       }
     }
     AhaProvider.sortSummaries(tickets, criteria);
-    return { tickets, nextPageToken, truncated: nextPageToken !== null };
+    // The features API cannot sort: across several pages, the order asked for holds inside each page only
+    const sortAsked = criteria.descending === true || criteria.orderBy === 'updated';
+    const warning = nextPageToken !== null && sortAsked ? t('ticketSearchSortedPerPage', { provider: AhaProvider.providerLabel }) : null;
+    return { tickets, nextPageToken, truncated: nextPageToken !== null, warning };
   }
 
   /** Adds a tag; the tags already on the feature are kept */
