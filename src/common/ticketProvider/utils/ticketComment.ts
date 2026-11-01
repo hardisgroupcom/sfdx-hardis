@@ -17,8 +17,8 @@ export interface PostCommentOptions {
    * ticket and per marker: the most recent one found is updated.
    */
   marker?: string;
-  /** ServiceNow journal field written to (`work_notes`, `comments`...) */
-  serviceNowField?: string;
+  /** Field the comment is written to, for a ticketing system that keeps comments in several fields; ignored by the others */
+  commentField?: string;
   /** Real mention of this assignee, inserted right after the first block by the providers that support mentions */
   mention?: TicketAssignee | null;
   /** Comment restricted to a role or a group; checked by validateQualifyOptions of the provider */

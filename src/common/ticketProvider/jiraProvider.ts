@@ -758,8 +758,9 @@ export class JiraProvider extends TicketProviderRoot {
     return this.isJiraCloud() ? await this.searchCloud(jql, options) : await this.searchServer(jql, options);
   }
 
-  /** JIRA refuses a label containing whitespace, and writes story points only into a named custom field */
+  /** JIRA refuses a label containing whitespace, writes story points only into a named custom field, and can restrict a comment */
   public validateQualifyOptions(options: TicketQualifyOptions): void {
+    super.validateQualifyOptions({ ...options, visibility: null });
     if (options.label && /\s/.test(options.label)) {
       throw new SfError(t("ticketLabelHasSpaces", { provider: JiraProvider.providerLabel, label: options.label }));
     }

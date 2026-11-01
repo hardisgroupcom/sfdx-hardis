@@ -43,6 +43,7 @@ interface QualifySteps {
   overwritePoints: boolean;
   mentionAssignee: boolean;
   visibility: TicketCommentVisibility | null;
+  commentField: string | null;
   allowedProjects: string[] | null;
 }
 
@@ -97,7 +98,7 @@ The ticketing variables sfdx-hardis already documents, from CI/CD variables or a
 
 - **JIRA:** \`JIRA_HOST\` + (\`JIRA_EMAIL\` + \`JIRA_TOKEN\`) or \`JIRA_PAT\` or (\`JIRA_CLIENT_ID\` + \`JIRA_CLIENT_SECRET\`)
 - **Azure Boards:** a token (\`CI_SFDX_HARDIS_AZURE_TOKEN\`, \`SYSTEM_ACCESSTOKEN\` or \`AZURE_DEVOPS_EXT_PAT\`). The organization and the project are read from the git remote, or from \`SYSTEM_COLLECTIONURI\` and \`SYSTEM_TEAMPROJECT\`.
-- **ServiceNow:** \`SERVICENOW_URL\` + \`SERVICENOW_USERNAME\` + \`SERVICENOW_PASSWORD\`. The note goes to \`work_notes\` by default: \`--servicenow-field\`, then \`SERVICENOW_COMMENT_FIELD\`, then the \`serviceNowCommentField\` configuration choose another journal field, such as \`comments\`.
+- **ServiceNow:** \`SERVICENOW_URL\` + \`SERVICENOW_USERNAME\` + \`SERVICENOW_PASSWORD\`. The note goes to \`work_notes\` by default: \`--comment-field\` (formerly \`--servicenow-field\`, still accepted), then \`SERVICENOW_COMMENT_FIELD\`, then the \`serviceNowCommentField\` configuration choose another journal field, such as \`comments\`.
 - **Aha!:** \`AHA_HOST\` + \`AHA_API_KEY\`
 
 <details markdown="1">
@@ -132,7 +133,7 @@ The same applies in CI.
     '$ sf hardis:ticket:post-comment --id AB-1234 --file test-report.md --marker test-report',
     '$ sf hardis:ticket:post-comment --id AB-1234 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition Active --points 3 --mention-assignee --allowed-projects "My Project" --agent --json',
     // ServiceNow
-    '$ sf hardis:ticket:post-comment --id INC0012345 --message "Fixed in the last release" --servicenow-field comments',
+    '$ sf hardis:ticket:post-comment --id INC0012345 --message "Fixed in the last release" --comment-field comments',
     '$ sf hardis:ticket:post-comment --id STRY0010001 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Work in progress" --points 5 --mention-assignee --agent --json',
     // Aha!
     '$ sf hardis:ticket:post-comment --id PROD-12 --provider aha --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Ready to develop" --points 3 --mention-assignee --agent --json',
@@ -160,8 +161,11 @@ The same applies in CI.
       options: ticketCommentProviderKeys(),
       description: 'Force the ticketing system instead of deducing it from the identifier',
     }),
-    'servicenow-field': Flags.string({
-      description: 'ServiceNow journal field written to (work_notes by default, comments for a note the requester reads)',
+    'comment-field': Flags.string({
+      // The former name still works, with a deprecation warning
+      aliases: ['servicenow-field'],
+      deprecateAliases: true,
+      description: 'Field the comment is written to, for a ticketing system that keeps comments in several fields. Ignored by the others',
     }),
     'strict-markdown': Flags.boolean({
       default: false,
@@ -243,6 +247,7 @@ The same applies in CI.
       overwritePoints: flags['overwrite-points'] === true,
       mentionAssignee: flags['mention-assignee'] === true,
       visibility: parseCommentVisibility(flags.visibility),
+      commentField: (flags['comment-field'] || '').trim() || null,
       allowedProjects: parseAllowedProjects(flags['allowed-projects']),
     };
     if (steps.skipIfMarked && !steps.prefix && !steps.markerLabel) {
@@ -345,7 +350,7 @@ The same applies in CI.
     const result: PostCommentResult = await TicketProvider.postComment(ticketId, markdown, {
       providerKey: steps.providerKey,
       marker: flags.marker,
-      serviceNowField: flags['servicenow-field'],
+      commentField: steps.commentField ?? undefined,
       strictMarkdown: flags.strictMarkdown === true,
       mention,
       visibility: steps.visibility,

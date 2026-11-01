@@ -895,6 +895,17 @@ describe('ticket post-comment / get / label / whoami / meta commands', () => {
     process.exitCode = undefined;
   });
 
+  it('post-comment: --comment-field, and its former name --servicenow-field, reach the ticketing system, which may ignore them', async () => {
+    for (const flag of ['--comment-field', '--servicenow-field']) {
+      const fake = fakeProvider();
+      use(fake);
+      const result: any = await TicketPostComment.run(['--id', 'ACME-1', '--message', 'x', flag, 'comments', '--agent']);
+      expect(result.results[0].action, flag).to.equal('created');
+      expect(fake.provider.lastComment.commentField, flag).to.equal('comments');
+    }
+    process.exitCode = undefined;
+  });
+
   it('post-comment: without the new options, nothing is read and every step says not-requested', async () => {
     const fake = fakeProvider();
     use(fake);

@@ -214,6 +214,18 @@ describe('ServiceNowProvider ticket operations', () => {
     expect(details!.project).to.equal('incident');
   }));
 
+  it('--comment-field: ServiceNow writes the journal field named, a system with one comment field ignores it', withEnv({ ...SERVICENOW_ENV, ...AHA_ENV }, async () => {
+    const calls = fakeFetch([
+      [(call) => call.method === 'PATCH', () => ({ body: { result: {} } })],
+      [path('/table/incident'), () => ({ body: { result: [incident] } })],
+      [(call) => call.method === 'POST' && call.url.pathname.includes('/features/'), () => ({ body: { comment: { id: 1, url: 'u' } } })],
+    ]);
+    await new ServiceNowProvider({}).postComment('INC0010001', 'Visible to the requester', { commentField: 'comments' });
+    expect(Object.keys(calls.find((call) => call.method === 'PATCH')!.body)).to.deep.equal(['comments']);
+    const result = await new AhaProvider({}).postComment('DEMO-1', 'x', { commentField: 'comments' });
+    expect(result.action).to.equal('created');
+  }));
+
   it('errors: a 401 is TicketProviderNotConfigured, the ServiceNow reason is kept', withEnv(SERVICENOW_ENV, async () => {
     fakeFetch([[path('/sys_user'), () => ({ status: 401, body: { error: { message: 'User is not authenticated', detail: 'Required to provide Auth information' } } })]]);
     const error = await rejectionOf(new ServiceNowProvider({}).whoAmI());

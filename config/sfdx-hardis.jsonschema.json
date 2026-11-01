@@ -4482,7 +4482,7 @@
     "serviceNowCommentField": {
       "$id": "#/properties/serviceNowCommentField",
       "default": "work_notes",
-      "description": "Journal field the deployment comment, and the comments posted with hardis:ticket:post-comment, are written into. work_notes is the internal journal, comments is read by the person who opened the record. The SERVICENOW_COMMENT_FIELD environment variable and the --servicenow-field flag of hardis:ticket:post-comment take precedence.",
+      "description": "Journal field the deployment comment, and the comments posted with hardis:ticket:post-comment, are written into. work_notes is the internal journal, comments is read by the person who opened the record. The SERVICENOW_COMMENT_FIELD environment variable and the --comment-field flag of hardis:ticket:post-comment take precedence.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-servicenow/",
       "examples": [
         "work_notes",

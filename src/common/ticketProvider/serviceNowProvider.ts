@@ -694,7 +694,7 @@ export class ServiceNowProvider extends TicketProviderRoot {
     if (!table) {
       throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId: number }));
     }
-    const field = ServiceNowProvider.commentFieldOf(options.serviceNowField, config);
+    const field = ServiceNowProvider.commentFieldOf(options.commentField, config);
     const sysId = await this.resolveSysId(table, number);
     if (!sysId) {
       throw new SfError(t('serviceNowProviderNoSysId', { ticketId: number }));
@@ -839,7 +839,7 @@ export class ServiceNowProvider extends TicketProviderRoot {
   }
 
   /**
-   * Journal field a comment is written to: the option (the --servicenow-field flag), then
+   * Journal field a comment is written to: the option (the --comment-field flag), then
    * SERVICENOW_COMMENT_FIELD, then `serviceNowCommentField`, then `work_notes`.
    */
   private static commentFieldOf(override: string | undefined, config: any): string {

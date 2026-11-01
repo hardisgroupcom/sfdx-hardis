@@ -322,7 +322,7 @@ describe('ticket comments', () => {
 
     it('writes in the field of the option, before SERVICENOW_COMMENT_FIELD', withEnv({ ...SERVICENOW_ENV, SERVICENOW_COMMENT_FIELD: 'comments' }, async () => {
       const calls = stubServiceNow();
-      await new ServiceNowProvider({}).postComment('INC0012345', 'x', { serviceNowField: 'close_notes' });
+      await new ServiceNowProvider({}).postComment('INC0012345', 'x', { commentField: 'close_notes' });
       expect(Object.keys(calls.find((call) => call.method === 'PATCH')!.body)).to.deep.equal(['close_notes']);
       await new ServiceNowProvider({}).postComment('INC0012345', 'x');
       expect(Object.keys(calls.filter((call) => call.method === 'PATCH')[1].body)).to.deep.equal(['comments']);
@@ -332,7 +332,7 @@ describe('ticket comments', () => {
       const calls = stubServiceNow();
       let message = '';
       try {
-        await new ServiceNowProvider({}).postComment('INC0012345', 'x', { serviceNowField: 'work_notes": "x' });
+        await new ServiceNowProvider({}).postComment('INC0012345', 'x', { commentField: 'work_notes": "x' });
       } catch (e) {
         message = (e as Error).message;
       }
