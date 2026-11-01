@@ -14,12 +14,13 @@
 
 ### Supported ticketing systems
 
-| Provider                  | Supported                                   | Id returned        |
-|---------------------------|---------------------------------------------|--------------------|
-| JIRA Cloud                | Yes                                         | `accountId`        |
-| JIRA Server / Data Center | Yes                                         | user name          |
-| Azure Boards              | Yes                                         | identity id (GUID) |
-| ServiceNow                | No: fails with `TicketProviderNotSupported` |                    |
+| Provider                  | Supported | Id returned                                     |
+|---------------------------|-----------|-------------------------------------------------|
+| JIRA Cloud                | Yes       | `accountId`                                     |
+| JIRA Server / Data Center | Yes       | user name                                       |
+| Azure Boards              | Yes       | identity id (GUID)                              |
+| ServiceNow                | Yes       | user name (`sys_created_by` of journal entries) |
+| Aha!                      | Yes       | user id                                         |
 
 ### Errors
 
@@ -30,6 +31,8 @@
 
 - **JIRA:** `jira.js` `myself.getCurrentUser` (`/rest/api/3/myself` on Cloud, `/rest/api/2/myself` on Server / Data Center).
 - **Azure Boards:** `connectionData` of the organization (`azure-devops-node-api` `WebApi.connect`), field `authenticatedUser`.
+- **ServiceNow:** the `sys_user` record of `SERVICENOW_USERNAME`. The id is the user name, the value ServiceNow writes as the author of every journal entry.
+- **Aha!:** `/api/v1/me`.
 - A read answered 5xx is retried once.
 
 </details>
@@ -63,6 +66,18 @@ $ sf hardis:ticket:whoami
 
 ```shell
 $ sf hardis:ticket:whoami --provider jira --agent --json
+```
+
+```shell
+$ sf hardis:ticket:whoami --provider azure --agent --json
+```
+
+```shell
+$ sf hardis:ticket:whoami --provider servicenow --agent --json
+```
+
+```shell
+$ sf hardis:ticket:whoami --provider aha --agent --json
 ```
 
 

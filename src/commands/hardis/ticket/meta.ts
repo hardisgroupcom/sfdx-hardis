@@ -27,7 +27,7 @@ export default class TicketMeta extends SfCommand<any> {
 
 ### Supported ticketing systems
 
-JIRA Cloud, JIRA Server / Data Center and Azure Boards. ServiceNow fails with \`TicketProviderNotSupported\`.
+JIRA Cloud, JIRA Server / Data Center, Azure Boards, ServiceNow (a project is a table: incident, rm_story...) and Aha! (a project is a workspace, named by the prefix of its features).
 
 ### Errors
 
@@ -38,6 +38,8 @@ JIRA Cloud, JIRA Server / Data Center and Azure Boards. ServiceNow fails with \`
 
 - **JIRA:** \`/project/{key}/statuses\` (statuses per issue type); projects from \`/project/search\` on Cloud, \`/project\` on Server / Data Center.
 - **Azure Boards:** work item types of the project (disabled types are left out) with their states; a type that comes without states is completed by \`workitemtypes/{type}/states\`. Projects from \`_apis/projects\` (200 at most).
+- **ServiceNow:** the projects are the tables a record number maps to (built-in prefixes and \`SERVICENOW_TABLE_PREFIXES\`); the statuses are the \`state\` choices of the table (\`sys_choice\`), or those of \`task\` when the table has none of its own. The type is the table itself.
+- **Aha!:** workspaces from \`/api/v1/products\`; statuses from the feature workflow of the workspace (\`/products/{key}/workflows\`). Aha! lists no feature types: the types are the workflow kinds its features use, read on up to 200 features.
 - A read answered 5xx is retried once.
 
 </details>
@@ -53,9 +55,18 @@ sf hardis ticket meta --projects --provider azure --agent --json
 `;
 
   public static examples = [
+    // JIRA
     '$ sf hardis:ticket:meta --project ACME',
+    '$ sf hardis:ticket:meta --projects --provider jira --agent --json',
+    // Azure Boards
     '$ sf hardis:ticket:meta --projects --provider azure --agent --json',
     '$ sf hardis:ticket:meta --project "My Project" --provider azure --allowed-projects "My Project" --agent --json',
+    // ServiceNow (tables, and the states of one)
+    '$ sf hardis:ticket:meta --projects --provider servicenow --agent --json',
+    '$ sf hardis:ticket:meta --project incident --provider servicenow --agent --json',
+    // Aha! (workspaces, and the feature statuses of one)
+    '$ sf hardis:ticket:meta --projects --provider aha --agent --json',
+    '$ sf hardis:ticket:meta --project PROD --provider aha --agent --json',
   ];
 
   public static flags: any = {

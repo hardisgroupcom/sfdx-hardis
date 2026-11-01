@@ -80,7 +80,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
 | id<br/>-i           | option  | Ticket identifier: JIRA key or Aha! feature (ACME-123), Azure Boards work item (1234 or AB-1234) or ServiceNow number (INC0012345). Separate several identifiers with commas |         |          |                                       |
 | json                | boolean | Format output as json.                                                                                                                                                       |         |          |                                       |
 | marker              | option  | Comment prefix: markedByMe is true when the authenticated account already posted a comment starting with it                                                                  |         |          |                                       |
-| marker-label        | option  | Label (Azure Boards tag): markedByMe is true when the ticket carries it                                                                                                      |         |          |                                       |
+| marker-label        | option  | Label: markedByMe is true when the ticket carries it                                                                                                                         |         |          |                                       |
 | max-attachment-size | option  | Maximum size in MB read from a single attachment. Bigger files are truncated                                                                                                 |   20    |          |                                       |
 | output-file<br/>-f  | option  | Write a markdown extract of the ticket at this path (parent folders are created)                                                                                             |         |          |                                       |
 | provider<br/>-p     | option  | Force the ticketing system instead of deducing it from the identifier                                                                                                        |         |          | jira<br/>azure<br/>servicenow<br/>aha |
@@ -100,7 +100,7 @@ $ sf hardis:ticket:get --id ACME-4567 --agent --json
 ```
 
 ```shell
-$ sf hardis:ticket:get --id INC0012345 --output-file docs/INC0012345/ticket-extract.md
+$ sf hardis:ticket:get --id ACME-1,ACME-2,ACME-3 --allowed-projects ACME --marker "Automatic qualification" --marker-label ia-qualified --skip-attachments --agent --json
 ```
 
 ```shell
@@ -108,15 +108,23 @@ $ sf hardis:ticket:get --id AB-4567 --provider azure --attachments-dir ./ticket-
 ```
 
 ```shell
+$ sf hardis:ticket:get --id 1234,1235 --provider azure --skip-comments --agent --json
+```
+
+```shell
+$ sf hardis:ticket:get --id INC0012345 --output-file docs/INC0012345/ticket-extract.md
+```
+
+```shell
+$ sf hardis:ticket:get --id STRY0010001 --allowed-projects rm_story --agent --json
+```
+
+```shell
 $ sf hardis:ticket:get --id PROD-12 --provider aha --agent --json
 ```
 
 ```shell
-$ sf hardis:ticket:get --id ACME-4567 --skip-attachments --agent --json
-```
-
-```shell
-$ sf hardis:ticket:get --id ACME-1,ACME-2,ACME-3 --allowed-projects ACME --marker "Automatic qualification" --marker-label ia-qualified --skip-attachments --agent --json
+$ sf hardis:ticket:get --id PROD-12 --provider aha --skip-attachments --marker-label ia-qualified --agent --json
 ```
 
 

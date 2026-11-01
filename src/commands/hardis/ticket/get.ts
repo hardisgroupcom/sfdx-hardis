@@ -96,13 +96,19 @@ sf hardis ticket get --id ACME-4567 --agent --json
 `;
 
   public static examples = [
+    // JIRA
     '$ sf hardis:ticket:get --id ACME-4567',
     '$ sf hardis:ticket:get --id ACME-4567 --agent --json',
-    '$ sf hardis:ticket:get --id INC0012345 --output-file docs/INC0012345/ticket-extract.md',
-    '$ sf hardis:ticket:get --id AB-4567 --provider azure --attachments-dir ./ticket-attachments',
-    '$ sf hardis:ticket:get --id PROD-12 --provider aha --agent --json',
-    '$ sf hardis:ticket:get --id ACME-4567 --skip-attachments --agent --json',
     '$ sf hardis:ticket:get --id ACME-1,ACME-2,ACME-3 --allowed-projects ACME --marker "Automatic qualification" --marker-label ia-qualified --skip-attachments --agent --json',
+    // Azure Boards
+    '$ sf hardis:ticket:get --id AB-4567 --provider azure --attachments-dir ./ticket-attachments',
+    '$ sf hardis:ticket:get --id 1234,1235 --provider azure --skip-comments --agent --json',
+    // ServiceNow
+    '$ sf hardis:ticket:get --id INC0012345 --output-file docs/INC0012345/ticket-extract.md',
+    '$ sf hardis:ticket:get --id STRY0010001 --allowed-projects rm_story --agent --json',
+    // Aha!
+    '$ sf hardis:ticket:get --id PROD-12 --provider aha --agent --json',
+    '$ sf hardis:ticket:get --id PROD-12 --provider aha --skip-attachments --marker-label ia-qualified --agent --json',
   ];
 
   public static flags: any = {

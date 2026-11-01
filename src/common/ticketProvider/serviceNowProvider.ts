@@ -14,6 +14,26 @@ import { PostCommentOptions, PostCommentResult, buildDeploymentCommentMarkdown, 
 import { markdownToPlainText } from './utils/markdownToTicketFormats.js';
 import { t } from '../utils/i18n.js';
 import {
+  TICKET_ERROR,
+  TicketErrorContext,
+  TicketOperation,
+  TicketSearchCriteria,
+  TicketSearchOptions,
+  TicketSearchResult,
+  TicketSummary,
+  toTicketError,
+} from './utils/ticketOperations.js';
+import {
+  TicketAssignee,
+  TicketIdentity,
+  TicketPointsOptions,
+  TicketProjectMeta,
+  TicketProjectSummary,
+  TicketStepResult,
+  mentionLead,
+  retryReadOn5xx,
+} from './utils/ticketQualify.js';
+import {
   TicketDetails,
   TicketDetailsOptions,
   TicketRelatedItem,
@@ -314,19 +334,32 @@ export class ServiceNowProvider extends TicketProviderRoot {
    * ServiceNow answers a denied read with an empty result rather than a 403 - so without this
    * fallback a ticket full of comments comes back looking like a ticket with none.
    */
-  private static journalsFromRecord(record: any): { author: string; date: string; body: string }[] {
-    const entries: { author: string; date: string; body: string }[] = [];
+  private static journalsFromRecord(record: any): { author: string; authorId?: string | null; date: string; body: string }[] {
+    const entries: { author: string; authorId?: string | null; date: string; body: string }[] = [];
     for (const fieldName of ServiceNowProvider.RECORD_JOURNAL_FIELDS) {
       const value = normalizeText(ServiceNowProvider.fieldValue(record, fieldName));
-      if (value) {
-        entries.push({ author: '', date: '', body: `[${fieldName}] ${value}` });
+      if (!value) {
+        continue;
       }
+      // A journal field reads "<date> - <author> (Work notes)\n<text>" for each entry, newest first
+      const headers = [...value.matchAll(ServiceNowProvider.JOURNAL_HEADER_RE)];
+      if (headers.length === 0) {
+        entries.push({ author: '', date: '', body: `[${fieldName}] ${value}` });
+        continue;
+      }
+      headers.forEach((header, index) => {
+        const end = index + 1 < headers.length ? headers[index + 1].index : value.length;
+        const text = normalizeText(value.slice((header.index ?? 0) + header[0].length, end));
+        entries.push({ author: header[2], date: header[1], body: `${text}\n\n[${fieldName}]` });
+      });
     }
-    return entries;
+    return entries.sort((a, b) => a.date.localeCompare(b.date));
   }
 
+  private static readonly JOURNAL_HEADER_RE = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (.+?) \([^)\n]+\)\n/gm;
+
   /** Work notes / comments live in the sys_journal_field table, not on the record itself */
-  private async fetchJournals(table: string, sysId: string): Promise<{ author: string; date: string; body: string }[]> {
+  private async fetchJournals(table: string, sysId: string): Promise<{ author: string; authorId?: string | null; date: string; body: string }[]> {
     try {
       const response = await httpGet(`${this.instanceUrl}/api/now/table/sys_journal_field`, {
         ...this.authConfig(),
@@ -336,10 +369,13 @@ export class ServiceNowProvider extends TicketProviderRoot {
           sysparm_display_value: 'all',
         },
       });
+      // The journal field goes last: a comment must start with its own first line, which the
+      // --skip-if-marked check of ticket post-comment compares with --prefix
       return (response?.data?.result || []).map((journal: any) => ({
         author: ServiceNowProvider.fieldValue(journal, 'sys_created_by'),
+        authorId: ServiceNowProvider.rawFieldValue(journal, 'sys_created_by') || null,
         date: ServiceNowProvider.fieldValue(journal, 'sys_created_on'),
-        body: `[${ServiceNowProvider.fieldValue(journal, 'element')}] ${normalizeText(ServiceNowProvider.fieldValue(journal, 'value'))}`,
+        body: `${normalizeText(ServiceNowProvider.fieldValue(journal, 'value'))}\n\n[${ServiceNowProvider.fieldValue(journal, 'element')}]`,
       }));
     } catch (e: any) {
       uxLog('warning', this, c.yellow('[ServiceNowProvider] ' + t('serviceNowJournalsError', { message: e.message })));
@@ -486,7 +522,12 @@ export class ServiceNowProvider extends TicketProviderRoot {
     details.status = ServiceNowProvider.fieldValue(record, 'state');
     details.priority = ServiceNowProvider.fieldValue(record, 'priority');
     details.assignee = ServiceNowProvider.fieldValue(record, 'assigned_to');
+    details.assigneeId = await this.userNameOf(ServiceNowProvider.rawFieldValue(record, 'assigned_to'));
     details.reporter = ServiceNowProvider.fieldValue(record, 'opened_by') || ServiceNowProvider.fieldValue(record, 'sys_created_by');
+    details.reporterId = ServiceNowProvider.rawFieldValue(record, 'sys_created_by') || null;
+    // The table is the project: it is what ticket list --project and --allowed-projects name
+    details.project = table;
+    details.labels = await this.tagsOfRecord(table, sysId);
     details.created = ServiceNowProvider.fieldValue(record, 'sys_created_on');
     details.updated = ServiceNowProvider.fieldValue(record, 'sys_updated_on');
     details.resolved = ServiceNowProvider.fieldValue(record, 'closed_at') || ServiceNowProvider.fieldValue(record, 'resolved_at');
@@ -501,15 +542,24 @@ export class ServiceNowProvider extends TicketProviderRoot {
       }
     }
 
-    let journals = await this.fetchJournals(table, sysId);
-    if (journals.length === 0) {
+    let journals = options.skipComments ? [] : await this.fetchJournals(table, sysId);
+    if (journals.length === 0 && !options.skipComments) {
       journals = ServiceNowProvider.journalsFromRecord(record);
+      // The record gives the display name of each author only: the entries of the authenticated
+      // account get its user name, the id ticket whoami returns, so --skip-if-marked can find them
+      if (journals.some((journal) => journal.author)) {
+        const me = await this.whoAmI().catch(() => null);
+        for (const journal of journals) {
+          journal.authorId = me?.displayName && journal.author === me.displayName ? me.id : null;
+        }
+      }
       // Say it either way: an empty sys_journal_field is indistinguishable from a denied read, and a
       // ticket that silently comes back with no comments is worse than one that says it might have some.
       uxLog('log', this, c.grey('[ServiceNowProvider] ' + t('serviceNowNoJournalEntries', { count: journals.length })));
     }
     details.comments = journals.map((journal) => ({
       author: journal.author,
+      authorId: journal.authorId ?? null,
       date: journal.date,
       body: capText(journal.body),
     }));
@@ -636,6 +686,8 @@ export class ServiceNowProvider extends TicketProviderRoot {
    * marker line, and a warning says so.
    */
   public async postComment(ticketId: string, markdown: string, options: PostCommentOptions = {}): Promise<PostCommentResult> {
+    // Journal notes cannot be restricted: refused by the base check, before any call
+    this.validateQualifyOptions({ visibility: options.visibility });
     const config = await getConfig('project');
     const number = (ticketId || '').trim().toUpperCase();
     const table = ServiceNowProvider.tableOfTicketId(number, config);
@@ -650,13 +702,140 @@ export class ServiceNowProvider extends TicketProviderRoot {
     if (options.marker) {
       uxLog('warning', this, c.yellow('[ServiceNowProvider] ' + t('ticketCommentServiceNowNotEditable', { ticketId: number })));
     }
-    await this.writeNote(table, sysId, field, markdown + markdownMarkerFooter(options.marker));
+    const text = ServiceNowProvider.withMention(markdown, options.mention);
+    await this.writeNote(table, sysId, field, text + markdownMarkerFooter(options.marker));
     return {
       ticketId: number,
       provider: ServiceNowProvider.providerLabel,
       action: 'created',
       url: ServiceNowProvider.recordUrlBySysId(this.instanceUrl, table, sysId),
     };
+  }
+
+  public normalizeTicketId(ticketId: string): string {
+    return (ticketId || '').trim().toUpperCase();
+  }
+
+  /**
+   * The neutral criteria become an encoded query. The project is the table (incident, rm_story...):
+   * one is required, several are searched in `task` with `sys_class_nameIN`. Values holding a
+   * character the encoded query reserves (^, and a comma in a list) are refused.
+   */
+  public async searchTickets(criteria: TicketSearchCriteria, options: TicketSearchOptions): Promise<TicketSearchResult> {
+    const projects = criteria.projects || [];
+    if (projects.length === 0) {
+      throw new SfError(t('ticketSearchProjectRequired', { provider: ServiceNowProvider.providerLabel }), TICKET_ERROR.queryInvalid);
+    }
+    const table = projects.length === 1 ? ServiceNowProvider.tableName(projects[0]) : 'task';
+    const query = await this.toEncodedQuery(table, criteria, projects.length > 1 ? projects.map((project) => ServiceNowProvider.tableName(project)) : []);
+    let offset = Number(options.pageToken || 0) || 0;
+    const tickets: TicketSummary[] = [];
+    let nextPageToken: string | null = null;
+    for (;;) {
+      const limit = Math.min(options.maxResults - tickets.length, ServiceNowProvider.SEARCH_PAGE_SIZE);
+      const response: any = await this.runOperation({ operation: 'list' }, () =>
+        retryReadOn5xx(() =>
+          httpGet(`${this.instanceUrl}/api/now/table/${table}`, {
+            ...this.authConfig(),
+            params: { sysparm_query: query, sysparm_limit: limit, sysparm_offset: offset, sysparm_display_value: 'all', sysparm_fields: ServiceNowProvider.SEARCH_FIELDS },
+          })
+        )
+      );
+      const records: any[] = response?.data?.result || [];
+      tickets.push(...records.map((record) => this.toTicketSummary(record)));
+      offset += records.length;
+      const total = Number(response?.headers?.['x-total-count'] ?? 0);
+      const more = records.length > 0 && (total ? offset < total : records.length === limit);
+      if (!more) {
+        break;
+      }
+      if (tickets.length >= options.maxResults) {
+        nextPageToken = String(offset);
+        break;
+      }
+    }
+    return { tickets, nextPageToken, truncated: nextPageToken !== null };
+  }
+
+  /** Tags the record (label_entry), as the deployment tag does */
+  public async addTicketLabel(ticketId: string, label: string): Promise<void> {
+    const { table, sysId, number } = await this.requireRecord(ticketId, 'label');
+    await this.runOperation({ operation: 'label', ticketId: number }, () => this.addTagOnRecord(table, sysId, label));
+  }
+
+  /** The id is the user name: it is what sys_created_by holds on every journal entry */
+  public async whoAmI(): Promise<TicketIdentity> {
+    const response: any = await this.runOperation({ operation: 'whoami' }, () =>
+      retryReadOn5xx(() =>
+        httpGet(`${this.instanceUrl}/api/now/table/sys_user`, {
+          ...this.authConfig(),
+          params: { sysparm_query: `user_name=${this.user}`, sysparm_limit: 1, sysparm_fields: 'user_name,name,email' },
+        })
+      )
+    );
+    const user = response?.data?.result?.[0] || {};
+    return { id: user.user_name || this.user || null, displayName: user.name || null, email: user.email || null };
+  }
+
+  /** The projects are the tables a record number maps to */
+  public async listProjects(): Promise<TicketProjectSummary[]> {
+    const config = await getConfig('project');
+    const byTable = new Map<string, string[]>();
+    for (const [prefix, table] of Object.entries(ServiceNowProvider.prefixTableMap(config))) {
+      byTable.set(table, [...(byTable.get(table) || []), prefix]);
+    }
+    return [...byTable].map(([table, prefixes]) => ({ key: table, name: `${table} (${prefixes.join(', ')})` }));
+  }
+
+  /** The states of the table, from its choice list */
+  public async getProjectMeta(project: string): Promise<TicketProjectMeta> {
+    const table = ServiceNowProvider.tableName(project);
+    const states = await this.statesOf(table, 'meta');
+    return {
+      project: table,
+      issueTypes: [{ id: table, name: table }],
+      statuses: states.map((state) => ({ id: state.value, name: state.label })),
+      statusesByType: { [table]: states.map((state) => state.label) },
+    };
+  }
+
+  /** The state of the record, matched on the label or the value of the choice list, without case */
+  public async transitionTicket(ticketId: string, status: string): Promise<string> {
+    const { table, sysId, number } = await this.requireRecord(ticketId, 'transition');
+    const wanted = status.trim().toLowerCase();
+    const match = (await this.statesOf(table, 'transition')).find((state) => state.label.toLowerCase() === wanted || state.value.toLowerCase() === wanted);
+    if (!match) {
+      throw new SfError(t('ticketStateNotAvailable', { status, type: table }), TICKET_ERROR.transitionInvalid);
+    }
+    await this.runOperation({ operation: 'transition', ticketId: number }, () =>
+      httpPatch(`${this.instanceUrl}/api/now/table/${table}/${sysId}`, { state: match.value }, this.authConfig())
+    );
+    return match.label;
+  }
+
+  /** story_points by default (rm_story), or the field named; a record without it is skipped */
+  public async setTicketPoints(ticketId: string, points: number, options: TicketPointsOptions = {}): Promise<TicketStepResult> {
+    const field = options.field || 'story_points';
+    if (!/^[a-z0-9_]+$/.test(field)) {
+      throw new SfError(t('ticketPointsRefused', { ticketId, message: field }), TICKET_ERROR.pointsInvalid);
+    }
+    const { table, sysId, number } = await this.requireRecord(ticketId, 'points');
+    const response: any = await this.runOperation({ operation: 'points', ticketId: number }, () =>
+      retryReadOn5xx(() => httpGet(`${this.instanceUrl}/api/now/table/${table}/${sysId}`, { ...this.authConfig(), params: { sysparm_fields: field } }))
+    );
+    const record = response?.data?.result || {};
+    if (!(field in record)) {
+      return { status: 'skipped', value: null, field, reason: 'field-not-on-issue' };
+    }
+    // An empty integer field reads "0" or ""
+    const current = record[field];
+    if (current !== '' && current !== '0' && current !== null && !options.overwrite) {
+      return { status: 'skipped', value: current, field, reason: 'already-set' };
+    }
+    await this.runOperation({ operation: 'points', ticketId: number }, () =>
+      httpPatch(`${this.instanceUrl}/api/now/table/${table}/${sysId}`, { [field]: points }, this.authConfig())
+    );
+    return { status: 'done', value: points, field };
   }
 
   /**
@@ -717,10 +896,209 @@ export class ServiceNowProvider extends TicketProviderRoot {
     if (alreadyTagged?.data?.result?.length) {
       return;
     }
-    await httpPost(
+    const entry = await httpPost(
       `${this.instanceUrl}/api/now/table/label_entry`,
       { label: labelSysId, table, table_key: sysId, title: tag },
       this.authConfig()
     );
+    // Without a write ACL on label_entry, ServiceNow saves the entry with these fields blank and
+    // answers 201: the record is not tagged, and saying "done" would be false
+    const saved = entry?.data?.result || {};
+    const valueOf = (field: any) => (typeof field === 'object' && field !== null ? field.value : field);
+    if (!valueOf(saved.label) || !valueOf(saved.table_key)) {
+      throw new SfError(t('serviceNowTagNotAttached', { tag }));
+    }
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // ServiceNow formats: encoded queries, choice lists, tags, error bodies and mentions. They stay here
+  // ---------------------------------------------------------------------------------------------
+
+  private static readonly SEARCH_PAGE_SIZE = 100;
+  private static readonly SEARCH_FIELDS =
+    'sys_id,number,short_description,sys_class_name,state,priority,assigned_to,assigned_to.user_name,sys_created_on,sys_updated_on,assignment_group';
+
+  /** A table name and nothing else: it lands in the URL */
+  private static tableName(project: string): string {
+    const table = String(project || '').trim().toLowerCase();
+    if (!/^[a-z0-9_]+$/.test(table)) {
+      throw new SfError(t('ticketSearchValueRefused', { provider: ServiceNowProvider.providerLabel, value: project, characters: 'a-z 0-9 _' }), TICKET_ERROR.queryInvalid);
+    }
+    return table;
+  }
+
+  /** ^ separates the conditions of an encoded query, and a comma the values of an IN list */
+  private static queryValue(value: string, inList = false): string {
+    const text = String(value).trim();
+    if (/[\^\r\n]/.test(text) || (inList && text.includes(','))) {
+      throw new SfError(t('ticketSearchValueRefused', { provider: ServiceNowProvider.providerLabel, value, characters: inList ? '^ ,' : '^' }), TICKET_ERROR.queryInvalid);
+    }
+    return text;
+  }
+
+  private async toEncodedQuery(table: string, criteria: TicketSearchCriteria, classes: string[]): Promise<string> {
+    const conditions: string[] = [];
+    const classNames = [...classes, ...(criteria.types || []).map((type) => ServiceNowProvider.tableName(type))];
+    if (classNames.length > 0) {
+      conditions.push(`sys_class_nameIN${classNames.join(',')}`);
+    }
+    if (criteria.statuses?.length) {
+      // States are numbers behind their labels: the label or the value of the choice list is accepted
+      const states = await this.statesOf(table, 'list');
+      const values = criteria.statuses.map((status) => {
+        const wanted = ServiceNowProvider.queryValue(status, true).toLowerCase();
+        return states.find((state) => state.label.toLowerCase() === wanted || state.value.toLowerCase() === wanted)?.value ?? wanted;
+      });
+      conditions.push(`stateIN${values.join(',')}`);
+    }
+    if (criteria.assignee === 'me') {
+      conditions.push(`assigned_to.user_name=${ServiceNowProvider.queryValue(this.user)}`);
+    } else if (criteria.assignee === 'none') {
+      conditions.push('assigned_toISEMPTY');
+    } else if (criteria.assignee) {
+      conditions.push(`assigned_to.user_name=${ServiceNowProvider.queryValue(criteria.assignee)}`);
+    }
+    if (criteria.labels?.length) {
+      const keys = await this.recordsTagged(table, criteria.labels.map((label) => ServiceNowProvider.queryValue(label, true)));
+      // No tagged record: a condition no record matches, rather than no condition at all
+      conditions.push(`sys_idIN${keys.length > 0 ? keys.join(',') : '-'}`);
+    }
+    if (criteria.text) {
+      const text = ServiceNowProvider.queryValue(criteria.text);
+      conditions.push(`short_descriptionLIKE${text}^ORdescriptionLIKE${text}`);
+    }
+    if (criteria.createdAfter) {
+      conditions.push(`sys_created_on>=${criteria.createdAfter} 00:00:00`);
+    }
+    if (criteria.updatedAfter) {
+      conditions.push(`sys_updated_on>=${criteria.updatedAfter} 00:00:00`);
+    }
+    if (criteria.openOnly) {
+      conditions.push('active=true');
+    }
+    const orderField = criteria.orderBy === 'updated' ? 'sys_updated_on' : 'sys_created_on';
+    conditions.push(`${criteria.descending ? 'ORDERBYDESC' : 'ORDERBY'}${orderField}`);
+    return conditions.join('^');
+  }
+
+  /** sys_ids of the records of the table carrying one of the tags */
+  private async recordsTagged(table: string, labels: string[]): Promise<string[]> {
+    const tableCondition = table === 'task' ? '' : `^table=${table}`;
+    const response: any = await this.runOperation({ operation: 'list' }, () =>
+      retryReadOn5xx(() =>
+        httpGet(`${this.instanceUrl}/api/now/table/label_entry`, {
+          ...this.authConfig(),
+          params: { sysparm_query: `label.nameIN${labels.join(',')}${tableCondition}`, sysparm_fields: 'table_key', sysparm_limit: 1000 },
+        })
+      )
+    );
+    return [...new Set<string>((response?.data?.result || []).map((entry: any) => String(entry.table_key || '')).filter(Boolean))];
+  }
+
+  /** Names of the tags of one record; empty when they cannot be read */
+  private async tagsOfRecord(table: string, sysId: string): Promise<string[]> {
+    try {
+      const response: any = await httpGet(`${this.instanceUrl}/api/now/table/label_entry`, {
+        ...this.authConfig(),
+        params: { sysparm_query: `table=${table}^table_key=${sysId}`, sysparm_fields: 'label.name', sysparm_limit: 100 },
+      });
+      return (response?.data?.result || []).map((entry: any) => String(entry['label.name'] || '')).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  /** The user name behind a sys_user sys_id: the id ticket whoami returns and ticket list --assignee takes */
+  private async userNameOf(userSysId: string): Promise<string | null> {
+    if (!userSysId) {
+      return null;
+    }
+    try {
+      const response: any = await httpGet(`${this.instanceUrl}/api/now/table/sys_user/${userSysId}`, { ...this.authConfig(), params: { sysparm_fields: 'user_name' } });
+      return response?.data?.result?.user_name || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** The choices of the state field; a table extending task may only inherit those of task */
+  private async statesOf(table: string, operation: TicketOperation): Promise<{ value: string; label: string }[]> {
+    for (const name of table === 'task' ? ['task'] : [table, 'task']) {
+      const response: any = await this.runOperation({ operation }, () =>
+        retryReadOn5xx(() =>
+          httpGet(`${this.instanceUrl}/api/now/table/sys_choice`, {
+            ...this.authConfig(),
+            params: { sysparm_query: `name=${name}^element=state^inactive=false^language=en^ORDERBYsequence`, sysparm_fields: 'value,label' },
+          })
+        )
+      );
+      const states = (response?.data?.result || []).map((choice: any) => ({ value: String(choice.value), label: String(choice.label) }));
+      if (states.length > 0) {
+        return states;
+      }
+    }
+    return [];
+  }
+
+  /** Table, sys_id and number of a record, or a named error */
+  private async requireRecord(ticketId: string, operation: TicketOperation): Promise<{ table: string; sysId: string; number: string }> {
+    const number = this.normalizeTicketId(ticketId);
+    const table = ServiceNowProvider.tableOfTicketId(number, await getConfig('project'));
+    if (!table) {
+      throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId: number }), TICKET_ERROR.notFound);
+    }
+    const record = await this.runOperation({ operation, ticketId: number }, () => retryReadOn5xx(() => this.fetchRecord(table, number)));
+    if (!record) {
+      throw new SfError(t('ticketNotFound', { ticketId: number }), TICKET_ERROR.notFound);
+    }
+    return { table, sysId: ServiceNowProvider.rawFieldValue(record, 'sys_id'), number };
+  }
+
+  private toTicketSummary(record: any): TicketSummary {
+    const table = ServiceNowProvider.rawFieldValue(record, 'sys_class_name');
+    // Raw dates are UTC, written "YYYY-MM-DD HH:mm:ss"
+    const isoOf = (field: string) => {
+      const raw = ServiceNowProvider.rawFieldValue(record, field);
+      return raw ? `${raw.replace(' ', 'T')}Z` : '';
+    };
+    return {
+      id: ServiceNowProvider.rawFieldValue(record, 'number'),
+      url: ServiceNowProvider.recordUrlBySysId(this.instanceUrl, table, ServiceNowProvider.rawFieldValue(record, 'sys_id')),
+      subject: ServiceNowProvider.fieldValue(record, 'short_description'),
+      type: table,
+      status: ServiceNowProvider.fieldValue(record, 'state'),
+      priority: ServiceNowProvider.fieldValue(record, 'priority'),
+      assignee: ServiceNowProvider.fieldValue(record, 'assigned_to') || null,
+      created: isoOf('sys_created_on'),
+      updated: isoOf('sys_updated_on'),
+      labels: [],
+      assigneeId: ServiceNowProvider.rawFieldValue(record, 'assigned_to.user_name') || null,
+      project: table,
+      areaPath: ServiceNowProvider.fieldValue(record, 'assignment_group') || null,
+    };
+  }
+
+  /** Named errors on every failure of the ticket operations, with the reason ServiceNow gave */
+  private async runOperation<T>(context: Omit<TicketErrorContext, 'providerLabel'>, call: () => Promise<T>): Promise<T> {
+    if (!this.isActive) {
+      throw new SfError(t('ticketProviderNoCredential', { provider: ServiceNowProvider.providerLabel }), TICKET_ERROR.providerNotConfigured);
+    }
+    try {
+      return await call();
+    } catch (e: any) {
+      const error = e?.response?.data?.error;
+      const serverMessage = [error?.message, error?.detail].filter((part) => typeof part === 'string' && part).join(': ') || undefined;
+      throw toTicketError(e, { providerLabel: ServiceNowProvider.providerLabel, serverMessage, ...context });
+    }
+  }
+
+  /** Journal notes are plain text: the assignee is named after the first block, as text */
+  private static withMention(markdown: string, assignee: TicketAssignee | null | undefined): string {
+    if (!assignee?.displayName) {
+      return markdown;
+    }
+    const blocks = markdown.split('\n\n');
+    blocks.splice(1, 0, `${mentionLead()}${assignee.displayName}`);
+    return blocks.join('\n\n');
   }
 }

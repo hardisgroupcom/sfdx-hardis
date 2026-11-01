@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { TicketProvider } from '../../../src/common/ticketProvider/index.js';
 import { GenericTicketingProvider } from '../../../src/common/ticketProvider/genericProvider.js';
 import { JiraProvider } from '../../../src/common/ticketProvider/jiraProvider.js';
-import { ServiceNowProvider } from '../../../src/common/ticketProvider/serviceNowProvider.js';
 import { TICKET_ERROR } from '../../../src/common/ticketProvider/utils/ticketOperations.js';
 import TicketList from '../../../src/commands/hardis/ticket/list.js';
 
@@ -51,8 +50,8 @@ async function rejectionOf(promise: Promise<unknown>): Promise<any> {
 }
 
 describe('ticket operations on providers that cannot do them', () => {
-  // JIRA and Azure Boards support them all; ServiceNow and the generic connector none
-  const providers = () => [new ServiceNowProvider({}), new GenericTicketingProvider({})];
+  // JIRA, Azure Boards, ServiceNow and Aha! support them all; the generic connector, which has no API, none
+  const providers = () => [new GenericTicketingProvider({})];
 
   it('fail with TicketProviderNotSupported, never with an empty result', async () => {
     for (const provider of providers()) {

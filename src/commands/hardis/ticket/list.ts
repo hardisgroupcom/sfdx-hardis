@@ -72,7 +72,8 @@ export default class TicketList extends SfCommand<any> {
 | JIRA Cloud | Yes |
 | JIRA Server / Data Center | Yes (offset pagination, carried by the page token) |
 | Azure Boards | Yes (one page of \`--max-results\`, no page token) |
-| ServiceNow, Aha! | No: fails with \`TicketProviderNotSupported\` |
+| ServiceNow | Yes (\`--project\` is required: the table, such as incident or rm_story) |
+| Aha! | Yes (\`--project\` is the workspace prefix, such as PROD) |
 
 ### Errors
 
@@ -87,7 +88,10 @@ The credentials of [sf hardis ticket get](${'https://sfdx-hardis.cloudity.com/ha
 
 - **Provider abstraction:** the command builds a neutral \`TicketSearchCriteria\` and calls the \`searchTickets()\` method of the provider. Each provider converts the criteria to its query language in its own class: no query language appears in the command.
 - **JIRA:** the criteria become JQL (\`project in (...)\`, \`status in (...)\`, \`issuetype in (...)\`, \`assignee = currentUser()\` or \`is EMPTY\`, \`labels in (...)\`, \`text ~\`, \`created >=\`, \`updated >=\`, \`statusCategory != Done\`). Cloud calls \`/search/jql\` through \`jira.js\` \`issueSearch.searchForIssuesUsingJqlEnhancedSearchPost\` (the former \`/rest/api/3/search\` was removed from Jira Cloud, HTTP 410), whose cursor gives no exact total, so \`totalFetched\` counts the tickets actually fetched. Server / Data Center has no \`/search/jql\`: the command calls \`/rest/api/2/search\` and carries \`startAt\` in the opaque page token. JIRA Cloud is recognized by its host (\`atlassian.net\` or \`.jira.com\`). The assignee account is the \`accountId\` on Cloud, the user name on Server / Data Center.
-- **Azure Boards:** the criteria become a WIQL statement on \`System.TeamProject\` (the configured team project when no project is given), \`System.State\`, \`System.WorkItemType\`, \`System.AssignedTo\` (\`@Me\`; another assignee is matched by display name or email), \`System.Tags\`, \`System.Title\` / \`System.Description\`, \`System.CreatedDate\` and \`System.ChangedDate\`. WIQL has no status category: \`--open-only\` leaves out the states Done, Closed, Completed, Resolved and Removed. \`wit/wiql\` with \`$top\`, then \`workitemsbatch\` for the fields. A read answered 5xx is retried once.
+- **Azure Boards:** the criteria become a WIQL statement on \`System.TeamProject\` (the configured team project when no project is given), \`System.State\`, \`System.WorkItemType\`, \`System.AssignedTo\` (\`@Me\`; another assignee is matched by display name or email), \`System.Tags\`, \`System.Title\` / \`System.Description\`, \`System.CreatedDate\` and \`System.ChangedDate\`. WIQL has no status category: \`--open-only\` leaves out the states Done, Closed, Completed, Resolved and Removed. \`wit/wiql\` with \`$top\`, then \`workitemsbatch\` for the fields.
+- **ServiceNow:** the criteria become an encoded query on the table (several tables are searched in \`task\` with \`sys_class_nameIN\`): \`stateIN\` (the label or the value of the choice list), \`assigned_to.user_name\`, tags through \`label_entry\`, \`short_descriptionLIKE\` / \`descriptionLIKE\`, \`sys_created_on\` / \`sys_updated_on\`, \`active=true\` for \`--open-only\`. A value holding \`^\` (or a comma in a list) is refused, since the encoded query cannot quote it. Pages by offset; the labels of the tickets are not returned.
+- **Aha!:** \`q\`, \`tag\` (one label), \`assigned_to_user\` and \`updated_since\` are filters of the features API; status, type, creation day, open only (a workflow status not \`complete\`), several labels or several workspaces are applied to each page. The tickets of a page are sorted with \`--order-by\`, the pages keep the order of Aha!.
+- A read answered 5xx is retried once.
 
 </details>
 
@@ -101,12 +105,21 @@ sf hardis ticket list --project ACME --open-only --agent --json
 `;
 
   public static examples = [
+    // JIRA
     '$ sf hardis:ticket:list --project ACME --type Bug --open-only',
-    '$ sf hardis:ticket:list --project ACME --max-results 100 --agent --json',
-    '$ sf hardis:ticket:list --project ACME --page-token <nextPageToken of the previous page> --agent --json',
-    '$ sf hardis:ticket:list --project ACME --status "To Do,In Progress" --output-file docs/backlog.json',
-    '$ sf hardis:ticket:list --assignee me --allowed-projects ACME,OPS --agent --json',
-    '$ sf hardis:ticket:list --provider azure --status New --project "My Project" --order-by updated --descending --agent --json',
+    '$ sf hardis:ticket:list --project ACME --status "To Do,In Progress" --assignee me --agent --json',
+    '$ sf hardis:ticket:list --project ACME --label ia-qualified --updated-after 2026-10-01 --order-by updated --descending --agent --json',
+    '$ sf hardis:ticket:list --project ACME --max-results 100 --page-token <nextPageToken of the previous page> --agent --json',
+    '$ sf hardis:ticket:list --assignee none --allowed-projects ACME,OPS --output-file docs/backlog.json',
+    // Azure Boards
+    '$ sf hardis:ticket:list --provider azure --project "My Project" --status New --agent --json',
+    '$ sf hardis:ticket:list --provider azure --type "User Story" --text login --open-only --agent --json',
+    // ServiceNow (the project is the table)
+    '$ sf hardis:ticket:list --provider servicenow --project incident --status "In Progress" --assignee me --agent --json',
+    '$ sf hardis:ticket:list --provider servicenow --project incident,rm_story --open-only --created-after 2026-10-01 --agent --json',
+    // Aha! (the project is the workspace prefix)
+    '$ sf hardis:ticket:list --provider aha --project PROD --status "In design" --agent --json',
+    '$ sf hardis:ticket:list --provider aha --project PROD,DEMO --label ia-qualified --open-only --agent --json',
   ];
 
   public static flags: any = {

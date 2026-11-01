@@ -30,7 +30,7 @@ import TicketPostComment from '../../../src/commands/hardis/ticket/post-comment.
 import TicketGet from '../../../src/commands/hardis/ticket/get.js';
 import TicketMeta from '../../../src/commands/hardis/ticket/meta.js';
 import TicketWhoami from '../../../src/commands/hardis/ticket/whoami.js';
-import TicketLabel from '../../../src/commands/hardis/ticket/label.js';
+import TicketSetLabel from '../../../src/commands/hardis/ticket/set-label.js';
 
 /*
  * Port of the acceptance tests of the cloudity-qualify-ticket adapters (providers/jira.mjs and
@@ -915,19 +915,19 @@ describe('ticket post-comment / get / label / whoami / meta commands', () => {
   it('[J11][A22] label: adds the label alone; a ticket outside --allowed-projects is refused, nothing written', async () => {
     const fake = fakeProvider();
     use(fake);
-    const result: any = await TicketLabel.run(['--id', 'acme-1', '--label', 'ia-qualif-erreur', '--allowed-projects', 'ACME', '--agent']);
+    const result: any = await TicketSetLabel.run(['--id', 'acme-1', '--label', 'ia-qualif-erreur', '--allowed-projects', 'ACME', '--agent']);
     expect(fake.calls).to.deep.equal(['get', 'label']);
     expect(result).to.deep.equal({ provider: 'jira', ticket: 'ACME-1', label: { status: 'done', value: 'ia-qualif-erreur' } });
     const outside = fakeProvider({ project: 'OTHER' });
     use(outside);
-    const error = await rejectionOf(() => TicketLabel.run(['--id', 'ACME-1', '--label', 'x', '--allowed-projects', 'ACME', '--agent']));
+    const error = await rejectionOf(() => TicketSetLabel.run(['--id', 'ACME-1', '--label', 'x', '--allowed-projects', 'ACME', '--agent']));
     expect(error.name).to.equal(TICKET_ERROR.outOfScope);
     expect(outside.calls).to.deep.equal(['get']);
     const plain = fakeProvider();
     use(plain);
-    await TicketLabel.run(['--id', 'ACME-1', '--label', 'x', '--agent']);
+    await TicketSetLabel.run(['--id', 'ACME-1', '--label', 'x', '--agent']);
     expect(plain.calls).to.deep.equal(['label']);
-    await rejectionOf(() => TicketLabel.run(['--id', 'ACME-1', '--label', 'two words', '--agent']));
+    await rejectionOf(() => TicketSetLabel.run(['--id', 'ACME-1', '--label', 'two words', '--agent']));
   });
 
   it('[A5] get --id a,b,c: one entry per id in the order asked, a failure never stops the others, exit 1 only when none is read', async () => {

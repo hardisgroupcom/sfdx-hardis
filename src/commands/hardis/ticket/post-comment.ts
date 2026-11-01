@@ -123,12 +123,19 @@ The same applies in CI.
 `;
 
   public static examples = [
+    // JIRA
     '$ sf hardis:ticket:post-comment --id ACME-4567 --message "The fix is deployed in UAT, please test it"',
     '$ sf hardis:ticket:post-comment --id ACME-4567 --id ACME-4568 --file release-notes.md',
-    '$ sf hardis:ticket:post-comment --id AB-1234 --file test-report.md --marker test-report',
-    '$ sf hardis:ticket:post-comment --id INC0012345 --message "Fixed in the last release" --servicenow-field comments',
     '$ sf hardis:ticket:post-comment --id ACME-4567 --file docs/ACME-4567/design.md --marker design --agent',
-    '$ sf hardis:ticket:post-comment --id AB-1234 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition Ready --points 3 --mention-assignee --allowed-projects "My Project" --agent --json',
+    '$ sf hardis:ticket:post-comment --id ACME-4567 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Ready for dev" --points 3 --points-field customfield_10016 --mention-assignee --visibility role:Developers --allowed-projects ACME --strict-markdown --agent --json',
+    // Azure Boards
+    '$ sf hardis:ticket:post-comment --id AB-1234 --file test-report.md --marker test-report',
+    '$ sf hardis:ticket:post-comment --id AB-1234 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition Active --points 3 --mention-assignee --allowed-projects "My Project" --agent --json',
+    // ServiceNow
+    '$ sf hardis:ticket:post-comment --id INC0012345 --message "Fixed in the last release" --servicenow-field comments',
+    '$ sf hardis:ticket:post-comment --id STRY0010001 --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Work in progress" --points 5 --mention-assignee --agent --json',
+    // Aha!
+    '$ sf hardis:ticket:post-comment --id PROD-12 --provider aha --file draft.md --prefix "Automatic qualification" --skip-if-marked --label ia-qualified --transition "Ready to develop" --points 3 --mention-assignee --agent --json',
   ];
 
   public static flags: any = {
