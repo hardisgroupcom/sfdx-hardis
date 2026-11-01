@@ -247,6 +247,10 @@ The free [Salesforce DevOps with sfdx-hardis](https://sfdx-hardis-training.cloud
         await fs.remove('README.md');
       }
       await fs.copy(path.join(PACKAGE_ROOT_DIR, 'defaults/monitoring', '.'), process.cwd(), { overwrite: true });
+      // npm never publishes a file named .gitignore, so the package ships it as gitignore
+      if (fs.existsSync('gitignore')) {
+        await fs.move('gitignore', '.gitignore', { overwrite: true });
+      }
     }
 
     // The CI/CD repository that deploys to this org: the AGENTS.md written by the backup tells coding agents to search it too
