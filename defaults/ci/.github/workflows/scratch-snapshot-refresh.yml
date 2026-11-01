@@ -1,0 +1,67 @@
+---
+# Scratch org snapshot refresh: on every push to a major branch that sets useScratchOrgSnapshot: true in its
+# branch config, deploys the branch into an empty scratch org and takes a Dev Hub org snapshot of it.
+# The scratch org job of check-deploy.yml then creates the scratch orgs of Pull Requests to that branch from
+# this snapshot, and deploys only what changed since its commit.
+#
+# Runs only when the repository variable USE_SCRATCH_ORGS is "true"
+# (Settings -> Secrets and variables -> Actions -> Variables)
+#
+# More info at https://sfdx-hardis.cloudity.com/hardis/scratch/snapshot/refresh/
+
+on:
+  push:
+    # Add your major branches names here
+    branches:
+      - main
+      - preprod
+      - uat
+      - integration
+  workflow_dispatch:
+permissions: read-all
+name: Refresh scratch org snapshot (sfdx-hardis)
+
+# A snapshot in progress is never cancelled: a newer push waits for it
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  refresh_scratch_org_snapshot:
+    if: ${{ vars.USE_SCRATCH_ORGS == 'true' }}
+    runs-on: ubuntu-latest
+    # Job timeout, in minutes: keep it above SCRATCH_ORG_SNAPSHOT_WAIT (60 by default) plus the deployment
+    timeout-minutes: ${{ fromJSON(vars.CI_JOB_TIMEOUT_MINUTES || '150') }}
+    # Job runs in sfdx-hardis docker image, that includes Salesforce CLI and all required plugins & dependencies.
+    container: ghcr.io/hardisgroupcom/sfdx-hardis-ubuntu:latest
+    name: Refresh scratch org snapshot
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      # Set env branch variable, keeping the slashes of a branch like release/1.0
+      - name: Set env.BRANCH
+        run: echo "BRANCH=${GITHUB_REF#refs/heads/}" >> "$GITHUB_ENV"
+      - name: Login & refresh scratch org snapshot
+        env:
+          # Dev Hub authentication: keep the variables matching the way your Dev Hub is authenticated,
+          # and replace DEVHUB by the alias of your Dev Hub
+          SFDX_AUTH_URL_DEV_HUB: ${{ secrets.SFDX_AUTH_URL_DEV_HUB }}
+          SFDX_CLIENT_ID_DEVHUB: ${{ secrets.SFDX_CLIENT_ID_DEVHUB }}
+          SFDX_CLIENT_KEY_DEVHUB: ${{ secrets.SFDX_CLIENT_KEY_DEVHUB }}
+          SCRATCH_ORG_SNAPSHOT_WAIT: ${{ vars.SCRATCH_ORG_SNAPSHOT_WAIT || '60' }}
+          CI_COMMIT_REF_NAME: ${{ env.BRANCH }} # The branch whose snapshot is refreshed
+          FORCE_COLOR: "1"
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          sf hardis:auth:login --devhub
+          sf hardis:scratch:snapshot:refresh
+
+      - name: Archive sfdx-hardis reports
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sfdx-hardis reports
+          path: hardis-report

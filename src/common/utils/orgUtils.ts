@@ -584,6 +584,20 @@ export function getScratchSignupEnv(env: NodeJS.ProcessEnv = process.env): Recor
   };
 }
 
+// The definition file of a scratch org created from a snapshot, without the keys the CLI rejects with a snapshot
+// (SNAPSHOT_UNSUPPORTED_OPTIONS in @salesforce/core) and the two more the Salesforce snapshot docs exclude
+// (release, hasSampleData). The input is left untouched: initOrgMetadatas reads its features.
+export function buildSnapshotScratchDef(projectScratchDef: any, snapshot: string): { scratchDef: any; droppedKeys: string[] } {
+  const scratchDef = { ...projectScratchDef, snapshot };
+  const droppedKeys = ['features', 'orgPreferences', 'edition', 'sourceOrg', 'settingsPath', 'releaseVersion', 'release', 'hasSampleData'].filter(
+    (key) => key in scratchDef
+  );
+  for (const key of droppedKeys) {
+    delete scratchDef[key];
+  }
+  return { scratchDef, droppedKeys };
+}
+
 export async function initOrgMetadatas(
   configInfo: any,
   orgUsername: string,
@@ -593,15 +607,10 @@ export async function initOrgMetadatas(
   options: any = {}
 ) {
   // Push or deploy according to config (default: push)
-  if ((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true') {
+  const packageXmlFile = getScratchDeployManifest(configInfo);
+  if (packageXmlFile) {
     // if CI, use sf project deploy start to make sure package.xml is consistent
     uxLog("action", this, c.cyan(t('deployingProjectSourcesToOrg', { orgAlias: c.green(orgAlias) })));
-    // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
-    // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
-    const packageXmlFile =
-      process.env.PACKAGE_XML_TO_DEPLOY ||
-      configInfo.packageXmlToDeploy ||
-      (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml');
     await smartDeploy(packageXmlFile, false, 'NoTestRun', debugMode, this, {
       targetUsername: orgUsername,
       conn: null,
@@ -654,6 +663,20 @@ export async function initOrgMetadatas(
       });
     }
   }
+}
+
+// The manifest deployed to a scratch org in deploy mode, or null when its sources are pushed (the default)
+export function getScratchDeployManifest(configInfo: any): string | null {
+  if (!((isCI && process.env.CI_SCRATCH_MODE === 'deploy') || process.env.DEBUG_DEPLOY === 'true')) {
+    return null;
+  }
+  // A configured manifest wins, manifest/ and config/ are fallbacks. Keep the existsSync ternary
+  // parenthesized, otherwise it swallows the whole || chain and the configured path is discarded.
+  return (
+    process.env.PACKAGE_XML_TO_DEPLOY ||
+    configInfo.packageXmlToDeploy ||
+    (fs.existsSync('./manifest/package.xml') ? './manifest/package.xml' : './config/package.xml')
+  );
 }
 
 // Assign permission sets to user. Returns the failures ("name: message"), an existing assignment is not one.

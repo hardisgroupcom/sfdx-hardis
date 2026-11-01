@@ -190,6 +190,10 @@ pipeline {
                 ///////////////////////////////////////////////////////////////////////////////
                 stage('Scratch Org Tests') {
                     when { environment name: 'USE_SCRATCH_ORGS', value: 'true' }
+                    environment {
+                        // Target branch, to find its scratch org snapshot (useScratchOrgSnapshot)
+                        FORCE_TARGET_BRANCH = "${env.CHANGE_TARGET ?: ''}"
+                    }
                     steps {
                         script {
                             def currentBranch = env.GIT_BRANCH?.replaceAll('^(refs/heads/|origin/)', '') ?: ''
@@ -339,6 +343,37 @@ pipeline {
                             sh 'sf hardis:project:deploy:smart'
                         }
                     }
+                }
+            }
+            post {
+                always {
+                    archiveArtifacts allowEmptyArchive: true, artifacts: 'hardis-report/**', defaultExcludes: false, followSymlinks: false
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////
+        // Refresh the scratch org snapshot of a deployment branch whose branch config //
+        // sets useScratchOrgSnapshot: true, so that the scratch orgs of Pull Requests //
+        // to that branch are created from it. Runs only when USE_SCRATCH_ORGS is true //
+        /////////////////////////////////////////////////////////////////////////////////
+        stage('Scratch Org Snapshot Refresh') {
+            when {
+                allOf {
+                    expression { DEPLOYMENT_BRANCHES.contains(env.BRANCH_NAME_CLEAN) }
+                    not { changeRequest() }
+                    not { environment name: 'SCRATCH_ORG_POOL', value: 'true' }
+                    environment name: 'USE_SCRATCH_ORGS', value: 'true'
+                }
+            }
+            steps {
+                withCredentials([
+                    string(credentialsId: 'SFDX_AUTH_URL_DEV_HUB',  variable: 'SFDX_AUTH_URL_DEV_HUB',  optional: true),
+                    string(credentialsId: 'SFDX_CLIENT_ID_DEVHUB',  variable: 'SFDX_CLIENT_ID_DEVHUB',  optional: true),
+                    string(credentialsId: 'SFDX_CLIENT_KEY_DEVHUB', variable: 'SFDX_CLIENT_KEY_DEVHUB', optional: true),
+                ]) {
+                    sh 'sf hardis:auth:login --devhub'
+                    sh 'sf hardis:scratch:snapshot:refresh'
                 }
             }
             post {
