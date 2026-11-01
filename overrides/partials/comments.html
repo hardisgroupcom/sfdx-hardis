@@ -1,0 +1,63 @@
+{#-
+  Giscus comments, backed by GitHub Discussions on hardisgroupcom/sfdx-hardis.
+  Zensical ships an empty partials/comments.html stub that partials/content.html
+  includes at the end of the page content, so overriding that file here (through
+  theme.custom_dir) is the supported way to add a comment widget.
+
+  One discussion is created lazily per page, matched on the page path, in the
+  "Online Documentation" category.
+
+  Comments show on every page. Add "comments: false" to a page front matter to
+  hide the widget on that page.
+-#}
+{% if not (page.meta and page.meta.comments == false) %}
+  <h2 id="__comments">Comments</h2>
+  <script src="https://giscus.app/client.js"
+          data-repo="hardisgroupcom/sfdx-hardis"
+          data-repo-id="MDEwOlJlcG9zaXRvcnkzMzI5MDU3MDI="
+          data-category="Online Documentation"
+          data-category-id="DIC_kwDOE9e85s4CY6wA"
+          data-mapping="pathname"
+          data-strict="1"
+          data-reactions-enabled="1"
+          data-emit-metadata="0"
+          data-input-position="top"
+          data-theme="preferred_color_scheme"
+          data-lang="en"
+          crossorigin="anonymous"
+          async>
+  </script>
+
+  <script>
+    // Keep the Giscus iframe in sync with the palette toggle. It is a
+    // cross-origin frame, so its theme can only be changed by postMessage.
+    (function () {
+      if (window.__giscusThemeSync) {
+        return;
+      }
+      window.__giscusThemeSync = true;
+      var giscusTheme = function () {
+        var scheme = document.body.getAttribute("data-md-color-scheme");
+        return scheme === "slate" ? "dark" : "light";
+      };
+      var apply = function () {
+        var frame = document.querySelector("iframe.giscus-frame");
+        if (frame && frame.contentWindow) {
+          frame.contentWindow.postMessage(
+            { giscus: { setConfig: { theme: giscusTheme() } } },
+            "https://giscus.app"
+          );
+        }
+      };
+      new MutationObserver(apply).observe(document.body, {
+        attributes: true,
+        attributeFilter: ["data-md-color-scheme"]
+      });
+      window.addEventListener("message", function (event) {
+        if (event.origin === "https://giscus.app") {
+          apply();
+        }
+      });
+    })();
+  </script>
+{% endif %}
