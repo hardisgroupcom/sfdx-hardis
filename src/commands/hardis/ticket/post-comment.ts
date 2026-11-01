@@ -30,8 +30,6 @@ import { t } from '../../../common/utils/i18n.js';
 Messages.importMessagesDirectoryFromMetaUrl(import.meta.url);
 const messages = Messages.loadMessages('sfdx-hardis', 'org');
 
-const JIRA_POINTS_FIELD_RE = /^customfield_\d+$/;
-
 /** The qualification options of one run, checked once before the first ticket */
 interface QualifySteps {
   providerKey: TicketProviderKey | undefined;
@@ -63,19 +61,21 @@ An AI agent can report what it designed or tested on the ticket it worked on, a 
 - **Update instead of adding** (\`--marker\`): a rerun with the same marker replaces the comment it posted before, so a CI job can keep one status comment up to date. ServiceNow journal notes cannot be edited: a new note is added there, with a warning.
 - **Report:** a table and a CSV file with the action (created, updated, skipped, refused or failed) and the link of each comment. Exit code 0 when no ticket failed or was refused, 2 when some did, 1 when all did. A skipped ticket is not a failure.
 
-### Qualifying a ticket in the same run (JIRA, Azure Boards)
+### Qualifying a ticket in the same run
 
 Options meant for an agent that reviews a backlog. Each ticket goes through the same steps, in this order:
 
 1. **Checks, before any write:** \`--allowed-projects a,b\` leaves a ticket of another project untouched (action \`refused\`, \`errorName: TicketOutOfScope\`). \`--skip-if-marked\` leaves untouched a ticket that carries \`--marker-label\` (default \`--label\`), or a comment of the authenticated account starting with \`--prefix\` (action \`skipped\`, \`errorName: TicketAlreadyMarked\`): it is neither commented nor updated, even with \`--marker\`. Comments of other accounts never count.
-2. **Comment**, with \`--prefix\` as its first line (never twice), \`--mention-assignee\` adding a real mention of the assignee read on the ticket (never taken from the text; nothing when unassigned), and \`--visibility role:<role>\` or \`group:<group>\` restricting it on JIRA (refused on Azure Boards).
+2. **Comment**, with \`--prefix\` as its first line (never twice), \`--mention-assignee\` adding a real mention of the assignee read on the ticket (never taken from the text; nothing when unassigned), and \`--visibility role:<role>\` or \`group:<group>\` restricting it to the members of a role or a group. A ticketing system that cannot restrict comments refuses \`--visibility\` with \`TicketProviderNotSupported\`, before anything is written.
 3. **Label** (\`--label\`), added on top of the existing ones. If it cannot be added, the result is \`failed\` although the comment is saved: add the label only, do not post again.
 4. **Status** (\`--transition\`): the target status, by name, untranslated name or id, never the name of the transition.
-5. **Story points** (\`--points\`): a filled value is kept unless \`--overwrite-points\`. JIRA needs \`--points-field customfield_NNNNN\`; Azure Boards finds the field on the work item type (StoryPoints, then Effort, then Size), or takes \`--points-field\`. A type without the field is \`skipped\`, not an error.
+5. **Story points** (\`--points\`): a filled value is kept unless \`--overwrite-points\`. \`--points-field\` names the field; a ticketing system that cannot find it alone refuses \`--points\` without it, before anything is written. A ticket type without the field is \`skipped\`, not an error.
 
-\`--strict-markdown\` keeps only headings, bullet and numbered lists, paragraphs, bold and inline code: links, images, HTML, code blocks, tables and mentions are posted as literal text, so text quoted from a ticket cannot inject anything. Without it, the full markdown is converted as usual. On Azure Boards the headings keep their markdown level (\`#\` gives \`<h1>\`), with an empty line before each one but the first.
+Each ticketing system checks these options before the first write on each ticket: a label it cannot store, a missing field or a restriction it cannot apply fail the ticket with nothing written.
 
-A failed status or points step does not undo the comment. Each result carries \`label\`, \`transition\` and \`points\`: \`{status: done | skipped | failed | not-requested, value, field, reason, error: {name, message}}\`. A failed step names its error: \`TicketTransitionInvalid\` (status unknown for the type of the ticket, or move refused by the workflow), \`TicketPointsInvalid\` (no \`--points-field\` on JIRA, or value refused). On ServiceNow and Aha! these steps fail with \`TicketProviderNotSupported\`.
+\`--strict-markdown\` keeps only headings, bullet and numbered lists, paragraphs, bold and inline code: links, images, HTML, code blocks, tables and mentions are posted as literal text, so text quoted from a ticket cannot inject anything. Without it, the full markdown is converted as usual.
+
+A failed status or points step does not undo the comment. Each result carries \`label\`, \`transition\` and \`points\`: \`{status: done | skipped | failed | not-requested, value, field, reason, error: {name, message}}\`. A failed step names its error: \`TicketTransitionInvalid\` (status unknown for the type of the ticket, or move refused by the workflow), \`TicketPointsInvalid\` (no \`--points-field\` where it is required, or value refused). On ServiceNow and Aha! these steps fail with \`TicketProviderNotSupported\`.
 
 **Checking the result:** [hardis:ticket:get](${'https://sfdx-hardis.cloudity.com/hardis/ticket/get/'}) returns the comments as flattened plain text, without their HTML or Atlassian formatting: it tells what was posted, not how it renders. Check the rendering (headings, lists, mention, visibility) in the ticketing system itself.
 
@@ -106,6 +106,7 @@ The ticketing variables sfdx-hardis already documents, from CI/CD variables or a
 - **One posting path:** every connector implements \`postComment(ticketId, markdown, options)\`, and its deployment comments call it too. \`TicketProvider.postComment()\` picks the connector with the same routing as \`TicketProvider.getTicketDetails()\`.
 - **Conversion:** the markdown is read with \`marked\`. Azure Boards and Aha! get its sanitized HTML. The Atlassian document, the wiki markup and the plain text are built from the same tokens, so a comment reads the same everywhere.
 - **Marker:** \`sfdx-hardis:<marker>\` is written in the comment, hidden in the title of an empty element on Azure Boards and Aha! (Azure Boards strips HTML comments), as a last line in code format on JIRA and ServiceNow, which have no hidden text. A rerun reads the comments of the ticket and updates the most recent one holding the marker. A marker holds letters, digits, \`_\`, \`.\`, \`:\` and \`-\`, 80 characters at most.
+- **Qualification options:** before the first write on a ticket, the command calls \`validateQualifyOptions()\` on its provider; each ticketing system applies its own rules in its class. **JIRA:** labels without spaces, \`--points\` needs \`--points-field customfield_NNNNN\`, \`--visibility\` becomes the \`visibility\` of the comment. **Azure Boards:** \`--points-field\` is optional, the field is found on the work item type (StoryPoints, then Effort, then Size); \`--visibility\` is refused; with \`--strict-markdown\` the headings keep their markdown level (\`#\` gives \`<h1>\`), with an empty line before each one but the first. **ServiceNow, Aha!:** \`--visibility\` is refused, labels, status and points fail with \`TicketProviderNotSupported\`.
 - **Proxy support:** the HTTP calls go through the shared proxy-aware client (\`HTTP_PROXY\`, \`HTTPS_PROXY\`, \`NO_PROXY\`).
 
 </details>
@@ -170,7 +171,7 @@ The same applies in CI.
       description: 'Label checked by --skip-if-marked. Defaults to --label',
     }),
     label: Flags.string({
-      description: 'Label (Azure Boards tag) added to the ticket once the comment is posted',
+      description: 'Label added to the ticket once the comment is posted',
     }),
     transition: Flags.string({
       description: 'Status the ticket is moved to once the comment is posted (name, untranslated name or id)',
@@ -179,7 +180,7 @@ The same applies in CI.
       description: 'Story points written once the comment is posted. A filled value is kept unless --overwrite-points',
     }),
     'points-field': Flags.string({
-      description: 'Story points field: customfield_NNNNN on JIRA (required with --points), field reference name on Azure Boards (optional)',
+      description: 'Field the story points are written to, as the ticketing system names it. Some ticketing systems require it with --points',
     }),
     'overwrite-points': Flags.boolean({
       default: false,
@@ -187,10 +188,10 @@ The same applies in CI.
     }),
     'mention-assignee': Flags.boolean({
       default: false,
-      description: 'Mention the assignee read on the ticket, under the first line of the comment (JIRA, Azure Boards)',
+      description: 'Mention the assignee read on the ticket, under the first line of the comment',
     }),
     visibility: Flags.string({
-      description: 'JIRA only: role:<role> or group:<group> to restrict the comment',
+      description: 'role:<role> or group:<group>: restrict the comment to its members. Refused by a ticketing system that cannot restrict comments',
     }),
     'allowed-projects': Flags.string({
       description: 'Comma-separated projects the tickets must belong to: any other one is refused (action refused) and left untouched',
@@ -291,7 +292,7 @@ The same applies in CI.
   private async postOnTicket(ticketId: string, markdown: string, flags: any, steps: QualifySteps): Promise<PostCommentResult> {
     const notRequested = { label: NOT_REQUESTED, transition: NOT_REQUESTED, points: NOT_REQUESTED };
     const needsRead = steps.allowedProjects !== null || steps.skipIfMarked || steps.mentionAssignee;
-    const needsProvider = needsRead || steps.label !== null || steps.transition !== null || steps.points !== null;
+    const needsProvider = needsRead || steps.label !== null || steps.transition !== null || steps.points !== null || steps.visibility !== null;
     let provider: TicketProviderRoot | null = null;
     let providerLabel = steps.providerKey || '';
     let mention: TicketAssignee | null = null;
@@ -300,10 +301,13 @@ The same applies in CI.
         const resolved = await TicketProvider.resolveProvider({ ticketId, providerKey: steps.providerKey });
         provider = resolved.provider;
         providerLabel = resolved.providerClass.providerLabel;
-        // JIRA writes points only into a named custom field: refused before the comment, not after
-        if (steps.points !== null && resolved.providerClass.providerKey === 'jira' && !JIRA_POINTS_FIELD_RE.test(steps.pointsField || '')) {
-          throw new SfError(t('ticketPointsFieldRequired'), TICKET_ERROR.pointsInvalid);
-        }
+        // The rules of the ticketing system (label format, required field, visibility): refused before the comment, not after
+        provider.validateQualifyOptions({
+          label: steps.label,
+          points: steps.points,
+          pointsField: steps.pointsField,
+          visibility: steps.visibility,
+        });
       }
       if (needsRead && provider) {
         const details = await provider.getTicketDetails(ticketId, { downloadAttachments: false, skipComments: !steps.skipIfMarked });

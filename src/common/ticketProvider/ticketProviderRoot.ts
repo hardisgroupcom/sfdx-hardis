@@ -13,12 +13,13 @@ import {
   downloadTicketAttachment,
 } from "./utils/ticketDetails.js";
 import { PostCommentOptions, PostCommentResult } from "./utils/ticketComment.js";
-import { TicketSearchOptions, TicketSearchResult, ticketProviderNotSupported } from "./utils/ticketOperations.js";
+import { TICKET_ERROR, TicketSearchCriteria, TicketSearchOptions, TicketSearchResult, ticketProviderNotSupported } from "./utils/ticketOperations.js";
 import type {
   TicketIdentity,
   TicketPointsOptions,
   TicketProjectMeta,
   TicketProjectSummary,
+  TicketQualifyOptions,
   TicketStepResult,
 } from "./utils/ticketQualify.js";
 import { t } from '../utils/i18n.js';
@@ -113,8 +114,20 @@ export abstract class TicketProviderRoot {
     return (ticketId || "").trim();
   }
 
+  /**
+   * Checks the options of a qualification run before anything is written on the ticket. The rules of
+   * one ticketing system (a required field, a label format...) go in its override, never in a command.
+   * Default: a comment cannot be restricted.
+   */
+  public validateQualifyOptions(options: TicketQualifyOptions): void {
+    if (options.visibility) {
+      throw new SfError(t("ticketVisibilityNotSupported", { provider: this.getLabel() }), TICKET_ERROR.providerNotSupported);
+    }
+  }
+
+  /** The provider converts the neutral criteria to its own query language */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async searchTickets(_query: string, _options: TicketSearchOptions): Promise<TicketSearchResult> {
+  public async searchTickets(_criteria: TicketSearchCriteria, _options: TicketSearchOptions): Promise<TicketSearchResult> {
     throw ticketProviderNotSupported(this.getLabel(), "list");
   }
 

@@ -19,11 +19,11 @@ export interface PostCommentOptions {
   marker?: string;
   /** ServiceNow journal field written to (`work_notes`, `comments`...) */
   serviceNowField?: string;
-  /** Real mention of this assignee, inserted right after the first block (JIRA, Azure Boards) */
+  /** Real mention of this assignee, inserted right after the first block by the providers that support mentions */
   mention?: TicketAssignee | null;
-  /** JIRA only: comment restricted to a project role or a group */
+  /** Comment restricted to a role or a group; checked by validateQualifyOptions of the provider */
   visibility?: TicketCommentVisibility | null;
-  /** The markdown went through toStrictMarkdown: Azure Boards adds the spacing its comment view drops */
+  /** The markdown went through toStrictMarkdown: a provider may adapt the rendering to its comment view */
   strictMarkdown?: boolean;
 }
 

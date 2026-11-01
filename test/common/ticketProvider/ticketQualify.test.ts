@@ -6,24 +6,24 @@ import fs from '../../../src/common/utils/fsUtils.js';
 import { TicketProvider } from '../../../src/common/ticketProvider/index.js';
 import { AzureBoardsProvider } from '../../../src/common/ticketProvider/azureBoardsProvider.js';
 import { JiraProvider } from '../../../src/common/ticketProvider/jiraProvider.js';
-import { TICKET_ERROR } from '../../../src/common/ticketProvider/utils/ticketOperations.js';
+import { TICKET_ERROR, hasSearchFilter, parseSearchDate } from '../../../src/common/ticketProvider/utils/ticketOperations.js';
 import { newTicketDetails } from '../../../src/common/ticketProvider/utils/ticketDetails.js';
 import {
-  assertWiqlCondition,
   isTicketMarked,
   parseAllowedProjects,
   parseCommentVisibility,
   parseStoryPoints,
   retryReadOn5xx,
-  scopeJql,
-  scopeWiql,
+  scopeSearchProjects,
   toStrictMarkdown,
-  withAdfMention,
   withCommentPrefix,
-  withHtmlHeadingSpacers,
-  withHtmlMention,
-  withWikiMention,
 } from '../../../src/common/ticketProvider/utils/ticketQualify.js';
+
+// The formats of one ticketing system are private to its provider class
+const withAdfMention = (JiraProvider as any).withAdfMention;
+const withWikiMention = (JiraProvider as any).withWikiMention;
+const withHtmlMention = (AzureBoardsProvider as any).withHtmlMention;
+const withHtmlHeadingSpacers = (AzureBoardsProvider as any).withHtmlHeadingSpacers;
 import { markdownToAdf, markdownToJiraWiki } from '../../../src/common/ticketProvider/utils/markdownToTicketFormats.js';
 import { convertMarkdownToHtml } from '../../../src/common/notifProvider/utils/markdownToHtml.js';
 import TicketPostComment from '../../../src/commands/hardis/ticket/post-comment.js';
@@ -105,33 +105,68 @@ function stubbedAzure(wit: any, extra: any = {}): AzureBoardsProvider {
 // ---------------------------------------------------------------------------------------------
 
 describe('ticket qualification helpers', () => {
-  it('[J3][J22] scopeJql bounds the query to the projects, keeps ORDER BY, quoted ORDER BY stays a filter', () => {
-    expect(scopeJql(['ACME', 'OPS'], 'status = Open ORDER BY priority DESC')).to.equal(
-      'project in ("ACME", "OPS") AND (status = Open) ORDER BY priority DESC'
+  it('[J3][J16] JIRA converts the neutral criteria to JQL, every value quoted', () => {
+    const toJql = (JiraProvider as any).toJql;
+    expect(
+      toJql({
+        projects: ['ACME', 'OPS'],
+        statuses: ['To Do'],
+        types: ['Bug'],
+        assignee: 'me',
+        labels: ['ia'],
+        text: 'login',
+        createdAfter: '2026-10-01',
+        updatedAfter: '2026-10-15',
+        openOnly: true,
+        orderBy: 'updated',
+        descending: true,
+      })
+    ).to.equal(
+      'project in ("ACME", "OPS") AND status in ("To Do") AND issuetype in ("Bug") AND assignee = currentUser() AND labels in ("ia") AND text ~ "login" AND created >= "2026-10-01" AND updated >= "2026-10-15" AND statusCategory != Done ORDER BY updated DESC'
     );
-    expect(scopeJql(['ACME'], '')).to.equal('project in ("ACME") ORDER BY created ASC');
-    expect(scopeJql(['ACME'], 'summary ~ "ORDER BY x"')).to.equal('project in ("ACME") AND (summary ~ "ORDER BY x") ORDER BY created ASC');
+    expect(toJql({ assignee: 'none' })).to.equal('assignee is EMPTY ORDER BY created ASC');
+    // A value never escapes its string literal
+    expect(toJql({ projects: ['A") OR project = OTHER OR ("'] })).to.equal('project in ("A\\") OR project = OTHER OR (\\"") ORDER BY created ASC');
+    expect(toJql({ assignee: '5b10:abc' })).to.equal('assignee = "5b10:abc" ORDER BY created ASC');
   });
 
-  it('[J16] scopeJql refuses unbalanced parentheses outside quoted strings', () => {
-    expect(scopeJql(['ACME'], 'summary ~ "a)"')).to.contain('(summary ~ "a)")');
-    for (const query of ['status = Open) OR (project = OTHER', 'status = "Open', '((a = 1)']) {
-      expect(() => scopeJql(['ACME'], query), query).to.throw().with.property('name', TICKET_ERROR.queryInvalid);
-    }
-  });
-
-  it('[A3] assertWiqlCondition refuses statement keywords and unbalanced input', () => {
-    for (const condition of ['SELECT [System.Id] FROM WorkItems', "[System.State] = 'New' ORDER BY [System.Id]", 'a = 1 ASOF x', '(a = 1']) {
-      expect(() => assertWiqlCondition(condition), condition).to.throw().with.property('name', TICKET_ERROR.queryInvalid);
-    }
-    expect(assertWiqlCondition("[System.Title] CONTAINS 'select from'")).to.equal("[System.Title] CONTAINS 'select from'");
-  });
-
-  it('[A6][A5] scopeWiql bounds the condition to the projects, quotes escaped', () => {
-    expect(scopeWiql(["O'Brien", 'CRM'], "[System.State] = 'New'")).to.equal(
-      "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] IN ('O''Brien', 'CRM') AND ([System.State] = 'New') ORDER BY [System.CreatedDate] ASC"
+  it('[A3][A6] Azure Boards converts the neutral criteria to WIQL, every value quoted', () => {
+    const toWiql = (AzureBoardsProvider as any).toWiql;
+    expect(toWiql({ projects: ["O'Brien", 'CRM'], statuses: ['New'], labels: ['a', 'b'], text: 'x', assignee: 'me', openOnly: true })).to.equal(
+      "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] IN ('O''Brien', 'CRM') AND [System.State] IN ('New') AND [System.AssignedTo] = @Me AND ([System.Tags] CONTAINS 'a' OR [System.Tags] CONTAINS 'b') AND ([System.Title] CONTAINS 'x' OR [System.Description] CONTAINS 'x') AND [System.State] NOT IN ('Done', 'Closed', 'Completed', 'Resolved', 'Removed') ORDER BY [System.CreatedDate] ASC"
     );
-    expect(scopeWiql(['CRM'], '')).to.contain("WHERE [System.TeamProject] IN ('CRM') ORDER BY");
+    expect(toWiql({ projects: ['CRM'], types: ['Bug'], createdAfter: '2026-10-01', orderBy: 'updated', descending: true })).to.equal(
+      "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] IN ('CRM') AND [System.WorkItemType] IN ('Bug') AND [System.CreatedDate] >= '2026-10-01' ORDER BY [System.ChangedDate] DESC"
+    );
+    expect(toWiql({ projects: ['CRM'], assignee: 'none' })).to.contain("[System.AssignedTo] = ''");
+  });
+
+  it('search criteria: a filter is required, days are checked, projects stay inside --allowed-projects', () => {
+    expect(hasSearchFilter({})).to.equal(false);
+    expect(hasSearchFilter({ orderBy: 'updated', descending: true })).to.equal(false);
+    expect(hasSearchFilter({ openOnly: true })).to.equal(true);
+    expect(parseSearchDate('2026-10-01', '--created-after')).to.equal('2026-10-01');
+    expect(parseSearchDate(undefined, '--created-after')).to.equal(null);
+    for (const value of ['2026-02-30', '01/10/2026', '2026-10-01T10:00']) {
+      expect(() => parseSearchDate(value, '--created-after'), value).to.throw().with.property('name', TICKET_ERROR.queryInvalid);
+    }
+    expect(scopeSearchProjects(null, null)).to.equal(undefined);
+    expect(scopeSearchProjects(['ACME'], null)).to.deep.equal(['ACME']);
+    expect(scopeSearchProjects(null, ['ACME', 'OPS'])).to.deep.equal(['ACME', 'OPS']);
+    expect(scopeSearchProjects(['acme'], ['ACME', 'OPS'])).to.deep.equal(['acme']);
+    expect(() => scopeSearchProjects(['OTHER'], ['ACME'])).to.throw().with.property('name', TICKET_ERROR.outOfScope);
+  });
+
+  it('[J55][J24] validateQualifyOptions: JIRA needs a customfield for points and labels without spaces; others refuse --visibility', () => {
+    const jira = new JiraProvider({});
+    expect(() => jira.validateQualifyOptions({ points: 3, pointsField: null })).to.throw().with.property('name', TICKET_ERROR.pointsInvalid);
+    expect(() => jira.validateQualifyOptions({ label: 'two words' })).to.throw();
+    jira.validateQualifyOptions({ points: 3, pointsField: 'customfield_10016', label: 'ok', visibility: { type: 'role', value: 'Developers' } });
+    const azure = Object.create(AzureBoardsProvider.prototype);
+    azure.validateQualifyOptions({ points: 3, label: 'two words' });
+    expect(() => azure.validateQualifyOptions({ visibility: { type: 'group', value: 'x' } }))
+      .to.throw()
+      .with.property('name', TICKET_ERROR.providerNotSupported);
   });
 
   it('parseAllowedProjects: absent stays null, empty is refused', () => {
@@ -222,10 +257,10 @@ describe('ticket qualification helpers', () => {
     const doc = withAdfMention(markdownToAdf('Prefix\n\nBody'), { id: '5b10:abc-1', displayName: 'Ann' });
     expect(doc.content[1].content[1]).to.deep.equal({ type: 'mention', attrs: { id: '5b10:abc-1', text: '@Ann' } });
     expect(withAdfMention(markdownToAdf('P'), { id: 'bad id"', displayName: 'x' }).content).to.have.length(1);
-    expect(withWikiMention('Prefix\n\nBody', { id: 'ann.dupont', displayName: null })).to.equal('Prefix\n\nPour : [~ann.dupont]\n\nBody');
+    expect(withWikiMention('Prefix\n\nBody', { id: 'ann.dupont', displayName: null })).to.equal('Prefix\n\nFor: [~ann.dupont]\n\nBody');
     expect(withWikiMention('Prefix', { id: 'a]b', displayName: null })).to.equal('Prefix');
     const html = withHtmlMention('<p>Prefix</p><p>Body</p>', { id: GUID, displayName: '<Ann>' });
-    expect(html).to.equal(`<p>Prefix</p><p>Pour : <a href="#" data-vss-mention="version:2.0,${GUID}">@&lt;Ann&gt;</a></p><p>Body</p>`);
+    expect(html).to.equal(`<p>Prefix</p><p>For: <a href="#" data-vss-mention="version:2.0,${GUID}">@&lt;Ann&gt;</a></p><p>Body</p>`);
     expect(withHtmlMention('<p>P</p>', { id: 'not-a-guid', displayName: 'x' })).to.equal('<p>P</p>');
     expect(withHtmlMention('<p>P</p>', null)).to.equal('<p>P</p>');
   });
@@ -280,7 +315,7 @@ const jiraIssue = (key: string, project = key.split('-')[0]) => ({
 });
 
 describe('JiraProvider qualification operations', () => {
-  it('[J13][J20] search (Cloud): bounded JQL sent, results of other projects dropped', withEnv(JIRA_ENV, async () => {
+  it('[J13][J20] search (Cloud): the criteria are sent as JQL, the tickets mapped', withEnv(JIRA_ENV, async () => {
     const calls: any[] = [];
     const provider = stubbedJira({
       issueSearch: {
@@ -290,14 +325,14 @@ describe('JiraProvider qualification operations', () => {
         },
       },
     });
-    const result = await provider.searchTickets('status = Open', { maxResults: 50, allowedProjects: ['ACME'] });
-    expect(calls[0].jql).to.equal('project in ("ACME") AND (status = Open) ORDER BY created ASC');
-    expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['ACME-1']);
+    const result = await provider.searchTickets({ projects: ['ACME'], statuses: ['Open'] }, { maxResults: 50 });
+    expect(calls[0].jql).to.equal('project in ("ACME") AND status in ("Open") ORDER BY created ASC');
+    expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['ACME-1', 'OTHER-2']);
     expect(result.tickets[0]).to.include({ assigneeId: 'acc-1', project: 'ACME', areaPath: null });
     expect(result.warning ?? null).to.equal(null);
   }));
 
-  it('[J32] search (Server/DC): /rest/api/2/search, other projects dropped, empty result warned', withEnv(JIRA_DC_ENV, async () => {
+  it('[J32] search (Server/DC): /rest/api/2/search with the same JQL', withEnv(JIRA_DC_ENV, async () => {
     const calls: any[] = [];
     const provider = stubbedJira({
       issueSearch: {
@@ -307,10 +342,9 @@ describe('JiraProvider qualification operations', () => {
         },
       },
     });
-    const result = await provider.searchTickets('', { maxResults: 10, allowedProjects: ['ACME'] });
+    const result = await provider.searchTickets({ projects: ['ACME'] }, { maxResults: 10 });
     expect(calls[0].jql).to.equal('project in ("ACME") ORDER BY created ASC');
-    expect(result.tickets).to.deep.equal([]);
-    expect(result.warning).to.contain('ACME');
+    expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['OTHER-2']);
   }));
 
   it('[J8][J33] get: project, account ids of assignee, reporter and comment authors (Cloud accountId, Server name)', withEnv(JIRA_DC_ENV, async () => {
@@ -392,7 +426,7 @@ describe('JiraProvider qualification operations', () => {
       },
     });
     await provider.postComment('ACME-1', 'Prefix line\n\n- **one**', { mention: { id: 'ann', displayName: null } });
-    expect(posted[0].comment).to.equal('Prefix line\n\nPour : [~ann]\n\n* *one*');
+    expect(posted[0].comment).to.equal('Prefix line\n\nFor: [~ann]\n\n* *one*');
   }));
 
   it('[J12][J42][J35] transition: matches the target status by name, untranslated name or id, never the transition name', withEnv(JIRA_ENV, async () => {
@@ -468,7 +502,7 @@ describe('JiraProvider qualification operations', () => {
     const invalid = stubbedJira({
       issueSearch: { searchForIssuesUsingJqlEnhancedSearchPost: async () => { throw httpError(400, { errorMessages: ['Field "x" does not exist'] }); } },
     });
-    const error = await rejectionOf(invalid.searchTickets('x = 1', { maxResults: 5 }));
+    const error = await rejectionOf(invalid.searchTickets({ statuses: ['x'] }, { maxResults: 5 }));
     expect(error.name).to.equal(TICKET_ERROR.queryInvalid);
     expect(error.message).to.contain('Field "x" does not exist');
   }));
@@ -495,7 +529,7 @@ const workItem = (id: number, project = 'CRM', extra: any = {}) => ({
 });
 
 describe('AzureBoardsProvider qualification operations', () => {
-  it('[A15] list: WIQL bounded to the projects, then batch; results outside the projects dropped', withEnv(AZURE_ENV, async () => {
+  it('[A15] list: the criteria are sent as WIQL, then batch', withEnv(AZURE_ENV, async () => {
     const queries: any[] = [];
     const provider = stubbedAzure({
       queryByWiql: async (wiql: any, team: any, _precision: any, top: number) => {
@@ -504,16 +538,16 @@ describe('AzureBoardsProvider qualification operations', () => {
       },
       getWorkItemsBatch: async () => [workItem(1), workItem(2, 'Other')],
     });
-    const result = await provider.searchTickets("[System.State] = 'New'", { maxResults: 5, allowedProjects: ['CRM'] });
+    const result = await provider.searchTickets({ projects: ['CRM'], statuses: ['New'] }, { maxResults: 5 });
     expect(queries[0].wiql).to.equal(
-      "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] IN ('CRM') AND ([System.State] = 'New') ORDER BY [System.CreatedDate] ASC"
+      "SELECT [System.Id] FROM WorkItems WHERE [System.TeamProject] IN ('CRM') AND [System.State] IN ('New') ORDER BY [System.CreatedDate] ASC"
     );
     expect(queries[0]).to.include({ project: 'CRM', top: 5 });
-    expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['AB-1']);
+    expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['AB-1', 'AB-2']);
     expect(result.tickets[0]).to.include({ assigneeId: GUID, project: 'CRM', areaPath: 'CRM\\Sales', assignee: 'Ann' });
   }));
 
-  it('list: bounded to the configured team project without --allowed-projects; 0 result warned', withEnv(AZURE_ENV, async () => {
+  it('list: bounded to the configured team project when no project is given', withEnv(AZURE_ENV, async () => {
     const queries: string[] = [];
     const provider = stubbedAzure({
       queryByWiql: async (wiql: any) => {
@@ -521,9 +555,9 @@ describe('AzureBoardsProvider qualification operations', () => {
         return { workItems: [] };
       },
     });
-    const result = await provider.searchTickets('', { maxResults: 5 });
+    const result = await provider.searchTickets({ statuses: ['New'] }, { maxResults: 5 });
     expect(queries[0]).to.contain("[System.TeamProject] IN ('Code')");
-    expect(result.warning).to.contain('Code');
+    expect(result.tickets).to.deep.equal([]);
   }));
 
   it('[A16] list: a 5xx on the WIQL is retried once', withEnv(AZURE_ENV, async () => {
@@ -543,7 +577,7 @@ describe('AzureBoardsProvider qualification operations', () => {
     // The retry pause is not under test here
     (global as any).setTimeout = (fn: any) => clock(fn, 0);
     try {
-      await provider.searchTickets('', { maxResults: 5 });
+      await provider.searchTickets({ openOnly: true }, { maxResults: 5 });
     } finally {
       (global as any).setTimeout = clock;
     }
@@ -580,7 +614,7 @@ describe('AzureBoardsProvider qualification operations', () => {
     expect(result.commentId).to.equal('99');
     expect(posted[0]).to.include({ project: 'CRM', id: 5 });
     // The mention goes right after the first block (the prefix), and the script is stripped
-    expect(posted[0].text.startsWith(`<p>${PREFIX}</p><p>Pour : <a href="#" data-vss-mention="version:2.0,${GUID}">@Ann</a></p>`)).to.equal(true);
+    expect(posted[0].text.startsWith(`<p>${PREFIX}</p><p>For: <a href="#" data-vss-mention="version:2.0,${GUID}">@Ann</a></p>`)).to.equal(true);
     expect(posted[0].text).to.not.contain('<script');
     await rejectionOf(provider.postComment('5', 'x', { visibility: { type: 'role', value: 'Dev' } }));
     expect(posted).to.have.length(1);
@@ -705,6 +739,11 @@ function fakeProvider(options: { project?: string; labels?: string[]; comments?:
   details.assigneeId = 'acc-1';
   const provider: any = {
     normalizeTicketId: (id: string) => id.toUpperCase(),
+    // The rules of the real connector: a command never checks them itself
+    validateQualifyOptions: (options.providerKey ?? 'jira') === 'jira'
+      ? JiraProvider.prototype.validateQualifyOptions
+      : AzureBoardsProvider.prototype.validateQualifyOptions,
+    getLabel: () => 'Azure Boards',
     getTicketDetails: async () => {
       calls.push('get');
       return details;

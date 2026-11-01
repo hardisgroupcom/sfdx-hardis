@@ -5,6 +5,7 @@ import { GenericTicketingProvider } from '../../../src/common/ticketProvider/gen
 import { JiraProvider } from '../../../src/common/ticketProvider/jiraProvider.js';
 import { ServiceNowProvider } from '../../../src/common/ticketProvider/serviceNowProvider.js';
 import { TICKET_ERROR } from '../../../src/common/ticketProvider/utils/ticketOperations.js';
+import TicketList from '../../../src/commands/hardis/ticket/list.js';
 
 /*
  * ticket list (JIRA Cloud cursor, Server / Data Center offsets), provider resolution without an
@@ -56,7 +57,7 @@ describe('ticket operations on providers that cannot do them', () => {
   it('fail with TicketProviderNotSupported, never with an empty result', async () => {
     for (const provider of providers()) {
       const label = provider.getLabel();
-      expect((await rejectionOf(provider.searchTickets('project = ACME', { maxResults: 50 }))).name, label).to.equal(TICKET_ERROR.providerNotSupported);
+      expect((await rejectionOf(provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50 }))).name, label).to.equal(TICKET_ERROR.providerNotSupported);
       expect((await rejectionOf(provider.addTicketLabel('ACME-1', 'tag'))).name, label).to.equal('TicketProviderNotSupported');
       for (const call of [() => provider.whoAmI(), () => provider.listProjects(), () => provider.getProjectMeta('ACME'), () => provider.transitionTicket('ACME-1', 'Done'), () => provider.setTicketPoints('ACME-1', 3)]) {
         expect((await rejectionOf(call())).name, label).to.equal('TicketProviderNotSupported');
@@ -186,7 +187,7 @@ describe('JiraProvider.searchTickets', () => {
     const provider = stubbedJira({
       issueSearch: { searchForIssuesUsingJqlEnhancedSearchPost: async () => ({ issues: [jiraIssue('ACME-1')] }) },
     });
-    const result = await provider.searchTickets('project = ACME', { maxResults: 50 });
+    const result = await provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50 });
     expect(result.tickets).to.deep.equal([
       {
         id: 'ACME-1',
@@ -222,7 +223,7 @@ describe('JiraProvider.searchTickets', () => {
         },
       },
     });
-    const result = await provider.searchTickets('project = ACME', { maxResults: 3 });
+    const result = await provider.searchTickets({ projects: ['ACME'] }, { maxResults: 3 });
     expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['ACME-1', 'ACME-2', 'ACME-3']);
     expect(calls.map((call) => call.maxResults)).to.deep.equal([3, 1]);
     expect(calls[1].nextPageToken).to.equal('cursor-1');
@@ -240,9 +241,9 @@ describe('JiraProvider.searchTickets', () => {
         },
       },
     });
-    await provider.searchTickets('project = ACME', { maxResults: 50, pageToken: 'opaque-token' });
+    await provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50, pageToken: 'opaque-token' });
     expect(received.nextPageToken).to.equal('opaque-token');
-    expect(received.jql).to.equal('project = ACME');
+    expect(received.jql).to.equal('project in ("ACME") ORDER BY created ASC');
   }));
 
   it('searches Jira Server / Data Center with offsets carried by the page token', withEnv({ ...JIRA_ENV, JIRA_HOST: 'https://jira.acme.com' }, async () => {
@@ -255,7 +256,7 @@ describe('JiraProvider.searchTickets', () => {
         },
       },
     });
-    const result = await provider.searchTickets('project = ACME', { maxResults: 2, pageToken: '1' });
+    const result = await provider.searchTickets({ projects: ['ACME'] }, { maxResults: 2, pageToken: '1' });
     expect(calls[0].startAt).to.equal(1);
     expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['ACME-1', 'ACME-2']);
     expect(result.nextPageToken).to.equal('3');
@@ -270,7 +271,7 @@ describe('JiraProvider.searchTickets', () => {
         },
       },
     });
-    const error = await rejectionOf(provider.searchTickets('nope = 1', { maxResults: 50 }));
+    const error = await rejectionOf(provider.searchTickets({ statuses: ['nope'] }, { maxResults: 50 }));
     expect(error.name).to.equal('TicketQueryInvalid');
     expect(error.message).to.contain("Field 'nope' does not exist");
   }));
@@ -283,12 +284,12 @@ describe('JiraProvider.searchTickets', () => {
         },
       },
     });
-    expect((await rejectionOf(provider.searchTickets('project = ACME', { maxResults: 50 }))).name).to.equal('TicketRateLimited');
+    expect((await rejectionOf(provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50 }))).name).to.equal('TicketRateLimited');
   }));
 
   it('names a missing credential TicketProviderNotConfigured', withEnv(NO_JIRA_ENV, async () => {
     const provider = new JiraProvider({});
-    expect((await rejectionOf(provider.searchTickets('project = ACME', { maxResults: 50 }))).name).to.equal('TicketProviderNotConfigured');
+    expect((await rejectionOf(provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50 }))).name).to.equal('TicketProviderNotConfigured');
   }));
 
   it('refuses a maxResults that is not a positive integer, without calling JIRA', withEnv(JIRA_ENV, async () => {
@@ -301,7 +302,7 @@ describe('JiraProvider.searchTickets', () => {
         },
       },
     });
-    const error = await rejectionOf(provider.searchTickets('project = ACME', { maxResults: 0 }));
+    const error = await rejectionOf(provider.searchTickets({ projects: ['ACME'] }, { maxResults: 0 }));
     expect(error.message).to.contain('maxResults must be a positive integer');
     expect(called).to.equal(false);
   }));
@@ -316,7 +317,7 @@ describe('JiraProvider.searchTickets', () => {
         },
       },
     });
-    const result = await provider.searchTickets('project = ACME', { maxResults: 50 });
+    const result = await provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50 });
     expect(calls).to.equal(1);
     expect(result.tickets).to.deep.equal([]);
     expect(result.nextPageToken).to.equal(null);
@@ -333,7 +334,7 @@ describe('JiraProvider.searchTickets', () => {
     });
     // No fallback credential: a 401 must never reach a real client and the network
     (provider as any).nextAuths = [];
-    expect((await rejectionOf(provider.searchTickets('project = ACME', { maxResults: 50 }))).name).to.equal('TicketProviderNotConfigured');
+    expect((await rejectionOf(provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50 }))).name).to.equal('TicketProviderNotConfigured');
   }));
 
   it('skips an issue returned without a key', withEnv(JIRA_ENV, async () => {
@@ -342,9 +343,66 @@ describe('JiraProvider.searchTickets', () => {
         searchForIssuesUsingJqlEnhancedSearchPost: async () => ({ issues: [{ fields: { summary: 'No key' } }, jiraIssue('ACME-2')] }),
       },
     });
-    const result = await provider.searchTickets('project = ACME', { maxResults: 50 });
+    const result = await provider.searchTickets({ projects: ['ACME'] }, { maxResults: 50 });
     expect(result.tickets.map((ticket) => ticket.id)).to.deep.equal(['ACME-2']);
     expect(result.tickets.some((ticket) => ticket.url.endsWith('/browse/undefined'))).to.equal(false);
   }));
 });
 
+
+describe('ticket list command', () => {
+  const original = TicketProvider.resolveProvider;
+  let received: any[] = [];
+
+  beforeEach(() => {
+    received = [];
+    const provider: any = {
+      searchTickets: async (criteria: any, options: any) => {
+        received.push({ criteria, options });
+        const ticket = (id: string, project: string) => ({ id, project, url: 'u', subject: 's', type: 'Bug', status: 'Open', priority: '', assignee: null, created: '', updated: '', labels: [], assigneeId: null, areaPath: null });
+        return { tickets: [ticket('ACME-1', 'ACME'), ticket('OTHER-1', 'OTHER')], nextPageToken: null, truncated: false };
+      },
+    };
+    TicketProvider.resolveProvider = async () => ({ provider, providerClass: { providerKey: 'jira', providerLabel: 'JIRA' } }) as any;
+  });
+
+  afterEach(() => {
+    TicketProvider.resolveProvider = original;
+  });
+
+  it('passes neutral criteria built from the flags, never a query', async () => {
+    const result: any = await TicketList.run([
+      '--project', 'ACME, OPS', '--status', 'To Do,Done', '--type', 'Bug', '--assignee', 'me', '--label', 'ia',
+      '--text', 'login', '--created-after', '2026-10-01', '--open-only', '--order-by', 'updated', '--descending', '--agent',
+    ]);
+    expect(received[0].criteria).to.deep.equal({
+      projects: ['ACME', 'OPS'],
+      statuses: ['To Do', 'Done'],
+      types: ['Bug'],
+      assignee: 'me',
+      labels: ['ia'],
+      text: 'login',
+      createdAfter: '2026-10-01',
+      updatedAfter: null,
+      openOnly: true,
+      orderBy: 'updated',
+      descending: true,
+    });
+    expect(result.criteria.projects).to.deep.equal(['ACME', 'OPS']);
+    expect(result).to.not.have.property('query');
+  });
+
+  it('bounds the search to --allowed-projects and drops any ticket outside them', async () => {
+    const result: any = await TicketList.run(['--allowed-projects', 'ACME', '--agent']);
+    expect(received[0].criteria.projects).to.deep.equal(['ACME']);
+    expect(result.tickets.map((ticket: any) => ticket.id)).to.deep.equal(['ACME-1']);
+    const error = await rejectionOf(TicketList.run(['--project', 'OTHER', '--allowed-projects', 'ACME', '--agent']));
+    expect(error.name).to.equal(TICKET_ERROR.outOfScope);
+  });
+
+  it('refuses a search without any criterion, or with a wrong day, before calling the ticketing system', async () => {
+    expect((await rejectionOf(TicketList.run(['--agent']))).name).to.equal(TICKET_ERROR.queryInvalid);
+    expect((await rejectionOf(TicketList.run(['--project', 'ACME', '--updated-after', '2026-13-01', '--agent']))).name).to.equal(TICKET_ERROR.queryInvalid);
+    expect(received).to.deep.equal([]);
+  });
+});

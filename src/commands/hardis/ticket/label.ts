@@ -62,7 +62,7 @@ sf hardis ticket label --id ACME-123 --label ia-qualif-erreur --allowed-projects
     }),
     label: Flags.string({
       required: true,
-      description: 'Label (Azure Boards tag) added to the ticket',
+      description: 'Label added to the ticket',
     }),
     'allowed-projects': Flags.string({
       description: 'Comma-separated projects the ticket must belong to (TicketOutOfScope otherwise)',
@@ -102,6 +102,8 @@ sf hardis ticket label --id ACME-123 --label ia-qualif-erreur --allowed-projects
       ticketId,
       providerKey: flags.provider as TicketProviderKey | undefined,
     });
+    // The label rules of the ticketing system, before any call
+    provider.validateQualifyOptions({ label });
     const ticketKey = provider.normalizeTicketId(ticketId);
     if (allowedProjects) {
       const details = await provider.getTicketDetails(ticketId, { downloadAttachments: false, skipComments: true });

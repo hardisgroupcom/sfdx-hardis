@@ -1,8 +1,8 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:ticket:whoami
 
 ## Description
+
 
 ## Command Behavior
 
@@ -14,12 +14,12 @@
 
 ### Supported ticketing systems
 
-| Provider | Supported | Id returned |
-|----------|-----------|-------------|
-| JIRA Cloud | Yes | `accountId` |
-| JIRA Server / Data Center | Yes | user name |
-| Azure Boards | Yes | identity id (GUID) |
-| ServiceNow | No: fails with `TicketProviderNotSupported` | |
+| Provider                  | Supported                                   | Id returned        |
+|---------------------------|---------------------------------------------|--------------------|
+| JIRA Cloud                | Yes                                         | `accountId`        |
+| JIRA Server / Data Center | Yes                                         | user name          |
+| Azure Boards              | Yes                                         | identity id (GUID) |
+| ServiceNow                | No: fails with `TicketProviderNotSupported` |                    |
 
 ### Errors
 
@@ -42,17 +42,18 @@ The command never prompts:
 sf hardis ticket whoami --provider azure --agent --json
 ```
 
+
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|provider<br/>-p|option|Ticketing system to query. Defaults to the only one configured|||jira<br/>azure<br/>servicenow<br/>aha|
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name            |  Type   | Description                                                    | Default | Required |                Options                |
+|:----------------|:-------:|:---------------------------------------------------------------|:-------:|:--------:|:-------------------------------------:|
+| agent           | boolean | Run in non-interactive mode for agents and automation          |         |          |                                       |
+| debug<br/>-d    | boolean | Activate debug mode (more logs)                                |         |          |                                       |
+| flags-dir       | option  | Import flag values from a directory.                           |         |          |                                       |
+| json            | boolean | Format output as json.                                         |         |          |                                       |
+| provider<br/>-p | option  | Ticketing system to query. Defaults to the only one configured |         |          | jira<br/>azure<br/>servicenow<br/>aha |
+| skipauth        | boolean | Skip authentication check when a default username is required  |         |          |                                       |
+| websocket       | option  | Websocket host:port for VsCode SFDX Hardis UI integration      |         |          |                                       |
 
 ## Examples
 
@@ -63,4 +64,5 @@ $ sf hardis:ticket:whoami
 ```shell
 $ sf hardis:ticket:whoami --provider jira --agent --json
 ```
+
 

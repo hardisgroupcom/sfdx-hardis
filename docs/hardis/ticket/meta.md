@@ -1,8 +1,8 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:ticket:meta
 
 ## Description
+
 
 ## Command Behavior
 
@@ -38,20 +38,21 @@ sf hardis ticket meta --project ACME --agent --json
 sf hardis ticket meta --projects --provider azure --agent --json
 ```
 
+
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|allowed-projects|option|Comma-separated projects --project must belong to||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|project|option|Project to describe (JIRA project key, or Azure Boards team project)||||
-|projects|boolean|List the projects the credentials can see instead||||
-|provider<br/>-p|option|Ticketing system to query. Defaults to the only one configured|||jira<br/>azure<br/>servicenow<br/>aha|
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name             |  Type   | Description                                                          | Default | Required |                Options                |
+|:-----------------|:-------:|:---------------------------------------------------------------------|:-------:|:--------:|:-------------------------------------:|
+| agent            | boolean | Run in non-interactive mode for agents and automation                |         |          |                                       |
+| allowed-projects | option  | Comma-separated projects --project must belong to                    |         |          |                                       |
+| debug<br/>-d     | boolean | Activate debug mode (more logs)                                      |         |          |                                       |
+| flags-dir        | option  | Import flag values from a directory.                                 |         |          |                                       |
+| json             | boolean | Format output as json.                                               |         |          |                                       |
+| project          | option  | Project to describe (JIRA project key, or Azure Boards team project) |         |          |                                       |
+| projects         | boolean | List the projects the credentials can see instead                    |         |          |                                       |
+| provider<br/>-p  | option  | Ticketing system to query. Defaults to the only one configured       |         |          | jira<br/>azure<br/>servicenow<br/>aha |
+| skipauth         | boolean | Skip authentication check when a default username is required        |         |          |                                       |
+| websocket        | option  | Websocket host:port for VsCode SFDX Hardis UI integration            |         |          |                                       |
 
 ## Examples
 
@@ -66,4 +67,5 @@ $ sf hardis:ticket:meta --projects --provider azure --agent --json
 ```shell
 $ sf hardis:ticket:meta --project "My Project" --provider azure --allowed-projects "My Project" --agent --json
 ```
+
 

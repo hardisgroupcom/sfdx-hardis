@@ -65,7 +65,7 @@ sf hardis ticket meta --projects --provider azure --agent --json
     }),
     project: Flags.string({
       exactlyOne: MODE_FLAGS,
-      description: 'Project to describe (JIRA project key, or Azure Boards team project)',
+      description: 'Project to describe (its key, or its name when the ticketing system has no key)',
     }),
     projects: Flags.boolean({
       exactlyOne: MODE_FLAGS,

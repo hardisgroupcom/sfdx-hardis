@@ -75,7 +75,7 @@ export interface TicketDetails {
   assigneeId: string | null;
   reporter: string;
   reporterId: string | null;
-  /** JIRA project key, or Azure Boards team project of the work item */
+  /** Project the ticket belongs to (its key, or its name when the ticketing system has no key) */
   project: string;
   /** Set by ticket get --marker / --marker-label: label or prefixed comment of the authenticated account. Null when not asked */
   markedByMe: boolean | null;

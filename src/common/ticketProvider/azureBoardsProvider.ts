@@ -31,6 +31,7 @@ import {
   TICKET_ERROR,
   TicketErrorContext,
   TicketOperation,
+  TicketSearchCriteria,
   TicketSearchOptions,
   TicketSearchResult,
   TicketSummary,
@@ -38,17 +39,14 @@ import {
   toTicketError,
 } from "./utils/ticketOperations.js";
 import {
+  TicketAssignee,
   TicketIdentity,
   TicketPointsOptions,
   TicketProjectMeta,
   TicketProjectSummary,
   TicketStepResult,
-  isProjectAllowed,
+  mentionLead,
   retryReadOn5xx,
-  scopeWiql,
-  splitTags,
-  withHtmlHeadingSpacers,
-  withHtmlMention,
 } from "./utils/ticketQualify.js";
 /* jscpd:ignore-end */
 
@@ -453,7 +451,9 @@ export class AzureBoardsProvider extends TicketProviderRoot {
           TICKET_ERROR.providerNotConfigured
         );
       }
-      throw toTicketError(e, { providerLabel: AzureBoardsProvider.providerLabel, ...context });
+      // azure-devops-node-api: the parsed answer of the server is on result
+      const serverMessage = typeof e?.result?.message === "string" ? e.result.message : undefined;
+      throw toTicketError(e, { providerLabel: AzureBoardsProvider.providerLabel, serverMessage, ...context });
     }
   }
 
@@ -509,7 +509,7 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       assignee: AzureBoardsProvider.identityName(fields["System.AssignedTo"]) || null,
       created: fields["System.CreatedDate"] ? new Date(fields["System.CreatedDate"]).toISOString() : "",
       updated: fields["System.ChangedDate"] ? new Date(fields["System.ChangedDate"]).toISOString() : "",
-      labels: splitTags(fields["System.Tags"]),
+      labels: AzureBoardsProvider.splitTags(fields["System.Tags"]),
       assigneeId: AzureBoardsProvider.identityId(fields["System.AssignedTo"]),
       project,
       areaPath: fields["System.AreaPath"] || null,
@@ -517,12 +517,13 @@ export class AzureBoardsProvider extends TicketProviderRoot {
   }
 
   /**
-   * The query is a WIQL condition, wrapped in a statement bounded to the allowed projects (or, without
-   * --allowed-projects, to the configured team project). WIQL has no cursor: one page of maxResults.
+   * The neutral criteria become a WIQL statement here, every value quoted. Without projects in the
+   * criteria, the search is bounded to the configured team project. WIQL has no cursor: one page of
+   * maxResults.
    */
-  public async searchTickets(query: string, options: TicketSearchOptions): Promise<TicketSearchResult> {
-    const projects = options.allowedProjects || [this.teamProject || ""];
-    const wiql = scopeWiql(projects, query);
+  public async searchTickets(criteria: TicketSearchCriteria, options: TicketSearchOptions): Promise<TicketSearchResult> {
+    const projects = criteria.projects?.length ? criteria.projects : [this.teamProject || ""];
+    const wiql = AzureBoardsProvider.toWiql({ ...criteria, projects });
     const api = await this.witApi();
     const queryResult: any = await this.runOperation({ operation: "list" }, () =>
       retryReadOn5xx(() => api.queryByWiql({ query: wiql }, { project: projects[0] } as any, undefined, options.maxResults))
@@ -537,17 +538,15 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       tickets = ids
         .map((id) => byId.get(id))
         .filter(Boolean)
-        .map((item) => this.toTicketSummary(item))
-        .filter((ticket) => isProjectAllowed(ticket.project, projects));
+        .map((item) => this.toTicketSummary(item));
     }
-    const warning = tickets.length === 0 ? t("ticketListNoResult", { scope: projects.join(", ") }) : null;
-    return { tickets, nextPageToken: null, truncated: false, warning };
+    return { tickets, nextPageToken: null, truncated: false };
   }
 
   /** Adds one tag, keeps the others; Azure tags are case-insensitive */
   public async addTicketLabel(ticketId: string, label: string): Promise<void> {
     const workItem = await this.getWorkItemFields(this.requireWorkItemId(ticketId), "label");
-    const tags = splitTags(workItem.fields["System.Tags"]);
+    const tags = AzureBoardsProvider.splitTags(workItem.fields["System.Tags"]);
     if (tags.some((tag) => tag.toLowerCase() === label.toLowerCase())) {
       return;
     }
@@ -697,12 +696,12 @@ export class AzureBoardsProvider extends TicketProviderRoot {
     if (!workItemId) {
       throw new SfError(t('ticketDetailsUnknownIdShape', { ticketId }));
     }
-    if (options.visibility) {
-      throw new SfError(t('ticketVisibilityJiraOnly'));
-    }
+    // Azure Boards comments cannot be restricted: refused by the base check, before any write
+    this.validateQualifyOptions({ visibility: options.visibility });
     // The mention comes from the assignee read on the work item by the caller, never from the text
     const converted = await convertMarkdownToHtml(markdown);
-    const html = withHtmlMention(options.strictMarkdown ? withHtmlHeadingSpacers(converted) : converted, options.mention) + htmlMarker(options.marker);
+    const spaced = options.strictMarkdown ? AzureBoardsProvider.withHtmlHeadingSpacers(converted) : converted;
+    const html = AzureBoardsProvider.withHtmlMention(spaced, options.mention) + htmlMarker(options.marker);
     const azureWorkItemApi = await this.azureApi.getWorkItemTrackingApi(this.serverUrl || "");
     // The work item's own project: commenting through the project of the repository fails when they differ
     const workItemProject: any = await retryReadOn5xx(() => azureWorkItemApi.getWorkItem(workItemId, ["System.TeamProject"]));
@@ -740,5 +739,98 @@ export class AzureBoardsProvider extends TicketProviderRoot {
       }
     }
     return found;
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Azure Boards formats: WIQL, tags, comment HTML and mentions. They stay here, never in shared code
+  // ---------------------------------------------------------------------------------------------
+
+  // WIQL has no state category: the done states of the Agile, Scrum, CMMI and Basic processes
+  private static readonly DONE_STATES = ["Done", "Closed", "Completed", "Resolved", "Removed"];
+
+  private static wiqlString(value: string): string {
+    return `'${String(value).replace(/'/g, "''")}'`;
+  }
+
+  private static wiqlList(values: string[]): string {
+    return values.map((value) => AzureBoardsProvider.wiqlString(value)).join(", ");
+  }
+
+  /** The neutral criteria as a full WIQL statement; every value is a quoted string literal */
+  private static toWiql(criteria: TicketSearchCriteria): string {
+    const clauses: string[] = [];
+    if (criteria.projects?.length) {
+      clauses.push(`[System.TeamProject] IN (${AzureBoardsProvider.wiqlList(criteria.projects)})`);
+    }
+    if (criteria.statuses?.length) {
+      clauses.push(`[System.State] IN (${AzureBoardsProvider.wiqlList(criteria.statuses)})`);
+    }
+    if (criteria.types?.length) {
+      clauses.push(`[System.WorkItemType] IN (${AzureBoardsProvider.wiqlList(criteria.types)})`);
+    }
+    if (criteria.assignee === "me") {
+      clauses.push("[System.AssignedTo] = @Me");
+    } else if (criteria.assignee === "none") {
+      clauses.push("[System.AssignedTo] = ''");
+    } else if (criteria.assignee) {
+      clauses.push(`[System.AssignedTo] = ${AzureBoardsProvider.wiqlString(criteria.assignee)}`);
+    }
+    if (criteria.labels?.length) {
+      const tags = criteria.labels.map((label) => `[System.Tags] CONTAINS ${AzureBoardsProvider.wiqlString(label)}`);
+      clauses.push(`(${tags.join(" OR ")})`);
+    }
+    if (criteria.text) {
+      const text = AzureBoardsProvider.wiqlString(criteria.text);
+      clauses.push(`([System.Title] CONTAINS ${text} OR [System.Description] CONTAINS ${text})`);
+    }
+    if (criteria.createdAfter) {
+      clauses.push(`[System.CreatedDate] >= ${AzureBoardsProvider.wiqlString(criteria.createdAfter)}`);
+    }
+    if (criteria.updatedAfter) {
+      clauses.push(`[System.ChangedDate] >= ${AzureBoardsProvider.wiqlString(criteria.updatedAfter)}`);
+    }
+    if (criteria.openOnly) {
+      clauses.push(`[System.State] NOT IN (${AzureBoardsProvider.wiqlList(AzureBoardsProvider.DONE_STATES)})`);
+    }
+    const where = clauses.length > 0 ? ` WHERE ${clauses.join(" AND ")}` : "";
+    const orderField = criteria.orderBy === "updated" ? "[System.ChangedDate]" : "[System.CreatedDate]";
+    return `SELECT [System.Id] FROM WorkItems${where} ORDER BY ${orderField} ${criteria.descending ? "DESC" : "ASC"}`;
+  }
+
+  /** "a; b ;c" -> ["a", "b", "c"] */
+  private static splitTags(tags: string | null | undefined): string[] {
+    return String(tags || "")
+      .split(";")
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+  }
+
+  // The comment CSS drops block margins: an empty line, written as the Azure editor writes one, goes
+  // before every heading but the first
+  private static withHtmlHeadingSpacers(html: string): string {
+    let headings = 0;
+    return html.replace(/<h[1-6]>/g, (tag) => (headings++ === 0 ? tag : `<div><br></div>${tag}`));
+  }
+
+  // HTML-escaped, @ included: the display name of a mention cannot inject markup
+  private static escapeHtml(text: string): string {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/@/g, "&#64;");
+  }
+
+  private static readonly IDENTITY_GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  /** Mention link inserted right after the first block (the prefix). A malformed identity id is dropped */
+  private static withHtmlMention(html: string, assignee: TicketAssignee | null | undefined): string {
+    if (!assignee || !AzureBoardsProvider.IDENTITY_GUID_RE.test(assignee.id || "")) {
+      return html;
+    }
+    const name = AzureBoardsProvider.escapeHtml(assignee.displayName || "");
+    const line = `<p>${AzureBoardsProvider.escapeHtml(mentionLead())}<a href="#" data-vss-mention="version:2.0,${assignee.id}">@${name}</a></p>`;
+    const end = html.search(/<\/(p|h\d|ul|ol)>/);
+    if (end < 0) {
+      return line + html;
+    }
+    const close = html.indexOf(">", end) + 1;
+    return html.slice(0, close) + line + html.slice(close);
   }
 }

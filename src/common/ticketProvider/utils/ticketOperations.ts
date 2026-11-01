@@ -19,7 +19,7 @@ export const TICKET_ERROR = {
   alreadyMarked: "TicketAlreadyMarked",
   /** The status does not exist for the type of the ticket, or the ticketing system refused the move */
   transitionInvalid: "TicketTransitionInvalid",
-  /** Story points refused: not a number, no field named on JIRA, or a value the ticketing system rejected */
+  /** Story points refused: not a number, no field named where the ticketing system requires one, or a value it rejected */
   pointsInvalid: "TicketPointsInvalid",
 } as const;
 
@@ -37,20 +37,77 @@ export interface TicketSummary {
   created: string;
   updated: string;
   labels: string[];
-  /** Account id of the assignee (JIRA accountId, or user name on Server / Data Center; Azure identity id) */
+  /** Account id of the assignee, the same id `ticket whoami` returns */
   assigneeId: string | null;
-  /** JIRA project key, or Azure Boards team project */
+  /** Project the ticket belongs to */
   project: string;
-  /** Azure Boards area path; null on JIRA */
+  /** Area or component path the ticketing system files the ticket under; null when it has none */
   areaPath: string | null;
+}
+
+export const TICKET_SEARCH_ORDER_FIELDS = ["created", "updated"] as const;
+export type TicketSearchOrderField = (typeof TICKET_SEARCH_ORDER_FIELDS)[number];
+
+/**
+ * What `sf hardis ticket list` searches for, in a form every ticketing system understands. Each
+ * provider converts it to its own query language inside its class: generic code never builds one.
+ */
+export interface TicketSearchCriteria {
+  /** Projects the tickets belong to. A provider that needs one may default to its configured project */
+  projects?: string[];
+  /** Status names, any of them */
+  statuses?: string[];
+  /** Ticket type names (Bug, Story...), any of them */
+  types?: string[];
+  /** "me" (the authenticated account), "none" (unassigned), or the account of the assignee */
+  assignee?: string | null;
+  /** Labels, any of them */
+  labels?: string[];
+  /** Words searched in the summary and the description */
+  text?: string | null;
+  /** YYYY-MM-DD: created on or after that day */
+  createdAfter?: string | null;
+  /** YYYY-MM-DD: updated on or after that day */
+  updatedAfter?: string | null;
+  /** Leave out the tickets in a done status (done, closed, resolved, removed...) */
+  openOnly?: boolean;
+  /** created by default */
+  orderBy?: TicketSearchOrderField;
+  descending?: boolean;
+}
+
+/** True when the criteria filter something: an empty search would read every ticket */
+export function hasSearchFilter(criteria: TicketSearchCriteria): boolean {
+  return Boolean(
+    criteria.projects?.length ||
+      criteria.statuses?.length ||
+      criteria.types?.length ||
+      criteria.assignee ||
+      criteria.labels?.length ||
+      criteria.text ||
+      criteria.createdAfter ||
+      criteria.updatedAfter ||
+      criteria.openOnly
+  );
+}
+
+/** A calendar day, YYYY-MM-DD, that exists; null when absent */
+export function parseSearchDate(value: string | null | undefined, flag: string): string | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const day = String(value).trim();
+  const date = new Date(`${day}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== day) {
+    throw new SfError(t("ticketSearchDateInvalid", { flag, value }), TICKET_ERROR.queryInvalid);
+  }
+  return day;
 }
 
 export interface TicketSearchOptions {
   maxResults: number;
   /** Opaque cursor returned by the previous page: relayed as is, never parsed */
   pageToken?: string | null;
-  /** When set, the query is bounded to these projects and any result outside them is dropped */
-  allowedProjects?: string[] | null;
 }
 
 export interface TicketSearchResult {
@@ -65,6 +122,8 @@ export interface TicketErrorContext {
   providerLabel: string;
   operation: TicketOperation;
   ticketId?: string;
+  /** What the server said, read by the provider from its own error shape. Defaults to the error message */
+  serverMessage?: string;
 }
 
 const NOT_SUPPORTED_KEYS: Record<TicketOperation, string> = {
@@ -86,23 +145,6 @@ export function httpStatusOf(error: any): number | undefined {
   return typeof status === "number" ? status : undefined;
 }
 
-/** What the server said, rather than the generic "Request failed with status code 400" */
-export function serverMessageOf(error: any): string {
-  const data = error?.response?.data;
-  const messages: string[] = [];
-  if (Array.isArray(data?.errorMessages)) {
-    messages.push(...data.errorMessages.map(String));
-  }
-  if (data?.errors && typeof data.errors === "object") {
-    messages.push(...Object.values(data.errors).map(String));
-  }
-  // azure-devops-node-api: the parsed answer of the server is on result
-  if (typeof error?.result?.message === "string") {
-    messages.push(error.result.message);
-  }
-  return messages.filter(Boolean).join(" | ") || error?.message || String(error);
-}
-
 function isNamedTicketError(error: any): boolean {
   return (Object.values(TICKET_ERROR) as string[]).includes(error?.name);
 }
@@ -113,7 +155,7 @@ export function toTicketError(error: any, context: TicketErrorContext): Error {
     return error;
   }
   const status = httpStatusOf(error);
-  const message = serverMessageOf(error);
+  const message = context.serverMessage || error?.message || String(error);
   const cause = error instanceof Error ? error : undefined;
   if (status === 429) {
     return new SfError(t("ticketRateLimited", { provider: context.providerLabel }), TICKET_ERROR.rateLimited, undefined, cause);
@@ -147,25 +189,17 @@ export function toTicketError(error: any, context: TicketErrorContext): Error {
   return message !== cause.message ? new SfError(message, undefined, undefined, cause) : cause;
 }
 
-/** JIRA writes offsets without a colon (+0200), which Date does not read everywhere */
-export function toIsoDateTime(value: string): string {
-  if (!value) {
-    return "";
-  }
-  const date = new Date(value.replace(/([+-]\d{2})(\d{2})$/, "$1:$2"));
-  return isNaN(date.getTime()) ? value : date.toISOString();
-}
-
 /**
- * Checked before any write: JIRA refuses a label containing whitespace, and the label is written after the
- * comment. Returns null when no label is asked for; the error is unnamed on purpose (P11).
+ * Checked before any write, since the label is written after the comment. Returns null when no label is
+ * asked for; the error is unnamed on purpose. A ticketing system with stricter label rules checks them
+ * in its validateQualifyOptions().
  */
 export function validateTicketLabel(label: string | null | undefined): string | null {
   if (label === undefined || label === null || label === "") {
     return null;
   }
   const trimmed = label.trim();
-  if (!trimmed || /\s/.test(trimmed)) {
+  if (!trimmed) {
     throw new SfError(t("ticketLabelInvalid", { label }));
   }
   return trimmed;

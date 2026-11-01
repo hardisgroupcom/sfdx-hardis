@@ -1,8 +1,8 @@
 <!-- This file has been generated with command 'sf hardis:doc:plugin:generate'. Please do not update it manually or it may be overwritten -->
-
 # hardis:ticket:list
 
 ## Description
+
 
 ## Command Behavior
 
@@ -18,12 +18,12 @@
 
 ### Supported ticketing systems
 
-| Provider | Supported |
-|----------|-----------|
-| JIRA Cloud | Yes |
-| JIRA Server / Data Center | Yes (offset pagination, carried by the page token) |
-| Azure Boards | Yes (WIQL condition, one page of `--max-results`, no page token) |
-| ServiceNow | No: fails with `TicketProviderNotSupported` |
+| Provider                  | Supported                                                        |
+|---------------------------|------------------------------------------------------------------|
+| JIRA Cloud                | Yes                                                              |
+| JIRA Server / Data Center | Yes (offset pagination, carried by the page token)               |
+| Azure Boards              | Yes (WIQL condition, one page of `--max-results`, no page token) |
+| ServiceNow                | No: fails with `TicketProviderNotSupported`                      |
 
 ### Errors
 
@@ -51,22 +51,23 @@ The command never prompts. `--query` is always required. Use `--agent --json` to
 sf hardis ticket list --query "project = ACME AND statusCategory != Done" --agent --json
 ```
 
+
 ## Parameters
 
-|Name|Type|Description|Default|Required|Options|
-|:---|:--:|:----------|:-----:|:------:|:-----:|
-|agent|boolean|Run in non-interactive mode for agents and automation||||
-|allowed-projects|option|Comma-separated projects the query is bounded to||||
-|debug<br/>-d|boolean|Activate debug mode (more logs)||||
-|flags-dir|option|undefined||||
-|json|boolean|Format output as json.||||
-|max-results|option|Maximum number of tickets fetched|50|||
-|output-file<br/>-f|option|Also write the JSON result at this path (parent folders are created). JSON, not the markdown of ticket get: a list is read by a program||||
-|page-token|option|nextPageToken returned by the previous page, relayed as is||||
-|provider<br/>-p|option|Ticketing system to query. Defaults to the only one configured|||jira<br/>azure<br/>servicenow<br/>aha|
-|query<br/>-q|option|JQL on JIRA, WIQL condition on Azure Boards||||
-|skipauth|boolean|Skip authentication check when a default username is required||||
-|websocket|option|Websocket host:port for VsCode SFDX Hardis UI integration||||
+| Name               |  Type   | Description                                                                                                                             | Default | Required |                Options                |
+|:-------------------|:-------:|:----------------------------------------------------------------------------------------------------------------------------------------|:-------:|:--------:|:-------------------------------------:|
+| agent              | boolean | Run in non-interactive mode for agents and automation                                                                                   |         |          |                                       |
+| allowed-projects   | option  | Comma-separated projects the query is bounded to                                                                                        |         |          |                                       |
+| debug<br/>-d       | boolean | Activate debug mode (more logs)                                                                                                         |         |          |                                       |
+| flags-dir          | option  | Import flag values from a directory.                                                                                                    |         |          |                                       |
+| json               | boolean | Format output as json.                                                                                                                  |         |          |                                       |
+| max-results        | option  | Maximum number of tickets fetched                                                                                                       |   50    |          |                                       |
+| output-file<br/>-f | option  | Also write the JSON result at this path (parent folders are created). JSON, not the markdown of ticket get: a list is read by a program |         |          |                                       |
+| page-token         | option  | nextPageToken returned by the previous page, relayed as is                                                                              |         |          |                                       |
+| provider<br/>-p    | option  | Ticketing system to query. Defaults to the only one configured                                                                          |         |          | jira<br/>azure<br/>servicenow<br/>aha |
+| query<br/>-q       | option  | JQL on JIRA, WIQL condition on Azure Boards                                                                                             |         |   true   |                                       |
+| skipauth           | boolean | Skip authentication check when a default username is required                                                                           |         |          |                                       |
+| websocket          | option  | Websocket host:port for VsCode SFDX Hardis UI integration                                                                               |         |          |                                       |
 
 ## Examples
 
@@ -93,4 +94,5 @@ $ sf hardis:ticket:list --query "assignee = currentUser()" --allowed-projects AC
 ```shell
 $ sf hardis:ticket:list --provider azure --query "[System.State] = 'New'" --allowed-projects "My Project" --agent --json
 ```
+
 

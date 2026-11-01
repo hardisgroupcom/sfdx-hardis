@@ -133,7 +133,7 @@ sf hardis ticket get --id ACME-4567 --agent --json
       description: 'Comment prefix: markedByMe is true when the authenticated account already posted a comment starting with it',
     }),
     'marker-label': Flags.string({
-      description: 'Label (Azure Boards tag): markedByMe is true when the ticket carries it',
+      description: 'Label: markedByMe is true when the ticket carries it',
     }),
     'skip-comments': Flags.boolean({
       default: false,

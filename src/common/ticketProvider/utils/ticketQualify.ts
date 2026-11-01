@@ -5,7 +5,8 @@ import { TICKET_ERROR, httpStatusOf } from "./ticketOperations.js";
 
 /**
  * Pure helpers of the qualification options of the ticket commands: project scope, marker detection,
- * markdown conversion to each provider's comment format, and the single retry on a 5xx answer.
+ * strict markdown, and the single retry on a 5xx answer. Nothing here is specific to one ticketing
+ * system: what is lives in that system's provider class.
  *
  * Nothing here calls the network: the providers do, the commands decide.
  */
@@ -36,15 +37,28 @@ export interface TicketAssignee {
   displayName: string | null;
 }
 
+/** Comment restricted to the members of a role or a group; refused by a system that cannot restrict comments */
 export interface TicketCommentVisibility {
   type: "role" | "group";
   value: string;
 }
 
 export interface TicketPointsOptions {
-  /** JIRA: custom field id (customfield_NNNNN), required. Azure Boards: field reference name, optional */
+  /** Field the points are written to, as the ticketing system names it; some systems require it */
   field?: string | null;
   overwrite?: boolean;
+}
+
+/**
+ * The options of a qualification run, checked by the provider of each ticket before anything is
+ * written (TicketProviderRoot.validateQualifyOptions), so that a rule of one ticketing system never
+ * lives in a command.
+ */
+export interface TicketQualifyOptions {
+  label?: string | null;
+  points?: number | null;
+  pointsField?: string | null;
+  visibility?: TicketCommentVisibility | null;
 }
 
 /** Result of one step run after the comment: it never cancels the comment already posted */
@@ -77,7 +91,7 @@ export function parseAllowedProjects(value: string | undefined | null): string[]
   return projects;
 }
 
-/** Project keys and Azure team project names are compared without case, as both systems do */
+/** Project keys and names are compared without case */
 export function isProjectAllowed(project: string | null | undefined, allowedProjects: string[] | null): boolean {
   if (allowedProjects === null) {
     return true;
@@ -96,81 +110,25 @@ export function assertProjectAllowed(ticketId: string, project: string | null | 
   }
 }
 
-/** Quotes and parentheses must balance, so that a condition cannot close the project clause it is wrapped in */
-export function assertBalanced(where: string): void {
-  let depth = 0;
-  let inQuote: string | null = null;
-  for (let index = 0; index < where.length; index++) {
-    const char = where[index];
-    if (inQuote) {
-      if (char === "\\") {
-        index++;
-      } else if (char === inQuote) {
-        inQuote = null;
-      }
-    } else if (char === '"' || char === "'") {
-      inQuote = char;
-    } else if (char === "(") {
-      depth++;
-    } else if (char === ")" && --depth < 0) {
-      break;
-    }
+/**
+ * The projects a search reads: the ones asked for, which must all be allowed, or else the allowed
+ * ones. Generic: each provider then turns the projects into its own query.
+ */
+export function scopeSearchProjects(requested: string[] | null, allowedProjects: string[] | null): string[] | undefined {
+  if (allowedProjects === null) {
+    return requested?.length ? requested : undefined;
   }
-  if (depth !== 0 || inQuote) {
-    throw new SfError(t("ticketQueryUnbalanced"), TICKET_ERROR.queryInvalid);
+  if (!requested?.length) {
+    return allowedProjects;
   }
-}
-
-const jqlString = (value: string) => `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-
-/** Index of the first ORDER BY outside a quoted literal, or -1 */
-function findOrderBy(jql: string): number {
-  let inQuote: string | null = null;
-  for (let index = 0; index < jql.length; index++) {
-    const char = jql[index];
-    if (inQuote) {
-      if (char === "\\") {
-        index++;
-      } else if (char === inQuote) {
-        inQuote = null;
-      }
-    } else if (char === '"' || char === "'") {
-      inQuote = char;
-    } else if ((index === 0 || /\s/.test(jql[index - 1])) && /^ORDER\s+BY\s/i.test(jql.slice(index))) {
-      return index;
-    }
+  const outside = requested.filter((project) => !isProjectAllowed(project, allowedProjects));
+  if (outside.length > 0) {
+    throw new SfError(
+      t("ticketSearchOutOfScope", { projects: outside.join(", "), allowed: allowedProjects.join(", ") }),
+      TICKET_ERROR.outOfScope
+    );
   }
-  return -1;
-}
-
-/** JQL bounded to the allowed projects: `project in (...) AND (<query>) ORDER BY ...` */
-export function scopeJql(allowedProjects: string[], jql: string): string {
-  const orderIndex = findOrderBy(jql);
-  const where = (orderIndex >= 0 ? jql.slice(0, orderIndex) : jql).trim();
-  const order = orderIndex >= 0 ? jql.slice(orderIndex).trim() : "ORDER BY created ASC";
-  assertBalanced(where);
-  const projectClause = `project in (${allowedProjects.map(jqlString).join(", ")})`;
-  return where ? `${projectClause} AND (${where}) ${order}` : `${projectClause} ${order}`;
-}
-
-const wiqlString = (value: string) => `'${String(value).replace(/'/g, "''")}'`;
-
-/** A WIQL condition only: statement keywords are refused, quotes and parentheses must balance */
-export function assertWiqlCondition(condition: string): string {
-  const value = String(condition || "");
-  if (/\b(SELECT|FROM|ORDER\s+BY|ASOF|MODE)\b/i.test(value.replace(/'(?:[^']|'')*'/g, "''"))) {
-    throw new SfError(t("ticketWiqlConditionOnly"), TICKET_ERROR.queryInvalid);
-  }
-  assertBalanced(value);
-  return value.trim();
-}
-
-/** Full WIQL statement bounded to the team projects */
-export function scopeWiql(projects: string[], condition: string): string {
-  const where = assertWiqlCondition(condition);
-  const projectClause = `[System.TeamProject] IN (${projects.map(wiqlString).join(", ")})`;
-  const fullWhere = where ? `${projectClause} AND (${where})` : projectClause;
-  return `SELECT [System.Id] FROM WorkItems WHERE ${fullWhere} ORDER BY [System.CreatedDate] ASC`;
+  return requested;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -222,7 +180,7 @@ export function withCommentPrefix(body: string, prefix: string | null | undefine
   return `${prefix.trim()}\n\n${body}`;
 }
 
-/** "role:Developers" or "group:jira-users" */
+/** "role:Developers" or "group:developers" */
 export function parseCommentVisibility(value: string | undefined | null): TicketCommentVisibility | null {
   if (value === undefined || value === null || value === "") {
     return null;
@@ -232,14 +190,6 @@ export function parseCommentVisibility(value: string | undefined | null): Ticket
     throw new SfError(t("ticketVisibilityInvalid", { value }));
   }
   return { type: match[1] as "role" | "group", value: match[2].trim() };
-}
-
-/** Azure Boards tags: "a; b ;c" -> ["a", "b", "c"] */
-export function splitTags(tags: string | null | undefined): string[] {
-  return String(tags || "")
-    .split(";")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
 }
 
 /** Story points: a plain non-negative number */
@@ -339,57 +289,12 @@ export function toStrictMarkdown(markdown: string): string {
   return blocks.filter(Boolean).join("\n\n");
 }
 
-// Azure DevOps comment CSS drops block margins: an empty line, written as its own editor writes one,
-// goes before every heading but the first
-export function withHtmlHeadingSpacers(html: string): string {
-  let headings = 0;
-  return html.replace(/<h[1-6]>/g, (tag) => (headings++ === 0 ? tag : `<div><br></div>${tag}`));
-}
-
-// HTML-escaped, @ included: the display name of a mention cannot inject markup
-export const escapeHtml = (text: string) =>
-  String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/@/g, "&#64;");
-
 // ---------------------------------------------------------------------------------------------
-// Mentions: always from the assignee read on the same ticket, never from the comment text
+// Mentions: always from the assignee read on the same ticket, never from the comment text. Each
+// provider writes the mention in its own format; only the words before it are shared
 // ---------------------------------------------------------------------------------------------
 
-export const MENTION_LEAD = "Pour : ";
-
-const JIRA_CLOUD_ACCOUNT_RE = /^[A-Za-z0-9:_-]+$/;
-const JIRA_SERVER_NAME_RE = /^[A-Za-z0-9._@+-]+$/;
-const AZURE_GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Inserted right after the first block (the prefix). A malformed account id is dropped */
-export function withAdfMention(doc: any, assignee: TicketAssignee | null | undefined): any {
-  if (!assignee || !JIRA_CLOUD_ACCOUNT_RE.test(assignee.id || "")) {
-    return doc;
-  }
-  const line = {
-    type: "paragraph",
-    content: [{ type: "text", text: MENTION_LEAD }, { type: "mention", attrs: { id: assignee.id, text: `@${assignee.displayName || ""}` } }],
-  };
-  return { ...doc, content: [...doc.content.slice(0, 1), line, ...doc.content.slice(1)] };
-}
-
-export function withWikiMention(wiki: string, assignee: TicketAssignee | null | undefined): string {
-  if (!assignee || !JIRA_SERVER_NAME_RE.test(assignee.id || "")) {
-    return wiki;
-  }
-  const blocks = wiki.split("\n\n");
-  blocks.splice(1, 0, `${MENTION_LEAD}[~${assignee.id}]`);
-  return blocks.join("\n\n");
-}
-
-export function withHtmlMention(html: string, assignee: TicketAssignee | null | undefined): string {
-  if (!assignee || !AZURE_GUID_RE.test(assignee.id || "")) {
-    return html;
-  }
-  const line = `<p>${MENTION_LEAD}<a href="#" data-vss-mention="version:2.0,${assignee.id}">@${escapeHtml(assignee.displayName || "")}</a></p>`;
-  const end = html.search(/<\/(p|h\d|ul|ol)>/);
-  if (end < 0) {
-    return line + html;
-  }
-  const close = html.indexOf(">", end) + 1;
-  return html.slice(0, close) + line + html.slice(close);
+/** Words written before the mention of the assignee, in the language of the run */
+export function mentionLead(): string {
+  return t("ticketMentionLead") + " ";
 }
