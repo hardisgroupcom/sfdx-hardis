@@ -10,7 +10,7 @@
 
 - `--project <P>` returns `issueTypes`, `statuses` (each status once) and `statusesByType` (type name -> its status names). Statuses come with their id: on JIRA a query is safer with ids, since the names returned are translated.
 - `--projects` returns the projects the credentials can see (`key` and `name`; on Azure Boards both are the team project name). Use it when the project of the repository is not the one that holds the work items.
-- `--allowed-projects a,b` refuses a `--project` outside that list with `TicketOutOfScope`.
+- `--allowed-projects a,b` refuses a `--project` outside that list with `TicketOutOfScope`, and leaves the other projects out of `--projects`.
 
 ### Supported ticketing systems
 
