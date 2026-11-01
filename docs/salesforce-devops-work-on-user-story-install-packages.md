@@ -35,7 +35,14 @@ Each package has two flags:
 
 > Once a package is declared with the **Deployments** flag, the CI/CD pipeline installs it in the major orgs before deploying your metadata. You never have to install it by hand.
 >
-> By default, packages are installed by the deployment jobs, not by the Pull Request (Merge Request on GitLab) validation jobs. If the validation of your Pull Request fails because a package is missing, ask your release manager to define `installPackagesDuringCheckDeploy: true` in the `.sfdx-hardis.yml` config file.
+> By default, packages are installed by the deployment jobs, not by the Pull Request (Merge Request on GitLab) validation jobs. If the validation of your Pull Request fails because a package is missing, ask your release manager to define `installPackagesDuringCheckDeploy: true` at the root of the `config/.sfdx-hardis.yml` config file, not inside a package of the `installedPackages` list:
+>
+> ```yaml
+> installPackagesDuringCheckDeploy: true
+> installedPackages:
+>   - SubscriberPackageName: My Package
+>     installDuringDeployments: true
+> ```
 
 Technical details for release managers:
 

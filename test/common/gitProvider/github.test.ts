@@ -242,6 +242,51 @@ describe('GithubProvider (native fetch client)', () => {
     expect(url.searchParams.get('page')).to.equal('1');
   });
 
+  it('filters on the merge date when asked: a release Pull Request opened before the period still counts', async () => {
+    const release = { number: 3, title: 'release', head: { ref: 'release/x' }, base: { ref: 'uat' }, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-20T00:00:00Z', merged_at: '2026-10-20T00:00:00Z' };
+    const old = { number: 4, title: 'old', head: { ref: 'f4' }, base: { ref: 'uat' }, created_at: '2026-09-01T00:00:00Z', updated_at: '2026-10-21T00:00:00Z', merged_at: '2026-09-02T00:00:00Z' };
+    const minDate = new Date('2026-10-05T00:00:00Z');
+    mockFetch(jsonResponse([old, release]));
+    const byCreation = await new GithubProvider().listPullRequests({ status: 'merged', targetBranch: 'uat', minDate });
+    expect(byCreation!.map((pr) => pr.idNumber)).to.deep.equal([]);
+    mockFetch(jsonResponse([old, release]));
+    const byMerge = await new GithubProvider().listPullRequests({ status: 'merged', targetBranch: 'uat', minDate, minDateOn: 'merged' });
+    expect(byMerge!.map((pr) => pr.idNumber)).to.deep.equal([3]);
+  });
+
+  it('completes the commits of a Pull Request past the 250 of its listing through the compare API', async () => {
+    const commit = (index: number) => ({ sha: `c${index}`, commit: { message: `m${index}` }, parents: [{ sha: `p${index}` }] });
+    const listing = Array.from({ length: 250 }, (_v, index) => commit(index));
+    mockFetch(
+      jsonResponse(listing.slice(0, 100), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=2>; rel="next"' }),
+      jsonResponse(listing.slice(100, 200), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=3>; rel="next"' }),
+      jsonResponse(listing.slice(200, 250)),
+      jsonResponse({ number: 9, base: { sha: 'base1' }, head: { sha: 'head1' } }),
+      jsonResponse({ total_commits: 260, commits: Array.from({ length: 100 }, (_v, index) => commit(index)) }),
+      jsonResponse({ total_commits: 260, commits: Array.from({ length: 100 }, (_v, index) => commit(100 + index)) }),
+      jsonResponse({ total_commits: 260, commits: Array.from({ length: 60 }, (_v, index) => commit(200 + index)) }),
+    );
+    const commits = await new GithubProvider().listPullRequestCommits(9);
+    expect(commits).to.have.length(260);
+    expect(commits![259]).to.deep.equal({ sha: 'c259', message: 'm259', parentShas: ['p259'] });
+    const compare = new URL(requests[4].url);
+    expect(compare.pathname).to.equal('/repos/acme/widgets/compare/base1...head1');
+    expect(compare.searchParams.get('page')).to.equal('1');
+    expect(new URL(requests[6].url).searchParams.get('page')).to.equal('3');
+  });
+
+  it('keeps the 250 commits of the listing when the compare API cannot answer', async () => {
+    const listing = Array.from({ length: 250 }, (_v, index) => ({ sha: `c${index}`, commit: { message: 'm' }, parents: [] }));
+    mockFetch(
+      jsonResponse(listing.slice(0, 100), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=2>; rel="next"' }),
+      jsonResponse(listing.slice(100, 200), 200, { Link: '<https://api.github.com/repos/acme/widgets/pulls/9/commits?page=3>; rel="next"' }),
+      jsonResponse(listing.slice(200, 250)),
+      jsonResponse({ message: 'Not Found' }, 404),
+    );
+    const commits = await new GithubProvider().listPullRequestCommits(9);
+    expect(commits).to.have.length(250);
+  });
+
   it('lists the pull requests of a go live through commits, compare and pulls endpoints', async () => {
     mockFetch(
       jsonResponse({ sha: 'merge1', parents: [{ sha: 'parent1' }] }),

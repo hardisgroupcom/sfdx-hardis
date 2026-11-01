@@ -85,6 +85,15 @@ export function getPromotionBranchConfig(config: any): PromotionBranchConfig {
 }
 
 /**
+ * detectManualCherryPicks: also recognize the stories that reached the target branch through a
+ * cherry-pick made by hand. It only exists on top of promotion branches, so it is off whenever they
+ * are.
+ */
+export function isManualCherryPickDetectionEnabled(config: any): boolean {
+  return getPromotionBranchConfig(config).enabled && config?.detectManualCherryPicks === true;
+}
+
+/**
  * Read allowedPromotionSteps: the source and target branches a release manager may assemble a
  * promotion between. Entries are objects ({ source: uat, target: preprod }); a "uat > preprod"
  * string is accepted too, since the config file is often edited by hand. An entry without a

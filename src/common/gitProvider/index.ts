@@ -1094,6 +1094,9 @@ export declare type CommonPullRequestInfo = {
   createdDate?: string;
   mergedDate?: string;
   mergeCommitSha?: string;
+  // The commit a squash merge left in the target branch, when the provider tells it apart from
+  // mergeCommitSha (GitLab)
+  squashCommitSha?: string;
   // A draft Pull Request (not ready for review), as the git provider flags it
   isDraft?: boolean;
   customBehaviors: {
@@ -1103,6 +1106,15 @@ export declare type CommonPullRequestInfo = {
     flowDeleteInterviews?: boolean
   }
   providerInfo: any
+}
+
+// One commit of a Pull Request as the provider lists it: what the Pull Request held before it was
+// merged, which a squash merge removes from the target branch history
+export declare type PullRequestCommitInfo = {
+  sha: string;
+  message: string;
+  // Empty when the provider does not return the parents
+  parentShas: string[];
 }
 
 export declare type PullRequestData = {

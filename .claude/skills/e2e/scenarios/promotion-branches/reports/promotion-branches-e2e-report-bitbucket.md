@@ -1,5 +1,9 @@
 # Promotion branches, deployment actions and backpromote: end to end test on Bitbucket Cloud
 
+> **2026-10-31: not run.** The preflight could not reach the test workspace: the project `TES` of
+> `sfdxhardistest` answers HTTP 404 and the token cannot list its repositories. The other three
+> providers ran on `main` at 8.21.0 the same night. This report stays the last Bitbucket run.
+
 **Date:** 2026-10-14 (supersedes the run of 2026-10-10 on `feat/pr-modal-job-artifacts`)
 **Why this run:** regression check of the four providers on `main` after the release of 8.18.0
 (the scratch org pool in the git provider, hardisgroupcom/sfdx-hardis#2343). Bitbucket Cloud last,
