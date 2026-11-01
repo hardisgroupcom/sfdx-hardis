@@ -9,7 +9,7 @@ import { WebSocketClient } from '../websocketClient.js';
 import { getConfig, getEnvVar, setConfig } from '../../config/index.js';
 import { isValidEmail } from './stringUtils.js';
 import sortArray from './sortArray.js';
-import { AuthInfo, Connection, SfdcUrl, SfError } from '@salesforce/core';
+import { AuthInfo, Connection, SfdcUrl, SfError, StateAggregator } from '@salesforce/core';
 import { soqlQuery, soqlQueryTooling } from './apiUtils.js';
 import { open } from './openUtils.js';
 import { isSfdxProject } from './projectUtils.js';
@@ -741,7 +741,7 @@ export async function setConnectionVariables(conn, handleTechnical = false) {
   if (conn) {
     globalThis.jsForceConn = conn;
   }
-  if (handleTechnical && tryTechnical && !(process.env?.SKIP_TECHNICAL_ORG === "true")) {
+  if (handleTechnical && tryTechnical && !(process.env?.SKIP_TECHNICAL_ORG === "true") && (await isTechnicalOrgAliasDefined())) {
     try {
       const techOrgDisplayCommand = 'sf org display --target-org TECHNICAL_ORG --json';
       const orgInfoResult = await execSfdxJson(techOrgDisplayCommand, this, {
@@ -899,5 +899,15 @@ async function waitForLightningDomain(url: string, commandThis: any): Promise<vo
     await new SfdcUrl(url).checkLightningDomain();
   } catch (error: any) {
     uxLog("warning", commandThis, c.yellow(t('openOrgDomainNotResolved', { message: error?.message || String(error) })));
+  }
+}
+
+// Without a TECHNICAL_ORG alias, sf org display would fail and show as a failed sub-command
+async function isTechnicalOrgAliasDefined(): Promise<boolean> {
+  try {
+    const stateAggregator = await StateAggregator.getInstance();
+    return !!stateAggregator.aliases.getUsername('TECHNICAL_ORG');
+  } catch {
+    return true;
   }
 }

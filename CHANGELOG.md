@@ -2,6 +2,10 @@
 
 ## [beta] (main)
 
+- [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): the monitoring repository gets its `.gitignore` again, so `hardis-report/`, `config/user/` and certificates are no longer committed ([sfdx-hardis-training#196](https://github.com/hardisgroupcom/sfdx-hardis-training/discussions/196)).
+- [hardis:doc:project2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) and [hardis:doc:flow2markdown](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/): no failed `sf org display` step in VS Code when no `TECHNICAL_ORG` is defined ([sfdx-hardis-training#141](https://github.com/hardisgroupcom/sfdx-hardis-training/discussions/141)).
+- Doc: the [Install packages](https://sfdx-hardis.cloudity.com/salesforce-devops-work-on-user-story-install-packages/) page shows that `installPackagesDuringCheckDeploy` goes at the root of `.sfdx-hardis.yml` ([#2426](https://github.com/hardisgroupcom/sfdx-hardis/discussions/2426)).
+
 ## [8.21.0] 2026-10-30
 
 - [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): deployment keywords in the Pull Request description or the latest commit (like NO_DELTA or nodelta) match in any case, and are ignored inside HTML comments and code blocks ([#2423](https://github.com/hardisgroupcom/sfdx-hardis/issues/2423)).
