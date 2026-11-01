@@ -19,6 +19,7 @@ Your goal is to design a solution and produce a technical specification.
    - Define the approach (new command, provider method, utility function, etc.)
    - Consider the provider pattern if external integrations are involved
    - A deployment action type keeps everything specific to it (flags, prompts, validation, phases, defaults) in its `ActionsProvider` subclass, never in `base.ts`, `create.ts`, `update.ts` or `actionUtils.ts`: see "Deployment action types" in the `architecture` skill
+   - Every provider family (git, notification, ticketing, AI, actions...) is agnostic outside its implementation classes: commands, index.ts, root classes and shared utils never name an implementation nor use its native syntax (JQL, WIQL, API filters, Slack blocks...); they speak a common format each provider converts in its own class. See "Rule for every provider family" in the `architecture` skill
    - Plan i18n keys if new user-visible strings are needed
    - Consider edge cases and error handling
    - Plan the vscode-sfdx-hardis side with the `vscode-sfdx-hardis` skill and the extension's own `design` skill: which panel, command entry or WebSocket event changes, and which CLI flags or `--json` fields the UI needs so the terminal and the extension behave the same

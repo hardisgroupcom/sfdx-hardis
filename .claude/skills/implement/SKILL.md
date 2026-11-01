@@ -30,6 +30,7 @@ Read `.claude/rules/` for coding conventions, i18n rules, and translation rules 
    - Use `prompts()` for user input
    - Follow the provider pattern for external integrations
    - A deployment action type keeps everything specific to it (flags, prompts, validation, phases, defaults) in its `ActionsProvider` subclass, never in `base.ts`, `create.ts`, `update.ts` or `actionUtils.ts`: see "Deployment action types" in the `architecture` skill
+   - Every provider family (git, notification, ticketing, AI, actions...) is agnostic outside its implementation classes: commands, index.ts, root classes and shared utils never name an implementation nor use its native syntax (JQL, WIQL, API filters, Slack blocks...); they speak a common format each provider converts in its own class. See "Rule for every provider family" in the `architecture` skill
    - In `src/commands/**` files, keep only the command class declaration in the file body; move interfaces, types, and helper functions to sibling utility modules.
    - Allowed exception: top-level `Messages.importMessagesDirectoryFromMetaUrl(import.meta.url)` and `const messages = Messages.loadMessages(...)` can remain in command files.
 3. **Extension side**: When the design touches vscode-sfdx-hardis, load the `vscode-sfdx-hardis` skill and implement that part in `../vscode-sfdx-hardis`, following that repository's `CLAUDE.md` and `.claude/skills/implement/SKILL.md` rather than the sfdx-hardis conventions. The CLI stays the engine: the extension passes flags, it does not duplicate CLI logic.
