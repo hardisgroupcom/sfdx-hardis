@@ -65,29 +65,11 @@ Rules are configured from the **Replacement Rules** panel of VS Code (settings m
 | `Workflow/alerts[fullName=Escalation_Alert]/senderAddress` | The sender of one email alert                       |
 | `Layout/excludeButtons[.=SmartFillEnrich]`                 | The `excludeButtons` element holding this value     |
 
-For example, to remove one user permission from every Profile deployed to production:
+In the VS Code panel, **New rule** opens the editor, and the row menu of a rule opens it on that rule. The help of the **Element** field lists the common paths.
 
-```yaml
-replacementRules:
-  - id: remove-view-setup-in-production
-    description: ViewSetup is granted in the sandboxes only
-    type: xml-remove
-    files: "**/profiles/*.profile-meta.xml"
-    xmlPath: Profile/userPermissions[name=ViewSetup]
-    includeTargetBranches: [main]
-```
+#### Set an XML value (`xml-value`)
 
-In the VS Code panel, **New rule** opens the editor. The help of the **Element** field lists the common paths.
-
-![Rule editor removing one user permission of the Profiles deployed to production](assets/images/replacement-rules-editor.png)
-
-The same rule works for Permission Sets with `files: "**/permissionsets/*.permissionset-meta.xml"` and `xmlPath: PermissionSet/userPermissions[name=ViewSetup]`.
-
-An `xml-value` rule never creates a missing element: it reports "not found". A `text` rule replaces every occurrence, and its replacement is literal (no `$1`), so a value containing `$` is safe.
-
----
-
-### Values per org
+The Payment API endpoint of each org, with one URL per major branch and a `default` for developer sandboxes and scratch orgs:
 
 ```yaml
 replacementRules:
@@ -104,6 +86,57 @@ replacementRules:
       default: https://pay-sandbox.example.com
     required: true
 ```
+
+![Rule editor setting the endpoint of a Named Credential, with one URL per org](assets/images/replacement-rules-editor-xml-value.png)
+
+An `xml-value` rule never creates a missing element: it reports "not found". **Secret** reads the value from a CI/CD variable instead (see [Secrets](#secrets)).
+
+#### Remove an XML element (`xml-remove`)
+
+One user permission removed from every Profile deployed to production:
+
+```yaml
+replacementRules:
+  - id: remove-view-setup-in-production
+    description: ViewSetup is granted in the sandboxes only
+    type: xml-remove
+    files: "**/profiles/*.profile-meta.xml"
+    xmlPath: Profile/userPermissions[name=ViewSetup]
+    includeTargetBranches: [main]
+```
+
+![Rule editor removing one user permission of the Profiles deployed to production](assets/images/replacement-rules-editor.png)
+
+The same rule works for Permission Sets with `files: "**/permissionsets/*.permissionset-meta.xml"` and `xmlPath: PermissionSet/userPermissions[name=ViewSetup]`.
+
+#### Find and replace text (`text`)
+
+The host hardcoded in an Apex class, found with a regular expression and replaced by the one of each org:
+
+```yaml
+replacementRules:
+  - id: apex-payment-host
+    description: Host hardcoded in the callout class
+    type: text
+    files: "**/classes/PaymentService.cls"
+    find: https://pay-[a-z]+\.example\.com
+    regex: true
+    values:
+      integration: https://pay-int.example.com
+      uat: https://pay-uat.example.com
+      preprod: https://pay-staging.example.com
+      main: https://pay.example.com
+```
+
+![Rule editor replacing a host hardcoded in an Apex class, with one value per org](assets/images/replacement-rules-editor-text.png)
+
+A `text` rule replaces every occurrence, and its replacement is literal (no `$1`), so a value containing `$` is safe. Without `regex: true`, `find` is a plain text.
+
+---
+
+### Values per org
+
+The [`xml-value` example](#set-an-xml-value-xml-value) above gives each org its own URL.
 
 - `value`: the same value for every org.
 - `values`: one value per target branch. `default` applies to developer sandboxes, scratch orgs, and the branches without their own value. An org with no value and no default keeps the file of git.

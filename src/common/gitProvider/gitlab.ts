@@ -1,7 +1,7 @@
 import { Gitlab } from "@gitbeaker/rest";
 import c from "chalk";
 import { Agent as HttpsAgent } from "https";
-import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
+import { CommonPullRequestInfo, CreatePullRequestRequest, CreatePullRequestResult, PullRequestCommitInfo, PullRequestMessageRequest, PullRequestMessageResult } from "./index.js";
 import { getCurrentGitBranch, git, uxLog } from "../utils/index.js";
 import { buildPrCreateUrl, CiRunFilters, CiRunStatus, CommonCiRun, DashboardComment, DashboardRef, GitProviderRepositorySettings, GitProviderRoot, JobArtifact, JobArtifactsListing, PullRequestCommentRef, PullRequestCreateUrlResult, getOldestCommitDateWithMargin } from "./gitProviderRoot.js";
 import { getBannerMarkdownAndLink } from "../../config/index.js";
@@ -604,7 +604,8 @@ ${getBannerMarkdownAndLink()}
   }
 
   public async listPullRequests(
-    filters: { status?: string; targetBranch?: string; minDate?: Date } = {},
+    // minDateOn is accepted and needs nothing: updatedAfter is never older than the merge
+    filters: { status?: string; targetBranch?: string; minDate?: Date; minDateOn?: 'created' | 'merged' } = {},
   ): Promise<CommonPullRequestInfo[] | null> {
     if (!this.gitlabApi) {
       return null;
@@ -651,6 +652,25 @@ ${getBannerMarkdownAndLink()}
       return mergeRequest ? this.completePullRequestInfo(mergeRequest) : null;
     } catch (err) {
       uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderPrByIdNotFound', { id: mrIid, message: String(err) })));
+      return null;
+    }
+  }
+
+  public async listPullRequestCommits(mrIid: number): Promise<PullRequestCommitInfo[] | null> {
+    const projectId = this.projectId;
+    if (!this.gitlabApi || !projectId) {
+      return null;
+    }
+    try {
+      // GitLab keeps the commits of a squashed merge request: they are still listed after the merge
+      const commits: any[] = (await this.gitlabApi.MergeRequests.allCommits(projectId, mrIid)) as any[];
+      return (commits || []).map((commit: any) => ({
+        sha: commit.id,
+        message: commit.message || commit.title || '',
+        parentShas: commit.parent_ids || commit.parentIds || [],
+      }));
+    } catch (err) {
+      uxLog("warning", this, c.yellow('[Gitlab Integration] ' + t('gitProviderPullRequestCommitsNotListed', { number: mrIid, message: String(err) })));
       return null;
     }
   }
@@ -875,6 +895,7 @@ ${getBannerMarkdownAndLink()}
       createdDate: prData?.created_at || undefined,
       mergedDate: prData?.merged_at || undefined,
       mergeCommitSha: prData?.merge_commit_sha || prData?.mergeCommitSha || undefined,
+      squashCommitSha: prData?.squash_commit_sha || prData?.squashCommitSha || undefined,
       // draft since GitLab 13.2, work_in_progress before
       isDraft: prData?.draft === true || prData?.work_in_progress === true,
       providerInfo: prData,

@@ -9,7 +9,20 @@
   - [hardis:scratch:create](https://sfdx-hardis.cloudity.com/hardis/scratch/create/): new env var **SCRATCH_ORG_SNAPSHOT** to create the scratch org from a snapshot given by name.
   - The [org initialization steps](https://sfdx-hardis.cloudity.com/salesforce-devops-org-initialization/) run as for a pool: the snapshot holds the result of the steps run when filling the pool, and each Pull Request scratch org installs the packages it lacks, gets the delta, then the other steps.
 - Delta deployment with `useDeltaDeploymentWithDependencies`: a command that reads two manifests no longer extends the second delta with the components of the first.
+## [8.21.0] 2026-10-30
+
+- [hardis:project:deploy:smart](https://sfdx-hardis.cloudity.com/hardis/project/deploy/smart/): deployment keywords in the Pull Request description or the latest commit (like NO_DELTA or nodelta) match in any case, and are ignored inside HTML comments and code blocks ([#2423](https://github.com/hardisgroupcom/sfdx-hardis/issues/2423)).
+- [hardis:project:configure:auth](https://sfdx-hardis.cloudity.com/hardis/project/configure/auth/) and [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): System Administrator is now selected by default as the profile of the External Client App, in every org language.
+- Doc: the [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) page shows an example and a screenshot of the rule editor for each rule type (`xml-value`, `xml-remove`, `text`), and its Rules and Values per org screenshots are zoomed out so every column can be read.
+- Doc: the [Aha! integration](https://sfdx-hardis.cloudity.com/salesforce-devops-setup-integration-aha/) page explains how to pass the Aha! variables to pipelines created before 8.14.0.
+- [Promotion branches](https://sfdx-hardis.cloudity.com/salesforce-devops-promotion-branches/#stories-cherry-picked-by-hand-before-promotion-branches-beta) (Beta): new `detectManualCherryPicks` setting, so the User Stories already cherry-picked by hand into the next branch, even through a squashed release branch, are no longer offered for promotion.
+- Upgrade **picomatch** to 4.0.7.
+
+## [8.20.1] 2026-10-27
+
+- [Replacement rules](https://sfdx-hardis.cloudity.com/salesforce-devops-config-replacement-rules/) (Beta): backpromotes, org initializations and deployments no longer fail or skip the rules with "Cannot find package 'picomatch'" ([#2403](https://github.com/hardisgroupcom/sfdx-hardis/issues/2403)).
 - [hardis:org:configure:monitoring](https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/): an org whose instance URL ends with a slash no longer stops the command with "is not a valid branch name" ([sfdx-hardis-training#248](https://github.com/hardisgroupcom/sfdx-hardis-training/issues/248)).
+- [hardis:org:configure:data](https://sfdx-hardis.cloudity.com/hardis/org/configure/data/): the `export.json` it creates ends with a newline, so MegaLinter no longer pushes a fix commit on the Pull Request.
 - Upgrade **fast-uri** to 3.1.9, which fixes four URI parsing and normalization flaws (CVE-2026-110180, CVE-2026-110306, CVE-2026-110095, CVE-2026-110725).
 
 ## [8.20.0] 2026-10-24

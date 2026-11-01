@@ -1361,6 +1361,13 @@ export function listMetadataTypes() {
         xmlName: 'DataWeaveResource',
       },
       {
+        directoryName: 'debugLevels',
+        inFolder: false,
+        metaFile: false,
+        suffix: 'debugLevel',
+        xmlName: 'DebugLevel',
+      },
+      {
         directoryName: 'decisionMatrixDefinition',
         inFolder: false,
         metaFile: false,

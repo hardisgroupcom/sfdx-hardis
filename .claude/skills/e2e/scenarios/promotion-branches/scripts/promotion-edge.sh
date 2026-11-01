@@ -80,7 +80,14 @@ story() {
   eval "$change"
   git add -A -- force-app NOTES.md config scripts 2>/dev/null
   git commit -q -m "$message" || return 1
-  git push -q -f -u origin "$branch" 2>/dev/null || return 1
+  # A push can fail once on a provider hiccup (Azure DevOps, 2026-10-31): retry, and say why it failed
+  local try
+  for try in 1 2 3; do
+    git push -q -f -u origin "$branch" 2>"$LOGS/story-push.err" && break
+    echo "story $branch: push attempt $try failed: $(tail -1 "$LOGS/story-push.err")" >&2
+    [ "$try" = 3 ] && return 1
+    sleep 10
+  done
   mkdir -p "$(dirname "$BODIES/$branch.md")"
   printf '%s\n' "$title, section 6 edge case." >"$BODIES/$branch.md"
   number=$(p_open "$branch" "$target" "$title" "$BODIES/$branch.md") || return 1
