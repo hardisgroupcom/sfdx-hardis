@@ -222,12 +222,15 @@ describe('ticket comments', () => {
   });
 
   describe('AzureBoardsProvider.postComment', () => {
-    function stubbedAzure(pages: any[] = [{ comments: [] }]): { provider: AzureBoardsProvider; calls: any[] } {
+    // The work item answers in the project of the repository unless a test says otherwise
+    function stubbedAzure(pages: any[] = [{ comments: [] }], workItemProject = 'Sales'): { provider: AzureBoardsProvider; calls: any[] } {
       const provider = new AzureBoardsProvider({});
       const calls: any[] = [];
       let page = 0;
       (provider as any).azureApi = {
         getWorkItemTrackingApi: async () => ({
+          // Not recorded: the expectations below count the comment calls only
+          getWorkItem: async () => ({ fields: { 'System.TeamProject': workItemProject } }),
           getComments: async (...args: any[]) => {
             calls.push(['getComments', ...args]);
             return pages[page++] ?? { comments: [] };
@@ -270,6 +273,20 @@ describe('ticket comments', () => {
       expect(result.action).to.equal('updated');
     }));
 
+    it('comments in the project of the work item, not in the one of the repository', withEnv(AZURE_ENV, async () => {
+      const { provider, calls } = stubbedAzure([{ comments: [] }], 'Backlog');
+      const result = await provider.postComment('1234', 'x');
+      expect(calls[0].slice(2)).to.deep.equal(['Backlog', 1234]);
+      expect(result.url).to.equal('https://dev.azure.com/acme/Backlog/_workitems/edit/1234');
+    }));
+
+    it('adds no marker of any kind when no --marker is given', withEnv(AZURE_ENV, async () => {
+      const { provider, calls } = stubbedAzure();
+      await provider.postComment('1234', 'Plain');
+      expect(calls[0][1].text).to.not.contain('sfdx-hardis:');
+      expect(calls[0][1].text).to.not.contain('<span');
+    }));
+
     it('refuses an identifier that is not a work item number', withEnv(AZURE_ENV, async () => {
       const { provider } = stubbedAzure();
       let message = '';
@@ -305,7 +322,7 @@ describe('ticket comments', () => {
 
     it('writes in the field of the option, before SERVICENOW_COMMENT_FIELD', withEnv({ ...SERVICENOW_ENV, SERVICENOW_COMMENT_FIELD: 'comments' }, async () => {
       const calls = stubServiceNow();
-      await new ServiceNowProvider({}).postComment('INC0012345', 'x', { serviceNowField: 'close_notes' });
+      await new ServiceNowProvider({}).postComment('INC0012345', 'x', { commentField: 'close_notes' });
       expect(Object.keys(calls.find((call) => call.method === 'PATCH')!.body)).to.deep.equal(['close_notes']);
       await new ServiceNowProvider({}).postComment('INC0012345', 'x');
       expect(Object.keys(calls.filter((call) => call.method === 'PATCH')[1].body)).to.deep.equal(['comments']);
@@ -315,7 +332,7 @@ describe('ticket comments', () => {
       const calls = stubServiceNow();
       let message = '';
       try {
-        await new ServiceNowProvider({}).postComment('INC0012345', 'x', { serviceNowField: 'work_notes": "x' });
+        await new ServiceNowProvider({}).postComment('INC0012345', 'x', { commentField: 'work_notes": "x' });
       } catch (e) {
         message = (e as Error).message;
       }

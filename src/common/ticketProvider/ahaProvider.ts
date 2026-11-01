@@ -12,6 +12,26 @@ import { convertMarkdownToHtml } from '../notifProvider/utils/markdownToHtml.js'
 import { PostCommentOptions, PostCommentResult, buildDeploymentCommentMarkdown, hasMarker, htmlMarker } from './utils/ticketComment.js';
 import { WebSocketClient } from '../websocketClient.js';
 import { t } from '../utils/i18n.js';
+import { SfError } from '@salesforce/core';
+import {
+  TICKET_ERROR,
+  TicketErrorContext,
+  TicketSearchCriteria,
+  TicketSearchOptions,
+  TicketSearchResult,
+  TicketSummary,
+  toTicketError,
+} from './utils/ticketOperations.js';
+import {
+  TicketAssignee,
+  TicketIdentity,
+  TicketPointsOptions,
+  TicketProjectMeta,
+  TicketProjectSummary,
+  TicketStepResult,
+  mentionLead,
+  retryReadOn5xx,
+} from './utils/ticketQualify.js';
 import {
   TicketAttachment,
   TicketDetails,
@@ -36,6 +56,9 @@ const AHA_COLLECT_FIELDS = 'name,reference_num,workflow_status,assigned_to_user,
 const AHA_COMMENTS_PAGE_SIZE = 200;
 const AHA_COMMENTS_MAX = 2000;
 const AHA_REQUEST_TIMEOUT_MS = 60000;
+// Fields of each feature read by ticket list
+const AHA_SEARCH_FIELDS = 'reference_num,name,url,workflow_kind,workflow_status,assigned_to_user,tags,created_at,updated_at,release';
+const AHA_SEARCH_PAGE_SIZE = 100;
 
 /**
  * Aha! ticketing connector: features of Aha! Roadmaps and Aha! Develop.
@@ -231,7 +254,10 @@ export class AhaProvider extends TicketProviderRoot {
     details.type = feature.workflow_kind?.name || '';
     details.status = feature.workflow_status?.name || '';
     details.assignee = feature.assigned_to_user?.name || '';
+    details.assigneeId = feature.assigned_to_user?.id ? String(feature.assigned_to_user.id) : null;
     details.reporter = feature.created_by_user?.name || '';
+    details.reporterId = feature.created_by_user?.id ? String(feature.created_by_user.id) : null;
+    details.project = AhaProvider.projectOfReference(details.id);
     details.created = feature.created_at || '';
     details.updated = feature.updated_at || '';
     details.labels = feature.tags || [];
@@ -252,10 +278,11 @@ export class AhaProvider extends TicketProviderRoot {
       }
     }
 
-    const { comments, truncated } = await this.fetchAllComments(details.id);
+    const { comments, truncated } = options.skipComments ? { comments: [], truncated: false } : await this.fetchAllComments(details.id);
     details.commentsTruncated = truncated;
     details.comments = comments.map((comment: any) => ({
       author: comment?.user?.name || '',
+      authorId: comment?.user?.id ? String(comment.user.id) : null,
       date: comment?.created_at || '',
       body: capText(htmlToPlainText(comment?.body)),
     }));
@@ -372,7 +399,10 @@ export class AhaProvider extends TicketProviderRoot {
    */
   public async postComment(ticketId: string, markdown: string, options: PostCommentOptions = {}): Promise<PostCommentResult> {
     const reference = (ticketId || '').trim();
-    const body = { comment: { body: (await convertMarkdownToHtml(markdown)) + htmlMarker(options.marker) } };
+    // Aha! comments cannot be restricted: refused by the base check, before any write
+    this.validateQualifyOptions({ visibility: options.visibility });
+    const html = AhaProvider.withHtmlMention(await convertMarkdownToHtml(markdown), options.mention);
+    const body = { comment: { body: html + htmlMarker(options.marker) } };
     const existing = options.marker ? await this.findMarkedComment(reference, options.marker) : null;
     const response = existing
       ? await httpPut(`${this.host}/api/v1/comments/${encodeURIComponent(String(existing.id))}`, body, this.requestConfig())
@@ -385,6 +415,156 @@ export class AhaProvider extends TicketProviderRoot {
       commentId: String(comment?.id ?? existing?.id ?? ''),
       url: comment?.url || AhaProvider.featureUrl(this.host, reference),
     };
+  }
+
+  /** Aha! keys are upper case: it answers "Record not found" to a lowercase reference */
+  public normalizeTicketId(ticketId: string): string {
+    return (ticketId || '').trim().toUpperCase();
+  }
+
+  /**
+   * The neutral criteria become the filters of the features API (q, tag, assigned_to_user,
+   * updated_since); the others (status, type, creation day, open only, several labels or projects)
+   * are applied to each page. The page token holds the page and the position in it.
+   */
+  public async searchTickets(criteria: TicketSearchCriteria, options: TicketSearchOptions): Promise<TicketSearchResult> {
+    const projects = (criteria.projects || []).map((project) => project.toUpperCase());
+    const url = projects.length === 1
+      ? `${this.host}/api/v1/products/${encodeURIComponent(projects[0])}/features`
+      : `${this.host}/api/v1/features`;
+    const params: Record<string, any> = { fields: AHA_SEARCH_FIELDS, per_page: AHA_SEARCH_PAGE_SIZE };
+    if (criteria.text) {
+      params.q = criteria.text;
+    }
+    if (criteria.labels?.length === 1) {
+      params.tag = criteria.labels[0];
+    }
+    if (criteria.assignee === 'me') {
+      params.assigned_to_user = (await this.whoAmI()).id;
+    } else if (criteria.assignee && criteria.assignee !== 'none') {
+      params.assigned_to_user = criteria.assignee;
+    }
+    if (criteria.updatedAfter) {
+      params.updated_since = `${criteria.updatedAfter}T00:00:00Z`;
+    }
+    const [startPage, startSkip] = AhaProvider.parsePageToken(options.pageToken);
+    const tickets: TicketSummary[] = [];
+    let nextPageToken: string | null = null;
+    for (let page = startPage, skip = startSkip; ; page++, skip = 0) {
+      const response: any = await this.runOperation({ operation: 'list' }, () =>
+        retryReadOn5xx(() => httpGet(url, this.requestConfig({ ...params, page })))
+      );
+      const matching = (response?.data?.features || []).filter((feature: any) => AhaProvider.matchesCriteria(feature, criteria, projects));
+      const available = matching.slice(skip);
+      const taken = available.slice(0, options.maxResults - tickets.length);
+      tickets.push(...taken.map((feature: any) => this.toTicketSummary(feature)));
+      const totalPages = Number(response?.data?.pagination?.total_pages ?? page);
+      if (taken.length < available.length) {
+        nextPageToken = `${page}.${skip + taken.length}`;
+        break;
+      }
+      if (page >= totalPages || (response?.data?.features || []).length === 0) {
+        break;
+      }
+      if (tickets.length >= options.maxResults) {
+        nextPageToken = `${page + 1}.0`;
+        break;
+      }
+    }
+    AhaProvider.sortSummaries(tickets, criteria);
+    // The features API cannot sort: across several pages, the order asked for holds inside each page only
+    const sortAsked = criteria.descending === true || criteria.orderBy === 'updated';
+    const warning = nextPageToken !== null && sortAsked ? t('ticketSearchSortedPerPage', { provider: AhaProvider.providerLabel }) : null;
+    return { tickets, nextPageToken, truncated: nextPageToken !== null, warning };
+  }
+
+  /** Adds a tag; the tags already on the feature are kept */
+  public async addTicketLabel(ticketId: string, label: string): Promise<void> {
+    const reference = this.normalizeTicketId(ticketId);
+    await this.runOperation({ operation: 'label', ticketId: reference }, () => this.addTagOnFeature(reference, label));
+  }
+
+  public async whoAmI(): Promise<TicketIdentity> {
+    const response: any = await this.runOperation({ operation: 'whoami' }, () => retryReadOn5xx(() => httpGet(`${this.host}/api/v1/me`, this.requestConfig())));
+    const user = response?.data?.user || {};
+    return { id: user.id ? String(user.id) : null, displayName: user.name ?? null, email: user.email ?? null };
+  }
+
+  /** Workspaces (products) the API key can see; the key is the reference prefix of their features */
+  public async listProjects(): Promise<TicketProjectSummary[]> {
+    const response: any = await this.runOperation({ operation: 'meta' }, () =>
+      retryReadOn5xx(() => httpGet(`${this.host}/api/v1/products`, this.requestConfig({ per_page: 200 })))
+    );
+    return (response?.data?.products || []).map((product: any) => ({ key: product?.reference_prefix || '', name: product?.name || '' }));
+  }
+
+  /**
+   * The statuses of the feature workflow of the workspace. Aha! lists no feature types: the types
+   * are the ones its features use (workflow kinds), read on up to 200 features.
+   */
+  public async getProjectMeta(project: string): Promise<TicketProjectMeta> {
+    const product = encodeURIComponent(project.toUpperCase());
+    const workflows: any = await this.runOperation({ operation: 'meta' }, () =>
+      retryReadOn5xx(() => httpGet(`${this.host}/api/v1/products/${product}/workflows`, this.requestConfig()))
+    );
+    const featureWorkflow = (workflows?.data?.workflows || []).find((workflow: any) => workflow?.statusable_type === 'Feature');
+    const statuses = (featureWorkflow?.workflow_statuses || []).map((status: any) => ({ id: String(status.id), name: status.name }));
+    const features: any = await this.runOperation({ operation: 'meta' }, () =>
+      retryReadOn5xx(() => httpGet(`${this.host}/api/v1/products/${product}/features`, this.requestConfig({ fields: 'workflow_kind', per_page: 200 })))
+    );
+    const kinds = new Map<string, string>();
+    for (const feature of features?.data?.features || []) {
+      if (feature?.workflow_kind?.name) {
+        kinds.set(String(feature.workflow_kind.id), feature.workflow_kind.name);
+      }
+    }
+    const names = statuses.map((status: { name: string }) => status.name);
+    return {
+      project: project.toUpperCase(),
+      issueTypes: [...kinds].map(([id, name]) => ({ id, name })),
+      statuses,
+      statusesByType: Object.fromEntries([...kinds.values()].map((name) => [name, names])),
+    };
+  }
+
+  /** Moves the feature to the workflow status named (name or id, any case) */
+  public async transitionTicket(ticketId: string, status: string): Promise<string> {
+    const reference = this.normalizeTicketId(ticketId);
+    const response: any = await this.runOperation({ operation: 'transition', ticketId: reference }, () =>
+      httpPut(this.featureApiUrl(reference), { feature: { workflow_status: status.trim() } }, this.requestConfig({ fields: 'workflow_status' }))
+    );
+    const reached = response?.data?.feature?.workflow_status;
+    const wanted = status.trim().toLowerCase();
+    if (!reached || (String(reached.name || '').toLowerCase() !== wanted && String(reached.id) !== status.trim())) {
+      throw new SfError(t('ticketTransitionNotAvailable', { status, ticketId: reference }), TICKET_ERROR.transitionInvalid);
+    }
+    return reached.name;
+  }
+
+  /**
+   * Writes the estimate of the feature (original_estimate, in the work units of the workspace), or
+   * the custom field named by options.field. A filled value is kept unless options.overwrite.
+   */
+  public async setTicketPoints(ticketId: string, points: number, options: TicketPointsOptions = {}): Promise<TicketStepResult> {
+    const reference = this.normalizeTicketId(ticketId);
+    const field = options.field || 'original_estimate';
+    const feature: any = await this.runOperation({ operation: 'points', ticketId: reference }, () =>
+      retryReadOn5xx(() => this.fetchFeature(reference, field === 'original_estimate' ? 'original_estimate' : 'custom_fields'))
+    );
+    if (!feature) {
+      throw new SfError(t('ticketNotFound', { ticketId: reference }), TICKET_ERROR.notFound);
+    }
+    const customField = field === 'original_estimate' ? null : (feature.custom_fields || []).find((candidate: any) => candidate?.key === field);
+    if (field !== 'original_estimate' && !customField) {
+      return { status: 'skipped', value: null, field, reason: 'field-not-on-issue' };
+    }
+    const current = field === 'original_estimate' ? AhaProvider.estimateOf(feature) : customField.value;
+    if (current !== undefined && current !== null && current !== '' && !options.overwrite) {
+      return { status: 'skipped', value: current, field, reason: 'already-set' };
+    }
+    const update = field === 'original_estimate' ? { original_estimate: points } : { custom_fields: { [field]: points } };
+    await this.runOperation({ operation: 'points', ticketId: reference }, () => httpPut(this.featureApiUrl(reference), { feature: update }, this.requestConfig({ fields: 'reference_num' })));
+    return { status: 'done', value: points, field };
   }
 
   /**
@@ -544,5 +724,103 @@ export class AhaProvider extends TicketProviderRoot {
     const { comments } = await this.fetchAllComments(reference);
     const marked = comments.filter((comment: any) => hasMarker(comment?.body, marker));
     return marked.length > 0 ? marked[marked.length - 1] : null;
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Aha! formats: search filters, page tokens, error bodies and mentions. They stay here
+  // ---------------------------------------------------------------------------------------------
+
+  /** Named errors on every failure of the ticket operations, with the reason Aha! gave */
+  private async runOperation<T>(context: Omit<TicketErrorContext, 'providerLabel'>, call: () => Promise<T>): Promise<T> {
+    if (!this.isActive) {
+      throw new SfError(t('ticketProviderNoCredential', { provider: AhaProvider.providerLabel }), TICKET_ERROR.providerNotConfigured);
+    }
+    try {
+      return await call();
+    } catch (e: any) {
+      throw toTicketError(e, { providerLabel: AhaProvider.providerLabel, serverMessage: AhaProvider.serverMessageOf(e), ...context });
+    }
+  }
+
+  /** Aha! answers { errors: { message } } or { error: "..." } */
+  private static serverMessageOf(error: any): string | undefined {
+    const data = error?.response?.data;
+    const message = data?.errors?.message ?? data?.error ?? data?.message;
+    return typeof message === 'string' && message ? message : undefined;
+  }
+
+  private toTicketSummary(feature: any): TicketSummary {
+    const reference = feature?.reference_num || '';
+    return {
+      id: reference,
+      url: feature?.url || AhaProvider.featureUrl(this.host, reference),
+      subject: feature?.name || '',
+      type: feature?.workflow_kind?.name || '',
+      status: feature?.workflow_status?.name || '',
+      priority: '',
+      assignee: feature?.assigned_to_user?.name || null,
+      created: feature?.created_at || '',
+      updated: feature?.updated_at || '',
+      labels: feature?.tags || [],
+      assigneeId: feature?.assigned_to_user?.id ? String(feature.assigned_to_user.id) : null,
+      project: AhaProvider.projectOfReference(reference),
+      areaPath: feature?.release?.name || null,
+    };
+  }
+
+  /** PROD-12 -> PROD */
+  private static projectOfReference(reference: string): string {
+    return /^([A-Za-z][A-Za-z0-9]*)-\d+$/.exec(reference || '')?.[1]?.toUpperCase() || '';
+  }
+
+  /** The criteria the features API cannot filter on */
+  private static matchesCriteria(feature: any, criteria: TicketSearchCriteria, projects: string[]): boolean {
+    const anyOf = (values: string[] | undefined, value: string) => !values?.length || values.some((wanted) => wanted.toLowerCase() === value.toLowerCase());
+    if (projects.length > 1 && !projects.includes(AhaProvider.projectOfReference(feature?.reference_num))) {
+      return false;
+    }
+    if (!anyOf(criteria.statuses, feature?.workflow_status?.name || '') || !anyOf(criteria.types, feature?.workflow_kind?.name || '')) {
+      return false;
+    }
+    if (criteria.assignee === 'none' && feature?.assigned_to_user) {
+      return false;
+    }
+    const tags: string[] = feature?.tags || [];
+    if (criteria.labels && criteria.labels.length > 1 && !criteria.labels.some((label) => tags.some((tag) => tag.toLowerCase() === label.toLowerCase()))) {
+      return false;
+    }
+    if (criteria.createdAfter && String(feature?.created_at || '').slice(0, 10) < criteria.createdAfter) {
+      return false;
+    }
+    return !(criteria.openOnly && feature?.workflow_status?.complete === true);
+  }
+
+  private static sortSummaries(tickets: TicketSummary[], criteria: TicketSearchCriteria): void {
+    const key = criteria.orderBy === 'updated' ? 'updated' : 'created';
+    tickets.sort((a, b) => (criteria.descending ? -1 : 1) * String(a[key]).localeCompare(String(b[key])));
+  }
+
+  /** "3.40": page 3, from its 41st matching feature. Opaque for the caller */
+  private static parsePageToken(token: string | null | undefined): [number, number] {
+    const match = /^(\d+)\.(\d+)$/.exec(String(token || ''));
+    return match ? [Math.max(1, Number(match[1])), Number(match[2])] : [1, 0];
+  }
+
+  private static escapeHtml(text: string): string {
+    return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  /** The assignee named after the first block: the Aha! API offers no mention a comment can carry */
+  private static withHtmlMention(html: string, assignee: TicketAssignee | null | undefined): string {
+    if (!assignee?.displayName) {
+      return html;
+    }
+    const line = `<p>${AhaProvider.escapeHtml(mentionLead())}<strong>${AhaProvider.escapeHtml(assignee.displayName)}</strong></p>`;
+    const end = html.search(/<\/(p|h\d|ul|ol)>/);
+    if (end < 0) {
+      return line + html;
+    }
+    const close = html.indexOf('>', end) + 1;
+    return html.slice(0, close) + line + html.slice(close);
   }
 }

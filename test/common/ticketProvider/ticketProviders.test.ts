@@ -257,7 +257,7 @@ describe('ticket providers', () => {
       expect(details!.extra.category).to.equal('Software');
       expect(details!.comments).to.have.lengthOf(1);
       expect(details!.comments[0].author).to.equal('Alice Martin');
-      expect(details!.comments[0].body).to.equal('[work_notes] Assign the permission set manually.');
+      expect(details!.comments[0].body).to.equal('Assign the permission set manually.\n\n[work_notes]');
       expect(details!.manualActions.join(' ')).to.contain('permission set');
     }));
 
@@ -438,7 +438,7 @@ describe('ServiceNowProvider deployment comments', () => {
       calls.push({ url, method, body: init?.body ? JSON.parse(init.body) : null });
       let body: any = { result: [] };
       if (url.includes('/api/now/table/label_entry')) {
-        body = method === 'GET' ? { result: [] } : { result: { sys_id: 'entry1' } };
+        body = method === 'GET' ? { result: [] } : { result: { sys_id: 'entry1', label: { value: 'label1' }, table_key: { value: 'sys1' } } };
       } else if (url.includes('/api/now/table/label')) {
         body = method === 'GET'
           ? { result: existingLabelSysId ? [{ sys_id: existingLabelSysId }] : [] }
