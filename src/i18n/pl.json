@@ -1,5 +1,10 @@
 {
   "aDetailedDescriptionForExportConfig": "Szczegółowy opis wyjaśniający, co robi ta konfiguracja eksportu",
+  "agentPublishResumesActivation": "Wersja {{version}} agenta {{agentName}} została opublikowana przez wcześniejsze uruchomienie i nie jest aktywna: zostanie aktywowana zamiast ponownej publikacji agenta.",
+  "agentRunningUserCreatedAtDeployment": "Agent {{agentName}} nie ma jeszcze użytkownika uruchamiającego w tej org produkcyjnej: sprawdzenie wdrożenia go nie tworzy, utworzy go dopiero wdrożenie.",
+  "agentRunningUserProjectRuleNoCreation": "Reguła zamiany projektu zapisuje użytkownika uruchamiającego agenta {{agentName}} dla tego celu: żaden użytkownik nie zostanie utworzony.",
+  "agentRunningUserRulesOffNoCreation": "Reguły zamiany lub wbudowana reguła builtin-agent-running-user są wyłączone dla tego celu: użytkownik uruchamiający agenta {{agentName}} nie zostanie utworzony, ponieważ nic nie zapisałoby go we wdrażanych plikach.",
+  "agentsDeploymentActionsAlreadyThere": "Akcje wdrożenia zmienionych agentów już istnieją: nie ma nic do dodania.",
   "agentsDeploymentActionsNoAgentChanged": "Żaden bundle agenta Agentforce nie został zmieniony: brak akcji wdrożenia agenta do dodania.",
   "aHumanReadableLabelForExportConfig": "Czytelna etykieta identyfikująca tę konfigurację eksportu",
   "aSalesforceOrgLabel": "Salesforce org",
@@ -4402,6 +4407,7 @@
   "unableToQueryNamedCredentials": "Nie można wykonać zapytania o Named Credentials: {{error}}",
   "unableToQueryOauthTokens": "Nie można wykonać zapytania o tokeny OAuth: {{error}}",
   "unableToQueryScheduledJobs": "Nie można wykonać zapytania o zaplanowane zadania: {{error}}",
+  "unableToReadAgentVersionStatuses": "Nie można odczytać statusów wersji agenta: {{message}}",
   "unableToRemoveFolderPleaseDeleteIt": "Nie można usunąć folderu {{tempFolder}}, usuń go ręcznie",
   "unableToResolveHostnameForIp": "Nie można rozwiązać nazwy hosta dla IP {{ip}}: {{value}}",
   "unableToRetrieveCredential": "Nie można pobrać poświadczeń dla {{org}}. Uruchom `sf org auth show-{{kind}} --target-org {{org}} --no-prompt --json`, aby pobrać je ręcznie, lub uwierzytelnij org ponownie.",

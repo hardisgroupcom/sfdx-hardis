@@ -1,22 +1,20 @@
-import { AuthInfo, Connection, SfError } from '@salesforce/core';
-import c from 'chalk';
-import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand } from './actionsProvider.js';
-import { uxLog } from '../utils/index.js';
-import { AGENT_DOC_URL } from '../utils/agentUtils.js';
+import { Connection } from '@salesforce/core';
+import { ActionResult, ActionWhen, PrePostCommand } from './actionsProvider.js';
+import { AgentActionBase } from './agentActionBase.js';
+import { getCurrentGitBranch } from '../utils/index.js';
+import { soqlQuery } from '../utils/apiUtils.js';
+import { AGENT_DOC_URL, getRunningUserRuleUsage } from '../utils/agentUtils.js';
 import { t } from '../utils/i18n.js';
 import { listAgentsWithRunningUser, resolveAgentRunningUser } from '../replacementRules/agentRunningUserBuiltInRule.js';
-
-const AGENT_RUNNING_USER_FLAGS = ['agent-name'];
-// API names only: they are written in a command line
-const AGENT_API_NAME_REGEX = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 /**
  * Creates the running user of a service agent in the target org when it has none, with
  * "sf org create agent-user". The built-in replacement rule builtin-agent-running-user then writes it
- * in the deployed files. Run before the deployment, in the deployment checks too: the check then
- * validates the agent with its real user.
+ * in the deployed files. Runs before the deployment, in the deployment checks too, so the check
+ * validates the agent with its real user. A check never creates a user in production: the Pull
+ * Request may never be merged, and each agent user takes a license.
  */
-export class AgentRunningUserAction extends ActionsProvider {
+export class AgentRunningUserAction extends AgentActionBase {
   public getLabel(): string {
     return 'AgentRunningUserAction';
   }
@@ -26,48 +24,9 @@ export class AgentRunningUserAction extends ActionsProvider {
     return ['pre-deploy'];
   }
 
-  public getFlagNames(): string[] {
-    return AGENT_RUNNING_USER_FLAGS;
-  }
-
-  public async collectParameters(flags: any, headless: boolean, current: PrePostCommand['parameters'] = {}): Promise<Record<string, any>> {
-    const collected: Record<string, any> = this.applyFlags({ ...(current || {}) }, flags);
-    if (headless) {
-      if (!collected.agentName) {
-        throw new SfError(t('missingRequiredFlag', { flag: 'agent-name' }));
-      }
-      return collected;
-    }
-    // Loaded only when prompting, so running the action never loads the prompt dependencies
-    const { promptActionText } = await import('../utils/actionPromptUtils.js');
-    if (flags['agent-name'] === undefined) {
-      collected.agentName = await promptActionText(t('enterAgentApiName'), collected.agentName || '');
-    }
-    return collected;
-  }
-
-  public applyFlags(parameters: PrePostCommand['parameters'], flags: any): Record<string, any> {
-    const updated: Record<string, any> = { ...(parameters || {}) };
-    if (flags['agent-name'] !== undefined) updated.agentName = String(flags['agent-name']).trim();
-    return updated;
-  }
-
-  // The phase is checked by the generic validation, against getAllowedWhen()
-  public async getDefinitionErrors(action: Partial<PrePostCommand>): Promise<string[]> {
-    return listDefinitionErrors(action);
-  }
-
-  public async checkParameters(cmd: PrePostCommand): Promise<ActionResult | null> {
-    const errors = listDefinitionErrors(cmd);
-    if (errors.length > 0) {
-      uxLog('error', this, c.red(`[DeploymentActions] ${errors.join('\n')}`));
-      return { statusCode: 'failed', skippedReason: errors.join('\n') };
-    }
-    return null;
-  }
-
-  public getIdentityParameters(cmd: PrePostCommand): Record<string, any> | null {
-    return { agentName: String(cmd.parameters?.agentName || '').trim().toLowerCase() };
+  // The deployment check then validates the agent with the user of the target org
+  public getDefaultContext(): PrePostCommand['context'] | null {
+    return 'all';
   }
 
   public async run(cmd: PrePostCommand): Promise<ActionResult> {
@@ -79,40 +38,37 @@ export class AgentRunningUserAction extends ActionsProvider {
     if (!agent) {
       return this.succeed(t('agentRunningUserNotNeeded', { agentName }));
     }
+    // A user nothing writes in the deployed files would only take a license
+    const targetBranch = cmd.pipelineContext?.targetBranch || process.env.FORCE_TARGET_BRANCH || (await getCurrentGitBranch()) || null;
+    const ruleUsage = await getRunningUserRuleUsage(targetBranch);
+    if (ruleUsage !== 'built-in') {
+      return this.succeed(t(ruleUsage === 'project' ? 'agentRunningUserProjectRuleNoCreation' : 'agentRunningUserRulesOffNoCreation', { agentName }));
+    }
     const conn = await this.getConnection();
-    const resolved = await resolveAgentRunningUser(conn, agent, true, this);
+    const create = !(cmd.pipelineContext?.checkOnly === 'true' && (await isProductionOrg(conn, cmd)));
+    const resolved = await resolveAgentRunningUser(conn, agent, create, this);
     if (resolved.status === 'failed') {
-      const message = t('agentRunningUserCreationFailed', { agentName, message: resolved.message || '' }) + `\n${AGENT_DOC_URL}`;
-      uxLog('error', this, c.red(`[DeploymentActions] ${message}`));
-      return { statusCode: 'failed', output: message };
+      return this.fail(t('agentRunningUserCreationFailed', { agentName, message: resolved.message || '' }) + `\n${AGENT_DOC_URL}`);
+    }
+    if (resolved.status === 'missing') {
+      return this.succeed(t('agentRunningUserCreatedAtDeployment', { agentName }));
     }
     if (resolved.status === 'created') {
       return this.succeed(t('agentRunningUserCreated', { agentName, username: resolved.username }));
     }
     return this.succeed(t('agentRunningUserAlreadyThere', { agentName, username: resolved.username }));
   }
-
-  private async getConnection(): Promise<Connection> {
-    if (this.customUsernameToUse) {
-      const authInfo = await AuthInfo.create({ username: this.customUsernameToUse });
-      return Connection.create({ authInfo });
-    }
-    return globalThis.jsForceConn;
-  }
-
-  private succeed(message: string): ActionResult {
-    uxLog('log', this, c.green(`[DeploymentActions] ${message}`));
-    return { statusCode: 'success', output: message };
-  }
 }
 
-function listDefinitionErrors(action: Partial<PrePostCommand>): string[] {
-  const agentName = String(action.parameters?.agentName || '').trim();
-  if (!agentName) {
-    return [t('actionValidationAgentActivateNoAgentName')];
+async function isProductionOrg(conn: Connection, cmd: PrePostCommand): Promise<boolean> {
+  if (cmd.pipelineContext?.isProduction === 'true') {
+    return true;
   }
-  if (!AGENT_API_NAME_REGEX.test(agentName)) {
-    return [t('actionValidationAgentActivateInvalidAgentName', { name: agentName })];
+  try {
+    const result = await soqlQuery('SELECT IsSandbox FROM Organization LIMIT 1', conn);
+    return result.records?.[0]?.IsSandbox === false;
+  } catch {
+    // Unknown: a check never risks creating a user in production
+    return true;
   }
-  return [];
 }

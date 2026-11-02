@@ -11,6 +11,8 @@ import {
 import { findBuiltInReplacementRule } from '../../../src/common/replacementRules/builtIn/builtInReplacementRules.js';
 
 const SOURCE_USER = 'my_agent@00dsource.ext';
+const DEFINITION_FILE = 'force-app/main/default/aiAgents/My_Agent.aiAgentDefinition-meta.xml';
+const BUNDLE_FILE = 'force-app/main/default/aiAuthoringBundles/My_Agent_2/My_Agent_2.agent';
 const ORG_ID = '00D000000000042';
 
 function buildRule(enabled = true): AgentRunningUserBuiltInRule {
@@ -48,6 +50,11 @@ describe('AgentRunningUserBuiltInRule', () => {
     await fs.writeFile(path.join(base, 'aiAgents', 'My_Agent.aiAgentDefinition-meta.xml'), `<AiAgentDefinition><botUser>${SOURCE_USER}</botUser></AiAgentDefinition>`);
     await fs.ensureDir(path.join(base, 'aiAuthoringBundles', 'My_Agent_2'));
     await fs.writeFile(path.join(base, 'aiAuthoringBundles', 'My_Agent_2', 'My_Agent_2.agent'), `access:\n    default_agent_user: "${SOURCE_USER}"\n`);
+    // Retrieved bundle of version 2 of My_Agent
+    await fs.writeFile(
+      path.join(base, 'aiAuthoringBundles', 'My_Agent_2', 'My_Agent_2.bundle-meta.xml'),
+      '<AiAuthoringBundle><bundleType>AGENT</bundleType><target>My_Agent.v2</target></AiAuthoringBundle>'
+    );
     await fs.ensureDir(path.join(base, 'aiAgents'));
     await fs.writeFile(path.join(base, 'aiAgents', 'Employee_Agent.aiAgentDefinition-meta.xml'), '<AiAgentDefinition><type>EmployeeCopilot</type></AiAgentDefinition>');
   });
@@ -87,24 +94,24 @@ describe('AgentRunningUserBuiltInRule', () => {
     const conn = fakeConnection({ users: [], agentUsers: ['my-agent.a1b2c3d4e5f6@00d000000000042.ext'] });
     await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn });
     expect(conn.queries.some((soql: string) => soql.includes("LIKE 'my-agent.%@00d000000000042.ext'"))).to.equal(true);
-    const xml = rule.applyToText(`<AiAgentDefinition><botUser>${SOURCE_USER}</botUser></AiAgentDefinition>`);
+    const xml = rule.applyToText(`<AiAgentDefinition><botUser>${SOURCE_USER}</botUser></AiAgentDefinition>`, null, DEFINITION_FILE);
     expect(xml.status).to.equal('changed');
     expect(xml.content).to.contain('<botUser>my-agent.a1b2c3d4e5f6@00d000000000042.ext</botUser>');
-    const script = rule.applyToText(`    default_agent_user: "${SOURCE_USER}"`);
+    const script = rule.applyToText(`    default_agent_user: "${SOURCE_USER}"`, null, BUNDLE_FILE);
     expect(script.content).to.equal('    default_agent_user: "my-agent.a1b2c3d4e5f6@00d000000000042.ext"');
   });
 
   it('keeps the username of git when the target org has this user', async () => {
     const rule = buildRule();
     await rule.prepare({ target: { targetBranch: 'uat', label: 'uat', apiVersion: 68 }, conn: fakeConnection({ users: [SOURCE_USER.toUpperCase()] }) });
-    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`).status).to.equal('unchanged');
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).status).to.equal('unchanged');
   });
 
   it('never creates a user: the files keep the username of git when the org has none', async () => {
     const rule = buildRule();
     const conn = fakeConnection({ users: [], agentUsers: [] });
     await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn });
-    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`).status).to.equal('unchanged');
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).status).to.equal('unchanged');
   });
 
   it('resolves the running user of an agent: git, found, or missing when it may not create one', async () => {
@@ -117,17 +124,13 @@ describe('AgentRunningUserBuiltInRule', () => {
     expect(await resolveAgentRunningUser(fakeConnection({}), agent, false, null)).to.deep.equal({ status: 'missing', username: null });
   });
 
-  it('reads no user when a rule of the project writes the running user', async () => {
-    await fs.ensureDir('config');
-    await fs.writeFile(
-      path.join('config', '.sfdx-hardis.yml'),
-      "replacementRules:\n  - id: agent-user\n    type: text\n    files: '**/aiAgents/*.aiAgentDefinition-meta.xml'\n    find: '(?<=<botUser>)[^<]+(?=</botUser>)'\n    regex: true\n    secret: AGENT_RUNNING_USER\n"
-    );
+  it('reads no user when a rule of the project applied to this target writes the running user', async () => {
+    const ownRule = { id: 'agent-user', enabled: true, type: 'text', find: '(?<=<botUser>)[^<]+(?=</botUser>)', secret: 'AGENT_RUNNING_USER' } as any;
     const rule = buildRule();
     const conn = fakeConnection({ users: [], agentUsers: [] });
-    await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn });
+    await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn, rules: [ownRule] });
     expect(conn.queries).to.deep.equal([]);
-    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`).status).to.equal('unchanged');
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).status).to.equal('unchanged');
   });
 
   it('does nothing when turned off', async () => {
@@ -135,7 +138,29 @@ describe('AgentRunningUserBuiltInRule', () => {
     const conn = fakeConnection({ agentUsers: ['my-agent.a1b2c3d4e5f6@00d000000000042.ext'] });
     await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn });
     expect(conn.queries).to.deep.equal([]);
-    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`).status).to.equal('unchanged');
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).status).to.equal('unchanged');
+  });
+
+  it('gives each agent its own user when two agents run as the same user in git', async () => {
+    const base = path.join('force-app', 'main', 'default', 'aiAgents');
+    await fs.writeFile(path.join(base, 'Other_Agent.aiAgentDefinition-meta.xml'), `<AiAgentDefinition><botUser>${SOURCE_USER}</botUser></AiAgentDefinition>`);
+    const rule = buildRule();
+    const conn: any = fakeConnection({});
+    conn.query = async (soql: string) => {
+      const agentUser = soql.includes("'my-agent.%") ? 'my-agent.a1@00d000000000042.ext' : soql.includes("'other-agent.%") ? 'other-agent.b2@00d000000000042.ext' : null;
+      return { done: true, records: agentUser ? [{ Username: agentUser }] : [] };
+    };
+    await rule.prepare({ target: { targetBranch: 'main', label: 'main', apiVersion: 68 }, conn });
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, DEFINITION_FILE).content).to.contain('my-agent.a1@');
+    expect(rule.applyToText(`<botUser>${SOURCE_USER}</botUser>`, null, `${base}/Other_Agent.aiAgentDefinition-meta.xml`).content).to.contain('other-agent.b2@');
+  });
+
+  it('keeps a long agent name within the username length limit, and two long names apart', () => {
+    const first = buildAgentUserBaseUsername('Customer_Service_Agent_For_Europe_North_Region', ORG_ID);
+    const second = buildAgentUserBaseUsername('Customer_Service_Agent_For_Europe_South_Region', ORG_ID);
+    expect(first.split('@')[0].length).to.be.at.most(30);
+    expect(first).to.not.equal(second);
+    expect(first).to.not.match(/[_%]/);
   });
 
   it('reports not-found on a file without running user', () => {

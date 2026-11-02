@@ -1,5 +1,10 @@
 {
   "aDetailedDescriptionForExportConfig": "Une description détaillée expliquant ce que fait cette configuration d'export",
+  "agentPublishResumesActivation": "La version {{version}} de l'agent {{agentName}} a été publiée par une exécution précédente et n'est pas active : elle est activée au lieu de publier à nouveau l'agent.",
+  "agentRunningUserCreatedAtDeployment": "L'agent {{agentName}} n'a pas encore d'utilisateur d'exécution dans cette org de production : une vérification de déploiement ne le crée pas, le déploiement le fera.",
+  "agentRunningUserProjectRuleNoCreation": "Une règle de remplacement du projet écrit l'utilisateur d'exécution de l'agent {{agentName}} pour cette cible : aucun utilisateur n'est créé.",
+  "agentRunningUserRulesOffNoCreation": "Les règles de remplacement ou la règle intégrée builtin-agent-running-user sont désactivées pour cette cible : l'utilisateur d'exécution de l'agent {{agentName}} n'est pas créé, car rien ne l'écrirait dans les fichiers déployés.",
+  "agentsDeploymentActionsAlreadyThere": "Les actions de déploiement des agents modifiés sont déjà présentes : rien à ajouter.",
   "agentsDeploymentActionsNoAgentChanged": "Aucun bundle d'agent Agentforce modifié : aucune action de déploiement d'agent à ajouter.",
   "aHumanReadableLabelForExportConfig": "Un libellé lisible qui identifiera cette configuration d'export",
   "aSalesforceOrgLabel": "une org Salesforce",
@@ -4402,6 +4407,7 @@
   "unableToQueryNamedCredentials": "Impossible d'interroger les Named Credentials : {{error}}",
   "unableToQueryOauthTokens": "Impossible d'interroger les jetons OAuth : {{error}}",
   "unableToQueryScheduledJobs": "Impossible d'interroger les jobs planifiés : {{error}}",
+  "unableToReadAgentVersionStatuses": "Impossible de lire les statuts des versions de l'agent : {{message}}",
   "unableToRemoveFolderPleaseDeleteIt": "Impossible de supprimer le dossier {{tempFolder}}, veuillez le supprimer manuellement",
   "unableToResolveHostnameForIp": "Impossible de résoudre le nom d'hôte pour l'IP {{ip}} : {{value}}",
   "unableToRetrieveCredential": "Impossible de récupérer les identifiants pour {{org}}. Exécutez `sf org auth show-{{kind}} --target-org {{org}} --no-prompt --json` pour les récupérer manuellement, ou réauthentifiez l'org.",

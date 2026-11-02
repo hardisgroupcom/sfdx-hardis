@@ -9,8 +9,9 @@ import { soqlQuery } from './apiUtils.js';
 import { parsePackageXmlFile, writePackageXmlFile } from './xmlUtils.js';
 import { buildActionOutput, PrePostCommand } from '../actionsProvider/actionsProvider.js';
 import { CONSTANTS } from '../../config/index.js';
-import { findSkipReplacementRulesFile } from '../replacementRules/config/ruleConfig.js';
-import { hasOwnRunningUserRule, readRulesOfEveryPlace } from '../replacementRules/agentRunningUserBuiltInRule.js';
+import { listMajorOrgs } from './orgConfigUtils.js';
+import { AGENT_FILES_IGNORE, describeBundleFolder, readAgentRunningUsers, readBundleIndex } from './agentBundleUtils.js';
+import { hasOwnRunningUserRule } from '../replacementRules/agentRunningUserBuiltInRule.js';
 
 // First API version where agents are AiAgentDefinition and AiAgentDefinitionVersion
 export const AGENT_DEFINITION_MIN_API_VERSION = 68.0;
@@ -24,8 +25,10 @@ const AGENT_OWN_TYPES = [AGENT_DEFINITION_TYPE, AGENT_DEFINITION_VERSION_TYPE, A
 const DEFAULT_BUNDLE_META_XML = '<?xml version="1.0" encoding="UTF-8"?>\n<AiAuthoringBundle xmlns="http://soap.sforce.com/2006/04/metadata">\n    <bundleType>AGENT</bundleType>\n</AiAuthoringBundle>\n';
 export const AGENT_DOC_URL = `${CONSTANTS.DOC_URL_ROOT}/salesforce-ci-cd-agentforce-agents/`;
 
-// Custom objects and fields (__c), Data 360 objects (__dlm, __dll) and external objects (__x)
-const CUSTOM_REFERENCE_REGEX = /\b([A-Za-z][A-Za-z0-9_]*__(?:c|dlm|dll|x))(?:\.([A-Za-z][A-Za-z0-9_]*__c))?\b/g;
+// Custom objects and fields (__c), Data 360 objects (__dlm, __dll) and external objects (__x), with the
+// name before them (Account.My_Field__c) and the field after them (My_Object__c.My_Field__c)
+const CUSTOM_REFERENCE_REGEX = /\b(?:([A-Za-z][A-Za-z0-9_]*)\.)?([A-Za-z][A-Za-z0-9_]*__(?:c|dlm|dll|x))(?:\.([A-Za-z][A-Za-z0-9_]*__c))?\b/g;
+const CUSTOM_SUFFIX_REGEX = /__(?:c|dlm|dll|x)$/;
 
 /** A version of an agent, as listed from an org. */
 export interface AgentVersionInfo {
@@ -171,8 +174,10 @@ export async function convertRetrievedAgentToBundle(
   // no longer deploys it
   const removed = new Set<string>();
   const kept = new Set<string>();
-  for (const file of listFilesOf([...agentFiles])) {
-    if (await isTrackedByGit(file)) {
+  const files = listFilesOf([...agentFiles]);
+  const tracked = await listTrackedFiles(files);
+  for (const file of files) {
+    if (tracked.has(realPath(file))) {
       await git({ output: false, displayCommand: false }).raw(['checkout', '--', file]);
       kept.add(agentFileUnit(file, projectRoot));
     } else {
@@ -186,19 +191,35 @@ export async function convertRetrievedAgentToBundle(
 
 /**
  * Removes from a package.xml the entries of the agent that the project no longer deploys: its
- * AiAgentDefinition, its AiAgentDefinitionVersion and the bundles of its versions (<Agent>_<n>).
- * Returns the removed entries as "Type:member".
+ * AiAgentDefinition, its AiAgentDefinitionVersion and the bundles of its versions (<Agent>_<n>). A
+ * bundle named <Agent>_<n> that is another agent (otherAgentNames, or an agent bundle of the project)
+ * is kept. Returns the removed entries as "Type:member".
  */
-export async function removeAgentVersionEntries(packageXmlFile: string, agentName: string): Promise<string[]> {
+export async function removeAgentVersionEntries(
+  packageXmlFile: string,
+  agentName: string,
+  otherAgentNames: string[] = [],
+  projectRoot: string = process.cwd()
+): Promise<string[]> {
   if (!fs.existsSync(packageXmlFile)) {
     return [];
   }
   const content = await parsePackageXmlFile(packageXmlFile);
   const name = agentName.toLowerCase();
+  const bundles = await readBundleIndex(projectRoot);
+  const otherAgents = new Set(otherAgentNames.map((other) => other.toLowerCase()).filter((other) => other !== name));
+  const isVersionBundle = (member: string): boolean => {
+    const lower = member.toLowerCase();
+    if (!new RegExp(`^${escapeRegex(name)}_\\d+$`).test(lower) || otherAgents.has(lower)) {
+      return false;
+    }
+    const bundle = bundles.get(lower);
+    return !bundle || bundle.isVersion;
+  };
   const isAgentEntry: Record<string, (member: string) => boolean> = {
     [AGENT_DEFINITION_TYPE]: (member) => member.toLowerCase() === name,
     [AGENT_DEFINITION_VERSION_TYPE]: (member) => parseAgentVersionFullName(member)?.agentName.toLowerCase() === name,
-    [AGENT_AUTHORING_BUNDLE_TYPE]: (member) => new RegExp(`^${escapeRegex(name)}_\\d+$`).test(member.toLowerCase()),
+    [AGENT_AUTHORING_BUNDLE_TYPE]: isVersionBundle,
   };
   const removed: string[] = [];
   for (const type of Object.keys(isAgentEntry)) {
@@ -261,9 +282,17 @@ export async function findMissingAgentReferences(agentFiles: string[], projectRo
     const content = await fs.readFile(agentFile, 'utf8');
     const referencedBy = path.relative(projectRoot, agentFile).replace(/\\/g, '/');
     for (const match of content.matchAll(CUSTOM_REFERENCE_REGEX)) {
-      const objectName = match[1];
-      const fieldName = match[2];
+      const reference = splitCustomReference(match[1], match[2], match[3]);
+      if (!reference) {
+        continue;
+      }
+      const { objectName, fieldName } = reference;
       const objectFolder = localObjects.get(objectName.toLowerCase());
+      // A standard object is in the org: only its custom fields may be missing
+      if (!objectFolder && fieldName && !CUSTOM_SUFFIX_REGEX.test(objectName)) {
+        addMissing(missing, { type: 'CustomField', name: `${objectName}.${fieldName}`, referencedBy });
+        continue;
+      }
       if (!objectFolder) {
         addMissing(missing, { type: 'CustomObject', name: objectName, referencedBy });
         continue;
@@ -282,15 +311,23 @@ export async function listAgentsChangedSince(fromCommit: string): Promise<string
     ...(await git({ output: false, displayCommand: false }).diff(['--name-only', fromCommit])).split('\n'),
     ...(await git({ output: false, displayCommand: false }).status()).not_added,
   ];
-  const agentNames = new Set<string>();
+  const bundleFolders = new Map<string, string>();
   for (const file of changedFiles) {
-    const match = /aiAuthoringBundles\/([^/]+)\//.exec(file.replace(/\\/g, '/'));
-    // The bundle of a version (<Agent>_<n>) is not the one the project publishes
-    if (match && !/_\d+$/.test(match[1])) {
-      agentNames.add(match[1]);
+    const match = /^(.*aiAuthoringBundles\/([^/]+))\//.exec(file.replace(/\\/g, '/'));
+    if (match) {
+      bundleFolders.set(match[2], match[1]);
     }
   }
-  return [...agentNames].sort();
+  const agentNames: string[] = [];
+  for (const [bundleName, folder] of bundleFolders) {
+    // A deleted bundle has nothing to publish, and the bundle of a version (<Agent>_<n>, retrieved) is
+    // not the one the project publishes. An agent may be named Support_Agent_2
+    if (!fs.existsSync(path.join(folder, `${bundleName}.agent`)) || (await describeBundleFolder(folder, bundleName)).isVersion) {
+      continue;
+    }
+    agentNames.push(bundleName);
+  }
+  return agentNames.sort();
 }
 
 /**
@@ -298,7 +335,7 @@ export async function listAgentsChangedSince(fromCommit: string): Promise<string
  * each publication creates a new version, even when the bundle did not change.
  */
 export function upsertAgentPublishAction(actions: PrePostCommand[], agentName: string, newId: () => string): PrePostCommand {
-  const existing = actions.find((action) => action.type === 'agent-publish' && String(action.parameters?.agentName || '').toLowerCase() === agentName.toLowerCase());
+  const existing = findAgentAction(actions, 'agent-publish', agentName);
   if (existing) {
     return existing;
   }
@@ -334,9 +371,9 @@ export async function activateAgentVersion(conn: Connection, target: AgentVersio
     const hint = /should have a user assigned/i.test(activateOutput) ? `\n${t('agentActivationNeedsBotUser', { agentName: target.agentName, docUrl: AGENT_DOC_URL })}` : '';
     return { success: false, message: t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: activateOutput }) + hint };
   }
-  const updated = resolveAgentVersion(await listOrgAgentVersions(conn), target.agentName, target.version);
-  if (updated?.status && updated.status.toLowerCase() !== 'active') {
-    return { success: false, message: t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: `Status is ${updated.status}` }) };
+  const status = (await readAgentVersionStatuses(conn)).get(formatAgentVersionFullName(target.agentName, target.version).toLowerCase());
+  if (status && status.toLowerCase() !== 'active') {
+    return { success: false, message: t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: `Status is ${status}` }) };
   }
   return { success: true, message: t('agentVersionActivated', { agentName: target.agentName, version: target.version }) };
 }
@@ -346,7 +383,7 @@ export async function activateAgentVersion(conn: Connection, target: AgentVersio
  * Context all: the deployment check then validates the agent with the user of the target org.
  */
 export function upsertAgentRunningUserAction(actions: PrePostCommand[], agentName: string, newId: () => string): PrePostCommand {
-  const existing = actions.find((action) => action.type === 'agent-running-user' && String(action.parameters?.agentName || '').toLowerCase() === agentName.toLowerCase());
+  const existing = findAgentAction(actions, 'agent-running-user', agentName);
   if (existing) {
     return existing;
   }
@@ -397,10 +434,14 @@ export async function findLegacyAgentEntries(packageXmlFile: string, projectRoot
   return entries;
 }
 
-/** Removes the entries from the package.xml file. Returns the folders of the project that still hold them. */
+/**
+ * Removes the entries from the package.xml file, except a wildcard: it also deploys the other bots, so
+ * it stays, and deleting the folders of the agent is what takes the agent out of it. Returns the
+ * folders of the project that still hold them.
+ */
 export async function removeLegacyAgentEntries(packageXmlFile: string, entries: LegacyAgentEntry[], projectRoot: string = process.cwd()): Promise<string[]> {
   const content = await parsePackageXmlFile(packageXmlFile);
-  for (const entry of entries) {
+  for (const entry of entries.filter((item) => item.member !== '*')) {
     const kept = (content[entry.type] || []).filter((member: string) => member !== entry.member);
     if (kept.length > 0) {
       content[entry.type] = kept;
@@ -412,56 +453,64 @@ export async function removeLegacyAgentEntries(packageXmlFile: string, entries: 
   const agentNames = [...new Set(entries.map((entry) => entry.agentName).filter((name) => name !== '*'))];
   const folders = await glob(
     agentNames.flatMap((agentName) => [`**/bots/${agentName}`, `**/genAiPlannerBundles/${agentName}_v*`]),
-    { cwd: projectRoot, ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'] }
+    { cwd: projectRoot, ignore: AGENT_FILES_IGNORE }
   );
   return folders.map((folder) => folder.replace(/\\/g, '/')).sort();
 }
 
 /**
- * Running user of each agent of the project: botUser of its definition file, default_agent_user of its bundle. A service agent runs as a user
- * of its org: the username of the org it was retrieved from does not exist in the other orgs.
+ * Running user of each agent of the project: botUser of its definition file, default_agent_user of its
+ * bundle, the first one of each file. A service agent runs as a user of its org: the username of the
+ * org it was retrieved from does not exist in the other orgs.
  */
 export async function readAgentBotUsers(agentNames: string[], projectRoot: string = process.cwd()): Promise<Array<{ agentName: string; botUser: string; file: string }>> {
   const wanted = new Set(agentNames.filter((name) => name && name !== '*').map((name) => name.toLowerCase()));
   if (wanted.size === 0) {
     return [];
   }
-  const files = await glob(['**/aiAgents/*.aiAgentDefinition-meta.xml', '**/aiAuthoringBundles/*/*.agent'], {
-    cwd: projectRoot,
-    ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'],
-  });
   const botUsers: Array<{ agentName: string; botUser: string; file: string }> = [];
-  for (const file of files.sort()) {
-    const agentName = path.basename(file).replace(/\.aiAgentDefinition-meta\.xml$/, '').replace(/\.agent$/, '');
-    if (!wanted.has(agentName.toLowerCase())) {
-      continue;
-    }
-    const userRegex = file.endsWith('.agent') ? /default_agent_user:\s*"([^"]+)"/ : /<botUser>\s*([^<]+?)\s*<\/botUser>/;
-    const match = userRegex.exec(await fs.readFile(path.join(projectRoot, file), 'utf8'));
-    if (match) {
-      botUsers.push({ agentName, botUser: match[1], file: file.replace(/\\/g, '/') });
+  const files = new Set<string>();
+  for (const entry of await readAgentRunningUsers(projectRoot)) {
+    if (wanted.has(entry.agentName.toLowerCase()) && !files.has(entry.file)) {
+      files.add(entry.file);
+      botUsers.push({ agentName: entry.agentName, botUser: entry.username, file: entry.file });
     }
   }
   return botUsers;
 }
 
 /**
- * True when a replacement rule writes the running user of each org: the built-in rule
- * builtin-agent-running-user (on unless turned off in some place, or every rule is skipped),
- * or a rule of the project that writes botUser or default_agent_user.
+ * True when a deployment to the target branch writes the running user of its org: the built-in rule
+ * builtin-agent-running-user is on, or a rule of the project writes botUser or default_agent_user.
+ * No target branch: true only when it is so for every major branch and for the developer sandboxes.
  */
 export async function hasBotUserReplacementRule(targetBranch: string | null = null): Promise<boolean> {
-  if (await hasOwnRunningUserRule()) {
-    return true;
+  const targets: Array<string | null> = targetBranch ? [targetBranch] : [null, ...(await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName)];
+  for (const target of targets) {
+    const usage = await getRunningUserRuleUsage(target);
+    if (usage === 'none') {
+      return false;
+    }
   }
-  const rules = await readRulesOfEveryPlace();
-  const builtInTurnedOff = rules.some((rule) => rule?.id === AGENT_RUNNING_USER_RULE_ID && rule?.enabled === false);
-  return !builtInTurnedOff && (await findSkipReplacementRulesFile(targetBranch)) === null;
+  return true;
+}
+
+/**
+ * Which rule writes the running user of the agents in a deployment to the target branch: the built-in
+ * rule, a rule of the project, or none (built-in rule off, or every rule skipped).
+ */
+export async function getRunningUserRuleUsage(targetBranch: string | null): Promise<'built-in' | 'project' | 'none'> {
+  const { listRulesOfTarget } = await import('../replacementRules/engine/ruleEngine.js');
+  const { rules } = await listRulesOfTarget(targetBranch);
+  if (hasOwnRunningUserRule(rules)) {
+    return 'project';
+  }
+  return rules.some((rule) => rule.id === AGENT_RUNNING_USER_RULE_ID && rule.enabled) ? 'built-in' : 'none';
 }
 
 // Bots of the project that are agents, not classic Einstein Bots
 async function listLocalAgentBots(projectRoot: string): Promise<Set<string>> {
-  const files = await glob('**/bots/*/*.bot-meta.xml', { cwd: projectRoot, ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'] });
+  const files = await glob('**/bots/*/*.bot-meta.xml', { cwd: projectRoot, ignore: AGENT_FILES_IGNORE });
   const agentBots = new Set<string>();
   for (const file of files) {
     const content = await fs.readFile(path.join(projectRoot, file), 'utf8');
@@ -494,32 +543,35 @@ async function readAgentVersionStatuses(conn: Connection): Promise<Map<string, s
       }
     }
   } catch (e: any) {
-    uxLog('log', null, c.grey(`Unable to read agent version statuses: ${e?.message || e}`));
+    uxLog('log', null, c.grey(t('unableToReadAgentVersionStatuses', { message: e?.message || e })));
   }
   return statuses;
 }
 
 // Object folders of the project, keyed by lowercase object API name
 async function listLocalObjectFolders(projectRoot: string): Promise<Map<string, string>> {
-  const objectFiles = await glob('**/objects/*/*.object-meta.xml', {
-    cwd: projectRoot,
-    ignore: ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'],
-  });
+  // An object folder may hold only fields: a standard object of the project
+  const objectFiles = await glob('**/objects/*/{*.object-meta.xml,fields/*.field-meta.xml}', { cwd: projectRoot, ignore: AGENT_FILES_IGNORE });
   const folders = new Map<string, string>();
   for (const objectFile of objectFiles) {
-    const folder = path.join(projectRoot, path.dirname(objectFile));
+    const folder = path.join(projectRoot, objectFile.replace(/\\/g, '/').replace(/\/(?:fields\/)?[^/]+$/, ''));
     folders.set(path.basename(folder).toLowerCase(), folder);
   }
   return folders;
 }
 
-async function isTrackedByGit(file: string): Promise<boolean> {
+// Absolute paths of the files that git tracks, with one git call
+async function listTrackedFiles(files: string[]): Promise<Set<string>> {
+  if (files.length === 0) {
+    return new Set();
+  }
   try {
-    const listed = await git({ output: false, displayCommand: false }).raw(['ls-files', '--', file]);
-    return listed.trim() !== '';
+    // Listed relative to the current folder; real paths, as a temporary folder may be a symbolic link
+    const listed = await git({ output: false, displayCommand: false }).raw(['ls-files', '-z', '--', ...files]);
+    return new Set(listed.split('\0').filter(Boolean).map((file) => realPath(path.resolve(process.cwd(), file))));
   } catch {
     // Not a git repository: nothing is tracked
-    return false;
+    return new Set();
   }
 }
 
@@ -581,5 +633,36 @@ function addMissing(missing: Map<string, MissingAgentReference>, reference: Miss
   const key = `${reference.type}:${reference.name.toLowerCase()}`;
   if (!missing.has(key)) {
     missing.set(key, reference);
+  }
+}
+
+function findAgentAction(actions: PrePostCommand[], type: string, agentName: string): PrePostCommand | undefined {
+  return actions.find((action) => action.type === type && String(action.parameters?.agentName || '').toLowerCase() === agentName.toLowerCase());
+}
+
+// Object and field of a reference: My_Object__c, My_Object__c.My_Field__c, Account.My_Field__c. null
+// for a field after a variable (record.My_Field__c): its object is unknown
+function splitCustomReference(before: string | undefined, name: string, after: string | undefined): { objectName: string; fieldName?: string } | null {
+  if (after) {
+    return { objectName: name, fieldName: after };
+  }
+  if (!before) {
+    return { objectName: name };
+  }
+  if (CUSTOM_SUFFIX_REGEX.test(before)) {
+    return name.endsWith('__c') ? { objectName: before, fieldName: name } : { objectName: name };
+  }
+  // A standard object starts with an uppercase letter
+  if (/^[A-Z]/.test(before) && name.endsWith('__c')) {
+    return { objectName: before, fieldName: name };
+  }
+  return /__c$/.test(name) ? null : { objectName: name };
+}
+
+function realPath(file: string): string {
+  try {
+    return fs.realpathSync(file);
+  } catch {
+    return path.resolve(file);
   }
 }

@@ -112,7 +112,7 @@ An \`agent-running-user\` action, run before the deployment, creates the running
 
 - \`agentName\`: API name of the agent.
 
-A user already there (the one of git, or one created before for the agent) is kept. An agent-running-user action is \`pre-deploy\` only. Use the \`all\` context, so the deployment check validates the agent with its real user. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`).
+A user already there (the one of git, or one created before for the agent) is kept. No user is created when a rule of the project writes the running user, or when the replacement rules are skipped for the target. An agent-running-user action is \`pre-deploy\` only, and its context defaults to \`all\`, so the deployment check validates the agent with its real user. A deployment check never creates the user in production: the deployment does. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`).
 
 A manual action declared \`pre-deploy\` is always stored with the \`all\` context: it has to be done before the merge, so the deployment check lists it too.
 
@@ -129,7 +129,7 @@ Required in agent mode:
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
 - Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`), \`--agent-name\` for agent-publish, agent-activate (\`--agent-version\` defaults to \`latest\`) and agent-running-user
 
-In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
+In agent mode, \`--context\` defaults to \`process-deployment-only\` (\`all\` for remove-packagexml-items and agent-running-user). \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
 Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separated, mutually exclusive) to restrict the action to some target branches. Without either flag, the action runs on all of them.
 
@@ -382,6 +382,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     // Collect context
     // remove-packagexml-items must also run during deployment checks, so it defaults to all contexts
     const defaultContext = functionDefaults?.context
+      || provider?.getDefaultContext()
       || (type === 'remove-packagexml-items' ? 'all' : 'process-deployment-only');
     // run-batch only runs in one context: there is nothing to ask. Neither for a manual step to do
     // before the deployment: the validation job lists it whatever its context, so it is stored as

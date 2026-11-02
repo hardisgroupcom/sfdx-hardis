@@ -157,7 +157,7 @@ In agent mode:
     const agentName = await this.selectAgentName(flags.name, versions, headless);
     const selected = await this.selectAgentVersion(agentName, flags.version, versions, headless);
     if (!selected) {
-      throw new SfError(t('agentVersionNotFound', { agentName, version: flags.version, org: username }));
+      throw new SfError(t('agentVersionNotFound', { agentName, version: flags.version || 'latest', org: username }));
     }
     const fullName = formatAgentVersionFullName(selected.agentName, selected.version);
 
@@ -195,7 +195,9 @@ In agent mode:
     const retrievedComponents = buildAgentPackageXmlContent(retrievedFiles, selected.agentName);
     const componentRows = Object.keys(retrievedComponents).flatMap((type) => retrievedComponents[type].map((member) => ({ Type: type, Member: member })));
     await uxLogTableWithReport(this, componentRows, ['Type', 'Member'], { fileNamePrefix: 'agent-retrieved-components', fileTitle: 'Retrieved agent components' });
-    const removedEntries = await removeAgentVersionEntries(packageXmlFile, selected.agentName);
+    // Sales_2 may be an agent of its own, not version 2 of Sales
+    const orgAgentNames = [...new Set(versions.map((version) => version.agentName))];
+    const removedEntries = await removeAgentVersionEntries(packageXmlFile, selected.agentName, orgAgentNames);
     if (removedEntries.length > 0) {
       uxLog('action', this, c.cyan(t('agentVersionEntriesRemoved', { agentName: selected.agentName, entries: removedEntries.join(', ') })));
     }
@@ -204,10 +206,14 @@ In agent mode:
 
     // The same agent in the format before API 68.0 (GenAiPlannerBundle, Bot, BotVersion) is replaced
     const legacyEntries = (await findLegacyAgentEntries(packageXmlFile)).filter((entry) => entry.agentName.toLowerCase() === selected.agentName.toLowerCase());
+    // A wildcard stays: it deploys the other bots too
+    const legacyEntriesRemoved = legacyEntries.filter((entry) => entry.member !== '*');
     let legacyFolders: string[] = [];
     if (legacyEntries.length > 0) {
       legacyFolders = await removeLegacyAgentEntries(packageXmlFile, legacyEntries);
-      uxLog('action', this, c.cyan(t('agentLegacyEntriesRemoved', { agentName: selected.agentName, entries: legacyEntries.map((entry) => `${entry.type}:${entry.member}`).join(', ') })));
+      if (legacyEntriesRemoved.length > 0) {
+        uxLog('action', this, c.cyan(t('agentLegacyEntriesRemoved', { agentName: selected.agentName, entries: legacyEntriesRemoved.map((entry) => `${entry.type}:${entry.member}`).join(', ') })));
+      }
       if (legacyFolders.length > 0) {
         uxLog('warning', this, c.yellow(t('agentLegacyFoldersToDelete', { folders: legacyFolders.join('\n') })));
       }
@@ -243,7 +249,7 @@ In agent mode:
       addedToPackageXml: added.map((item) => ({ type: item.type, name: item.member })),
       missingDependencies: missingReferences.map((reference) => ({ ...reference })),
       botUsers: botUsers.map((item) => ({ ...item })),
-      legacyEntriesRemoved: legacyEntries.map((entry) => ({ type: entry.type, name: entry.member })),
+      legacyEntriesRemoved: legacyEntriesRemoved.map((entry) => ({ type: entry.type, name: entry.member })),
       legacyFoldersToDelete: legacyFolders,
     };
   }

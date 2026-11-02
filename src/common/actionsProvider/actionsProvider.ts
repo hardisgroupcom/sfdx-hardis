@@ -241,6 +241,11 @@ export abstract class ActionsProvider {
     return null;
   }
 
+  // Context of a new action of this type when none is given, or null for the generic default
+  public getDefaultContext(): PrePostCommand['context'] | null {
+    return null;
+  }
+
   // Flags of hardis:project:action:create and update that only this type accepts
   public getFlagNames(): string[] {
     return [];

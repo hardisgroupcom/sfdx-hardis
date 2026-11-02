@@ -20,6 +20,7 @@ import {
   resolveAgentVersion,
 } from '../../../src/common/utils/agentUtils.js';
 import { parsePackageXmlFile } from '../../../src/common/utils/xmlUtils.js';
+import { clearListMajorOrgsCache } from '../../../src/common/utils/orgConfigUtils.js';
 
 function packageXml(types: Record<string, string[]>, version = '68.0'): string {
   const typesXml = Object.keys(types)
@@ -112,6 +113,17 @@ describe('agentUtils package.xml', () => {
     expect(content.AiAuthoringBundle).to.deep.equal(['My_Agent', 'My_Agent_Helper']);
     expect(await fs.readFile(file, 'utf8')).to.contain('<version>67.0</version>');
     expect(await removeAgentVersionEntries(file, 'My_Agent')).to.deep.equal([]);
+  });
+
+  it('keeps the bundle of an agent named <Agent>_<n>', async () => {
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ AiAuthoringBundle: ['Sales', 'Sales_2', 'Sales_3'] }));
+    const agentFolder = path.join(tmpDir, 'force-app', 'main', 'default', 'aiAuthoringBundles', 'Sales_3');
+    await fs.ensureDir(agentFolder);
+    await fs.writeFile(path.join(agentFolder, 'Sales_3.bundle-meta.xml'), '<AiAuthoringBundle><bundleType>AGENT</bundleType></AiAuthoringBundle>');
+    // Sales_2 is an agent of the org, Sales_3 an agent bundle of the project
+    expect(await removeAgentVersionEntries(file, 'Sales', ['Sales', 'Sales_2'], tmpDir)).to.deep.equal([]);
+    expect((await parsePackageXmlFile(file)).AiAuthoringBundle).to.deep.equal(['Sales', 'Sales_2', 'Sales_3']);
   });
 
   it('merges into a package.xml, keeps wildcards, and returns what was added', async () => {
@@ -266,6 +278,7 @@ describe('agentUtils botUser', () => {
     process.env.SF_ORG_API_VERSION = '68.0';
     process.chdir(tmpDir);
     await fs.writeFile('sfdx-project.json', JSON.stringify({ sourceApiVersion: '68.0' }));
+    clearListMajorOrgsCache();
   });
 
   afterEach(async () => {
@@ -382,6 +395,17 @@ describe('agentUtils agents in the format before API 68.0', () => {
     expect(folders).to.deep.equal(['force-app/main/default/bots/Old_Agent', 'force-app/main/default/genAiPlannerBundles/Old_Agent_v2']);
   });
 
+  it('keeps a wildcard: it deploys the other bots too', async () => {
+    const file = path.join(tmpDir, 'package.xml');
+    await fs.writeFile(file, packageXml({ Bot: ['*'], BotVersion: ['*'] }, '68.0'));
+    const entries = (await findLegacyAgentEntries(file, tmpDir)).filter((entry) => entry.agentName === 'Old_Agent');
+    const folders = await removeLegacyAgentEntries(file, entries, tmpDir);
+    const content = await parsePackageXmlFile(file);
+    expect(content.Bot).to.deep.equal(['*']);
+    expect(content.BotVersion).to.deep.equal(['*']);
+    expect(folders).to.deep.equal(['force-app/main/default/bots/Old_Agent', 'force-app/main/default/genAiPlannerBundles/Old_Agent_v2']);
+  });
+
   it('keeps the package.xml version when components are merged', async () => {
     const file = path.join(tmpDir, 'package.xml');
     await fs.writeFile(file, packageXml({ ApexClass: ['MyClass'] }, '66.0'));
@@ -425,5 +449,15 @@ describe('agentUtils.findMissingAgentReferences', () => {
       'CustomObject:Invoice__c',
     ]);
     expect(missing[0].referencedBy).to.equal('force-app/main/default/aiAgentDefinitionVersions/My_Agent_2.xml');
+  });
+
+  it('reports a custom field of a standard object as a field, not as a missing object', async () => {
+    const accountFields = path.join(tmpDir, 'force-app', 'main', 'default', 'objects', 'Account', 'fields');
+    await fs.ensureDir(accountFields);
+    await fs.writeFile(path.join(accountFields, 'Tier__c.field-meta.xml'), '<CustomField/>');
+    const agentFile = path.join(tmpDir, 'agent.xml');
+    await fs.writeFile(agentFile, '<x>Account.Tier__c Account.Region__c Contact.Score__c</x>');
+    const missing = await findMissingAgentReferences([agentFile], tmpDir);
+    expect(missing.map((reference) => `${reference.type}:${reference.name}`)).to.deep.equal(['CustomField:Account.Region__c', 'CustomField:Contact.Score__c']);
   });
 });

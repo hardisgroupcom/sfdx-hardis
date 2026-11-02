@@ -24,6 +24,8 @@ export interface ReplacementRulePrepareOptions {
   commandThis?: any;
   // Package.xml files of the deployment. None: every file of the package directories
   packageXmlFiles?: string[];
+  // Rules the run applies to this target, this one included
+  rules?: MergedReplacementRule[];
 }
 
 export abstract class ReplacementRuleRoot {
@@ -46,9 +48,10 @@ export abstract class ReplacementRuleRoot {
   }
 
   /** Change the raw content of a file (scope text) */
-  public applyToText(content: string, value: string | null): ReplacementTextOutcome {
+  public applyToText(content: string, value: string | null, file?: string): ReplacementTextOutcome {
     void content;
     void value;
+    void file;
     throw new Error(`Rule ${this.rule.id} does not work on text`);
   }
 

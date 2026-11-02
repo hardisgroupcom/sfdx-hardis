@@ -75,12 +75,14 @@ describe('hardis:project:clean:agents-deployment-actions', () => {
   let previousCwd = '';
   let previousCi: string | undefined;
 
-  async function writeBundle(bundleName: string, agentUser?: string): Promise<void> {
+  // versionTarget: the bundle of a version, as retrieved (<target>My_Agent.v2</target>)
+  async function writeBundle(bundleName: string, agentUser?: string, versionTarget?: string): Promise<void> {
     const folder = path.join(tmpDir, 'force-app', 'main', 'default', 'aiAuthoringBundles', bundleName);
     await fs.ensureDir(folder);
     const access = agentUser ? `access:\n    default_agent_user: "${agentUser}"\n` : '';
     await fs.writeFile(path.join(folder, `${bundleName}.agent`), `config:\n    developer_name: "${bundleName}"\n${access}`);
-    await fs.writeFile(path.join(folder, `${bundleName}.bundle-meta.xml`), '<AiAuthoringBundle><bundleType>AGENT</bundleType></AiAuthoringBundle>');
+    const target = versionTarget ? `<target>${versionTarget}</target>` : '';
+    await fs.writeFile(path.join(folder, `${bundleName}.bundle-meta.xml`), `<AiAuthoringBundle><bundleType>AGENT</bundleType>${target}</AiAuthoringBundle>`);
   }
 
   beforeEach(async () => {
@@ -114,13 +116,15 @@ describe('hardis:project:clean:agents-deployment-actions', () => {
     await writeBundle('Old_Agent');
     execSync('git add -A && git commit -q -m init', { cwd: tmpDir });
     await writeBundle('Story_Agent', 'story_agent@source.ext');
-    // The bundle of a version is not the one the project publishes
-    await writeBundle('Other_Agent_2');
+    // The bundle of a version is not the one the project publishes, an agent named <Name>_<n> is
+    await writeBundle('Other_Agent_2', undefined, 'Other_Agent.v2');
+    await writeBundle('Support_Agent_2');
     await CleanAgentsDeploymentActions.run(['--delta-from', 'HEAD', '--agent']);
 
     const draft: any = yaml.load(await fs.readFile(path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml'), 'utf8'));
     expect(draft.commandsPostDeploy.map((action: any) => [action.type, action.parameters.agentName, action.runOnlyOnceByOrg])).to.deep.equal([
       ['agent-publish', 'Story_Agent', true],
+      ['agent-publish', 'Support_Agent_2', true],
     ]);
     expect(draft.commandsPreDeploy.map((action: any) => [action.type, action.parameters.agentName, action.context])).to.deep.equal([
       ['agent-running-user', 'Story_Agent', 'all'],
@@ -137,6 +141,23 @@ describe('hardis:project:clean:agents-deployment-actions', () => {
     const draft: any = yaml.load(await fs.readFile(path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml'), 'utf8'));
     expect(draft.commandsPostDeploy.map((action: any) => action.parameters.agentName)).to.deep.equal(['Story_Agent']);
     expect(draft.commandsPreDeploy || []).to.deep.equal([]);
+  });
+
+  it('adds no publication for a deleted bundle, and does not write the file again when nothing is added', async () => {
+    await writeBundle('Old_Agent');
+    await writeBundle('Story_Agent');
+    execSync('git add -A && git commit -q -m init', { cwd: tmpDir });
+    await fs.remove(path.join(tmpDir, 'force-app', 'main', 'default', 'aiAuthoringBundles', 'Old_Agent'));
+    const scriptFile = path.join(tmpDir, 'force-app', 'main', 'default', 'aiAuthoringBundles', 'Story_Agent', 'Story_Agent.agent');
+    await fs.writeFile(scriptFile, (await fs.readFile(scriptFile, 'utf8')) + 'system:\n    instructions: "Changed"\n');
+    await CleanAgentsDeploymentActions.run(['--agent']);
+    const draftFile = path.join(tmpDir, 'scripts', 'actions', '.sfdx-hardis.draft.yml');
+    const draft: any = yaml.load(await fs.readFile(draftFile, 'utf8'));
+    expect(draft.commandsPostDeploy.map((action: any) => action.parameters.agentName)).to.deep.equal(['Story_Agent']);
+    const writtenAt = fs.statSync(draftFile).mtimeMs;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    await CleanAgentsDeploymentActions.run(['--agent']);
+    expect(fs.statSync(draftFile).mtimeMs).to.equal(writtenAt);
   });
 
   it('writes nothing when no agent bundle changed', async () => {

@@ -1,5 +1,10 @@
 {
   "aDetailedDescriptionForExportConfig": "A detailed description explaining what this export configuration does",
+  "agentPublishResumesActivation": "Version {{version}} of agent {{agentName}} was published by a previous run and is not active: it is activated instead of publishing the agent again.",
+  "agentRunningUserCreatedAtDeployment": "Agent {{agentName}} has no running user in this production org yet: a deployment check does not create it, the deployment will.",
+  "agentRunningUserProjectRuleNoCreation": "A replacement rule of the project writes the running user of agent {{agentName}} for this target: no user is created.",
+  "agentRunningUserRulesOffNoCreation": "The replacement rules or the built-in rule builtin-agent-running-user are off for this target: the running user of agent {{agentName}} is not created, as nothing would write it in the deployed files.",
+  "agentsDeploymentActionsAlreadyThere": "The deployment actions of the changed agents are already there: nothing to add.",
   "agentsDeploymentActionsNoAgentChanged": "No Agentforce agent bundle changed: no agent deployment action to add.",
   "aHumanReadableLabelForExportConfig": "A human-readable label that will identify this export configuration",
   "aSalesforceOrgLabel": "a Salesforce org",
@@ -4406,6 +4411,7 @@
   "unableToQueryNamedCredentials": "Unable to query Named Credentials: {{error}}",
   "unableToQueryOauthTokens": "Unable to query OAuth tokens: {{error}}",
   "unableToQueryScheduledJobs": "Unable to query scheduled jobs: {{error}}",
+  "unableToReadAgentVersionStatuses": "Unable to read the statuses of the agent versions: {{message}}",
   "unableToRemoveFolderPleaseDeleteIt": "Unable to remove folder {{tempFolder}}, please delete it manually",
   "unableToResolveHostnameForIp": "Unable to resolve hostname for IP {{ip}}: {{value}}",
   "unableToRetrieveCredential": "Unable to retrieve credential for {{org}}. Run `sf org auth show-{{kind}} --target-org {{org}} --no-prompt --json` to retrieve it manually, or re-authenticate the org.",

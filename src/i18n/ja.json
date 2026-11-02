@@ -1,5 +1,10 @@
 {
   "aDetailedDescriptionForExportConfig": "このエクスポート設定の内容を説明する詳細な説明",
+  "agentPublishResumesActivation": "エージェント {{agentName}} のバージョン {{version}} は以前の実行で公開されましたが、有効ではありません。エージェントを再度公開する代わりに、このバージョンを有効化します。",
+  "agentRunningUserCreatedAtDeployment": "エージェント {{agentName}} には、この本番環境の組織にまだ実行ユーザーがいません。デプロイの検証では作成されず、デプロイ時に作成されます。",
+  "agentRunningUserProjectRuleNoCreation": "プロジェクトの置換ルールが、このターゲットのエージェント {{agentName}} の実行ユーザーを書き込みます。ユーザーは作成されません。",
+  "agentRunningUserRulesOffNoCreation": "このターゲットでは、置換ルールまたは組み込みルール builtin-agent-running-user が無効です。デプロイされるファイルに書き込むものがないため、エージェント {{agentName}} の実行ユーザーは作成されません。",
+  "agentsDeploymentActionsAlreadyThere": "変更されたエージェントのデプロイアクションは既に存在します。追加するものはありません。",
   "agentsDeploymentActionsNoAgentChanged": "Agentforce エージェントのバンドルに変更はありません: 追加するエージェントのデプロイアクションはありません。",
   "aHumanReadableLabelForExportConfig": "このエクスポート設定を識別するための分かりやすいラベル",
   "aSalesforceOrgLabel": "Salesforce組織",
@@ -4399,6 +4404,7 @@
   "unableToQueryNamedCredentials": "Named Credentialをクエリできません: {{error}}",
   "unableToQueryOauthTokens": "OAuthトークンをクエリできません: {{error}}",
   "unableToQueryScheduledJobs": "スケジュールされたジョブをクエリできません: {{error}}",
+  "unableToReadAgentVersionStatuses": "エージェントバージョンの状況を読み取れません: {{message}}",
   "unableToRemoveFolderPleaseDeleteIt": "フォルダ {{tempFolder}} を削除できません。手動で削除してください",
   "unableToResolveHostnameForIp": "IP {{ip}} のホスト名を解決できません: {{value}}",
   "unableToRetrieveCredential": "{{org}} の認証情報を取得できません。`sf org auth show-{{kind}} --target-org {{org}} --no-prompt --json` を実行して手動で取得するか、組織を再認証してください。",

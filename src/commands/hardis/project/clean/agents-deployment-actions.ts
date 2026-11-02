@@ -35,7 +35,7 @@ See [Agentforce agents in CI/CD](${AGENT_DOC_URL}).
 
 - **Changed agents:** the agents with a file under \`aiAuthoringBundles/<Agent>/\` in \`git diff --name-only <commit>\` or not tracked yet. The bundles of versions (\`<Agent>_<n>\`) are ignored. \`<commit>\` is \`--delta-from\` (passed by hardis:work:save), else \`HEAD\`: run by hand, the cleaning only handles the changes not committed yet.
 - **Actions file:** the Pull Request of the current branch is found with the git provider (\`scripts/actions/.sfdx-hardis.<id>.yml\`), else the actions go to \`scripts/actions/.sfdx-hardis.draft.yml\`, to link with [hardis:project:action:link-pull-request](${CONSTANTS.DOC_URL_ROOT}/hardis/project/action/link-pull-request/).
-- **Actions:** \`agent-publish\`, context \`process-deployment-only\`, \`runOnlyOnceByOrg: true\`, and \`agent-running-user\`, context \`all\`, \`runOnlyOnceByOrg: false\`: an existing user is found again. An action already there for the agent is kept as it is. The labels are in English, as they are committed.
+- **Actions:** \`agent-publish\`, context \`process-deployment-only\`, \`runOnlyOnceByOrg: true\`, and \`agent-running-user\`, context \`all\`, \`runOnlyOnceByOrg: false\`: an existing user is found again. An action already there for the agent is kept as it is, and a file with nothing to add is not written again. The labels are in English, as they are committed.
 </details>
 
 ### Agent Mode
@@ -91,19 +91,29 @@ The command has no prompt: \`--agent\` only exists for consistency with the othe
     const prId = await resolvePrId(this, 'current', true);
     const withRunningUser = new Set((await listAgentsWithRunningUser()).map((agent) => agent.agentName.toLowerCase()));
     const runningUserAgents = agentNames.filter((agentName) => withRunningUser.has(agentName.toLowerCase()));
+    // A file is only written when an action is added: each work:save runs this cleaning again
     if (runningUserAgents.length > 0) {
       const preDeployActions = await readActions('pr', 'pre-deploy', undefined, prId);
-      for (const agentName of runningUserAgents) {
+      const added = runningUserAgents.filter((agentName) => {
+        const countBefore = preDeployActions.length;
         upsertAgentRunningUserAction(preDeployActions, agentName, randomUUID);
-      }
-      const preDeployFile = await writeActions('pr', 'pre-deploy', preDeployActions, undefined, prId);
-      for (const agentName of runningUserAgents) {
-        uxLog("action", this, c.cyan(t('agentRunningUserActionWritten', { agentName: c.bold(agentName), file: preDeployFile })));
+        return preDeployActions.length > countBefore;
+      });
+      if (added.length > 0) {
+        const preDeployFile = await writeActions('pr', 'pre-deploy', preDeployActions, undefined, prId);
+        for (const agentName of added) {
+          uxLog("action", this, c.cyan(t('agentRunningUserActionWritten', { agentName: c.bold(agentName), file: preDeployFile })));
+        }
       }
     }
 
     const actions = await readActions('pr', 'post-deploy', undefined, prId);
+    const countBefore = actions.length;
     agentNames.forEach((agentName) => upsertAgentPublishAction(actions, agentName, randomUUID));
+    if (actions.length === countBefore) {
+      uxLog("log", this, c.grey(t('agentsDeploymentActionsAlreadyThere')));
+      return { outputString: 'Agent deployment actions already there', actions: agentNames.map((agentName) => ({ agentName })) };
+    }
     const actionsFile = await writeActions('pr', 'post-deploy', actions, undefined, prId);
     for (const agentName of agentNames) {
       uxLog("action", this, c.cyan(t('agentPublishActionWritten', { agentName: c.bold(agentName), file: actionsFile })));

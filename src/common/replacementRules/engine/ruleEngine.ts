@@ -181,8 +181,16 @@ export async function applyReplacementRules(options: ApplyReplacementRulesOption
   }
 
   uxLog('action', commandThis, c.cyan(t('replacementRulesApplying', { target: target.label })));
+  const resolvedRules = resolved.map((item) => item.rule);
   for (const item of resolved) {
-    await item.handler.prepare({ target, conn: options.conn, targetUsername: options.targetUsername, commandThis, packageXmlFiles: options.packageXmlFiles });
+    await item.handler.prepare({
+      target,
+      conn: options.conn,
+      targetUsername: options.targetUsername,
+      commandThis,
+      packageXmlFiles: options.packageXmlFiles,
+      rules: resolvedRules,
+    });
   }
   const files = await listCandidateFiles(options.packageXmlFiles, commandThis);
   for (const file of files) {
@@ -236,6 +244,39 @@ export async function runWithReplacementRules<T>(options: Omit<ApplyReplacementR
   } finally {
     session?.restore();
   }
+}
+
+/**
+ * Rules a deployment to the target branch would apply, without reading the org nor the secrets: the
+ * built-in rules that are on, and the rules of the project that pass their branch filter and have a
+ * value for the target (a secret counts as one). skippedBy: the env var or the config file that turns
+ * every rule off for this target.
+ */
+export async function listRulesOfTarget(targetBranch: string | null): Promise<{ skippedBy: string | null; rules: MergedReplacementRule[] }> {
+  if (process.env[SKIP_REPLACEMENT_RULES_ENV] === 'true') {
+    return { skippedBy: SKIP_REPLACEMENT_RULES_ENV, rules: [] };
+  }
+  const target = await resolveTarget(targetBranch, null);
+  const skipFile = await findSkipReplacementRulesFile(target.targetBranch);
+  if (skipFile) {
+    return { skippedBy: skipFile, rules: [] };
+  }
+  const { rules } = await loadEffectiveRules(target.targetBranch, { readIssue: true });
+  const majorBranchNames = (await listMajorOrgs()).map((majorOrg: any) => majorOrg.branchName);
+  const candidates = buildActionTargetBranchCandidates(target.targetBranch || '', majorBranchNames);
+  const applied = rules.filter((rule) => {
+    if (!rule.enabled) {
+      return false;
+    }
+    if (rule.builtIn) {
+      return true;
+    }
+    if (!evaluateActionBranchFilter(rule, candidates).run) {
+      return false;
+    }
+    return !!rule.secret || !createReplacementRule(rule).needsValue() || resolveRuleValue(rule, target.targetBranch) != null;
+  });
+  return { skippedBy: null, rules: applied };
 }
 
 /** Rules after the merge of the layers, invalid ones removed and reported */
@@ -383,7 +424,7 @@ async function processFile(
   // Text rules work on the raw content, before the XML ones
   for (const item of rulesOfFile.filter((entry) => entry.handler.scope === 'text')) {
     item.matchedFiles++;
-    const outcome = item.handler.applyToText(content, item.value);
+    const outcome = item.handler.applyToText(content, item.value, file);
     item.found += outcome.found;
     pushResult(report, file, item, outcome.status, outcome.changed || outcome.found, outcome.detail);
     content = outcome.content;

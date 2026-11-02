@@ -6,8 +6,7 @@
 // The rule never creates a user: a change to the org is always recorded in the Pull Request.
 
 import c from 'chalk';
-import { glob } from 'glob';
-import * as path from 'path';
+import { createHash } from 'crypto';
 import { Org } from '@salesforce/core';
 import fs from '../utils/fsUtils.js';
 import { execSfdxJson, uxLog } from '../utils/index.js';
@@ -15,19 +14,21 @@ import { soqlQuery } from '../utils/apiUtils.js';
 import { soqlString } from '../utils/metadataDepsUtils.js';
 import { t } from '../utils/i18n.js';
 import { parsePackageXmlFile } from '../utils/xmlUtils.js';
+import { agentNameOfFile, BOT_USER_REGEX, DEFAULT_AGENT_USER_REGEX, readAgentRunningUsers, readBundleIndex } from '../utils/agentBundleUtils.js';
 import { CONSTANTS } from '../../config/index.js';
-import { readIssueRules } from './config/issueRulesStore.js';
-import { readAllBranchReplacementRules, readProjectReplacementRules } from './config/ruleConfig.js';
+import { MergedReplacementRule } from './utils/types.js';
 import { ReplacementRulePrepareOptions, ReplacementRuleRoot, ReplacementTextOutcome } from './replacementRuleRoot.js';
 
-const BOT_USER_REGEX = /(<botUser>\s*)([^<]+?)(\s*<\/botUser>)/g;
-const DEFAULT_AGENT_USER_REGEX = /(default_agent_user:\s*")([^"]+)(")/g;
-const AGENT_FILES_IGNORE = ['**/node_modules/**', '**/.sfdx/**', '**/.sf/**'];
+// Salesforce usernames have at most 80 characters. "sf org create agent-user" adds a unique id
+// before the @, and the domain is @<18 characters org id>.ext: the agent part keeps 30 of them
+const MAX_AGENT_LOCAL_PART_LENGTH = 30;
 
 export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
   public readonly scope = 'text' as const;
-  // Lowercase username of git -> username of the target org
-  private readonly usernames = new Map<string, string>();
+  // Lowercase agent name -> lowercase username of git -> username of the target org. By agent: two
+  // agents of git may run as the same user, and get a user each in the target org
+  private readonly usernames = new Map<string, Map<string, string>>();
+  private bundles = new Map<string, { agentName: string; isVersion: boolean }>();
 
   public async prepare(options: ReplacementRulePrepareOptions): Promise<void> {
     this.usernames.clear();
@@ -38,8 +39,8 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
     if (agents.length === 0) {
       return;
     }
-    // A rule of the project writes the user
-    if (await hasOwnRunningUserRule()) {
+    // A rule of the project writes the user for this target
+    if (hasOwnRunningUserRule(options.rules || [])) {
       uxLog('log', options.commandThis, c.grey(t('agentRunningUserOwnRule')));
       return;
     }
@@ -48,6 +49,7 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
       uxLog('log', options.commandThis, c.grey(t('agentRunningUserOrgUnreachable')));
       return;
     }
+    this.bundles = await readBundleIndex();
     for (const agent of agents) {
       const resolved = await resolveAgentRunningUser(conn, agent, false, options.commandThis);
       if (resolved.status === 'missing') {
@@ -58,18 +60,22 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
         continue;
       }
       uxLog('action', options.commandThis, c.cyan(t('agentRunningUserUsed', { agentName: agent.agentName, username: resolved.username })));
+      const agentUsernames = new Map<string, string>();
       for (const username of agent.usernames) {
-        this.usernames.set(username.toLowerCase(), resolved.username as string);
+        agentUsernames.set(username.toLowerCase(), resolved.username as string);
       }
+      this.usernames.set(agent.agentName.toLowerCase(), agentUsernames);
     }
   }
 
-  public applyToText(content: string): ReplacementTextOutcome {
+  public applyToText(content: string, _value: string | null, file?: string): ReplacementTextOutcome {
+    const agentName = file ? agentNameOfFile(file, this.bundles) : null;
+    const agentUsernames = agentName ? this.usernames.get(agentName.toLowerCase()) : undefined;
     let found = 0;
     let changed = 0;
     const replaceUser = (match: string, before: string, username: string, after: string) => {
       found++;
-      const targetUsername = this.usernames.get(username.toLowerCase());
+      const targetUsername = agentUsernames?.get(username.toLowerCase());
       if (!targetUsername || targetUsername === username) {
         return match;
       }
@@ -89,44 +95,33 @@ export class AgentRunningUserBuiltInRule extends ReplacementRuleRoot {
 
 /** Agents of the deployment that run as a user, with every username their files hold */
 export async function listAgentsWithRunningUser(packageXmlFiles?: string[], projectRoot: string = process.cwd()): Promise<Array<{ agentName: string; usernames: string[] }>> {
-  const deployed = await listDeployedAgentNames(packageXmlFiles);
-  const files = await glob(['**/aiAgents/*.aiAgentDefinition-meta.xml', '**/aiAuthoringBundles/*/*.agent'], { cwd: projectRoot, ignore: AGENT_FILES_IGNORE });
+  const deployed = await listDeployedAgentNames(packageXmlFiles, projectRoot);
   const byAgent = new Map<string, { agentName: string; usernames: Set<string> }>();
-  for (const file of files.sort()) {
-    const agentName = agentNameOfFile(file);
-    if (!agentName || (deployed && !deployed.has(agentName.toLowerCase()))) {
+  for (const entry of await readAgentRunningUsers(projectRoot)) {
+    const key = entry.agentName.toLowerCase();
+    if (deployed && !deployed.has(key)) {
       continue;
     }
-    const content = await fs.readFile(path.join(projectRoot, file), 'utf8');
-    const regex = file.endsWith('.agent') ? DEFAULT_AGENT_USER_REGEX : BOT_USER_REGEX;
-    for (const match of content.matchAll(new RegExp(regex.source, 'g'))) {
-      const entry = byAgent.get(agentName.toLowerCase()) || { agentName, usernames: new Set<string>() };
-      entry.usernames.add(match[2].trim());
-      byAgent.set(agentName.toLowerCase(), entry);
-    }
+    const agent = byAgent.get(key) || { agentName: entry.agentName, usernames: new Set<string>() };
+    agent.usernames.add(entry.username);
+    byAgent.set(key, agent);
   }
   return [...byAgent.values()].map((entry) => ({ agentName: entry.agentName, usernames: [...entry.usernames] }));
 }
 
-/** True when a rule of the project (config, a branch file or the issue) writes botUser or default_agent_user. */
-export async function hasOwnRunningUserRule(): Promise<boolean> {
-  const rules = await readRulesOfEveryPlace();
+/** True when one of the rules is a rule of the project, on, that writes botUser or default_agent_user. */
+export function hasOwnRunningUserRule(rules: Array<Partial<MergedReplacementRule>>): boolean {
   return rules.some((rule) => rule?.enabled !== false && !rule?.builtIn && /botUser|default_agent_user/.test(`${rule?.xmlPath || ''} ${rule?.find || ''}`));
-}
-
-/** Rules of the project config, of every branch file and of the issue, before they are merged. */
-export async function readRulesOfEveryPlace(): Promise<any[]> {
-  const rules: any[] = [...(await readProjectReplacementRules())];
-  for (const branch of await readAllBranchReplacementRules()) {
-    rules.push(...branch.rules);
-  }
-  rules.push(...((await readIssueRules({ useCache: true })).rules || []));
-  return rules;
 }
 
 /** Base username given to "sf org create agent-user", which adds a unique id before the @ */
 export function buildAgentUserBaseUsername(agentName: string, orgId: string): string {
-  const localPart = agentName.toLowerCase().replace(/[^a-z0-9.-]/g, '-');
+  let localPart = agentName.toLowerCase().replace(/[^a-z0-9.-]/g, '-');
+  if (localPart.length > MAX_AGENT_LOCAL_PART_LENGTH) {
+    // A hash of the whole name keeps two long names with the same start apart
+    const hash = createHash('sha1').update(agentName.toLowerCase()).digest('hex').slice(0, 6);
+    localPart = `${localPart.slice(0, MAX_AGENT_LOCAL_PART_LENGTH - hash.length - 1)}-${hash}`;
+  }
   return `${localPart}@${orgId.toLowerCase()}.ext`;
 }
 
@@ -161,10 +156,11 @@ export async function resolveAgentRunningUser(
 
 // Agents of the package.xml files (AiAgentDefinition, or the agent of an AiAgentDefinitionVersion or an
 // AiAuthoringBundle). null: no package.xml, every agent of the project.
-async function listDeployedAgentNames(packageXmlFiles?: string[]): Promise<Set<string> | null> {
+async function listDeployedAgentNames(packageXmlFiles: string[] | undefined, projectRoot: string): Promise<Set<string> | null> {
   if (!packageXmlFiles || packageXmlFiles.length === 0) {
     return null;
   }
+  const bundles = await readBundleIndex(projectRoot);
   const names = new Set<string>();
   for (const packageXmlFile of packageXmlFiles) {
     if (!packageXmlFile || !fs.existsSync(packageXmlFile)) {
@@ -178,23 +174,13 @@ async function listDeployedAgentNames(packageXmlFiles?: string[]): Promise<Set<s
       names.add(String(member).split('#')[0].toLowerCase());
     }
     for (const member of content['AiAuthoringBundle'] || []) {
-      names.add(String(member).replace(/_\d+$/, '').toLowerCase());
+      // The bundle of a version belongs to its agent, an agent may be named Support_Agent_2
+      const name = String(member);
+      names.add((bundles.get(name.toLowerCase())?.agentName || name).toLowerCase());
     }
   }
   // A wildcard deploys every agent of the project
   return names.has('*') ? null : names;
-}
-
-// aiAgents/My_Agent.aiAgentDefinition-meta.xml and aiAuthoringBundles/My_Agent_2/My_Agent_2.agent -> My_Agent
-function agentNameOfFile(file: string): string | null {
-  const base = path.basename(file);
-  if (base.endsWith('.aiAgentDefinition-meta.xml')) {
-    return base.replace(/\.aiAgentDefinition-meta\.xml$/, '');
-  }
-  if (base.endsWith('.agent')) {
-    return base.replace(/\.agent$/, '').replace(/_\d+$/, '');
-  }
-  return null;
 }
 
 async function resolveConnection(options: ReplacementRulePrepareOptions): Promise<any | null> {

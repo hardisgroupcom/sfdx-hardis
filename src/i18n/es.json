@@ -1,5 +1,10 @@
 {
   "aDetailedDescriptionForExportConfig": "Una descripción detallada que explique qué hace esta configuración de exportación",
+  "agentPublishResumesActivation": "La versión {{version}} del agente {{agentName}} fue publicada por una ejecución anterior y no está activa: se activa en lugar de publicar el agente de nuevo.",
+  "agentRunningUserCreatedAtDeployment": "El agente {{agentName}} aún no tiene usuario de ejecución en esta org de producción: una validación del despliegue no lo crea, el despliegue sí.",
+  "agentRunningUserProjectRuleNoCreation": "Una regla de reemplazo del proyecto escribe el usuario de ejecución del agente {{agentName}} para este destino: no se crea ningún usuario.",
+  "agentRunningUserRulesOffNoCreation": "Las reglas de reemplazo o la regla integrada builtin-agent-running-user están desactivadas para este destino: no se crea el usuario de ejecución del agente {{agentName}}, ya que nada lo escribiría en los archivos desplegados.",
+  "agentsDeploymentActionsAlreadyThere": "Las acciones de despliegue de los agentes modificados ya existen: no hay nada que añadir.",
   "agentsDeploymentActionsNoAgentChanged": "Ningún bundle de agente de Agentforce ha cambiado: no hay acción de despliegue de agente que añadir.",
   "aHumanReadableLabelForExportConfig": "Una etiqueta legible que identificará esta configuración de exportación",
   "aSalesforceOrgLabel": "una org de Salesforce",
@@ -4402,6 +4407,7 @@
   "unableToQueryNamedCredentials": "No se han podido consultar las Named Credentials: {{error}}",
   "unableToQueryOauthTokens": "No se han podido consultar los tokens OAuth: {{error}}",
   "unableToQueryScheduledJobs": "No se han podido consultar los trabajos programados: {{error}}",
+  "unableToReadAgentVersionStatuses": "No se pueden leer los estados de las versiones del agente: {{message}}",
   "unableToRemoveFolderPleaseDeleteIt": "No se puede eliminar la carpeta {{tempFolder}}, elimínela manualmente",
   "unableToResolveHostnameForIp": "No se puede resolver el nombre de host para la IP {{ip}}: {{value}}",
   "unableToRetrieveCredential": "No se pueden recuperar las credenciales para {{org}}. Ejecute `sf org auth show-{{kind}} --target-org {{org}} --no-prompt --json` para recuperarlas manualmente, o vuelva a autenticar la org.",
