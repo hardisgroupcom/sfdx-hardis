@@ -2,6 +2,8 @@
 
 ## [beta] (main)
 
+## [8.22.0] 2026-11-02
+
 - [hardis:ticket:list](https://sfdx-hardis.cloudity.com/hardis/ticket/list/), [hardis:ticket:whoami](https://sfdx-hardis.cloudity.com/hardis/ticket/whoami/), [hardis:ticket:meta](https://sfdx-hardis.cloudity.com/hardis/ticket/meta/) and [hardis:ticket:set-label](https://sfdx-hardis.cloudity.com/hardis/ticket/set-label/): **new commands** to search tickets with the same criteria on every ticketing system, show the authenticated account, list the types and statuses of a project, and label a ticket.
 - [hardis:ticket:post-comment](https://sfdx-hardis.cloudity.com/hardis/ticket/post-comment/) can qualify the ticket in the same run (prefix, label, status, story points, assignee mention), its `--servicenow-field` becomes `--comment-field` (the former name still works), and [hardis:ticket:get](https://sfdx-hardis.cloudity.com/hardis/ticket/get/) reads several tickets at once.
 - Ticket comments: on Azure Boards they are read and posted in the project of the work item, on JIRA Server / Data Center a code block no longer breaks the rest of the comment, and ServiceNow reports a tag it could not attach.
