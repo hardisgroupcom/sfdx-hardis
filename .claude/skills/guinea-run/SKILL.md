@@ -1,6 +1,6 @@
 ---
 name: guinea-run
-description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, signed scores, speed bonus, the hall-of-fame workflow and site page), Pipeline Pinball (the bonus pinball table opened by finishing every world), offline play (the service worker, the home screen app, the save kept across open games), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the pinball", "the bonus level", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
+description: Maintain Guinea Run, the 3D easter-egg game hidden in the sfdx-hardis training site (sibling repository sfdx-hardis-training, site-theme/javascripts/guinea-run/) - its ten worlds, its story and texts, the Blender models and the guinea pig's shape, the pictures and the cartoon portraits of the cast and bosses, the Hall of Fame (the boards, the nickname typed once and the scores sent on their own to its Supabase database, signed scores, speed bonus, the site page), Pipeline Pinball (the bonus pinball table opened by finishing every world), offline play (the service worker, the home screen app, the save kept across open games), the check that plays every world, and the playable preview published as a claude.ai Artifact. Load it for any change to the game, when the user says "Guinea Run", "the game", "the easter egg", "the Hall of Fame", "the pinball", "the bonus level", "the guinea pig", names one of its worlds, or sends feedback from playing it; and when a lab change may break a world (a quoted string, a lab link).
 ---
 
 # Guinea Run
@@ -127,47 +127,100 @@ These are the author's decisions. A change that breaks one is a regression.
 
 ## The Hall of Fame
 
-A general board (the best score of each world, added up) and one board per
-world, with the GitHub handle, avatar and badge of each player. Decided with
-the author on 2026-10-22: GitHub only, no server.
+A general board (the best score of each world, added up), one board per world
+and one per bonus, with the nickname and the guinea pig each player picked.
+Decided with the author on 2026-11-02 (it replaced the GitHub issue flow of
+2026-10-22): a player types a nickname once and every new best goes to a
+Supabase database on its own. No account, no login, no backend of our own,
+and **nothing personal stored but the nickname**.
 
-| What                                        | Where (in `../sfdx-hardis-training`)                                                             |
-|---------------------------------------------|--------------------------------------------------------------------------------------------------|
-| Rankings, loading the board, the issue link | `site-theme/javascripts/guinea-run/core/hof.js` (also imported by the scripts and the site page) |
-| Signing a result and a submission           | `core/tally.js`                                                                                  |
-| The card in the game                        | `hud.js` `hallOfFame()`, `game.js` `showHallOfFame()`                                            |
-| The issue form, the workflow                | `.github/ISSUE_TEMPLATE/guinea-run-score.yml`, `.github/workflows/hall-of-fame.yml`              |
-| Checking and merging a submission, tests    | `scripts/guinea-run/verify-submission.mjs`, `hall-of-fame.mjs`, `*.test.mjs`                     |
-| The board                                   | `hall-of-fame/hall-of-fame.json` (written by the workflow and by `claim.yml` for badges)         |
-| The site page                               | `hallOfFamePage` in `scripts/lib/pages.mjs`, `hallOfFamePages()` in `scripts/build/site.mjs`     |
+| What                                                    | Where (in `../sfdx-hardis-training`)                                                                               |
+|---------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| The database: tables, checks, boards, ranks, forget     | `scripts/guinea-run/supabase.sql`                                                                                  |
+| Its URL and publishable key                             | `site-theme/javascripts/guinea-run/core/online-config.js`                                                          |
+| Sends, reads, the sync loop, nickname rules, coat tints | `core/online.js`                                                                                                   |
+| The database in memory (tests, `guinea-online=fake`)    | `core/online-fake.js`                                                                                              |
+| Board ids, the TOP 5 target, the signed results to send | `core/hof.js`                                                                                                      |
+| The profile in the save                                 | `core/progress.js` (`online`, `setOnline`, `addOnlineSent`)                                                        |
+| Signing a result                                        | `core/tally.js`                                                                                                    |
+| The cards                                               | `hud.js` `hallOfFame()`, `profileForm()`, `joinOffer()`, `hofStatus()`; `game.js` `showHallOfFame()`, `afterWin()` |
+| The maintainer's commands, the live check               | `scripts/guinea-run/supabase.mjs`, `supabase-api.mjs`, `key-check.mjs`                                             |
+| The workflow (tests, key check, daily keep-alive)       | `.github/workflows/hall-of-fame.yml`                                                                               |
+| The site page                                           | `hallOfFamePage` in `scripts/lib/pages.mjs`, filled by `site-theme/javascripts/hall-of-fame-page.js`               |
+| Tests                                                   | `scripts/guinea-run/online.test.mjs`, `progress.test.mjs`, `host-save.test.mjs`                                    |
 
-- **How a score gets in**: a won world keeps a signed result of its best run.
-  "Send my scores" on the Hall of Fame card opens a prefilled GitHub issue; the
-  workflow checks the signatures, that the handle is the issue author, the hour,
-  and the limits, then merges (each world keeps the higher score), commits to
-  `main`, asks for the site build, comments the ranks and closes the issue.
-- **The invitation to send** (asked by the author on 2026-10-23): a score
-  that would enter the top 5 of its world, of the total (pinball excluded) or of
-  the Pinball board gets a box on the end card (`topInvites()` in `hof.js`,
-  `inviteFor()` in `game.js`, `invite()` in `hud.js`), with a link straight to
-  the issue once the handle is known. A tie with the fifth does not count (the
-  first one keeps the place); fewer than five others, any score counts. Never a
-  score already on the board or already sent (`progress.sent`), never after a
-  failed world. The map marks the Hall of Fame button while one waits, and the
-  pinball display flashes TOP 5 once per game past the fifth
-  (`pinballTarget()`). The board is read only when there is something new to
-  send. In a check, `window.__guineaRun.board(board)` stands in for GitHub.
-- **Secrets**: `GUINEA_RUN_KEYS` (the signing keys by id) and
-  `GUINEA_RUN_LIMITS` (score caps, minimum boss times, rate limit). The limits
-  are secret on purpose: never write them in the repository or a comment.
+- **The project** is the author's existing Supabase project **JardinPublic**,
+  shared with another game: every public object is prefixed `guinea_`, the
+  private ones live in the schema `guinea_private`, which the API never serves.
+  The free plan pauses a project after a week without a request: the workflow
+  reads the board every day.
+- **What the browser can do**, with the publishable key only (public by
+  design): insert into `guinea_names` (player id, nickname, coat) and
+  `guinea_scores` (one signed best of one board), read the views
+  `guinea_board` and `guinea_totals` (no player id in them), call
+  `guinea_ranks(pid)`, `guinea_forget(pid)` and `guinea_key_ok(k, sig)`. It can
+  read no table. The player id is a random UUID drawn on the device the day the
+  player joins: it is the only proof of who is who, so it is never shown.
+- **What the database refuses** (triggers in `guinea_private`, `supabase.sql`):
+  a nickname of more than 20 characters, with control characters, an `@`,
+  `://` or `www.`; an unknown coat; a score without a nickname first; a bad
+  HMAC (the keys are in `guinea_private.keys`); a bad mode, stars, range or
+  date; the private limits (caps and minimum boss times per world, pinball and
+  Org-Man caps and points per minute, the Org-Man ceiling per maze, all in
+  `guinea_private.settings`); a score not above the player's best on that board
+  (`not better`, which keeps the table small); a send within 10 s of the last
+  one of that player and board (`too soon`); a banned player.
+- **A send ends one of three ways** (`createNet` in `online.js`): `sent`;
+  `later` (no network, a timeout, 5xx/408/429, `too soon`), tried again 12 s
+  later; `refused` (any other 4xx), never sent again. `progress.online.sent`
+  keeps the best sent or refused of each board.
+- **The sync** (`createSync`): one at a time; the nickname first when it
+  changed (`named` is the `name|coat` the database took, `refused` one it
+  refused, which stops every send until the nickname changes), then each signed
+  best above what was sent. It runs 1.5 s after the game opens, on the `online`
+  event, after a won world or a bonus game once its result is signed, and after
+  a profile change. A rename inserts a new `guinea_names` row: the boards show
+  the newest nickname on every past score, nothing is sent again.
+- **The join box**: on the end card of the first won world (or bonus game) of a
+  player who never answered it, a nickname, six guinea pigs (`COATS`, tinted
+  from `guinea-pig-small.webp` by `COAT_FILTERS`), Join and No thanks. Either
+  way it never shows again (`asked`); the profile box of the Hall of Fame card
+  joins, renames, changes the guinea pig, and "Remove me from the Hall of
+  Fame" calls `guinea_forget` (every row of that id deleted, the profile
+  emptied). After a won world of a player who joined, the end card says
+  "Sent to the Hall of Fame" or "Waiting for the network".
+- **My row** is marked from `guinea_ranks(pid)`; past the 10 rows of the card
+  it says "You are #N of M". The pinball and Org-Man displays flash TOP 5 past
+  the fifth of the others (`bonusTarget(list, rank, best)` in `hof.js`).
+- **The VS Code panel**: the profile is part of the progress, so the shared
+  save (`core/host-save.js`) carries it to every project: one player in VS Code.
+- **Off on a local copy** (`127.0.0.1`, `localhost`) unless
+  `guinea-online=live`; `guinea-online=0` turns it off anywhere;
+  `guinea-online=fake` plays against the database in memory, and
+  `window.__guineaRun.online.seed(players)`, `.db()`, `.profile()`, `.sync()`
+  drive it in a check. **A test link never sends to the real database**:
+  `guinea-test`, `guinea-seed`, `guinea-at` and `guinea-unlock` runs never sign,
+  and with the fake database they send stand-in results that are never stored.
+  The Artifact preview always opens with `guinea-online=fake`.
+- **Maintainer commands** (`node scripts/guinea-run/supabase.mjs ...`, through
+  the Supabase Management API with a token kept in
+  `~/.config/sfdx-hardis-training/supabase.json`, scoped to the project, never
+  committed): `apply` (the SQL, safe to run again), `settings` (the limits from
+  `~/.config/sfdx-hardis-training/guinea-run-limits.json`, never written in the
+  repository, plus the Org-Man ceilings from `rules.js`), `keys`,
+  `players <text>`, `ban <id>`, `unban <id>`, `forget <id>`, and `smoke`, which
+  plays the live database as the game does (taken, refused, throttled, the
+  boards, the ranks, the private schema unreadable) and removes its rows.
+  **Run `smoke` after any change to `supabase.sql` or to a signed text.**
 - **The key** is rotated with a script kept on the author's machine only (not
-  committed, see `.gitignore`). Never describe where the game keeps its key in
-  a public file, this one included. A `key-check` job fails when the game and
-  the secret disagree.
-- **A test link never signs**: `guinea-test`, `guinea-seed`, `guinea-at` and
-  `guinea-unlock` runs are kept out of submissions.
-- **Moderation**: `node scripts/guinea-run/hall-of-fame.mjs remove <handle>` or
-  `ban <handle>`, then commit.
+  committed, see `.gitignore`); it pushes the keys to `guinea_private.keys`.
+  Never describe where the game keeps its key in a public file, this one
+  included. `key-check.mjs` (run by the workflow) fails when the game and the
+  database disagree. A change to a signed text (`r2|`, `p1|`, `o1|` in
+  `tally.js`) changes `signed_text` in `supabase.sql` in the same PR, applied
+  before the site serves the new game.
+- **Privacy**: never send the nickname or the player id to Google Analytics;
+  the analytics events of the Hall of Fame carry the coat at most.
 - **End bonuses** (`succeedWorld` in `game.js`, one line each on the end card):
   +250 for no mistake, 50 less per attempt lost, never below 0; +200 for
   Victor's note; up to +300 for a boss beaten at its par time. Decided with the
@@ -311,10 +364,10 @@ pipeline. Decided with the author on 2026-10-22.
 - **Saved game**: every 5 s of play, on pause and when the page hides, signed;
   a saved game changed by hand is dropped. A resume serves the ball again from
   the plunger.
-- **Hall of Fame**: the best game is signed (its own text prefix) and travels
-  in the same submission as the worlds, on its own board (`rankPinball`), never
-  in the total. The workflow also checks a cap and a ceiling of points per
-  minute of play (limits in the secret, fallbacks in `parseLimits`).
+- **Hall of Fame**: the best game is signed (its own text prefix) and sent
+  like a world, on its own board (`pinball`), never in the total. The database
+  also checks a cap and a ceiling of points per minute of play (limits in
+  `guinea_private.settings`, fallbacks in `supabase.sql`).
 - **Look at it** with the harness: `harness.mjs pinball <outDir>`, then the
   steps `{"click":"[data-action=bonus-new]"}` and
   `{"eval":"window.__guineaRun.pinball.autoplay(true)"}`;
@@ -341,8 +394,8 @@ only.
   pictures the game shows, its two fonts, the three badge banners and Three.js
   (the entry and what it imports by a relative path). A new file the game
   loads from elsewhere goes into the list in `site.mjs`, or it is only saved
-  once fetched online. The Hall of Fame board, GitHub and analytics stay on the
-  network.
+  once fetched online. The Hall of Fame database (another origin) and
+  analytics stay on the network.
 - **All or nothing**: a file that fails drops the install, tried again at the
   next visit, so a copy is never half a game.
 - **Next visit**: a new version (any saved file changed, or `THREE_VERSION`)
