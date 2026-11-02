@@ -1,8 +1,8 @@
 import { AuthInfo, Connection, SfError } from '@salesforce/core';
 import c from 'chalk';
-import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand, buildActionOutput } from './actionsProvider.js';
-import { execSfdxJson, uxLog } from '../utils/index.js';
-import { AGENT_DOC_URL, AgentVersionInfo, listOrgAgentVersions, resolveAgentVersion } from '../utils/agentUtils.js';
+import { ActionsProvider, ActionResult, ActionWhen, PrePostCommand } from './actionsProvider.js';
+import { uxLog } from '../utils/index.js';
+import { activateAgentVersion, listOrgAgentVersions, resolveAgentVersion } from '../utils/agentUtils.js';
 import { t } from '../utils/i18n.js';
 
 // A deployment check deploys nothing, so there is no agent version to activate after it
@@ -105,32 +105,11 @@ export class AgentActivateAction extends ActionsProvider {
     }
 
     // 2. Activate it
-    uxLog('log', this, c.grey(`[DeploymentActions] ${t('activatingAgentVersion', { agentName: target.agentName, version: target.version })}`));
-    const activateCommand =
-      `sf agent activate --api-name ${target.agentName} --version ${target.version}` +
-      ` --target-org ${conn.getUsername()}` +
-      ' --json';
-    const activateRes = await execSfdxJson(activateCommand, this, { fail: false, output: true });
-    if (activateRes?.status !== 0) {
-      const activateOutput = buildActionOutput(activateRes);
-      // Salesforce refuses a service agent whose botUser is not a user of the org
-      const hint = /should have a user assigned/i.test(activateOutput) ? `\n${t('agentActivationNeedsBotUser', { agentName: target.agentName, docUrl: AGENT_DOC_URL })}` : '';
-      return this.fail(
-        t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: activateOutput }) + hint,
-        outputLines
-      );
+    const activation = await activateAgentVersion(conn, target, this);
+    if (!activation.success) {
+      return this.fail(activation.message, outputLines);
     }
-
-    // 3. Read the status again: it is what proves the version now runs. An org that does not
-    // tell the status is trusted on the command result.
-    const updated = await this.readVersion(conn, target);
-    if (updated?.status && updated.status.toLowerCase() !== 'active') {
-      return this.fail(
-        t('agentActivationFailed', { agentName: target.agentName, version: target.version, message: `Status is ${updated.status}` }),
-        outputLines
-      );
-    }
-    this.logSuccess(t('agentVersionActivated', { agentName: target.agentName, version: target.version }), outputLines);
+    this.logSuccess(activation.message, outputLines);
     return { statusCode: 'success', output: outputLines.join('\n') };
   }
 
@@ -140,10 +119,6 @@ export class AgentActivateAction extends ActionsProvider {
       return Connection.create({ authInfo });
     }
     return globalThis.jsForceConn;
-  }
-
-  private async readVersion(conn: Connection, target: AgentVersionInfo): Promise<AgentVersionInfo | null> {
-    return resolveAgentVersion(await listOrgAgentVersions(conn), target.agentName, target.version);
   }
 
   private logSuccess(message: string, outputLines: string[]): void {

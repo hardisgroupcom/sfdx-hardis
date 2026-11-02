@@ -89,9 +89,17 @@ A deployment always leaves the User Access Policies it contains in Design status
 
 A user-access-policy action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs at every deployment by default (\`runOnlyOnceByOrg: false\`), because each new deployment of a policy turns it off again.
 
-### Activate an Agentforce agent
+### Publish an Agentforce agent
 
-An \`agent-activate\` action, run after the deployment, activates a version of an agent with \`sf agent activate\`.
+An \`agent-publish\` action, run after the deployment, publishes the authoring bundle of an agent (\`aiAuthoringBundles/<Agent>/\`) in the target org with \`sf agent publish authoring-bundle\`, then activates the version this created. The org numbers the version. The replacement rules of the target org are applied to the bundle while it is published.
+
+- \`agentName\`: API name of the agent.
+
+An agent-publish action is \`post-deploy\` only, and only runs in the \`process-deployment-only\` context. It runs once by org by default (\`runOnlyOnceByOrg: true\`): each publication creates a new version, even when the bundle did not change.
+
+### Activate a version of an Agentforce agent
+
+An \`agent-activate\` action, run after the deployment, activates a version of an agent with \`sf agent activate\`, for example to go back to a previous version.
 
 - \`agentName\`: API name of the agent.
 - \`agentVersion\`: the version number, or \`latest\` (default) for the highest version of the agent in the target org.
@@ -119,7 +127,7 @@ sf hardis:project:action:create --agent --scope branch --when pre-deploy --type 
 Required in agent mode:
 
 - \`--scope\`, \`--when\`, \`--type\`, \`--label\`
-- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`), \`--agent-name\` for agent-activate (\`--agent-version\` defaults to \`latest\`) and agent-running-user
+- Type-specific flags: \`--command\` for command, \`--apex-script\` for apex, \`--sfdmu-project\` for data, \`--community-name\` for publish-community, \`--instructions\` for manual, \`--class-name\` and \`--cron-expression\` for schedule-batch, \`--class-name\` for run-batch (\`--run-mode\` defaults to \`wait\`), \`--packagexml-items\` for remove-packagexml-items, \`--policies\` for user-access-policy (\`--activate\` defaults to \`true\`, \`--apply-to-all\` to \`false\`), \`--agent-name\` for agent-publish, agent-activate (\`--agent-version\` defaults to \`latest\`) and agent-running-user
 
 In agent mode, \`--context\` defaults to \`process-deployment-only\`. \`--run-only-once-by-org\` defaults to \`true\` (use \`--no-run-only-once-by-org\` to disable); other optional boolean flags default to \`false\`.
 
@@ -142,6 +150,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --type remove-packagexml-items --label "Skip legacy classes" --packagexml-items "ApexClass:MyClass1,MyClass3;Layout:MyLayout1,MyLayout2"',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type run-batch --label "Recalculate crew capacity" --class-name CrewCapacityBatch --run-mode wait --wait-timeout 30',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type user-access-policy --label "Activate sales access policies" --policies "Sales_Rep_Access,Sales_Manager_Access" --apply-to-all',
+    '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when post-deploy --type agent-publish --label "Publish the service agent" --agent-name My_Service_Agent',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type agent-activate --label "Activate the service agent" --agent-name My_Service_Agent --agent-version latest',
     '$ sf hardis:project:action:create --agent --scope pr --pr-id 123 --when pre-deploy --context all --type agent-running-user --label "Create the running user of the service agent" --agent-name My_Service_Agent',
     '$ sf hardis:project:action:create --agent --scope project --when post-deploy --type apex --label "Reset demo data" --apex-script scripts/apex/reset-demo.apex --exclude-target-branches "main,preprod"',
@@ -157,7 +166,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'When to run the action: pre-deploy or post-deploy',
     }),
     type: Flags.string({
-      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, agent-activate, agent-running-user) or the id of a project custom function',
+      description: 'Type of action: a built-in type (command, data, apex, publish-community, manual, schedule-batch, run-batch, remove-packagexml-items, user-access-policy, agent-publish, agent-activate, agent-running-user) or the id of a project custom function',
     }),
     label: Flags.string({
       description: 'Human-readable label for the action',
@@ -220,7 +229,7 @@ Use \`--include-target-branches\` or \`--exclude-target-branches\` (comma-separa
       description: 'For user-access-policy type: also run Apply To All for each policy, by driving the Setup page in a headless browser (default: false)',
     }),
     'agent-name': Flags.string({
-      description: 'API name of the Agentforce agent (for agent-activate and agent-running-user types)',
+      description: 'API name of the Agentforce agent (for agent-publish, agent-activate and agent-running-user types)',
     }),
     'agent-version': Flags.string({
       description: 'For agent-activate type: version number to activate, or latest for the highest version in the target org (default: latest)',

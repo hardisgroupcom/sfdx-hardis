@@ -13,6 +13,7 @@ export const DEPLOYMENT_ACTION_TYPES = [
   'remove-packagexml-items',
   'user-access-policy',
   'agent-activate',
+  'agent-publish',
   'agent-running-user',
 ] as const;
 
@@ -41,7 +42,7 @@ export const ORG_INIT_ACTION_TYPES = [
  * A registry rather than a provider method: getEffectiveActionContext is synchronous and called
  * from synchronous code, where no provider class can be loaded.
  */
-export const DEPLOYMENT_ONLY_ACTION_TYPES: string[] = ['run-batch', 'user-access-policy', 'agent-activate'];
+export const DEPLOYMENT_ONLY_ACTION_TYPES: string[] = ['run-batch', 'user-access-policy', 'agent-activate', 'agent-publish'];
 
 /**
  * Types that run at every deployment when their runOnlyOnceByOrg is not written: a deployment sets
