@@ -335,7 +335,7 @@ jobs:
           package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
-      - run: yarn config set version-git-tag false && tsc -b
+      - run: yarn config set version-git-tag false && yarn tsc -b
       - run: CANARYID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="canary$CANARYID"
       - run: yarn config set network-timeout 300000 && npm publish --tag canary
 
@@ -542,7 +542,7 @@ jobs:
           package-manager-cache: false
       - run: yarn config set registry "https://registry.npmjs.org"
       - run: yarn install --frozen-lockfile
-      - run: yarn config set version-git-tag false && tsc -b
+      - run: yarn config set version-git-tag false && yarn tsc -b
       - run: BETAID=$(date '+%Y%m%d%H%M') && yarn version --prepatch --preid="beta$BETAID"
       - id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
