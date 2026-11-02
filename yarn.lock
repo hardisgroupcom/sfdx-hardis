@@ -1455,10 +1455,10 @@
   dependencies:
     ollama "^0.6.3"
 
-"@langchain/openai@1.6.3":
-  version "1.6.3"
-  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.6.3.tgz#9d845f6469aca17f16083c604a3e66ef33cd0de8"
-  integrity sha512-vioA4Si8bIAczcsmrfV8C8KZ3QozAz2yiuTZSgR57WsjuDsuF2dzZ4tx/jTEEtyOrFzfKXnSYi32QsNz8Mah9w==
+"@langchain/openai@1.7.0":
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/@langchain/openai/-/openai-1.7.0.tgz#09f963ba98070644f487ae41258f3089c7564c2a"
+  integrity sha512-ne5vZme5yZaC0VcNu2SJrYa8kqJ++dTZlvPmq4lNMyp+oupl5vsEb7YXPHtGgzBU21C44+I5ToEFYbJrXieSkA==
   dependencies:
     js-tiktoken "^1.0.12"
     openai "^7.23.0"
